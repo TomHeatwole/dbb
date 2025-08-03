@@ -8,7 +8,7 @@
   pointer-events: none;
   background: url('./watermark.png') center center no-repeat;
   background-size: contain;
-  opacity: 0.05;
+  opacity: 0.06;
 }
 
 .App {
@@ -33,9 +33,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* justify-content: center; */
+  justify-content: flex-start;
+  padding-top: 2rem;
   font-size: calc(10px + 2vmin);
   color: white;
+  font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
+}
+
+.App-header h1 {
+  font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
+  letter-spacing: 0.1em;
+  font-size: 3em;
 }
 
 .App-link {
