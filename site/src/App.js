@@ -6,7 +6,7 @@ function App() {
     <div className="App">
       <div className="watermark-bg" />
       <header className="App-header">
-        <h1>Welcome to The Hwang Dynasty</h1>
+        <h1>Welcome to the Hwang Dynasty</h1>
       </header>
     </div>
   );
