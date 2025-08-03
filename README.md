@@ -10,6 +10,14 @@ with the following values:
 ```
 export const SITE_NAME = '<name of site>';
 export const LEAGUE_ID = '<your_sleeper_league_id>';
+
+// Optional:
+export const PREVIOUS_YEARS = {
+    2024: '<2024_leagee_id>',
+    2023: '<2023 league_id>',
+    . . .
+};
+
 ```
 
 

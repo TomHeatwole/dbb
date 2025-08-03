@@ -4,8 +4,9 @@ import './App.css';
 function App() {
   return (
     <div className="App">
+      <div className="watermark-bg" />
       <header className="App-header">
-        The Hwang Dynasty
+        <h1>TODO: Build website</h1>
       </header>
     </div>
   );
