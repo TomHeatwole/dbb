@@ -4,3 +4,4 @@ All from sleeper API's documentation: https://docs.sleeper.com/
 
 Matchups: "https://api.sleeper.app/v1/league/<league_id>/matchups/<week>"
 Users: "https://api.sleeper.app/v1/league/<league_id>/users"
+Rosters: "https://api.sleeper.app/v1/league/<league_id>/rostres"
