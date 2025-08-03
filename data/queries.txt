@@ -3,3 +3,4 @@ API doc for how I got the example data in this directory.
 All from sleeper API's documentation: https://docs.sleeper.com/
 
 Matchups: "https://api.sleeper.app/v1/league/<league_id>/matchups/<week>"
+Users: "https://api.sleeper.app/v1/league/<league_id>/users"

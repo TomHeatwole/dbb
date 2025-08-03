@@ -1,0 +1,167 @@
+[
+  {
+    "avatar": "<redacted>",
+    "display_name": "jheatwole",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "mention_pn": "on",
+      "team_name": "The Boomers"
+    },
+    "settings": null,
+    "user_id": "739139804687712256"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "daviii",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "mention_pn": "on",
+      "team_name": "#FreeRashee"
+    },
+    "settings": null,
+    "user_id": "871865063273885696"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "dwol11",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "avatar": "https://sleepercdn.com/images/v2/logos/logo_with_text_2.png",
+      "mention_pn": "on",
+      "team_name": "Adams"
+    },
+    "settings": null,
+    "user_id": "1000300632479174656"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "sleeperdotcom",
+    "is_bot": false,
+    "is_owner": true,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "mention_pn": "on",
+      "team_name": "Trey"
+    },
+    "settings": null,
+    "user_id": "1102774547503230976"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "RoflCopters",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "mention_pn": "on",
+      "team_name": "The Ladds"
+    },
+    "settings": null,
+    "user_id": "1113255287491801088"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "seanjcrow",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "mention_pn": "on"
+    },
+    "settings": null,
+    "user_id": "1120177878219534336"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "yellowbrickroad",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "allow_sms": "on",
+      "avatar": "https://sleepercdn.com/images/v3/avatars/avatar_default_yellow.webp",
+      "mention_pn": "on",
+      "team_name": "House of Hwang"
+    },
+    "settings": null,
+    "user_id": "1120237537626341376"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "fumland7",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "allow_sms": "on",
+      "league_report_pn": "off",
+      "mascot_message": "off",
+      "mention_pn": "on",
+      "player_like_pn": "off",
+      "player_nickname_update": "off",
+      "team_name": "LaPorta Potty",
+      "team_name_update": "off",
+      "trade_block_pn": "off",
+      "transaction_commissioner": "off",
+      "transaction_free_agent": "off",
+      "transaction_trade": "off",
+      "transaction_waiver": "off",
+      "user_message_pn": "off"
+    },
+    "settings": null,
+    "user_id": "1120794092750974976"
+  },
+  {
+    "avatar": "<redacted>",
+    "display_name": "GIVEDADDYASPIKE",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "avatar": "https://sleepercdn.com/images/v3/avatars/avatar_default_yellow.webp",
+      "league_report_pn": "on",
+      "mascot_message": "off",
+      "mention_pn": "on",
+      "player_like_pn": "off",
+      "player_nickname_update": "on",
+      "team_name": "Sleeper2",
+      "team_name_update": "on",
+      "trade_block_pn": "on",
+      "transaction_commissioner": "on",
+      "transaction_free_agent": "off",
+      "transaction_trade": "on",
+      "transaction_waiver": "on",
+      "user_message_pn": "on"
+    },
+    "settings": null,
+    "user_id": "1120794790733529088"
+  },
+  {
+    "avatar": "redacted",
+    "display_name": "Mr Toms",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "1194868087212167168",
+    "metadata": {
+      "allow_pn": "on",
+      "mention_pn": "on"
+    },
+    "settings": null,
+    "user_id": "1182562099657515008"
+  }
+]
