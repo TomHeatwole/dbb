@@ -2850,7 +2850,7 @@ ARI,Arizona Cardinals,100022,Arizona,-16022,Cardinals D/ST,1821,Arizona Cardinal
 11570,Rasheen Ali,41033,Rasheen Ali,4690013,Rasheen Ali,21167,Rasheen Ali,3168797,Rasheen Ali,,,,,25983,Rasheen Ali,Rasheen Ali,AlixRa00,Rasheen Ali
 11568,Blake Watson,41388,Blake Watson,4361604,Blake Watson,,,,,,,,,,,Blake Watson,,
 11567,Jordan Travis,41037,Jordan Travis,,,,,,,,,,,,,Jordan Travis,TravJo00,Jordan Travis
-11562,Spencer Rattler,41043,Spencer Rattler,,,21413,Spencer Rattler,3125863,Spencer Rattler,19089,Spencer Rattler,,,23081,Spencer Rattler,Spencer Rattler,RattSp00,Spencer Rattler
+11562,Spencer Rattler,41043,Spencer Rattler,4426339,4426339,21413,Spencer Rattler,3125863,Spencer Rattler,19089,Spencer Rattler,4426339,4426339,23081,Spencer Rattler,Spencer Rattler,RattSp00,Spencer Rattler
 11558,Sam Hartman,41238,Sam Hartman,,,,,,,,,,,,,Sam Hartman,,
 11554,Chase Cota,40590,Chase Cota,4367186,Chase Cota,,,,,,,,,,,Chase Cota,,
 11544,Avery Davis,,,,,,,,,,,,,,,Avery Davis,,

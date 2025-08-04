@@ -115,16 +115,34 @@
   width: 100%;
 }
 .sidebar nav ul li {
+  color: #5A3B1E;
   margin: 8px 0;
+  font-size: 1.5em;
 }
 .sidebar nav ul li a {
   color: #5A3B1E;
   text-decoration: none;
-  font-size: 2.0em;
+  font-size: 1.3em;
   transition: color 0.2s;
 }
 .sidebar nav ul li a:hover {
   color: #61dafb;
+}
+
+.sidebar .dropdown-toggle {
+  font-size: 1.2em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  color: inherit;
+}
+
+.sidebar .dropdown-list li {
+  font-size: 0.95em;
+  padding: 0;
+  margin: 4px 0;
+  margin-left: 0;
 }
 
 
@@ -161,7 +179,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-left: 70px;
+  margin-left: 68px;
   margin-right: 70px;
   background: #C49A6C;
 }
