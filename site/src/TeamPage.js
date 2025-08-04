@@ -82,6 +82,17 @@ function TeamPage() {
     return info ? info : { name: pid, position: '', espn_photo_url: null };
   });
 
+  // Group players by position
+  const positions = ['QB', 'WR', 'RB', 'TE'];
+  const playersByPosition = {};
+  positions.forEach(pos => { playersByPosition[pos] = []; });
+  playerList.forEach(player => {
+    const pos = positions.includes(player.position) ? player.position : null;
+    if (pos) {
+      playersByPosition[pos].push(player);
+    }
+  });
+
   return (
     <div className="team-info-box">
       <h1 className="team-header">{teamName}</h1>
@@ -92,17 +103,23 @@ function TeamPage() {
         )}
       </div>
       <div style={{ marginTop: '1.5em', textAlign: 'left' }}>
-        <h4>Rostered Players:</h4>
-        <ul>
-          {playerList.map((p, i) => (
-            <li key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5em' }}>
-              {p.espn_photo_url && (
-                <img src={p.espn_photo_url} alt={p.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', marginRight: 12, background: '#222' }} />
-              )}
-              <span>{p.name} {p.position && <span style={{ color: '#aaa', fontSize: '0.95em' }}>({p.position})</span>}</span>
-            </li>
+        <div className="player-columns" style={{ display: 'flex', gap: '2em', justifyContent: 'center' }}>
+          {positions.map(pos => (
+            <div key={pos} style={{ minWidth: 120 }}>
+              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: '1.5em', fontWeight: 700, letterSpacing: '0.05em' }}>{pos}</div>
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {playersByPosition[pos].map((p, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5em' }}>
+                    {p.espn_photo_url && (
+                      <img src={p.espn_photo_url} alt={p.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', marginRight: 12, background: '#222' }} />
+                    )}
+                    <span>{p.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );
