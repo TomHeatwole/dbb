@@ -92,6 +92,14 @@ function TeamPage() {
       playersByPosition[pos].push(player);
     }
   });
+  // Sort each position group by search_rank (ascending)
+  positions.forEach(pos => {
+    playersByPosition[pos].sort((a, b) => {
+      const rankA = a.search_rank !== undefined ? a.search_rank : 9999999;
+      const rankB = b.search_rank !== undefined ? b.search_rank : 9999999;
+      return rankA - rankB;
+    });
+  });
 
   return (
     <div className="team-info-box">
