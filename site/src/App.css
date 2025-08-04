@@ -44,11 +44,12 @@
 .main-content {
   position: relative;
   flex: 1 1 0;
-  margin-left: 0;
+  margin-left: 88px;
   padding: 2rem;
   min-width: 0;
   z-index: 2;
   overflow: visible;
+  opacity: 0.8;
 }
 
 .content-wrapper h1 {
@@ -96,8 +97,6 @@
   margin-right: 50px;
   height: calc(100vh - 144px);
   width: 230px;
-  background: #C49A6C;
-  color: #fff;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -161,6 +160,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-left: 70px;
+  margin-right: 70px;
+  background: #C49A6C;
 }
 
 .scroll-body nav ul {
