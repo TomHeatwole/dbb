@@ -16,25 +16,80 @@
   z-index: 1;
 }
 
+.sidebar {
+  position: relative;
+  top: 32px;
+  left: 32px;
+  height: calc(100vh - 64px);
+  width: 180px;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 0;
+  box-shadow: 2px 4px 16px rgba(0,0,0,0.12);
+  border-radius: 18px;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0 0 0 20px;
+  margin: 0;
+  width: 100%;
+}
+.sidebar nav ul li {
+  margin: 20px 0;
+}
+.sidebar nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1em;
+  transition: color 0.2s;
+}
+.sidebar nav ul li a:hover {
+  color: #61dafb;
+}
+
 .content-wrapper {
+  height: 100vh;
+  width: 100%;
   position: relative;
   z-index: 1;
   background-color: #282c34;
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: stretch;
   justify-content: flex-start;
-  padding-top: 2rem;
+  padding-top: 0;
   font-size: calc(10px + 2vmin);
   color: white;
   font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
+}
+
+.main-content {
+  flex: 1 1 0;
+  margin-left: 0;
+  padding: 2rem;
+  min-width: 0;
+  z-index: 2;
 }
 
 .content-wrapper h1 {
   font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
   letter-spacing: 0.1em;
   font-size: 3em;
+}
+
+.main-content h1 {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  max-width: 80%;
 }
 
 .App-logo {

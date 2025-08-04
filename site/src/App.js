@@ -14,12 +14,17 @@ function App() {
     <Router>
       <div className="App">
         <div className="content-wrapper">
-        <div className="watermark-bg" />
-          <Routes>
-            <Route path="/team/:id" element={<TeamPage />} />
-            <Route path="/home/" element={<HomePage />} />
-            <Route path="*" element={<Navigate to="/home/" replace />} />
-          </Routes>
+          <div className="watermark-bg" />
+          <div className="sidebar">
+            TODO: Add sidebar
+          </div>
+          <div className="main-content">
+            <Routes>
+              <Route path="/team/:id" element={<TeamPage />} />
+              <Route path="/home/" element={<HomePage />} />
+              <Route path="*" element={<Navigate to="/home/" replace />} />
+            </Routes>
+          </div>
         </div>
       </div>
     </Router>
