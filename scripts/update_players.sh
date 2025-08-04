@@ -1,1 +1,1 @@
-curl -k "https://api.sleeper.app/v1/players/nfl" -o data/players.txt
+curl -k "https://api.sleeper.app/v1/players/nfl" -o site/public/data/players.txt
