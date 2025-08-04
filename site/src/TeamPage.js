@@ -5,6 +5,7 @@ import { LEAGUE_ID } from './global_constants';
 function TeamPage() {
   const { id } = useParams();
   const [roster, setRoster] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -13,22 +14,34 @@ function TeamPage() {
 
   useEffect(() => {
     if (!isValidId) return;
-    async function fetchRoster() {
+    async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`);
-        if (!response.ok) throw new Error('Failed to fetch rosters');
-        const rosters = await response.json();
-        const found = rosters.find(r => String(r.roster_id) === String(id));
-        setRoster(found);
+        // Fetch rosters
+        const rosterRes = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`);
+        if (!rosterRes.ok) throw new Error('Failed to fetch rosters');
+        const rosters = await rosterRes.json();
+        const foundRoster = rosters.find(r => String(r.roster_id) === String(id));
+        setRoster(foundRoster);
+        if (!foundRoster) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        // Fetch users
+        const usersRes = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/users`);
+        if (!usersRes.ok) throw new Error('Failed to fetch users');
+        const users = await usersRes.json();
+        const foundUser = users.find(u => String(u.user_id) === String(foundRoster.owner_id));
+        setUser(foundUser);
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     }
-    fetchRoster();
+    fetchData();
   }, [id, isValidId]);
 
   if (!isValidId) {
@@ -42,8 +55,13 @@ function TeamPage() {
   return (
     <div>
       <h1>Hello, team ID: {id}</h1>
+      <h2>Roster Info</h2>
       <pre style={{textAlign: 'left', background: '#222', color: '#fff', padding: '1em', borderRadius: '8px', overflowX: 'auto'}}>
         {JSON.stringify(roster, null, 2)}
+      </pre>
+      <h2>User Info</h2>
+      <pre style={{textAlign: 'left', background: '#222', color: '#fff', padding: '1em', borderRadius: '8px', overflowX: 'auto'}}>
+        {JSON.stringify(user, null, 2)}
       </pre>
     </div>
   );

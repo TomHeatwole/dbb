@@ -38,7 +38,6 @@
   padding-top: 0;
   font-size: calc(10px + 2vmin);
   color: white;
-  font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
 }
 
 .main-content {
@@ -53,7 +52,6 @@
 }
 
 .content-wrapper h1 {
-  font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
   letter-spacing: 0.1em;
   font-size: 3em;
 }
@@ -91,6 +89,7 @@
 }
 
 .sidebar {
+  font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
   position: relative;
   top: 70px;
   left: 94px;
