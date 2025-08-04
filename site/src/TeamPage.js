@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { LEAGUE_ID } from './global_constants';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
+import { fetchTeamData } from './TeamLookup';
 
 function TeamPage() {
   const { id } = useParams();
@@ -31,10 +31,7 @@ function TeamPage() {
       setLoading(true);
       setError(null);
       try {
-        // Fetch rosters
-        const rosterRes = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`);
-        if (!rosterRes.ok) throw new Error('Failed to fetch rosters');
-        const rosters = await rosterRes.json();
+        const { rosters, users } = await fetchTeamData();
         const foundRoster = rosters.find(r => String(r.roster_id) === String(id));
         setRoster(foundRoster);
         if (!foundRoster) {
@@ -42,10 +39,6 @@ function TeamPage() {
           setLoading(false);
           return;
         }
-        // Fetch users
-        const usersRes = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/users`);
-        if (!usersRes.ok) throw new Error('Failed to fetch users');
-        const users = await usersRes.json();
         const foundUser = users.find(u => String(u.user_id) === String(foundRoster.owner_id));
         setUser(foundUser);
       } catch (err) {
