@@ -22,7 +22,7 @@
 }
 
 .App {
-  position: relative;
+  position: relative0.7;
   z-index: 1;
 
 .content-wrapper {
@@ -63,7 +63,7 @@
   margin-left: auto;
   margin-right: auto;
   margin-top: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0.7rem;
   max-width: 80%;
 }
 
@@ -179,18 +179,18 @@
 }
 
 .team-info-box {
-  background: rgba(0, 10, 30, 0.9);
+  background: rgb(0, 10, 30);
   margin-right: 230px;
   border-radius: 18px;
   width: 100%;
-  margin: 3rem auto 0 auto;
+  margin: 2rem auto 0 auto;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12);
 }
 
 .team-header {
   width: 100%;
   text-align: center;
-  margin-bottom: 0.15em;
+  margin-bottom: 0.05em;
   margin-top: 0;
 }
 
@@ -209,8 +209,8 @@
 }
 
 .owner-avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
   background: #222;

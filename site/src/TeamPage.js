@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { LEAGUE_ID } from './global_constants';
+import { getPlayerInfo, fetchPlayersData } from './PlayerLookup';
 
 function TeamPage() {
   const { id } = useParams();
   const [roster, setRoster] = useState(null);
   const [user, setUser] = useState(null);
+  const [playersData, setPlayersData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Check if id is a positive integer
   const isValidId = /^[1-9]\d*$/.test(id);
+
+  // Fetch player data on mount (now using fetchPlayersData)
+  useEffect(() => {
+    fetchPlayersData()
+      .then(setPlayersData)
+      .catch(() => setPlayersData(null));
+  }, []);
 
   useEffect(() => {
     if (!isValidId) return;
@@ -48,7 +57,7 @@ function TeamPage() {
     return <Navigate to="/home/" replace />;
   }
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || !playersData) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!roster) return <div>No roster found for ID {id}</div>;
 
@@ -68,12 +77,13 @@ function TeamPage() {
     if (typeof avatarVal === 'string' && avatarVal.startsWith('http')) return avatarVal;
     return `https://sleepercdn.com/avatars/${avatarVal}`;
   }
-
-  // Team avatar: prefer user.metadata.avatar, then user.avatar
-  let teamAvatarVal = user && user.metadata && user.metadata.avatar ? user.metadata.avatar : (user && user.avatar ? user.avatar : null);
-  const teamAvatarUrl = getAvatarUrl(teamAvatarVal);
-  // User avatar: user.avatar
   const userAvatarUrl = getAvatarUrl(user && user.avatar);
+
+  // Get player info for each player on the roster
+  const playerList = (roster.players || []).map(pid => {
+    const info = getPlayerInfo(pid, playersData);
+    return info ? `${info.name} (${info.position})` : pid;
+  });
 
   return (
     <div className="team-info-box">
@@ -83,6 +93,12 @@ function TeamPage() {
         {userAvatarUrl && (
           <img src={userAvatarUrl} alt="Owner Avatar" className="owner-avatar" />
         )}
+      </div>
+      <div style={{ marginTop: '1.5em', textAlign: 'left' }}>
+        <h4>Rostered Players:</h4>
+        <ul>
+          {playerList.map((p, i) => <li key={i}>{p}</li>)}
+        </ul>
       </div>
     </div>
   );
