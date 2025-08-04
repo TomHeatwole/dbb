@@ -215680,7 +215680,7 @@
     "age": 24,
     "player_id": "9493",
     "rotowire_id": 16790,
-    "espn_id": null,
+    "espn_id": 4426515,
     "swish_id": 1162128,
     "birth_country": null
   },

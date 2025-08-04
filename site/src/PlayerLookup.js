@@ -19,6 +19,7 @@ export function getPlayerInfo(playerId, playersData) {
   return {
     name: player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim(),
     position: player.position || (player.fantasy_positions && player.fantasy_positions[0]) || '',
+    espn_photo_url: player.espn_id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${player.espn_id}.png` : null,
     ...player
   };
 } 

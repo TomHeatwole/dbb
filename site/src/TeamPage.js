@@ -82,7 +82,7 @@ function TeamPage() {
   // Get player info for each player on the roster
   const playerList = (roster.players || []).map(pid => {
     const info = getPlayerInfo(pid, playersData);
-    return info ? `${info.name} (${info.position})` : pid;
+    return info ? info : { name: pid, position: '', espn_photo_url: null };
   });
 
   return (
@@ -97,7 +97,14 @@ function TeamPage() {
       <div style={{ marginTop: '1.5em', textAlign: 'left' }}>
         <h4>Rostered Players:</h4>
         <ul>
-          {playerList.map((p, i) => <li key={i}>{p}</li>)}
+          {playerList.map((p, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5em' }}>
+              {p.espn_photo_url && (
+                <img src={p.espn_photo_url} alt={p.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', marginRight: 12, background: '#222' }} />
+              )}
+              <span>{p.name} {p.position && <span style={{ color: '#aaa', fontSize: '0.95em' }}>({p.position})</span>}</span>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
