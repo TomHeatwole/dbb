@@ -1,24 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { LEAGUE_ID } from './global_constants';
-import { getPlayerInfo, fetchPlayersData } from './PlayerLookup';
+import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 
 function TeamPage() {
   const { id } = useParams();
   const [roster, setRoster] = useState(null);
   const [user, setUser] = useState(null);
   const [playersData, setPlayersData] = useState(null);
+  const [playerIdMap, setPlayerIdMap] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Check if id is a positive integer
   const isValidId = /^[1-9]\d*$/.test(id);
 
-  // Fetch player data on mount (now using fetchPlayersData)
+  // Fetch player data and playerIdMap on mount
   useEffect(() => {
     fetchPlayersData()
       .then(setPlayersData)
       .catch(() => setPlayersData(null));
+    fetchPlayerIdMap()
+      .then(setPlayerIdMap)
+      .catch(() => setPlayerIdMap(null));
   }, []);
 
   useEffect(() => {
@@ -57,7 +61,7 @@ function TeamPage() {
     return <Navigate to="/home/" replace />;
   }
 
-  if (loading || !playersData) return <div>Loading...</div>;
+  if (loading || !playersData || !playerIdMap) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!roster) return <div>No roster found for ID {id}</div>;
 
@@ -81,7 +85,7 @@ function TeamPage() {
 
   // Get player info for each player on the roster
   const playerList = (roster.players || []).map(pid => {
-    const info = getPlayerInfo(pid, playersData);
+    const info = getPlayerInfo(pid, playersData, playerIdMap);
     return info ? info : { name: pid, position: '', espn_photo_url: null };
   });
 
