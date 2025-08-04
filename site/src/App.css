@@ -36,7 +36,6 @@
   align-items: stretch;
   justify-content: flex-start;
   padding-top: 0;
-  font-size: calc(10px + 2vmin);
   color: white;
 }
 
@@ -48,12 +47,15 @@
   min-width: 0;
   z-index: 2;
   overflow: visible;
-  opacity: 0.8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .content-wrapper h1 {
   letter-spacing: 0.1em;
-  font-size: 3em;
+  font-size: 2.5em;
+  text-align: center;
 }
 
 .main-content h1 {
@@ -174,4 +176,42 @@
 .scroll-body nav ul li {
   width: 100%;
   text-align: center;
+}
+
+.team-info-box {
+  background: rgba(0, 10, 30, 0.9);
+  margin-right: 230px;
+  border-radius: 18px;
+  width: 100%;
+  margin: 3rem auto 0 auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
+.team-header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 0.15em;
+  margin-top: 0;
+}
+
+.owner-subtitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 1.2em;
+  color: #aaa;
+  font-weight: 400;
+  padding-bottom: 1em;
+}
+
+.owner-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
 }

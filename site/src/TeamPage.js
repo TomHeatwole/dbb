@@ -52,17 +52,38 @@ function TeamPage() {
   if (error) return <div>Error: {error}</div>;
   if (!roster) return <div>No roster found for ID {id}</div>;
 
+  // Get team name and avatars
+  const ownerName = user && user.display_name ? user.display_name : 'Unknown';
+  let teamName = null;
+  if (user && user.metadata && user.metadata.team_name) {
+    teamName = user.metadata.team_name;
+  } else if (ownerName && ownerName !== 'Unknown') {
+    teamName = `Team ${ownerName}`;
+  } else {
+    teamName = `Team ${id}`;
+  }
+  // Helper to get avatar URL from value (ID or URL)
+  function getAvatarUrl(avatarVal) {
+    if (!avatarVal) return null;
+    if (typeof avatarVal === 'string' && avatarVal.startsWith('http')) return avatarVal;
+    return `https://sleepercdn.com/avatars/${avatarVal}`;
+  }
+
+  // Team avatar: prefer user.metadata.avatar, then user.avatar
+  let teamAvatarVal = user && user.metadata && user.metadata.avatar ? user.metadata.avatar : (user && user.avatar ? user.avatar : null);
+  const teamAvatarUrl = getAvatarUrl(teamAvatarVal);
+  // User avatar: user.avatar
+  const userAvatarUrl = getAvatarUrl(user && user.avatar);
+
   return (
-    <div>
-      <h1>Hello, team ID: {id}</h1>
-      <h2>Roster Info</h2>
-      <pre style={{textAlign: 'left', background: '#222', color: '#fff', padding: '1em', borderRadius: '8px', overflowX: 'auto'}}>
-        {JSON.stringify(roster, null, 2)}
-      </pre>
-      <h2>User Info</h2>
-      <pre style={{textAlign: 'left', background: '#222', color: '#fff', padding: '1em', borderRadius: '8px', overflowX: 'auto'}}>
-        {JSON.stringify(user, null, 2)}
-      </pre>
+    <div className="team-info-box">
+      <h1 className="team-header">{teamName}</h1>
+      <div className="owner-subtitle">
+        <span>Owner: {ownerName}</span>
+        {userAvatarUrl && (
+          <img src={userAvatarUrl} alt="Owner Avatar" className="owner-avatar" />
+        )}
+      </div>
     </div>
   );
 }
