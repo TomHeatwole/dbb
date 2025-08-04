@@ -8,17 +8,17 @@ import {
 import './App.css';
 import TeamPage from './TeamPage';
 import HomePage from './HomePage';
+import Sidebar from './Sidebar';
 
 function App() {
   return (
     <Router>
       <div className="App">
+        <div className="background-bg" />
         <div className="content-wrapper">
-          <div className="watermark-bg" />
-          <div className="sidebar">
-            TODO: Add sidebar
-          </div>
+          <Sidebar />
           <div className="main-content">
+            <div className="watermark-bg" />
             <Routes>
               <Route path="/team/:id" element={<TeamPage />} />
               <Route path="/home/" element={<HomePage />} />
