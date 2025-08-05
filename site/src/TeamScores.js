@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 const NUM_WEEKS = 17;
@@ -9,6 +9,19 @@ function TeamScores() {
   const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : 1;
   const [week, setWeek] = useState(initialWeek);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    function handleClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [dropdownOpen]);
 
   // Update query param when week changes
   useEffect(() => {
@@ -28,6 +41,11 @@ function TeamScores() {
     if ((isNaN(urlWeek) || urlWeek < 1 || urlWeek > NUM_WEEKS) && week !== 1) setWeek(1);
     // eslint-disable-next-line
   }, [urlWeek]);
+
+  // Close dropdown on week change (arrow, dropdown, or query param)
+  useEffect(() => {
+    setDropdownOpen(false);
+  }, [week]);
 
   const handleArrow = dir => {
     setWeek(w => Math.max(1, Math.min(NUM_WEEKS, w + dir)));
@@ -52,6 +70,7 @@ function TeamScores() {
         <div
           className="team-scores-week-dropdown"
           onClick={() => setDropdownOpen(open => !open)}
+          ref={dropdownRef}
         >
           Week {week}
           <span className="team-scores-week-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
