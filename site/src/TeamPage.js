@@ -7,6 +7,7 @@ import { CURRENT_YEAR } from './DateHelper';
 import FullRoster from './FullRoster';
 import TeamSummary from './TeamSummary';
 import TeamScores from './TeamScores';
+import { fetchScoresData } from './ScoresLookup';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -28,6 +29,8 @@ function TeamPage() {
   const urlTab = searchParams.get('tab');
   const initialTab = tabOptions.includes(urlTab) ? urlTab : tabOptions[0];
   const [selectedTab, setSelectedTab] = useState(initialTab);
+  const [weeksParsedData, setWeeksParsedData] = useState(null);
+  const [scoresLoading, setScoresLoading] = useState(true);
 
   // Sync tab with query param
   useEffect(() => {
@@ -76,6 +79,14 @@ function TeamPage() {
       .then(setPlayerIdMap)
       .catch(() => setPlayerIdMap(null));
   }, []);
+
+  useEffect(() => {
+    setScoresLoading(true);
+    fetchScoresData(season).then(data => {
+      setWeeksParsedData(data);
+      setScoresLoading(false);
+    });
+  }, [season]);
 
   useEffect(() => {
     if (!/^[1-9]\d*$/.test(id)) return;
@@ -189,7 +200,7 @@ function TeamPage() {
           </button>
         ))}
       </div>
-      {selectedTab === 'Summary' && <TeamSummary />}
+      {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} />}
       {selectedTab === 'Scores' && <TeamScores />}
       {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
     </div>

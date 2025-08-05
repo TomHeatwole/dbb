@@ -2,38 +2,62 @@ import { LEAGUE_ID, PREVIOUS_YEARS } from './global_constants';
 
 export async function fetchScoresData(season) {
   // Determine leagueId based on season
-  const leagueId = season === undefined || season === null || season === '' || season === new Date().getFullYear().toString()
-    ? LEAGUE_ID
-    : PREVIOUS_YEARS[season];
+  const currentYear = new Date().getFullYear().toString();
+  const isCurrentSeason = season === undefined || season === null || season === '' || season === currentYear;
+  const leagueId = isCurrentSeason ? LEAGUE_ID : PREVIOUS_YEARS[season];
 
-  let weeksData = null;
   let weeksParsedData = null;
-  // If previous season, load all week1.txt through week17.txt from public/data/{season}/
-  if (PREVIOUS_YEARS[season]) {
+
+  const fetchWeekData = async (season, weekNum) => {
+    // Try to fetch from local file first
+    const localUrl = `/data/${season}/week${weekNum}.txt`;
+    try {
+      const resp = await fetch(localUrl);
+      if (resp.ok) {
+        const text = await resp.text();
+        const weekArr = JSON.parse(text);
+        return weekArr.map(({ matchup_id, ...rest }) => rest);
+      }
+    } catch (e) {
+      // Ignore and try API
+    }
+    // If not found locally and current season, fetch from Sleeper API
+    if (isCurrentSeason) {
+      try {
+        const apiUrl = `https://api.sleeper.app/v1/league/${leagueId}/matchups/${weekNum}`;
+        const resp = await fetch(apiUrl);
+        if (resp.ok) {
+          const weekArr = await resp.json();
+          return weekArr.map(({ matchup_id, ...rest }) => rest);
+        }
+      } catch (e) {
+        // Ignore, return null
+      }
+    }
+    return null;
+  };
+
+  if (!isCurrentSeason && PREVIOUS_YEARS[season]) {
+    // Previous season: always load from local files
     const weekFiles = Array.from({ length: 17 }, (_, i) => `/data/${season}/week${i + 1}.txt`);
-    weeksData = await Promise.all(
-      weekFiles.map(async (url) => {
+    weeksParsedData = await Promise.all(
+      weekFiles.map(async (url, idx) => {
         try {
           const resp = await fetch(url);
           if (!resp.ok) throw new Error('Not found');
-          return await resp.text();
+          const text = await resp.text();
+          const weekArr = JSON.parse(text);
+          return weekArr.map(({ matchup_id, ...rest }) => rest);
         } catch (e) {
-          return null; // Could not load this week
+          return null;
         }
       })
     );
-    // Parse each week's data as JSON, ignore matchup_id
-    weeksParsedData = weeksData.map(weekText => {
-      if (!weekText) return null;
-      try {
-        const weekArr = JSON.parse(weekText);
-        // Each weekArr is an array of score breakdowns for each roster
-        // Remove matchup_id from each object (optional, but per instructions)
-        return weekArr.map(({ matchup_id, ...rest }) => rest);
-      } catch (e) {
-        return null;
-      }
-    });
+  } else {
+    // Current season: try local, then API
+    weeksParsedData = await Promise.all(
+      Array.from({ length: 17 }, (_, i) => fetchWeekData(season || currentYear, i + 1))
+    );
   }
 
   return weeksParsedData;
