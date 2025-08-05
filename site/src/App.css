@@ -391,3 +391,118 @@
   background: #23233a;
   color: #fff;
 }
+
+/* TeamScores week selector styles */
+.team-scores-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.5em;
+  position: relative;
+}
+.team-scores-week-bar {
+  display: flex;
+  align-items: center;
+  font-size: 1.15em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  position: relative;
+}
+.team-scores-arrow {
+  font-size: 1em;
+  margin: 0 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  transition: color 0.15s;
+}
+.team-scores-arrow:disabled {
+  color: #555;
+  cursor: not-allowed;
+}
+.team-scores-week-dropdown {
+  cursor: pointer;
+  padding: 0.15em 0.9em;
+  border-radius: 7px;
+  background: #23233a;
+  border: 1px solid #444;
+  user-select: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.team-scores-week-dropdown-arrow {
+  margin-left: 10px;
+  font-size: 0.8em;
+}
+.team-scores-week-dropdown-list {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: #23233a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  z-index: 10;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.team-scores-week-dropdown-option {
+  padding: 0.4em 1em;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 400;
+  background: none;
+  transition: background 0.15s, color 0.15s;
+}
+.team-scores-week-dropdown-option-active {
+  background: #2e2e4a;
+  color: #61dafb;
+  font-weight: 700;
+}
+
+.team-season-dropdown {
+  cursor: pointer;
+  padding: 0.15em 0.9em;
+  border-radius: 7px;
+  background: #23233a;
+  border: 1px solid #444;
+  user-select: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  font-size: 1.15em;
+  font-weight: 600;
+}
+.team-season-dropdown-arrow {
+  margin-left: 10px;
+  font-size: 0.8em;
+}
+.team-season-dropdown-list {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: #23233a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  z-index: 10;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.team-season-dropdown-option {
+  padding: 0.4em 1em;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 400;
+  background: none;
+  transition: background 0.15s, color 0.15s;
+}
+.team-season-dropdown-option-active {
+  background: #2e2e4a;
+  color: #61dafb;
+  font-weight: 700;
+}

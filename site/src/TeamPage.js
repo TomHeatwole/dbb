@@ -154,24 +154,23 @@ function TeamPage() {
 
   return (
     <div className="team-info-box team-info-rel">
-      <div
-        className="season-dropdown season-dropdown-abs"
-      >
+      <div className="season-dropdown season-dropdown-abs">
         <div
-          className="season-dropdown-selected season-dropdown-selected-style"
+          className="team-season-dropdown"
           onClick={() => setSeasonDropdownOpen(open => !open)}
         >
           {season}
-          <span className="season-dropdown-arrow">{seasonDropdownOpen ? '▲' : '▼'}</span>
+          <span className="team-season-dropdown-arrow">{seasonDropdownOpen ? '▲' : '▼'}</span>
         </div>
         {seasonDropdownOpen && (
-          <div
-            className="season-dropdown-list season-dropdown-list-style"
-          >
+          <div className="team-season-dropdown-list">
             {allYears.map(opt => (
               <div
                 key={opt}
-                className={`season-dropdown-option${opt === season ? ' season-dropdown-option-active' : ''}`}
+                className={
+                  'team-season-dropdown-option' +
+                  (opt === season ? ' team-season-dropdown-option-active' : '')
+                }
                 onClick={() => { setSeason(opt); setSeasonDropdownOpen(false); }}
               >
                 {opt}
