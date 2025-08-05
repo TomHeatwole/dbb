@@ -95,8 +95,6 @@ function TeamPage() {
         const foundUser = users.find(u => String(u.user_id) === String(foundRoster.owner_id)) ?? {};
         setUser(foundUser);
         // After finding foundRoster and foundUser, apply overrides if present
-        console.log(season);
-        console.log(id);
         const override = PREVIOUS_ROSTER_OVERRIDES[season] && PREVIOUS_ROSTER_OVERRIDES[season][id];
         if (override) {
           foundUser.display_name = override.owner;
