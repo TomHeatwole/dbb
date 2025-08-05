@@ -1,6 +1,8 @@
 // PlayerLookup.js
 // Utility to look up player info by ID from a provided player data object
 
+import { PLAYER_ESPN_MAP_OVERRIDES } from './global_constants';
+
 let cachedPlayersData = null;
 let cachedPlayerIdMap = null;
 
@@ -40,6 +42,10 @@ export function getPlayerInfo(playerId, playersData, playerIdMap) {
   let espn_id = player.espn_id;
   if (!espn_id && playerIdMap) {
     espn_id = playerIdMap[playerId];
+  }
+  // Use override if still not found
+  if (!espn_id && PLAYER_ESPN_MAP_OVERRIDES && PLAYER_ESPN_MAP_OVERRIDES[playerId]) {
+    espn_id = PLAYER_ESPN_MAP_OVERRIDES[playerId];
   }
   return {
     name: player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim(),
