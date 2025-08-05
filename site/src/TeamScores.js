@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
+import { getWeekScoreBreakdown } from './ScoresParser';
+import { getPlayerInfo } from './PlayerLookup';
+import { STARTER_POSITION_NAMES } from './global_constants';
 
 const NUM_WEEKS = 17;
 
-function TeamScores() {
+function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlWeek = parseInt(searchParams.get('week'), 10);
   const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : 1;
   const [week, setWeek] = useState(initialWeek);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const { id } = useParams();
+  const rosterId = Number(id);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -22,6 +27,11 @@ function TeamScores() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [dropdownOpen]);
+
+  // Close dropdown on week change (arrow, dropdown, or query param)
+  useEffect(() => {
+    setDropdownOpen(false);
+  }, [week]);
 
   // Update query param when week changes
   useEffect(() => {
@@ -42,11 +52,6 @@ function TeamScores() {
     // eslint-disable-next-line
   }, [urlWeek]);
 
-  // Close dropdown on week change (arrow, dropdown, or query param)
-  useEffect(() => {
-    setDropdownOpen(false);
-  }, [week]);
-
   const handleArrow = dir => {
     setWeek(w => Math.max(1, Math.min(NUM_WEEKS, w + dir)));
   };
@@ -55,6 +60,9 @@ function TeamScores() {
     setWeek(w);
     setDropdownOpen(false);
   };
+
+  // Get week breakdown for this roster
+  const weekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
 
   return (
     <div className="team-scores-container">
@@ -100,7 +108,72 @@ function TeamScores() {
           &#8594;
         </button>
       </div>
-      {/* Week content will go here */}
+      {/* Week content */}
+      {weekBreakdown ? (
+        <div className="team-scores-tables-flex">
+          <div className="team-scores-tables-col">
+            <div style={{ fontWeight: 600, fontSize: '1.1em', marginBottom: 8 }}>Starters</div>
+            <table className="team-scores-table">
+              <thead>
+                <tr>
+                  <th>Position</th>
+                  <th>Player</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weekBreakdown.starters.map((p, i) => {
+                  const info = getPlayerInfo(p.id, playersData, playerIdMap);
+                  const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
+                  return (
+                    <tr key={p.id}>
+                      <td className="team-scores-pos-cell">{posLabel}</td>
+                      <td className="team-scores-player-cell">
+                        {info && info.espn_photo_url && (
+                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
+                        )}
+                        <span className="player-name">{info && info.name ? info.name : p.id}</span>
+                      </td>
+                      <td className="team-scores-pts-cell">{p.pts}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="team-scores-total">Total: {weekBreakdown.starterTotal}</div>
+          </div>
+          <div className="team-scores-tables-col">
+            <div style={{ fontWeight: 600, fontSize: '1.1em', marginBottom: 8 }}>Bench</div>
+            <table className="team-scores-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weekBreakdown.bench.map((p, i) => {
+                  const info = getPlayerInfo(p.id, playersData, playerIdMap);
+                  return (
+                    <tr key={p.id}>
+                      <td className="team-scores-player-cell">
+                        {info && info.espn_photo_url && (
+                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
+                        )}
+                        <span className="player-name">{info && info.name ? info.name : p.id}</span>
+                      </td>
+                      <td className="team-scores-pts-cell">{p.pts}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="team-scores-total">Total: {weekBreakdown.benchTotal}</div>
+          </div>
+        </div>
+      ) : (
+        <div>No data for this week/team.</div>
+      )}
     </div>
   );
 }

@@ -60,4 +60,35 @@ export function getPlayerTotals(weeksParsedData) {
       .sort((a, b) => b.pts - a.pts);
   }
   return result;
+}
+
+export function getWeekScoreBreakdown(weeksParsedData, week) {
+  // week is 1-based index
+  if (!weeksParsedData || !weeksParsedData[week - 1]) return {};
+  const weekData = weeksParsedData[week - 1];
+  const result = {};
+  for (const entry of weekData) {
+    if (!entry || entry.roster_id == null) continue;
+    const starters = (entry.starters || []).map((pid, i) => ({
+      id: pid,
+      pts: entry.starters_points && entry.starters_points[i] != null ? entry.starters_points[i] : 0
+    }));
+    // Bench = all players not in starters
+    const starterSet = new Set(entry.starters || []);
+    const bench = (entry.players || [])
+      .filter(pid => !starterSet.has(pid))
+      .map(pid => ({
+        id: pid,
+        pts: entry.players_points && entry.players_points[pid] != null ? entry.players_points[pid] : 0
+      }));
+    const starterTotal = starters.reduce((sum, p) => sum + p.pts, 0);
+    const benchTotal = bench.reduce((sum, p) => sum + p.pts, 0);
+    result[entry.roster_id] = {
+      starters,
+      bench,
+      starterTotal: Math.round(starterTotal * 10) / 10,
+      benchTotal: Math.round(benchTotal * 10) / 10
+    };
+  }
+  return result;
 } 

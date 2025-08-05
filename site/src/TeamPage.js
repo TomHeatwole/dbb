@@ -200,7 +200,7 @@ function TeamPage() {
         ))}
       </div>
       {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} />}
-      {selectedTab === 'Scores' && <TeamScores />}
+      {selectedTab === 'Scores' && <TeamScores weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
     </div>
   );

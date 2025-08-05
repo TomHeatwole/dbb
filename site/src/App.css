@@ -506,3 +506,82 @@
   color: #61dafb;
   font-weight: 700;
 }
+
+.team-scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+  background: #181e2a;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  font-size: 0.97em;
+}
+.team-scores-table th, .team-scores-table td {
+  padding: 0.38em 0.5em;
+  text-align: left;
+}
+.team-scores-table th {
+  background: #23233a;
+  color: #61dafb;
+  font-weight: 700;
+  font-size: 0.98em;
+  border-bottom: 2px solid #333;
+}
+.team-scores-table tr:not(:last-child) td {
+  border-bottom: 1px solid #292944;
+}
+.team-scores-pos-cell {
+  font-weight: 600;
+  color: #b6b6d6;
+  width: 3.5em;
+}
+.team-scores-player-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  font-weight: 500;
+}
+.team-scores-pts-cell {
+  text-align: right;
+  font-weight: 700;
+  color: #fff;
+  min-width: 2.5em;
+}
+
+/* Smaller player avatar for scores tables */
+.team-scores-table .player-avatar-style {
+  width: 28px;
+  height: 28px;
+}
+
+.team-scores-total {
+  font-weight: 900;
+  font-size: 1.25em;
+  color: #61dafb;
+  margin-bottom: 1.1em;
+  margin-top: 0.2em;
+  text-align: right;
+  letter-spacing: 0.01em;
+}
+
+.team-scores-tables-flex {
+  display: flex;
+  gap: 2.5vw;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 1.5em auto;
+}
+.team-scores-tables-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+@media (max-width: 800px) {
+  .team-scores-tables-flex {
+    flex-direction: column;
+    gap: 1.2em;
+    max-width: 480px;
+  }
+}
