@@ -200,13 +200,13 @@
 }
 
 .team-info-box {
-  background: rgb(10, 05, 30);
+  background: rgb(10, 5, 30);
   margin-right: 230px;
   border-radius: 18px;
   width: 100%;
-  margin: 2rem auto 0 auto;
+  margin: 0;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12);
-  min-height: calc(100vh - 100px);
+  min-height: calc(100vh - 50px);
 }
 
 .team-header {
