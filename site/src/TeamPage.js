@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchTeamData } from './TeamLookup';
+import { LEAGUE_ID, PREVIOUS_YEARS } from './global_constants';
 
 function TeamPage() {
   const { id } = useParams();
@@ -11,9 +12,31 @@ function TeamPage() {
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+  const seasonOptions = ['2025', '2024'];
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlYear = searchParams.get('year');
+  const initialSeason = urlYear === '2024' ? '2024' : '2025';
+  const [season, setSeason] = useState(initialSeason);
 
-  // Check if id is a positive integer
-  const isValidId = /^[1-9]\d*$/.test(id);
+  // Sync season with query param
+  useEffect(() => {
+    if (season === '2025') {
+      searchParams.delete('year');
+      setSearchParams(searchParams, { replace: true });
+    } else if (season === '2024') {
+      searchParams.set('year', '2024');
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line
+  }, [season]);
+
+  // If the query param changes (e.g., via browser nav), update the dropdown
+  useEffect(() => {
+    if (urlYear === '2024' && season !== '2024') setSeason('2024');
+    if (!urlYear && season !== '2025') setSeason('2025');
+    // eslint-disable-next-line
+  }, [urlYear]);
 
   // Fetch player data and playerIdMap on mount
   useEffect(() => {
@@ -26,12 +49,13 @@ function TeamPage() {
   }, []);
 
   useEffect(() => {
-    if (!isValidId) return;
+    if (!/^[1-9]\d*$/.test(id)) return;
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        const { rosters, users } = await fetchTeamData();
+        const leagueId = season === '2024' ? PREVIOUS_YEARS[2024] : LEAGUE_ID;
+        const { rosters, users } = await fetchTeamData(leagueId);
         const foundRoster = rosters.find(r => String(r.roster_id) === String(id));
         setRoster(foundRoster);
         if (!foundRoster) {
@@ -48,9 +72,9 @@ function TeamPage() {
       }
     }
     fetchData();
-  }, [id, isValidId]);
+  }, [id, season]);
 
-  if (!isValidId) {
+  if (!/^[1-9]\d*$/.test(id)) {
     return <Navigate to="/home/" replace />;
   }
 
@@ -102,7 +126,36 @@ function TeamPage() {
   });
 
   return (
-    <div className="team-info-box">
+    <div className="team-info-box" style={{ position: 'relative' }}>
+      <div
+        className="season-dropdown"
+        style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}
+      >
+        <div
+          className="season-dropdown-selected"
+          style={{ fontSize: '1em', padding: '0.2em 0.8em', borderRadius: 6, background: '#222', color: '#fff', cursor: 'pointer', minWidth: 70 }}
+          onClick={() => setSeasonDropdownOpen(open => !open)}
+        >
+          {season}
+          <span style={{ marginLeft: 8, fontSize: '0.9em' }}>{seasonDropdownOpen ? '▲' : '▼'}</span>
+        </div>
+        {seasonDropdownOpen && (
+          <div
+            className="season-dropdown-list"
+            style={{ position: 'absolute', top: '110%', left: 0, background: '#222', color: '#fff', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.15)', minWidth: 70 }}
+          >
+            {seasonOptions.map(opt => (
+              <div
+                key={opt}
+                style={{ padding: '0.3em 0.8em', cursor: 'pointer', background: opt === season ? '#444' : 'none' }}
+                onClick={() => { setSeason(opt); setSeasonDropdownOpen(false); }}
+              >
+                {opt}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       <h1 className="team-header">{teamName}</h1>
       <div className="owner-subtitle">
         <span>Owner: {ownerName}</span>
