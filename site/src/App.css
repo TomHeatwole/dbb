@@ -353,3 +353,40 @@
 .sidebar-dropdown-list-item {
   padding-left: 18px;
 }
+
+/* --- TeamPage Tabs --- */
+.team-tabs-bar {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+  background: #181e2a;
+  border-radius: 10px 10px 0 0;
+  border-bottom: 2px solid #333;
+  margin-bottom: 1.5em;
+  margin-top: 0.5em;
+  overflow: hidden;
+}
+.team-tab {
+  flex: 1 1 0;
+  text-align: center;
+  padding: 1em 0;
+  cursor: pointer;
+  font-size: 1.15em;
+  color: #aaa;
+  background: none;
+  border: none;
+  outline: none;
+  transition: background 0.18s, color 0.18s;
+}
+.team-tab-active {
+  color: #fff;
+  background: #232b3a;
+  font-weight: 600;
+  border-bottom: 3px solid #61dafb;
+  z-index: 2;
+}
+.team-tab:not(.team-tab-active):hover {
+  background: #23233a;
+  color: #fff;
+}

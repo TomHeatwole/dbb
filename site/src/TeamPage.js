@@ -4,6 +4,7 @@ import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLooku
 import { fetchTeamData } from './TeamLookup';
 import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
+import FullRoster from './FullRoster';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -20,6 +21,9 @@ function TeamPage() {
   const urlYear = searchParams.get('year');
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
   const [season, setSeason] = useState(initialSeason);
+  // Tab state
+  const tabOptions = ['Summary', 'Scores', 'Full Roster'];
+  const [selectedTab, setSelectedTab] = useState(tabOptions[0]);
 
   // Sync season with query param
   useEffect(() => {
@@ -116,25 +120,6 @@ function TeamPage() {
     return info ? info : { name: pid, position: '', espn_photo_url: null };
   });
 
-  // Group players by position
-  const positions = ['QB', 'WR', 'RB', 'TE'];
-  const playersByPosition = {};
-  positions.forEach(pos => { playersByPosition[pos] = []; });
-  playerList.forEach(player => {
-    const pos = positions.includes(player.position) ? player.position : null;
-    if (pos) {
-      playersByPosition[pos].push(player);
-    }
-  });
-  // Sort each position group by search_rank (ascending)
-  positions.forEach(pos => {
-    playersByPosition[pos].sort((a, b) => {
-      const rankA = a.search_rank !== undefined ? a.search_rank : 9999999;
-      const rankB = b.search_rank !== undefined ? b.search_rank : 9999999;
-      return rankA - rankB;
-    });
-  });
-
   return (
     <div className="team-info-box team-info-rel">
       <div
@@ -170,25 +155,20 @@ function TeamPage() {
           <img src={userAvatarUrl} alt="Owner Avatar" className="owner-avatar" />
         )}
       </div>
-      <div className="team-roster-section">
-        <div className="player-columns">
-          {positions.map(pos => (
-            <div key={pos} className="player-column">
-              <div className="player-column-header">{pos}</div>
-              <ul className="player-list">
-                {playersByPosition[pos].map((p, i) => (
-                  <li key={i} className="player-list-item player-list-item-flex">
-                    {p.espn_photo_url && (
-                      <img src={p.espn_photo_url} alt={p.name} className="player-avatar player-avatar-style" />
-                    )}
-                    <span className="player-name">{p.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+      {/* Tabs Bar */}
+      <div className="team-tabs-bar">
+        {tabOptions.map(tab => (
+          <button
+            key={tab}
+            className={`team-tab${selectedTab === tab ? ' team-tab-active' : ''}`}
+            onClick={() => setSelectedTab(tab)}
+            type="button"
+          >
+            {tab}
+          </button>
+        ))}
       </div>
+      <FullRoster playerList={playerList} />
     </div>
   );
 }
