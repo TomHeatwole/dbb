@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchTeamData } from './TeamLookup';
-import { LEAGUE_ID, PREVIOUS_YEARS } from './global_constants';
+import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
@@ -65,8 +65,16 @@ function TeamPage() {
           setLoading(false);
           return;
         }
-        const foundUser = users.find(u => String(u.user_id) === String(foundRoster.owner_id));
+        const foundUser = users.find(u => String(u.user_id) === String(foundRoster.owner_id)) ?? {};
         setUser(foundUser);
+        // After finding foundRoster and foundUser, apply overrides if present
+        console.log(season);
+        console.log(id);
+        const override = PREVIOUS_ROSTER_OVERRIDES[season] && PREVIOUS_ROSTER_OVERRIDES[season][id];
+        if (override) {
+          foundUser.display_name = override.owner;
+          foundUser.metadata = { ...foundUser.metadata, team_name: override.name };
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -172,11 +180,11 @@ function TeamPage() {
               <div style={{ textAlign: 'center', marginBottom: 12, fontSize: '1.5em', fontWeight: 700, letterSpacing: '0.05em' }}>{pos}</div>
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 {playersByPosition[pos].map((p, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5em' }}>
+                  <li key={i} className="player-list-item" style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5em' }}>
                     {p.espn_photo_url && (
-                      <img src={p.espn_photo_url} alt={p.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', marginRight: 12, background: '#222' }} />
+                      <img src={p.espn_photo_url} alt={p.name} className="player-avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', marginRight: 12, background: '#222' }} />
                     )}
-                    <span>{p.name}</span>
+                    <span className="player-name">{p.name}</span>
                   </li>
                 ))}
               </ul>

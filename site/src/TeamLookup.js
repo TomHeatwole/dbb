@@ -1,4 +1,4 @@
-import { LEAGUE_ID } from './global_constants';
+import { LEAGUE_ID, teamOverrides } from './global_constants';
 
 export async function fetchTeamData(leagueId = LEAGUE_ID) {
   // Fetch rosters

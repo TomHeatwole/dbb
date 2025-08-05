@@ -19,7 +19,7 @@
   pointer-events: none;
   background: url('./watermark.png') center center no-repeat;
   background-size: contain;
-  opacity: 0.035;
+  opacity: 0.042;
 }
 
 .App {
@@ -235,4 +235,30 @@
   border-radius: 50%;
   object-fit: cover;
   background: #222;
+}
+
+/* Player hover animation styles */
+.player-list-item {
+  transition: box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), background 0.2s;
+  border-radius: 8px;
+  padding: 0.3em 0.6em 0.3em 0.6em;
+}
+.player-list-item:hover {
+  box-shadow: 0 4px 18px 0 rgba(40,40,60,0.18), 0 1.5px 6px 0 rgba(0,0,0,0.10);
+  background: #23233a;
+}
+.player-list-item:hover .player-avatar {
+  transform: scale(1.10);
+  box-shadow: 0 4px 16px 0 rgba(40,40,60,0.22);
+}
+.player-avatar {
+  transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), box-shadow 0.18s;
+}
+.player-list-item:hover .player-name {
+  transform: scale(1.08);
+  text-shadow: 0 2px 8px rgba(40,40,60,0.18);
+}
+.player-name {
+  transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), text-shadow 0.18s;
+  display: inline-block;
 }
