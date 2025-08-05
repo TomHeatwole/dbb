@@ -57,12 +57,12 @@ function Sidebar() {
                   onClick={() => setTeamsOpen(open => !open)}
                 >
                   <span>Teams</span>
-                  <span style={{ marginLeft: 8, fontSize: '0.85em' }}>{teamsOpen ? '▼' : '▶'}</span>
+                  <span className="sidebar-teams-arrow">{teamsOpen ? '▼' : '▶'}</span>
                 </div>
                 {teamsOpen && (
-                  <ul className="dropdown-list" style={{ marginTop: 6, paddingLeft: 0 }}>
+                  <ul className="dropdown-list sidebar-dropdown-list">
                     {teams.map(team => (
-                      <li key={team.roster_id} style={{ paddingLeft: 18 }}>
+                      <li key={team.roster_id} className="sidebar-dropdown-list-item">
                         <Link to={`/team/${team.roster_id}`}>{team.username}</Link>
                       </li>
                     ))}

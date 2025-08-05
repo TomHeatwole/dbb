@@ -262,3 +262,94 @@
   transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), text-shadow 0.18s;
   display: inline-block;
 }
+
+/* --- TeamPage.js extracted styles --- */
+.team-info-rel {
+  position: relative;
+}
+.season-dropdown-abs {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+}
+.season-dropdown-selected-style {
+  font-size: 1em;
+  padding: 0.2em 0.8em;
+  border-radius: 6px;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  min-width: 70px;
+}
+.season-dropdown-arrow {
+  margin-left: 8px;
+  font-size: 0.9em;
+}
+.season-dropdown-list-style {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: #222;
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  min-width: 70px;
+}
+.season-dropdown-option {
+  padding: 0.3em 0.8em;
+  cursor: pointer;
+  background: none;
+}
+.season-dropdown-option-active {
+  background: #444;
+}
+.team-roster-section {
+  margin-top: 1.5em;
+  text-align: left;
+}
+.player-columns {
+  display: flex;
+  gap: 2em;
+  justify-content: center;
+}
+.player-column {
+  min-width: 120px;
+}
+.player-column-header {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.player-list {
+  list-style: none;
+  padding: 0;
+}
+.player-list-item-flex {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5em;
+}
+.player-avatar-style {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+  background: #222;
+}
+
+/* --- Sidebar.js extracted styles --- */
+.sidebar-teams-arrow {
+  margin-left: 8px;
+  font-size: 0.85em;
+}
+.sidebar-dropdown-list {
+  margin-top: 6px;
+  padding-left: 0;
+}
+.sidebar-dropdown-list-item {
+  padding-left: 18px;
+}

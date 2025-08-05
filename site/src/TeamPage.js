@@ -136,28 +136,25 @@ function TeamPage() {
   });
 
   return (
-    <div className="team-info-box" style={{ position: 'relative' }}>
+    <div className="team-info-box team-info-rel">
       <div
-        className="season-dropdown"
-        style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}
+        className="season-dropdown season-dropdown-abs"
       >
         <div
-          className="season-dropdown-selected"
-          style={{ fontSize: '1em', padding: '0.2em 0.8em', borderRadius: 6, background: '#222', color: '#fff', cursor: 'pointer', minWidth: 70 }}
+          className="season-dropdown-selected season-dropdown-selected-style"
           onClick={() => setSeasonDropdownOpen(open => !open)}
         >
           {season}
-          <span style={{ marginLeft: 8, fontSize: '0.9em' }}>{seasonDropdownOpen ? '▲' : '▼'}</span>
+          <span className="season-dropdown-arrow">{seasonDropdownOpen ? '▲' : '▼'}</span>
         </div>
         {seasonDropdownOpen && (
           <div
-            className="season-dropdown-list"
-            style={{ position: 'absolute', top: '110%', left: 0, background: '#222', color: '#fff', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.15)', minWidth: 70 }}
+            className="season-dropdown-list season-dropdown-list-style"
           >
             {allYears.map(opt => (
               <div
                 key={opt}
-                style={{ padding: '0.3em 0.8em', cursor: 'pointer', background: opt === season ? '#444' : 'none' }}
+                className={`season-dropdown-option${opt === season ? ' season-dropdown-option-active' : ''}`}
                 onClick={() => { setSeason(opt); setSeasonDropdownOpen(false); }}
               >
                 {opt}
@@ -173,16 +170,16 @@ function TeamPage() {
           <img src={userAvatarUrl} alt="Owner Avatar" className="owner-avatar" />
         )}
       </div>
-      <div style={{ marginTop: '1.5em', textAlign: 'left' }}>
-        <div className="player-columns" style={{ display: 'flex', gap: '2em', justifyContent: 'center' }}>
+      <div className="team-roster-section">
+        <div className="player-columns">
           {positions.map(pos => (
-            <div key={pos} style={{ minWidth: 120 }}>
-              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: '1.5em', fontWeight: 700, letterSpacing: '0.05em' }}>{pos}</div>
-              <ul style={{ listStyle: 'none', padding: 0 }}>
+            <div key={pos} className="player-column">
+              <div className="player-column-header">{pos}</div>
+              <ul className="player-list">
                 {playersByPosition[pos].map((p, i) => (
-                  <li key={i} className="player-list-item" style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5em' }}>
+                  <li key={i} className="player-list-item player-list-item-flex">
                     {p.espn_photo_url && (
-                      <img src={p.espn_photo_url} alt={p.name} className="player-avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', marginRight: 12, background: '#222' }} />
+                      <img src={p.espn_photo_url} alt={p.name} className="player-avatar player-avatar-style" />
                     )}
                     <span className="player-name">{p.name}</span>
                   </li>
