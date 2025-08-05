@@ -5,6 +5,8 @@ import { fetchTeamData } from './TeamLookup';
 import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
 import FullRoster from './FullRoster';
+import TeamSummary from './TeamSummary';
+import TeamScores from './TeamScores';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -168,7 +170,9 @@ function TeamPage() {
           </button>
         ))}
       </div>
-      <FullRoster playerList={playerList} />
+      {selectedTab === 'Summary' && <TeamSummary />}
+      {selectedTab === 'Scores' && <TeamScores />}
+      {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
     </div>
   );
 }
