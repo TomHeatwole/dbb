@@ -25,7 +25,28 @@ function TeamPage() {
   const [season, setSeason] = useState(initialSeason);
   // Tab state
   const tabOptions = ['Summary', 'Scores', 'Full Roster'];
-  const [selectedTab, setSelectedTab] = useState(tabOptions[0]);
+  const urlTab = searchParams.get('tab');
+  const initialTab = tabOptions.includes(urlTab) ? urlTab : tabOptions[0];
+  const [selectedTab, setSelectedTab] = useState(initialTab);
+
+  // Sync tab with query param
+  useEffect(() => {
+    if (selectedTab === tabOptions[0]) {
+      searchParams.delete('tab');
+      setSearchParams(searchParams, { replace: true });
+    } else if (tabOptions.includes(selectedTab)) {
+      searchParams.set('tab', selectedTab);
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line
+  }, [selectedTab]);
+
+  // If the query param changes (e.g., via browser nav), update the tab
+  useEffect(() => {
+    if (urlTab && tabOptions.includes(urlTab) && selectedTab !== urlTab) setSelectedTab(urlTab);
+    if (!urlTab && selectedTab !== tabOptions[0]) setSelectedTab(tabOptions[0]);
+    // eslint-disable-next-line
+  }, [urlTab]);
 
   // Sync season with query param
   useEffect(() => {
