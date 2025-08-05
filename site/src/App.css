@@ -29,7 +29,7 @@
 .content-wrapper {
   position: relative;
   z-index: auto;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
   position: relative;
   z-index: 1;
@@ -200,12 +200,13 @@
 }
 
 .team-info-box {
-  background: rgb(0, 10, 30);
+  background: rgb(10, 05, 30);
   margin-right: 230px;
   border-radius: 18px;
   width: 100%;
   margin: 2rem auto 0 auto;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  min-height: calc(100vh - 100px);
 }
 
 .team-header {
@@ -274,8 +275,8 @@
   z-index: 10;
 }
 .season-dropdown-selected-style {
-  font-size: 1em;
-  padding: 0.2em 0.8em;
+  font-size: 1.25em;
+  padding: 0.25em 1em;
   border-radius: 6px;
   background: #222;
   color: #fff;
@@ -283,8 +284,8 @@
   min-width: 70px;
 }
 .season-dropdown-arrow {
-  margin-left: 8px;
-  font-size: 0.9em;
+  margin-left: 10px;
+  font-size: 1.1em;
 }
 .season-dropdown-list-style {
   position: absolute;
