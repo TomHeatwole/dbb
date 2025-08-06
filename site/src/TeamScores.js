@@ -35,13 +35,9 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
 
   // Update query param when week changes
   useEffect(() => {
-    if (week === 1) {
-      searchParams.delete('week');
-      setSearchParams(searchParams, { replace: true });
-    } else {
-      searchParams.set('week', week);
-      setSearchParams(searchParams, { replace: true });
-    }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('week', week);
+    setSearchParams(newParams, { replace: true });
     // eslint-disable-next-line
   }, [week]);
 

@@ -34,20 +34,22 @@ function TeamPage() {
 
   // Sync tab with query param
   useEffect(() => {
-    if (selectedTab === tabOptions[0]) {
-      searchParams.delete('tab');
-      setSearchParams(searchParams, { replace: true });
-    } else if (tabOptions.includes(selectedTab)) {
-      searchParams.set('tab', selectedTab);
-      setSearchParams(searchParams, { replace: true });
+    const newParams = new URLSearchParams(searchParams);
+    if (tabOptions.includes(selectedTab)) {
+      newParams.set('tab', selectedTab);
+      console.log(selectedTab);
+    } else {
+      newParams.set('tab', 'Summary');
     }
+    setSearchParams(newParams, { replace: true });
     // eslint-disable-next-line
   }, [selectedTab]);
 
   // If the query param changes (e.g., via browser nav), update the tab
   useEffect(() => {
+    console.log(urlTab);
     if (urlTab && tabOptions.includes(urlTab) && selectedTab !== urlTab) setSelectedTab(urlTab);
-    if (!urlTab && selectedTab !== tabOptions[0]) setSelectedTab(tabOptions[0]);
+    // if (!urlTab && selectedTab !== tabOptions[0]) setSelectedTab(tabOptions[0]);
     // eslint-disable-next-line
   }, [urlTab]);
 
