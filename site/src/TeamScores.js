@@ -128,7 +128,7 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                         {info && info.espn_photo_url && (
                           <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
                         )}
-                        <span className="player-name">{info && info.name ? info.name : p.id}</span>
+                        <span className="player-name">{info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}</span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
                     </tr>
@@ -156,7 +156,7 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                         {info && info.espn_photo_url && (
                           <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
                         )}
-                        <span className="player-name">{info && info.name ? info.name : p.id}</span>
+                        <span className="player-name">{info && info.name ? info.name : (p.id === 0 ? '' : p.id)}</span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
                     </tr>
