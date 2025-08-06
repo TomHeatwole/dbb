@@ -44,6 +44,10 @@ function TeamPage() {
     if (selectedTab != 'Scores') {
       newParams.delete('week');
     }
+    if (selectedTab != 'Analytics') {
+      newParams.delete('start_week');
+      newParams.delete('end_week');
+    }
     setSearchParams(newParams, { replace: true });
     // eslint-disable-next-line
   }, [selectedTab]);
