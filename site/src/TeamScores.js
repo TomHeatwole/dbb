@@ -132,12 +132,6 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                         <span className="player-name">
                           {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                           {info && info.position ? ` (${info.position})` : ''}
-                          {info && (info.injury_status === 'PUP' || info.injury_status === 'IR') && (
-                            <>
-                              {' '}
-                              <span className="injury-out">(OUT)</span>
-                            </>
-                          )}
                         </span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
@@ -175,12 +169,6 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                         <span className="player-name">
                           {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                           {info && info.position ? ` (${info.position})` : ''}
-                          {info && (info.injury_status === 'PUP' || info.injury_status === 'IR') && (
-                            <>
-                              {' '}
-                              <span className="injury-out">(OUT)</span>
-                            </>
-                          )}
                         </span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
