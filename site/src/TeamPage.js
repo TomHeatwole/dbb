@@ -8,6 +8,7 @@ import FullRoster from './FullRoster';
 import TeamSummary from './TeamSummary';
 import TeamScores from './TeamScores';
 import { fetchScoresData } from './ScoresLookup';
+import TeamAnalytics from './TeamAnalytics';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -25,7 +26,7 @@ function TeamPage() {
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
   const [season, setSeason] = useState(initialSeason);
   // Tab state
-  const tabOptions = ['Summary', 'Scores', 'Full Roster'];
+  const tabOptions = ['Summary', 'Scores', 'Full Roster', 'Analytics'];
   const urlTab = searchParams.get('tab');
   const initialTab = tabOptions.includes(urlTab) ? urlTab : tabOptions[0];
   const [selectedTab, setSelectedTab] = useState(initialTab);
@@ -206,6 +207,7 @@ function TeamPage() {
       {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Scores' && <TeamScores weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
+      {selectedTab === 'Analytics' && <TeamAnalytics />}
     </div>
   );
 }
