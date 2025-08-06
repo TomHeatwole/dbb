@@ -37,9 +37,11 @@ function TeamPage() {
     const newParams = new URLSearchParams(searchParams);
     if (tabOptions.includes(selectedTab)) {
       newParams.set('tab', selectedTab);
-      console.log(selectedTab);
     } else {
       newParams.set('tab', 'Summary');
+    }
+    if (selectedTab != 'Scores') {
+      newParams.delete('week');
     }
     setSearchParams(newParams, { replace: true });
     // eslint-disable-next-line

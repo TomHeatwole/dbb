@@ -32,11 +32,12 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
   useEffect(() => {
     setDropdownOpen(false);
   }, [week]);
-
+;
   // Update query param when week changes
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('week', week);
+    newParams.set('tab', 'Scores');
     setSearchParams(newParams, { replace: true });
     // eslint-disable-next-line
   }, [week]);
