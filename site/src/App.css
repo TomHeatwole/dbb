@@ -565,6 +565,21 @@
   letter-spacing: 0.01em;
 }
 
+.team-scores-total-row {
+  font-weight: 900;
+  font-size: 1.25em;
+  color: #61dafb;
+  background: #23233a;
+  text-align: right;
+  letter-spacing: 0.01em;
+  border-top: 2px solid #61dafb;
+}
+
+.team-scores-total-inner {
+  width: 100%;
+  text-align: right;
+}
+
 .team-scores-tables-flex {
   display: flex;
   gap: 2.5vw;

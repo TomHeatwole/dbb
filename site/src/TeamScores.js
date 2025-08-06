@@ -136,8 +136,14 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3} className="team-scores-total-row">
+                    <div className="team-scores-total-inner">Total: {weekBreakdown.starterTotal}</div>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
-            <div className="team-scores-total">Total: {weekBreakdown.starterTotal}</div>
           </div>
           <div className="team-scores-tables-col">
             <div style={{ fontWeight: 600, fontSize: '1.1em', marginBottom: 8 }}>Bench</div>
@@ -164,8 +170,14 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={2} className="team-scores-total-row">
+                    <div className="team-scores-total-inner">Total: {weekBreakdown.benchTotal}</div>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
-            <div className="team-scores-total">Total: {weekBreakdown.benchTotal}</div>
           </div>
         </div>
       ) : (
