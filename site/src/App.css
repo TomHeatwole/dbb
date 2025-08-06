@@ -600,3 +600,12 @@
     max-width: 480px;
   }
 }
+
+.injury-out {
+  color: #e74c3c;
+  font-weight: bold;
+}
+.injury-status {
+  color: #e6b800;
+  font-weight: 500;
+}

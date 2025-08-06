@@ -129,7 +129,16 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                         {info && info.espn_photo_url && (
                           <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
                         )}
-                        <span className="player-name">{info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}</span>
+                        <span className="player-name">
+                          {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
+                          {info && info.position ? ` (${info.position})` : ''}
+                          {info && (info.injury_status === 'PUP' || info.injury_status === 'IR') && (
+                            <>
+                              {' '}
+                              <span className="injury-out">(OUT)</span>
+                            </>
+                          )}
+                        </span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
                     </tr>
@@ -163,7 +172,16 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                         {info && info.espn_photo_url && (
                           <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
                         )}
-                        <span className="player-name">{info && info.name ? info.name : (p.id === 0 ? '' : p.id)}</span>
+                        <span className="player-name">
+                          {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
+                          {info && info.position ? ` (${info.position})` : ''}
+                          {info && (info.injury_status === 'PUP' || info.injury_status === 'IR') && (
+                            <>
+                              {' '}
+                              <span className="injury-out">(OUT)</span>
+                            </>
+                          )}
+                        </span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
                     </tr>
