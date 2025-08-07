@@ -1,28 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-const data = [
-  { name: 'Week 1', points: 120 },
-  { name: 'Week 2', points: 98 },
-  { name: 'Week 3', points: 110 },
-  { name: 'Week 4', points: 130 },
-  { name: 'Week 5', points: 105 },
-  { name: 'Week 6', points: 115 },
-];
+import { getWeeklyStandings } from './ScoresParser';
 
 const chartConfigs = [
-  { title: 'Team Points Over Time' },
-  { title: 'Bench Points Trend' },
-  { title: 'Starter Consistency' },
-  { title: 'Weekly Score Differential' },
-  { title: 'Projected vs Actual Points' },
+  { title: 'Weekly Scores', key: 'weeklyScores' },
+  { title: 'Bench Points Trend', key: 'benchTrend' },
+  { title: 'Starter Consistency', key: 'starterConsistency' },
+  { title: 'Weekly Score Differential', key: 'scoreDiff' },
+  { title: 'Projected vs Actual Points', key: 'projVsActual' },
 ];
 
 const WEEKS = Array.from({ length: 17 }, (_, i) => i + 1);
 
-export default function TeamAnalytics() {
+export default function TeamAnalytics({ weeksParsedData, teamName }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { id } = useParams();
+  const rosterId = Number(id);
   const urlStartWeek = parseInt(searchParams.get('start_week'), 10);
   const urlEndWeek = parseInt(searchParams.get('end_week'), 10);
   const initialStartWeek = !isNaN(urlStartWeek) && urlStartWeek >= 1 && urlStartWeek <= 17 ? urlStartWeek : 1;
@@ -67,6 +61,33 @@ export default function TeamAnalytics() {
       return () => document.removeEventListener('mousedown', handleClick);
     }
   }, [startDropdownOpen, endDropdownOpen]);
+
+  // Get weekly standings for the selected window
+  const weeklyStandings = getWeeklyStandings(weeksParsedData, startWeek, endWeek);
+  // Build data for the chart
+  const weeklyScoresData = weeklyStandings.map((weekArr, i) => {
+    // Sort by points descending (already sorted in getWeeklyStandings)
+    const user = weekArr.find(x => x.rosterId === rosterId);
+    const pointsArr = weekArr.map(x => x.points).sort((a, b) => b - a);
+    const leagueCeiling = pointsArr.length ? pointsArr[0] : 0;
+    const leagueFloor = pointsArr.length ? pointsArr[pointsArr.length - 1] : 0;
+    // Median: average of 5th and 6th place (0-based: 4 and 5)
+    let leagueMedian = 0;
+    if (pointsArr.length >= 6) {
+      leagueMedian = (pointsArr[4] + pointsArr[5]) / 2;
+    } else if (pointsArr.length > 0) {
+      // Fallback: just use the middle value if not enough teams
+      const mid = Math.floor(pointsArr.length / 2);
+      leagueMedian = pointsArr[mid];
+    }
+    return {
+      name: `Week ${startWeek + i}`,
+      points: user ? user.points : 0,
+      leagueCeiling,
+      leagueFloor,
+      leagueMedian: Math.round(leagueMedian * 10) / 10,
+    };
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '60vh', gap: '2.5rem', padding: '0 0 2rem 0' }}>
@@ -125,23 +146,25 @@ export default function TeamAnalytics() {
         </div>
       </div>
       {/* Charts */}
-      {chartConfigs.map((config, idx) => (
-        <div key={idx} style={{ width: '100%', maxWidth: 600, marginBottom: '1.5rem' }}>
-          <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>{config.title}</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="points" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Weekly Scores chart (real data) */}
+      <div style={{ width: '100%', maxWidth: '900px', marginBottom: '1.5rem' }}>
+        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Weekly Scores</h3>
+        <div style={{ width: '100%', height: 420 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={weeklyScoresData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="points" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
+              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
+              <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
+              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      ))}
+      </div>
     </div>
   );
 } 

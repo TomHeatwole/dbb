@@ -211,7 +211,7 @@ function TeamPage() {
       {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Scores' && <TeamScores weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
-      {selectedTab === 'Analytics' && <TeamAnalytics />}
+      {selectedTab === 'Analytics' && <TeamAnalytics weeksParsedData={weeksParsedData} teamName={teamName} />}
     </div>
   );
 }

@@ -91,4 +91,38 @@ export function getWeekScoreBreakdown(weeksParsedData, week) {
     };
   }
   return result;
+}
+
+export function getWeeklyStandings(weeksParsedData, start_week, end_week) {
+  // weeksParsedData: array of weeks, each week is array of entries
+  // start_week, end_week: 1-based inclusive
+  if (!weeksParsedData || !Array.isArray(weeksParsedData)) return [];
+  const standingsByWeek = [];
+  const runningTotals = {};
+  for (let w = start_week; w <= end_week; ++w) {
+    const weekIdx = w - 1;
+    const week = weeksParsedData[weekIdx];
+    if (!week) {
+      standingsByWeek.push([]);
+      continue;
+    }
+    // Map roster_id to points for this week
+    const weekPoints = {};
+    for (const entry of week) {
+      if (!entry || entry.roster_id == null) continue;
+      weekPoints[entry.roster_id] = entry.points;
+      if (!runningTotals[entry.roster_id]) runningTotals[entry.roster_id] = 0;
+      runningTotals[entry.roster_id] += entry.points;
+    }
+    // Build standings for this week
+    const weekArr = Object.entries(weekPoints).map(([rosterId, points]) => ({
+      rosterId: Number(rosterId),
+      points: Math.round(points * 10) / 10,
+      runningTotalPoints: Math.round(runningTotals[rosterId] * 10) / 10
+    }));
+    // Sort by points descending
+    weekArr.sort((a, b) => b.points - a.points);
+    standingsByWeek.push(weekArr);
+  }
+  return standingsByWeek;
 } 
