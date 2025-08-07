@@ -5,3 +5,4 @@
 - Kickass homepage
 - /league pages to compare across teams
 - Figure out if we can understand what games a player was/wasn't active for for per-game stats.
+- What week is it awareness, and disabling future weeks
