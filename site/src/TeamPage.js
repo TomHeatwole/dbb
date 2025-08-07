@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchTeamData } from './TeamLookup';
-import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from './global_constants';
+import { PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
 import FullRoster from './FullRoster';
 import TeamSummary from './TeamSummary';
@@ -104,8 +104,7 @@ function TeamPage() {
       setLoading(true);
       setError(null);
       try {
-        const leagueId = season === CURRENT_YEAR ? LEAGUE_ID : PREVIOUS_YEARS[season];
-        const teamData = await fetchTeamData(leagueId);
+        const teamData = await fetchTeamData(season);
         setRosters(teamData.rosters);
         setUsers(teamData.users);
         const foundRoster = teamData.rosters.find(r => String(r.roster_id) === String(id));

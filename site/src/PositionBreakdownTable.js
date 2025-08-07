@@ -23,7 +23,7 @@ const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent 
             top: pos.y - 48,
             zIndex: 1000,
             background: '#fff',
-            color: '#183661',
+            color: '#222',
             border: '1px solid #eee',
             borderRadius: 8,
             padding: '10px 16px',
