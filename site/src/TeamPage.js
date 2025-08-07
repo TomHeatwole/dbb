@@ -32,6 +32,8 @@ function TeamPage() {
   const [selectedTab, setSelectedTab] = useState(initialTab);
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [scoresLoading, setScoresLoading] = useState(true);
+  const [rosters, setRosters] = useState(null);
+  const [users, setUsers] = useState(null);
 
   // Sync tab with query param
   useEffect(() => {
@@ -54,7 +56,6 @@ function TeamPage() {
 
   // If the query param changes (e.g., via browser nav), update the tab
   useEffect(() => {
-    console.log(urlTab);
     if (urlTab && tabOptions.includes(urlTab) && selectedTab !== urlTab) setSelectedTab(urlTab);
     // if (!urlTab && selectedTab !== tabOptions[0]) setSelectedTab(tabOptions[0]);
     // eslint-disable-next-line
@@ -104,15 +105,17 @@ function TeamPage() {
       setError(null);
       try {
         const leagueId = season === CURRENT_YEAR ? LEAGUE_ID : PREVIOUS_YEARS[season];
-        const { rosters, users } = await fetchTeamData(leagueId);
-        const foundRoster = rosters.find(r => String(r.roster_id) === String(id));
+        const teamData = await fetchTeamData(leagueId);
+        setRosters(teamData.rosters);
+        setUsers(teamData.users);
+        const foundRoster = teamData.rosters.find(r => String(r.roster_id) === String(id));
         setRoster(foundRoster);
         if (!foundRoster) {
           setUser(null);
           setLoading(false);
           return;
         }
-        const foundUser = users.find(u => String(u.user_id) === String(foundRoster.owner_id)) ?? {};
+        const foundUser = teamData.users.find(u => String(u.user_id) === String(foundRoster.owner_id)) ?? {};
         setUser(foundUser);
         // After finding foundRoster and foundUser, apply overrides if present
         const override = PREVIOUS_ROSTER_OVERRIDES[season] && PREVIOUS_ROSTER_OVERRIDES[season][id];
@@ -133,7 +136,7 @@ function TeamPage() {
     return <Navigate to="/home/" replace />;
   }
 
-  if (loading || !playersData || !playerIdMap) return <div>Loading...</div>;
+  if (loading || !playersData || !playerIdMap || !rosters || !users) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!roster) return <div>No roster found for ID {id}</div>;
 
@@ -211,7 +214,7 @@ function TeamPage() {
       {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Scores' && <TeamScores weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
-      {selectedTab === 'Analytics' && <TeamAnalytics weeksParsedData={weeksParsedData} teamName={teamName} />}
+      {selectedTab === 'Analytics' && <TeamAnalytics weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} />}
     </div>
   );
 }

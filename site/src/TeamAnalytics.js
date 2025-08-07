@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { getWeeklyStandings, getPositionalBreakdownData } from './ScoresParser';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
 import PositionAnalytics from './PositionAnalytics';
+import PositionBreakdownTable from './PositionBreakdownTable';
 import { STARTER_POSITION_NAMES } from './global_constants';
 
 const chartConfigs = [
@@ -16,7 +17,7 @@ const chartConfigs = [
 
 const WEEKS = Array.from({ length: 17 }, (_, i) => i + 1);
 
-export default function TeamAnalytics({ weeksParsedData, teamName }) {
+export default function TeamAnalytics({ weeksParsedData, teamName, rosters, users }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { id } = useParams();
   const rosterId = Number(id);
@@ -34,6 +35,10 @@ export default function TeamAnalytics({ weeksParsedData, teamName }) {
 
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
+
+  // Tooltip state for Positional Averages table
+  const [hoveredAvgIdx, setHoveredAvgIdx] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     fetchPlayersData().then(setPlayersData);
@@ -243,58 +248,16 @@ export default function TeamAnalytics({ weeksParsedData, teamName }) {
       </div>
 
       {/* Positional Averages Table */}
-      <div className="pos-avg-table-container">
-        <h3 className="pos-avg-table-title">Positional Averages</h3>
-        <table className="pos-avg-table">
-          <thead>
-            <tr>
-              <th>Position</th>
-              <th>Team Avg</th>
-              <th>League Avg</th>
-              <th>League Ceiling</th>
-              <th>League Minimum</th>
-            </tr>
-          </thead>
-          <tbody>
-            {STARTER_POSITION_NAMES.map((posLabel, posIdx) => {
-              let userScores = [];
-              // Map: rosterId -> [scores]
-              const teamScoresMap = {};
-              for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
-                const weekNum = startWeek + weekIdx;
-                const week = weeksParsedData[weekNum - 1];
-                if (!week) continue;
-                week.forEach(entry => {
-                  if (!entry || !entry.starters_points || entry.starters_points[posIdx] == null) return;
-                  const rid = entry.roster_id;
-                  if (!teamScoresMap[rid]) teamScoresMap[rid] = [];
-                  teamScoresMap[rid].push(entry.starters_points[posIdx]);
-                  if (rid === rosterId) {
-                    userScores.push(entry.starters_points[posIdx]);
-                  }
-                });
-              }
-              // Compute league averages (excluding user)
-              const leagueTeamAverages = Object.entries(teamScoresMap)
-                .filter(([rid]) => Number(rid) !== rosterId)
-                .map(([_, scores]) => scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0);
-              const leagueAvg = leagueTeamAverages.length ? (leagueTeamAverages.reduce((a, b) => a + b, 0) / leagueTeamAverages.length) : 0;
-              const leagueCeiling = leagueTeamAverages.length ? Math.max(...leagueTeamAverages) : 0;
-              const leagueMin = leagueTeamAverages.length ? Math.min(...leagueTeamAverages) : 0;
-              const userAvg = userScores.length ? (userScores.reduce((a, b) => a + b, 0) / userScores.length) : 0;
-              return (
-                <tr key={posIdx}>
-                  <td>{posLabel}</td>
-                  <td>{userAvg.toFixed(1)}</td>
-                  <td>{leagueAvg.toFixed(1)}</td>
-                  <td>{leagueCeiling.toFixed(1)}</td>
-                  <td>{leagueMin.toFixed(1)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <PositionBreakdownTable
+        weeksParsedData={weeksParsedData}
+        rosterId={rosterId}
+        startWeek={startWeek}
+        endWeek={endWeek}
+        STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
+        rosters={rosters}
+        users={users}
+        teamName={teamName}
+      />
 
       {STARTER_POSITION_NAMES.map((_, idx) => (
         <PositionAnalytics
