@@ -1,6 +1,8 @@
 // ScoresParser.js
 // Helper functions for parsing and analyzing weeksParsedData
 
+import { STARTER_POSITION_NAMES } from './global_constants';
+
 export function getStandings(weeksParsedData) {
   // Accumulate points for each roster_id
   const pointsMap = {};
@@ -147,8 +149,8 @@ export function getPositionalBreakdownData(weeksParsedData, start_week, end_week
   for (const rid of rosterIds) {
     teamDataMap[rid] = {
       roster_id: Number(rid),
-      positional_scores: Array(10).fill(0).map(() => []), // array of arrays for each position
-      positional_player_breakdown: Array(10).fill(0).map(() => ({})), // array of maps for each position, playerId -> { starts, cumulative_score }
+      positional_scores: Array(STARTER_POSITION_NAMES.length).fill(0).map(() => []), // array of arrays for each position
+      positional_player_breakdown: Array(STARTER_POSITION_NAMES.length).fill(0).map(() => ({})), // array of maps for each position, playerId -> { starts, cumulative_score }
     };
   }
 
@@ -160,7 +162,7 @@ export function getPositionalBreakdownData(weeksParsedData, start_week, end_week
     for (const entry of week) {
       if (!entry || entry.roster_id == null || !entry.starters || !entry.starters_points) continue;
       const rid = entry.roster_id;
-      for (let pos = 0; pos < 10; ++pos) {
+      for (let pos = 0; pos < 11; ++pos) {
         const pid = entry.starters[pos];
         const pts = entry.starters_points[pos];
         // If no player in this position, treat as 0

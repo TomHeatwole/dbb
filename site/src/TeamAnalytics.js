@@ -3,6 +3,8 @@ import { useSearchParams, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell } from 'recharts';
 import { getWeeklyStandings, getPositionalBreakdownData } from './ScoresParser';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
+import PositionAnalytics from './PositionAnalytics';
+import { STARTER_POSITION_NAMES } from './global_constants';
 
 const chartConfigs = [
   { title: 'Weekly Scores', key: 'weeklyScores' },
@@ -295,82 +297,20 @@ export default function TeamAnalytics({ weeksParsedData, teamName }) {
         </div>
       </div>
 
-      {/* QB1 (Position 0) chart */}
-      <div style={{ width: '100%', maxWidth: '900px', marginBottom: '1.5rem' }}>
-        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>QB1 Weekly Scores</h3>
-        <div style={{ width: '100%', height: 420 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={qb1ChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="userQB1" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your QB1"} />
-              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* QB1 Breakdown Pie Chart */}
-      <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto 2rem auto' }}>
-        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>QB1 Breakdown</h3>
-        <div style={{ width: '100%', height: 420, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          {qb1BreakdownData.length > 0 ? (
-            <ResponsiveContainer width={700} height={420}>
-              <PieChart>
-                <Pie
-                  data={qb1BreakdownData}
-                  dataKey="count"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  label={({ name, count }) => `${name} (${count})`}
-                >
-                  {qb1BreakdownData.map((entry, idx) => (
-                    <Cell key={`cell-${entry.playerId}`} fill={pieColors[idx % pieColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      // Find userTeam and QB1 breakdown for richer info
-                      const userTeam = positionalBreakdown.find(t => t.roster_id === rosterId);
-                      const qb1Breakdown = userTeam && userTeam.positional_player_breakdown && userTeam.positional_player_breakdown[0];
-                      const totalStarts = endWeek - startWeek + 1;
-                      const qb1Scores = userTeam && userTeam.positional_scores && userTeam.positional_scores[0];
-                      const playerStarts = d.count;
-                      const startPct = totalStarts > 0 ? Math.round((playerStarts / totalStarts) * 1000) / 10 : 0;
-                      // Compute average score as QB1 for this player using new structure
-                      let avgScore = 0;
-                      if (d.count > 0 && d.cumulative_score !== undefined) {
-                        avgScore = Math.round((d.cumulative_score / d.count) * 10) / 10;
-                      }
-                      return (
-                        <div style={{ background: '#fff', border: '1px solid #ccc', padding: 10, color: '#111', textAlign: 'center' }}>
-                          {d.img && <img src={d.img} alt={d.name} style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto 8px auto', display: 'block' }} />}
-                          <div><b>{d.name} ({d.position})</b></div>
-                          <div><b>QB1 starts:</b> {playerStarts}</div>
-                          <div><b>QB1 start percentage:</b> {startPct}%</div>
-                          <div><b>Avg score as QB1:</b> {avgScore}</div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ textAlign: 'center', color: '#888' }}>No QB1 data available.</div>
-          )}
-        </div>
-      </div>
+      {STARTER_POSITION_NAMES.map((_, idx) => (
+        <PositionAnalytics
+          key={idx}
+          pos={idx}
+          positionalBreakdown={positionalBreakdown}
+          weeksParsedData={weeksParsedData}
+          startWeek={startWeek}
+          endWeek={endWeek}
+          rosterId={rosterId}
+          teamName={teamName}
+          playersData={playersData}
+          playerIdMap={playerIdMap}
+        />
+      ))}
     </div>
   );
 } 
