@@ -104,61 +104,6 @@ export default function TeamAnalytics({ weeksParsedData, teamName }) {
     };
   });
 
-  // QB1 (position 0) chart data
-  const qb1ChartData = [];
-  for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
-    const weekNum = startWeek + weekIdx;
-    // For this week, gather all teams' QB1 scores
-    const week = weeksParsedData[weekNum - 1];
-    if (!week) continue;
-    const qb1Scores = week.map(entry => (entry && entry.starters_points && entry.starters_points[0] != null) ? entry.starters_points[0] : 0);
-    const userEntry = week.find(entry => entry && entry.roster_id === rosterId);
-    const userQB1 = userEntry && userEntry.starters_points && userEntry.starters_points[0] != null ? userEntry.starters_points[0] : 0;
-    const sorted = [...qb1Scores].sort((a, b) => b - a);
-    const leagueCeiling = sorted.length ? sorted[0] : 0;
-    const leagueFloor = sorted.length ? sorted[sorted.length - 1] : 0;
-    let leagueMedian = 0;
-    if (sorted.length >= 6) {
-      leagueMedian = (sorted[4] + sorted[5]) / 2;
-    } else if (sorted.length > 0) {
-      const mid = Math.floor(sorted.length / 2);
-      leagueMedian = sorted[mid];
-    }
-    qb1ChartData.push({
-      name: `Week ${weekNum}`,
-      userQB1: Math.round(userQB1 * 10) / 10,
-      leagueCeiling: Math.round(leagueCeiling * 10) / 10,
-      leagueFloor: Math.round(leagueFloor * 10) / 10,
-      leagueMedian: Math.round(leagueMedian * 10) / 10,
-    });
-  }
-
-  // QB1 breakdown pie chart data
-  let qb1BreakdownData = [];
-  if (positionalBreakdown && positionalBreakdown.length && playersData && playerIdMap) {
-    const userTeam = positionalBreakdown.find(t => t.roster_id === rosterId);
-    if (userTeam && userTeam.positional_player_breakdown && userTeam.positional_player_breakdown[0]) {
-      qb1BreakdownData = Object.entries(userTeam.positional_player_breakdown[0])
-        .map(([playerId, data]) => {
-          const info = getPlayerInfo(playerId, playersData, playerIdMap);
-          return {
-            playerId,
-            count: data.starts,
-            cumulative_score: data.cumulative_score,
-            name: info ? info.name : playerId,
-            position: info ? info.position : '',
-            img: info ? info.espn_photo_url : null,
-          };
-        })
-        .sort((a, b) => b.count - a.count);
-    }
-  }
-
-  // Color palette for pie slices
-  const pieColors = [
-    '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF4444', '#A28FD0', '#FFB6B9', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#FF9AA2'
-  ];
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '60vh', gap: '2.5rem', padding: '0 0 2rem 0' }}>
       {/* Weeks Selector */}
