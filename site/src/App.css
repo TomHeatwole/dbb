@@ -609,3 +609,65 @@
   color: #e6b800;
   font-weight: 500;
 }
+
+/* Positional Averages Table Styles */
+.pos-avg-table-container {
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 2rem;
+}
+.pos-avg-table-title {
+  text-align: center;
+  margin-bottom: 1.2rem;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.pos-avg-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #101c2c;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.pos-avg-table thead tr {
+  background: linear-gradient(90deg, #183661 0%, #1e488a 100%);
+}
+.pos-avg-table th {
+  padding: 12px 8px;
+  border: none;
+  color: #7ecbff;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-align: right;
+}
+.pos-avg-table th:first-child {
+  text-align: left;
+}
+.pos-avg-table td {
+  padding: 10px 8px;
+  border: none;
+  font-weight: 500;
+  font-size: 17px;
+  text-align: right;
+  transition: background 0.2s;
+}
+.pos-avg-table td:first-child {
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  letter-spacing: 0.5px;
+}
+.pos-avg-table td:nth-child(2) { color: #7ecbff; }
+.pos-avg-table td:nth-child(3) { color: #4fd1c5; }
+.pos-avg-table td:nth-child(4) { color: #00e6ff; }
+.pos-avg-table td:nth-child(5) { color: #b2cfff; }
+.pos-avg-table tbody tr {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pos-avg-table tbody tr:hover {
+  background: #2356a8 !important;
+}
