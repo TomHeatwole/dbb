@@ -15,11 +15,19 @@ export async function fetchTeamData(season = getCurrentYear()) {
   if (!usersRes.ok) throw new Error('Failed to fetch users');
   const users = await usersRes.json();
 
-  for (const user of users) {
-    const override = PREVIOUS_ROSTER_OVERRIDES[season] && PREVIOUS_ROSTER_OVERRIDES[season][user.roster_id];
+  for (const roster of rosters) {
+    const override = PREVIOUS_ROSTER_OVERRIDES[season] && PREVIOUS_ROSTER_OVERRIDES[season][roster.roster_id];
     if (override) {
-      user.display_name = override.owner;
-      user.metadata = { ...user.metadata, team_name: override.name };
+      users.push(
+        {
+          display_name: override.owner,
+          metadata: {
+            team_name: override.name
+          },
+          roster_id: roster.roster_id,
+          user_id: roster.owner_id
+        }
+      )
     }
   }
 

@@ -96,7 +96,7 @@ export default function PositionAnalytics({
         <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>{posLabel} Breakdown</h3>
         <div style={{ width: '100%', height: 420, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           {breakdownData.length > 0 ? (
-            <ResponsiveContainer width={700} height={420}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={breakdownData}

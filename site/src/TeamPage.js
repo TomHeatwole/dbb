@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchTeamData } from './TeamLookup';
-import { PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from './global_constants';
+import { PREVIOUS_YEARS  } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
 import FullRoster from './FullRoster';
 import TeamSummary from './TeamSummary';
@@ -116,12 +116,6 @@ function TeamPage() {
         }
         const foundUser = teamData.users.find(u => String(u.user_id) === String(foundRoster.owner_id)) ?? {};
         setUser(foundUser);
-        // After finding foundRoster and foundUser, apply overrides if present
-        const override = PREVIOUS_ROSTER_OVERRIDES[season] && PREVIOUS_ROSTER_OVERRIDES[season][id];
-        if (override) {
-          foundUser.display_name = override.owner;
-          foundUser.metadata = { ...foundUser.metadata, team_name: override.name };
-        }
       } catch (err) {
         setError(err.message);
       } finally {
