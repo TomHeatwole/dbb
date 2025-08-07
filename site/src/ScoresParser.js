@@ -125,4 +125,33 @@ export function getWeeklyStandings(weeksParsedData, start_week, end_week) {
     standingsByWeek.push(weekArr);
   }
   return standingsByWeek;
+}
+
+export function getScoresPositionalBreakdown(weeksParsedData, start_week, end_week, roster_id) {
+  // Returns an array of objects, one per week, each with position scores for the given roster_id
+  // Positions are determined by the index in the starters array for each week
+  if (!weeksParsedData || !Array.isArray(weeksParsedData)) return [];
+  const result = [];
+  for (let w = start_week; w <= end_week; ++w) {
+    const weekIdx = w - 1;
+    const week = weeksParsedData[weekIdx];
+    if (!week) {
+      result.push(null);
+      continue;
+    }
+    // Find the entry for the given roster_id
+    const entry = week.find(e => e && e.roster_id === roster_id);
+    if (!entry || !entry.starters || !entry.starters_points) {
+      result.push(null);
+      continue;
+    }
+    // Map each position index to the player id and points
+    const positions = entry.starters.map((pid, idx) => ({
+      pos: idx,
+      player_id: pid,
+      points: entry.starters_points[idx] != null ? entry.starters_points[idx] : 0
+    }));
+    result.push(positions);
+  }
+  return result;
 } 

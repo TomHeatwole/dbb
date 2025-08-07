@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
-import { getWeeklyStandings } from './ScoresParser';
+import { getWeeklyStandings, getScoresPositionalBreakdown } from './ScoresParser';
+import { STARTER_POSITION_NAMES } from './global_constants';
 
 const chartConfigs = [
   { title: 'Weekly Scores', key: 'weeklyScores' },
@@ -88,6 +89,19 @@ export default function TeamAnalytics({ weeksParsedData, teamName }) {
       leagueMedian: Math.round(leagueMedian * 10) / 10,
     };
   });
+
+  // Get positional breakdown for the selected window
+  const positionalBreakdown = getScoresPositionalBreakdown(weeksParsedData, startWeek, endWeek, rosterId);
+
+  // Prepare data for the positional breakdown chart
+  const positionalChartData = positionalBreakdown.map((weekArr, i) => {
+    const weekObj = { name: `Week ${startWeek + i}` };
+    STARTER_POSITION_NAMES.forEach((pos, idx) => {
+      weekObj[pos] = weekArr && weekArr[idx] ? weekArr[idx].points : 0;
+    });
+    return weekObj;
+  });
+  console.log(positionalBreakdown);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '60vh', gap: '2.5rem', padding: '0 0 2rem 0' }}>
@@ -222,6 +236,33 @@ export default function TeamAnalytics({ weeksParsedData, teamName }) {
               <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
               <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
               <Line type="monotone" dataKey="playoffBar" stroke="#FFD700" strokeWidth={2} name="Playoff Bar" dot={false} strokeDasharray="3 3" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Positional Breakdown Chart */}
+      <div style={{ width: '100%', maxWidth: '900px', marginBottom: '1.5rem' }}>
+        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Scoring by Position (Weekly)</h3>
+        <div style={{ width: '100%', height: 420 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={positionalChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {STARTER_POSITION_NAMES.map((pos, idx) => (
+                <Line
+                  key={pos}
+                  type="monotone"
+                  dataKey={pos}
+                  stroke={`hsl(${(idx * 360) / STARTER_POSITION_NAMES.length}, 70%, 50%)`}
+                  strokeWidth={2}
+                  dot={false}
+                  name={pos}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </div>

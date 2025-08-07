@@ -54,7 +54,6 @@ function TeamPage() {
 
   // If the query param changes (e.g., via browser nav), update the tab
   useEffect(() => {
-    console.log(urlTab);
     if (urlTab && tabOptions.includes(urlTab) && selectedTab !== urlTab) setSelectedTab(urlTab);
     // if (!urlTab && selectedTab !== tabOptions[0]) setSelectedTab(tabOptions[0]);
     // eslint-disable-next-line
