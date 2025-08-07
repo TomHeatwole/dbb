@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import { getWeeklyStandings } from './ScoresParser';
 
 const chartConfigs = [
@@ -161,6 +161,67 @@ export default function TeamAnalytics({ weeksParsedData, teamName }) {
               <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
               <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
               <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Weekly Scores (Cumulative) chart */}
+      <div style={{ width: '100%', maxWidth: '900px', marginBottom: '1.5rem' }}>
+        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Weekly Scores (Cumulative)</h3>
+        <div style={{ width: '100%', height: 420 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={
+              weeklyStandings.map((weekArr, i) => {
+                // Sort by runningTotalPoints descending
+                const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
+                const user = sorted.find(x => x.rosterId === rosterId);
+                const runningArr = sorted.map(x => x.runningTotalPoints);
+                const leagueCeiling = runningArr.length ? runningArr[0] : 0;
+                const leagueFloor = runningArr.length ? runningArr[runningArr.length - 1] : 0;
+                // Median: average of 5th and 6th place (0-based: 4 and 5)
+                let leagueMedian = 0;
+                if (runningArr.length >= 6) {
+                  leagueMedian = (runningArr[4] + runningArr[5]) / 2;
+                } else if (runningArr.length > 0) {
+                  const mid = Math.floor(runningArr.length / 2);
+                  leagueMedian = runningArr[mid];
+                }
+                // Playoff Bar: 5th place running total (0-based index 4)
+                const playoffBar = runningArr.length >= 5 ? runningArr[4] : 0;
+                return {
+                  name: `Week ${startWeek + i}`,
+                  runningTotalPoints: user ? user.runningTotalPoints : 0,
+                  leagueCeiling,
+                  leagueFloor,
+                  leagueMedian: Math.round(leagueMedian * 10) / 10,
+                  playoffBar,
+                };
+              })
+            } margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {/* Area above playoff bar */}
+              <defs>
+                <linearGradient id="abovePlayoff" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#b3e5fc" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#b3e5fc" stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+              <defs>
+                <linearGradient id="betweenPlayoffAndCeiling" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#b3e5fc" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#b3e5fc" stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+              <Line type="monotone" dataKey="runningTotalPoints" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
+              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
+              <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
+              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
+              <Line type="monotone" dataKey="playoffBar" stroke="#FFD700" strokeWidth={2} name="Playoff Bar" dot={false} strokeDasharray="3 3" />
             </LineChart>
           </ResponsiveContainer>
         </div>
