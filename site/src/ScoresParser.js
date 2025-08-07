@@ -125,4 +125,72 @@ export function getWeeklyStandings(weeksParsedData, start_week, end_week) {
     standingsByWeek.push(weekArr);
   }
   return standingsByWeek;
+}
+
+export function getPositionalBreakdownData(weeksParsedData, start_week, end_week) {
+  // Collect all roster_ids
+  const rosterIds = new Set();
+  if (!weeksParsedData || !Array.isArray(weeksParsedData)) return [];
+  for (let w = start_week; w <= end_week; ++w) {
+    const weekIdx = w - 1;
+    const week = weeksParsedData[weekIdx];
+    if (!week) continue;
+    for (const entry of week) {
+      if (entry && entry.roster_id != null) {
+        rosterIds.add(entry.roster_id);
+      }
+    }
+  }
+
+  // Initialize data structures for each team
+  const teamDataMap = {};
+  for (const rid of rosterIds) {
+    teamDataMap[rid] = {
+      roster_id: Number(rid),
+      positional_scores: Array(10).fill(0).map(() => []), // array of arrays for each position
+      positional_player_breakdown: Array(10).fill(0).map(() => ({})), // array of maps for each position, playerId -> { starts, cumulative_score }
+    };
+  }
+
+  // Fill in data
+  for (let w = start_week; w <= end_week; ++w) {
+    const weekIdx = w - 1;
+    const week = weeksParsedData[weekIdx];
+    if (!week) continue;
+    for (const entry of week) {
+      if (!entry || entry.roster_id == null || !entry.starters || !entry.starters_points) continue;
+      const rid = entry.roster_id;
+      for (let pos = 0; pos < 10; ++pos) {
+        const pid = entry.starters[pos];
+        const pts = entry.starters_points[pos];
+        // If no player in this position, treat as 0
+        const score = pts != null ? pts : 0;
+        teamDataMap[rid].positional_scores[pos].push(score);
+        if (pid != null) {
+          if (!teamDataMap[rid].positional_player_breakdown[pos][pid]) {
+            teamDataMap[rid].positional_player_breakdown[pos][pid] = { starts: 0, cumulative_score: 0 };
+          }
+          teamDataMap[rid].positional_player_breakdown[pos][pid].starts += 1;
+          teamDataMap[rid].positional_player_breakdown[pos][pid].cumulative_score += score;
+        }
+      }
+    }
+  }
+
+  // Build result
+  const result = [];
+  for (const rid of rosterIds) {
+    const team = teamDataMap[rid];
+    const positional_average_scores = team.positional_scores.map(scores => {
+      if (scores.length === 0) return 0;
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      return Math.round(avg * 10) / 10;
+    });
+    result.push({
+      roster_id: team.roster_id,
+      positional_average_scores,
+      positional_player_breakdown: team.positional_player_breakdown
+    });
+  }
+  return result;
 } 
