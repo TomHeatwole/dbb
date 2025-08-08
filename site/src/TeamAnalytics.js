@@ -202,15 +202,12 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
                   const mid = Math.floor(runningArr.length / 2);
                   leagueMedian = runningArr[mid];
                 }
-                // Playoff Bar: 5th place running total (0-based index 4)
-                const playoffBar = runningArr.length >= 5 ? runningArr[4] : 0;
                 return {
                   name: `Week ${startWeek + i}`,
                   runningTotalPoints: user ? user.runningTotalPoints : 0,
                   leagueCeiling,
                   leagueFloor,
                   leagueMedian: Math.round(leagueMedian * 10) / 10,
-                  playoffBar,
                 };
               })
             } margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -236,7 +233,6 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
               <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
               <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
               <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="playoffBar" stroke="#FFD700" strokeWidth={2} name="Playoff Bar" dot={false} strokeDasharray="3 3" />
             </LineChart>
           </ResponsiveContainer>
         </div>
