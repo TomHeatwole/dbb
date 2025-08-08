@@ -3,25 +3,41 @@ import React, { useState } from 'react';
 const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent }) {
   const [hovered, setHovered] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const hoverTimeout = React.useRef();
+
+  function handleMouseEnter(e) {
+    hoverTimeout.current = setTimeout(() => {
+      setHovered(true);
+    }, 50);
+    const rect = e.target.getBoundingClientRect();
+    setPos({ x: rect.left + rect.width / 2, y: rect.top });
+  }
+
+  function handleMouseLeave() {
+    clearTimeout(hoverTimeout.current);
+    setHovered(false);
+  }
+
   return (
-    <td
-      onMouseEnter={e => {
-        setHovered(true);
-        const rect = e.target.getBoundingClientRect();
-        setPos({ x: rect.left + rect.width / 2, y: rect.top });
-      }}
-      onMouseLeave={() => setHovered(false)}
-      className="pos-avg-tooltip-relative"
-    >
-      {value}
-      {hovered && tooltipContent && (
-        <div
-          className="pos-avg-tooltip-fixed"
-          style={{ left: pos.x, top: pos.y - 48 }}
-        >
-          {tooltipContent}
-        </div>
-      )}
+    <td className="pos-avg-tooltip-relative">
+      <div
+        className="pos-avg-tooltip-hover-parent"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{ display: 'inline-block', width: '100%' }}
+      >
+        <span className="pos-avg-tooltip-hover-area">
+          {value}
+        </span>
+        {hovered && tooltipContent && (
+          <div
+            className="pos-avg-tooltip-fixed pos-avg-tooltip-fadein"
+            style={{ left: pos.x, top: pos.y - 48 }}
+          >
+            {tooltipContent}
+          </div>
+        )}
+      </div>
     </td>
   );
 });

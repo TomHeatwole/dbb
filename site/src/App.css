@@ -828,3 +828,25 @@
   font-weight: bold;
   font-size: 1em;
 }
+.pos-avg-tooltip-hover-area {
+  display: inline-block;
+  width: 30%;
+  min-width: 36px;
+  max-width: 90px;
+  text-align: center;
+  margin: 0 auto;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.12s;
+}
+.pos-avg-tooltip-hover-area:hover {
+  background: rgba(21, 95, 160, 0.08);
+}
+.pos-avg-tooltip-fadein {
+  opacity: 0;
+  animation: pos-avg-tooltip-fadein 0.25s forwards;
+}
+@keyframes pos-avg-tooltip-fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
