@@ -63,7 +63,7 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
             <th>Team Avg</th>
             <th>League Avg</th>
             <th>League Ceiling</th>
-            <th>League Minimum</th>
+            <th>League Floor</th>
           </tr>
         </thead>
         <tbody>
