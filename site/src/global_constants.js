@@ -1,10 +1,8 @@
-
 const serializedSettings = process.env.REACT_APP_SITE_SETTINGS;
 
 let parsedSettings = {};
 try {
   parsedSettings = serializedSettings ? JSON.parse(serializedSettings) : {};
-  console.log(serializedSettings);
 } catch (e) {
   throw new Error('SITE_SETTINGS is not valid JSON');
 }
