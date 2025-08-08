@@ -11,28 +11,13 @@ const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent 
         setPos({ x: rect.left + rect.width / 2, y: rect.top });
       }}
       onMouseLeave={() => setHovered(false)}
-      style={{ position: 'relative' }}
+      className="pos-avg-tooltip-relative"
     >
       {value}
       {hovered && tooltipContent && (
         <div
-          className="pos-avg-tooltip"
-          style={{
-            position: 'fixed',
-            left: pos.x,
-            top: pos.y - 48,
-            zIndex: 1000,
-            background: '#fff',
-            color: '#222',
-            border: '1px solid #eee',
-            borderRadius: 8,
-            padding: '10px 16px',
-            fontWeight: 600,
-            fontSize: 16,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
-            minWidth: 120,
-            textAlign: 'center',
-          }}
+          className="pos-avg-tooltip-fixed"
+          style={{ left: pos.x, top: pos.y - 48 }}
         >
           {tooltipContent}
         </div>
@@ -114,7 +99,7 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
                   tooltipContent={
                     <>
                       League Avg: <span>{leagueAvg.toFixed(1)}</span><br />
-                      <span style={{ color: delta >= 0 ? '#1a7f37' : '#c0392b' }}>
+                      <span className={delta >= 0 ? "pos-avg-tooltip-delta-pos" : "pos-avg-tooltip-delta-neg"}>
                         {delta >= 0 ? '+' : ''}{delta.toFixed(1)}%
                       </span>
                     </>

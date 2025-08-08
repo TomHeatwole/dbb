@@ -109,7 +109,7 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
       {weekBreakdown ? (
         <div className="team-scores-tables-flex">
           <div className="team-scores-tables-col">
-            <div style={{ fontWeight: 600, fontSize: '1.1em', marginBottom: 8 }}>Starters</div>
+            <div className="team-scores-starters-bench-title">Starters</div>
             <table className="team-scores-table">
               <thead>
                 <tr>
@@ -127,7 +127,7 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                       <td className="team-scores-pos-cell">{posLabel}</td>
                       <td className="team-scores-player-cell">
                         {info && info.espn_photo_url && (
-                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
+                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                         )}
                         <span className="player-name">
                           {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
@@ -149,7 +149,7 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
             </table>
           </div>
           <div className="team-scores-tables-col">
-            <div style={{ fontWeight: 600, fontSize: '1.1em', marginBottom: 8 }}>Bench</div>
+            <div className="team-scores-starters-bench-title">Bench</div>
             <table className="team-scores-table">
               <thead>
                 <tr>
@@ -164,7 +164,7 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
                     <tr key={p.id}>
                       <td className="team-scores-player-cell">
                         {info && info.espn_photo_url && (
-                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" style={{ marginRight: 8 }} />
+                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                         )}
                         <span className="player-name">
                           {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}

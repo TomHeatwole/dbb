@@ -110,15 +110,14 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '60vh', gap: '2.5rem', padding: '0 0 2rem 0' }}>
+    <div className="team-analytics-root">
       {/* Weeks Selector */}
       <div className="team-scores-week-bar">
-        <span style={{ marginRight: 10 }}>From</span>
+        <span className="team-analytics-week-from">From</span>
         <div
-          className="team-scores-week-dropdown"
+          className="team-scores-week-dropdown team-analytics-week-dropdown-start"
           onClick={() => setStartDropdownOpen(open => !open)}
           ref={startDropdownRef}
-          style={{ marginRight: 16 }}
         >
           Week {startWeek}
           <span className="team-scores-week-dropdown-arrow">{startDropdownOpen ? '▲' : '▼'}</span>
@@ -139,7 +138,7 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
             </div>
           )}
         </div>
-        <span style={{ margin: '0 10px' }}>to</span>
+        <span className="team-analytics-week-to">to</span>
         <div
           className="team-scores-week-dropdown"
           onClick={() => setEndDropdownOpen(open => !open)}
@@ -167,9 +166,9 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
       </div>
       {/* Charts */}
       {/* Weekly Scores chart (real data) */}
-      <div style={{ width: '100%', maxWidth: '900px', marginBottom: '1.5rem' }}>
-        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Weekly Scores</h3>
-        <div style={{ width: '100%', height: 420 }}>
+      <div className="team-analytics-chart-container">
+        <h3 className="team-analytics-chart-title">Weekly Scores</h3>
+        <div className="team-analytics-chart-inner">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={weeklyScoresData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -187,9 +186,9 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
       </div>
 
       {/* Weekly Scores (Cumulative) chart */}
-      <div style={{ width: '100%', maxWidth: '900px', marginBottom: '1.5rem' }}>
-        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Weekly Scores (Cumulative)</h3>
-        <div style={{ width: '100%', height: 420 }}>
+      <div className="team-analytics-chart-container">
+        <h3 className="team-analytics-chart-title">Weekly Scores (Cumulative)</h3>
+        <div className="team-analytics-chart-inner">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={
               weeklyStandings.map((weekArr, i) => {

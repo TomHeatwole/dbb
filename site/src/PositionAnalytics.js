@@ -72,9 +72,9 @@ export default function PositionAnalytics({
   return (
     <>
       {/* Line Chart */}
-      <div style={{ width: '100%', maxWidth: '900px', marginBottom: '1.5rem' }}>
-        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>{posLabel} Weekly Scores</h3>
-        <div style={{ width: '100%', height: 420 }}>
+      <div className="position-analytics-chart-container">
+        <h3 className="position-analytics-chart-title">{posLabel} Weekly Scores</h3>
+        <div className="position-analytics-chart-inner">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -90,11 +90,10 @@ export default function PositionAnalytics({
           </ResponsiveContainer>
         </div>
       </div>
-
       {/* Pie Chart */}
-      <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto 2rem auto' }}>
-        <h3 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>{posLabel} Breakdown</h3>
-        <div style={{ width: '100%', height: 420, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div className="position-analytics-pie-container">
+        <h3 className="position-analytics-pie-title">{posLabel} Breakdown</h3>
+        <div className="position-analytics-pie-inner-flex">
           {breakdownData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -124,8 +123,8 @@ export default function PositionAnalytics({
                         avgScore = Math.round((d.cumulative_score / d.count) * 10) / 10;
                       }
                       return (
-                        <div style={{ background: '#fff', border: '1px solid #ccc', padding: 10, color: '#111', textAlign: 'center' }}>
-                          {d.img && <img src={d.img} alt={d.name} style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto 8px auto', display: 'block' }} />}
+                        <div className="position-analytics-tooltip">
+                          {d.img && <img src={d.img} alt={d.name} className="position-analytics-tooltip-img" />}
                           <div><b>{d.name} ({d.position})</b></div>
                           <div><b>{posLabel} starts:</b> {playerStarts}</div>
                           <div><b>{posLabel} start percentage:</b> {startPct}%</div>
@@ -139,7 +138,7 @@ export default function PositionAnalytics({
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ textAlign: 'center', color: '#888' }}>No {posLabel} data available.</div>
+            <div className="position-analytics-no-data">No {posLabel} data available.</div>
           )}
         </div>
       </div>

@@ -32,35 +32,22 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap }) {
   if (!weeksParsedData) return <div>No summary data found.</div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '2em' }}>
+    <div className="team-summary-root">
       {myStanding ? (
         <>
-          <div style={{
-            fontWeight: 700,
-            fontSize: '2.5em',
-            textAlign: 'center',
-            marginBottom: '0.2em',
-            letterSpacing: '0.03em',
-            lineHeight: 1.1
-          }}>
+          <div className="team-summary-place">
             Place: #{myStanding.place}
             {myStanding.numTied > 1 && (
-              <span style={{ fontSize: '0.4em', fontWeight: 400, marginLeft: 8 }}>
+              <span className="team-summary-tie">
                 ({myStanding.numTied}-way Tie)
               </span>
             )}
           </div>
-          <div style={{
-            fontWeight: 400,
-            fontSize: '1.2em',
-            color: '#aaa',
-            marginBottom: '2em',
-            textAlign: 'center'
-          }}>
+          <div className="team-summary-points">
             {myStanding.points_scored} Fantasy Points
           </div>
-          <div style={{ marginTop: '1em', width: '100%', maxWidth: 420 }}>
-            <strong style={{ fontSize: '1.1em' }}>Top 5 Scorers:</strong>
+          <div className="team-summary-top5">
+            <strong className="team-summary-top5-title">Top 5 Scorers:</strong>
             <ul className="player-list">
               {myPlayers.map((p, i) => {
                 const info = getPlayerInfo(p.id, playersData, playerIdMap);
@@ -70,7 +57,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap }) {
                       <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style" />
                     )}
                     <span className="player-name">{info && info.name ? info.name : p.id}</span>
-                    <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{p.pts}</span>
+                    <span className="team-summary-top5-pts">{p.pts}</span>
                   </li>
                 );
               })}
