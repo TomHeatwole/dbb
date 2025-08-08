@@ -3,13 +3,14 @@ import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown } from './ScoresParser';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
+import { getCurrentNFLWeek } from './DateHelper';
 
 const NUM_WEEKS = 17;
 
 function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlWeek = parseInt(searchParams.get('week'), 10);
-  const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : 1;
+  const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : getCurrentNFLWeek();
   const [week, setWeek] = useState(initialWeek);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -44,8 +45,9 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
 
   // Update week if query param changes (browser nav)
   useEffect(() => {
-    if (!isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS && week !== urlWeek) setWeek(urlWeek);
-    if ((isNaN(urlWeek) || urlWeek < 1 || urlWeek > NUM_WEEKS) && week !== 1) setWeek(1);
+    if (!isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS && week !== urlWeek)  {
+      setWeek(urlWeek);
+    }
     // eslint-disable-next-line
   }, [urlWeek]);
 
