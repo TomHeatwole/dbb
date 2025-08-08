@@ -1,6 +1,13 @@
 import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES, teamOverrides } from './global_constants';
 import { getCurrentYear } from './DateHelper';
 
+// Helper to get avatar URL from value (ID or URL)
+function getAvatarUrl(avatarVal) {
+  if (!avatarVal) return null;
+  if (typeof avatarVal === 'string' && avatarVal.startsWith('http')) return avatarVal;
+  return `https://sleepercdn.com/avatars/${avatarVal}`;
+}
+
 export async function fetchTeamData(season = getCurrentYear()) {
   const currentYear = getCurrentYear();
   const leagueId = currentYear === season ? LEAGUE_ID : PREVIOUS_YEARS[season];
@@ -24,11 +31,16 @@ export async function fetchTeamData(season = getCurrentYear()) {
           metadata: {
             team_name: override.name
           },
+          avatar: override.avatar,
           roster_id: roster.roster_id,
-          user_id: roster.owner_id
+          user_id: roster.owner_id,
         }
       )
     }
+  }
+
+  for (const user of users) {
+    user.avatar_url = getAvatarUrl(user.avatar);
   }
 
   return { rosters, users };

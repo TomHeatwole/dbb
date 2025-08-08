@@ -143,13 +143,8 @@ function TeamPage() {
   } else {
     teamName = `Team ${id}`;
   }
-  // Helper to get avatar URL from value (ID or URL)
-  function getAvatarUrl(avatarVal) {
-    if (!avatarVal) return null;
-    if (typeof avatarVal === 'string' && avatarVal.startsWith('http')) return avatarVal;
-    return `https://sleepercdn.com/avatars/${avatarVal}`;
-  }
-  const userAvatarUrl = getAvatarUrl(user && user.avatar);
+
+  const userAvatarUrl = user.avatar_url;
 
   // Get player info for each player on the roster
   const playerList = (roster.players || []).map(pid => {
