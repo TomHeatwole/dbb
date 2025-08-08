@@ -242,6 +242,54 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
         </div>
       </div>
 
+      {/* Weekly Scores (Cumulative - Relative to League Floor) chart */}
+      <div className="team-analytics-chart-container">
+        <h3 className="team-analytics-chart-title">Weekly Scores (Cumulative - Relative to League Floor)</h3>
+        <div className="team-analytics-chart-inner">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={
+              weeklyStandings.map((weekArr, i) => {
+                // Sort by runningTotalPoints descending
+                const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
+                const user = sorted.find(x => x.rosterId === rosterId);
+                const runningArr = sorted.map(x => x.runningTotalPoints);
+                const leagueFloor = runningArr.length ? runningArr[runningArr.length - 1] : 0;
+                const leagueCeiling = runningArr.length ? (runningArr[0] - leagueFloor) : 0;
+                // Median: average of 5th and 6th place (0-based: 4 and 5)
+                let leagueMedian = 0;
+                if (runningArr.length >= 6) {
+                  leagueMedian = ((runningArr[4] + runningArr[5]) / 2) - leagueFloor;
+                } else if (runningArr.length > 0) {
+                  const mid = Math.floor(runningArr.length / 2);
+                  leagueMedian = runningArr[mid] - leagueFloor;
+                }
+                // Playoff Bar: 5th place running total (0-based index 4)
+                const playoffBar = runningArr.length >= 5 ? (runningArr[4] - leagueFloor) : 0;
+                return {
+                  name: `Week ${startWeek + i}`,
+                  runningTotalPoints: user ? Math.round((user.runningTotalPoints - leagueFloor) * 10) / 10 : 0,
+                  leagueCeiling: Math.round(leagueCeiling * 10) / 10,
+                  leagueMedian: Math.round(leagueMedian * 10) / 10,
+                  playoffBar: Math.round(playoffBar * 10) / 10,
+                };
+              })
+            } margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis
+                tickFormatter={v => (v >= 0 ? `+${v}` : v)}
+              />
+              <Tooltip formatter={v => (v >= 0 ? `+${v}` : v)} />
+              <Legend />
+              <Line type="monotone" dataKey="runningTotalPoints" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
+              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
+              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
+              <Line type="monotone" dataKey="playoffBar" stroke="#FFD700" strokeWidth={2} name="Playoff Bar" dot={false} strokeDasharray="3 3" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       {/* Positional Averages Table */}
       <PositionBreakdownTable
         weeksParsedData={weeksParsedData}
