@@ -36,10 +36,6 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
 
-  // Tooltip state for Positional Averages table
-  const [hoveredAvgIdx, setHoveredAvgIdx] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-
   useEffect(() => {
     fetchPlayersData().then(setPlayersData);
     fetchPlayerIdMap().then(setPlayerIdMap);
@@ -256,6 +252,7 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
         rosters={rosters}
         users={users}
         teamName={teamName}
+        searchParams={searchParams}
       />
 
       {STARTER_POSITION_NAMES.map((_, idx) => (

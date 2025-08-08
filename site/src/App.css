@@ -805,3 +805,26 @@
 .pos-avg-tooltip-delta-neg {
   color: #c0392b;
 }
+.pos-avg-tooltip-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  margin-bottom: 4px;
+}
+.pos-avg-tooltip-avatar {
+  display: block;
+  margin: 0 auto 8px auto;
+}
+.pos-avg-tooltip-team-name {
+  display: block;
+  text-align: center;
+  font-weight: 600;
+}
+.pos-avg-tooltip-analytics-link {
+  display: block;
+  text-align: center;
+  color: #155fa0;
+  margin-top: 6px;
+  font-weight: bold;
+  font-size: 1em;
+}

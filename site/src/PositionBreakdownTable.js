@@ -26,7 +26,7 @@ const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent 
   );
 });
 
-export default function PositionBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, STARTER_POSITION_NAMES, rosters, users }) {
+export default function PositionBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, STARTER_POSITION_NAMES, rosters, users, searchParams }) {
   function getTeamName(rid) {
     if (!rosters || !users) return `Team ${rid}`;
     const roster = rosters.find(r => Number(r.roster_id) === Number(rid));
@@ -109,19 +109,55 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
                 <HoverInfoCell
                   value={leagueCeiling.toFixed(1)}
                   tooltipContent={
-                    <>
-                      {getTeamName(leagueCeilingRoster)}<br />
-                      {posLabel} Avg: {leagueCeiling.toFixed(1)}
-                    </>
+                    (() => {
+                      const roster = rosters && leagueCeilingRoster != null ? rosters.find(r => Number(r.roster_id) === Number(leagueCeilingRoster)) : null;
+                      const user = roster && users ? users.find(u => String(u.user_id) === String(roster.owner_id)) : null;
+                      return (
+                        <>
+                          <a
+                            href={`/team/${leagueCeilingRoster}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="pos-avg-tooltip-link"
+                          >
+                            {user && user.avatar_url && (
+                              <img src={user.avatar_url} alt={getTeamName(leagueCeilingRoster)} className="owner-avatar pos-avg-tooltip-avatar" />
+                            )}
+                            <span className="pos-avg-tooltip-team-name">{getTeamName(leagueCeilingRoster)}</span>
+                            {posLabel} Avg: {leagueCeiling.toFixed(1)}
+                            <br /><br />
+                            <span className="pos-avg-tooltip-analytics-link">See Team Analytics &rarr;</span>
+                          </a>
+                        </>
+                      );
+                    })()
                   }
                 />
                 <HoverInfoCell
                   value={leagueMin.toFixed(1)}
                   tooltipContent={
-                    <>
-                      {getTeamName(leagueMinRoster)}<br />
-                      {posLabel} Avg: {leagueMin.toFixed(1)}
-                    </>
+                    (() => {
+                      const roster = rosters && leagueMinRoster != null ? rosters.find(r => Number(r.roster_id) === Number(leagueMinRoster)) : null;
+                      const user = roster && users ? users.find(u => String(u.user_id) === String(roster.owner_id)) : null;
+                      return (
+                        <>
+                          <a
+                            href={`/team/${leagueMinRoster}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="pos-avg-tooltip-link"
+                          >
+                            {user && user.avatar_url && (
+                              <img src={user.avatar_url} alt={getTeamName(leagueMinRoster)} className="owner-avatar pos-avg-tooltip-avatar" />
+                            )}
+                            <span className="pos-avg-tooltip-team-name">{getTeamName(leagueMinRoster)}</span>
+                            {posLabel} Avg: {leagueMin.toFixed(1)}
+                            <br /><br />
+                            <span className="pos-avg-tooltip-analytics-link">See Team Analytics &rarr;</span>
+                          </a>
+                        </>
+                      );
+                    })()
                   }
                 />
               </tr>
