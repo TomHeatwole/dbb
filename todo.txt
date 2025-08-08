@@ -1,4 +1,4 @@
-- Look into streamlit for data visualization
+- Update README for new settings format
 - Top 5 players probably isn't great for summary page - maybe consolidate summary & roster into Overview
 - "Team Analytics" tab with scoring averages and breakdown by roster spot.
 - Hover on player for popup of information
