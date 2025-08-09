@@ -92,12 +92,17 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
                 rosterId: Number(rid),
                 avg: scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0
               }));
+            // Add the user's team to the array for ceiling/floor calculation
+            let allTeamAveragesArr = [...leagueTeamAveragesArr];
+            if (userScores.length) {
+              allTeamAveragesArr.push({ rosterId: Number(rosterId), avg: userScores.reduce((a, b) => a + b, 0) / userScores.length });
+            }
             const leagueAvg = leagueTeamAveragesArr.length ? (leagueTeamAveragesArr.reduce((a, b) => a + b.avg, 0) / leagueTeamAveragesArr.length) : 0;
             let leagueCeiling = 0, leagueCeilingRoster = null;
             let leagueMin = 0, leagueMinRoster = null;
-            if (leagueTeamAveragesArr.length) {
-              const maxObj = leagueTeamAveragesArr.reduce((max, curr) => curr.avg > max.avg ? curr : max, leagueTeamAveragesArr[0]);
-              const minObj = leagueTeamAveragesArr.reduce((min, curr) => curr.avg < min.avg ? curr : min, leagueTeamAveragesArr[0]);
+            if (allTeamAveragesArr.length) {
+              const maxObj = allTeamAveragesArr.reduce((max, curr) => curr.avg > max.avg ? curr : max, allTeamAveragesArr[0]);
+              const minObj = allTeamAveragesArr.reduce((min, curr) => curr.avg < min.avg ? curr : min, allTeamAveragesArr[0]);
               leagueCeiling = maxObj.avg;
               leagueCeilingRoster = maxObj.rosterId;
               leagueMin = minObj.avg;
