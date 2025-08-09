@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchTeamData } from './TeamLookup';
@@ -34,6 +34,8 @@ function TeamPage() {
   const [scoresLoading, setScoresLoading] = useState(true);
   const [rosters, setRosters] = useState(null);
   const [users, setUsers] = useState(null);
+  const teamAnalyticsRef = useRef();
+  const teamScoresRef = useRef();
 
   // Sync tab with query param
   useEffect(() => {
@@ -63,12 +65,14 @@ function TeamPage() {
 
   // Sync season with query param
   useEffect(() => {
-    if (season === CURRENT_YEAR) {
-      searchParams.delete('year');
-      setSearchParams(searchParams, { replace: true });
-    } else if (allYears.includes(season)) {
-      searchParams.set('year', season);
-      setSearchParams(searchParams, { replace: true });
+    if (selectedTab !== 'Analytics' && selectedTab !== 'Scores') {
+      if (season === CURRENT_YEAR) {
+        searchParams.delete('year');
+        setSearchParams(searchParams, { replace: true });
+      } else if (allYears.includes(season)) {
+        searchParams.set('year', season);
+        setSearchParams(searchParams, { replace: true });
+      }
     }
     // eslint-disable-next-line
   }, [season]);
@@ -171,7 +175,25 @@ function TeamPage() {
                   'team-season-dropdown-option' +
                   (opt === season ? ' team-season-dropdown-option-active' : '')
                 }
-                onClick={() => { setSeason(opt); setSeasonDropdownOpen(false); }}
+                onClick={() => {
+                  setSeason(opt);
+                  setSeasonDropdownOpen(false);
+                  // Reset all query params except tab
+                  const newParams = new URLSearchParams();
+                  if (searchParams.get('tab')) {
+                    newParams.set('tab', searchParams.get('tab'));
+                    newParams.delete('week')
+                    newParams.delete('start_week')
+                    newParams.delete('end_week')
+                  }
+                  setSearchParams(newParams, { replace: true });
+                  if (teamAnalyticsRef.current && typeof teamAnalyticsRef.current.resetWeek === 'function') {
+                    teamAnalyticsRef.current.resetWeek(opt);
+                  }
+                  if (teamScoresRef.current && typeof teamScoresRef.current.resetWeek === 'function') {
+                    teamScoresRef.current.resetWeek(opt);
+                  }
+                }}
               >
                 {opt}
               </div>
@@ -200,9 +222,9 @@ function TeamPage() {
         ))}
       </div>
       {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} />}
-      {selectedTab === 'Scores' && <TeamScores weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
+      {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
-      {selectedTab === 'Analytics' && <TeamAnalytics weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} />}
+      {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} />}
     </div>
   );
 }

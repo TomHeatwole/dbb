@@ -25,3 +25,8 @@ export function getCurrentNFLWeek() {
   const week = Math.floor(daysSinceStart / 7) + 1;
   return Math.min(week, 17);
 } 
+
+export const getDefaultDisplayWeek = function(season) {
+  const isCurrentSeason = season === CURRENT_YEAR || season === null;
+  return isCurrentSeason ? getCurrentNFLWeek() : 17;
+};

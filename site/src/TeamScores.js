@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown } from './ScoresParser';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
-import { getCurrentNFLWeek } from './DateHelper';
+import { getDefaultDisplayWeek, CURRENT_YEAR } from './DateHelper';
 
 const NUM_WEEKS = 17;
 
-function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
+const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData, playerIdMap }, ref) {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlWeek = parseInt(searchParams.get('week'), 10);
-  const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : getCurrentNFLWeek();
+  const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : getDefaultDisplayWeek(searchParams.get('year'));
   const [week, setWeek] = useState(initialWeek);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -50,6 +50,22 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
     }
     // eslint-disable-next-line
   }, [urlWeek]);
+
+  useImperativeHandle(ref, () => ({
+    resetWeek: (season) => {
+      const newParams = new URLSearchParams(searchParams);
+      const week = getDefaultDisplayWeek(season);
+      newParams.set('week', week);
+      if (season === CURRENT_YEAR) {
+        newParams.delete('year');
+        setSearchParams(searchParams, { replace: true });
+      } else {
+        newParams.set('year', season);
+      }
+      setSearchParams(newParams, { replace: true });
+      setWeek(week);
+    }
+  }));
 
   const handleArrow = dir => {
     setWeek(w => Math.max(1, Math.min(NUM_WEEKS, w + dir)));
@@ -193,6 +209,6 @@ function TeamScores({ weeksParsedData, playersData, playerIdMap }) {
       )}
     </div>
   );
-}
+});
 
 export default TeamScores; 

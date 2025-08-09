@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell } from 'recharts';
 import { getWeeklyStandings, getPositionalBreakdownData } from './ScoresParser';
@@ -6,6 +6,7 @@ import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLooku
 import PositionAnalytics from './PositionAnalytics';
 import PositionBreakdownTable from './PositionBreakdownTable';
 import { STARTER_POSITION_NAMES } from './global_constants';
+import { getDefaultDisplayWeek, CURRENT_YEAR } from './DateHelper';
 
 const chartConfigs = [
   { title: 'Weekly Scores', key: 'weeklyScores' },
@@ -17,14 +18,15 @@ const chartConfigs = [
 
 const WEEKS = Array.from({ length: 17 }, (_, i) => i + 1);
 
-export default function TeamAnalytics({ weeksParsedData, teamName, rosters, users }) {
+const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamName, rosters, users }, ref) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { id } = useParams();
   const rosterId = Number(id);
   const urlStartWeek = parseInt(searchParams.get('start_week'), 10);
   const urlEndWeek = parseInt(searchParams.get('end_week'), 10);
+  const urlYear = searchParams.get('year');
   const initialStartWeek = !isNaN(urlStartWeek) && urlStartWeek >= 1 && urlStartWeek <= 17 ? urlStartWeek : 1;
-  const initialEndWeek = !isNaN(urlEndWeek) && urlEndWeek >= 1 && urlEndWeek <= 17 ? urlEndWeek : 17;
+  const initialEndWeek = !isNaN(urlEndWeek) && urlEndWeek >= 1 && urlEndWeek <= 17 ? urlEndWeek : getDefaultDisplayWeek(urlYear);
 
   const [startWeek, setStartWeek] = useState(initialStartWeek);
   const [endWeek, setEndWeek] = useState(initialEndWeek);
@@ -51,13 +53,6 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
     // eslint-disable-next-line
   }, [startWeek, endWeek]);
 
-  // Update state if query params change (browser nav)
-  useEffect(() => {
-    if (!isNaN(urlStartWeek) && urlStartWeek !== startWeek && urlStartWeek >= 1 && urlStartWeek <= 17) setStartWeek(urlStartWeek);
-    if (!isNaN(urlEndWeek) && urlEndWeek !== endWeek && urlEndWeek >= 1 && urlEndWeek <= 17) setEndWeek(urlEndWeek);
-    // eslint-disable-next-line
-  }, [urlStartWeek, urlEndWeek]);
-
   // Close dropdowns on outside click
   useEffect(() => {
     function handleClick(e) {
@@ -73,6 +68,25 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
       return () => document.removeEventListener('mousedown', handleClick);
     }
   }, [startDropdownOpen, endDropdownOpen]);
+
+  useImperativeHandle(ref, () => ({
+    resetWeek: (season) => {
+      const newParams = new URLSearchParams(searchParams);
+      const startWeek = 1;
+      const endWeek = getDefaultDisplayWeek(season);
+      newParams.set('start_week', startWeek);
+      newParams.set('end_week', endWeek);
+      if (season === CURRENT_YEAR) {
+        newParams.delete('year');
+        setSearchParams(searchParams, { replace: true });
+      } else {
+        newParams.set('year', season);
+      }
+      setSearchParams(newParams, { replace: true });
+      setStartWeek(startWeek);
+      setEndWeek(endWeek);
+    }
+  }));
 
   // Get weekly standings for the selected window
   const weeklyStandings = getWeeklyStandings(weeksParsedData, startWeek, endWeek);
@@ -315,4 +329,6 @@ export default function TeamAnalytics({ weeksParsedData, teamName, rosters, user
       ))}
     </div>
   );
-} 
+});
+
+export default TeamAnalytics; 
