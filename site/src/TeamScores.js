@@ -176,7 +176,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                 </tr>
               </thead>
               <tbody>
-                {weekBreakdown.bench.map((p, i) => {
+                {[...weekBreakdown.bench].sort((a, b) => b.pts - a.pts).map((p, i) => {
                   const info = getPlayerInfo(p.id, playersData, playerIdMap);
                   return (
                     <tr key={p.id}>
