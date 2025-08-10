@@ -858,3 +858,19 @@
     display: none !important;
   }
 }
+
+/*
+ * To make all UI components smaller on mobile, wrap your main content in a div with class 'mobile-scale-container'.
+ * Example:
+ *   <div class="mobile-scale-container"> ... </div>
+ * On screens <= 50em (800px), this will scale down all child content to 60%.
+ */
+
+@media (max-width: 50em) {
+  .mobile-scale-container {
+    transform: scale(0.6);
+    transform-origin: top center;
+    width: 100vw;
+    overflow-x: auto;
+  }
+}
