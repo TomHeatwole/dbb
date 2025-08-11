@@ -3,6 +3,7 @@ import InfoPageWrapper from './InfoPageWrapper';
 import { useSearchParams } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
+import { getCurrentNFLWeek } from './DateHelper';
 import { getStandings } from './ScoresParser';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
@@ -97,6 +98,26 @@ function LeagueStandings() {
     return user && user.avatar_url ? user.avatar_url : null;
   }
 
+  function sumPointsForWeeks(weeksArr, rosterId) {
+    if (!Array.isArray(weeksArr)) { return 0; }
+    let total = 0;
+    weeksArr.forEach(weekEntries => {
+      if (!Array.isArray(weekEntries)) { return; }
+      const entry = weekEntries.find(e => e && Number(e.roster_id) === Number(rosterId));
+      if (entry && typeof entry.points === 'number') {
+        total += entry.points;
+      }
+    });
+    return total;
+  }
+
+  function computeTotals(rosterId, weeksArr) {
+    const weeksCountLocal = Array.isArray(weeksArr) ? weeksArr.filter(Boolean).length : 0;
+    const total = sumPointsForWeeks(weeksArr, rosterId);
+    const ppg = weeksCountLocal > 0 ? Math.round((total / weeksCountLocal) * 10) / 10 : 0;
+    return { total: Math.round(total), ppg, weeks: weeksCountLocal };
+  }
+
   const leftHeader = (
     <div
       ref={dropdownRef}
@@ -142,28 +163,47 @@ function LeagueStandings() {
   const weeksCount = Array.isArray(weeksParsedData) ? weeksParsedData.filter(Boolean).length : 0;
   const weeksFirst14 = Array.isArray(weeksParsedData) ? weeksParsedData.slice(0, 14).filter(Boolean) : [];
   const weeksCount14 = weeksFirst14.length;
+  const weeks15to17 = Array.isArray(weeksParsedData) ? weeksParsedData.slice(14, 17).filter(Boolean) : [];
+
   const standingsAll = getStandings(weeksParsedData) || [];
   const standings14 = getStandings(weeksFirst14) || [];
 
-  // Determine playoff teams based on first 14 weeks
-  const top4Ids = standings14
+  // Determine if we should apply playoff logic
+  const isCurrentSeason = season === CURRENT_YEAR;
+  const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : 17;
+  const usePlayoffLogic = !isCurrentSeason || currentWeek >= 15;
+
+  // Determine playoff teams based on first 14 weeks (or current cumulative when playoff logic is off)
+  const top4Source = usePlayoffLogic ? standings14 : standingsAll;
+  const top4Ids = top4Source
     .slice()
     .sort((a, b) => a.place - b.place)
     .slice(0, 4)
     .map(r => r.roster_id);
   const top4Set = new Set(top4Ids);
 
-  // Build display rows: top4 from full season, others from 14 weeks
-  const top4Display = standingsAll
-    .filter(r => top4Set.has(r.roster_id))
-    .sort((a, b) => a.place - b.place)
-    .map(r => ({ roster_id: r.roster_id, points_scored: r.points_scored, isPlayoff: true, weeksCount }));
+  // Compute playoff points for weeks 15-17 and build playoff display rows
+  const top4Display = usePlayoffLogic ? top4Ids
+    .map(rid => {
+      const playoffPoints = Math.round(sumPointsForWeeks(weeks15to17, rid));
+      const seasonTotal = (standingsAll.find(s => s.roster_id === rid)?.points_scored) || 0;
+      return { roster_id: rid, playoffPoints, seasonTotal };
+    })
+    .sort((a, b) => b.playoffPoints - a.playoffPoints)
+    .map(r => ({ roster_id: r.roster_id, points_scored: r.playoffPoints, isPlayoff: true, weeksCount: weeks15to17.length })) : [];
 
-  const othersDisplay = standings14
-    .filter(r => !top4Set.has(r.roster_id))
+  const othersSource = usePlayoffLogic ? standings14 : standingsAll;
+  const othersWeeks = usePlayoffLogic ? weeksCount14 : weeksCount;
+  const othersDisplay = othersSource
+    .filter(r => !usePlayoffLogic || !top4Set.has(r.roster_id))
     .sort((a, b) => a.place - b.place)
     .slice(0, Math.max(0, 10 - top4Display.length))
-    .map(r => ({ roster_id: r.roster_id, points_scored: r.points_scored, isPlayoff: false, weeksCount: weeksCount14 }));
+    .map(r => ({
+      roster_id: r.roster_id,
+      points_scored: r.points_scored,
+      isPlayoff: !usePlayoffLogic && top4Set.has(r.roster_id),
+      weeksCount: othersWeeks
+    }));
 
   const displayRows = [...top4Display, ...othersDisplay].slice(0, 10);
 
@@ -180,8 +220,14 @@ function LeagueStandings() {
           const isPlayoff = row.isPlayoff;
           const teamName = getTeamName(rosterId);
           const avatarUrl = getAvatar(rosterId);
+
+          // Display metrics
           const ppg = row.weeksCount > 0 ? Math.round((row.points_scored / row.weeksCount) * 10) / 10 : 0;
-          const tooltip = !isPlayoff ? 'Teams who missed the playoffs only use the first 14 weeks of data.' : undefined;
+
+          // Expanded details for playoff teams
+          const details14 = usePlayoffLogic && isPlayoff ? computeTotals(rosterId, weeksFirst14) : null;
+          const details17 = usePlayoffLogic && isPlayoff ? computeTotals(rosterId, weeksParsedData) : null;
+
           return (
             <div key={rosterId} className={`standings-row ${isPlayoff ? 'standings-row--playoff' : ''}`}>
               <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
@@ -189,18 +235,33 @@ function LeagueStandings() {
                 <span className="standings-rank">#{idx + 1}</span>
                 {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                 <span className="standings-title">{teamName}</span>
-                <span className="standings-ppg">{ppg} ppg</span>
-                <span className={`standings-total${!isPlayoff ? ' standings-metric' : ''}`} title={undefined}>
-                  {Math.round(row.points_scored)} pts
-                  {!isPlayoff && (
-                    <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
-                  )}
-                </span>
+                {usePlayoffLogic && isPlayoff ? (
+                  <>
+                    <span className="standings-ppg standings-ppg--playoff-mobile">Playoff: {Math.round(row.points_scored)} pts</span>
+                    <span className="standings-total standings-total--playoff-desktop">Playoff: {Math.round(row.points_scored)} pts</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="standings-ppg">{ppg} ppg</span>
+                    <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
+                      {Math.round(row.points_scored)} pts
+                      {usePlayoffLogic && (
+                        <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
+                      )}
+                    </span>
+                  </>
+                )}
               </button>
               {isExpanded && (
                 <div className="standings-row-expand">
-                  {/* More team details can go here in future iterations */}
-                  <div className="standings-row-expand-inner">Details coming soon…</div>
+                  {usePlayoffLogic && isPlayoff ? (
+                    <div className="standings-row-expand-inner">
+                      <div><strong>14-week:</strong> {details14?.ppg} ppg, {details14?.total} pts</div>
+                      <div><strong>17-week:</strong> {details17?.ppg} ppg, {details17?.total} pts</div>
+                    </div>
+                  ) : (
+                    <div className="standings-row-expand-inner">Details coming soon…</div>
+                  )}
                 </div>
               )}
             </div>

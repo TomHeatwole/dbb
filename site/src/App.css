@@ -1409,16 +1409,60 @@
   transform: translateY(0);
 }
 
+@media (min-width: 50.0625em) {
+  .standings-ppg--playoff-mobile { display: none; }
+}
 @media (max-width: 50em) {
-  .standings-list { max-width: 34rem; }
-  .standings-row-header {
-    grid-template-columns: auto auto auto 1fr auto; /* toggle, rank, avatar, name, ppg; drop total */
+  .standings-total--playoff-desktop { display: none; }
+}
+
+/* Desktop: playoff score spans both metric columns */
+@media (min-width: 50.0625em) {
+  .standings-total--playoff-desktop {
+    grid-column: 5 / 7;
+    text-align: right;
   }
-  .standings-total { display: none; }
-  .standings-metric .standings-tooltip {
-    right: 0.5rem;
-    left: auto;
-    max-width: calc(100vw - 2rem);
-    white-space: normal;
+}
+
+/* Mobile: show total (rightmost) and hide PPG */
+@media (max-width: 50em) {
+  /* Mobile: only show the rightmost total column; hide PPG */
+  .standings-ppg { display: none; }
+  .standings-total { display: inline; grid-column: 5; }
+  /* For playoff rows, use the total-column variant and hide the PPG-column variant */
+  .standings-ppg--playoff-mobile { display: none !important; }
+  .standings-total--playoff-desktop { display: inline !important; grid-column: 5; }
+} 
+
+@media (max-width: 50em) {
+  /* Standings mobile: two-column flex (team info, score) spanning full width */
+  .standings-row-header {
+    display: flex !important;
+    align-items: center;
+    gap: 0.6rem;
+    grid-template-columns: none !important;
+  }
+  /* Hide PPG column on mobile; show total and push to right */
+  .standings-ppg { display: none !important; }
+  .standings-ppg--playoff-mobile { display: none !important; }
+  .standings-total,
+  .standings-total--playoff-desktop {
+    display: inline !important;
+    margin-left: auto !important;
+  }
+} 
+
+/* Ensure totals don't wrap */
+.standings-total,
+.standings-total--playoff-desktop {
+  white-space: nowrap;
+}
+
+@media (max-width: 50em) {
+  /* Truncate team name a bit earlier so the score always fits */
+  .standings-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 60%;
   }
 } 
