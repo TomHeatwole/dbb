@@ -128,7 +128,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
         <div className="team-scores-tables-flex">
           <div className="team-scores-tables-col">
             <div className="team-scores-starters-bench-title">Starters</div>
-            <table className="team-scores-table">
+            <table className="team-scores-table team-scores-table-fixed-width">
               <thead>
                 <tr>
                   <th>Position</th>
@@ -168,7 +168,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
           </div>
           <div className="team-scores-tables-col">
             <div className="team-scores-starters-bench-title">Bench</div>
-            <table className="team-scores-table">
+            <table className="team-scores-table team-scores-table-bench">
               <thead>
                 <tr>
                   <th>Player</th>

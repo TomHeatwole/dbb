@@ -902,3 +902,50 @@
   display: block !important;
   box-sizing: border-box !important;
 } 
+
+.team-scores-table-fixed-width {
+  width: 100% !important;
+  table-layout: fixed !important;
+} 
+
+.team-scores-table-fixed-width th,
+.team-scores-table-fixed-width td {
+  text-align: right !important;
+}
+.team-scores-table-fixed-width th:first-child,
+.team-scores-table-fixed-width td:first-child {
+  width: 3.5em !important;
+  min-width: 2.5em !important;
+  text-align: left !important;
+}
+.team-scores-table-fixed-width th:last-child,
+.team-scores-table-fixed-width td:last-child {
+  width: 4.5em !important;
+  min-width: 3em !important;
+  text-align: right !important;
+}
+.team-scores-table-fixed-width th:nth-child(2),
+.team-scores-table-fixed-width td:nth-child(2) {
+  width: auto !important;
+  min-width: 10em !important;
+  max-width: 100% !important;
+  text-align: left !important;
+} 
+
+.team-scores-table-bench {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+.team-scores-table-bench th:first-child,
+.team-scores-table-bench td:first-child {
+  width: auto !important;
+  min-width: 10em !important;
+  max-width: 100% !important;
+  text-align: left !important;
+}
+.team-scores-table-bench th:last-child,
+.team-scores-table-bench td:last-child {
+  width: 4.5em !important;
+  min-width: 3em !important;
+  text-align: right !important;
+} 
