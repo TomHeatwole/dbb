@@ -973,3 +973,25 @@
     padding: 0.5rem 0.4rem;
   }
 } 
+
+@media (max-width: 50em) {
+  .mobile-home-link-abs {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
+  }
+  .mobile-home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25em 0.9em;
+    border-radius: 0.4375rem;
+    background: #23233a;
+    border: 1px solid #444;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05em;
+  }
+} 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Navigate, useSearchParams } from 'react-router-dom';
+import { useParams, Navigate, useSearchParams, Link } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchTeamData } from './TeamLookup';
 import { PREVIOUS_YEARS  } from './global_constants';
@@ -203,6 +203,14 @@ function TeamPage() {
           </div>
         )}
       </div>
+      {isMobile && (
+        <div className="mobile-home-link-abs">
+          <Link className="mobile-home-link" to="/home/" aria-label="Home">
+            <span role="img" aria-hidden="true">🏠</span>
+            Home
+          </Link>
+        </div>
+      )}
       <h1 className="team-header">{teamName}</h1>
       <div className="owner-subtitle">
         <span>Owner: {ownerName}</span>
