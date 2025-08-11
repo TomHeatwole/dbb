@@ -962,3 +962,14 @@
   flex: 0 0 50% !important;
   max-width: 50% !important;
 } 
+
+@media (max-width: 50em) {
+  .pos-avg-table th {
+    font-size: 1rem;
+    padding: 0.6rem 0.4rem;
+  }
+  .pos-avg-table td {
+    font-size: 0.95rem;
+    padding: 0.5rem 0.4rem;
+  }
+} 
