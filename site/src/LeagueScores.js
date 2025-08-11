@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
 import { useSearchParams } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
@@ -12,6 +12,18 @@ function LeagueScores() {
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
   const [season, setSeason] = useState(initialSeason);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!dropdownOpen) { return; }
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [dropdownOpen]);
 
   useEffect(() => {
     if (urlYear && allYears.includes(urlYear) && season !== urlYear) {
@@ -38,13 +50,14 @@ function LeagueScores() {
 
   const leftHeader = (
     <div
+      ref={dropdownRef}
       className="team-season-dropdown"
       onClick={() => setDropdownOpen(open => !open)}
     >
       {season}
       <span className="team-season-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
       {dropdownOpen && (
-        <div className="team-season-dropdown-list">
+        <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
           {allYears.map(opt => (
             <div
               key={opt}
@@ -63,7 +76,7 @@ function LeagueScores() {
   );
 
   return (
-    <InfoPageWrapper title="Scores" subtitle={null} leftHeader={<div className="season-dropdown info-header-left-abs">{leftHeader}</div>}>
+    <InfoPageWrapper title="Scores" subtitle={null} leftHeader={leftHeader}>
       <div>Scores page coming soon</div>
     </InfoPageWrapper>
   );
