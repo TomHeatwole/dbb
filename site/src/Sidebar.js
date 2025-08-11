@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { fetchTeamData } from './TeamLookup';
 import { fetchPlayersData } from './PlayerLookup';
 
+const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
+
 function Sidebar() {
   const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
@@ -10,6 +12,7 @@ function Sidebar() {
   const location = useLocation();
   const isHome = location.pathname === '/home/';
   const [playUnroll, setPlayUnroll] = useState(false);
+
 
   useEffect(() => {
     if (isHome) {
@@ -68,6 +71,7 @@ function Sidebar() {
               <li><Link to="/home/">Home</Link></li>
               <li><Link to="/standings">Standings</Link></li>
               <li><Link to="/Scores/Week">Scores</Link></li>
+              <li><a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a></li>
               <li>
                 <div
                   className="dropdown-toggle"
