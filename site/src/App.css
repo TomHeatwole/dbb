@@ -210,11 +210,11 @@
   width: 100%;
   margin: 0;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  min-height: calc(90vh);
 }
 
 .team-info-box {
   margin-right: 14.375rem; /* 230px -> 14.375rem */
-  min-height: calc(90vh);
   margin: 0;
 }
 
@@ -948,4 +948,14 @@
   width: 4.5em !important;
   min-width: 3em !important;
   text-align: right !important;
+} 
+
+.mobile-team-header-margin {
+  margin-top: 2.5rem !important;
+} 
+
+@media (max-width: 50em) {
+  .mobile-team-info-padding {
+    padding-top: 2.5rem !important;
+  }
 } 

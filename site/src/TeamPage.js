@@ -159,7 +159,7 @@ function TeamPage() {
   });
 
   return (
-    <div className={`${isMobile ? 'mobile-team-info-box' : 'team-info-box'} team-info-shared team-info-rel`}>
+    <div className={`${isMobile ? 'mobile-team-info-box mobile-team-info-padding' : 'team-info-box'} team-info-shared team-info-rel`}>
       <div className="season-dropdown season-dropdown-abs">
         <div
           className="team-season-dropdown"
