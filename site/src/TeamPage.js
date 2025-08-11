@@ -9,6 +9,7 @@ import TeamSummary from './TeamSummary';
 import TeamScores from './TeamScores';
 import { fetchScoresData } from './ScoresLookup';
 import TeamAnalytics from './TeamAnalytics';
+import useIsMobile from './useIsMobile';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -26,7 +27,7 @@ function TeamPage() {
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
   const [season, setSeason] = useState(initialSeason);
   // Tab state
-  const tabOptions = ['Summary', 'Scores', 'Full Roster', 'Analytics'];
+  const tabOptions = ['Summary', 'Scores', 'Roster', 'Analytics'];
   const urlTab = searchParams.get('tab');
   const initialTab = tabOptions.includes(urlTab) ? urlTab : tabOptions[0];
   const [selectedTab, setSelectedTab] = useState(initialTab);
@@ -36,6 +37,7 @@ function TeamPage() {
   const [users, setUsers] = useState(null);
   const teamAnalyticsRef = useRef();
   const teamScoresRef = useRef();
+  const isMobile = useIsMobile();
 
   // Sync tab with query param
   useEffect(() => {
@@ -157,7 +159,7 @@ function TeamPage() {
   });
 
   return (
-    <div className="team-info-box team-info-rel team-info-shared">
+    <div className={`${isMobile ? 'mobile-team-info-box' : 'team-info-box'} team-info-shared team-info-rel`}>
       <div className="season-dropdown season-dropdown-abs">
         <div
           className="team-season-dropdown"
@@ -223,7 +225,7 @@ function TeamPage() {
       </div>
       {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
-      {selectedTab === 'Full Roster' && <FullRoster playerList={playerList} />}
+      {selectedTab === 'Roster' && <FullRoster playerList={playerList} />}
       {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} />}
     </div>
   );
