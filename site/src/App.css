@@ -868,20 +868,12 @@
   }
 }
 
-/*
- * To make all UI components smaller on mobile, wrap your main content in a div with class 'mobile-scale-container'.
+
+ /* * To make all UI components smaller on mobile, wrap your main content in a div with class 'mobile-scale-container'.
  * Example:
  *   <div class="mobile-scale-container"> ... </div>
  * On screens <= 50em (800px), this will scale down all child content to 60%.
- */
-
-/* @media (max-width: 50em) {
-  .App,
-  .content-wrapper {
-    width: 100vw !important;
-    box-sizing: border-box !important;
-  }
-} */
+ */ 
 
 .mobile-main-content {
   margin: 0 !important;
@@ -896,7 +888,7 @@
 .mobile-team-info-box {
   padding-left: 18px !important;
   padding-right: 18px !important;
-  min-height: unset !important;
+  min-height: calc(100vh) !important;
   width: 100% !important;
   max-width: 100% !important;
   display: block !important;
