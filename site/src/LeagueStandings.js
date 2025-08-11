@@ -235,6 +235,115 @@ function LeagueStandings() {
     setExpanded(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
   }
 
+  function renderExpandedStats({
+    isMobileView,
+    shouldUsePlayoffLogic,
+    isPlayoffTeam,
+    playoffPointsTotal,
+    playoffPointsPerGame,
+    playoffStandingPlace,
+    fourteenWeekTotals,
+    seventeenWeekTotals,
+    fourteenWeekPlace,
+    seventeenWeekPlace,
+    highestWeekly,
+    lowestWeekly,
+    rosterIdForLink,
+    currentSearchParams
+  }) {
+    return (
+      <div className="standings-row-expand">
+        <div className="standings-row-expand-inner standings-stats-grid">
+          {shouldUsePlayoffLogic && isPlayoffTeam && (
+            isMobileView ? (
+              <>
+                <div className="stat-label">Playoffs:</div>
+                <div className="stat-v1">{playoffPointsTotal} pts</div>
+                <div className="stat-v2">#{playoffStandingPlace}</div>
+                <div className="stat-v3"></div>
+              </>
+            ) : (
+              <>
+                <div className="stat-label">Playoffs:</div>
+                <div className="stat-v1">{playoffPointsTotal} pts</div>
+                <div className="stat-v2">{playoffPointsPerGame} ppg</div>
+                <div className="stat-v3">#{playoffStandingPlace}</div>
+              </>
+            )
+          )}
+
+          {isMobileView ? (
+            <>
+              <div className="stat-label">14-Week:</div>
+              <div className="stat-v1">{fourteenWeekTotals.total} pts</div>
+              <div className="stat-v2">#{fourteenWeekPlace}</div>
+              <div className="stat-v3"></div>
+            </>
+          ) : (
+            <>
+              <div className="stat-label">14-Week:</div>
+              <div className="stat-v1">{fourteenWeekTotals.total} pts</div>
+              <div className="stat-v2">{fourteenWeekTotals.ppg} ppg</div>
+              <div className="stat-v3">#{fourteenWeekPlace}</div>
+            </>
+          )}
+
+          {isMobileView ? (
+            <>
+              <div className="stat-label">17-Week:</div>
+              <div className="stat-v1">{seventeenWeekTotals.total} pts</div>
+              <div className="stat-v2">#{seventeenWeekPlace}</div>
+              <div className="stat-v3"></div>
+            </>
+          ) : (
+            <>
+              <div className="stat-label">17-Week:</div>
+              <div className="stat-v1">{seventeenWeekTotals.total} pts</div>
+              <div className="stat-v2">{seventeenWeekTotals.ppg} ppg</div>
+              <div className="stat-v3">#{seventeenWeekPlace}</div>
+            </>
+          )}
+
+          {isMobileView ? (
+            <>
+              <div className="stat-label">High Score:</div>
+              <div className="stat-v1">{highestWeekly.points} pts</div>
+              <div className="stat-v2">Week {highestWeekly.week}</div>
+              <div className="stat-v3"></div>
+            </>
+          ) : (
+            <>
+              <div className="stat-label">High Score:</div>
+              <div className="stat-v1">{highestWeekly.points} pts</div>
+              <div className="stat-v2">Week {highestWeekly.week}</div>
+              <div className="stat-v3"></div>
+            </>
+          )}
+
+          {isMobileView ? (
+            <>
+              <div className="stat-label">Low Score:</div>
+              <div className="stat-v1">{lowestWeekly.points} pts</div>
+              <div className="stat-v2">Week {lowestWeekly.week}</div>
+              <div className="stat-v3"></div>
+            </>
+          ) : (
+            <>
+              <div className="stat-label">Low Score:</div>
+              <div className="stat-v1">{lowestWeekly.points} pts</div>
+              <div className="stat-v2">Week {lowestWeekly.week}</div>
+              <div className="stat-v3"></div>
+            </>
+          )}
+
+          <div className="standings-team-link">
+            <Link to={`/team/${rosterIdForLink}${currentSearchParams && currentSearchParams.toString() ? `?${currentSearchParams.toString()}` : ''}`}>See Team Overview</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
       <div className="standings-list">
@@ -298,41 +407,22 @@ function LeagueStandings() {
                 )}
               </button>
               {isExpanded && (
-                <div className="standings-row-expand">
-                  <div className="standings-row-expand-inner standings-stats-grid">
-                    {usePlayoffLogic && isPlayoff && (
-                      <>
-                        <div className="stat-label">Playoffs:</div>
-                        <div className="stat-v1">{playoffPts} pts</div>
-                        <div className="stat-v2">{playoffPpg} ppg</div>
-                        <div className="stat-v3">#{playoffPlace}</div>
-                      </>
-                    )}
-                    <div className="stat-label">14-Week:</div>
-                    <div className="stat-v1">{det14.total} pts</div>
-                    <div className="stat-v2">{det14.ppg} ppg</div>
-                    <div className="stat-v3">#{place14}</div>
-
-                    <div className="stat-label">17-Week:</div>
-                    <div className="stat-v1">{det17.total} pts</div>
-                    <div className="stat-v2">{det17.ppg} ppg</div>
-                    <div className="stat-v3">#{place17}</div>
-
-                    <div className="stat-label">High Score:</div>
-                    <div className="stat-v1">{high.points} pts</div>
-                    <div className="stat-v2">Week {high.week}</div>
-                    <div className="stat-v3"></div>
-
-                    <div className="stat-label">Low Score:</div>
-                    <div className="stat-v1">{low.points} pts</div>
-                    <div className="stat-v2">Week {low.week}</div>
-                    <div className="stat-v3"></div>
-
-                    <div className="standings-team-link">
-                      <Link to={`/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>See Team Overview</Link>
-                    </div>
-                  </div>
-                </div>
+                renderExpandedStats({
+                  isMobileView: isMobile,
+                  shouldUsePlayoffLogic: usePlayoffLogic,
+                  isPlayoffTeam: isPlayoff,
+                  playoffPointsTotal: playoffPts,
+                  playoffPointsPerGame: playoffPpg,
+                  playoffStandingPlace: playoffPlace,
+                  fourteenWeekTotals: det14,
+                  seventeenWeekTotals: det17,
+                  fourteenWeekPlace: place14,
+                  seventeenWeekPlace: place17,
+                  highestWeekly: high,
+                  lowestWeekly: low,
+                  rosterIdForLink: rosterId,
+                  currentSearchParams: searchParams
+                })
               )}
             </div>
           );
