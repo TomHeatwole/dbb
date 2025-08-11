@@ -189,6 +189,20 @@ function TeamPage() {
               onClick={() => {
                 setSeason(opt);
                 setSeasonDropdownOpen(false);
+                const newParams = new URLSearchParams();
+                if (searchParams.get('tab')) {
+                  newParams.set('tab', searchParams.get('tab'));
+                  newParams.delete('week');
+                  newParams.delete('start_week');
+                  newParams.delete('end_week');
+                }
+                setSearchParams(newParams, { replace: true });
+                if (teamAnalyticsRef.current && typeof teamAnalyticsRef.current.resetWeek === 'function') {
+                  teamAnalyticsRef.current.resetWeek(opt);
+                }
+                if (teamScoresRef.current && typeof teamScoresRef.current.resetWeek === 'function') {
+                  teamScoresRef.current.resetWeek(opt);
+                }
               }}
             >
               {opt}
