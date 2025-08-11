@@ -69,8 +69,8 @@ function Sidebar() {
           <nav>
             <ul>
               <li><Link to="/home/">Home</Link></li>
-              <li><Link to="/standings">Standings</Link></li>
               <li><Link to="/Scores/Week">Scores</Link></li>
+              <li><Link to="/standings">Standings</Link></li>
               <li><a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a></li>
               <li>
                 <div

@@ -1,20 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchTeamData } from './TeamLookup';
 
 function HomePage() {
+  const [showTeams, setShowTeams] = useState(false);
+  const [teams, setTeams] = useState([]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchTeamData();
+        const rosters = data && Array.isArray(data.rosters) ? data.rosters : [];
+        const users = data && Array.isArray(data.users) ? data.users : [];
+        const mapped = rosters.map(roster => {
+          const user = users.find(u => String(u.user_id) === String(roster.owner_id)) || {};
+          const ownerName = user && user.display_name ? user.display_name : 'Unknown';
+          let teamName = null;
+          if (user && user.metadata && user.metadata.team_name) {
+            teamName = user.metadata.team_name;
+          } else if (ownerName && ownerName !== 'Unknown') {
+            teamName = `Team ${ownerName}`;
+          } else {
+            teamName = `Team ${roster.roster_id}`;
+          }
+          return {
+            rosterId: roster.roster_id,
+            teamName,
+            ownerName,
+            avatarUrl: user && user.avatar_url ? user.avatar_url : null,
+          };
+        });
+        setTeams(mapped.slice(0, 10));
+      } catch (e) {
+        setTeams([]);
+      }
+    }
+    load();
+  }, []);
+
   return(
     <main className="home-main">
-      <div className="home-cta-container">
-        <Link className="home-cta-btn" to="/Scores/Week" aria-label="Scores">
-          <img className="home-cta-img" src="/scores.png" alt="Scores" />
-        </Link>
-        <Link className="home-cta-btn" to="/standings" aria-label="Standings">
-          <img className="home-cta-img" src="/standings.png" alt="Standings" />
-        </Link>
-        <button className="home-cta-btn" type="button" aria-label="Teams">
-          <img className="home-cta-img" src="/teams.png" alt="Teams" />
-        </button>
-      </div>
+      {!showTeams && (
+        <div className="home-cta-container">
+          <Link className="home-cta-btn" to="/Scores/Week" aria-label="Scores">
+            <img className="home-cta-img" src="/scores.png" alt="Scores" />
+          </Link>
+          <Link className="home-cta-btn" to="/standings" aria-label="Standings">
+            <img className="home-cta-img" src="/standings.png" alt="Standings" />
+          </Link>
+          <button
+            className="home-cta-btn"
+            type="button"
+            aria-label="Teams"
+            onClick={() => setShowTeams(true)}
+          >
+            <img className="home-cta-img" src="/teams.png" alt="Teams" />
+          </button>
+        </div>
+      )}
+      {showTeams && (
+        <>
+          <div className="home-back-container">
+            <button type="button" className="home-back-btn" onClick={() => setShowTeams(false)}>← Back</button>
+          </div>
+          <div className="home-team-links" aria-label="Team Links">
+            {teams.map(t => (
+              <Link key={t.rosterId} to={`/team/${t.rosterId}`} className="home-team-link">
+                {t.avatarUrl && (
+                  <img className="home-team-link-avatar" src={t.avatarUrl} alt={`${t.ownerName} avatar`} />
+                )}
+                <span className="home-team-link-text">{t.teamName} - {t.ownerName}</span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </main>
   );
 }
