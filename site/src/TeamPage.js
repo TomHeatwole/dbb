@@ -27,8 +27,9 @@ function TeamPage() {
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
   const [season, setSeason] = useState(initialSeason);
   // Tab state
-  const tabOptions = ['Summary', 'Scores', 'Roster', 'Analytics'];
-  const urlTab = searchParams.get('tab');
+  const tabOptions = ['Overview', 'Scores', 'Analytics'];
+  const urlTabRaw = searchParams.get('tab');
+  const urlTab = urlTabRaw === 'Summary' || urlTabRaw === 'Roster' ? 'Overview' : urlTabRaw;
   const initialTab = tabOptions.includes(urlTab) ? urlTab : tabOptions[0];
   const [selectedTab, setSelectedTab] = useState(initialTab);
   const [weeksParsedData, setWeeksParsedData] = useState(null);
@@ -45,7 +46,7 @@ function TeamPage() {
     if (tabOptions.includes(selectedTab)) {
       newParams.set('tab', selectedTab);
     } else {
-      newParams.set('tab', 'Summary');
+      newParams.set('tab', 'Overview');
     }
     if (selectedTab != 'Scores') {
       newParams.delete('week');
@@ -61,7 +62,6 @@ function TeamPage() {
   // If the query param changes (e.g., via browser nav), update the tab
   useEffect(() => {
     if (urlTab && tabOptions.includes(urlTab) && selectedTab !== urlTab) setSelectedTab(urlTab);
-    // if (!urlTab && selectedTab !== tabOptions[0]) setSelectedTab(tabOptions[0]);
     // eslint-disable-next-line
   }, [urlTab]);
 
@@ -223,9 +223,8 @@ function TeamPage() {
           </button>
         ))}
       </div>
-      {selectedTab === 'Summary' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} />}
+      {selectedTab === 'Overview' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} playerList={playerList} />}
       {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
-      {selectedTab === 'Roster' && <FullRoster playerList={playerList} />}
       {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} />}
     </div>
   );

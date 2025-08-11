@@ -951,3 +951,14 @@
     padding-top: 2.5rem !important;
   }
 } 
+
+.roster-mobile-columns {
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+  justify-content: space-between !important;
+}
+
+.roster-mobile-column {
+  flex: 0 0 50% !important;
+  max-width: 50% !important;
+} 

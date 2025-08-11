@@ -1,4 +1,5 @@
 import React from 'react';
+import useIsMobile from './useIsMobile';
 
 function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
   // Group players by position
@@ -19,11 +20,13 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
     });
   });
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="team-roster-section">
-      <div className="player-columns">
+      <div className={`player-columns${isMobile ? ' roster-mobile-columns' : ''}`}>
         {positions.map(pos => (
-          <div key={pos} className="player-column">
+          <div key={pos} className={`player-column${isMobile ? ' roster-mobile-column' : ''}`}>
             <div className="player-column-header">{pos}</div>
             <ul className="player-list">
               {playersByPosition[pos].map((p, i) => (
