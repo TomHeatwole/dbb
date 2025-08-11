@@ -44,9 +44,11 @@ function HomePage() {
         <div className="home-cta-container">
           <Link className="home-cta-btn" to="/Scores/Week" aria-label="Scores">
             <img className="home-cta-img" src="/scores.png" alt="Scores" />
+            <span className="home-cta-label">Scores</span>
           </Link>
           <Link className="home-cta-btn" to="/standings" aria-label="Standings">
             <img className="home-cta-img" src="/standings.png" alt="Standings" />
+            <span className="home-cta-label">Standings</span>
           </Link>
           <button
             className="home-cta-btn"
@@ -55,6 +57,7 @@ function HomePage() {
             onClick={() => setShowTeams(true)}
           >
             <img className="home-cta-img" src="/teams.png" alt="Teams" />
+            <span className="home-cta-label">Teams</span>
           </button>
         </div>
       )}

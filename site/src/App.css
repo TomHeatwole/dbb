@@ -1044,36 +1044,49 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   box-sizing: border-box;
   flex: 0 0 16rem;
   width: 16rem;
   padding: 0;
   border-radius: 2rem;
   overflow: hidden;
-  background: transparent;
-  border: none;
+  background: rgba(26, 22, 40, 0.9);
+  border: 1px solid rgba(100, 100, 140, 0.35);
   text-decoration: none;
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  transition: box-shadow 0.2s ease, transform 0.15s ease, background 0.18s ease;
 }
-/* Exaggerated glow on hover */
-.home-cta-btn:hover {
-  box-shadow: 0 0 24px rgba(97, 218, 251, 0.28), 0 14px 36px rgba(0, 0, 0, 0.35);
+.home-cta-label {
+  position: absolute;
+  z-index: 2;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
 }
-/* Slight image scale + brighter opacity on hover */
-.home-cta-btn:hover .home-cta-img {
-  opacity: 0.94;
-  transform: scale(1.04);
-}
-.home-cta-btn:active {
-  transform: translateY(0px) scale(0.99);
-}
+/* Default: image hidden (subtle) */
 .home-cta-img {
   display: block;
   width: 100%;
   height: auto;
   object-fit: contain;
-  opacity: 0.;
+  opacity: 0.0;
   transition: opacity 0.18s ease, transform 0.18s ease;
+}
+/* Hover: stronger glow, show image, reduce label prominence */
+.home-cta-btn:hover {
+  box-shadow: 0 0 24px rgba(97, 218, 251, 0.28), 0 14px 36px rgba(0, 0, 0, 0.35);
+  background: transparent;
+}
+.home-cta-btn:hover .home-cta-img {
+  opacity: 0.94;
+  transform: scale(1.04);
+}
+.home-cta-btn:hover .home-cta-label {
+  opacity: 0.0;
+}
+.home-cta-btn:active {
+  transform: translateY(0px) scale(0.99);
 }
 @media (max-width: 50em) {
   .home-cta-container {
@@ -1086,6 +1099,7 @@
     width: 13rem;
     border-radius: 1.75rem;
   }
+  .home-cta-label { font-size: 1.15rem; }
 }
 
 /* Slightly brighter watermark only on home page */
@@ -1107,7 +1121,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  background: rgb(15, 15, 58);
+  background: rgba(26, 22, 40, 0.9);
   border: 1px solid rgba(100, 100, 140, 0.45);
   color: #fff;
   text-decoration: none;
