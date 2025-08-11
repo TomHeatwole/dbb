@@ -157,7 +157,7 @@ function TeamPage() {
   });
 
   return (
-    <div className="team-info-box team-info-rel">
+    <div className="team-info-box team-info-rel team-info-shared">
       <div className="season-dropdown season-dropdown-abs">
         <div
           className="team-season-dropdown"

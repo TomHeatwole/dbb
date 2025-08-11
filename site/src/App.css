@@ -42,17 +42,21 @@
   color: white;
 }
 
-.main-content {
+.main-content-shared {
   position: relative;
   z-index: auto;
-  flex: 1 1 0;
-  margin-left: 5.5rem; /* 88px -> 5.5rem */
-  padding: 2rem;
   min-width: 0;
   z-index: 2;
   overflow: visible;
   display: flex;
   flex-direction: column;
+  /* align-items is layout, so not included here */
+}
+
+.main-content {
+  margin-left: 5.5rem; /* 88px -> 5.5rem */
+  padding: 2rem;
+  flex: 1 1 0;
   align-items: center;
 }
 
@@ -199,14 +203,19 @@
   text-align: center;
 }
 
-.team-info-box {
+.team-info-shared {
   background: rgb(10, 5, 30);
   margin-right: 14.375rem; /* 230px -> 14.375rem */
   border-radius: 1.125rem; /* 18px -> 1.125rem */
   width: 100%;
   margin: 0;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
+.team-info-box {
+  margin-right: 14.375rem; /* 230px -> 14.375rem */
   min-height: calc(100vh - 50px);
+  margin: 0;
 }
 
 .team-header {
@@ -866,11 +875,30 @@
  * On screens <= 50em (800px), this will scale down all child content to 60%.
  */
 
-@media (max-width: 50em) {
-  .mobile-scale-container {
-    transform: scale(0.6);
-    transform-origin: top center;
-    width: 100vw;
-    overflow-x: auto;
+/* @media (max-width: 50em) {
+  .App,
+  .content-wrapper {
+    width: 100vw !important;
+    box-sizing: border-box !important;
   }
+} */
+
+.mobile-main-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
+
+.mobile-team-info-box {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: unset !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+} 
