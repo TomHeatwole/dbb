@@ -1166,17 +1166,21 @@
     max-width: 34rem;
     grid-template-columns: 1fr;
     gap: 0.7rem;
-    padding: 0 0.5rem;
   }
   .home-team-link {
     min-height: 3.25rem;
     padding: 0.55rem 0.75rem;
     border-radius: 0.75rem;
+    margin-right: 1rem;
+    margin-left: 1rem;
   }
   .home-team-link-avatar {
     width: 1.75rem;
     height: 1.75rem;
     margin-right: 0.6rem;
+  }
+  .home-back-btn {
+    margin-left: 1rem;
   }
 } 
 
