@@ -1,4 +1,3 @@
-- Update README for new settings format
 - Hover on player for popup of information
 - Kickass homepage
 - /league pages to compare across teams
