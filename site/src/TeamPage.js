@@ -218,10 +218,10 @@ function TeamPage() {
       leftHeader={leftHeader}
       title={teamName}
       subtitle={
-        <div>
+        <div className="owner-subtitle-inline">
           <span>Owner: {ownerName}</span>
           {userAvatarUrl && (
-            <img src={userAvatarUrl} alt="Owner Avatar" className="owner-avatar" />
+            <img src={userAvatarUrl} alt="Owner Avatar" className="owner-subtitle-avatar" />
           )}
         </div>
       }

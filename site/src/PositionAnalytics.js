@@ -2,6 +2,7 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
+import useIsMobile from './useIsMobile';
 
 const pieColors = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF4444', '#A28FD0', '#FFB6B9', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#FF9AA2'
@@ -18,6 +19,7 @@ export default function PositionAnalytics({
   playersData,
   playerIdMap
 }) {
+  const isMobile = useIsMobile();
   // Build line chart data for this position
   const chartData = [];
   for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
@@ -103,13 +105,15 @@ export default function PositionAnalytics({
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={120}
-                  label={({ name, count }) => `${name} (${count})`}
+                  outerRadius={isMobile ? 150 : 120}
+                  labelLine={!isMobile}
+                  label={isMobile ? false : (({ name, count }) => `${name} (${count})`)}
                 >
                   {breakdownData.map((entry, idx) => (
                     <Cell key={`cell-${entry.playerId}`} fill={pieColors[idx % pieColors.length]} />
                   ))}
                 </Pie>
+                {isMobile ? <Legend /> : null}
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {

@@ -738,6 +738,8 @@
 .position-analytics-tooltip-img {
   width: 3rem; /* 48px -> 3rem */
   height: 3rem; /* 48px -> 3rem */
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
   border-radius: 50%;
   margin: 0 auto 0.5rem auto; /* 8px -> 0.5rem */
   display: block;
@@ -957,12 +959,14 @@
 .roster-mobile-columns {
   flex-wrap: wrap !important;
   gap: 1rem !important;
-  justify-content: space-between !important;
+  justify-content: center !important;
 }
 
 .roster-mobile-column {
   flex: 0 0 50% !important;
   max-width: 50% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 } 
 
 @media (max-width: 50em) {
@@ -1263,6 +1267,21 @@
   padding-bottom: 1em;
 } 
 
+/* Team title avatar inline styling */
+.info-title-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.team-title-avatar {
+  width: 1.6em; /* scales with title font-size */
+  height: 1.6em;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 50%;
+  display: inline-block;
+}
+
 @media (max-width: 50em) {
   /* Align mobile year selector with mobile Home link */
   .team-season-dropdown {
@@ -1278,4 +1297,38 @@
     margin-left: 0.625rem;
     font-size: 0.85em;
   }
+} 
+
+/* Tooltip constraints for PositionAnalytics and PositionBreakdownTable */
+.pos-avg-tooltip-fixed,
+.position-analytics-tooltip {
+  max-width: calc(100vw - 2rem);
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 50em) {
+  .pos-avg-tooltip-fixed {
+    left: auto !important;
+    right: 1rem !important;
+    transform: translateX(0) translateY(0);
+  }
+  .position-analytics-tooltip {
+    max-width: calc(100vw - 2rem);
+  }
+} 
+
+/* Owner subtitle inline with avatar on the right */
+.owner-subtitle-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.owner-subtitle-avatar {
+  width: 1.2em;
+  height: 1.2em;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 50%;
+  display: inline-block;
 } 
