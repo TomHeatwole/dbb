@@ -1382,6 +1382,31 @@
 .standings-row-expand { padding: 0.6rem 0.9rem 0.9rem 2.2rem; border-top: 1px solid rgba(100, 100, 140, 0.25); }
 .standings-row-expand-inner { color: #dfe6f0; }
 
+/* Standings expanded stats grid */
+.standings-stats-grid {
+  display: grid;
+  grid-template-columns: 9rem 7rem 7rem 5rem; /* label, pts, ppg, place */
+  row-gap: 0.35rem;
+  column-gap: 0.6rem;
+  align-items: center;
+}
+@media (max-width: 50em) {
+  .standings-stats-grid {
+    grid-template-columns: 7.5rem 6rem 6rem 3.5rem;
+    row-gap: 0.3rem;
+    column-gap: 0.5rem;
+  }
+}
+.stat-label { font-weight: 800; color: #e2e8f5; }
+.stat-v1, .stat-v2, .stat-v3 { font-weight: 700; color: #cfe0ff; }
+.standings-team-link { margin-top: 0.8rem; grid-column: 1 / -1; }
+.standings-team-link a { color: #4fb7ff; font-weight: 800; font-size: 1.05rem; text-decoration: none; }
+.standings-team-link a:hover { text-decoration: underline; }
+
+@media (max-width: 50em) {
+  .standings-stats-grid { grid-template-columns: 8.5rem 6.5rem 6.5rem 4rem; }
+}
+
 /* Standings totals hover tooltip */
 .standings-metric {
   position: relative;
@@ -1435,21 +1460,17 @@
 } 
 
 @media (max-width: 50em) {
-  /* Standings mobile: two-column flex (team info, score) spanning full width */
+  /* Standings mobile: only two columns (team info left, total right) */
   .standings-row-header {
     display: flex !important;
     align-items: center;
-    gap: 0.6rem;
-    grid-template-columns: none !important;
+    gap: 0.5rem;
   }
-  /* Hide PPG column on mobile; show total and push to right */
-  .standings-ppg { display: none !important; }
+  .standings-ppg,
   .standings-ppg--playoff-mobile { display: none !important; }
+  .standings-title { flex: 1 1 auto; min-width: 0; max-width: 65%; }
   .standings-total,
-  .standings-total--playoff-desktop {
-    display: inline !important;
-    margin-left: auto !important;
-  }
+  .standings-total--playoff-desktop { display: inline !important; margin-left: auto !important; white-space: nowrap; }
 } 
 
 /* Ensure totals don't wrap */
@@ -1465,4 +1486,11 @@
     min-width: 0;
     max-width: 60%;
   }
+} 
+
+/* Mobile-only place indicator in header */
+.standings-place-mobile { display: none; font-weight: 800; color: #cfe6ff; }
+@media (max-width: 50em) {
+  .standings-place-mobile { display: inline; margin-left: auto; }
+  /* When we switch to flex layout on mobile, this appears where PPG was and pushes score right */
 } 

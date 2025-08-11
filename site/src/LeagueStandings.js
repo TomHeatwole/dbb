@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
 import { getCurrentNFLWeek } from './DateHelper';
 import { getStandings } from './ScoresParser';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
+import useIsMobile from './useIsMobile';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -24,6 +25,7 @@ function LeagueStandings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -118,6 +120,27 @@ function LeagueStandings() {
     return { total: Math.round(total), ppg, weeks: weeksCountLocal };
   }
 
+  function getPlace(standingsArr, rosterId) {
+    const row = (standingsArr || []).find(r => Number(r.roster_id) === Number(rosterId));
+    return row ? row.place : null;
+  }
+
+  function computeHighLow(rosterId, weeksArr) {
+    let high = { points: -Infinity, week: null };
+    let low = { points: Infinity, week: null };
+    (weeksArr || []).forEach((weekEntries, idx) => {
+      if (!Array.isArray(weekEntries)) { return; }
+      const entry = weekEntries.find(e => e && Number(e.roster_id) === Number(rosterId));
+      if (entry && typeof entry.points === 'number') {
+        if (entry.points > high.points) { high = { points: entry.points, week: idx + 1 }; }
+        if (entry.points < low.points) { low = { points: entry.points, week: idx + 1 }; }
+      }
+    });
+    if (!isFinite(high.points)) { high = { points: 0, week: '-' }; }
+    if (!isFinite(low.points)) { low = { points: 0, week: '-' }; }
+    return { high, low };
+  }
+
   const leftHeader = (
     <div
       ref={dropdownRef}
@@ -147,7 +170,7 @@ function LeagueStandings() {
 
   if (loading) {
     return (
-      <InfoPageWrapper title="Hwang DynastyStandings" subtitle={null} leftHeader={leftHeader}>
+      <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
         <div>Loading standings…</div>
       </InfoPageWrapper>
     );
@@ -206,6 +229,7 @@ function LeagueStandings() {
     }));
 
   const displayRows = [...top4Display, ...othersDisplay].slice(0, 10);
+  const playoffOrderMap = new Map(top4Display.map((r, i) => [r.roster_id, i + 1]));
 
   function toggleExpand(rosterId) {
     setExpanded(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
@@ -224,9 +248,15 @@ function LeagueStandings() {
           // Display metrics
           const ppg = row.weeksCount > 0 ? Math.round((row.points_scored / row.weeksCount) * 10) / 10 : 0;
 
-          // Expanded details for playoff teams
-          const details14 = usePlayoffLogic && isPlayoff ? computeTotals(rosterId, weeksFirst14) : null;
-          const details17 = usePlayoffLogic && isPlayoff ? computeTotals(rosterId, weeksParsedData) : null;
+          // Expanded details for every team
+          const det14 = computeTotals(rosterId, weeksFirst14);
+          const det17 = computeTotals(rosterId, weeksParsedData);
+          const place14 = getPlace(standings14, rosterId);
+          const place17 = getPlace(standingsAll, rosterId);
+          const { high, low } = computeHighLow(rosterId, weeksParsedData);
+          const playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
+          const playoffPpg = usePlayoffLogic && isPlayoff && weeks15to17.length > 0 ? Math.round((playoffPts / weeks15to17.length) * 10) / 10 : null;
+          const playoffPlace = usePlayoffLogic && isPlayoff ? playoffOrderMap.get(rosterId) : null;
 
           return (
             <div key={rosterId} className={`standings-row ${isPlayoff ? 'standings-row--playoff' : ''}`}>
@@ -235,33 +265,73 @@ function LeagueStandings() {
                 <span className="standings-rank">#{idx + 1}</span>
                 {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                 <span className="standings-title">{teamName}</span>
-                {usePlayoffLogic && isPlayoff ? (
-                  <>
-                    <span className="standings-ppg standings-ppg--playoff-mobile">Playoff: {Math.round(row.points_scored)} pts</span>
-                    <span className="standings-total standings-total--playoff-desktop">Playoff: {Math.round(row.points_scored)} pts</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="standings-ppg">{ppg} ppg</span>
+                {isMobile ? (
+                  // Mobile: only render total (or playoff score) on the right
+                  usePlayoffLogic && isPlayoff ? (
+                    <span className="standings-total">Playoffs: {Math.round(row.points_scored)} pts</span>
+                  ) : (
                     <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
                       {Math.round(row.points_scored)} pts
                       {usePlayoffLogic && (
                         <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
                       )}
                     </span>
-                  </>
+                  )
+                ) : (
+                  // Desktop: render PPG + total as before
+                  usePlayoffLogic && isPlayoff ? (
+                    <>
+                      <span className="standings-ppg standings-ppg--playoff-mobile">Playoffs: {Math.round(row.points_scored)} pts</span>
+                      <span className="standings-total standings-total--playoff-desktop">Playoffs: {Math.round(row.points_scored)} pts</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="standings-ppg">{ppg} ppg</span>
+                      <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
+                        {Math.round(row.points_scored)} pts
+                        {usePlayoffLogic && (
+                          <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
+                        )}
+                      </span>
+                    </>
+                  )
                 )}
               </button>
               {isExpanded && (
                 <div className="standings-row-expand">
-                  {usePlayoffLogic && isPlayoff ? (
-                    <div className="standings-row-expand-inner">
-                      <div><strong>14-week:</strong> {details14?.ppg} ppg, {details14?.total} pts</div>
-                      <div><strong>17-week:</strong> {details17?.ppg} ppg, {details17?.total} pts</div>
+                  <div className="standings-row-expand-inner standings-stats-grid">
+                    {usePlayoffLogic && isPlayoff && (
+                      <>
+                        <div className="stat-label">Playoffs:</div>
+                        <div className="stat-v1">{playoffPts} pts</div>
+                        <div className="stat-v2">{playoffPpg} ppg</div>
+                        <div className="stat-v3">#{playoffPlace}</div>
+                      </>
+                    )}
+                    <div className="stat-label">14-Week:</div>
+                    <div className="stat-v1">{det14.total} pts</div>
+                    <div className="stat-v2">{det14.ppg} ppg</div>
+                    <div className="stat-v3">#{place14}</div>
+
+                    <div className="stat-label">17-Week:</div>
+                    <div className="stat-v1">{det17.total} pts</div>
+                    <div className="stat-v2">{det17.ppg} ppg</div>
+                    <div className="stat-v3">#{place17}</div>
+
+                    <div className="stat-label">High Score:</div>
+                    <div className="stat-v1">{high.points} pts</div>
+                    <div className="stat-v2">Week {high.week}</div>
+                    <div className="stat-v3"></div>
+
+                    <div className="stat-label">Low Score:</div>
+                    <div className="stat-v1">{low.points} pts</div>
+                    <div className="stat-v2">Week {low.week}</div>
+                    <div className="stat-v3"></div>
+
+                    <div className="standings-team-link">
+                      <Link to={`/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>See Team Overview</Link>
                     </div>
-                  ) : (
-                    <div className="standings-row-expand-inner">Details coming soon…</div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
