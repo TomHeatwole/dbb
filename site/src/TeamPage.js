@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Navigate, useSearchParams, Link } from 'react-router-dom';
+import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchTeamData } from './TeamLookup';
 import { PREVIOUS_YEARS  } from './global_constants';
@@ -10,6 +10,7 @@ import TeamScores from './TeamScores';
 import { fetchScoresData } from './ScoresLookup';
 import TeamAnalytics from './TeamAnalytics';
 import useIsMobile from './useIsMobile';
+import InfoPageWrapper from './InfoPageWrapper';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -39,6 +40,19 @@ function TeamPage() {
   const teamAnalyticsRef = useRef();
   const teamScoresRef = useRef();
   const isMobile = useIsMobile();
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!seasonDropdownOpen) { return; }
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setSeasonDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [seasonDropdownOpen]);
 
   // Sync tab with query param
   useEffect(() => {
@@ -158,66 +172,46 @@ function TeamPage() {
     return info ? info : { name: pid, position: '', espn_photo_url: null };
   });
 
-  return (
-    <div className={`${isMobile ? 'mobile-team-info-box mobile-team-info-padding' : 'team-info-box'} team-info-shared team-info-rel`}>
-      <div className="season-dropdown season-dropdown-abs">
-        <div
-          className="team-season-dropdown"
-          onClick={() => setSeasonDropdownOpen(open => !open)}
-        >
-          {season}
-          <span className="team-season-dropdown-arrow">{seasonDropdownOpen ? '▲' : '▼'}</span>
-        </div>
-        {seasonDropdownOpen && (
-          <div className="team-season-dropdown-list">
-            {allYears.map(opt => (
-              <div
-                key={opt}
-                className={
-                  'team-season-dropdown-option' +
-                  (opt === season ? ' team-season-dropdown-option-active' : '')
-                }
-                onClick={() => {
-                  setSeason(opt);
-                  setSeasonDropdownOpen(false);
-                  // Reset all query params except tab
-                  const newParams = new URLSearchParams();
-                  if (searchParams.get('tab')) {
-                    newParams.set('tab', searchParams.get('tab'));
-                    newParams.delete('week')
-                    newParams.delete('start_week')
-                    newParams.delete('end_week')
-                  }
-                  setSearchParams(newParams, { replace: true });
-                  if (teamAnalyticsRef.current && typeof teamAnalyticsRef.current.resetWeek === 'function') {
-                    teamAnalyticsRef.current.resetWeek(opt);
-                  }
-                  if (teamScoresRef.current && typeof teamScoresRef.current.resetWeek === 'function') {
-                    teamScoresRef.current.resetWeek(opt);
-                  }
-                }}
-              >
-                {opt}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {isMobile && (
-        <div className="mobile-home-link-abs">
-          <Link className="mobile-home-link" to="/home/" aria-label="Home">
-            <span role="img" aria-hidden="true">🏠</span>
-            Home
-          </Link>
+  const leftHeader = (
+    <div
+      ref={dropdownRef}
+      className="team-season-dropdown"
+      onClick={() => setSeasonDropdownOpen(open => !open)}
+    >
+      {season}
+      <span className="team-season-dropdown-arrow">{seasonDropdownOpen ? '▲' : '▼'}</span>
+      {seasonDropdownOpen && (
+        <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
+          {allYears.map(opt => (
+            <div
+              key={opt}
+              className={'team-season-dropdown-option' + (opt === season ? ' team-season-dropdown-option-active' : '')}
+              onClick={() => {
+                setSeason(opt);
+                setSeasonDropdownOpen(false);
+              }}
+            >
+              {opt}
+            </div>
+          ))}
         </div>
       )}
-      <h1 className="team-header">{teamName}</h1>
-      <div className="owner-subtitle">
-        <span>Owner: {ownerName}</span>
-        {userAvatarUrl && (
-          <img src={userAvatarUrl} alt="Owner Avatar" className="owner-avatar" />
-        )}
-      </div>
+    </div>
+  );
+
+  return (
+    <InfoPageWrapper
+      leftHeader={leftHeader}
+      title={teamName}
+      subtitle={
+        <div>
+          <span>Owner: {ownerName}</span>
+          {userAvatarUrl && (
+            <img src={userAvatarUrl} alt="Owner Avatar" className="owner-avatar" />
+          )}
+        </div>
+      }
+    >
       {/* Tabs Bar */}
       <div className="team-tabs-bar">
         {tabOptions.map(tab => (
@@ -234,7 +228,7 @@ function TeamPage() {
       {selectedTab === 'Overview' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} playerList={playerList} />}
       {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
       {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} />}
-    </div>
+    </InfoPageWrapper>
   );
 }
 
