@@ -6,7 +6,7 @@ import { fetchPlayersData } from './PlayerLookup';
 function Sidebar() {
   const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
-  const [teamsOpen, setTeamsOpen] = useState(false);
+  const [teamsOpen, setTeamsOpen] = useState(true);
   const location = useLocation();
   const isHome = location.pathname === '/home/';
   const [playUnroll, setPlayUnroll] = useState(false);
