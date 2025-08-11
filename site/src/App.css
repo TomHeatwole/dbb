@@ -54,6 +54,7 @@
 }
 
 .main-content {
+  position: relative;
   margin-left: 5.5rem; /* 88px -> 5.5rem */
   padding: 2rem;
   flex: 1 1 0;
@@ -876,6 +877,7 @@
  */ 
 
 .mobile-main-content {
+  position: relative;
   margin: 0 !important;
   padding: 0 !important;
   align-items: stretch !important;
