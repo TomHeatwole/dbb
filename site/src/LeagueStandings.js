@@ -140,8 +140,32 @@ function LeagueStandings() {
   }
 
   const weeksCount = Array.isArray(weeksParsedData) ? weeksParsedData.filter(Boolean).length : 0;
-  const standingsArr = getStandings(weeksParsedData) || [];
-  const sortedStandings = [...standingsArr].sort((a, b) => a.place - b.place).slice(0, 10);
+  const weeksFirst14 = Array.isArray(weeksParsedData) ? weeksParsedData.slice(0, 14).filter(Boolean) : [];
+  const weeksCount14 = weeksFirst14.length;
+  const standingsAll = getStandings(weeksParsedData) || [];
+  const standings14 = getStandings(weeksFirst14) || [];
+
+  // Determine playoff teams based on first 14 weeks
+  const top4Ids = standings14
+    .slice()
+    .sort((a, b) => a.place - b.place)
+    .slice(0, 4)
+    .map(r => r.roster_id);
+  const top4Set = new Set(top4Ids);
+
+  // Build display rows: top4 from full season, others from 14 weeks
+  const top4Display = standingsAll
+    .filter(r => top4Set.has(r.roster_id))
+    .sort((a, b) => a.place - b.place)
+    .map(r => ({ roster_id: r.roster_id, points_scored: r.points_scored, isPlayoff: true, weeksCount }));
+
+  const othersDisplay = standings14
+    .filter(r => !top4Set.has(r.roster_id))
+    .sort((a, b) => a.place - b.place)
+    .slice(0, Math.max(0, 10 - top4Display.length))
+    .map(r => ({ roster_id: r.roster_id, points_scored: r.points_scored, isPlayoff: false, weeksCount: weeksCount14 }));
+
+  const displayRows = [...top4Display, ...othersDisplay].slice(0, 10);
 
   function toggleExpand(rosterId) {
     setExpanded(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
@@ -150,22 +174,28 @@ function LeagueStandings() {
   return (
     <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
       <div className="standings-list">
-        {sortedStandings.map((row, idx) => {
+        {displayRows.map((row, idx) => {
           const rosterId = row.roster_id;
           const isExpanded = !!expanded[rosterId];
-          const isPlayoff = idx < 4;
+          const isPlayoff = row.isPlayoff;
           const teamName = getTeamName(rosterId);
           const avatarUrl = getAvatar(rosterId);
-          const ppg = weeksCount > 0 ? Math.round((row.points_scored / weeksCount) * 10) / 10 : 0;
+          const ppg = row.weeksCount > 0 ? Math.round((row.points_scored / row.weeksCount) * 10) / 10 : 0;
+          const tooltip = !isPlayoff ? 'Teams who missed the playoffs only use the first 14 weeks of data.' : undefined;
           return (
             <div key={rosterId} className={`standings-row ${isPlayoff ? 'standings-row--playoff' : ''}`}>
               <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
                 <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
-                <span className="standings-rank">#{row.place}</span>
+                <span className="standings-rank">#{idx + 1}</span>
                 {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                 <span className="standings-title">{teamName}</span>
                 <span className="standings-ppg">{ppg} ppg</span>
-                <span className="standings-total">{Math.round(row.points_scored)} pts</span>
+                <span className={`standings-total${!isPlayoff ? ' standings-metric' : ''}`} title={undefined}>
+                  {Math.round(row.points_scored)} pts
+                  {!isPlayoff && (
+                    <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
+                  )}
+                </span>
               </button>
               {isExpanded && (
                 <div className="standings-row-expand">
