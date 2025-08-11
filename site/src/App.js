@@ -11,6 +11,8 @@ import TeamPage from './TeamPage';
 import HomePage from './HomePage';
 import Sidebar from './Sidebar';
 import useIsMobile from './useIsMobile';
+import LeagueStandings from './LeagueStandings';
+import LeagueScores from './LeagueScores';
 
 function App() {
   const isMobile = useIsMobile();
@@ -18,6 +20,8 @@ function App() {
     <Routes>
       <Route path="/team/:id" element={<TeamPage />} />
       <Route path="/home/" element={<HomePage />} />
+      <Route path="/standings" element={<LeagueStandings />} />
+      <Route path="/Scores/Week" element={<LeagueScores />} />
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
   );
