@@ -1119,7 +1119,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* two columns: 5x2 grid for 10 teams */
   gap: 0.8rem 1rem;
-  padding: 0 1rem;
+  padding: 0 1rem 2rem 1rem; /* add bottom padding */
 }
 .home-team-link {
   display: flex;
@@ -1170,6 +1170,7 @@
     max-width: 34rem;
     grid-template-columns: 1fr;
     gap: 0.7rem;
+    padding: 0 1rem 2.5rem 1rem; /* add bottom padding on mobile */
   }
   .home-team-link {
     min-height: 3.25rem;
