@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { fetchTeamData } from './TeamLookup';
 import { fetchPlayersData } from './PlayerLookup';
 
@@ -7,6 +7,22 @@ function Sidebar() {
   const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
   const [teamsOpen, setTeamsOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === '/home/';
+  const [playUnroll, setPlayUnroll] = useState(false);
+
+  useEffect(() => {
+    if (isHome) {
+      const t = setTimeout(() => setPlayUnroll(true), 50);
+      const t2 = setTimeout(() => setPlayUnroll(false), 2550);
+      return () => {
+        clearTimeout(t);
+        clearTimeout(t2);
+      };
+    } else {
+      setPlayUnroll(false);
+    }
+  }, [isHome]);
 
   useEffect(() => {
     async function loadTeams() {
@@ -31,7 +47,6 @@ function Sidebar() {
     async function loadPlayers() {
       try {
         const data = await fetchPlayersData();
-        // Convert to array and sort by name
         const playerArr = Object.entries(data)
           .map(([id, p]) => ({ id, name: p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim() }))
           .sort((a, b) => a.name.localeCompare(b.name));
@@ -45,7 +60,7 @@ function Sidebar() {
 
   return (
     <div className="sidebar">
-      <aside className="scroll-sidebar">
+      <aside className={`scroll-sidebar${playUnroll ? ' scroll-animating' : ''}`}>
         <div className="scroll-top" />
         <div className="scroll-body">
           <nav>

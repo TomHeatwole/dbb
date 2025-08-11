@@ -995,3 +995,15 @@
     font-size: 1.05em;
   }
 } 
+
+/* Sidebar unroll animation for Home page */
+.scroll-animating .scroll-body {
+  max-height: 0;
+  overflow: hidden;
+  animation: scroll-body-unroll 2.5s linear forwards;
+}
+
+@keyframes scroll-body-unroll {
+  0% { max-height: 0; }
+  100% { max-height: 100vh; }
+} 
