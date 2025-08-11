@@ -3,14 +3,19 @@ import { Link } from 'react-router-dom';
 
 function HomePage() {
   return(
-    <header className="App-header">
-      <h1>Welcome to the Hwang Dynasty</h1>
+    <main className="home-main">
       <div className="home-cta-container">
-        <Link className="home-cta-btn" to="/Scores/Week">Scores</Link>
-        <Link className="home-cta-btn" to="/standings">Standings</Link>
-        <button className="home-cta-btn" type="button">Teams</button>
+        <Link className="home-cta-btn" to="/Scores/Week" aria-label="Scores">
+          <img className="home-cta-img" src="/scores.png" alt="Scores" />
+        </Link>
+        <Link className="home-cta-btn" to="/standings" aria-label="Standings">
+          <img className="home-cta-img" src="/standings.png" alt="Standings" />
+        </Link>
+        <button className="home-cta-btn" type="button" aria-label="Teams">
+          <img className="home-cta-img" src="/teams.png" alt="Teams" />
+        </button>
       </div>
-    </header>
+    </main>
   );
 }
 

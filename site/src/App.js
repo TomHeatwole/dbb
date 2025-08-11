@@ -3,7 +3,8 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate
+  Navigate,
+  useLocation
 } from 'react-router-dom';
 
 import './App.css';
@@ -14,8 +15,12 @@ import useIsMobile from './useIsMobile';
 import LeagueStandings from './LeagueStandings';
 import LeagueScores from './LeagueScores';
 
-function App() {
+function AppInner() {
   const isMobile = useIsMobile();
+  const location = useLocation();
+  const isHomeRoute = location.pathname === '/home/';
+  const mainClassName = `${isMobile ? 'mobile-main-content' : 'main-content'}${isHomeRoute ? ' home-watermark' : ''}`;
+
   const routes = (
     <Routes>
       <Route path="/team/:id" element={<TeamPage />} />
@@ -27,17 +32,23 @@ function App() {
   );
 
   return (
-    <Router>
-      <div className="App">
-        <div className="background-bg" />
-        <div className="content-wrapper">
-          <Sidebar />
-          <div className={isMobile ? 'mobile-main-content' : 'main-content'}>
-            <div className="watermark-bg" />
-            {isMobile ? <div className="mobile-scale-container">{routes}</div> : routes}
-          </div>
+    <div className="App">
+      <div className="background-bg" />
+      <div className="content-wrapper">
+        <Sidebar />
+        <div className={mainClassName}>
+          <div className="watermark-bg" />
+          {isMobile ? <div className="mobile-scale-container">{routes}</div> : routes}
         </div>
       </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppInner />
     </Router>
   );
 }
