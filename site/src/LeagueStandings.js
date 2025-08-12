@@ -198,12 +198,14 @@ function LeagueStandings() {
 
   // Determine if we should apply playoff logic
   const isCurrentSeason = season === CURRENT_YEAR;
-  const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : 17;
-  const completedWeeks = isCurrentSeason ? getCompletedWeeksCount() : 17;
-  const usePlayoffLogic = !isCurrentSeason || currentWeek >= 15;
+  const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
+  const completedWeeks = isCurrentSeason ? getCompletedWeeksCount() : getCompletedWeeksCount(season);
+  const weeksCompletedArr = Array.isArray(weeksParsedData) ? weeksParsedData.slice(0, completedWeeks).filter(Boolean) : [];
+  const standingsCompleted = getStandings(weeksCompletedArr) || [];
+  const usePlayoffLogic = completedWeeks >= 15;
 
   // Determine playoff teams based on first 14 weeks (or current cumulative when playoff logic is off)
-  const top4Source = usePlayoffLogic ? standings14 : standingsAll;
+  const top4Source = usePlayoffLogic ? standings14 : standingsCompleted;
   const top4Ids = top4Source
     .slice()
     .sort((a, b) => a.place - b.place)
@@ -221,8 +223,8 @@ function LeagueStandings() {
     .sort((a, b) => b.playoffPoints - a.playoffPoints)
     .map(r => ({ roster_id: r.roster_id, points_scored: r.playoffPoints, isPlayoff: true, weeksCount: weeks15to17.length })) : [];
 
-  const othersSource = usePlayoffLogic ? standings14 : standingsAll;
-  const othersWeeks = usePlayoffLogic ? weeksCount14 : weeksCount;
+  const othersSource = usePlayoffLogic ? standings14 : standingsCompleted;
+  const othersWeeks = usePlayoffLogic ? weeksCount14 : completedWeeks;
   const othersDisplay = othersSource
     .filter(r => !usePlayoffLogic || !top4Set.has(r.roster_id))
     .sort((a, b) => a.place - b.place)
@@ -230,7 +232,7 @@ function LeagueStandings() {
     .map(r => ({
       roster_id: r.roster_id,
       points_scored: r.points_scored,
-      isPlayoff: !usePlayoffLogic && top4Set.has(r.roster_id),
+      isPlayoff: false,
       weeksCount: othersWeeks
     }));
 
@@ -261,11 +263,12 @@ function LeagueStandings() {
     seventeenWeekTotals,
     fourteenWeekPlace,
     seventeenWeekPlace,
+    placeCompletedRank,
     highestWeekly,
     lowestWeekly,
     rosterIdForLink,
     currentSearchParams,
-    currentWeekNumber,
+    completedWeeksNumber,
     ppg14Completed,
     ppg17Completed
   }) {
@@ -296,12 +299,12 @@ function LeagueStandings() {
             )
           )}
 
-          {currentWeekNumber < 15 ? (
+          {completedWeeksNumber < 15 ? (
             // Pre-playoffs: only show PF once
             <>
               <div className="stat-label">PF:</div>
               <div className="stat-v1">{seventeenWeekTotals.total} pts</div>
-              <div className="stat-v2">#{seventeenWeekPlace}</div>
+              <div className="stat-v2">#{placeCompletedRank}</div>
               <div className="stat-v3"></div>
             </>
           ) : (
@@ -415,6 +418,7 @@ function LeagueStandings() {
           const det17 = computeTotals(rosterId, weeksParsedData);
           const place14 = getPlace(standings14, rosterId);
           const place17 = getPlace(standingsAll, rosterId);
+          const placeCompleted = getPlace(standingsCompleted, rosterId);
           const { high, low } = computeHighLow(rosterId, weeksParsedData, completedWeeks);
           const playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
           const completedPlayoffWeeks = usePlayoffLogic && isPlayoff ? (isCurrentSeason ? Math.max(0, Math.min(3, completedWeeks - 14)) : 3) : 0;
@@ -474,11 +478,12 @@ function LeagueStandings() {
                   seventeenWeekTotals: det17,
                   fourteenWeekPlace: place14,
                   seventeenWeekPlace: place17,
+                  placeCompletedRank: placeCompleted,
                   highestWeekly: high,
                   lowestWeekly: low,
                   rosterIdForLink: rosterId,
                   currentSearchParams: searchParams,
-                  currentWeekNumber: currentWeek,
+                  completedWeeksNumber: completedWeeks,
                   ppg14Completed: computeCompletedWeeksPpg(weeksFirst14, rosterId, 14),
                   ppg17Completed: computeCompletedWeeksPpg(weeksParsedData, rosterId, 17)
                 })

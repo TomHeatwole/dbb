@@ -1,7 +1,8 @@
 // DateHelper.js
 // Utility to get the current year as a string
 
-import { SEASON_START_DAY } from './global_constants';
+import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE } from './global_constants';
+import { PREVIOUS_YEARS } from './global_constants';
 
 export function getCurrentYear() {
   return String(new Date().getFullYear());
@@ -9,15 +10,22 @@ export function getCurrentYear() {
 
 export const CURRENT_YEAR = getCurrentYear();
 
-export function getCurrentNFLWeek() {
+export function getCurrentNFLWeek(season = null) {
   // SEASON_START_DAY is MM/DD
   const now = new Date();
-  const year = now.getFullYear();
+  const currentYear = now.getFullYear();
+  const targetYear = season ? Number(season) : currentYear;
   const [month, day] = SEASON_START_DAY.split('/').map(Number);
-  const seasonStart = new Date(year, month - 1, day);
+  const seasonStart = new Date(targetYear, month - 1, day);
 
-  // If before season start, return 1
-  if (now < seasonStart) return 1;
+  // If we're looking at a previous season and an override is set, use it
+  const isPreviousSeason = season && String(season) !== String(currentYear);
+  if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
+    return Math.max(1, Math.min(17, Number(PREVIOUS_CURRENT_WEEK_OVERRIDE)));
+  }
+
+  // If before season start (and no override), return 1
+  if (!isPreviousSeason && now < seasonStart) return 1;
 
   // Compute days since season start
   const daysSinceStart = Math.floor((now - seasonStart) / (1000 * 60 * 60 * 24));
@@ -27,13 +35,20 @@ export function getCurrentNFLWeek() {
 }
 
 // Number of weeks for which Tuesday has passed relative to each week start (Thu)
-export function getCompletedWeeksCount() {
+export function getCompletedWeeksCount(season = null) {
   const now = new Date();
-  const year = now.getFullYear();
+  const currentYear = now.getFullYear();
+  const targetYear = season ? Number(season) : currentYear;
   const [month, day] = SEASON_START_DAY.split('/').map(Number);
-  const seasonStart = new Date(year, month - 1, day);
+  const seasonStart = new Date(targetYear, month - 1, day);
 
-  if (now < seasonStart) {
+  const isPreviousSeason = season && String(season) !== String(currentYear);
+  if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
+    // completed weeks equals override (cap at 17)
+    return Math.max(0, Math.min(17, Number(PREVIOUS_CURRENT_WEEK_OVERRIDE)));
+  }
+
+  if (!isPreviousSeason && now < seasonStart) {
     return 0;
   }
 
@@ -47,17 +62,24 @@ export function getCompletedWeeksCount() {
 }
 
 // Whether the current week (per getCurrentNFLWeek) has completed (i.e., Tuesday has passed)
-export function isCurrentWeekCompleted() {
+export function isCurrentWeekCompleted(season = null) {
   const now = new Date();
-  const year = now.getFullYear();
+  const currentYear = now.getFullYear();
+  const targetYear = season ? Number(season) : currentYear;
   const [month, day] = SEASON_START_DAY.split('/').map(Number);
-  const seasonStart = new Date(year, month - 1, day);
+  const seasonStart = new Date(targetYear, month - 1, day);
 
-  if (now < seasonStart) {
+  const isPreviousSeason = season && String(season) !== String(currentYear);
+  if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
+    // completed weeks equals override; current week considered completed if override advanced beyond start+5 of that week
+    return true; // previous seasons are static with override, treat as completed snapshot
+  }
+
+  if (!isPreviousSeason && now < seasonStart) {
     return false;
   }
 
-  const currentWeek = getCurrentNFLWeek();
+  const currentWeek = getCurrentNFLWeek(season);
   const currentWeekStart = new Date(seasonStart.getTime() + (currentWeek - 1) * 7 * 24 * 60 * 60 * 1000);
   const tuesdayThreshold = new Date(currentWeekStart.getTime() + 5 * 24 * 60 * 60 * 1000);
   return now >= tuesdayThreshold;
