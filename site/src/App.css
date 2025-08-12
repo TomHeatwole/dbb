@@ -1335,6 +1335,54 @@
   display: inline-block;
 } 
 
+/* Inline info icon tooltip for headings */
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+  font-size: 0.9em;
+  cursor: default;
+  position: relative;
+}
+.info-icon .info-icon-tooltip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  background: #0f1430;
+  color: #fff;
+  border: 1px solid #3a4466;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  white-space: normal;
+  width: 22rem;
+  max-width: 85vw;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 2000;
+}
+.info-icon:hover .info-icon-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (max-width: 50em) {
+  .info-icon .info-icon-tooltip {
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, 4px);
+    max-width: 92vw;
+    width: auto;
+  }
+  .info-icon:hover .info-icon-tooltip {
+    transform: translate(-50%, 0);
+  }
+}
+
 /* Standings list styles */
 .standings-list {
   display: flex;
@@ -1344,6 +1392,21 @@
   max-width: 56rem;
   margin: 0 auto;
 }
+
+/* Space between standings and the playoff race graph */
+.playoff-race-graph { margin-top: 2rem; }
+@media (max-width: 50em) {
+  .playoff-race-graph { margin-top: 1.2rem; }
+}
+
+/* Full-viewport chart container for playoff race */
+.playoff-race-chart-container {
+  width: 100%;
+  height: 80vh; /* fill 80% of the viewport height */
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
 .standings-list--expanded {
   padding-bottom: 2.5rem; /* create breathing room below expanded rows */
 }

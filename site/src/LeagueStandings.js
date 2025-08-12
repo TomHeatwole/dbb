@@ -8,6 +8,7 @@ import { getStandings } from './ScoresParser';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
 import useIsMobile from './useIsMobile';
+import PlayoffRaceGraph from './PlayoffRaceGraph';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -492,6 +493,12 @@ function LeagueStandings() {
           );
         })}
       </div>
+      {/* Playoff Race Graph based on completed weeks only */}
+      <PlayoffRaceGraph
+        weeksParsedData={weeksParsedData}
+        completedWeeks={completedWeeks}
+        rosterIdToName={Object.fromEntries((rosters || []).map(r => [Number(r.roster_id), getTeamName(r.roster_id)]))}
+      />
     </InfoPageWrapper>
   );
 }
