@@ -1,8 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
+import { getDefaultDisplayWeek } from './DateHelper';
+import WeekSelector from './WeekSelector';
+import { fetchScoresData } from './ScoresLookup';
+import { fetchTeamData } from './TeamLookup';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -13,6 +17,14 @@ function LeagueScores() {
   const [season, setSeason] = useState(initialSeason);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const urlWeek = parseInt(searchParams.get('week'), 10);
+  const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= 17 ? urlWeek : getDefaultDisplayWeek(season);
+  const [week, setWeek] = useState(initialWeek);
+  const [weeksParsedData, setWeeksParsedData] = useState(null);
+  const [rosters, setRosters] = useState(null);
+  const [users, setUsers] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -48,6 +60,62 @@ function LeagueScores() {
     // eslint-disable-next-line
   }, [season]);
 
+  // sync week param
+  useEffect(() => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('week', week);
+    newParams.set('tab', 'Scores');
+    setSearchParams(newParams, { replace: true });
+    // eslint-disable-next-line
+  }, [week]);
+
+  useEffect(() => {
+    if (!isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= 17 && week !== urlWeek)  {
+      setWeek(urlWeek);
+    }
+    // eslint-disable-next-line
+  }, [urlWeek]);
+
+  // Load league scores/teams for season
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      fetchScoresData(season),
+      fetchTeamData(season)
+    ])
+      .then(([weeksData, teamData]) => {
+        setWeeksParsedData(weeksData);
+        setRosters(teamData.rosters);
+        setUsers(teamData.users);
+      })
+      .catch(() => {
+        setWeeksParsedData(null);
+        setRosters(null);
+        setUsers(null);
+        setError('Failed to load scores');
+      })
+      .finally(() => setLoading(false));
+  }, [season]);
+
+  function getTeamName(rosterId) {
+    if (!rosters || !users) return `Team ${rosterId}`;
+    const roster = rosters.find(r => String(r.roster_id) === String(rosterId));
+    if (!roster) return `Team ${rosterId}`;
+    const user = users.find(u => String(u.user_id) === String(roster.owner_id));
+    if (user && user.metadata && user.metadata.team_name) return user.metadata.team_name;
+    if (user && user.display_name) return `Team ${user.display_name}`;
+    return `Team ${rosterId}`;
+  }
+
+  function getAvatar(rosterId) {
+    if (!rosters || !users) return null;
+    const roster = rosters.find(r => String(r.roster_id) === String(rosterId));
+    if (!roster) return null;
+    const user = users.find(u => String(u.user_id) === String(roster.owner_id));
+    return user && user.avatar_url ? user.avatar_url : null;
+  }
+
   const leftHeader = (
     <div
       ref={dropdownRef}
@@ -76,8 +144,39 @@ function LeagueScores() {
   );
 
   return (
-    <InfoPageWrapper title="Scores" subtitle={null} leftHeader={leftHeader}>
-      <div>Scores page coming soon</div>
+    <InfoPageWrapper title="Hwang Dynasty Scores" subtitle={null} leftHeader={leftHeader}>
+      <div className="team-scores-container">
+        <WeekSelector week={week} onChange={setWeek} />
+      </div>
+      {loading ? (
+        <div>Loading scores…</div>
+      ) : error || !weeksParsedData || !rosters || !users ? (
+        <div>Error loading scores.</div>
+      ) : (
+        <div className="standings-list">
+          {(Array.isArray(weeksParsedData) && weeksParsedData[week - 1] ? weeksParsedData[week - 1] : [])
+            .filter(e => e && e.roster_id != null && typeof e.points === 'number')
+            .slice()
+            .sort((a, b) => b.points - a.points)
+            .map((entry) => {
+              const rosterId = entry.roster_id;
+              const teamName = getTeamName(rosterId);
+              const avatarUrl = getAvatar(rosterId);
+              return (
+                <div key={rosterId} className="standings-row">
+                  <div className="standings-row-header">
+                    <span className="standings-toggle-icon" style={{ visibility: 'hidden' }}>▸</span>
+                    {/* No rank number for live scores */}
+                    <span className="standings-rank" style={{ visibility: 'hidden' }}>#</span>
+                    {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
+                    <span className="standings-title">{teamName}</span>
+                    <span className="standings-total">{Math.round(entry.points)} pts</span>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
     </InfoPageWrapper>
   );
 }

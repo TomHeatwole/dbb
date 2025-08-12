@@ -4,6 +4,7 @@ import { getWeekScoreBreakdown } from './ScoresParser';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR } from './DateHelper';
+import WeekSelector from './WeekSelector';
 
 const NUM_WEEKS = 17;
 
@@ -67,62 +68,14 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     }
   }));
 
-  const handleArrow = dir => {
-    setWeek(w => Math.max(1, Math.min(NUM_WEEKS, w + dir)));
-  };
-
-  const handleSelect = w => {
-    setWeek(w);
-    setDropdownOpen(false);
-  };
+  const handleSelect = w => setWeek(w);
 
   // Get week breakdown for this roster
   const weekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
 
   return (
     <div className="team-scores-container">
-      <div className="team-scores-week-bar">
-        <button
-          className="team-scores-arrow"
-          onClick={() => handleArrow(-1)}
-          disabled={week === 1}
-          aria-label="Previous Week"
-        >
-          &#8592;
-        </button>
-        <div
-          className="team-scores-week-dropdown"
-          onClick={() => setDropdownOpen(open => !open)}
-          ref={dropdownRef}
-        >
-          Week {week}
-          <span className="team-scores-week-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
-          {dropdownOpen && (
-            <div className="team-scores-week-dropdown-list">
-              {[...Array(NUM_WEEKS)].map((_, i) => (
-                <div
-                  key={i + 1}
-                  className={
-                    'team-scores-week-dropdown-option' +
-                    (week === i + 1 ? ' team-scores-week-dropdown-option-active' : '')
-                  }
-                  onClick={() => handleSelect(i + 1)}
-                >
-                  Week {i + 1}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <button
-          className="team-scores-arrow"
-          onClick={() => handleArrow(1)}
-          disabled={week === NUM_WEEKS}
-          aria-label="Next Week"
-        >
-          &#8594;
-        </button>
-      </div>
+      <WeekSelector week={week} onChange={handleSelect} />
       {/* Week content */}
       {weekBreakdown ? (
         <div className="team-scores-tables-flex">
