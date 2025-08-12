@@ -8,6 +8,11 @@ import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
 import { getWeekScoreBreakdown } from './ScoresParser';
+import TeamScoresTables from './TeamScoresTables';
+import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
+import useIsMobile from './useIsMobile';
+import MobileTeamScoreSummary from './MobileTeamScoreSummary';
+import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -28,6 +33,10 @@ function LeagueScores() {
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
+  const [playersData, setPlayersData] = useState(null);
+  const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [benchOpen, setBenchOpen] = useState({});
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -88,17 +97,23 @@ function LeagueScores() {
     setError(null);
     Promise.all([
       fetchScoresData(season),
-      fetchTeamData(season)
+      fetchTeamData(season),
+      fetchPlayersData(),
+      fetchPlayerIdMap()
     ])
-      .then(([weeksData, teamData]) => {
+      .then(([weeksData, teamData, players, idMap]) => {
         setWeeksParsedData(weeksData);
         setRosters(teamData.rosters);
         setUsers(teamData.users);
+        setPlayersData(players);
+        setPlayerIdMap(idMap);
       })
       .catch(() => {
         setWeeksParsedData(null);
         setRosters(null);
         setUsers(null);
+        setPlayersData(null);
+        setPlayerIdMap(null);
         setError('Failed to load scores');
       })
       .finally(() => setLoading(false));
@@ -124,6 +139,9 @@ function LeagueScores() {
 
   function toggleExpand(rosterId) {
     setExpanded(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
+  }
+  function toggleBench(rosterId) {
+    setBenchOpen(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
   }
 
   const leftHeader = (
@@ -188,21 +206,26 @@ function LeagueScores() {
                   </button>
                   {isExpanded && (
                     <div className="standings-row-expand">
-                      <div className="standings-row-expand-inner standings-stats-grid">
-                        <div className="stat-label">Starters:</div>
-                        <div className="stat-v1">{startersTotal} pts</div>
-                        <div className="stat-v2"></div>
-                        <div className="stat-v3"></div>
-
-                        <div className="stat-label">Bench:</div>
-                        <div className="stat-v1">{benchTotal} pts</div>
-                        <div className="stat-v2"></div>
-                        <div className="stat-v3"></div>
-
-                        <div className="standings-team-link">
-                          <Link to={`/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>See Week {week} Breakdown</Link>
-                        </div>
-                      </div>
+                      {isMobile ? (
+                        <MobileTeamScoreSummary
+                          weekBreakdown={weekBreakdown}
+                          week={week}
+                          rosterId={rosterId}
+                          searchParams={searchParams}
+                        />
+                      ) : (
+                        <LeagueScoresTeamBreakdown
+                          weekBreakdown={weekBreakdown}
+                          week={week}
+                          rosterId={rosterId}
+                          benchOpen={!!benchOpen[rosterId]}
+                          onToggleBench={() => toggleBench(rosterId)}
+                          benchTotal={benchTotal}
+                          playersData={playersData}
+                          playerIdMap={playerIdMap}
+                          searchParams={searchParams}
+                        />
+                      )}
                     </div>
                   )}
                 </div>

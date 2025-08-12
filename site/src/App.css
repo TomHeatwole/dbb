@@ -1598,3 +1598,18 @@
     box-sizing: border-box;
   }
 } 
+
+/* Bench toggle control in Scores expanded section */
+.team-scores-bench-toggle {
+  background: none;
+  border: none;
+  color: #4fb7ff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0;
+}
+.team-scores-bench-toggle:hover { text-decoration: underline; } 
