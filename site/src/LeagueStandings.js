@@ -201,7 +201,8 @@ function LeagueStandings() {
   const isCurrentSeason = season === CURRENT_YEAR;
   const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
   const completedWeeks = isCurrentSeason ? getCompletedWeeksCount() : getCompletedWeeksCount(season);
-  const weeksCompletedArr = Array.isArray(weeksParsedData) ? weeksParsedData.slice(0, completedWeeks).filter(Boolean) : [];
+  const effectiveCompletedWeeks = Math.max(1, completedWeeks);
+  const weeksCompletedArr = Array.isArray(weeksParsedData) ? weeksParsedData.slice(0, effectiveCompletedWeeks).filter(Boolean) : [];
   const standingsCompleted = getStandings(weeksCompletedArr) || [];
   const usePlayoffLogic = completedWeeks >= 15;
 
@@ -225,7 +226,7 @@ function LeagueStandings() {
     .map(r => ({ roster_id: r.roster_id, points_scored: r.playoffPoints, isPlayoff: true, weeksCount: weeks15to17.length })) : [];
 
   const othersSource = usePlayoffLogic ? standings14 : standingsCompleted;
-  const othersWeeks = usePlayoffLogic ? weeksCount14 : completedWeeks;
+  const othersWeeks = usePlayoffLogic ? weeksCount14 : effectiveCompletedWeeks;
   const othersDisplay = othersSource
     .filter(r => !usePlayoffLogic || !top4Set.has(r.roster_id))
     .sort((a, b) => a.place - b.place)
@@ -234,11 +235,29 @@ function LeagueStandings() {
       roster_id: r.roster_id,
       points_scored: r.points_scored,
       isPlayoff: false,
+      place: r.place,
       weeksCount: othersWeeks
     }));
 
   const displayRows = [...top4Display, ...othersDisplay].slice(0, 10);
-  const playoffOrderMap = new Map(top4Display.map((r, i) => [r.roster_id, i + 1]));
+  // Tie-aware places for playoff subset
+  const playoffOrderMap = (() => {
+    const rows = top4Display.slice().sort((a, b) => b.points_scored - a.points_scored);
+    const map = new Map();
+    let place = 1;
+    let i = 0;
+    while (i < rows.length) {
+      const score = rows[i].points_scored;
+      let j = i + 1;
+      while (j < rows.length && rows[j].points_scored === score) { j++; }
+      for (let k = i; k < j; k++) {
+        map.set(rows[k].roster_id, place);
+      }
+      place += (j - i);
+      i = j;
+    }
+    return map;
+  })();
 
   function toggleExpand(rosterId) {
     setExpanded(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
@@ -410,9 +429,10 @@ function LeagueStandings() {
           const isPlayoff = row.isPlayoff;
           const teamName = getTeamName(rosterId);
           const avatarUrl = getAvatar(rosterId);
+          const isTop4Highlight = top4Set.has(rosterId);
 
-          // PPG should be computed over COMPLETED weeks only
-          const ppg = completedWeeks > 0 ? Math.round((sumPointsForWeeks(weeksParsedData.slice(0, completedWeeks), rosterId) / completedWeeks) * 10) / 10 : 0;
+          // Display metrics
+          const ppg = effectiveCompletedWeeks > 0 ? Math.round((sumPointsForWeeks(weeksParsedData.slice(0, effectiveCompletedWeeks), rosterId) / effectiveCompletedWeeks) * 10) / 10 : 0;
 
           // Expanded details for every team
           const det14 = computeTotals(rosterId, weeksFirst14);
@@ -420,7 +440,7 @@ function LeagueStandings() {
           const place14 = getPlace(standings14, rosterId);
           const place17 = getPlace(standingsAll, rosterId);
           const placeCompleted = getPlace(standingsCompleted, rosterId);
-          const { high, low } = computeHighLow(rosterId, weeksParsedData, completedWeeks);
+          const { high, low } = computeHighLow(rosterId, weeksParsedData, effectiveCompletedWeeks);
           const playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
           const completedPlayoffWeeks = usePlayoffLogic && isPlayoff ? (isCurrentSeason ? Math.max(0, Math.min(3, completedWeeks - 14)) : 3) : 0;
           const playoffPpg = usePlayoffLogic && isPlayoff && completedPlayoffWeeks > 0
@@ -429,10 +449,10 @@ function LeagueStandings() {
           const playoffPlace = usePlayoffLogic && isPlayoff ? playoffOrderMap.get(rosterId) : null;
 
           return (
-            <div key={rosterId} className={`standings-row ${isPlayoff ? 'standings-row--playoff' : ''}`}>
+            <div key={rosterId} className={`standings-row ${isTop4Highlight ? 'standings-row--playoff' : ''}`}>
               <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
                 <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
-                <span className="standings-rank">#{idx + 1}</span>
+                <span className="standings-rank">#{(usePlayoffLogic && isPlayoff) ? playoffOrderMap.get(rosterId) : ((usePlayoffLogic ? place14 : placeCompleted) || idx + 1)}</span>
                 {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                 <span className="standings-title">{teamName}</span>
                 {isMobile ? (
@@ -484,7 +504,7 @@ function LeagueStandings() {
                   lowestWeekly: low,
                   rosterIdForLink: rosterId,
                   currentSearchParams: searchParams,
-                  completedWeeksNumber: completedWeeks,
+                  completedWeeksNumber: effectiveCompletedWeeks,
                   ppg14Completed: computeCompletedWeeksPpg(weeksFirst14, rosterId, 14),
                   ppg17Completed: computeCompletedWeeksPpg(weeksParsedData, rosterId, 17)
                 })
