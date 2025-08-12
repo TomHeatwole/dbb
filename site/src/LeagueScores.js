@@ -7,6 +7,7 @@ import { getDefaultDisplayWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
+import { getWeekScoreBreakdown } from './ScoresParser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -25,6 +26,7 @@ function LeagueScores() {
   const [users, setUsers] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState({});
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -57,6 +59,9 @@ function LeagueScores() {
       searchParams.set('year', season);
       setSearchParams(searchParams, { replace: true });
     }
+    // Reset week to default for the selected season
+    const newWeek = getDefaultDisplayWeek(season);
+    setWeek(newWeek);
     // eslint-disable-next-line
   }, [season]);
 
@@ -116,6 +121,10 @@ function LeagueScores() {
     return user && user.avatar_url ? user.avatar_url : null;
   }
 
+  function toggleExpand(rosterId) {
+    setExpanded(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
+  }
+
   const leftHeader = (
     <div
       ref={dropdownRef}
@@ -153,7 +162,7 @@ function LeagueScores() {
       ) : error || !weeksParsedData || !rosters || !users ? (
         <div>Error loading scores.</div>
       ) : (
-        <div className="standings-list">
+        <div className="standings-list standings-list--scores">
           {(Array.isArray(weeksParsedData) && weeksParsedData[week - 1] ? weeksParsedData[week - 1] : [])
             .filter(e => e && e.roster_id != null && typeof e.points === 'number')
             .slice()
@@ -162,16 +171,39 @@ function LeagueScores() {
               const rosterId = entry.roster_id;
               const teamName = getTeamName(rosterId);
               const avatarUrl = getAvatar(rosterId);
+              const isExpanded = !!expanded[rosterId];
+              const weekBreakdown = getWeekScoreBreakdown(weeksParsedData, week)[rosterId];
+              const startersTotal = weekBreakdown ? weekBreakdown.starterTotal : 0;
+              const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
               return (
                 <div key={rosterId} className="standings-row">
-                  <div className="standings-row-header">
-                    <span className="standings-toggle-icon" style={{ visibility: 'hidden' }}>▸</span>
+                  <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
+                    <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
                     {/* No rank number for live scores */}
                     <span className="standings-rank" style={{ visibility: 'hidden' }}>#</span>
                     {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                     <span className="standings-title">{teamName}</span>
-                    <span className="standings-total">{Math.round(entry.points)} pts</span>
-                  </div>
+                    <span className="standings-total">{Math.round(entry.points * 10) / 10} pts</span>
+                  </button>
+                  {isExpanded && (
+                    <div className="standings-row-expand">
+                      <div className="standings-row-expand-inner standings-stats-grid">
+                        <div className="stat-label">Starters:</div>
+                        <div className="stat-v1">{startersTotal} pts</div>
+                        <div className="stat-v2"></div>
+                        <div className="stat-v3"></div>
+
+                        <div className="stat-label">Bench:</div>
+                        <div className="stat-v1">{benchTotal} pts</div>
+                        <div className="stat-v2"></div>
+                        <div className="stat-v3"></div>
+
+                        <div className="standings-team-link">
+                          <Link to={`/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>See Team Overview</Link>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -1586,3 +1586,15 @@
   .standings-place-mobile { display: inline; margin-left: auto; }
   /* When we switch to flex layout on mobile, this appears where PPG was and pushes score right */
 } 
+
+.standings-list--scores {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+}
+@media (max-width: 50em) {
+  .standings-list--scores {
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
+} 
