@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea } from 'recharts';
 
 function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds) {
   if (!Array.isArray(weeksParsedData) || completedWeeks <= 0) {
@@ -45,6 +45,7 @@ function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds) {
     for (const rid of allRosterIds) {
       const delta = (cumulative[rid] || 0) - playoffBar;
       point[rid] = Math.round(delta * 10) / 10;
+      point[`c_${rid}`] = Math.round((cumulative[rid] || 0) * 10) / 10;
     }
     chartData.push(point);
   }
@@ -85,7 +86,42 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
     [weeksParsedData, completedWeeks, rosterIdSet]
   );
 
-  const [yMin, yMax] = useMemo(() => computeRoundedYDomain(data, seriesRosterIds), [data, seriesRosterIds]);
+  const [yMinRaw, yMaxRaw] = useMemo(() => computeRoundedYDomain(data, seriesRosterIds), [data, seriesRosterIds]);
+  const yMin = Math.min(yMinRaw, 0);
+  const yMax = Math.max(yMaxRaw, 0);
+
+  const renderTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || payload.length === 0) { return null; }
+    const weekNum = typeof label === 'string' ? label.replace('W', '') : label;
+    const rows = payload
+      .slice()
+      .sort((a, b) => {
+        const av = typeof a.value === 'number' ? a.value : -Infinity;
+        const bv = typeof b.value === 'number' ? b.value : -Infinity;
+        return bv - av;
+      })
+      .map((item) => {
+        const ridKey = item.dataKey;
+        const teamName = item.name || ridKey;
+        const cumulativeVal = item.payload ? item.payload[`c_${ridKey}`] : undefined;
+        const signedDelta = typeof item.value === 'number' ? (item.value >= 0 ? `+${Math.round(item.value)}` : `${Math.round(item.value)}`) : '';
+        const valueText = `${typeof cumulativeVal === 'number' ? Math.round(cumulativeVal) : ''} (${signedDelta})`;
+        return (
+          <div key={ridKey} style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between', width: '100%', alignItems: 'baseline' }}>
+            <span style={{ color: item.color, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '0.5rem' }}>{teamName}</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{valueText}</span>
+          </div>
+        );
+      });
+    return (
+      <div style={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff', borderRadius: '8px', padding: '8px 10px', minWidth: '200px', maxWidth: '70vw' }}>
+        <div style={{ fontWeight: 800, textAlign: 'center', marginBottom: '6px' }}>{`Week ${weekNum}`}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {rows}
+        </div>
+      </div>
+    );
+  };
 
   if (!data || data.length === 0) {
     return null;
@@ -114,20 +150,30 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
           <LineChart data={data} margin={{ top: 10, right: 12, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334" />
             <XAxis dataKey="name" tick={{ fill: '#ccd' }} />
-            <YAxis tick={{ fill: '#ccd' }} domain={[yMin, yMax]} />
-            <Tooltip
-              formatter={(value) => `${value} pts`}
-              labelFormatter={(l) => `Week ${l?.replace('W','')}`}
-              itemSorter={(item) => {
-                const v = item && typeof item.value === 'number' ? item.value : -Infinity;
-                return -v; // negative for descending order
-              }}
-              contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }}
-              labelStyle={{ color: '#fff' }}
+            <YAxis
+              tick={{ fill: '#ccd' }}
+              domain={[Math.min(yMin, 0), Math.max(yMax, 0)]}
             />
+            {/* Add an extra mirrored tick label at 0 without changing main ticks */}
+            <YAxis
+              yAxisId="playoffLabel"
+              tick={{ fill: '#ccd', fontWeight: 700 }}
+              orientation="left"
+              mirror={true}
+              axisLine={false}
+              tickLine={false}
+              width={0}
+              domain={[Math.min(yMin, 0), Math.max(yMax, 0)]}
+              ticks={[0]}
+              tickFormatter={() => 'Playoff Bar'}
+            />
+            {/* Background shading: above and below the playoff bar */}
+            <ReferenceArea y1={0} y2={Math.max(yMax, 0)} fill="#ffd700" fillOpacity={0.14} />
+            <ReferenceArea y1={Math.min(yMin, 0)} y2={0} fill="#4fb7ff" fillOpacity={0.1} />
+            <Tooltip content={renderTooltip} />
             <Legend />
-            {/* Solid baseline at 0.0 labeled Playoff Bar */}
-            <ReferenceLine y={0} stroke="#ffffff" strokeWidth={1} ifOverflow="extendDomain" label={{ value: 'Playoff Bar', position: 'insideTopLeft', fill: '#fff' }} />
+            {/* Solid baseline at 0.0 (no label) */}
+            <ReferenceLine y={0} stroke="#ffffff" strokeWidth={1} ifOverflow="extendDomain" />
             {seriesRosterIds.map((rid, idx) => (
               <Line
                 key={rid}

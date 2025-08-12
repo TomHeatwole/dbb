@@ -1399,12 +1399,19 @@
   .playoff-race-graph { margin-top: 1.2rem; }
 }
 
+/* Add some breathing room below the playoff race graph */
+.playoff-race-graph { margin-bottom: 3.5rem; }
+@media (max-width: 50em) {
+  .playoff-race-graph { margin-bottom: 2rem; }
+}
+
 /* Full-viewport chart container for playoff race */
 .playoff-race-chart-container {
   width: 100%;
   height: 80vh; /* fill 80% of the viewport height */
   max-width: 72rem;
   margin: 0 auto;
+  padding-bottom: 1rem; /* soft edge below the chart */
 }
 
 .standings-list--expanded {
