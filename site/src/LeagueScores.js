@@ -27,6 +27,7 @@ function LeagueScores() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
+  const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -162,7 +163,7 @@ function LeagueScores() {
       ) : error || !weeksParsedData || !rosters || !users ? (
         <div>Error loading scores.</div>
       ) : (
-        <div className="standings-list standings-list--scores">
+        <div className={`standings-list standings-list--scores${hasAnyExpanded ? ' standings-list--expanded' : ''}`}>
           {(Array.isArray(weeksParsedData) && weeksParsedData[week - 1] ? weeksParsedData[week - 1] : [])
             .filter(e => e && e.roster_id != null && typeof e.points === 'number')
             .slice()
@@ -199,7 +200,7 @@ function LeagueScores() {
                         <div className="stat-v3"></div>
 
                         <div className="standings-team-link">
-                          <Link to={`/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>See Team Overview</Link>
+                          <Link to={`/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>See Week {week} Breakdown</Link>
                         </div>
                       </div>
                     </div>

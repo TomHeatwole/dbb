@@ -2,3 +2,4 @@
 - Figure out if we can understand what games a player was/wasn't active for for per-game stats.
 - Pull in API for live scores
 - playoffs and/or head to head
+- "Scenarios" page where you can see what would happen if a team did or didn't have another player
