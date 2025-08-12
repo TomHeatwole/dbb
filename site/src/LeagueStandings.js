@@ -440,7 +440,7 @@ function LeagueStandings() {
           const place14 = getPlace(standings14, rosterId);
           const place17 = getPlace(standingsAll, rosterId);
           const placeCompleted = getPlace(standingsCompleted, rosterId);
-          const { high, low } = computeHighLow(rosterId, weeksParsedData, effectiveCompletedWeeks);
+          const { high, low } = computeHighLow(rosterId, weeksParsedData, completedWeeks);
           const playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
           const completedPlayoffWeeks = usePlayoffLogic && isPlayoff ? (isCurrentSeason ? Math.max(0, Math.min(3, completedWeeks - 14)) : 3) : 0;
           const playoffPpg = usePlayoffLogic && isPlayoff && completedPlayoffWeeks > 0
