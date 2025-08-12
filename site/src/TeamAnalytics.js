@@ -184,7 +184,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip />
+              <Tooltip contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
               <Legend />
               <Line type="monotone" dataKey="points" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
               <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
@@ -228,7 +228,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip />
+              <Tooltip contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
               <Legend />
               {/* Area above playoff bar */}
               <defs>
@@ -273,8 +273,17 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
                   const mid = Math.floor(runningArr.length / 2);
                   leagueMedian = runningArr[mid] - leagueFloor;
                 }
-                // Playoff Bar: 5th place running total (0-based index 4)
-                const playoffBar = runningArr.length >= 5 ? (runningArr[4] - leagueFloor) : 0;
+                // Playoff Bar: average of 4th and 5th cumulative totals (0-based: 3 and 4),
+                // fallback to 4th if exactly 4 teams, else median if fewer
+                let playoffBarAbs = 0;
+                if (runningArr.length >= 5) {
+                  playoffBarAbs = (runningArr[3] + runningArr[4]) / 2;
+                } else if (runningArr.length >= 4) {
+                  playoffBarAbs = runningArr[3];
+                } else if (runningArr.length > 0) {
+                  playoffBarAbs = runningArr[Math.floor(runningArr.length / 2)];
+                }
+                const playoffBar = playoffBarAbs - leagueFloor;
                 return {
                   name: `Week ${startWeek + i}`,
                   runningTotalPoints: user ? Math.round((user.runningTotalPoints - leagueFloor) * 10) / 10 : 0,
@@ -289,7 +298,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
               <YAxis
                 tickFormatter={v => (v >= 0 ? `+${v}` : v)}
               />
-              <Tooltip formatter={v => (v >= 0 ? `+${v}` : v)} />
+              <Tooltip formatter={v => (v >= 0 ? `+${v}` : v)} contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
               <Legend />
               <Line type="monotone" dataKey="runningTotalPoints" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
               <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />

@@ -82,7 +82,7 @@ export default function PositionAnalytics({
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip />
+              <Tooltip contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
               <Legend />
               <Line type="monotone" dataKey="userScore" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || `Your ${posLabel}`} />
               <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
@@ -127,7 +127,7 @@ export default function PositionAnalytics({
                         avgScore = Math.round((d.cumulative_score / d.count) * 10) / 10;
                       }
                       return (
-                        <div className="position-analytics-tooltip">
+                        <div className="position-analytics-tooltip" style={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff', borderRadius: '8px', padding: '8px 10px' }}>
                           {d.img && <img src={d.img} alt={d.name} className="position-analytics-tooltip-img" />}
                           <div><b>{d.name} ({d.position})</b></div>
                           <div><b>{posLabel} starts:</b> {playerStarts}</div>
