@@ -3,7 +3,7 @@ import InfoPageWrapper from './InfoPageWrapper';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
-import { getCurrentNFLWeek } from './DateHelper';
+import { getCurrentNFLWeek, getCompletedWeeksCount } from './DateHelper';
 import { getStandings } from './ScoresParser';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
@@ -125,10 +125,15 @@ function LeagueStandings() {
     return row ? row.place : null;
   }
 
-  function computeHighLow(rosterId, weeksArr) {
+  function computeHighLow(rosterId, weeksArr, completedWeeksLimit = null) {
+    const totalWeeksAvailable = Array.isArray(weeksArr) ? weeksArr.filter(Boolean).length : 0;
+    const cap = completedWeeksLimit == null ? totalWeeksAvailable : Math.max(0, Math.min(totalWeeksAvailable, completedWeeksLimit));
+    if (cap === 0) {
+      return { high: { points: 'N/A', week: null }, low: { points: 'N/A', week: null } };
+    }
     let high = { points: -Infinity, week: null };
     let low = { points: Infinity, week: null };
-    (weeksArr || []).forEach((weekEntries, idx) => {
+    (weeksArr || []).slice(0, cap).forEach((weekEntries, idx) => {
       if (!Array.isArray(weekEntries)) { return; }
       const entry = weekEntries.find(e => e && Number(e.roster_id) === Number(rosterId));
       if (entry && typeof entry.points === 'number') {
@@ -194,6 +199,7 @@ function LeagueStandings() {
   // Determine if we should apply playoff logic
   const isCurrentSeason = season === CURRENT_YEAR;
   const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : 17;
+  const completedWeeks = isCurrentSeason ? getCompletedWeeksCount() : 17;
   const usePlayoffLogic = !isCurrentSeason || currentWeek >= 15;
 
   // Determine playoff teams based on first 14 weeks (or current cumulative when playoff logic is off)
@@ -237,6 +243,13 @@ function LeagueStandings() {
 
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
 
+  function computeCompletedWeeksPpg(weeksArr, rosterId, capWeeks = null) {
+    const effectiveCompleted = Math.max(0, Math.min(completedWeeks, capWeeks != null ? capWeeks : (weeksArr ? weeksArr.filter(Boolean).length : 0)));
+    if (effectiveCompleted === 0) { return 0; }
+    const sum = sumPointsForWeeks((weeksArr || []).slice(0, effectiveCompleted), rosterId);
+    return Math.round((sum / effectiveCompleted) * 10) / 10;
+  }
+
   function renderExpandedStats({
     isMobileView,
     shouldUsePlayoffLogic,
@@ -251,7 +264,10 @@ function LeagueStandings() {
     highestWeekly,
     lowestWeekly,
     rosterIdForLink,
-    currentSearchParams
+    currentSearchParams,
+    currentWeekNumber,
+    ppg14Completed,
+    ppg17Completed
   }) {
     const baseQuery = currentSearchParams && currentSearchParams.toString() ? currentSearchParams.toString() : '';
     const buildWeekLink = (week) => {
@@ -280,61 +296,70 @@ function LeagueStandings() {
             )
           )}
 
-          {isMobileView ? (
+          {currentWeekNumber < 15 ? (
+            // Pre-playoffs: only show PF once
             <>
-              <div className="stat-label">14-Week:</div>
-              <div className="stat-v1">{fourteenWeekTotals.total} pts</div>
-              <div className="stat-v2">#{fourteenWeekPlace}</div>
-              <div className="stat-v3"></div>
-            </>
-          ) : (
-            <>
-              <div className="stat-label">14-Week:</div>
-              <div className="stat-v1">{fourteenWeekTotals.total} pts</div>
-              <div className="stat-v2">{fourteenWeekTotals.ppg} ppg</div>
-              <div className="stat-v3">#{fourteenWeekPlace}</div>
-            </>
-          )}
-
-          {isMobileView ? (
-            <>
-              <div className="stat-label">17-Week:</div>
+              <div className="stat-label">PF:</div>
               <div className="stat-v1">{seventeenWeekTotals.total} pts</div>
               <div className="stat-v2">#{seventeenWeekPlace}</div>
               <div className="stat-v3"></div>
             </>
           ) : (
+            // Playoffs or after week 15: show 14-week and 17-week rows
             <>
-              <div className="stat-label">17-Week:</div>
-              <div className="stat-v1">{seventeenWeekTotals.total} pts</div>
-              <div className="stat-v2">{seventeenWeekTotals.ppg} ppg</div>
-              <div className="stat-v3">#{seventeenWeekPlace}</div>
+              {isMobileView ? (
+                <>
+                  <div className="stat-label">14-Week:</div>
+                  <div className="stat-v1">{fourteenWeekTotals.total} pts</div>
+                  <div className="stat-v2">#{fourteenWeekPlace}</div>
+                  <div className="stat-v3"></div>
+                </>
+              ) : (
+                <>
+                  <div className="stat-label">14-Week:</div>
+                  <div className="stat-v1">{fourteenWeekTotals.total} pts</div>
+                  <div className="stat-v2">{ppg14Completed} ppg</div>
+                  <div className="stat-v3">#{fourteenWeekPlace}</div>
+                </>
+              )}
+
+              {isMobileView ? (
+                <>
+                  <div className="stat-label">17-Week:</div>
+                  <div className="stat-v1">{seventeenWeekTotals.total} pts</div>
+                  <div className="stat-v2">#{seventeenWeekPlace}</div>
+                  <div className="stat-v3"></div>
+                </>
+              ) : (
+                <>
+                  <div className="stat-label">17-Week:</div>
+                  <div className="stat-v1">{seventeenWeekTotals.total} pts</div>
+                  <div className="stat-v2">{ppg17Completed} ppg</div>
+                  <div className="stat-v3">#{seventeenWeekPlace}</div>
+                </>
+              )}
             </>
           )}
 
           {isMobileView ? (
             <>
               <div className="stat-label">High Score:</div>
-              <div className="stat-v1">{highestWeekly.points} pts</div>
+              <div className="stat-v1">{typeof highestWeekly.points === 'number' ? `${highestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof highestWeekly.week === 'number' ? (
                   <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>Week {highestWeekly.week}</Link>
-                ) : (
-                  <>Week {highestWeekly.week}</>
-                )}
+                ) : null}
               </div>
               <div className="stat-v3"></div>
             </>
           ) : (
             <>
               <div className="stat-label">High Score:</div>
-              <div className="stat-v1">{highestWeekly.points} pts</div>
+              <div className="stat-v1">{typeof highestWeekly.points === 'number' ? `${highestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof highestWeekly.week === 'number' ? (
                   <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>Week {highestWeekly.week}</Link>
-                ) : (
-                  <>Week {highestWeekly.week}</>
-                )}
+                ) : null}
               </div>
               <div className="stat-v3"></div>
             </>
@@ -343,26 +368,22 @@ function LeagueStandings() {
           {isMobileView ? (
             <>
               <div className="stat-label">Low Score:</div>
-              <div className="stat-v1">{lowestWeekly.points} pts</div>
+              <div className="stat-v1">{typeof lowestWeekly.points === 'number' ? `${lowestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof lowestWeekly.week === 'number' ? (
                   <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>Week {lowestWeekly.week}</Link>
-                ) : (
-                  <>Week {lowestWeekly.week}</>
-                )}
+                ) : null}
               </div>
               <div className="stat-v3"></div>
             </>
           ) : (
             <>
               <div className="stat-label">Low Score:</div>
-              <div className="stat-v1">{lowestWeekly.points} pts</div>
+              <div className="stat-v1">{typeof lowestWeekly.points === 'number' ? `${lowestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof lowestWeekly.week === 'number' ? (
                   <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>Week {lowestWeekly.week}</Link>
-                ) : (
-                  <>Week {lowestWeekly.week}</>
-                )}
+                ) : null}
               </div>
               <div className="stat-v3"></div>
             </>
@@ -386,17 +407,20 @@ function LeagueStandings() {
           const teamName = getTeamName(rosterId);
           const avatarUrl = getAvatar(rosterId);
 
-          // Display metrics
-          const ppg = row.weeksCount > 0 ? Math.round((row.points_scored / row.weeksCount) * 10) / 10 : 0;
+          // PPG should be computed over COMPLETED weeks only
+          const ppg = completedWeeks > 0 ? Math.round((sumPointsForWeeks(weeksParsedData.slice(0, completedWeeks), rosterId) / completedWeeks) * 10) / 10 : 0;
 
           // Expanded details for every team
           const det14 = computeTotals(rosterId, weeksFirst14);
           const det17 = computeTotals(rosterId, weeksParsedData);
           const place14 = getPlace(standings14, rosterId);
           const place17 = getPlace(standingsAll, rosterId);
-          const { high, low } = computeHighLow(rosterId, weeksParsedData);
+          const { high, low } = computeHighLow(rosterId, weeksParsedData, completedWeeks);
           const playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
-          const playoffPpg = usePlayoffLogic && isPlayoff && weeks15to17.length > 0 ? Math.round((playoffPts / weeks15to17.length) * 10) / 10 : null;
+          const completedPlayoffWeeks = usePlayoffLogic && isPlayoff ? (isCurrentSeason ? Math.max(0, Math.min(3, completedWeeks - 14)) : 3) : 0;
+          const playoffPpg = usePlayoffLogic && isPlayoff && completedPlayoffWeeks > 0
+            ? Math.round((sumPointsForWeeks(weeks15to17.slice(0, completedPlayoffWeeks), rosterId) / completedPlayoffWeeks) * 10) / 10
+            : null;
           const playoffPlace = usePlayoffLogic && isPlayoff ? playoffOrderMap.get(rosterId) : null;
 
           return (
@@ -453,7 +477,10 @@ function LeagueStandings() {
                   highestWeekly: high,
                   lowestWeekly: low,
                   rosterIdForLink: rosterId,
-                  currentSearchParams: searchParams
+                  currentSearchParams: searchParams,
+                  currentWeekNumber: currentWeek,
+                  ppg14Completed: computeCompletedWeeksPpg(weeksFirst14, rosterId, 14),
+                  ppg17Completed: computeCompletedWeeksPpg(weeksParsedData, rosterId, 17)
                 })
               )}
             </div>
