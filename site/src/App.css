@@ -1235,11 +1235,12 @@
   padding-left: 18px !important;
   padding-right: 18px !important;
   padding-top: 3.5rem !important; /* offset for year selector + mobile home link */
-  min-height: calc(100vh) !important;
+  min-height: 100vh !important; /* ensure blue background extends at least to viewport bottom */
   width: 100% !important;
   max-width: 100% !important;
   display: block !important;
   box-sizing: border-box !important;
+  padding-bottom: 1rem !important; /* keep a touch of bottom breathing room without causing white gap */
 }
 .info-rel { position: relative; }
 .info-header-left-abs {
@@ -1343,6 +1344,14 @@
   max-width: 56rem;
   margin: 0 auto;
 }
+.standings-list--expanded {
+  padding-bottom: 2.5rem; /* create breathing room below expanded rows */
+}
+@media (max-width: 50em) {
+  .standings-list--expanded {
+    padding-bottom: 0.5rem; /* minimize extra scroll space on mobile */
+  }
+}
 .standings-row {
   background: rgba(26, 22, 40, 0.9);
   border: 1px solid rgba(100, 100, 140, 0.35);
@@ -1381,6 +1390,15 @@
 .standings-total { text-align: right; font-weight: 800; }
 .standings-row-expand { padding: 0.6rem 0.9rem 0.9rem 2.2rem; border-top: 1px solid rgba(100, 100, 140, 0.25); }
 .standings-row-expand-inner { color: #dfe6f0; }
+/* Prevent expanded content from causing horizontal scroll */
+.standings-row-expand,
+.standings-row-expand-inner,
+.standings-stats-grid {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
 
 /* Standings expanded stats grid */
 .standings-stats-grid {
@@ -1402,6 +1420,10 @@
 .standings-team-link { margin-top: 0.8rem; grid-column: 1 / -1; }
 .standings-team-link a { color: #4fb7ff; font-weight: 800; font-size: 1.05rem; text-decoration: none; }
 .standings-team-link a:hover { text-decoration: underline; }
+
+/* Inline week links in expanded stats should match team link color */
+.standings-inline-link { color: #4fb7ff; font-weight: 800; text-decoration: none; }
+.standings-inline-link:hover { text-decoration: underline; }
 
 @media (max-width: 50em) {
   .standings-stats-grid { grid-template-columns: 8.5rem 6.5rem 6.5rem 4rem; }

@@ -235,6 +235,8 @@ function LeagueStandings() {
     setExpanded(prev => ({ ...prev, [rosterId]: !prev[rosterId] }));
   }
 
+  const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
+
   function renderExpandedStats({
     isMobileView,
     shouldUsePlayoffLogic,
@@ -251,6 +253,12 @@ function LeagueStandings() {
     rosterIdForLink,
     currentSearchParams
   }) {
+    const baseQuery = currentSearchParams && currentSearchParams.toString() ? currentSearchParams.toString() : '';
+    const buildWeekLink = (week) => {
+      if (typeof week !== 'number' || !isFinite(week)) { return null; }
+      const qs = baseQuery ? `${baseQuery}&week=${week}&tab=Scores` : `week=${week}&tab=Scores`;
+      return `/team/${rosterIdForLink}?${qs}`;
+    };
     return (
       <div className="standings-row-expand">
         <div className="standings-row-expand-inner standings-stats-grid">
@@ -308,14 +316,26 @@ function LeagueStandings() {
             <>
               <div className="stat-label">High Score:</div>
               <div className="stat-v1">{highestWeekly.points} pts</div>
-              <div className="stat-v2">Week {highestWeekly.week}</div>
+              <div className="stat-v2">
+                {typeof highestWeekly.week === 'number' ? (
+                  <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>Week {highestWeekly.week}</Link>
+                ) : (
+                  <>Week {highestWeekly.week}</>
+                )}
+              </div>
               <div className="stat-v3"></div>
             </>
           ) : (
             <>
               <div className="stat-label">High Score:</div>
               <div className="stat-v1">{highestWeekly.points} pts</div>
-              <div className="stat-v2">Week {highestWeekly.week}</div>
+              <div className="stat-v2">
+                {typeof highestWeekly.week === 'number' ? (
+                  <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>Week {highestWeekly.week}</Link>
+                ) : (
+                  <>Week {highestWeekly.week}</>
+                )}
+              </div>
               <div className="stat-v3"></div>
             </>
           )}
@@ -324,14 +344,26 @@ function LeagueStandings() {
             <>
               <div className="stat-label">Low Score:</div>
               <div className="stat-v1">{lowestWeekly.points} pts</div>
-              <div className="stat-v2">Week {lowestWeekly.week}</div>
+              <div className="stat-v2">
+                {typeof lowestWeekly.week === 'number' ? (
+                  <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>Week {lowestWeekly.week}</Link>
+                ) : (
+                  <>Week {lowestWeekly.week}</>
+                )}
+              </div>
               <div className="stat-v3"></div>
             </>
           ) : (
             <>
               <div className="stat-label">Low Score:</div>
               <div className="stat-v1">{lowestWeekly.points} pts</div>
-              <div className="stat-v2">Week {lowestWeekly.week}</div>
+              <div className="stat-v2">
+                {typeof lowestWeekly.week === 'number' ? (
+                  <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>Week {lowestWeekly.week}</Link>
+                ) : (
+                  <>Week {lowestWeekly.week}</>
+                )}
+              </div>
               <div className="stat-v3"></div>
             </>
           )}
@@ -346,7 +378,7 @@ function LeagueStandings() {
 
   return (
     <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
-      <div className="standings-list">
+      <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "")}>
         {displayRows.map((row, idx) => {
           const rosterId = row.roster_id;
           const isExpanded = !!expanded[rosterId];
