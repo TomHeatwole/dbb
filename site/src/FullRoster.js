@@ -1,5 +1,6 @@
 import React from 'react';
 import useIsMobile from './useIsMobile';
+import PlayerCard from './PlayerCard';
 
 function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
   // Group players by position
@@ -30,11 +31,14 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
             <div className="player-column-header">{pos}</div>
             <ul className="player-list">
               {playersByPosition[pos].map((p, i) => (
-                <li key={i} className="player-list-item player-list-item-flex">
+                <li key={i} className="player-list-item player-list-item-flex player-hover-container">
                   {p.espn_photo_url && (
                     <img src={p.espn_photo_url} alt={p.name} className="player-avatar player-avatar-style" />
                   )}
                   <span className="player-name">{p.name}</span>
+                  <div className="player-card-wrapper">
+                    <PlayerCard player={p} />
+                  </div>
                 </li>
               ))}
             </ul>
