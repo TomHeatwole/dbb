@@ -1,6 +1,6 @@
 import React from 'react';
 
-function PlayerCard({ player }) {
+function PlayerCard({ player, onClose }) {
   const hasPhoto = Boolean(player && player.espn_photo_url);
   const name = player && player.name ? player.name : '';
   const position = player && player.position ? player.position : '';
@@ -16,6 +16,16 @@ function PlayerCard({ player }) {
 
   return (
     <div className="player-card">
+      {typeof onClose === 'function' && (
+        <button
+          className="player-card-close"
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+        >
+          ×
+        </button>
+      )}
       <div className="player-card-content">
         {hasPhoto && (
           <img src={player.espn_photo_url} alt={name} className="player-card-photo" />

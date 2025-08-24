@@ -1701,3 +1701,60 @@
 .player-card-detail-value {
   color: #e7efff;
 } 
+
+.player-clickable {
+  cursor: pointer;
+}
+
+.player-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+.player-modal {
+  position: relative;
+  width: 66.6667vw;
+  max-width: 1600px;
+  min-width: 320px;
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 2px 12px rgba(0,0,0,0.25);
+}
+.player-modal .player-card {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.player-card {
+  position: relative;
+  width: 100%;
+}
+.player-card-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: #1e2433;
+  color: #e7efff;
+  border: 1px solid #2c3750;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.player-card-close:hover {
+  background: #27324a;
+} 
+body.modal-open {
+  overflow: hidden;
+} 

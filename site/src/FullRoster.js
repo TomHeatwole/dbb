@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import useIsMobile from './useIsMobile';
 import PlayerCard from './PlayerCard';
 
@@ -23,6 +24,43 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
 
   const isMobile = useIsMobile();
 
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        setSelectedPlayer(null);
+      }
+    }
+    if (selectedPlayer) {
+      document.addEventListener('keydown', onKeyDown);
+    }
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedPlayer]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (selectedPlayer) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [selectedPlayer]);
+
+  const modal = selectedPlayer ? (
+    <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+      <div
+        className="player-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => { e.stopPropagation(); }}
+      >
+        <PlayerCard player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div className="team-roster-section">
       <div className={`player-columns${isMobile ? ' roster-mobile-columns' : ''}`}>
@@ -31,20 +69,23 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
             <div className="player-column-header">{pos}</div>
             <ul className="player-list">
               {playersByPosition[pos].map((p, i) => (
-                <li key={i} className="player-list-item player-list-item-flex player-hover-container">
+                <li
+                  key={i}
+                  className="player-list-item player-list-item-flex player-clickable"
+                  onClick={() => setSelectedPlayer(p)}
+                >
                   {p.espn_photo_url && (
                     <img src={p.espn_photo_url} alt={p.name} className="player-avatar player-avatar-style" />
                   )}
                   <span className="player-name">{p.name}</span>
-                  <div className="player-card-wrapper">
-                    <PlayerCard player={p} />
-                  </div>
                 </li>
               ))}
             </ul>
           </div>
         ))}
       </div>
+
+      {modal && createPortal(modal, document.body)}
     </div>
   );
 }
