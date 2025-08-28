@@ -14,6 +14,7 @@ import useIsMobile from './useIsMobile';
 import MobileTeamScoreSummary from './MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from './GamesLookup';
+import { mapPlayersToGames } from './GamesParser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -120,14 +121,30 @@ function LeagueScores() {
       .finally(() => setLoading(false));
   }, [season]);
 
-  // Fetch NFL scoreboard JSON and log it
+  // Fetch NFL scoreboard JSON and log player->game mapping for the current week
   useEffect(() => {
+    if (!playersData || !playerIdMap || !weeksParsedData) { return; }
+    const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[week - 1] : null;
+    if (!Array.isArray(weekArr)) { return; }
+    const playerIdSet = new Set();
+    for (const entry of weekArr) {
+      if (entry && Array.isArray(entry.players)) {
+        for (const pid of entry.players) { playerIdSet.add(pid); }
+      }
+    }
+    const playerIds = Array.from(playerIdSet);
+    if (playerIds.length === 0) { return; }
+
     let cancelled = false;
     fetchNflScoreboard(season, week)
-      .then((json) => { if (!cancelled) { console.log('NFL Scoreboard', { season, week, json }); } })
+      .then((json) => {
+        if (cancelled) { return; }
+        const mapping = mapPlayersToGames(playerIds, playersData, playerIdMap, json);
+        console.log('Player->Game mapping', { season, week, mapping });
+      })
       .catch((err) => { if (!cancelled) { console.error('NFL Scoreboard fetch failed', err); } });
     return () => { cancelled = true; };
-  }, [season, week]);
+  }, [season, week, playersData, playerIdMap, weeksParsedData]);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) return `Team ${rosterId}`;
