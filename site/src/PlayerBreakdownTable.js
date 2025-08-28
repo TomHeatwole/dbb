@@ -18,7 +18,8 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
         const benchRate = totalAppearances > 0 ? (d.bench / totalAppearances) : 0;
         const avgStarterPts = d.starts > 0 ? (d.starterPointsSum / d.starts) : 0;
         const avgBenchPts = d.bench > 0 ? (d.benchPointsSum / d.bench) : 0;
-        const slotCounts = Array.isArray(d.startedPositionsCounts) ? d.startedPositionsCounts : [];
+        const totalPts = d.starterPointsSum + d.benchPointsSum;
+        const avgTotalPts = totalAppearances > 0 ? (totalPts / totalAppearances) : 0;
         return {
           playerId: d.playerId,
           name,
@@ -27,9 +28,9 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
           bench: d.bench,
           startRate,
           benchRate,
-          slotCounts,
           avgStarterPts,
           avgBenchPts,
+          avgTotalPts,
         };
       })
       .sort((a, b) => (b.starts - a.starts) || (b.bench - a.bench));
@@ -39,34 +40,26 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
     <div className="pos-avg-table-container">
       <h3 className="pos-avg-table-title">Player Breakdown</h3>
       <div className="pos-avg-table-scroll">
-        <table className="pos-avg-table pos-avg-table-min">
+        <table className="pos-avg-table player-breakdown-table player-breakdown-compact">
           <thead>
             <tr>
               <th>Player</th>
-              <th>Starts</th>
-              <th>Bench</th>
-              <th>Start %</th>
-              <th>Bench %</th>
-              {STARTER_POSITION_NAMES && STARTER_POSITION_NAMES.map((label, idx) => (
-                <th key={idx}>{label}</th>
-              ))}
-              <th>Avg Pts (Start)</th>
-              <th>Avg Pts (Bench)</th>
+              <th className="player-breakdown-number"><div className="th-multiline"><div>Starts</div></div></th>
+              <th className="player-breakdown-number"><div className="th-multiline"><div>Bench</div></div></th>
+              <th className="player-breakdown-number"><div className="th-multiline"><div>Avg Pts</div></div></th>
+              <th className="player-breakdown-number"><div className="th-multiline"><div>Avg Pts</div><div>(Start)</div></div></th>
+              <th className="player-breakdown-number"><div className="th-multiline"><div>Avg Pts</div><div>(Bench)</div></div></th>
             </tr>
           </thead>
           <tbody>
             {rows.map(row => (
               <tr key={row.playerId}>
                 <td>{row.name}{row.position ? ` (${row.position})` : ''}</td>
-                <td>{row.starts}</td>
-                <td>{row.bench}</td>
-                <td>{(row.startRate * 100).toFixed(0)}%</td>
-                <td>{(row.benchRate * 100).toFixed(0)}%</td>
-                {STARTER_POSITION_NAMES && STARTER_POSITION_NAMES.map((_, idx) => (
-                  <td key={`${row.playerId}-${idx}`}>{row.slotCounts[idx] || 0}</td>
-                ))}
-                <td>{row.avgStarterPts.toFixed(1)}</td>
-                <td>{row.avgBenchPts.toFixed(1)}</td>
+                <td className="player-breakdown-number">{row.starts} ({(row.startRate * 100).toFixed(0)}%)</td>
+                <td className="player-breakdown-number">{row.bench} ({(row.benchRate * 100).toFixed(0)}%)</td>
+                <td className="player-breakdown-number">{row.avgTotalPts.toFixed(1)}</td>
+                <td className="player-breakdown-number">{row.avgStarterPts.toFixed(1)}</td>
+                <td className="player-breakdown-number">{row.avgBenchPts.toFixed(1)}</td>
               </tr>
             ))}
           </tbody>

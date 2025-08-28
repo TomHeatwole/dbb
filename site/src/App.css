@@ -1765,3 +1765,26 @@ body.modal-open {
 .pos-avg-table-min {
   min-width: 1200px;
 } 
+
+.player-breakdown-table th,
+.player-breakdown-table td {
+  white-space: nowrap;
+}
+.player-breakdown-compact th,
+.player-breakdown-compact td {
+  padding: 0.35rem 0.5rem;
+}
+.player-breakdown-number {
+  text-align: right;
+}
+.th-multiline {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+@media (max-width: 50em) {
+  .player-breakdown-table th,
+  .player-breakdown-table td {
+    white-space: nowrap;
+  }
+} 
