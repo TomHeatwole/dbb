@@ -8,6 +8,26 @@ async function fetchJson(url) {
   return res.json();
 }
 
+async function fetchDailyFromCacheOrApi(season, dayToken) {
+  const localUrl = `/data/${season}/${dayToken}.txt`;
+  try {
+    const r = await fetch(localUrl);
+    if (r.ok) {
+      const t = await r.text();
+      try {
+        const j = JSON.parse(t);
+        return j;
+      } catch (_) {
+        // fall through to API
+      }
+    }
+  } catch (_) {
+    // ignore and fall back to API
+  }
+  const apiUrl = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dayToken}`;
+  return await fetchJson(apiUrl);
+}
+
 function enumerateDatesInclusive(startIso, endIso) {
   const start = new Date(startIso);
   const end = new Date(endIso);
@@ -71,38 +91,9 @@ async function fetchWeekByDates(season, week) {
   const startIso = entry.startDate; // e.g. 2024-12-25T08:00Z
   const endIso = entry.endDate;     // e.g. 2025-01-01T07:59Z
 
-  // DEBUG: log week range
-  // eslint-disable-next-line no-console
-  console.log('[GamesLookup] Week range from manifest (JSON)', { season, week, startIso, endIso });
-
   const dayTokens = enumerateDatesInclusive(startIso, endIso);
-  const urls = dayTokens.map(tok => `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${tok}`);
-
-  // DEBUG: log URLs
-  // eslint-disable-next-line no-console
-  console.log('[GamesLookup] Fetching daily scoreboards', { season, week, urls });
-
-  const blobs = await Promise.all(urls.map(u => fetchJson(u)));
-
-  // DEBUG: log per-day counts and short names
-  const perDay = blobs.map((b, i) => ({
-    date: dayTokens[i],
-    count: Array.isArray(b && b.events) ? b.events.length : 0,
-    games: Array.isArray(b && b.events) ? b.events.map(ev => (ev && (ev.shortName || ev.name || ev.id))) : []
-  }));
-  // eslint-disable-next-line no-console
-  console.log('[GamesLookup] Daily scoreboard results', perDay);
-
+  const blobs = await Promise.all(dayTokens.map(tok => fetchDailyFromCacheOrApi(season, tok)));
   const merged = mergeScoreboardsByEvents(blobs);
-  // DEBUG: merged events summary
-  // eslint-disable-next-line no-console
-  console.log('[GamesLookup] Merged weekly events', {
-    season,
-    week,
-    total: Array.isArray(merged.events) ? merged.events.length : 0,
-    games: Array.isArray(merged.events) ? merged.events.map(ev => (ev && (ev.shortName || ev.name || ev.id))) : []
-  });
-
   return merged;
 }
 
@@ -126,7 +117,7 @@ export async function fetchNflScoreboard(season, week) {
 
   const currentYear = new Date().getFullYear();
   if (Number(season) < currentYear) {
-    // Previous season: use per-day lookups per schedule manifest
+    // Previous season: use per-day lookups per schedule manifest with local cache
     return await fetchWeekByDates(season, week);
   }
 

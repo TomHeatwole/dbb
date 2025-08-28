@@ -124,20 +124,9 @@ function LeagueScores() {
 
   // Compute player->game labels for the selected week (web tables)
   useEffect(() => {
-    // DEBUG: entry point
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[LeagueScores] mapping effect enter', { season, week, hasPlayersData: !!playersData, hasPlayerIdMap: !!playerIdMap, hasWeeksParsedData: !!weeksParsedData });
-    } catch(_) {}
-
     if (!playersData || !playerIdMap || !weeksParsedData) { return; }
     const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[week - 1] : null;
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[LeagueScores] week array check', { week, hasWeekArr: Array.isArray(weekArr), weekArrLen: Array.isArray(weekArr) ? weekArr.length : 0 });
-    } catch(_) {}
     if (!Array.isArray(weekArr)) { return; }
-
     const playerIdSet = new Set();
     for (const entry of weekArr) {
       if (entry && Array.isArray(entry.players)) {
@@ -145,18 +134,10 @@ function LeagueScores() {
       }
     }
     const playerIds = Array.from(playerIdSet);
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[LeagueScores] collected playerIds', { count: playerIds.length });
-    } catch(_) {}
     if (playerIds.length === 0) { setPlayerGameLabels({}); return; }
 
     const seasonYear = Number(season);
     let cancelled = false;
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[LeagueScores] fetching scoreboard', { seasonYear, week });
-    } catch(_) {}
     fetchNflScoreboard(seasonYear, week)
       .then((json) => {
         if (cancelled) { return; }
@@ -168,46 +149,6 @@ function LeagueScores() {
           const d = ev ? getGameDisplayForTeam(ev, team) : { text: 'BYE', live: false };
           labels[pid] = d;
         }
-
-        // DEBUG: mapping stats for previous seasons
-        try {
-          const teamKeys = (() => {
-            const keys = new Set();
-            if (Array.isArray(json && json.events)) {
-              for (const ev of json.events) {
-                const comps = Array.isArray(ev && ev.competitions) ? ev.competitions : [];
-                const comp = comps.length ? comps[0] : null;
-                const competitors = comp && Array.isArray(comp.competitors) ? comp.competitors : [];
-                for (const c of competitors) {
-                  const ab = c && c.team && c.team.abbreviation;
-                  if (ab) { keys.add(ab); }
-                }
-              }
-            }
-            return Array.from(keys).sort();
-          })();
-
-          const unmatched = playerIds.filter(pid => !labels[pid] || !labels[pid].text);
-          const sampleUnmatched = unmatched.slice(0, 10).map(pid => {
-            const info = getPlayerInfo(pid, playersData, playerIdMap);
-            return {
-              id: pid,
-              name: (info && info.name) || pid,
-              team: (info && (info.team || info.team_abbr)) || null
-            };
-          });
-          // eslint-disable-next-line no-console
-          console.log('[LeagueScores] Game mapping', {
-            season: seasonYear,
-            week,
-            eventsCount: Array.isArray(json && json.events) ? json.events.length : 0,
-            teamKeys,
-            matched: playerIds.length - unmatched.length,
-            totalPlayers: playerIds.length,
-            sampleUnmatched
-          });
-        } catch (_) {}
-
         setPlayerGameLabels(labels);
       })
       .catch((err) => { if (!cancelled) { setPlayerGameLabels({}); } });
