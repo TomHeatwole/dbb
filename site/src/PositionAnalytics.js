@@ -17,7 +17,8 @@ export default function PositionAnalytics({
   rosterId,
   teamName,
   playersData,
-  playerIdMap
+  playerIdMap,
+  playerColorMap
 }) {
   const isMobile = useIsMobile();
   // Build line chart data for this position
@@ -109,9 +110,14 @@ export default function PositionAnalytics({
                   labelLine={!isMobile}
                   label={isMobile ? false : (({ name, count }) => `${name} (${count})`)}
                 >
-                  {breakdownData.map((entry, idx) => (
-                    <Cell key={`cell-${entry.playerId}`} fill={pieColors[idx % pieColors.length]} />
-                  ))}
+                  {breakdownData.map((entry, idx) => {
+                    const mapped = playerColorMap && playerColorMap[entry.playerId];
+                    const fallback = pieColors[idx % pieColors.length];
+                    const color = mapped || fallback;
+                    return (
+                      <Cell key={`cell-${entry.playerId}`} fill={color} />
+                    );
+                  })}
                 </Pie>
                 {isMobile ? <Legend /> : null}
                 <Tooltip

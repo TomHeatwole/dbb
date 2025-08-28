@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell } from 'recharts';
 import { getWeeklyStandings, getPositionalBreakdownData } from './ScoresParser';
@@ -17,6 +17,19 @@ const chartConfigs = [
 ];
 
 const WEEKS = Array.from({ length: 17 }, (_, i) => i + 1);
+
+function hslToHex(h, s, l) {
+  const sNorm = s / 100;
+  const lNorm = l / 100;
+  const k = (n) => (n + h / 30) % 12;
+  const a = sNorm * Math.min(lNorm, 1 - lNorm);
+  const f = (n) => lNorm - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const toHex = (x) => {
+    const v = Math.round(255 * x).toString(16).padStart(2, '0');
+    return v;
+  };
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
 
 const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamName, rosters, users }, ref) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -93,6 +106,37 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
 
   // Call getPositionalBreakdownData and log the result
   const positionalBreakdown = getPositionalBreakdownData(weeksParsedData, startWeek, endWeek);
+
+  // Build a stable, uniformly distributed playerId -> color mapping for this roster/time window
+  const playerColorMap = useMemo(() => {
+    const map = {};
+    const userTeam = positionalBreakdown && positionalBreakdown.find && positionalBreakdown.find(t => t.roster_id === rosterId);
+    if (!userTeam || !userTeam.positional_player_breakdown) {
+      return map;
+    }
+    const playerIdSet = new Set();
+    Object.values(userTeam.positional_player_breakdown).forEach((posObj) => {
+      if (!posObj) {
+        return;
+      }
+      Object.keys(posObj).forEach((playerId) => playerIdSet.add(playerId));
+    });
+    const playerIds = Array.from(playerIdSet).sort();
+    const n = playerIds.length;
+    if (n === 0) {
+      return map;
+    }
+    // Exclude the red/pink band by using a hue span from 20deg to 340deg (span 320deg)
+    const hueStart = 20; // start just past red/orange
+    const hueSpan = 320; // leave out 40 degrees near magenta/pink
+    const saturation = 65;
+    const lightness = 50;
+    for (let i = 0; i < n; i++) {
+      const hue = hueStart + (hueSpan * i) / n;
+      map[playerIds[i]] = hslToHex(hue, saturation, lightness);
+    }
+    return map;
+  }, [positionalBreakdown, rosterId]);
 
   // Build data for the chart
   const weeklyScoresData = weeklyStandings.map((weekArr, i) => {
@@ -334,6 +378,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
           teamName={teamName}
           playersData={playersData}
           playerIdMap={playerIdMap}
+          playerColorMap={playerColorMap}
         />
       ))}
     </div>
