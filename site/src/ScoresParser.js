@@ -195,4 +195,65 @@ export function getPositionalBreakdownData(weeksParsedData, start_week, end_week
     });
   }
   return result;
+}
+
+export function getTeamPlayerBreakdown(weeksParsedData, rosterId, start_week, end_week) {
+  const result = {};
+  if (!weeksParsedData || !Array.isArray(weeksParsedData)) {
+    return result;
+  }
+  const positionsCount = STARTER_POSITION_NAMES.length;
+  for (let w = start_week; w <= end_week; w++) {
+    const week = weeksParsedData[w - 1];
+    if (!week) {
+      continue;
+    }
+    const entry = week.find(e => e && Number(e.roster_id) === Number(rosterId));
+    if (!entry) {
+      continue;
+    }
+    const starters = Array.isArray(entry.starters) ? entry.starters : [];
+    const startersPoints = Array.isArray(entry.starters_points) ? entry.starters_points : [];
+    const starterSet = new Set(starters.filter(v => v != null));
+    const players = Array.isArray(entry.players) ? entry.players : [];
+    for (let pos = 0; pos < positionsCount; pos++) {
+      const pid = starters[pos];
+      if (pid == null) {
+        continue;
+      }
+      if (!result[pid]) {
+        result[pid] = {
+          playerId: pid,
+          starts: 0,
+          bench: 0,
+          startedPositionsCounts: Array(positionsCount).fill(0),
+          starterPointsSum: 0,
+          benchPointsSum: 0,
+        };
+      }
+      const pts = startersPoints[pos] != null ? startersPoints[pos] : 0;
+      result[pid].starts += 1;
+      result[pid].startedPositionsCounts[pos] += 1;
+      result[pid].starterPointsSum += pts;
+    }
+    for (const pid of players) {
+      if (starterSet.has(pid)) {
+        continue;
+      }
+      if (!result[pid]) {
+        result[pid] = {
+          playerId: pid,
+          starts: 0,
+          bench: 0,
+          startedPositionsCounts: Array(positionsCount).fill(0),
+          starterPointsSum: 0,
+          benchPointsSum: 0,
+        };
+      }
+      const pts = entry.players_points && entry.players_points[pid] != null ? entry.players_points[pid] : 0;
+      result[pid].bench += 1;
+      result[pid].benchPointsSum += pts;
+    }
+  }
+  return result;
 } 

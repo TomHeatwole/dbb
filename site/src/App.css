@@ -1758,3 +1758,10 @@
 body.modal-open {
   overflow: hidden;
 } 
+
+.pos-avg-table-scroll {
+  overflow-x: auto;
+}
+.pos-avg-table-min {
+  min-width: 1200px;
+} 

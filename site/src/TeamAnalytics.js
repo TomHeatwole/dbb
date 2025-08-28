@@ -5,6 +5,7 @@ import { getWeeklyStandings, getPositionalBreakdownData } from './ScoresParser';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
 import PositionAnalytics from './PositionAnalytics';
 import PositionBreakdownTable from './PositionBreakdownTable';
+import PlayerBreakdownTable from './PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR } from './DateHelper';
 
@@ -352,6 +353,17 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Player Breakdown Table */}
+      <PlayerBreakdownTable
+        weeksParsedData={weeksParsedData}
+        rosterId={rosterId}
+        startWeek={startWeek}
+        endWeek={endWeek}
+        playersData={playersData}
+        playerIdMap={playerIdMap}
+        STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
+      />
 
       {/* Positional Averages Table */}
       <PositionBreakdownTable
