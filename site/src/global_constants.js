@@ -19,3 +19,8 @@ export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/04";
 
 // Only for lcoal override while developing
 export const PREVIOUS_CURRENT_WEEK_OVERRIDE = null;
+
+// Testing-only: use local example data for NFL scoreboard lookup when true
+export const USE_FAKE_EXAMPLE_DATA = false;
+// Path should be placed under site/public so it can be fetched by the browser
+export const FAKE_SCOREBOARD_PATH = parsedSettings.FAKE_SCOREBOARD_PATH || '/fake_data/espn_scores_api.txt';

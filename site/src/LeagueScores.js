@@ -13,6 +13,7 @@ import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
 import MobileTeamScoreSummary from './MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
+import { fetchNflScoreboard } from './GamesLookup';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -118,6 +119,15 @@ function LeagueScores() {
       })
       .finally(() => setLoading(false));
   }, [season]);
+
+  // Fetch NFL scoreboard JSON and log it
+  useEffect(() => {
+    let cancelled = false;
+    fetchNflScoreboard(season, week)
+      .then((json) => { if (!cancelled) { console.log('NFL Scoreboard', { season, week, json }); } })
+      .catch((err) => { if (!cancelled) { console.error('NFL Scoreboard fetch failed', err); } });
+    return () => { cancelled = true; };
+  }, [season, week]);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) return `Team ${rosterId}`;
