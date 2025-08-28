@@ -926,7 +926,14 @@
   min-width: 10em !important;
   max-width: 100% !important;
   text-align: left !important;
-} 
+}
+/* Game column (3rd) */
+.team-scores-table-fixed-width th:nth-child(3),
+.team-scores-table-fixed-width td:nth-child(3) {
+  width: 16em !important;
+  min-width: 12em !important;
+  text-align: left !important;
+}
 
 .team-scores-table-bench {
   width: 100% !important;
@@ -937,6 +944,13 @@
   width: auto !important;
   min-width: 10em !important;
   max-width: 100% !important;
+  text-align: left !important;
+}
+/* Bench Game column (2nd) */
+.team-scores-table-bench th:nth-child(2),
+.team-scores-table-bench td:nth-child(2) {
+  width: 16em !important;
+  min-width: 12em !important;
   text-align: left !important;
 }
 .team-scores-table-bench th:last-child,
@@ -1881,4 +1895,11 @@ body.modal-open {
   color: #9fb4de;
   font-size: 0.85em;
   white-space: nowrap;
+  text-align: left !important;
+}
+.team-scores-game-live {
+  background: rgba(255, 215, 0, 0.12);
+  color: #ffe08a;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
 } 

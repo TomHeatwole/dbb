@@ -23,7 +23,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           {weekBreakdown.starters.map((p, i) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
             const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
-            const gameLabel = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : '';
+            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false };
             return (
               <tr key={p.id}>
                 <td className="team-scores-pos-cell">{posLabel}</td>
@@ -36,7 +36,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {info && info.position ? ` (${info.position})` : ''}
                   </span>
                 </td>
-                <td className="team-scores-game-cell">{gameLabel}</td>
+                <td className={`team-scores-game-cell${gameObj.live ? ' team-scores-game-live' : ''}`}>{gameObj.text}</td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );
@@ -67,7 +67,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <tbody>
           {[...weekBreakdown.bench].sort((a, b) => b.pts - a.pts).map((p) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
-            const gameLabel = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : '';
+            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false };
             return (
               <tr key={p.id}>
                 <td className="team-scores-player-cell">
@@ -79,7 +79,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {info && info.position ? ` (${info.position})` : ''}
                   </span>
                 </td>
-                <td className="team-scores-game-cell">{gameLabel}</td>
+                <td className={`team-scores-game-cell${gameObj.live ? ' team-scores-game-live' : ''}`}>{gameObj.text}</td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );

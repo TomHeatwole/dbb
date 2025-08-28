@@ -1,8 +1,23 @@
 import { getPlayerInfo } from './PlayerLookup';
 
+const TEAM_ABBR_ALIASES = {
+  WAS: 'WSH',
+  WASH: 'WSH',
+  WSH: 'WSH',
+  JAX: 'JAC',
+  ARZ: 'ARI',
+  NOR: 'NO',
+  NOS: 'NO',
+  OAK: 'LV',
+  SD: 'LAC',
+  STL: 'LAR',
+  LA: 'LAR',
+};
+
 function normalizeTeamAbbr(raw) {
   if (!raw) { return null; }
-  return String(raw).trim().toUpperCase();
+  const upper = String(raw).replace(/[^A-Za-z]/g, '').toUpperCase();
+  return TEAM_ABBR_ALIASES[upper] || upper;
 }
 
 function extractEvents(scoreboardJson) {
@@ -28,7 +43,7 @@ function getEventTeamAbbreviations(event) {
   if (result.length === 0 && typeof event.shortName === 'string') {
     const parts = event.shortName.split(/\s+@\s+|\s+vs\s+/i);
     for (const p of parts) {
-      const token = (p || '').replace(/[^A-Za-z]/g, '').toUpperCase();
+      const token = normalizeTeamAbbr(p);
       if (token) { result.push(token); }
     }
   }
@@ -75,6 +90,64 @@ export function getEventLabelForTeam(event, teamAbbr) {
   }
   // Fallback
   return getEventShortLabel(event);
+}
+
+function formatLocalDateTime(iso) {
+  if (!iso) { return null; }
+  const d = new Date(iso);
+  const dow = d.toLocaleDateString(undefined, { weekday: 'short' });
+  const md = d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' });
+  const tm = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return `${dow} ${md} ${tm}`;
+}
+
+export function getGameDisplayForTeam(event, teamAbbr) {
+  if (!event) { return { text: 'BYE', live: false }; }
+  const comps = Array.isArray(event.competitions) ? event.competitions : [];
+  const comp = comps.length ? comps[0] : {};
+  const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
+
+  let home = null, away = null, self = null, opp = null;
+  for (const c of competitors) {
+    const abbr = normalizeTeamAbbr(c && c.team && c.team.abbreviation);
+    if (c.homeAway === 'home') { home = c; }
+    if (c.homeAway === 'away') { away = c; }
+    if (abbr && normalizeTeamAbbr(teamAbbr) === abbr) { self = c; }
+  }
+  opp = self && home && away ? (self.homeAway === 'home' ? away : home) : null;
+  const oppAbbr = opp && opp.team && normalizeTeamAbbr(opp.team.abbreviation);
+  const perspective = self && self.homeAway === 'home' ? `vs ${oppAbbr || ''}` : `@ ${oppAbbr || ''}`;
+
+  // Determine state from competition-level status first, then event-level, then infer
+  const stType = (comp.status && comp.status.type) || (event.status && event.status.type) || {};
+  let state = stType.state || null;
+  if (!state && (stType.completed === true)) { state = 'post'; }
+  if (!state && typeof stType.name === 'string' && /FINAL|STATUS_FINAL|END|FULL/i.test(stType.name)) { state = 'post'; }
+
+  const sSelf = Number(self && self.score);
+  const sOpp = Number(opp && opp.score);
+  if (!state && (self && self.winner !== undefined)) { state = 'post'; }
+  if (!state && isFinite(sSelf) && isFinite(sOpp)) { state = 'post'; }
+  if (!state) {
+    state = 'pre';
+  }
+
+  if (state === 'post') {
+    const win = isFinite(sSelf) && isFinite(sOpp) ? (sSelf > sOpp) : (self && self.winner === true);
+    const wl = win ? 'W' : 'L';
+    const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
+    return { text: `${wl} ${scoreStr} ${perspective}`.trim(), live: false };
+  }
+  if (state === 'in') {
+    const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
+    const clock = (comp.status && (comp.status.displayClock || comp.status.clock)) || (event.status && (event.status.displayClock || event.status.clock)) || '';
+    const period = (comp.status && comp.status.period) || (event.status && event.status.period);
+    const q = period > 4 ? 'OT' : `Q${period || ''}`;
+    return { text: `${scoreStr} ${perspective} ${clock} ${q}`.trim(), live: true };
+  }
+  // Future (pre)
+  const when = formatLocalDateTime(event.date || comp.date);
+  return { text: `${when} ${perspective}`.trim(), live: false };
 }
 
 export function buildTeamToEventMap(scoreboardJson) {
