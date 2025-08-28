@@ -3,7 +3,7 @@ import { getTeamPlayerBreakdown } from './ScoresParser';
 import { getPlayerInfo } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
 
-function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, playersData, playerIdMap, STARTER_POSITION_NAMES }) {
+function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, playersData, playerIdMap, STARTER_POSITION_NAMES, rosterPlayers = [] }) {
   const breakdown = useMemo(() => {
     return getTeamPlayerBreakdown(weeksParsedData, rosterId, startWeek, endWeek);
   }, [weeksParsedData, rosterId, startWeek, endWeek]);
@@ -12,7 +12,7 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
   const [hover, setHover] = useState({ playerId: null, x: 0, y: 0 });
 
   const rows = useMemo(() => {
-    return Object.values(breakdown)
+    let baseRows = Object.values(breakdown)
       .map((d) => {
         const info = getPlayerInfo(d.playerId, playersData, playerIdMap);
         const name = info && info.name ? info.name : d.playerId;
@@ -40,9 +40,30 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
           avgTotalPts,
           slotCounts,
         };
-      })
-      .sort((a, b) => (b.starts - a.starts) || (b.bench - a.bench));
-  }, [breakdown, playersData, playerIdMap]);
+      });
+
+    if (baseRows.length === 0 && Array.isArray(rosterPlayers) && rosterPlayers.length > 0) {
+      baseRows = rosterPlayers.map(pid => {
+        const info = getPlayerInfo(pid, playersData, playerIdMap);
+        return {
+          playerId: pid,
+          name: (info && info.name) || pid,
+          position: (info && info.position) || '',
+          img: (info && info.espn_photo_url) || null,
+          starts: 0,
+          bench: 0,
+          startRate: 0,
+          benchRate: 0,
+          avgStarterPts: 0,
+          avgBenchPts: 0,
+          avgTotalPts: 0,
+          slotCounts: Array.isArray(STARTER_POSITION_NAMES) ? Array(STARTER_POSITION_NAMES.length).fill(0) : [],
+        };
+      });
+    }
+
+    return baseRows.sort((a, b) => (b.starts - a.starts) || (b.bench - a.bench));
+  }, [breakdown, playersData, playerIdMap, rosterPlayers, STARTER_POSITION_NAMES]);
 
   return (
     <div className="pos-avg-table-container">
@@ -92,9 +113,7 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
                             {row.img && <img src={row.img} alt={row.name} className="player-start-card-photo" />}
                             <div className="player-start-card-title">{row.name}</div>
                           </div>
-                          {row.starts > 0 && (
-                            <div className="player-start-card-count">{row.starts} Starts</div>
-                          )}
+                          <div className="player-start-card-count">{row.starts} Starts</div>
                           <div className="player-start-card-list">
                             {STARTER_POSITION_NAMES && STARTER_POSITION_NAMES.map((label, idx) => {
                               const count = row.slotCounts[idx] || 0;

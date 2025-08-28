@@ -7,7 +7,7 @@ import PositionAnalytics from './PositionAnalytics';
 import PositionBreakdownTable from './PositionBreakdownTable';
 import PlayerBreakdownTable from './PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from './global_constants';
-import { getDefaultDisplayWeek, CURRENT_YEAR } from './DateHelper';
+import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount } from './DateHelper';
 
 const chartConfigs = [
   { title: 'Weekly Scores', key: 'weeklyScores' },
@@ -359,10 +359,11 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
         weeksParsedData={weeksParsedData}
         rosterId={rosterId}
         startWeek={startWeek}
-        endWeek={endWeek}
+        endWeek={Math.min(endWeek, getCompletedWeeksCount(urlYear))}
         playersData={playersData}
         playerIdMap={playerIdMap}
         STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
+        rosterPlayers={(rosters && rosters.find(r => Number(r.roster_id) === Number(rosterId)) ? (rosters.find(r => Number(r.roster_id) === Number(rosterId)).players || []) : [])}
       />
 
       {/* Positional Averages Table */}
