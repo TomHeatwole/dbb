@@ -9,12 +9,12 @@ import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
 import { getWeekScoreBreakdown } from './ScoresParser';
 import TeamScoresTables from './TeamScoresTables';
-import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
+import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
 import MobileTeamScoreSummary from './MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from './GamesLookup';
-import { mapPlayersToGames } from './GamesParser';
+import { mapPlayersToGames, getEventShortLabel, getEventLabelForTeam } from './GamesParser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -39,6 +39,7 @@ function LeagueScores() {
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [benchOpen, setBenchOpen] = useState({});
   const isMobile = useIsMobile();
+  const [playerGameLabels, setPlayerGameLabels] = useState({});
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -121,7 +122,7 @@ function LeagueScores() {
       .finally(() => setLoading(false));
   }, [season]);
 
-  // Fetch NFL scoreboard JSON and log player->game mapping for the current week
+  // Compute player->game labels for the selected week (web tables)
   useEffect(() => {
     if (!playersData || !playerIdMap || !weeksParsedData) { return; }
     const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[week - 1] : null;
@@ -133,16 +134,23 @@ function LeagueScores() {
       }
     }
     const playerIds = Array.from(playerIdSet);
-    if (playerIds.length === 0) { return; }
+    if (playerIds.length === 0) { setPlayerGameLabels({}); return; }
 
     let cancelled = false;
     fetchNflScoreboard(season, week)
       .then((json) => {
         if (cancelled) { return; }
         const mapping = mapPlayersToGames(playerIds, playersData, playerIdMap, json);
-        console.log('Player->Game mapping', { season, week, mapping });
+        const labels = {};
+        for (const [pid, ev] of Object.entries(mapping)) {
+          const info = getPlayerInfo(pid, playersData, playerIdMap);
+          const team = info && (info.team || info.team_abbr);
+          const label = ev ? getEventLabelForTeam(ev, team) : null;
+          if (label) { labels[pid] = label; }
+        }
+        setPlayerGameLabels(labels);
       })
-      .catch((err) => { if (!cancelled) { console.error('NFL Scoreboard fetch failed', err); } });
+      .catch((err) => { if (!cancelled) { setPlayerGameLabels({}); } });
     return () => { cancelled = true; };
   }, [season, week, playersData, playerIdMap, weeksParsedData]);
 
@@ -184,7 +192,7 @@ function LeagueScores() {
           {allYears.map(opt => (
             <div
               key={opt}
-              className={'team-season-dropdown-option' + (opt === season ? ' team-season-dropdown-option-active' : '')}
+              className={'team-scores-week-dropdown-option' + (opt === season ? ' team-scores-week-dropdown-option-active' : '')}
               onClick={() => {
                 setSeason(opt);
                 setDropdownOpen(false);
@@ -251,6 +259,7 @@ function LeagueScores() {
                           playersData={playersData}
                           playerIdMap={playerIdMap}
                           searchParams={searchParams}
+                          playerGameLabels={playerGameLabels}
                         />
                       )}
                     </div>

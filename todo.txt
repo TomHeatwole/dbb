@@ -6,3 +6,4 @@
 - Consider removing or adjusting the grpahs for cumulative score and relative cumulative score in team page
 - Update player card with stats for previous games
 - Update scores with player stats for previous weeks
+- Incorporate when player changes team

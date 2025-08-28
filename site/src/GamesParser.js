@@ -35,6 +35,48 @@ function getEventTeamAbbreviations(event) {
   return result;
 }
 
+export function getEventShortLabel(event) {
+  if (!event) { return null; }
+  if (typeof event.shortName === 'string' && event.shortName.trim()) {
+    return event.shortName.trim();
+  }
+  const comps = Array.isArray(event.competitions) ? event.competitions : [];
+  const comp = comps.length ? comps[0] : null;
+  const competitors = comp && Array.isArray(comp.competitors) ? comp.competitors : [];
+  let away = null, home = null;
+  for (const c of competitors) {
+    const abbr = normalizeTeamAbbr(c && c.team && c.team.abbreviation);
+    if (!abbr) { continue; }
+    if (c.homeAway === 'home') { home = abbr; }
+    if (c.homeAway === 'away') { away = abbr; }
+  }
+  if (away && home) { return `${away} @ ${home}`; }
+  const abbrs = getEventTeamAbbreviations(event);
+  if (abbrs.length >= 2) { return `${abbrs[0]} @ ${abbrs[1]}`; }
+  return null;
+}
+
+export function getEventLabelForTeam(event, teamAbbr) {
+  if (!event || !teamAbbr) { return null; }
+  const team = normalizeTeamAbbr(teamAbbr);
+  const comps = Array.isArray(event.competitions) ? event.competitions : [];
+  const comp = comps.length ? comps[0] : null;
+  const competitors = comp && Array.isArray(comp.competitors) ? comp.competitors : [];
+  let away = null, home = null;
+  for (const c of competitors) {
+    const abbr = normalizeTeamAbbr(c && c.team && c.team.abbreviation);
+    if (!abbr) { continue; }
+    if (c.homeAway === 'home') { home = abbr; }
+    if (c.homeAway === 'away') { away = abbr; }
+  }
+  if (team && away && home) {
+    if (team === away) { return `@ ${home}`; }
+    if (team === home) { return `vs ${away}`; }
+  }
+  // Fallback
+  return getEventShortLabel(event);
+}
+
 export function buildTeamToEventMap(scoreboardJson) {
   const map = {};
   const events = extractEvents(scoreboardJson);

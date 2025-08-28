@@ -1876,3 +1876,9 @@ body.modal-open {
 .player-start-card-val {
   color: #e7efff;
 } 
+
+.team-scores-game-cell {
+  color: #9fb4de;
+  font-size: 0.85em;
+  white-space: nowrap;
+} 

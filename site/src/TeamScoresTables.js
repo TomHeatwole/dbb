@@ -2,7 +2,7 @@ import React from 'react';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null }) {
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {} }) {
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
@@ -15,6 +15,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           <tr>
             <th>Position</th>
             <th>Player</th>
+            <th>Game</th>
             <th>Points</th>
           </tr>
         </thead>
@@ -22,6 +23,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           {weekBreakdown.starters.map((p, i) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
             const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
+            const gameLabel = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : '';
             return (
               <tr key={p.id}>
                 <td className="team-scores-pos-cell">{posLabel}</td>
@@ -34,6 +36,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {info && info.position ? ` (${info.position})` : ''}
                   </span>
                 </td>
+                <td className="team-scores-game-cell">{gameLabel}</td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );
@@ -41,7 +44,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={3} className="team-scores-total-row">
+            <td colSpan={4} className="team-scores-total-row">
               <div className="team-scores-total-inner">Total: {weekBreakdown.starterTotal}</div>
             </td>
           </tr>
@@ -57,12 +60,14 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <thead>
           <tr>
             <th>Player</th>
+            <th>Game</th>
             <th>Points</th>
           </tr>
         </thead>
         <tbody>
           {[...weekBreakdown.bench].sort((a, b) => b.pts - a.pts).map((p) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
+            const gameLabel = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : '';
             return (
               <tr key={p.id}>
                 <td className="team-scores-player-cell">
@@ -74,6 +79,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {info && info.position ? ` (${info.position})` : ''}
                   </span>
                 </td>
+                <td className="team-scores-game-cell">{gameLabel}</td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );
@@ -81,7 +87,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={2} className="team-scores-total-row">
+            <td colSpan={3} className="team-scores-total-row">
               <div className="team-scores-total-inner">Total: {weekBreakdown.benchTotal}</div>
             </td>
           </tr>
