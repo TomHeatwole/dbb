@@ -6,3 +6,5 @@
 - Give players the same color in all pie charts
 - Master player table with their slotting in percentage, average score, etc.
 - Consider removing or adjusting the grpahs for cumulative score and relative cumulative score in team page
+- Update player card with stats for previous games.
+- Update scores with player stats for previous weeks
