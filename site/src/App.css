@@ -1903,3 +1903,28 @@ body.modal-open {
   padding: 0.1rem 0.35rem;
   border-radius: 0.25rem;
 } 
+
+/* Starters (simple 3-column: Position | Player | Points) */
+.team-scores-table-starters-simple {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+.team-scores-table-starters-simple th:first-child,
+.team-scores-table-starters-simple td:first-child {
+  width: 3.5em !important;
+  min-width: 3.5em !important;
+  text-align: left !important;
+}
+.team-scores-table-starters-simple th:nth-child(2),
+.team-scores-table-starters-simple td:nth-child(2) {
+  width: auto !important;
+  min-width: 10em !important;
+  max-width: 100% !important;
+  text-align: left !important;
+}
+.team-scores-table-starters-simple th:last-child,
+.team-scores-table-starters-simple td:last-child {
+  width: 4.5em !important;
+  min-width: 3em !important;
+  text-align: right !important;
+} 

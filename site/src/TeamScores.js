@@ -81,7 +81,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
         <div className="team-scores-tables-flex">
           <div className="team-scores-tables-col">
             <div className="team-scores-starters-bench-title">Starters</div>
-            <table className="team-scores-table team-scores-table-fixed-width">
+            <table className="team-scores-table team-scores-table-starters-simple">
               <thead>
                 <tr>
                   <th>Position</th>

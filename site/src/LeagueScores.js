@@ -148,7 +148,7 @@ function LeagueScores() {
           const ev = item && item.event;
           const teamForWeek = item && item.team;
           const d = ev ? getGameDisplayForTeam(ev, teamForWeek) : { text: 'BYE', live: false };
-          labels[pid] = d;
+          labels[pid] = { ...d, team: teamForWeek || null };
         }
         if (!cancelled) { setPlayerGameLabels(labels); }
       })
