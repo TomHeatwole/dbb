@@ -139,6 +139,17 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     return map;
   }, [positionalBreakdown, rosterId]);
 
+  // Compute clamped end week for PlayerBreakdownTable
+  const endWeekForBreakdown = useMemo(() => {
+    const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
+    if (isCurrentSeason) {
+      const completed = getCompletedWeeksCount(urlYear);
+      return Math.max(1, Math.min(endWeek, completed || endWeek));
+    }
+    // Previous seasons: do not clamp; data is complete
+    return endWeek;
+  }, [endWeek, urlYear]);
+
   // Build data for the chart
   const weeklyScoresData = weeklyStandings.map((weekArr, i) => {
     // Sort by points descending (already sorted in getWeeklyStandings)
@@ -359,7 +370,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
         weeksParsedData={weeksParsedData}
         rosterId={rosterId}
         startWeek={startWeek}
-        endWeek={Math.min(endWeek, getCompletedWeeksCount(urlYear))}
+        endWeek={endWeekForBreakdown}
         playersData={playersData}
         playerIdMap={playerIdMap}
         STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
