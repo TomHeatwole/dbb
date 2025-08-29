@@ -1,0 +1,1 @@
+{"2024":[{"week":1,"date":"2024-09-15","homeAway":"vs","team":"GB","opponent":"IND","result":"data-testid=\"resultCellLink\" href=\"https://www.espn.com/nfl/game/_/gameId/401671723/colts-packers\"> W 16-10","stats":{"CAR":"6","YDS":"3","AVG":"3.0","TD":"0","LNG":"3","REC":"1","TGTS":"1","FUM":"0","LST":"0","FF":"0","KB":"0"}}]}

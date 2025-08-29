@@ -1,0 +1,1 @@
+{"2024":[{"week":1,"date":"2024-10-13","homeAway":"@","team":"PIT","opponent":"LV","result":"data-testid=\"resultCellLink\" href=\"https://www.espn.com/nfl/game/_/gameId/401671657/steelers-raiders\"> W 32-13","stats":{"REC":"0","TGTS":"0","YDS":"0","AVG":"0.0","TD":"0","LNG":"0","CAR":"0","FUM":"0","LST":"0","FF":"0","KB":"0"}}]}
