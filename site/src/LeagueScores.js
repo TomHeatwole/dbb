@@ -139,19 +139,20 @@ function LeagueScores() {
     const seasonYear = Number(season);
     let cancelled = false;
     fetchNflScoreboard(seasonYear, week)
-      .then((json) => {
+      .then(async (json) => {
         if (cancelled) { return; }
-        const mapping = mapPlayersToGames(playerIds, playersData, playerIdMap, json);
+        const mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json);
         const labels = {};
-        for (const [pid, ev] of Object.entries(mapping)) {
-          const info = getPlayerInfo(pid, playersData, playerIdMap);
-          const team = info && (info.team || info.team_abbr);
-          const d = ev ? getGameDisplayForTeam(ev, team) : { text: 'BYE', live: false };
+        for (const pid of playerIds) {
+          const item = mapping[pid];
+          const ev = item && item.event;
+          const teamForWeek = item && item.team;
+          const d = ev ? getGameDisplayForTeam(ev, teamForWeek) : { text: 'BYE', live: false };
           labels[pid] = d;
         }
-        setPlayerGameLabels(labels);
+        if (!cancelled) { setPlayerGameLabels(labels); }
       })
-      .catch((err) => { if (!cancelled) { setPlayerGameLabels({}); } });
+      .catch(() => { if (!cancelled) { setPlayerGameLabels({}); } });
     return () => { cancelled = true; };
   }, [season, week, playersData, playerIdMap, weeksParsedData]);
 

@@ -1,4 +1,5 @@
 import { getPlayerInfo } from './PlayerLookup';
+import { fetchPlayerHistoryByEspnId, fetchHistoriesByEspnIds, getTeamAtDate } from './PlayerGameHistory';
 
 const TEAM_ABBR_ALIASES = {
   WAS: 'WSH',
@@ -163,21 +164,50 @@ export function buildTeamToEventMap(scoreboardJson) {
 }
 
 /**
- * Map player IDs to their game event for the week.
- * @param {Array<string>} playerIds - Sleeper player IDs (or consistent IDs used across the app)
- * @param {Object} playersData - Full players data (from PlayerLookup.fetchPlayersData)
- * @param {Object} playerIdMap - Sleeper->ESPN ID map (from PlayerLookup.fetchPlayerIdMap)
- * @param {Object} scoreboardJson - ESPN scoreboard JSON for the week
- * @returns {Object} playerId -> event (or null if no match)
+ * Map player IDs to their game event for the week, using history for past games to choose the correct team.
+ * Returns: { [playerId]: { event, team } }
  */
-export function mapPlayersToGames(playerIds, playersData, playerIdMap, scoreboardJson) {
+export async function mapPlayersToGames(playerIds, playersData, playerIdMap, scoreboardJson) {
   const teamToEvent = buildTeamToEventMap(scoreboardJson);
   const result = {};
   const ids = Array.isArray(playerIds) ? playerIds : [];
+
+  // Determine event date anchor (use first event date in the week)
+  const evs = extractEvents(scoreboardJson);
+  const anchorIso = evs && evs.length ? (evs[0].date || (evs[0].competitions && evs[0].competitions[0] && evs[0].competitions[0].date)) : null;
+
+  // Collect infos and ESPN IDs
+  const pidToInfo = {};
+  const espnIds = [];
   for (const pid of ids) {
     const info = getPlayerInfo(pid, playersData, playerIdMap);
-    const team = normalizeTeamAbbr(info && (info.team || info.team_abbr));
-    result[pid] = (team && teamToEvent[team]) ? teamToEvent[team] : null;
+    pidToInfo[pid] = info || null;
+    const espnId = info && info.espn_id ? String(info.espn_id) : null;
+    if (espnId) { espnIds.push(espnId); }
+  }
+
+  // Prefetch all histories in parallel
+  let historiesByEspn = {};
+  if (anchorIso && espnIds.length) {
+    try {
+      historiesByEspn = await fetchHistoriesByEspnIds(espnIds);
+    } catch (_) {
+      historiesByEspn = {};
+    }
+  }
+
+  for (const pid of ids) {
+    const info = pidToInfo[pid];
+    const currentTeam = normalizeTeamAbbr(info && (info.team || info.team_abbr));
+    const espnId = info && info.espn_id ? String(info.espn_id) : null;
+    let teamForWeek = currentTeam;
+    if (espnId && anchorIso) {
+      const history = historiesByEspn[espnId];
+      const histTeam = getTeamAtDate(history, anchorIso);
+      teamForWeek = normalizeTeamAbbr(histTeam) || teamForWeek;
+    }
+    const event = (teamForWeek && teamToEvent[teamForWeek]) ? teamToEvent[teamForWeek] : null;
+    result[pid] = { event, team: teamForWeek };
   }
   return result;
 } 
