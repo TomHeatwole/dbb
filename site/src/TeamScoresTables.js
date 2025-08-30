@@ -2,7 +2,7 @@ import React from 'react';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {} }) {
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false }) {
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
@@ -23,8 +23,14 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           {weekBreakdown.starters.map((p, i) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
             const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
-            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null };
+            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false };
             const teamAbbr = gameObj.team || (info && (info.team || info.team_abbr)) || null;
+            const gameCellClasses = ['team-scores-game-cell'];
+            if (isActiveWeek && gameObj.live) {
+              gameCellClasses.push('team-scores-game-live');
+            } else if (isActiveWeek && gameObj.completed) {
+              gameCellClasses.push('team-scores-game-completed');
+            }
             return (
               <tr key={p.id}>
                 <td className="team-scores-pos-cell">{posLabel}</td>
@@ -38,7 +44,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {teamAbbr ? <span className="team-scores-game-cell" style={{ marginLeft: '0.35rem' }}>{teamAbbr}</span> : null}
                   </span>
                 </td>
-                <td className={`team-scores-game-cell${gameObj.live ? ' team-scores-game-live' : ''}`}>{gameObj.text}</td>
+                <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );
@@ -69,8 +75,14 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <tbody>
           {[...weekBreakdown.bench].sort((a, b) => b.pts - a.pts).map((p) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
-            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null };
+            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false };
             const teamAbbr = gameObj.team || (info && (info.team || info.team_abbr)) || null;
+            const gameCellClasses = ['team-scores-game-cell'];
+            if (isActiveWeek && gameObj.live) {
+              gameCellClasses.push('team-scores-game-live');
+            } else if (isActiveWeek && gameObj.completed) {
+              gameCellClasses.push('team-scores-game-completed');
+            }
             return (
               <tr key={p.id}>
                 <td className="team-scores-player-cell">
@@ -83,7 +95,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {teamAbbr ? <span className="team-scores-game-cell" style={{ marginLeft: '0.35rem' }}>{teamAbbr}</span> : null}
                   </span>
                 </td>
-                <td className={`team-scores-game-cell${gameObj.live ? ' team-scores-game-live' : ''}`}>{gameObj.text}</td>
+                <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );

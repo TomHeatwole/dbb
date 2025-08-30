@@ -30,6 +30,20 @@ function extractEvents(scoreboardJson) {
   return [];
 }
 
+function isWeekFuture(scoreboardJson) {
+  const events = extractEvents(scoreboardJson);
+  if (!events.length) { return false; }
+  for (const ev of events) {
+    const comp = Array.isArray(ev.competitions) && ev.competitions.length ? ev.competitions[0] : {};
+    const st = (comp.status && comp.status.type) || (ev.status && ev.status.type) || {};
+    const state = st.state || (st.completed === true ? 'post' : null);
+    if (state === 'in' || state === 'post') {
+      return false;
+    }
+  }
+  return true;
+}
+
 function getEventTeamAbbreviations(event) {
   const result = [];
   if (!event) { return result; }
@@ -103,7 +117,7 @@ function formatLocalDateTime(iso) {
 }
 
 export function getGameDisplayForTeam(event, teamAbbr) {
-  if (!event) { return { text: 'BYE', live: false }; }
+  if (!event) { return { text: 'BYE', live: false, completed: false }; }
   const comps = Array.isArray(event.competitions) ? event.competitions : [];
   const comp = comps.length ? comps[0] : {};
   const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
@@ -137,18 +151,18 @@ export function getGameDisplayForTeam(event, teamAbbr) {
     const win = isFinite(sSelf) && isFinite(sOpp) ? (sSelf > sOpp) : (self && self.winner === true);
     const wl = win ? 'W' : 'L';
     const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
-    return { text: `${wl} ${scoreStr} ${perspective}`.trim(), live: false };
+    return { text: `${wl} ${scoreStr} ${perspective}`.trim(), live: false, completed: true };
   }
   if (state === 'in') {
     const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
     const clock = (comp.status && (comp.status.displayClock || comp.status.clock)) || (event.status && (event.status.displayClock || event.status.clock)) || '';
     const period = (comp.status && comp.status.period) || (event.status && event.status.period);
     const q = period > 4 ? 'OT' : `Q${period || ''}`;
-    return { text: `${scoreStr} ${perspective} ${clock} ${q}`.trim(), live: true };
+    return { text: `${q} ${clock} ${perspective} ${scoreStr}`.trim(), live: true, completed: false };
   }
   // Future (pre)
   const when = formatLocalDateTime(event.date || comp.date);
-  return { text: `${when} ${perspective}`.trim(), live: false };
+  return { text: `${when} ${perspective}`.trim(), live: false, completed: false };
 }
 
 export function buildTeamToEventMap(scoreboardJson) {
@@ -172,9 +186,10 @@ export async function mapPlayersToGames(playerIds, playersData, playerIdMap, sco
   const result = {};
   const ids = Array.isArray(playerIds) ? playerIds : [];
 
-  // Determine event date anchor (use first event date in the week)
+  // Determine event date anchor and whether this week is entirely future
   const evs = extractEvents(scoreboardJson);
   const anchorIso = evs && evs.length ? (evs[0].date || (evs[0].competitions && evs[0].competitions[0] && evs[0].competitions[0].date)) : null;
+  const weekFuture = isWeekFuture(scoreboardJson);
 
   // Collect infos and ESPN IDs
   const pidToInfo = {};
@@ -186,9 +201,9 @@ export async function mapPlayersToGames(playerIds, playersData, playerIdMap, sco
     if (espnId) { espnIds.push(espnId); }
   }
 
-  // Prefetch all histories in parallel
+  // Prefetch all histories in parallel (only needed if not future)
   let historiesByEspn = {};
-  if (anchorIso && espnIds.length) {
+  if (!weekFuture && anchorIso && espnIds.length) {
     try {
       historiesByEspn = await fetchHistoriesByEspnIds(espnIds);
     } catch (_) {
@@ -200,13 +215,23 @@ export async function mapPlayersToGames(playerIds, playersData, playerIdMap, sco
     const info = pidToInfo[pid];
     const currentTeam = normalizeTeamAbbr(info && (info.team || info.team_abbr));
     const espnId = info && info.espn_id ? String(info.espn_id) : null;
-    let teamForWeek = currentTeam;
-    if (espnId && anchorIso) {
-      const history = historiesByEspn[espnId];
-      const histTeam = getTeamAtDate(history, anchorIso);
-      teamForWeek = normalizeTeamAbbr(histTeam) || teamForWeek;
+
+    let teamForWeek = currentTeam || null;
+    if (weekFuture) {
+      // Future weeks: stick to current data only; if no team, mark FA
+      teamForWeek = teamForWeek || 'FA';
+    } else {
+      // Past or in-progress: use history to resolve team at date if available
+      if (espnId && anchorIso) {
+        const history = historiesByEspn[espnId];
+        const histTeam = getTeamAtDate(history, anchorIso);
+        teamForWeek = normalizeTeamAbbr(histTeam) || teamForWeek || 'FA';
+      } else {
+        teamForWeek = teamForWeek || 'FA';
+      }
     }
-    const event = (teamForWeek && teamToEvent[teamForWeek]) ? teamToEvent[teamForWeek] : null;
+
+    const event = (teamForWeek && teamForWeek !== 'FA' && teamToEvent[teamForWeek]) ? teamToEvent[teamForWeek] : null;
     result[pid] = { event, team: teamForWeek };
   }
   return result;

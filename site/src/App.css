@@ -1902,8 +1902,13 @@ body.modal-open {
   color: #ffe08a;
   padding: 0.1rem 0.35rem;
   border-radius: 0.25rem;
-} 
-
+}
+.team-scores-game-completed {
+  background: rgba(0, 185, 95, 0.12);
+  color: #b6f0c2;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
 /* Starters (simple 3-column: Position | Player | Points) */
 .team-scores-table-starters-simple {
   width: 100% !important;

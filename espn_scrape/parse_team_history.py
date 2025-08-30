@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple, List, Any
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
+import time
+import http.client
 
 TEAM_NAME_TO_ABBR: Dict[str, str] = {
     'Arizona Cardinals': 'ARI', 'Atlanta Falcons': 'ATL', 'Baltimore Ravens': 'BAL', 'Buffalo Bills': 'BUF',
@@ -37,13 +39,30 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 
 
 def fetch_html(url: str, timeout: int = 15) -> Optional[str]:
-    req = Request(url, headers={'User-Agent': USER_AGENT})
-    try:
-        with urlopen(req, timeout=timeout) as resp:
-            data = resp.read()
-            return data.decode('utf-8', errors='ignore')
-    except (HTTPError, URLError, TimeoutError):
-        return None
+    headers = {
+        'User-Agent': USER_AGENT,
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Encoding': 'identity',  # avoid chunked issues
+        'Connection': 'close',
+    }
+    last_err: Optional[Exception] = None
+    for attempt in range(3):
+        try:
+            req = Request(url, headers=headers)
+            with urlopen(req, timeout=timeout) as resp:
+                if resp.status != 200:
+                    last_err = HTTPError(url, resp.status, f'HTTP {resp.status}', hdrs=None, fp=None)
+                    raise last_err
+                data = resp.read()
+                return data.decode('utf-8', errors='ignore')
+        except (HTTPError, URLError, TimeoutError, http.client.IncompleteRead) as e:
+            last_err = e
+            time.sleep(0.4 * (attempt + 1))
+            continue
+        except Exception as e:
+            last_err = e
+            break
+    return None
 
 
 def parse_page_timestamp(html: str) -> Optional[datetime]:
@@ -116,8 +135,10 @@ def _parse_rows(section_html: str, season_year: int, headers: List[str]) -> List
         mm = re.search(r'>\s*(vs|@)\s*<', row_html)
         marker = mm.group(1) if mm else ''
 
-        # Extract game URL slug to derive teams
+        # Extract game URL to derive teams and eventId
         slugm = re.search(r'data-testid="resultCellLink"\s+href="[^"]+/gameId/[^/]+/([A-Za-z0-9\-]+)"', row_html)
+        evm = re.search(r'data-testid="resultCellLink"\s+href="[^"]*/gameId/(\d+)/', row_html)
+        event_id = evm.group(1) if evm else None
         player_team = None
         opp_team = None
         if slugm and marker:
@@ -151,6 +172,7 @@ def _parse_rows(section_html: str, season_year: int, headers: List[str]) -> List
             'team': player_team,
             'opponent': opp_team,
             'result': result_text,
+            'eventId': event_id,
             'stats': stats,
         })
 
@@ -158,23 +180,19 @@ def _parse_rows(section_html: str, season_year: int, headers: List[str]) -> List
 
 
 def parse_season_games(html: str) -> Tuple[Optional[int], List[Dict[str, Any]]]:
-    # Season year from either Regular or Postseason section
     y = re.search(r'\b(\d{4})\s+(?:Regular|Postseason)\s+Season', html)
     season_year = int(y.group(1)) if y else None
 
     all_games: List[Dict[str, Any]] = []
 
-    # Regular Season
     reg = _slice_table_by_label(html, r'\b\d{4}\s+Regular\s+Season\s*\(')
     if reg:
         headers = _parse_stat_headers(reg)
         all_games.extend(_parse_rows(reg, season_year or 0, headers))
 
-    # Postseason (append after regular weeks)
     post = _slice_table_by_label(html, r'\b\d{4}\s+Postseason\s*')
     if post:
         headers_post = _parse_stat_headers(post)
-        # Continue week numbering after existing
         existing_weeks = len(all_games)
         post_games = _parse_rows(post, season_year or 0, headers_post)
         for g in post_games:
@@ -222,7 +240,6 @@ def parse_game_history_for_player(player_id: str, min_year: Optional[int] = None
                 if misses >= stop_gaps:
                     break
 
-    # Return years ascending
     return dict(sorted(year_to_games.items(), key=lambda kv: kv[0]))
 
 

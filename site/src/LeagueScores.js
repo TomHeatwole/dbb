@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
-import { CURRENT_YEAR } from './DateHelper';
-import { getDefaultDisplayWeek } from './DateHelper';
+import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
@@ -231,6 +230,7 @@ function LeagueScores() {
               const weekBreakdown = getWeekScoreBreakdown(weeksParsedData, week)[rosterId];
               const startersTotal = weekBreakdown ? weekBreakdown.starterTotal : 0;
               const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
+              const isActiveWeek = (season === CURRENT_YEAR) && (week === getCurrentNFLWeek());
               return (
                 <div key={rosterId} className="standings-row">
                   <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
@@ -262,6 +262,7 @@ function LeagueScores() {
                           playerIdMap={playerIdMap}
                           searchParams={searchParams}
                           playerGameLabels={playerGameLabels}
+                          isActiveWeek={isActiveWeek}
                         />
                       )}
                     </div>
