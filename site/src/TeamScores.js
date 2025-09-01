@@ -3,8 +3,9 @@ import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown } from './ScoresParser';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
-import { getDefaultDisplayWeek, CURRENT_YEAR } from './DateHelper';
+import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
+import { getInjuryAbbreviation } from './InjuryLookup';
 
 const NUM_WEEKS = 17;
 
@@ -17,6 +18,10 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const dropdownRef = useRef(null);
   const { id } = useParams();
   const rosterId = Number(id);
+
+  const season = searchParams.get('year') ? String(searchParams.get('year')) : String(CURRENT_YEAR);
+  const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
+  const showCurrentInjury = String(season) === String(CURRENT_YEAR) && week >= currentWeek;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -73,6 +78,14 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   // Get week breakdown for this roster
   const weekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
 
+  const InjuryBadge = ({ info }) => {
+    if (!showCurrentInjury || !info) { return null; }
+    const status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended/i.test(info.status) ? info.status : null);
+    const ab = status ? getInjuryAbbreviation(status) : null;
+    if (!ab) { return null; }
+    return <span className="injury-badge" title={status}>{ab}</span>;
+  };
+
   return (
     <div className="team-scores-container">
       <WeekSelector week={week} onChange={handleSelect} />
@@ -103,6 +116,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                         <span className="player-name">
                           {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                           {info && info.position ? ` (${info.position})` : ''}
+                          <InjuryBadge info={info} />
                         </span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
@@ -140,6 +154,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                         <span className="player-name">
                           {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                           {info && info.position ? ` (${info.position})` : ''}
+                          <InjuryBadge info={info} />
                         </span>
                       </td>
                       <td className="team-scores-pts-cell">{p.pts}</td>
