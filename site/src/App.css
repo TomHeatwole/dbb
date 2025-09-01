@@ -1613,6 +1613,25 @@
   }
 } 
 
+/* LeagueScores inline activity indicators */
+.standings-list--scores .standings-row-header {
+  grid-template-columns: auto auto auto 0.4fr 1.2fr 6.5rem;
+}
+.standings-activity {
+  display: flex;
+  gap: 0.6rem;
+  justify-self: center;
+  text-align: center;
+  font-weight: 700;
+  color: #cfe6ff;
+}
+.standings-activity-item { white-space: nowrap; }
+
+@media (max-width: 50em) {
+  /* Hide inline activity on mobile; shown in expanded summary instead */
+  .standings-activity { display: none; }
+}
+
 /* Bench toggle control in Scores expanded section */
 .team-scores-bench-toggle {
   background: none;

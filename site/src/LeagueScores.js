@@ -249,6 +249,27 @@ function LeagueScores() {
               const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
               const isActiveWeek = (season === CURRENT_YEAR) && (week === getCurrentNFLWeek());
               const showCurrentInjury = (String(season) === String(CURRENT_YEAR)) && (week >= getCurrentNFLWeek());
+
+              // Compute Active / Yet to Play for current week
+              let activeCount = 0;
+              let yetToPlayCount = 0;
+              if (isActiveWeek && weekBreakdown) {
+                const rosterPlayerIds = [...weekBreakdown.starters, ...weekBreakdown.bench]
+                  .map((p) => p && p.id)
+                  .filter((pid) => pid && pid !== '0');
+                for (const pid of rosterPlayerIds) {
+                  const label = (playerGameLabels && playerGameLabels[pid]) ? playerGameLabels[pid] : null;
+                  if (!label) { continue; }
+                  const isLive = !!label.live;
+                  const isCompleted = !!label.completed;
+                  const isBye = label && label.text === 'BYE';
+                  if (isLive) {
+                    activeCount += 1;
+                  } else if (!isCompleted && !isBye) {
+                    yetToPlayCount += 1;
+                  }
+                }
+              }
               return (
                 <div key={rosterId} className="standings-row">
                   <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
@@ -257,6 +278,12 @@ function LeagueScores() {
                     <span className="standings-rank" style={{ visibility: 'hidden' }}>#</span>
                     {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                     <span className="standings-title">{teamName}</span>
+                    {isActiveWeek && !isMobile ? (
+                      <span className="standings-activity">
+                        <span className="standings-activity-item">Yet to Play: {yetToPlayCount}</span>
+                        <span className="standings-activity-item">In-Play: {activeCount}</span>
+                      </span>
+                    ) : null}
                     <span className="standings-total">{Math.round(entry.points * 10) / 10} pts</span>
                   </button>
                   {isExpanded && (
@@ -267,6 +294,9 @@ function LeagueScores() {
                           week={week}
                           rosterId={rosterId}
                           searchParams={searchParams}
+                          isActiveWeek={isActiveWeek}
+                          activeCount={activeCount}
+                          yetToPlayCount={yetToPlayCount}
                         />
                       ) : (
                         <LeagueScoresTeamBreakdown

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function MobileTeamScoreSummary({ weekBreakdown, week, rosterId, searchParams }) {
+export default function MobileTeamScoreSummary({ weekBreakdown, week, rosterId, searchParams, isActiveWeek = false, activeCount = 0, yetToPlayCount = 0 }) {
   if (!weekBreakdown) {
     return null;
   }
@@ -19,6 +19,18 @@ export default function MobileTeamScoreSummary({ weekBreakdown, week, rosterId, 
       <div className="stat-v1">{benchTotal} pts</div>
       <div className="stat-v2"></div>
       <div className="stat-v3"></div>
+
+      {isActiveWeek ? (<>
+        <div className="stat-label">Yet to Play:</div>
+        <div className="stat-v1">{yetToPlayCount}</div>
+        <div className="stat-v2"></div>
+        <div className="stat-v3"></div>
+
+        <div className="stat-label">In-Play:</div>
+        <div className="stat-v1">{activeCount}</div>
+        <div className="stat-v2"></div>
+        <div className="stat-v3"></div>
+      </>) : null}
 
       <div className="standings-team-link">
         <Link to={`/team/${rosterId}${qs}`}>See Week {week} Breakdown</Link>
