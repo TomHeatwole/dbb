@@ -7,22 +7,14 @@ function cacheKey(season, week) {
 function parseInjuries(text) {
   try {
     const data = JSON.parse(text);
-    // eslint-disable-next-line no-console
-    console.log('[injuries:raw-json]', { length: text ? text.length : 0, preview: (text || '').slice(0, 500) });
     if (!data) { return {}; }
     if (typeof data === 'object' && !Array.isArray(data)) {
-      // Direct map or nested map
       if (data.players && typeof data.players === 'object') {
-        // eslint-disable-next-line no-console
-        console.log('[injuries:parsed:players-map]', { keys: Object.keys(data.players).length });
         return data.players;
       }
-      // eslint-disable-next-line no-console
-      console.log('[injuries:parsed:map]', { keys: Object.keys(data).length });
       return data;
     }
     if (Array.isArray(data)) {
-      // Array of [id, status] or array of {id, status}
       const out = {};
       for (const item of data) {
         if (Array.isArray(item) && item.length >= 2) {
@@ -34,13 +26,9 @@ function parseInjuries(text) {
           if (id != null && status) { out[String(id)] = String(status); }
         }
       }
-      // eslint-disable-next-line no-console
-      console.log('[injuries:parsed:array]', { keys: Object.keys(out).length });
       return out;
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.log('[injuries:parse-error]', e);
     return {};
   }
   return {};
@@ -56,8 +44,6 @@ export async function fetchInjuriesForWeek(season, week) {
   const url = `/data/player_games/injuries_${yr}_week_${wk}.txt`;
   try {
     const resp = await fetch(url, { cache: 'no-store' });
-    // eslint-disable-next-line no-console
-    console.log('[injuries:url]', url, resp && resp.status);
     if (!resp.ok) {
       _injuriesCache.set(key, {});
       return {};
@@ -65,15 +51,12 @@ export async function fetchInjuriesForWeek(season, week) {
     const text = await resp.text();
     const parsed = parseInjuries(text);
     const keys = Object.keys(parsed || {});
-    // eslint-disable-next-line no-console
-    console.log('[injuries:parsed:summary]', { url, keys: keys.length, sample: keys.slice(0, 5).reduce((acc, k) => { acc[k] = parsed[k]; return acc; }, {}) });
     if (parsed && typeof parsed === 'object' && keys.length) {
       _injuriesCache.set(key, parsed);
       return parsed;
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.log('[injuries:fetch-error]', e);
+    // ignore
   }
   _injuriesCache.set(key, {});
   return {};
@@ -84,19 +67,15 @@ export function maybeRemapInjuriesKeysUsingPlayerIdMap(injuriesMap, playerIdMap)
     return injuriesMap || {};
   }
   const out = {};
-  let converted = 0;
   for (const [key, status] of Object.entries(injuriesMap)) {
     const mapping = playerIdMap[key];
     if (mapping && (mapping.espn_id || (mapping.metadata && mapping.metadata.espn_id))) {
       const espnId = String(mapping.espn_id || mapping.metadata.espn_id);
       out[espnId] = status;
-      converted += 1;
     } else {
       out[key] = status;
     }
   }
-  // eslint-disable-next-line no-console
-  console.log('[injuries:remap]', { before: Object.keys(injuriesMap).length, after: Object.keys(out).length, converted });
   return out;
 }
 

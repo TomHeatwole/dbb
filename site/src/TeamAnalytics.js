@@ -141,12 +141,17 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
 
   // Compute clamped end week for PlayerBreakdownTable
   const endWeekForBreakdown = useMemo(() => {
-    const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
-    if (isCurrentSeason) {
-      const completed = getCompletedWeeksCount(urlYear);
-      return Math.max(1, Math.min(endWeek, completed || endWeek));
+    // Determine current vs previous season robustly:
+    // - If an explicit year is provided and it's not the current year -> previous
+    // - If no year provided but endWeek >= 17 (typical for archived seasons) -> treat as previous
+    // - Otherwise treat as current
+    const explicitYear = urlYear ? String(urlYear) : null;
+    const isExplicitCurrent = explicitYear ? (explicitYear === String(CURRENT_YEAR)) : null;
+    const treatAsPrevious = (isExplicitCurrent === false) || (!explicitYear && endWeek >= 17);
+    if (!treatAsPrevious) {
+      const completed = getCompletedWeeksCount(explicitYear);
+      return Math.max(0, Math.min(endWeek, Number.isFinite(completed) ? completed : 0));
     }
-    // Previous seasons: do not clamp; data is complete
     return endWeek;
   }, [endWeek, urlYear]);
 
