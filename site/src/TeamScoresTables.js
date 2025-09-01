@@ -1,11 +1,22 @@
 import React from 'react';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
+import { getInjuryAbbreviation } from './InjuryLookup';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false }) {
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {} }) {
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
+
+  const InjuryBadge = ({ espnId }) => {
+    const st = injuriesMap && espnId && injuriesMap[String(espnId)];
+    if (!st || isActiveWeek) { return null; }
+    const ab = getInjuryAbbreviation(st);
+    if (!ab) { return null; }
+    return (
+      <span className="injury-badge" title={st}>{ab}</span>
+    );
+  };
 
   const renderStarters = () => (
     <div className="team-scores-tables-col" style={{ width: '100%' }}>
@@ -41,7 +52,8 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                   <span className="player-name">
                     {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                     {info && info.position ? ` (${info.position})` : ''}
-                    {teamAbbr ? <span className="team-scores-game-cell" style={{ marginLeft: '0.35rem' }}>{teamAbbr}</span> : null}
+                    {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
+                    <InjuryBadge espnId={info && info.espn_id} />
                   </span>
                 </td>
                 <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
@@ -92,7 +104,8 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                   <span className="player-name">
                     {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                     {info && info.position ? ` (${info.position})` : ''}
-                    {teamAbbr ? <span className="team-scores-game-cell" style={{ marginLeft: '0.35rem' }}>{teamAbbr}</span> : null}
+                    {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
+                    <InjuryBadge espnId={info && info.espn_id} />
                   </span>
                 </td>
                 <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>

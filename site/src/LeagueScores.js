@@ -14,6 +14,7 @@ import MobileTeamScoreSummary from './MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from './GamesParser';
+import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './InjuryLookup';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -39,6 +40,7 @@ function LeagueScores() {
   const [benchOpen, setBenchOpen] = useState({});
   const isMobile = useIsMobile();
   const [playerGameLabels, setPlayerGameLabels] = useState({});
+  const [injuriesMap, setInjuriesMap] = useState({});
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -120,6 +122,21 @@ function LeagueScores() {
       })
       .finally(() => setLoading(false));
   }, [season]);
+
+  // Load injuries map for season/week (used for past weeks rendering)
+  useEffect(() => {
+    let cancelled = false;
+    fetchInjuriesForWeek(season, week).then((m) => {
+      if (!cancelled) {
+        const remapped = maybeRemapInjuriesKeysUsingPlayerIdMap(m || {}, playerIdMap || {});
+        setInjuriesMap(remapped);
+        // Debug: verify injuries data load
+        // eslint-disable-next-line no-console
+        console.log('[injuries]', { season, week, count: remapped ? Object.keys(remapped).length : 0, sample: remapped });
+      }
+    }).catch(() => { if (!cancelled) { setInjuriesMap({}); } });
+    return () => { cancelled = true; };
+  }, [season, week, playerIdMap]);
 
   // Compute player->game labels for the selected week (web tables)
   useEffect(() => {
@@ -263,6 +280,7 @@ function LeagueScores() {
                           searchParams={searchParams}
                           playerGameLabels={playerGameLabels}
                           isActiveWeek={isActiveWeek}
+                          injuriesMap={injuriesMap}
                         />
                       )}
                     </div>

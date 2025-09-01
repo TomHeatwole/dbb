@@ -1933,3 +1933,13 @@ body.modal-open {
   min-width: 3em !important;
   text-align: right !important;
 } 
+
+/* Injury badge and team abbr spacing */
+.injury-badge {
+  color: #ff6b6b;
+  margin-left: 0.35rem;
+  font-weight: 700;
+}
+.team-scores-team-abbr {
+  margin-left: 0.35rem;
+} 
