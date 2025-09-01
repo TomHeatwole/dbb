@@ -86,6 +86,20 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     return <span className="injury-badge" title={status}>{ab}</span>;
   };
 
+  const benchRows = weekBreakdown ? [...weekBreakdown.bench].map((p) => {
+    const info = getPlayerInfo(p.id, playersData, playerIdMap);
+    const status = showCurrentInjury && info ? (info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null)) : null;
+    const ab = status ? getInjuryAbbreviation(status) : null;
+    const isDeprioritized = ab === 'O' || ab === 'P' || ab === 'PUP' || ab === 'IR';
+    return { p, info, isDeprioritized };
+  }).sort((a, b) => {
+    if (b.p.pts !== a.p.pts) { return b.p.pts - a.p.pts; }
+    if (a.isDeprioritized !== b.isDeprioritized) {
+      return a.isDeprioritized ? 1 : -1; // push OUT/PUP/IR below on ties
+    }
+    return 0;
+  }) : [];
+
   return (
     <div className="team-scores-container">
       <WeekSelector week={week} onChange={handleSelect} />
@@ -143,24 +157,21 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                 </tr>
               </thead>
               <tbody>
-                {[...weekBreakdown.bench].sort((a, b) => b.pts - a.pts).map((p, i) => {
-                  const info = getPlayerInfo(p.id, playersData, playerIdMap);
-                  return (
-                    <tr key={p.id}>
-                      <td className="team-scores-player-cell">
-                        {info && info.espn_photo_url && (
-                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
-                        )}
-                        <span className="player-name">
-                          {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
-                          {info && info.position ? ` (${info.position})` : ''}
-                          <InjuryBadge info={info} />
-                        </span>
-                      </td>
-                      <td className="team-scores-pts-cell">{p.pts}</td>
-                    </tr>
-                  );
-                })}
+                {benchRows.map(({ p, info }) => (
+                  <tr key={p.id}>
+                    <td className="team-scores-player-cell">
+                      {info && info.espn_photo_url && (
+                        <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
+                      )}
+                      <span className="player-name">
+                        {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
+                        {info && info.position ? ` (${info.position})` : ''}
+                        <InjuryBadge info={info} />
+                      </span>
+                    </td>
+                    <td className="team-scores-pts-cell">{p.pts}</td>
+                  </tr>
+                ))}
               </tbody>
               <tfoot>
                 <tr>
