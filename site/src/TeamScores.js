@@ -109,13 +109,6 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
           <div className="team-scores-tables-col">
             <div className="team-scores-starters-bench-title">Starters</div>
             <table className="team-scores-table team-scores-table-starters-simple">
-              <thead>
-                <tr>
-                  <th>Position</th>
-                  <th>Player</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
               <tbody>
                 {weekBreakdown.starters.map((p, i) => {
                   const info = getPlayerInfo(p.id, playersData, playerIdMap);
@@ -150,12 +143,6 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
           <div className="team-scores-tables-col">
             <div className="team-scores-starters-bench-title">Bench</div>
             <table className="team-scores-table team-scores-table-bench">
-              <thead>
-                <tr>
-                  <th>Player</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
               <tbody>
                 {benchRows.map(({ p, info }) => (
                   <tr key={p.id}>

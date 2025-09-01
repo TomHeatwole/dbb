@@ -26,14 +26,6 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
     <div className="team-scores-tables-col" style={{ width: '100%' }}>
       <div className="team-scores-starters-bench-title">Starters</div>
       <table className="team-scores-table team-scores-table-fixed-width" style={{ width: '100%' }}>
-        <thead>
-          <tr>
-            <th>Position</th>
-            <th>Player</th>
-            <th>Game</th>
-            <th>Points</th>
-          </tr>
-        </thead>
         <tbody>
           {weekBreakdown.starters.map((p, i) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
@@ -96,13 +88,6 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
       <div className="team-scores-tables-col" style={{ width: '100%' }}>
         <div className="team-scores-starters-bench-title">Bench</div>
         <table className="team-scores-table team-scores-table-bench" style={{ width: '100%' }}>
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Game</th>
-              <th>Points</th>
-            </tr>
-          </thead>
           <tbody>
             {benchRows.map(({ p, info }) => {
               const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false };
