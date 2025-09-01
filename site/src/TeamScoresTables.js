@@ -3,18 +3,22 @@ import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getInjuryAbbreviation } from './InjuryLookup';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {} }) {
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false }) {
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
 
-  const InjuryBadge = ({ espnId }) => {
-    const st = injuriesMap && espnId && injuriesMap[String(espnId)];
-    if (!st || isActiveWeek) { return null; }
-    const ab = getInjuryAbbreviation(st);
+  const InjuryBadge = ({ espnId, info }) => {
+    let status = null;
+    if (!isActiveWeek && injuriesMap && espnId && injuriesMap[String(espnId)]) {
+      status = injuriesMap[String(espnId)];
+    } else if (showCurrentInjury && info && (info.injury_status || info.injury_notes || info.status)) {
+      status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended/i.test(info.status) ? info.status : null);
+    }
+    const ab = status ? getInjuryAbbreviation(status) : null;
     if (!ab) { return null; }
     return (
-      <span className="injury-badge" title={st}>{ab}</span>
+      <span className="injury-badge" title={status}>{ab}</span>
     );
   };
 
@@ -53,7 +57,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                     {info && info.position ? ` (${info.position})` : ''}
                     {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
-                    <InjuryBadge espnId={info && info.espn_id} />
+                    <InjuryBadge espnId={info && info.espn_id} info={info} />
                   </span>
                 </td>
                 <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
@@ -105,7 +109,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                     {info && info.position ? ` (${info.position})` : ''}
                     {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
-                    <InjuryBadge espnId={info && info.espn_id} />
+                    <InjuryBadge espnId={info && info.espn_id} info={info} />
                   </span>
                 </td>
                 <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>

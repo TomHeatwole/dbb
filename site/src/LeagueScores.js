@@ -248,6 +248,7 @@ function LeagueScores() {
               const startersTotal = weekBreakdown ? weekBreakdown.starterTotal : 0;
               const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
               const isActiveWeek = (season === CURRENT_YEAR) && (week === getCurrentNFLWeek());
+              const showCurrentInjury = (String(season) === String(CURRENT_YEAR)) && (week >= getCurrentNFLWeek());
               return (
                 <div key={rosterId} className="standings-row">
                   <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
@@ -281,6 +282,7 @@ function LeagueScores() {
                           playerGameLabels={playerGameLabels}
                           isActiveWeek={isActiveWeek}
                           injuriesMap={injuriesMap}
+                          showCurrentInjury={showCurrentInjury}
                         />
                       )}
                     </div>
