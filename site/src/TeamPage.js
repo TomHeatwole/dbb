@@ -100,15 +100,16 @@ function TeamPage() {
     // eslint-disable-next-line
   }, [urlYear]);
 
-  // Fetch player data and playerIdMap on mount
+  // Fetch player data and playerIdMap (season-aware)
   useEffect(() => {
-    fetchPlayersData()
+    const param = (String(season) === String(CURRENT_YEAR)) ? (rosters || null) : String(season);
+    fetchPlayersData(param)
       .then(setPlayersData)
       .catch(() => setPlayersData(null));
     fetchPlayerIdMap()
       .then(setPlayerIdMap)
       .catch(() => setPlayerIdMap(null));
-  }, []);
+  }, [season, rosters]);
 
   useEffect(() => {
     setScoresLoading(true);

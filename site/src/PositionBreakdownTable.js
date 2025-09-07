@@ -76,12 +76,15 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
               const week = weeksParsedData[weekNum - 1];
               if (!week) continue;
               week.forEach(entry => {
-                if (!entry || !entry.starters_points || entry.starters_points[posIdx] == null) return;
+                if (!entry) { return; }
+                const startersPoints = (entry && Array.isArray(entry.starters_points)) ? entry.starters_points : null;
+                const value = (startersPoints && startersPoints.length > posIdx) ? startersPoints[posIdx] : null;
+                if (value == null) { return; }
                 const rid = entry.roster_id;
                 if (!teamScoresMap[rid]) teamScoresMap[rid] = [];
-                teamScoresMap[rid].push(entry.starters_points[posIdx]);
+                teamScoresMap[rid].push(value);
                 if (rid === rosterId) {
-                  userScores.push(entry.starters_points[posIdx]);
+                  userScores.push(value);
                 }
               });
             }

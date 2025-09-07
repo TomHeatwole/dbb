@@ -53,9 +53,10 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   const [playerIdMap, setPlayerIdMap] = useState(null);
 
   useEffect(() => {
-    fetchPlayersData().then(setPlayersData);
+    const param = (String(urlYear || CURRENT_YEAR) === String(CURRENT_YEAR)) ? null : String(urlYear);
+    fetchPlayersData(param).then(setPlayersData);
     fetchPlayerIdMap().then(setPlayerIdMap);
-  }, []);
+  }, [urlYear]);
 
   // Sync query params when startWeek or endWeek changes
   useEffect(() => {
