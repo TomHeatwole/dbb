@@ -14,6 +14,7 @@ import Sidebar from './Sidebar';
 import useIsMobile from './useIsMobile';
 import LeagueStandings from './LeagueStandings';
 import LeagueScores from './LeagueScores';
+import AdminControls from './AdminControls';
 
 function AppInner() {
   const isMobile = useIsMobile();
@@ -27,6 +28,7 @@ function AppInner() {
       <Route path="/home/" element={<HomePage />} />
       <Route path="/standings" element={<LeagueStandings />} />
       <Route path="/Scores/Week" element={<LeagueScores />} />
+      <Route path="/admincontrols" element={<AdminControls />} />
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
   );

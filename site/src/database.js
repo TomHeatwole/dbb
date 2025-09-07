@@ -2,7 +2,7 @@
 // Initializes Firebase app and exposes simple helpers for writing test data.
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getDatabase, ref, set, get, child } from 'firebase/database';
+import { getDatabase, ref, set, get, child, remove } from 'firebase/database';
 import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL } from './global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 
@@ -166,6 +166,8 @@ export default {
   readApiCacheFresh,
   readApiCacheLatest,
   readApiCacheLatestByKey,
+  deleteAllPlayerData,
+  deletePlayerWeek,
 };
 
 // Fetch Sleeper players, filter to active players intersecting caredPlayerIds, and store snapshot for current week
@@ -234,6 +236,38 @@ export async function readCurrentWeekPlayersSnapshot() {
     }
   } catch (_) {}
   return { path, snapshot: null, ageMs: Infinity };
+}
+
+// Admin: delete all player snapshots (players_* keys at root)
+export async function deleteAllPlayerData() {
+  const db = getDb();
+  const rootSnap = await get(ref(db, '/'));
+  if (!rootSnap.exists()) { return { deleted: [] }; }
+  const val = rootSnap.val() || {};
+  const keys = Object.keys(val).filter(k => typeof k === 'string' && k.startsWith('players_'));
+  const deleted = [];
+  for (const k of keys) {
+    try {
+      await remove(ref(db, k));
+      deleted.push(k);
+    } catch (_) {
+      // continue deleting others
+    }
+  }
+  return { deleted };
+}
+
+// Admin: delete specific player week snapshot
+export async function deletePlayerWeek(season, week) {
+  const seasonStr = String(season);
+  const weekNum = Number(week);
+  if (!seasonStr || !Number.isFinite(weekNum) || weekNum < 1 || weekNum > 17) {
+    throw new Error('deletePlayerWeek requires valid season and week (1-17)');
+  }
+  const path = `players_${seasonStr}_week_${weekNum}`;
+  const db = getDb();
+  await remove(ref(db, path));
+  return { path };
 }
 
 
