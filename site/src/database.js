@@ -2,7 +2,7 @@
 // Initializes Firebase app and exposes simple helpers for writing test data.
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getDatabase, ref, set } from 'firebase/database';
+import { getDatabase, ref, set, get, child } from 'firebase/database';
 import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL } from './global_constants';
 
 // Use environment variables for secrets/config. CRA exposes REACT_APP_*
@@ -26,20 +26,6 @@ function getFirebaseApp() {
 function getDb() {
   const app = getFirebaseApp();
   return getDatabase(app);
-}
-
-export async function writeHelloWorld(sender = 'league_scores_refresh') {
-  const db = getDb();
-  const timestamp = new Date().toISOString();
-  const path = `messages/${Date.now()}`;
-  console.log("CALLED");
-  const data = {
-    message: 'Hello, World from React!',
-    timestamp,
-    sender,
-  };
-  await set(ref(db, path), data);
-  return { path, data };
 }
 
 function providerFromHost(hostname) {
@@ -92,9 +78,33 @@ export async function writeApiCache(url, payload) {
   }
 }
 
+export async function readApiCacheFresh(url, maxAgeMs = 60_000) {
+  try {
+    const db = getDb();
+    const key = buildCacheKeyFromUrl(url);
+    const base = ref(db, `api_cache/${key}`);
+    const snap = await get(base);
+    if (!snap.exists()) { return null; }
+    const all = snap.val() || {};
+    const entries = Object.entries(all)
+      .map(([ts, value]) => ({ ts: Number(ts), value }))
+      .filter(e => e && !isNaN(e.ts))
+      .sort((a, b) => b.ts - a.ts);
+    const latest = entries[0];
+    if (!latest) { return null; }
+    const age = Date.now() - latest.ts;
+    if (age <= maxAgeMs && latest.value && latest.value.data !== undefined) {
+      return { key, ts: latest.ts, data: latest.value.data };
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
 export default {
-  writeHelloWorld,
   writeApiCache,
+  readApiCacheFresh,
 };
 
 

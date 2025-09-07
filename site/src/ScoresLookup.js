@@ -1,5 +1,5 @@
 import { LEAGUE_ID, PREVIOUS_YEARS } from './global_constants';
-import { writeApiCache } from './database';
+import { writeApiCache, readApiCacheFresh } from './database';
 
 export async function fetchScoresData(season) {
   // Determine leagueId based on season
@@ -26,6 +26,13 @@ export async function fetchScoresData(season) {
     if (isCurrentSeason) {
       try {
         const apiUrl = `https://api.sleeper.app/v1/league/${leagueId}/matchups/${weekNum}`;
+        try {
+          const cached = await readApiCacheFresh(apiUrl, 60_000);
+          if (cached && Array.isArray(cached.data)) {
+            const weekArr = cached.data;
+            return weekArr.map(({ matchup_id, ...rest }) => rest);
+          }
+        } catch (_) {}
         const resp = await fetch(apiUrl);
         if (resp.ok) {
           const weekArr = await resp.json();

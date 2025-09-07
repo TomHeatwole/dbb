@@ -16,7 +16,6 @@ import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from './GamesParser';
 import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './InjuryLookup';
-import { writeHelloWorld } from './database';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -202,20 +201,6 @@ function LeagueScores() {
     return () => { cancelled = true; };
   }, [season, week, playersData, playerIdMap, weeksParsedData]);
 
-  // On mount: write a hello-world message to the database
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await writeHelloWorld('LeagueScores Mount');
-        // eslint-disable-next-line no-console
-        console.log('[db write ok]', res);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[db write error]', err);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) return `Team ${rosterId}`;

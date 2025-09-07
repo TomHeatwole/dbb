@@ -1,7 +1,15 @@
 import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH } from './global_constants';
-import { writeApiCache } from './database';
+import { writeApiCache, readApiCacheFresh } from './database';
 
 async function fetchJson(url) {
+  // Try DB cache first (1 minute TTL)
+  try {
+    const cached = await readApiCacheFresh(url, 60_000);
+    if (cached && cached.data) {
+      return cached.data;
+    }
+  } catch (_) {}
+
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to fetch ${url}: ${res.status}`);
