@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import useIsMobile from './useIsMobile';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea } from 'recharts';
 
 function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds) {
@@ -80,6 +81,20 @@ function computeRoundedYDomain(data, seriesRosterIds) {
 }
 
 export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rosterIdToName, rosterIds }) {
+  const isMobile = useIsMobile();
+  function abbreviateTeamName(name) {
+    if (!isMobile) { return name; }
+    if (!name || typeof name !== 'string') { return name; }
+    let n = name.replace(/^Team\s+/i, '').trim();
+    if (n.includes(' ')) {
+      const parts = n.split(/\s+/).filter(Boolean);
+      const firstInitial = parts[0] ? parts[0][0].toUpperCase() : '';
+      const last = parts[parts.length - 1] || '';
+      const lastShort = last.length > 6 ? (last.slice(0, 6) + '…') : last;
+      return `${firstInitial}.${lastShort}`;
+    }
+    return n.length > 8 ? (n.slice(0, 8) + '…') : n;
+  }
   const rosterIdSet = useMemo(() => new Set(rosterIds || Object.keys(rosterIdToName || {}).map(Number)), [rosterIds, rosterIdToName]);
   const { data, rosterIds: seriesRosterIds } = useMemo(
     () => computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIdSet),
@@ -102,19 +117,21 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
       })
       .map((item) => {
         const ridKey = item.dataKey;
-        const teamName = item.name || ridKey;
+        const ridNum = Number(ridKey);
+        const fullName = (rosterIdToName && rosterIdToName[ridNum]) ? rosterIdToName[ridNum] : (item.name || `Team ${ridKey}`);
+        const teamName = abbreviateTeamName(fullName);
         const cumulativeVal = item.payload ? item.payload[`c_${ridKey}`] : undefined;
         const signedDelta = typeof item.value === 'number' ? (item.value >= 0 ? `+${Math.round(item.value)}` : `${Math.round(item.value)}`) : '';
         const valueText = `${typeof cumulativeVal === 'number' ? Math.round(cumulativeVal) : ''} (${signedDelta})`;
         return (
           <div key={ridKey} style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between', width: '100%', alignItems: 'baseline' }}>
-            <span style={{ color: item.color, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '0.5rem' }}>{teamName}</span>
+            <span style={{ color: item.color, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '0.5rem', minWidth: 0, maxWidth: isMobile ? '65%' : 'unset' }}>{teamName}</span>
             <span style={{ fontVariantNumeric: 'tabular-nums' }}>{valueText}</span>
           </div>
         );
       });
     return (
-      <div style={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff', borderRadius: '8px', padding: '8px 10px', minWidth: '200px', maxWidth: '70vw' }}>
+      <div style={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff', borderRadius: '8px', padding: '8px 10px', minWidth: '200px', maxWidth: isMobile ? '90vw' : '70vw' }}>
         <div style={{ fontWeight: 800, textAlign: 'center', marginBottom: '6px' }}>{`Week ${weekNum}`}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {rows}

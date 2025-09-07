@@ -199,14 +199,18 @@ function TeamPage() {
               onClick={() => {
                 setSeason(opt);
                 setSeasonDropdownOpen(false);
-                const newParams = new URLSearchParams();
-                if (searchParams.get('tab')) {
-                  newParams.set('tab', searchParams.get('tab'));
-                  newParams.delete('week');
-                  newParams.delete('start_week');
-                  newParams.delete('end_week');
+                // For Analytics tab, let the child component manage URL params to avoid race conditions
+                const tab = searchParams.get('tab');
+                if (tab !== 'Analytics') {
+                  const newParams = new URLSearchParams();
+                  if (tab) {
+                    newParams.set('tab', tab);
+                    newParams.delete('week');
+                    newParams.delete('start_week');
+                    newParams.delete('end_week');
+                  }
+                  setSearchParams(newParams, { replace: true });
                 }
-                setSearchParams(newParams, { replace: true });
                 if (teamAnalyticsRef.current && typeof teamAnalyticsRef.current.resetWeek === 'function') {
                   teamAnalyticsRef.current.resetWeek(opt);
                 }

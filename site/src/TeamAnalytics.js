@@ -54,8 +54,10 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
 
   useEffect(() => {
     const param = (String(urlYear || CURRENT_YEAR) === String(CURRENT_YEAR)) ? null : String(urlYear);
-    fetchPlayersData(param).then(setPlayersData);
-    fetchPlayerIdMap().then(setPlayerIdMap);
+    let cancelled = false;
+    fetchPlayersData(param).then((p) => { if (!cancelled) setPlayersData(p); });
+    fetchPlayerIdMap().then((m) => { if (!cancelled) setPlayerIdMap(m); });
+    return () => { cancelled = true; };
   }, [urlYear]);
 
   // Sync query params when startWeek or endWeek changes
@@ -87,19 +89,18 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   useImperativeHandle(ref, () => ({
     resetWeek: (season) => {
       const newParams = new URLSearchParams(searchParams);
-      const startWeek = 1;
-      const endWeek = getDefaultDisplayWeek(season);
-      newParams.set('start_week', startWeek);
-      newParams.set('end_week', endWeek);
+      const newStart = 1;
+      const newEnd = getDefaultDisplayWeek(season);
+      newParams.set('start_week', newStart);
+      newParams.set('end_week', newEnd);
       if (season === CURRENT_YEAR) {
         newParams.delete('year');
-        setSearchParams(searchParams, { replace: true });
       } else {
         newParams.set('year', season);
       }
+      setStartWeek(newStart);
+      setEndWeek(newEnd);
       setSearchParams(newParams, { replace: true });
-      setStartWeek(startWeek);
-      setEndWeek(endWeek);
     }
   }));
 
@@ -108,6 +109,14 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
   const adjustedEndWeek = isCurrentSeason ? Math.min(endWeek, Math.max(0, currentWeek - 1)) : endWeek;
   const adjustedStartWeek = isCurrentSeason ? Math.min(startWeek, adjustedEndWeek) : startWeek;
+
+  // When urlYear changes (season switch), reset start/end state immediately to reflect new season
+  useEffect(() => {
+    const newStart = 1;
+    const newEnd = getDefaultDisplayWeek(urlYear || CURRENT_YEAR);
+    setStartWeek(newStart);
+    setEndWeek(newEnd);
+  }, [urlYear]);
 
   // Get weekly standings for the selected window (with current week excluded)
   const weeklyStandings = getWeeklyStandings(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
