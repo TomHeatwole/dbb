@@ -102,9 +102,30 @@ export async function readApiCacheFresh(url, maxAgeMs = 60_000) {
   }
 }
 
+export async function readApiCacheLatest(url) {
+  try {
+    const db = getDb();
+    const key = buildCacheKeyFromUrl(url);
+    const base = ref(db, `api_cache/${key}`);
+    const snap = await get(base);
+    if (!snap.exists()) { return null; }
+    const all = snap.val() || {};
+    const entries = Object.entries(all)
+      .map(([ts, value]) => ({ ts: Number(ts), value }))
+      .filter(e => e && !isNaN(e.ts))
+      .sort((a, b) => b.ts - a.ts);
+    const latest = entries[0];
+    if (!latest || !latest.value) { return null; }
+    return { key: buildCacheKeyFromUrl(url), ts: latest.ts, data: latest.value.data };
+  } catch (_) {
+    return null;
+  }
+}
+
 export default {
   writeApiCache,
   readApiCacheFresh,
+  readApiCacheLatest,
 };
 
 

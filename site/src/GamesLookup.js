@@ -1,14 +1,25 @@
 import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH } from './global_constants';
-import { writeApiCache, readApiCacheFresh } from './database';
+import { writeApiCache, readApiCacheLatest } from './database';
 
 async function fetchJson(url) {
-  // Try DB cache first (1 minute TTL)
+  // Read from DB first; if stale (>1m), revalidate in background
   try {
-    const cached = await readApiCacheFresh(url, 60_000);
-    if (cached && cached.data) {
+    const cached = await readApiCacheLatest(url);
+    if (cached && cached.data !== undefined) {
+      const ageMs = Date.now() - (cached.ts || 0);
+      if (ageMs > 60_000) {
+        (async () => {
+          try {
+            const res2 = await fetch(url);
+            if (!res2.ok) { return; }
+            const json2 = await res2.json();
+            await writeApiCache(url, json2);
+          } catch (_) { /* ignore */ }
+        })();
+      }
       return cached.data;
     }
-  } catch (_) {}
+  } catch (_) { /* ignore */ }
 
   const res = await fetch(url);
   if (!res.ok) {
