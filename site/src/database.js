@@ -78,6 +78,24 @@ export async function writeApiCache(url, payload) {
   }
 }
 
+export async function writeApiCacheWithKey(cacheKey, url, payload) {
+  try {
+    const db = getDb();
+    const key = cacheKey || buildCacheKeyFromUrl(url);
+    const ts = Date.now();
+    const path = `api_cache/${key}/${ts}`;
+    const entry = {
+      url,
+      fetchedAt: new Date(ts).toISOString(),
+      data: payload,
+    };
+    await set(ref(db, path), entry);
+    return { path, key };
+  } catch (_) {
+    return null;
+  }
+}
+
 export async function readApiCacheFresh(url, maxAgeMs = 60_000) {
   try {
     const db = getDb();
@@ -122,10 +140,31 @@ export async function readApiCacheLatest(url) {
   }
 }
 
+export async function readApiCacheLatestByKey(cacheKey) {
+  try {
+    const db = getDb();
+    const base = ref(db, `api_cache/${cacheKey}`);
+    const snap = await get(base);
+    if (!snap.exists()) { return null; }
+    const all = snap.val() || {};
+    const entries = Object.entries(all)
+      .map(([ts, value]) => ({ ts: Number(ts), value }))
+      .filter(e => e && !isNaN(e.ts))
+      .sort((a, b) => b.ts - a.ts);
+    const latest = entries[0];
+    if (!latest || !latest.value) { return null; }
+    return { key: cacheKey, ts: latest.ts, data: latest.value.data };
+  } catch (_) {
+    return null;
+  }
+}
+
 export default {
   writeApiCache,
+  writeApiCacheWithKey,
   readApiCacheFresh,
   readApiCacheLatest,
+  readApiCacheLatestByKey,
 };
 
 
