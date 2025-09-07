@@ -30,7 +30,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           {weekBreakdown.starters.map((p, i) => {
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
             const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
-            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false };
+            const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false, eventId: null };
             const teamAbbr = gameObj.team || (info && (info.team || info.team_abbr)) || null;
             const gameCellClasses = ['team-scores-game-cell'];
             if (isActiveWeek && gameObj.live) {
@@ -52,7 +52,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <InjuryBadge espnId={info && info.espn_id} info={info} />
                   </span>
                 </td>
-                <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
+                <td className={gameCellClasses.join(' ')}>{gameObj && gameObj.eventId ? (<a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>) : gameObj.text}</td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );
@@ -90,7 +90,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <table className="team-scores-table team-scores-table-bench" style={{ width: '100%' }}>
           <tbody>
             {benchRows.map(({ p, info }) => {
-              const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false };
+              const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false, eventId: null };
               const teamAbbr = gameObj.team || (info && (info.team || info.team_abbr)) || null;
               const gameCellClasses = ['team-scores-game-cell'];
               if (isActiveWeek && gameObj.live) {
@@ -111,7 +111,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                       <InjuryBadge espnId={info && info.espn_id} info={info} />
                     </span>
                   </td>
-                  <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
+                  <td className={gameCellClasses.join(' ')}>{gameObj && gameObj.eventId ? (<a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>) : gameObj.text}</td>
                   <td className="team-scores-pts-cell">{p.pts}</td>
                 </tr>
               );
