@@ -1,9 +1,12 @@
-import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH } from './global_constants';
+import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH, PAUSE_SCRAPES } from './global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { writeApiCacheWithKey, readApiCacheLatestByKey } from './database';
 
 async function fetchJson(url, cacheKeyOverride = null) {
   // Helper to perform network fetch and write to cache with stable cache key
+  if (PAUSE_SCRAPES) {
+    throw new Error('Scrapes paused');
+  }
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to fetch ${url}: ${res.status}`);
@@ -116,10 +119,10 @@ export async function fetchNflScoreboard(season, week) {
   try {
     const cached = await readApiCacheLatestByKey(cacheKey);
     if (cached && cached.data !== undefined) {
-      // For future weeks, enforce a 24-hour TTL
-      if (isFutureWeek) {
+      // For future weeks, enforce a 1-hour TTL (temporary)
+      if (!PAUSE_SCRAPES && isFutureWeek) {
         const ageMs = Date.now() - (cached.ts || 0);
-        if (ageMs > 24 * 60 * 60 * 1000) {
+        if (ageMs > 60 * 60 * 1000) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
             return refreshed;
@@ -133,5 +136,6 @@ export async function fetchNflScoreboard(season, week) {
   } catch (_) {}
   // Only fetch if missing and this is the active week OR a past season (seed once)
   if (!isActiveWeek && !isPastSeason && !isFutureWeek) { return null; }
+  if (PAUSE_SCRAPES) { return null; }
   return await fetchJson(url, cacheKey);
 } 

@@ -20,13 +20,16 @@ export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/04";
 // Only for lcoal override while developing
 export const PREVIOUS_CURRENT_WEEK_OVERRIDE = null;
 
-// Testing-only: use local example data for NFL scoreboard lookup when true
-export const USE_FAKE_EXAMPLE_DATA = false;
-// Path should be placed under site/public so it can be fetched by the browser
-export const FAKE_SCOREBOARD_PATH = parsedSettings.FAKE_SCOREBOARD_PATH || '/fake_data/espn_scores_api.txt';
 
 // Firebase configuration values (non-secret parts)
 export const FIREBASE_AUTH_DOMAIN = parsedSettings.FIREBASE_AUTH_DOMAIN || 'N/A';
 export const FIREBASE_PROJECT_ID = parsedSettings.FIREBASE_PROJECT_ID || 'N/A';
 export const FIREBASE_STORAGE_BUCKET = parsedSettings.FIREBASE_STORAGE_BUCKET || 'N/A';
 export const FIREBASE_DATABASE_URL = parsedSettings.FIREBASE_DATABASE_URL || 'N/A';
+
+// Admin toggle: when true, never hit external APIs; read DB only
+export const PAUSE_SCRAPES = true; 
+// Testing-only: use local example data for NFL scoreboard lookup when true
+export const USE_FAKE_EXAMPLE_DATA = false;
+// Path should be placed under site/public so it can be fetched by the browser
+export const FAKE_SCOREBOARD_PATH = parsedSettings.FAKE_SCOREBOARD_PATH || '/fake_data/espn_scores_api.txt';

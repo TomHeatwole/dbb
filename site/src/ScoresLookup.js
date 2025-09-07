@@ -1,4 +1,4 @@
-import { LEAGUE_ID, PREVIOUS_YEARS } from './global_constants';
+import { LEAGUE_ID, PREVIOUS_YEARS, PAUSE_SCRAPES } from './global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { writeApiCacheWithKey, readApiCacheLatestByKey } from './database';
 
@@ -19,7 +19,7 @@ export async function fetchScoresData(season) {
       if (cached && Array.isArray(cached.data)) {
         const ageMs = Date.now() - (cached.ts || 0);
         const isActiveWeek = (String(season) === String(CURRENT_YEAR)) && (Number(weekNum) === getCurrentNFLWeek());
-        if (isActiveWeek && ageMs > 60_000) {
+        if (!PAUSE_SCRAPES && isActiveWeek && ageMs > 3_600_000) {
           (async () => {
             try {
               const r2 = await fetch(apiUrl);
@@ -38,6 +38,7 @@ export async function fetchScoresData(season) {
     const isPastSeason = String(season) !== String(CURRENT_YEAR);
     if (!isActiveWeek && !isPastSeason) { return null; }
     try {
+      if (PAUSE_SCRAPES) { return null; }
       const resp = await fetch(apiUrl);
       if (resp.ok) {
         const weekArr = await resp.json();

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { deleteAllPlayerData, deletePlayerWeek, readAdminBlob, writeAdminBlob } from './database';
+import { deleteAllPlayerData, deletePlayerWeek, readAdminBlob, writeAdminBlob, readApiCacheLatestByKey, writeApiCacheWithKey } from './database';
+import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
+import { LEAGUE_ID } from './global_constants';
 
 function AdminControls() {
   const [password, setPassword] = useState('');
@@ -7,6 +9,8 @@ function AdminControls() {
   const [authed, setAuthed] = useState(false);
   const [adminJson, setAdminJson] = useState('');
   const [adminStatus, setAdminStatus] = useState(null);
+  const [fakeJson, setFakeJson] = useState('');
+  const [fakeStatus, setFakeStatus] = useState(null);
 
   async function hashSha256Hex(str) {
     const enc = new TextEncoder();
@@ -67,6 +71,63 @@ function AdminControls() {
     <div className="info-container info-shared info-rel">
       <h1 className="info-title">Admin Controls</h1>
       <div className="admin-tools">
+        <div className="admin-tool-block">
+          <h2>Fake Data Update (Sleeper weekly matchups)</h2>
+          <div className="admin-inline-form">
+            <button
+              type="button"
+              className="admin-button"
+              onClick={async () => {
+                setFakeStatus(null);
+                try {
+                  const season = CURRENT_YEAR;
+                  const week = getCurrentNFLWeek();
+                  const leagueId = LEAGUE_ID;
+                  const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;
+                  const latest = await readApiCacheLatestByKey(cacheKey);
+                  const data = latest && latest.data ? latest.data : [];
+                  setFakeJson(JSON.stringify(data, null, 2));
+                  setFakeStatus(`Loaded season ${season}, week ${week}`);
+                } catch (e) {
+                  setFakeStatus('Load failed');
+                }
+              }}
+            >
+              Load Current Week
+            </button>
+          </div>
+          <textarea
+            className="admin-textarea"
+            rows={12}
+            value={fakeJson}
+            onChange={(e) => setFakeJson(e.target.value)}
+            placeholder="[ ]"
+          />
+          <div className="admin-inline-form">
+            <button
+              type="button"
+              className="admin-button"
+              onClick={async () => {
+                setFakeStatus(null);
+                try {
+                  const season = CURRENT_YEAR;
+                  const week = getCurrentNFLWeek();
+                  const leagueId = LEAGUE_ID;
+                  const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;
+                  const apiUrl = `https://api.sleeper.app/v1/league/${leagueId}/matchups/${week}`;
+                  const parsed = fakeJson ? JSON.parse(fakeJson) : [];
+                  await writeApiCacheWithKey(cacheKey, apiUrl, parsed);
+                  setFakeStatus('Wrote new entry for current week');
+                } catch (e) {
+                  setFakeStatus('Update failed: invalid JSON or write error');
+                }
+              }}
+            >
+              Submit as New Entry
+            </button>
+            {fakeStatus ? <span className="admin-status">{fakeStatus}</span> : null}
+          </div>
+        </div>
         <div className="admin-tool-block">
           <h2>Admin JSON</h2>
           <div className="admin-inline-form">
