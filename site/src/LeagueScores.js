@@ -397,7 +397,7 @@ function LeagueScores() {
             const computedEntries = weekEntries.map((e) => {
               const rid = e.roster_id;
               const raw = breakdownByRoster[rid];
-              const computed = raw ? StartSitSort(raw, playersData, playerIdMap) : null;
+              const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels) : null;
               const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
               return { rosterId: rid, points: pts, breakdown: computed };
             }).sort((a, b) => b.points - a.points);

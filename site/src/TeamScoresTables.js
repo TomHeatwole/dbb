@@ -86,7 +86,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
                   ) : gameObj.text}</div>
                 </td>
-                <td className="team-scores-pts-cell">{p.pts}</td>
+                <td className="team-scores-pts-cell">{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
               </tr>
             );
           })}
@@ -149,7 +149,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                       <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
                     ) : gameObj.text}</div>
                   </td>
-                  <td className="team-scores-pts-cell">{p.pts}</td>
+                  <td className="team-scores-pts-cell">{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
                 </tr>
               );
             })}

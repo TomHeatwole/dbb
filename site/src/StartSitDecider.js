@@ -4,16 +4,23 @@
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getPlayerInfo } from './PlayerLookup';
 
-// Helper: sort descending by pts, with stable tie-breaker on id
-function sortByPointsDesc(players) {
-  return players.slice().sort((a, b) => {
-    if (b.pts !== a.pts) { return b.pts - a.pts; }
-    const aId = String(a.id || '');
-    const bId = String(b.id || '');
-    if (aId < bId) { return -1; }
-    if (aId > bId) { return 1; }
-    return 0;
-  });
+// Helper: sort descending by pts, then by started (started > not started when equal pts), then stable id
+function buildSorter(playerGameLabels) {
+  return function sortByGameAware(players) {
+    return players.slice().sort((a, b) => {
+      if (b.pts !== a.pts) { return b.pts - a.pts; }
+      const aLab = playerGameLabels && playerGameLabels[a.id];
+      const bLab = playerGameLabels && playerGameLabels[b.id];
+      const aStarted = !!(aLab && (aLab.live || aLab.completed));
+      const bStarted = !!(bLab && (bLab.live || bLab.completed));
+      if (aStarted !== bStarted) { return bStarted ? 1 : -1; }
+      const aId = String(a.id || '');
+      const bId = String(b.id || '');
+      if (aId < bId) { return -1; }
+      if (aId > bId) { return 1; }
+      return 0;
+    });
+  };
 }
 
 // Helper: build a map of position name -> count from STARTER_POSITION_NAMES
@@ -49,7 +56,7 @@ function attachPositions(players, playersData, playerIdMap) {
 }
 
 // Core export: compute optimal starters/bench
-export function StartSitSort(teamScore, playersData, playerIdMap) {
+export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabels = null) {
   if (!teamScore) { return teamScore; }
   const starters = Array.isArray(teamScore.starters) ? teamScore.starters : [];
   const bench = Array.isArray(teamScore.bench) ? teamScore.bench : [];
@@ -64,6 +71,7 @@ export function StartSitSort(teamScore, playersData, playerIdMap) {
   const counts = getPositionCountsFromConfig();
 
   // Group by position
+  const sortByPointsDesc = buildSorter(playerGameLabels);
   const qbs = sortByPointsDesc(combined.filter(p => p.position === 'QB'));
   const rbs = sortByPointsDesc(combined.filter(p => p.position === 'RB'));
   const wrs = sortByPointsDesc(combined.filter(p => p.position === 'WR'));
