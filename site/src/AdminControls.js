@@ -8,13 +8,37 @@ function AdminControls() {
   const [adminJson, setAdminJson] = useState('');
   const [adminStatus, setAdminStatus] = useState(null);
 
-  const submit = (e) => {
+  async function hashSha256Hex(str) {
+    const enc = new TextEncoder();
+    const data = enc.encode(str);
+    const digest = await window.crypto.subtle.digest('SHA-256', data);
+    const bytes = new Uint8Array(digest);
+    let hex = '';
+    for (let i = 0; i < bytes.length; i++) {
+      const h = bytes[i].toString(16).padStart(2, '0');
+      hex += h;
+    }
+    return hex;
+  }
+
+  const submit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (password && password.length >= 8) {
-      setAuthed(true);
-    } else {
-      setError('Invalid password.');
+    try {
+      const admin = await readAdminBlob();
+      const storedHash = admin && admin.password ? String(admin.password) : '';
+      if (!storedHash) {
+        setError('Admin password not set.');
+        return;
+      }
+      const inputHash = await hashSha256Hex(password || '');
+      if (inputHash === storedHash) {
+        setAuthed(true);
+      } else {
+        setError('Invalid password.');
+      }
+    } catch (_) {
+      setError('Authentication error.');
     }
   };
 
