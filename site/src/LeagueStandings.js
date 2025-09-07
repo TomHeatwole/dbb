@@ -259,17 +259,39 @@ function LeagueStandings() {
 
   const othersSource = usePlayoffLogic ? standings14 : standingsCompleted;
   const othersWeeks = usePlayoffLogic ? weeksCount14 : effectiveCompletedWeeks;
-  const othersDisplay = othersSource
+  const othersWeeksLive = (!usePlayoffLogic && season === CURRENT_YEAR) ? Math.min(17, othersWeeks + 1) : othersWeeks;
+  const othersDisplayUnsorted = othersSource
     .filter(r => !usePlayoffLogic || !top4Set.has(r.roster_id))
-    .sort((a, b) => a.place - b.place)
     .slice(0, Math.max(0, 10 - top4Display.length))
     .map(r => ({
       roster_id: r.roster_id,
-      points_scored: sumPointsForWeeks((weeksParsedData || []).slice(0, othersWeeks), r.roster_id),
+      points_scored: sumPointsForWeeks((weeksParsedData || []).slice(0, othersWeeksLive), r.roster_id),
       isPlayoff: false,
       place: r.place,
-      weeksCount: othersWeeks
+      weeksCount: othersWeeksLive
     }));
+  // Sort others by live-inclusive totals during current season (pre-playoffs); otherwise by place
+  const othersDisplay = (!usePlayoffLogic && season === CURRENT_YEAR)
+    ? othersDisplayUnsorted.slice().sort((a, b) => b.points_scored - a.points_scored)
+    : othersDisplayUnsorted.slice().sort((a, b) => a.place - b.place);
+
+  // Build dynamic rank map when using live-inclusive ordering
+  const liveRankMap = (!usePlayoffLogic && season === CURRENT_YEAR) ? (() => {
+    const map = new Map();
+    let place = 1;
+    let i = 0;
+    while (i < othersDisplay.length) {
+      const score = othersDisplay[i].points_scored;
+      let j = i + 1;
+      while (j < othersDisplay.length && othersDisplay[j].points_scored === score) { j++; }
+      for (let k = i; k < j; k++) {
+        map.set(othersDisplay[k].roster_id, place);
+      }
+      place += (j - i);
+      i = j;
+    }
+    return map;
+  })() : null;
 
   const displayRows = [...top4Display, ...othersDisplay].slice(0, 10);
   // Tie-aware places for playoff subset
@@ -496,7 +518,11 @@ function LeagueStandings() {
             <div key={rosterId} className={`standings-row ${isTop4Highlight ? 'standings-row--playoff' : ''}`}>
               <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
                 <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
-                <span className="standings-rank">#{(usePlayoffLogic && isPlayoff) ? playoffOrderMap.get(rosterId) : ((usePlayoffLogic ? place14 : placeCompleted) || idx + 1)}</span>
+                <span className="standings-rank">#{(usePlayoffLogic && isPlayoff)
+                  ? playoffOrderMap.get(rosterId)
+                  : (!usePlayoffLogic && season === CURRENT_YEAR && liveRankMap && liveRankMap.has(rosterId)
+                    ? liveRankMap.get(rosterId)
+                    : ((usePlayoffLogic ? place14 : placeCompleted) || idx + 1))}</span>
                 {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                 <span className="standings-title">{teamName}</span>
                 {isMobile ? (

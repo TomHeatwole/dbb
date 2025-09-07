@@ -79,6 +79,7 @@ function LeagueScores() {
   const [prevData, setPrevData] = useState(null);
   const [teamHighlightMap, setTeamHighlightMap] = useState({}); // rosterId -> 'up'|'down'|'row'
   const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
+  const labelBaselineKeyRef = useRef(null);
 
   function buildExpandedData(srcWeeksParsedData, targetWeek, labels) {
     if (!srcWeeksParsedData) { return null; }
@@ -284,6 +285,26 @@ function LeagueScores() {
     return () => { cancelled = true; };
   }, [season, week, playersData, playerIdMap, weeksParsedData]);
 
+  // Align prevData baseline with first-loaded playerGameLabels for this season/week
+  useEffect(() => {
+    if (!weeksParsedData) { return; }
+    const labelsCount = Object.keys(playerGameLabels || {}).length;
+    if (labelsCount === 0) { return; }
+    const key = `${season}-${week}`;
+    if (labelBaselineKeyRef.current !== key) {
+      try {
+        const baseline = buildExpandedData(weeksParsedData, week, playerGameLabels);
+        setPrevData(baseline);
+      } catch (_) {}
+      labelBaselineKeyRef.current = key;
+    }
+  }, [playerGameLabels, weeksParsedData, season, week]);
+
+  // Reset label baseline key on season/week change
+  useEffect(() => {
+    labelBaselineKeyRef.current = null;
+  }, [season, week]);
+
   // Poll for score updates every 15s only when tab is visible/focused; run an immediate tick on return
   useEffect(() => {
     let cancelled = false;
@@ -305,7 +326,10 @@ function LeagueScores() {
         } catch (_) {}
         if (cancelled || !Array.isArray(newWeeks)) { return; }
         const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels);
-        const changes = compareExpanded(prevData, nextExpanded);
+        let changes = [];
+        if (prevData) {
+          changes = compareExpanded(prevData, nextExpanded);
+        }
         const prevTs = lastDbEntryTsRef.current;
         if (DEBUG_SCORES_LOG) {
           // eslint-disable-next-line no-console
@@ -345,12 +369,14 @@ function LeagueScores() {
               }
             }
           }
-          setTeamHighlightMap(nextTeamMap);
-          setPlayerHighlightMap(nextPlayerMap);
-          setTimeout(() => {
-            setTeamHighlightMap({});
-            setPlayerHighlightMap({});
-          }, 3000);
+          if (changes.length > 0) {
+            setTeamHighlightMap(nextTeamMap);
+            setPlayerHighlightMap(nextPlayerMap);
+            setTimeout(() => {
+              setTeamHighlightMap({});
+              setPlayerHighlightMap({});
+            }, 3000);
+          }
         }
       } catch (_) {
         // ignore
