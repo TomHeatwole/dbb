@@ -85,7 +85,10 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     const status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended/i.test(info.status) ? info.status : null);
     const ab = status ? getInjuryAbbreviation(status) : null;
     if (!ab) { return null; }
-    return <span className="injury-badge" title={status}>{ab}</span>;
+    const isRetired = ab === 'NA';
+    const label = isRetired ? 'Retired 😂' : ab;
+    const cls = isRetired ? 'injury-badge injury-badge--retired' : 'injury-badge';
+    return <span className={cls} title={status}>{label}</span>;
   };
 
   const benchRows = weekBreakdown ? [...weekBreakdown.bench].map((p) => {
