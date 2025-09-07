@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
 import { useSearchParams, Link } from 'react-router-dom';
-import { PREVIOUS_YEARS, LEAGUE_ID } from './global_constants';
+import { PREVIOUS_YEARS, LEAGUE_ID, DEBUG_SCORES_LOG } from './global_constants';
 import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
@@ -74,6 +74,7 @@ function LeagueScores() {
   const [playerGameLabels, setPlayerGameLabels] = useState({});
   const [injuriesMap, setInjuriesMap] = useState({});
   const pollingRef = useRef(false);
+  const intervalRef = useRef(null);
   const lastDbEntryTsRef = useRef(null);
   const [prevData, setPrevData] = useState(null);
   const [teamHighlightMap, setTeamHighlightMap] = useState({}); // rosterId -> 'up'|'down'|'row'
@@ -119,8 +120,10 @@ function LeagueScores() {
     for (const rid of allRosters) {
       const pa = prev.teams[rid] || { total: 0, starters: [], bench: [] };
       const pb = next.teams[rid] || { total: 0, starters: [], bench: [] };
-      if (Math.abs((pb.total || 0) - (pa.total || 0)) > 0.001) {
-        changes.push({ type: 'teamTotal', rosterId: rid, before: pa.total || 0, after: pb.total || 0 });
+      const beforeDisplay = Math.round(((pa.total || 0)) * 10) / 10;
+      const afterDisplay = Math.round(((pb.total || 0)) * 10) / 10;
+      if (beforeDisplay !== afterDisplay) {
+        changes.push({ type: 'teamTotal', rosterId: rid, before: beforeDisplay, after: afterDisplay });
       }
       // starters by slot
       const maxSlots = Math.max(pa.starters.length, pb.starters.length);
@@ -281,16 +284,17 @@ function LeagueScores() {
     return () => { cancelled = true; };
   }, [season, week, playersData, playerIdMap, weeksParsedData]);
 
-  // Poll for score updates every 15s; underlying lookups enforce their own TTLs
+  // Poll for score updates every 15s only when tab is visible/focused; run an immediate tick on return
   useEffect(() => {
     let cancelled = false;
     const intervalMs = 15000;
-    async function tick() {
+
+    const tick = async () => {
+      if (cancelled || document.visibilityState !== 'visible') { return; }
       if (pollingRef.current) { return; }
       pollingRef.current = true;
       try {
         const newWeeks = await fetchScoresData(season);
-        // Identify DB entry (timestamp) used for this week's Sleeper data
         const isCurrentSeason = String(season) === String(CURRENT_YEAR);
         const leagueId = isCurrentSeason ? LEAGUE_ID : PREVIOUS_YEARS[season];
         const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;
@@ -299,20 +303,18 @@ function LeagueScores() {
           const latest = await readApiCacheLatestByKey(cacheKey);
           dbEntryTs = latest && latest.ts ? latest.ts : null;
         } catch (_) {}
-        
         if (cancelled || !Array.isArray(newWeeks)) { return; }
         const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels);
         const changes = compareExpanded(prevData, nextExpanded);
-
         const prevTs = lastDbEntryTsRef.current;
-        // eslint-disable-next-line no-console
-        console.log('[scores delta]', { season, week, prevDbTs: prevTs, newDbTs: dbEntryTs, changes });
+        if (DEBUG_SCORES_LOG) {
+          // eslint-disable-next-line no-console
+          console.log('[scores delta]', { season, week, prevDbTs: prevTs, newDbTs: dbEntryTs, changes });
+        }
         if ((dbEntryTs != null && prevTs !== dbEntryTs) || changes.length > 0) {
           setWeeksParsedData(newWeeks);
           lastDbEntryTsRef.current = dbEntryTs != null ? dbEntryTs : prevTs;
           setPrevData(nextExpanded);
-
-          // Build highlight maps
           const nextTeamMap = {};
           const nextPlayerMap = {};
           for (const ch of changes) {
@@ -337,15 +339,14 @@ function LeagueScores() {
               if (!nextPlayerMap[rid]) { nextPlayerMap[rid] = {}; }
               nextPlayerMap[rid][String(ch.playerId)] = dir;
             } else if (ch.type === 'placement') {
-              // Only highlight the team that moved up in rank
               if (ch.direction === 'up') {
+                // Do not mark 'row' for totals; only row pulse, not total color
                 nextTeamMap[String(ch.rosterId)] = 'row';
               }
             }
           }
           setTeamHighlightMap(nextTeamMap);
           setPlayerHighlightMap(nextPlayerMap);
-          // Clear highlights after 3s
           setTimeout(() => {
             setTeamHighlightMap({});
             setPlayerHighlightMap({});
@@ -356,10 +357,54 @@ function LeagueScores() {
       } finally {
         pollingRef.current = false;
       }
+    };
+
+    const startPolling = () => {
+      if (intervalRef.current || cancelled) { return; }
+      if (document.visibilityState !== 'visible') { return; }
+      intervalRef.current = setInterval(() => { tick(); }, intervalMs);
+    };
+    const stopPolling = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        tick();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        tick();
+        startPolling();
+      }
+    };
+    const handleBlur = () => {
+      stopPolling();
+    };
+
+    // Initialize based on current visibility
+    if (document.visibilityState === 'visible') {
+      startPolling();
     }
-    const id = setInterval(() => { tick(); }, intervalMs);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [season, week, weeksParsedData, playersData, playerIdMap]);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      cancelled = true;
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [season, week, weeksParsedData, playersData, playerIdMap, playerGameLabels]);
 
 
   function getTeamName(rosterId) {
