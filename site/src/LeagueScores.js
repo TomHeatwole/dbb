@@ -7,6 +7,7 @@ import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
 import { getWeekScoreBreakdown } from './ScoresParser';
+import { StartSitSort } from './StartSitDecider';
 import TeamScoresTables from './TeamScoresTables';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
@@ -235,22 +236,27 @@ function LeagueScores() {
         <div>Error loading scores.</div>
       ) : (
         <div className={`standings-list standings-list--scores${hasAnyExpanded ? ' standings-list--expanded' : ''}`}>
-          {(Array.isArray(weeksParsedData) && weeksParsedData[week - 1] ? weeksParsedData[week - 1] : [])
-            .filter(e => e && e.roster_id != null && typeof e.points === 'number')
-            .slice()
-            .sort((a, b) => b.points - a.points)
-            .map((entry) => {
-              const rosterId = entry.roster_id;
+          {(() => {
+            const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, week) || {};
+            const weekEntries = (Array.isArray(weeksParsedData) && weeksParsedData[week - 1] ? weeksParsedData[week - 1] : [])
+              .filter(e => e && e.roster_id != null);
+            const computedEntries = weekEntries.map((e) => {
+              const rid = e.roster_id;
+              const raw = breakdownByRoster[rid];
+              const computed = raw ? StartSitSort(raw, playersData, playerIdMap) : null;
+              const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
+              return { rosterId: rid, points: pts, breakdown: computed };
+            }).sort((a, b) => b.points - a.points);
+            return computedEntries.map(({ rosterId, points, breakdown }) => {
               const teamName = getTeamName(rosterId);
               const avatarUrl = getAvatar(rosterId);
               const isExpanded = !!expanded[rosterId];
-              const weekBreakdown = getWeekScoreBreakdown(weeksParsedData, week)[rosterId];
+              const weekBreakdown = breakdown;
               const startersTotal = weekBreakdown ? weekBreakdown.starterTotal : 0;
               const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
               const isActiveWeek = (season === CURRENT_YEAR) && (week === getCurrentNFLWeek());
               const showCurrentInjury = (String(season) === String(CURRENT_YEAR)) && (week >= getCurrentNFLWeek());
 
-              // Compute Active / Yet to Play for current week
               let activeCount = 0;
               let yetToPlayCount = 0;
               if (isActiveWeek && weekBreakdown) {
@@ -270,11 +276,11 @@ function LeagueScores() {
                   }
                 }
               }
+
               return (
                 <div key={rosterId} className="standings-row">
                   <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
                     <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
-                    {/* No rank number for live scores */}
                     <span className="standings-rank" style={{ visibility: 'hidden' }}>#</span>
                     {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
                     <span className="standings-title">{teamName}</span>
@@ -284,7 +290,7 @@ function LeagueScores() {
                         <span className="standings-activity-item">In-Play: {activeCount}</span>
                       </span>
                     ) : null}
-                    <span className="standings-total">{Math.round(entry.points * 10) / 10} pts</span>
+                    <span className="standings-total">{Math.round(points * 10) / 10} pts</span>
                   </button>
                   {isExpanded && (
                     <div className="standings-row-expand">
@@ -319,7 +325,8 @@ function LeagueScores() {
                   )}
                 </div>
               );
-            })}
+            });
+          })()}
         </div>
       )}
     </InfoPageWrapper>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown } from './ScoresParser';
+import { StartSitSort } from './StartSitDecider';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
@@ -76,7 +77,8 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const handleSelect = w => setWeek(w);
 
   // Get week breakdown for this roster
-  const weekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
+  const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
+  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersData, playerIdMap) : null;
 
   const InjuryBadge = ({ info }) => {
     if (!showCurrentInjury || !info) { return null; }
