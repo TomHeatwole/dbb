@@ -10,25 +10,12 @@ let cachedPlayersData = null;
 let cachedPlayerIdMap = null;
 
 export async function fetchPlayersData(rosters = null) {
-  if (cachedPlayersData) {
-    // eslint-disable-next-line no-console
-    console.log('[players] using in-memory cache', { count: Object.keys(cachedPlayersData || {}).length });
-    return cachedPlayersData;
-  }
+  if (cachedPlayersData) { return cachedPlayersData; }
   // Try to read current week's snapshot first
   const current = await readCurrentWeekPlayersSnapshot();
   const hasSnapshot = current && current.snapshot && current.snapshot.data && Object.keys(current.snapshot.data).length > 0;
   const isFresh = hasSnapshot && Number.isFinite(current.ageMs) && current.ageMs <= 60 * 60 * 1000;
-  // eslint-disable-next-line no-console
-  console.log('[players] snapshot check', {
-    path: current && current.path,
-    hasSnapshot,
-    ageMs: current && current.ageMs,
-    isFresh,
-  });
   if (hasSnapshot && isFresh) {
-    // eslint-disable-next-line no-console
-    console.log('[players] using fresh snapshot');
     cachedPlayersData = current.snapshot.data;
     return cachedPlayersData;
   }
@@ -40,11 +27,7 @@ export async function fetchPlayersData(rosters = null) {
       const weeksData = await fetchScoresData(season);
       const currentWeek = getCurrentNFLWeek();
       const weekArr = Array.isArray(weeksData) ? weeksData[currentWeek - 1] : null;
-      if (Array.isArray(weekArr)) {
-        rosters = weekArr.map((e) => ({ players: (e && Array.isArray(e.players)) ? e.players : [], starters: [], bench: [] }));
-        // eslint-disable-next-line no-console
-        console.log('[players] derived rosters from ScoresLookup', { season, currentWeek, rosterCount: rosters.length });
-      }
+      if (Array.isArray(weekArr)) { rosters = weekArr.map((e) => ({ players: (e && Array.isArray(e.players)) ? e.players : [], starters: [], bench: [] })); }
     } catch (_) {
       // ignore and fall through
     }
@@ -65,18 +48,12 @@ export async function fetchPlayersData(rosters = null) {
       }
     }
     const caredPlayerIds = Array.from(caredSet);
-    // eslint-disable-next-line no-console
-    console.log('[players] invoking updatePlayers', { caredCount: caredPlayerIds.length });
     const res = await updatePlayers(caredPlayerIds);
     const data = (res && res.snapshot && res.snapshot.data) ? res.snapshot.data : {};
-    // eslint-disable-next-line no-console
-    console.log('[players] updatePlayers result', { path: res && res.path, count: Object.keys(data).length });
     cachedPlayersData = data;
     return data;
   }
   // No rosters yet: if no snapshot or snapshot empty, do not blind fetch; return empty
-  // eslint-disable-next-line no-console
-  console.log('[players] no rosters provided; returning snapshot-or-empty', { hasSnapshot });
   cachedPlayersData = hasSnapshot ? current.snapshot.data : {};
   return cachedPlayersData;
 }

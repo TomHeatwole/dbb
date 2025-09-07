@@ -192,11 +192,7 @@ export async function updatePlayers(caredPlayerIds) {
       if (latest && latest.value) {
         const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
         const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-        // eslint-disable-next-line no-console
-        console.log('[players] cache check', { basePath, latestTs: latest.ts, ageMs });
         if (ageMs <= 60 * 60 * 1000) {
-          // eslint-disable-next-line no-console
-          console.log('[players] cache fresh; skipping fetch');
           return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, skipped: true };
         }
       }
@@ -205,8 +201,6 @@ export async function updatePlayers(caredPlayerIds) {
     // ignore cache read errors
   }
   const url = 'https://api.sleeper.app/v1/players/nfl';
-  // eslint-disable-next-line no-console
-  console.log('[players] fetching from Sleeper', { url, basePath, caredCount: caredPlayerIds.length });
   const res = await fetch(url);
   if (!res || !res.ok) {
     throw new Error(`Failed to fetch players from Sleeper: ${res ? res.status : 'no response'}`);
@@ -233,8 +227,6 @@ export async function updatePlayers(caredPlayerIds) {
   const db = getDb();
   const writePath = `${basePath}/${ts}`;
   await set(ref(db, writePath), entry);
-  // eslint-disable-next-line no-console
-  console.log('[players] wrote snapshot', { writePath, count: entry.count });
   return { path: writePath, snapshot: entry };
 }
 
@@ -255,8 +247,6 @@ export async function readCurrentWeekPlayersSnapshot() {
       if (latest && latest.value) {
         const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
         const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-        // eslint-disable-next-line no-console
-        console.log('[players] read snapshot', { basePath, latestTs: latest.ts, ageMs, count: latest.value && latest.value.count });
         return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, ageMs };
       }
     }
