@@ -4,9 +4,11 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
 import { getCurrentNFLWeek, getCompletedWeeksCount } from './DateHelper';
-import { getStandings } from './ScoresParser';
+import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
+import { StartSitSort } from './StartSitDecider';
+import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
 import PlayoffRaceGraph from './PlayoffRaceGraph';
 
@@ -27,6 +29,8 @@ function LeagueStandings() {
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
   const isMobile = useIsMobile();
+  const [playersData, setPlayersData] = useState(null);
+  const [playerIdMap, setPlayerIdMap] = useState(null);
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -67,17 +71,23 @@ function LeagueStandings() {
     setError(null);
     Promise.all([
       fetchScoresData(season),
-      fetchTeamData(season)
+      fetchTeamData(season),
+      fetchPlayersData(),
+      fetchPlayerIdMap()
     ])
-      .then(([weeksData, teamData]) => {
+      .then(([weeksData, teamData, players, idMap]) => {
         setWeeksParsedData(weeksData);
         setRosters(teamData.rosters);
         setUsers(teamData.users);
+        setPlayersData(players);
+        setPlayerIdMap(idMap);
       })
       .catch(() => {
         setWeeksParsedData(null);
         setRosters(null);
         setUsers(null);
+        setPlayersData(null);
+        setPlayerIdMap(null);
         setError('Failed to load standings');
       })
       .finally(() => setLoading(false));
@@ -104,12 +114,30 @@ function LeagueStandings() {
   function sumPointsForWeeks(weeksArr, rosterId) {
     if (!Array.isArray(weeksArr)) { return 0; }
     let total = 0;
-    weeksArr.forEach(weekEntries => {
+    weeksArr.forEach((weekEntries, idx) => {
       if (!Array.isArray(weekEntries)) { return; }
       const entry = weekEntries.find(e => e && Number(e.roster_id) === Number(rosterId));
-      if (entry && typeof entry.points === 'number') {
-        total += entry.points;
+      if (!entry) { return; }
+      let pts = typeof entry.points === 'number' ? entry.points : 0;
+      // Override current week using StartSitDecider when possible
+      const isCurrentSeason = season === CURRENT_YEAR;
+      const currentWeekNum = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
+      const thisWeekNum = idx + 1;
+      if (isCurrentSeason && thisWeekNum === currentWeekNum && weeksParsedData && playersData) {
+        try {
+          const breakdown = getWeekScoreBreakdown(weeksParsedData, thisWeekNum);
+          const teamScore = breakdown && breakdown[rosterId];
+          if (teamScore) {
+            const computed = StartSitSort(teamScore, playersData, playerIdMap);
+            if (computed && typeof computed.starterTotal === 'number') {
+              pts = computed.starterTotal;
+            }
+          }
+        } catch (_) {
+          // fallback to API points
+        }
       }
+      total += pts;
     });
     return total;
   }
@@ -233,7 +261,7 @@ function LeagueStandings() {
     .slice(0, Math.max(0, 10 - top4Display.length))
     .map(r => ({
       roster_id: r.roster_id,
-      points_scored: r.points_scored,
+      points_scored: sumPointsForWeeks((weeksParsedData || []).slice(0, othersWeeks), r.roster_id),
       isPlayoff: false,
       place: r.place,
       weeksCount: othersWeeks
