@@ -133,10 +133,11 @@ function LeagueScores() {
     Promise.all([
       fetchScoresData(season),
       fetchTeamData(season),
-      fetchPlayersData(),
+      null,
       fetchPlayerIdMap()
     ])
-      .then(([weeksData, teamData, players, idMap]) => {
+      .then(async ([weeksData, teamData, _ignored, idMap]) => {
+        const players = await fetchPlayersData(teamData && teamData.rosters ? teamData.rosters : null);
         setWeeksParsedData(weeksData);
         setRosters(teamData.rosters);
         setUsers(teamData.users);

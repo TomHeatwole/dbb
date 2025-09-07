@@ -4,6 +4,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getDatabase, ref, set, get, child } from 'firebase/database';
 import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL } from './global_constants';
+import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 
 // Use environment variables for secrets/config. CRA exposes REACT_APP_*
 const firebaseConfig = {
@@ -166,5 +167,74 @@ export default {
   readApiCacheLatest,
   readApiCacheLatestByKey,
 };
+
+// Fetch Sleeper players, filter to active players intersecting caredPlayerIds, and store snapshot for current week
+export async function updatePlayers(caredPlayerIds) {
+  if (!Array.isArray(caredPlayerIds)) {
+    throw new Error('updatePlayers requires an array of player IDs');
+  }
+  const season = String(CURRENT_YEAR);
+  const week = getCurrentNFLWeek(season);
+  const path = `players_${season}_week_${week}`;
+
+  // Check cache with 1-hour TTL
+  try {
+    const snap = await get(ref(getDb(), path));
+    if (snap && snap.exists()) {
+      const existing = snap.val();
+      const fetchedAtMs = existing && existing.fetchedAt ? Date.parse(existing.fetchedAt) : 0;
+      const ageMs = Date.now() - fetchedAtMs;
+      if (!Number.isNaN(fetchedAtMs) && ageMs <= 60 * 60 * 1000) {
+        return { path, snapshot: existing, skipped: true };
+      }
+    }
+  } catch (_) {
+    // ignore cache read errors
+  }
+  const url = 'https://api.sleeper.app/v1/players/nfl';
+  const res = await fetch(url);
+  if (!res || !res.ok) {
+    throw new Error(`Failed to fetch players from Sleeper: ${res ? res.status : 'no response'}`);
+  }
+  const allPlayers = await res.json();
+  const caredSet = new Set(caredPlayerIds.map(String));
+  const filtered = {};
+  for (const pid of caredSet) {
+    const p = allPlayers && allPlayers[pid];
+    if (!p) { continue; }
+    const isActive = (p && p.active === true) || (p && typeof p.status === 'string' && p.status.toLowerCase() === 'active');
+    if (!isActive) { continue; }
+    filtered[pid] = p;
+  }
+  const snapshot = {
+    season,
+    week,
+    fetchedAt: new Date().toISOString(),
+    url,
+    count: Object.keys(filtered).length,
+    data: filtered,
+  };
+  const db = getDb();
+  await set(ref(db, path), snapshot);
+  return { path, snapshot };
+}
+
+// Read latest players snapshot for current week (regardless of TTL)
+export async function readCurrentWeekPlayersSnapshot() {
+  const season = String(CURRENT_YEAR);
+  const week = getCurrentNFLWeek(season);
+  const path = `players_${season}_week_${week}`;
+  try {
+    const snap = await get(ref(getDb(), path));
+    if (snap && snap.exists()) {
+      const snapshot = snap.val();
+      const fetchedAtMs = snapshot && snapshot.fetchedAt ? Date.parse(snapshot.fetchedAt) : NaN;
+      const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+      return { path, snapshot, ageMs };
+    }
+  } catch (_) {}
+  return { path, snapshot: null, ageMs: Infinity };
+}
+
 
 

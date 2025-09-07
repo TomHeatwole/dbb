@@ -2,17 +2,44 @@
 // Utility to look up player info by ID from a provided player data object
 
 import { PLAYER_ESPN_MAP_OVERRIDES } from './global_constants';
+import { updatePlayers, readCurrentWeekPlayersSnapshot } from './database';
 
 let cachedPlayersData = null;
 let cachedPlayerIdMap = null;
 
-export async function fetchPlayersData() {
+export async function fetchPlayersData(rosters = null) {
   if (cachedPlayersData) return cachedPlayersData;
-  const res = await fetch('/data/players.txt');
-  if (!res.ok) throw new Error('Failed to fetch player data');
-  const data = await res.json();
-  cachedPlayersData = data;
-  return data;
+  // Try to read current week's snapshot first
+  const current = await readCurrentWeekPlayersSnapshot();
+  const hasSnapshot = current && current.snapshot && current.snapshot.data;
+  const isFresh = hasSnapshot && Number.isFinite(current.ageMs) && current.ageMs <= 60 * 60 * 1000;
+  if (hasSnapshot && isFresh) {
+    cachedPlayersData = current.snapshot.data;
+    return cachedPlayersData;
+  }
+  // Snapshot missing or stale: only fetch if we have rosters to compute cared IDs
+  if (rosters && Array.isArray(rosters)) {
+    const caredSet = new Set();
+    for (const r of rosters) {
+      if (r && Array.isArray(r.players)) {
+        for (const pid of r.players) { if (pid && pid !== '0') { caredSet.add(String(pid)); } }
+      }
+      if (r && Array.isArray(r.starters)) {
+        for (const pid of r.starters) { if (pid && pid !== '0') { caredSet.add(String(pid)); } }
+      }
+      if (r && Array.isArray(r.bench)) {
+        for (const pid of r.bench) { if (pid && pid !== '0') { caredSet.add(String(pid)); } }
+      }
+    }
+    const caredPlayerIds = Array.from(caredSet);
+    const res = await updatePlayers(caredPlayerIds);
+    const data = (res && res.snapshot && res.snapshot.data) ? res.snapshot.data : {};
+    cachedPlayersData = data;
+    return data;
+  }
+  // No rosters yet: return stale snapshot if present, else empty
+  cachedPlayersData = hasSnapshot ? current.snapshot.data : {};
+  return cachedPlayersData;
 }
 
 export async function fetchPlayerIdMap() {
