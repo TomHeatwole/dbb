@@ -162,9 +162,6 @@ function LeagueScores() {
       if (!cancelled) {
         const remapped = maybeRemapInjuriesKeysUsingPlayerIdMap(m || {}, playerIdMap || {});
         setInjuriesMap(remapped);
-        // Debug: verify injuries data load
-        // eslint-disable-next-line no-console
-        console.log('[injuries]', { season, week, count: remapped ? Object.keys(remapped).length : 0, sample: remapped });
       }
     }).catch(() => { if (!cancelled) { setInjuriesMap({}); } });
     return () => { cancelled = true; };
