@@ -115,8 +115,11 @@ export async function fetchNflScoreboard(season, week) {
     }
   } catch (_) {}
   // Only fetch if missing and this is the active week OR a past season (seed once)
-  const isActiveWeek = (String(season) === String(CURRENT_YEAR)) && (Number(week) === getCurrentNFLWeek());
-  const isPastSeason = String(season) !== String(CURRENT_YEAR);
-  if (!isActiveWeek && !isPastSeason) { return null; }
+  const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+  const currentWeek = getCurrentNFLWeek();
+  const isActiveWeek = isCurrentSeason && (Number(week) === currentWeek);
+  const isPastSeason = !isCurrentSeason;
+  const isFutureWeek = isCurrentSeason && (Number(week) > currentWeek);
+  if (!isActiveWeek && !isPastSeason && !isFutureWeek) { return null; }
   return await fetchJson(url, cacheKey);
 } 
