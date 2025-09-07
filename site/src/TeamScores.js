@@ -11,7 +11,7 @@ import { getInjuryAbbreviation } from './InjuryLookup';
 
 const NUM_WEEKS = 17;
 
-const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData, playerIdMap }, ref) {
+const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData, playerIdMap, updateQueryParams }, ref) {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlWeek = parseInt(searchParams.get('week'), 10);
   const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : getDefaultDisplayWeek(searchParams.get('year'));
@@ -62,17 +62,16 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
 
   useImperativeHandle(ref, () => ({
     resetWeek: (season) => {
-      const newParams = new URLSearchParams(searchParams);
       const week = getDefaultDisplayWeek(season);
-      newParams.set('week', week);
-      if (season === CURRENT_YEAR) {
-        newParams.delete('year');
-        setSearchParams(searchParams, { replace: true });
-      } else {
-        newParams.set('year', season);
-      }
-      setSearchParams(newParams, { replace: true });
       setWeek(week);
+      if (updateQueryParams) {
+        updateQueryParams({ week, tab: 'Scores', year: season === CURRENT_YEAR ? null : season });
+      } else {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('week', week);
+        if (season === CURRENT_YEAR) { newParams.delete('year'); } else { newParams.set('year', season); }
+        setSearchParams(newParams, { replace: true });
+      }
     }
   }));
 

@@ -32,7 +32,7 @@ function hslToHex(h, s, l) {
   return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
 }
 
-const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamName, rosters, users }, ref) {
+const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamName, rosters, users, updateQueryParams }, ref) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { id } = useParams();
   const rosterId = Number(id);
@@ -60,13 +60,17 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     return () => { cancelled = true; };
   }, [urlYear]);
 
-  // Sync query params when startWeek or endWeek changes
+  // Sync start/end and tab only via parent updaters to avoid param flapping
   useEffect(() => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('start_week', startWeek);
-    newParams.set('end_week', endWeek);
-    newParams.set('tab', 'Analytics');
-    setSearchParams(newParams, { replace: true });
+    if (!updateQueryParams) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('start_week', startWeek);
+      newParams.set('end_week', endWeek);
+      newParams.set('tab', 'Analytics');
+      setSearchParams(newParams, { replace: true });
+    } else {
+      updateQueryParams({ start_week: startWeek, end_week: endWeek, tab: 'Analytics' });
+    }
     // eslint-disable-next-line
   }, [startWeek, endWeek]);
 
@@ -88,19 +92,19 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
 
   useImperativeHandle(ref, () => ({
     resetWeek: (season) => {
-      const newParams = new URLSearchParams(searchParams);
       const newStart = 1;
       const newEnd = getDefaultDisplayWeek(season);
-      newParams.set('start_week', newStart);
-      newParams.set('end_week', newEnd);
-      if (season === CURRENT_YEAR) {
-        newParams.delete('year');
-      } else {
-        newParams.set('year', season);
-      }
       setStartWeek(newStart);
       setEndWeek(newEnd);
-      setSearchParams(newParams, { replace: true });
+      if (updateQueryParams) {
+        updateQueryParams({ start_week: newStart, end_week: newEnd, tab: 'Analytics', year: season === CURRENT_YEAR ? null : season });
+      } else {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('start_week', newStart);
+        newParams.set('end_week', newEnd);
+        if (season === CURRENT_YEAR) { newParams.delete('year'); } else { newParams.set('year', season); }
+        setSearchParams(newParams, { replace: true });
+      }
     }
   }));
 
@@ -110,12 +114,13 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   const adjustedEndWeek = isCurrentSeason ? Math.min(endWeek, Math.max(0, currentWeek - 1)) : endWeek;
   const adjustedStartWeek = isCurrentSeason ? Math.min(startWeek, adjustedEndWeek) : startWeek;
 
-  // When urlYear changes (season switch), reset start/end state immediately to reflect new season
+  // When urlYear changes (season switch), reset start/end state to component defaults
   useEffect(() => {
     const newStart = 1;
     const newEnd = getDefaultDisplayWeek(urlYear || CURRENT_YEAR);
     setStartWeek(newStart);
     setEndWeek(newEnd);
+    // Do not rewrite 'year' here to avoid race with parent; start/end will sync via their own effect
   }, [urlYear]);
 
   // Get weekly standings for the selected window (with current week excluded)

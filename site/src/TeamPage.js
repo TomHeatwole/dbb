@@ -43,6 +43,19 @@ function TeamPage() {
   const isMobile = useIsMobile();
   const dropdownRef = useRef(null);
 
+  const updateQueryParams = React.useCallback((changes) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.keys(changes || {}).forEach((key) => {
+      const val = changes[key];
+      if (val === null || val === undefined || val === '') {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, String(val));
+      }
+    });
+    setSearchParams(newParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   // Close dropdown on outside click
   useEffect(() => {
     trackPageLoad();
@@ -58,20 +71,16 @@ function TeamPage() {
 
   // Sync tab with query param
   useEffect(() => {
-    const newParams = new URLSearchParams(searchParams);
-    if (tabOptions.includes(selectedTab)) {
-      newParams.set('tab', selectedTab);
-    } else {
-      newParams.set('tab', 'Overview');
+    const changes = {};
+    changes.tab = tabOptions.includes(selectedTab) ? selectedTab : 'Overview';
+    if (selectedTab !== 'Scores') {
+      changes.week = null;
     }
-    if (selectedTab != 'Scores') {
-      newParams.delete('week');
+    if (selectedTab !== 'Analytics') {
+      changes.start_week = null;
+      changes.end_week = null;
     }
-    if (selectedTab != 'Analytics') {
-      newParams.delete('start_week');
-      newParams.delete('end_week');
-    }
-    setSearchParams(newParams, { replace: true });
+    updateQueryParams(changes);
     // eslint-disable-next-line
   }, [selectedTab]);
 
@@ -81,16 +90,10 @@ function TeamPage() {
     // eslint-disable-next-line
   }, [urlTab]);
 
-  // Sync season with query param
+  // Sync season with query param for Overview only; Analytics/Scores manage year themselves
   useEffect(() => {
-    if (selectedTab !== 'Analytics' && selectedTab !== 'Scores') {
-      if (season === CURRENT_YEAR) {
-        searchParams.delete('year');
-        setSearchParams(searchParams, { replace: true });
-      } else if (allYears.includes(season)) {
-        searchParams.set('year', season);
-        setSearchParams(searchParams, { replace: true });
-      }
+    if (selectedTab === 'Overview') {
+      updateQueryParams({ year: season === CURRENT_YEAR ? null : season });
     }
     // eslint-disable-next-line
   }, [season]);
@@ -201,21 +204,9 @@ function TeamPage() {
               onClick={() => {
                 setSeason(opt);
                 setSeasonDropdownOpen(false);
-                // For Analytics tab, let the child component manage URL params to avoid race conditions
-                const tab = searchParams.get('tab');
-                if (tab !== 'Analytics') {
-                  const newParams = new URLSearchParams();
-                  if (tab) {
-                    newParams.set('tab', tab);
-                    newParams.delete('week');
-                    newParams.delete('start_week');
-                    newParams.delete('end_week');
-                  }
-                  setSearchParams(newParams, { replace: true });
-                }
-                if (teamAnalyticsRef.current && typeof teamAnalyticsRef.current.resetWeek === 'function') {
-                  teamAnalyticsRef.current.resetWeek(opt);
-                }
+                // Always reflect selected season in query params; when switching to a previous season remove week params
+                updateQueryParams({ year: opt === CURRENT_YEAR ? null : opt, start_week: null, end_week: null, week: null });
+                // Let Analytics manage its own defaults via urlYear change; don't call its reset here
                 if (teamScoresRef.current && typeof teamScoresRef.current.resetWeek === 'function') {
                   teamScoresRef.current.resetWeek(opt);
                 }
@@ -256,8 +247,8 @@ function TeamPage() {
         ))}
       </div>
       {selectedTab === 'Overview' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} playerList={playerList} />}
-      {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} />}
-      {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} />}
+      {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} updateQueryParams={updateQueryParams} />}
+      {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} updateQueryParams={updateQueryParams} />}
     </InfoPageWrapper>
   );
 }
