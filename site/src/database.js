@@ -275,10 +275,13 @@ export async function deleteAllPlayerData() {
 
 // Admin: delete specific player week snapshot
 export async function deletePlayerWeek(season, week) {
-  const seasonStr = String(season);
+  const seasonStr = String(season || '').trim();
   const weekNum = Number(week);
-  if (!seasonStr || !Number.isFinite(weekNum) || weekNum < 1 || weekNum > 17) {
-    throw new Error('deletePlayerWeek requires valid season and week (1-17)');
+  if (!seasonStr) {
+    throw new Error('Season is required');
+  }
+  if (!Number.isFinite(weekNum) || weekNum <= 0 || weekNum > 99) {
+    throw new Error('Week must be a positive number');
   }
   const path = `players_${seasonStr}_week_${weekNum}`;
   const db = getDb();
@@ -287,4 +290,19 @@ export async function deletePlayerWeek(season, week) {
 }
 
 
+
+
+// Admin JSON blob helpers
+export async function readAdminBlob() {
+  const db = getDb();
+  const snap = await get(ref(db, 'admin'));
+  if (!snap.exists()) { return null; }
+  return snap.val();
+}
+
+export async function writeAdminBlob(value) {
+  const db = getDb();
+  await set(ref(db, 'admin'), value);
+  return true;
+}
 

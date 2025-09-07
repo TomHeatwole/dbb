@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { deleteAllPlayerData, deletePlayerWeek } from './database';
+import { deleteAllPlayerData, deletePlayerWeek, readAdminBlob, writeAdminBlob } from './database';
 
 function AdminControls() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [authed, setAuthed] = useState(false);
+  const [adminJson, setAdminJson] = useState('');
+  const [adminStatus, setAdminStatus] = useState(null);
 
   const submit = (e) => {
     e.preventDefault();
@@ -42,6 +44,51 @@ function AdminControls() {
       <h1 className="info-title">Admin Controls</h1>
       <div className="admin-tools">
         <div className="admin-tool-block">
+          <h2>Admin JSON</h2>
+          <div className="admin-inline-form">
+            <button
+              type="button"
+              className="admin-button"
+              onClick={async () => {
+                try {
+                  const val = await readAdminBlob();
+                  setAdminJson(val ? JSON.stringify(val, null, 2) : '');
+                  setAdminStatus('Loaded');
+                } catch (e) {
+                  setAdminStatus('Load failed');
+                }
+              }}
+            >
+              Load
+            </button>
+          </div>
+          <textarea
+            className="admin-textarea"
+            rows={10}
+            value={adminJson}
+            onChange={(e) => setAdminJson(e.target.value)}
+            placeholder="{ }"
+          />
+          <div className="admin-inline-form">
+            <button
+              type="button"
+              className="admin-button"
+              onClick={async () => {
+                try {
+                  const parsed = adminJson ? JSON.parse(adminJson) : {};
+                  await writeAdminBlob(parsed);
+                  setAdminStatus('Updated');
+                } catch (e) {
+                  setAdminStatus('Update failed: invalid JSON or write error');
+                }
+              }}
+            >
+              Update
+            </button>
+            {adminStatus ? <span className="admin-status">{adminStatus}</span> : null}
+          </div>
+        </div>
+        <div className="admin-tool-block">
           <h2>Player Data</h2>
           <button
             type="button"
@@ -53,9 +100,18 @@ function AdminControls() {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              const season = e.currentTarget.elements.season.value;
-              const week = e.currentTarget.elements.week.value;
-              try { await deletePlayerWeek(season, week); alert(`Deleted players_${season}_week_${week}`); } catch (_) { alert('Delete failed'); }
+              const season = (e.currentTarget.elements.season.value || '').trim();
+              const weekStr = (e.currentTarget.elements.week.value || '').trim();
+              const week = Number(weekStr);
+              if (!season) { alert('Enter season'); return; }
+              if (!Number.isFinite(week) || week <= 0) { alert('Enter valid week'); return; }
+              try {
+                await deletePlayerWeek(season, week);
+                alert(`Deleted players_${season}_week_${week}`);
+                e.currentTarget.reset();
+              } catch (err) {
+                alert(`Delete failed: ${String(err && err.message ? err.message : err)}`);
+              }
             }}
             className="admin-inline-form"
           >
