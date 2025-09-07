@@ -53,7 +53,9 @@ export function StartSitSort(teamScore, playersData, playerIdMap) {
   if (!teamScore) { return teamScore; }
   const starters = Array.isArray(teamScore.starters) ? teamScore.starters : [];
   const bench = Array.isArray(teamScore.bench) ? teamScore.bench : [];
-  const combined = attachPositions([...starters, ...bench], playersData, playerIdMap).map((p) => ({
+  // Filter out API placeholder rows that use id '0' or missing ids
+  const filtered = [...starters, ...bench].filter((p) => p && p.id && String(p.id) !== '0');
+  const combined = attachPositions(filtered, playersData, playerIdMap).map((p) => ({
     id: p.id,
     pts: typeof p.pts === 'number' ? p.pts : 0,
     position: p.position || null
@@ -201,7 +203,9 @@ export function StartSitSort(teamScore, playersData, playerIdMap) {
     ...selectedSUPER.map(p => p.id),
     ...selectedFLEX.map(p => p.id)
   ]);
-  const benchOut = sortByPointsDesc(combined.filter(p => !selectedIds.has(p.id))).map(p => ({ id: p.id, pts: p.pts }));
+  const benchOut = sortByPointsDesc(
+    combined.filter(p => !selectedIds.has(p.id) && p.id && String(p.id) !== '0')
+  ).map(p => ({ id: p.id, pts: p.pts }));
 
   // Totals (rounded to nearest 0.01)
   const rawStarterTotal = normalizedStarters.reduce((sum, p) => sum + (typeof p.pts === 'number' ? p.pts : 0), 0);
