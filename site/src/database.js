@@ -177,23 +177,36 @@ export async function updatePlayers(caredPlayerIds) {
   }
   const season = String(CURRENT_YEAR);
   const week = getCurrentNFLWeek(season);
-  const path = `players_${season}_week_${week}`;
+  const basePath = `players_${season}_week_${week}`;
 
-  // Check cache with 1-hour TTL
+  // Check latest entry under the week folder with 1-hour TTL
   try {
-    const snap = await get(ref(getDb(), path));
-    if (snap && snap.exists()) {
-      const existing = snap.val();
-      const fetchedAtMs = existing && existing.fetchedAt ? Date.parse(existing.fetchedAt) : 0;
-      const ageMs = Date.now() - fetchedAtMs;
-      if (!Number.isNaN(fetchedAtMs) && ageMs <= 60 * 60 * 1000) {
-        return { path, snapshot: existing, skipped: true };
+    const weekSnap = await get(ref(getDb(), basePath));
+    if (weekSnap && weekSnap.exists()) {
+      const all = weekSnap.val() || {};
+      const entries = Object.entries(all)
+        .map(([ts, value]) => ({ ts: Number(ts), value }))
+        .filter(e => e && !isNaN(e.ts))
+        .sort((a, b) => b.ts - a.ts);
+      const latest = entries[0];
+      if (latest && latest.value) {
+        const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
+        const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+        // eslint-disable-next-line no-console
+        console.log('[players] cache check', { basePath, latestTs: latest.ts, ageMs });
+        if (ageMs <= 60 * 60 * 1000) {
+          // eslint-disable-next-line no-console
+          console.log('[players] cache fresh; skipping fetch');
+          return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, skipped: true };
+        }
       }
     }
   } catch (_) {
     // ignore cache read errors
   }
   const url = 'https://api.sleeper.app/v1/players/nfl';
+  // eslint-disable-next-line no-console
+  console.log('[players] fetching from Sleeper', { url, basePath, caredCount: caredPlayerIds.length });
   const res = await fetch(url);
   if (!res || !res.ok) {
     throw new Error(`Failed to fetch players from Sleeper: ${res ? res.status : 'no response'}`);
@@ -208,7 +221,8 @@ export async function updatePlayers(caredPlayerIds) {
     if (!isActive) { continue; }
     filtered[pid] = p;
   }
-  const snapshot = {
+  const ts = Date.now();
+  const entry = {
     season,
     week,
     fetchedAt: new Date().toISOString(),
@@ -217,25 +231,37 @@ export async function updatePlayers(caredPlayerIds) {
     data: filtered,
   };
   const db = getDb();
-  await set(ref(db, path), snapshot);
-  return { path, snapshot };
+  const writePath = `${basePath}/${ts}`;
+  await set(ref(db, writePath), entry);
+  // eslint-disable-next-line no-console
+  console.log('[players] wrote snapshot', { writePath, count: entry.count });
+  return { path: writePath, snapshot: entry };
 }
 
 // Read latest players snapshot for current week (regardless of TTL)
 export async function readCurrentWeekPlayersSnapshot() {
   const season = String(CURRENT_YEAR);
   const week = getCurrentNFLWeek(season);
-  const path = `players_${season}_week_${week}`;
+  const basePath = `players_${season}_week_${week}`;
   try {
-    const snap = await get(ref(getDb(), path));
-    if (snap && snap.exists()) {
-      const snapshot = snap.val();
-      const fetchedAtMs = snapshot && snapshot.fetchedAt ? Date.parse(snapshot.fetchedAt) : NaN;
-      const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-      return { path, snapshot, ageMs };
+    const weekSnap = await get(ref(getDb(), basePath));
+    if (weekSnap && weekSnap.exists()) {
+      const all = weekSnap.val() || {};
+      const entries = Object.entries(all)
+        .map(([ts, value]) => ({ ts: Number(ts), value }))
+        .filter(e => e && !isNaN(e.ts))
+        .sort((a, b) => b.ts - a.ts);
+      const latest = entries[0];
+      if (latest && latest.value) {
+        const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
+        const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+        // eslint-disable-next-line no-console
+        console.log('[players] read snapshot', { basePath, latestTs: latest.ts, ageMs, count: latest.value && latest.value.count });
+        return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, ageMs };
+      }
     }
   } catch (_) {}
-  return { path, snapshot: null, ageMs: Infinity };
+  return { path: basePath, snapshot: null, ageMs: Infinity };
 }
 
 // Admin: delete all player snapshots (players_* keys at root)
