@@ -107,19 +107,31 @@ export async function fetchNflScoreboard(season, week) {
 
   const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${encodeURIComponent(week)}&year=${encodeURIComponent(season)}&seasontype=2`;
   const cacheKey = `espn_site_v2_sports_football_nfl_scoreboard_week_${week}_year_${season}_seasontype_2`;
-  // DB first
-  try {
-    const cached = await readApiCacheLatestByKey(cacheKey);
-    if (cached && cached.data !== undefined) {
-      return cached.data;
-    }
-  } catch (_) {}
-  // Only fetch if missing and this is the active week OR a past season (seed once)
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
   const currentWeek = getCurrentNFLWeek();
   const isActiveWeek = isCurrentSeason && (Number(week) === currentWeek);
   const isPastSeason = !isCurrentSeason;
   const isFutureWeek = isCurrentSeason && (Number(week) > currentWeek);
+  // DB first
+  try {
+    const cached = await readApiCacheLatestByKey(cacheKey);
+    if (cached && cached.data !== undefined) {
+      // For future weeks, enforce a 24-hour TTL
+      if (isFutureWeek) {
+        const ageMs = Date.now() - (cached.ts || 0);
+        if (ageMs > 24 * 60 * 60 * 1000) {
+          try {
+            const refreshed = await fetchJson(url, cacheKey);
+            return refreshed;
+          } catch (_) {
+            return cached.data;
+          }
+        }
+      }
+      return cached.data;
+    }
+  } catch (_) {}
+  // Only fetch if missing and this is the active week OR a past season (seed once)
   if (!isActiveWeek && !isPastSeason && !isFutureWeek) { return null; }
   return await fetchJson(url, cacheKey);
 } 
