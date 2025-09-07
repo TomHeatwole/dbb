@@ -2102,6 +2102,11 @@ body.modal-open {
   margin-left: 0.35rem;
   font-weight: 700;
 }
+.injury-badge--retired {
+  display: block;
+  margin-left: 0 !important;
+  margin-top: 0.1rem;
+}
 .team-scores-team-abbr {
   margin-left: 0.35rem;
 } 

@@ -43,8 +43,11 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
     }
     const ab = status ? getInjuryAbbreviation(status) : null;
     if (!ab) { return null; }
+    const isRetired = ab === 'NA';
+    const label = isRetired ? 'Retired 😂' : ab;
+    const cls = isRetired ? 'injury-badge injury-badge--retired' : 'injury-badge';
     return (
-      <span className="injury-badge" title={status}>{ab}</span>
+      <span className={cls} title={status}>{label}</span>
     );
   };
 
