@@ -2,8 +2,15 @@ import React from 'react';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getInjuryAbbreviation } from './InjuryLookup';
+import PlayerHover from './PlayerHover';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false }) {
+function formatPoints(value) {
+  const num = Number(value);
+  if (!isFinite(num)) { return String(value); }
+  return num.toFixed(1);
+}
+
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, season = null, week = null }) {
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
@@ -38,22 +45,31 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
             } else if (isActiveWeek && gameObj.completed) {
               gameCellClasses.push('team-scores-game-completed');
             }
+            const hasStarted = !!gameObj.live || !!gameObj.completed;
+            const displayPts = hasStarted ? formatPoints(p.pts) : '--';
+            const showStatsIcon = hasStarted && info && info.espn_id;
             return (
               <tr key={p.id}>
                 <td className="team-scores-pos-cell">{posLabel}</td>
                 <td className="team-scores-player-cell">
-                  {info && info.espn_photo_url && (
-                    <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
-                  )}
-                  <span className="player-name">
-                    {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
-                    {info && info.position ? ` (${info.position})` : ''}
-                    {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
-                    <InjuryBadge espnId={info && info.espn_id} info={info} />
-                  </span>
+                  <PlayerHover info={info} season={season} week={week} gameText={gameObj.text} position={info && info.position}>
+                    {info && info.espn_photo_url && (
+                      <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
+                    )}
+                    <span className="player-name">
+                      {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
+                      {info && info.position ? ` (${info.position})` : ''}
+                      {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
+                      <InjuryBadge espnId={info && info.espn_id} info={info} />
+                    </span>
+                  </PlayerHover>
                 </td>
                 <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
-                <td className="team-scores-pts-cell">{p.pts}</td>
+                <td className="team-scores-pts-cell">{displayPts}
+                  {showStatsIcon ? (
+                    <PlayerHover info={info} season={season} week={week} gameText={gameObj.text} position={info && info.position} trigger={<span className="player-info-icon" title="Show stats">ℹ️</span>} />
+                  ) : null}
+                </td>
               </tr>
             );
           })}
@@ -61,7 +77,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <tfoot>
           <tr>
             <td colSpan={4} className="team-scores-total-row">
-              <div className="team-scores-total-inner">Total: {weekBreakdown.starterTotal}</div>
+              <div className="team-scores-total-inner">Total: {formatPoints(weekBreakdown.starterTotal)}</div>
             </td>
           </tr>
         </tfoot>
@@ -98,21 +114,30 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               } else if (isActiveWeek && gameObj.completed) {
                 gameCellClasses.push('team-scores-game-completed');
               }
+              const hasStarted = !!gameObj.live || !!gameObj.completed;
+              const displayPts = hasStarted ? formatPoints(p.pts) : '--';
+              const showStatsIcon = hasStarted && info && info.espn_id;
               return (
                 <tr key={p.id}>
                   <td className="team-scores-player-cell">
-                    {info && info.espn_photo_url && (
-                      <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
-                    )}
-                    <span className="player-name">
-                      {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
-                      {info && info.position ? ` (${info.position})` : ''}
-                      {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
-                      <InjuryBadge espnId={info && info.espn_id} info={info} />
-                    </span>
+                    <PlayerHover info={info} season={season} week={week} gameText={gameObj.text} position={info && info.position}>
+                      {info && info.espn_photo_url && (
+                        <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
+                      )}
+                      <span className="player-name">
+                        {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
+                        {info && info.position ? ` (${info.position})` : ''}
+                        {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
+                        <InjuryBadge espnId={info && info.espn_id} info={info} />
+                      </span>
+                    </PlayerHover>
                   </td>
                   <td className={gameCellClasses.join(' ')}>{gameObj.text}</td>
-                  <td className="team-scores-pts-cell">{p.pts}</td>
+                  <td className="team-scores-pts-cell">{displayPts}
+                    {showStatsIcon ? (
+                      <PlayerHover info={info} season={season} week={week} gameText={gameObj.text} position={info && info.position} trigger={<span className="player-info-icon" title="Show stats">ℹ️</span>} />
+                    ) : null}
+                  </td>
                 </tr>
               );
             })}
@@ -120,7 +145,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           <tfoot>
             <tr>
               <td colSpan={3} className="team-scores-total-row">
-                <div className="team-scores-total-inner">Total: {weekBreakdown.benchTotal}</div>
+                <div className="team-scores-total-inner">Total: {formatPoints(weekBreakdown.benchTotal)}</div>
               </td>
             </tr>
           </tfoot>

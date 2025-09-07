@@ -302,6 +302,7 @@ function LeagueScores() {
                         <LeagueScoresTeamBreakdown
                           weekBreakdown={weekBreakdown}
                           week={week}
+                          season={season}
                           rosterId={rosterId}
                           benchOpen={!!benchOpen[rosterId]}
                           onToggleBench={() => toggleBench(rosterId)}
