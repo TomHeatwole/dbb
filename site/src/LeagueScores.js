@@ -261,7 +261,10 @@ function LeagueScores() {
         <WeekSelector week={week} onChange={setWeek} />
       </div>
       {loading ? (
-        <div>Loading scores…</div>
+        <div className="loading-center">
+          <div className="spinner" aria-label="Loading" />
+          <div className="loading-text">Loading scores…</div>
+        </div>
       ) : error || !weeksParsedData || !rosters || !users ? (
         <div>Error loading scores.</div>
       ) : (

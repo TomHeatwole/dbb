@@ -13,7 +13,12 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     myStanding = standings.find(s => s.roster_id === rosterId);
   }
 
-  if (loading) return <div>Loading summary...</div>;
+  if (loading) return (
+    <div className="loading-center">
+      <div className="spinner" aria-label="Loading" />
+      <div className="loading-text">Loading summary…</div>
+    </div>
+  );
   if (!weeksParsedData) return <div>No summary data found.</div>;
 
   return (

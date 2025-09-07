@@ -205,7 +205,10 @@ function LeagueStandings() {
   if (loading) {
     return (
       <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
-        <div>Loading standings…</div>
+        <div className="loading-center">
+          <div className="spinner" aria-label="Loading" />
+          <div className="loading-text">Loading standings…</div>
+        </div>
       </InfoPageWrapper>
     );
   }

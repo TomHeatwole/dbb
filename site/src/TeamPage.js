@@ -149,7 +149,16 @@ function TeamPage() {
     return <Navigate to="/home/" replace />;
   }
 
-  if (loading || !playersData || !playerIdMap || !rosters || !users) return <div>Loading...</div>;
+  if (loading || !playersData || !playerIdMap || !rosters || !users) {
+    return (
+      <InfoPageWrapper title="Team" subtitle={null} leftHeader={null}>
+        <div className="loading-center">
+          <div className="spinner" aria-label="Loading" />
+          <div className="loading-text">Loading…</div>
+        </div>
+      </InfoPageWrapper>
+    );
+  }
   if (error) return <div>Error: {error}</div>;
   if (!roster) return <div>No roster found for ID {id}</div>;
 
