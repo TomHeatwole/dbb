@@ -74,6 +74,7 @@ function LeagueScores() {
   const [playerGameLabels, setPlayerGameLabels] = useState({});
   const [injuriesMap, setInjuriesMap] = useState({});
   const pollingRef = useRef(false);
+  const lastDbEntryTsRef = useRef(null);
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -222,8 +223,7 @@ function LeagueScores() {
           const latest = await readApiCacheLatestByKey(cacheKey);
           dbEntryTs = latest && latest.ts ? latest.ts : null;
         } catch (_) {}
-        // eslint-disable-next-line no-console
-        console.log('[scores data]', { season, week, cacheKey, dbEntryTs, data: newWeeks });
+        
         if (cancelled || !Array.isArray(newWeeks)) { return; }
         // Build computed breakdowns (starters/bench/totals) for prev and next
         const idx = (typeof week === 'number' && week >= 1) ? (week - 1) : 0;
@@ -307,10 +307,12 @@ function LeagueScores() {
           }
         });
 
+        const prevTs = lastDbEntryTsRef.current;
         // eslint-disable-next-line no-console
-        console.log('[scores delta]', { season, week, changes });
-        if (changes.length > 0) {
+        console.log('[scores delta]', { season, week, prevDbTs: prevTs, newDbTs: dbEntryTs, changes });
+        if ((dbEntryTs != null && prevTs !== dbEntryTs) || changes.length > 0) {
           setWeeksParsedData(newWeeks);
+          lastDbEntryTsRef.current = dbEntryTs != null ? dbEntryTs : prevTs;
         }
       } catch (_) {
         // ignore

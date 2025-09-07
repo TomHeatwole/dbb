@@ -19,7 +19,7 @@ export async function fetchScoresData(season) {
       if (cached && Array.isArray(cached.data)) {
         const ageMs = Date.now() - (cached.ts || 0);
         const isActiveWeek = (String(season) === String(CURRENT_YEAR)) && (Number(weekNum) === getCurrentNFLWeek());
-        if (!PAUSE_SCRAPES && isActiveWeek && ageMs > 3_600_000) {
+        if (!PAUSE_SCRAPES && isActiveWeek && ageMs > 60_000) {
           (async () => {
             try {
               const r2 = await fetch(apiUrl);
