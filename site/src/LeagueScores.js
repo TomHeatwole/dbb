@@ -20,6 +20,8 @@ import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
 function LeagueScores() {
+  // Toggle: when true, keep the current mobile summary behavior; when false, render the full web breakdown on mobile
+  const showFullScoreBreakdownOnMobile = false;
   const [searchParams, setSearchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
@@ -295,7 +297,7 @@ function LeagueScores() {
                   </button>
                   {isExpanded && (
                     <div className="standings-row-expand">
-                      {isMobile ? (
+                      {isMobile && showFullScoreBreakdownOnMobile ? (
                         <MobileTeamScoreSummary
                           weekBreakdown={weekBreakdown}
                           week={week}
@@ -306,21 +308,23 @@ function LeagueScores() {
                           yetToPlayCount={yetToPlayCount}
                         />
                       ) : (
-                        <LeagueScoresTeamBreakdown
-                          weekBreakdown={weekBreakdown}
-                          week={week}
-                          rosterId={rosterId}
-                          benchOpen={!!benchOpen[rosterId]}
-                          onToggleBench={() => toggleBench(rosterId)}
-                          benchTotal={benchTotal}
-                          playersData={playersData}
-                          playerIdMap={playerIdMap}
-                          searchParams={searchParams}
-                          playerGameLabels={playerGameLabels}
-                          isActiveWeek={isActiveWeek}
-                          injuriesMap={injuriesMap}
-                          showCurrentInjury={showCurrentInjury}
-                        />
+                        <div className={isMobile ? 'mobile-standings-scale-70' : ''}>
+                          <LeagueScoresTeamBreakdown
+                            weekBreakdown={weekBreakdown}
+                            week={week}
+                            rosterId={rosterId}
+                            benchOpen={!!benchOpen[rosterId]}
+                            onToggleBench={() => toggleBench(rosterId)}
+                            benchTotal={benchTotal}
+                            playersData={playersData}
+                            playerIdMap={playerIdMap}
+                            searchParams={searchParams}
+                            playerGameLabels={playerGameLabels}
+                            isActiveWeek={isActiveWeek}
+                            injuriesMap={injuriesMap}
+                            showCurrentInjury={showCurrentInjury}
+                          />
+                        </div>
                       )}
                     </div>
                   )}

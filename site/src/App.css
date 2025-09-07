@@ -944,6 +944,9 @@
   min-width: 12em !important;
   text-align: left !important;
 }
+/* Add breathing room between Player (2nd) and Game (3rd) columns */
+.team-scores-table-fixed-width td:nth-child(2) { padding-right: 0.6rem !important; }
+.team-scores-table-fixed-width td:nth-child(3) { padding-left: 0.6rem !important; }
 
 .team-scores-table-bench {
   width: 100% !important;
@@ -962,6 +965,57 @@
   width: 16em !important;
   min-width: 12em !important;
   text-align: left !important;
+}
+/* Bench table spacing between Player (1st) and Game (2nd) columns */
+.team-scores-table-bench td:first-child { padding-right: 0.6rem !important; }
+.team-scores-table-bench td:nth-child(2) { padding-left: 0.6rem !important; }
+
+/* Mobile: push the Game column significantly further right */
+@media (max-width: 50em) {
+  /* Normalize Game text start and keep status boxes consistent */
+  .team-scores-game-cell { padding-left: 0 !important; padding-right: 0 !important; }
+  .team-scores-game-live,
+  .team-scores-game-completed { padding: 0.1rem 0 !important; }
+  .team-scores-game-link { display: block !important; }
+
+  /* Indent game text uniformly while keeping highlight color full-width */
+  /* Flush-left game text inside the column */
+  .team-scores-game-text { text-indent: 0 !important; }
+  .team-scores-table-fixed-width td:nth-child(2),
+  .team-scores-table-bench td:first-child {
+    padding-right: 1rem !important;
+  }
+
+  /* Stronger mobile column sizing: widen Player, shift Game right */
+  .team-scores-table-fixed-width th:nth-child(2),
+  .team-scores-table-fixed-width td:nth-child(2) {
+    width: 60% !important;
+    max-width: 60% !important;
+  }
+  .team-scores-table-fixed-width th:nth-child(3),
+  .team-scores-table-fixed-width td:nth-child(3) {
+    width: 30% !important;
+    max-width: 30% !important;
+  }
+  .team-scores-table-bench th:first-child,
+  .team-scores-table-bench td:first-child {
+    width: 60% !important;
+    max-width: 60% !important;
+  }
+  .team-scores-table-bench th:nth-child(2),
+  .team-scores-table-bench td:nth-child(2) {
+    width: 30% !important;
+    max-width: 30% !important;
+  }
+  /* Ellipsis inside Player cell to avoid bleed */
+  .team-scores-player-cell { overflow: hidden !important; }
+  .team-scores-player-cell .player-name { 
+    display: inline-block !important; 
+    max-width: 80% !important; 
+    overflow: hidden !important; 
+    text-overflow: ellipsis !important; 
+    vertical-align: bottom;
+  }
 }
 .team-scores-table-bench th:last-child,
 .team-scores-table-bench td:last-child {
@@ -1623,6 +1677,67 @@
   }
 } 
 
+/* Mobile: when a row is expanded, let the ladder span full page width */
+@media (max-width: 50em) {
+  /* Expand ladder to true full-bleed width even inside mobile Info wrapper */
+  .mobile-info-container .standings-list--scores {
+    margin-left: -18px !important; /* negate mobile container padding */
+    margin-right: -18px !important;
+    width: calc(100% + 36px) !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  /* Keep the same full-bleed behavior when expanded */
+  .mobile-info-container .standings-list--scores.standings-list--expanded {
+    margin-left: -18px !important;
+    margin-right: -18px !important;
+    width: calc(100% + 36px) !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  /* Reduce left indent so expanded content can use the width */
+  .standings-row-expand {
+    padding: 0.6rem 0.75rem 0.9rem 0.75rem !important;
+  }
+  .standings-row-expand-inner { width: 100% !important; }
+  /* Ensure inner TeamScores tables stretch full width on mobile within standings */
+  .standings-row-expand-inner .team-scores-tables-flex {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  /* Remove any default margins from nested containers inside expanded area */
+  .standings-row-expand-inner > div {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  /* Ensure TeamScoresTables columns don't introduce extra spacing */
+  .standings-row-expand-inner .team-scores-tables-col {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Utility: visually scale expanded team content to 80% on mobile */
+  .mobile-standings-scale-80 {
+    transform: scale(0.8);
+    transform-origin: top left;
+    width: 125% !important; /* counter-scale to keep full-width appearance */
+  }
+  /* Utility: visually scale expanded team content to 70% on mobile */
+  .mobile-standings-scale-70 {
+    transform: scale(0.7);
+    transform-origin: top left;
+    width: 142.86% !important; /* counter-scale to keep full-width appearance */
+  }
+  /* Utility: visually scale expanded team content to 50% on mobile */
+  .mobile-standings-scale-50 {
+    transform: scale(0.5);
+    transform-origin: top left;
+    width: 200% !important; /* counter-scale so content appears half-sized within full width */
+  }
+}
+
 /* LeagueScores inline activity indicators */
 .standings-list--scores .standings-row-header {
   grid-template-columns: auto auto auto 0.4fr 1.2fr 6.5rem;
@@ -1939,6 +2054,7 @@ body.modal-open {
   text-decoration: none;
   border-bottom-color: rgba(159, 180, 222, 0.7);
 }
+.team-scores-game-text { display: block; width: 100%; }
 .team-scores-game-live {
   background: rgba(255, 215, 0, 0.12);
   color: #ffe08a;

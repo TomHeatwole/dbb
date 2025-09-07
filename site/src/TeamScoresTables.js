@@ -46,13 +46,36 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                   )}
                   <span className="player-name">
-                    {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
+                    {(() => {
+                      const name = info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id);
+                      if (typeof name !== 'string') { return name; }
+                      const parts = name.trim().split(/\s+/);
+                      const first = parts[0] || '';
+                      const last = parts.slice(1).join(' ') || '';
+                      const firstInitial = first ? `${first[0].toUpperCase()}.` : '';
+                      let lastShort = last;
+                      if (last && last.length > 15) {
+                        // Preserve up to first hyphenated segment if present, then abbreviate
+                        const hyphenIdx = last.indexOf('-');
+                        if (hyphenIdx > 0) {
+                          const prefix = last.slice(0, Math.min(hyphenIdx + 3, last.length));
+                          lastShort = `${prefix}...`;
+                        } else {
+                          lastShort = `${last.slice(0, 12)}...`;
+                        }
+                      }
+                      return `${firstInitial} ${lastShort || ''}`.trim();
+                    })()}
                     {info && info.position ? ` (${info.position})` : ''}
                     {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
                     <InjuryBadge espnId={info && info.espn_id} info={info} />
                   </span>
                 </td>
-                <td className={gameCellClasses.join(' ')}>{gameObj && gameObj.eventId ? (<a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>) : gameObj.text}</td>
+                <td className={gameCellClasses.join(' ')}>
+                  <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
+                    <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
+                  ) : gameObj.text}</div>
+                </td>
                 <td className="team-scores-pts-cell">{p.pts}</td>
               </tr>
             );
@@ -105,13 +128,35 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                       <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                     )}
                     <span className="player-name">
-                      {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
+                      {(() => {
+                        const name = info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id);
+                        if (typeof name !== 'string') { return name; }
+                        const parts = name.trim().split(/\s+/);
+                        const first = parts[0] || '';
+                        const last = parts.slice(1).join(' ') || '';
+                        const firstInitial = first ? `${first[0].toUpperCase()}.` : '';
+                        let lastShort = last;
+                        if (last && last.length > 15) {
+                          const hyphenIdx = last.indexOf('-');
+                          if (hyphenIdx > 0) {
+                            const prefix = last.slice(0, Math.min(hyphenIdx + 3, last.length));
+                            lastShort = `${prefix}...`;
+                          } else {
+                            lastShort = `${last.slice(0, 12)}...`;
+                          }
+                        }
+                        return `${firstInitial} ${lastShort || ''}`.trim();
+                      })()}
                       {info && info.position ? ` (${info.position})` : ''}
                       {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
                       <InjuryBadge espnId={info && info.espn_id} info={info} />
                     </span>
                   </td>
-                  <td className={gameCellClasses.join(' ')}>{gameObj && gameObj.eventId ? (<a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>) : gameObj.text}</td>
+                  <td className={gameCellClasses.join(' ')}>
+                    <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
+                      <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
+                    ) : gameObj.text}</div>
+                  </td>
                   <td className="team-scores-pts-cell">{p.pts}</td>
                 </tr>
               );
