@@ -102,11 +102,17 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     }
   }));
 
-  // Get weekly standings for the selected window
-  const weeklyStandings = getWeeklyStandings(weeksParsedData, startWeek, endWeek);
+  // Exclude the current week entirely when viewing the current season
+  const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
+  const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
+  const adjustedEndWeek = isCurrentSeason ? Math.min(endWeek, Math.max(0, currentWeek - 1)) : endWeek;
+  const adjustedStartWeek = isCurrentSeason ? Math.min(startWeek, adjustedEndWeek) : startWeek;
 
-  // Call getPositionalBreakdownData and log the result
-  const positionalBreakdown = getPositionalBreakdownData(weeksParsedData, startWeek, endWeek);
+  // Get weekly standings for the selected window (with current week excluded)
+  const weeklyStandings = getWeeklyStandings(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
+
+  // Positional breakdown over the same adjusted range
+  const positionalBreakdown = getPositionalBreakdownData(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
 
   // Build a stable, uniformly distributed playerId -> color mapping for this roster/time window
   const playerColorMap = useMemo(() => {
@@ -172,7 +178,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
       leagueMedian = pointsArr[mid];
     }
     return {
-      name: `Week ${startWeek + i}`,
+      name: `Week ${adjustedStartWeek + i}`,
       points: user ? user.points : 0,
       leagueCeiling,
       leagueFloor,
@@ -180,8 +186,6 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     };
   });
 
-  const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
-  const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
   const showWeekInfo = isCurrentSeason && startWeek <= currentWeek && endWeek >= currentWeek;
 
   return (
