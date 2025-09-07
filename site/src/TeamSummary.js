@@ -17,6 +17,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     <div className="loading-center">
       <div className="spinner" aria-label="Loading" />
       <div className="loading-text">Loading summary…</div>
+      <img src="/logo.jpg" alt="Site logo" className="loading-logo" />
     </div>
   );
   if (!weeksParsedData) return <div>No summary data found.</div>;

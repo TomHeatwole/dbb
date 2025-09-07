@@ -23,6 +23,14 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.loading-logo {
+  width: 180px;
+  max-width: 40vw;
+  height: auto;
+  margin-top: 16px;
+  display: block;
+}
 .background-bg {
   position: fixed;
   top: 0;

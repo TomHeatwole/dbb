@@ -264,6 +264,7 @@ function LeagueScores() {
         <div className="loading-center">
           <div className="spinner" aria-label="Loading" />
           <div className="loading-text">Loading scores…</div>
+          <img src="/logo.jpg" alt="Site logo" className="loading-logo" />
         </div>
       ) : error || !weeksParsedData || !rosters || !users ? (
         <div>Error loading scores.</div>
