@@ -75,6 +75,72 @@ function LeagueScores() {
   const [injuriesMap, setInjuriesMap] = useState({});
   const pollingRef = useRef(false);
   const lastDbEntryTsRef = useRef(null);
+  const [prevData, setPrevData] = useState(null);
+
+  function buildExpandedData(srcWeeksParsedData, targetWeek, labels) {
+    if (!srcWeeksParsedData) { return null; }
+    const breakdownByRoster = getWeekScoreBreakdown(srcWeeksParsedData, targetWeek) || {};
+    const weekEntries = (Array.isArray(srcWeeksParsedData) && srcWeeksParsedData[targetWeek - 1] ? srcWeeksParsedData[targetWeek - 1] : [])
+      .filter(e => e && e.roster_id != null);
+    const rows = weekEntries.map((e) => {
+      const rid = e.roster_id;
+      const raw = breakdownByRoster[rid];
+      const computed = raw ? StartSitSort(raw, playersData, playerIdMap, labels || playerGameLabels) : null;
+      const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
+      const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
+      const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
+      return { rosterId: String(rid), total, starters, bench };
+    }).sort((a, b) => b.total - a.total);
+    const order = rows.map(r => r.rosterId);
+    const teams = {};
+    rows.forEach(r => { teams[r.rosterId] = { total: r.total, starters: r.starters, bench: r.bench }; });
+    return { order, teams };
+  }
+
+  function compareExpanded(prev, next) {
+    if (!prev || !next) { return []; }
+    const changes = [];
+    // Order changes
+    const maxLen = Math.max((prev.order || []).length, (next.order || []).length);
+    for (let i = 0; i < maxLen; i++) {
+      const a = prev.order[i];
+      const b = next.order[i];
+      if (a !== b) {
+        changes.push({ type: 'placement', index: i, before: a || null, after: b || null });
+      }
+    }
+    const allRosters = new Set([...(prev.order || []), ...(next.order || [])]);
+    for (const rid of allRosters) {
+      const pa = prev.teams[rid] || { total: 0, starters: [], bench: [] };
+      const pb = next.teams[rid] || { total: 0, starters: [], bench: [] };
+      if (Math.abs((pb.total || 0) - (pa.total || 0)) > 0.001) {
+        changes.push({ type: 'teamTotal', rosterId: rid, before: pa.total || 0, after: pb.total || 0 });
+      }
+      // starters by slot
+      const maxSlots = Math.max(pa.starters.length, pb.starters.length);
+      for (let s = 0; s < maxSlots; s++) {
+        const sa = pa.starters[s] || { id: null, pts: 0 };
+        const sb = pb.starters[s] || { id: null, pts: 0 };
+        if (sa.id !== sb.id || Math.abs((sb.pts || 0) - (sa.pts || 0)) > 0.001) {
+          changes.push({ type: 'starterSlot', rosterId: rid, slot: s, before: sa, after: sb });
+        }
+      }
+      // bench membership/pts
+      const mapA = new Map((pa.bench || []).map(p => [p.id, p.pts || 0]));
+      const mapB = new Map((pb.bench || []).map(p => [p.id, p.pts || 0]));
+      const ids = new Set([...mapA.keys(), ...mapB.keys()]);
+      ids.forEach(pid => {
+        const a = mapA.has(pid) ? mapA.get(pid) : null;
+        const b = mapB.has(pid) ? mapB.get(pid) : null;
+        if (a === null && b !== null) { changes.push({ type: 'benchAdd', rosterId: rid, playerId: pid, after: b }); }
+        else if (a !== null && b === null) { changes.push({ type: 'benchRemove', rosterId: rid, playerId: pid, before: a }); }
+        else if (a !== null && b !== null && Math.abs((b || 0) - (a || 0)) > 0.001) {
+          changes.push({ type: 'benchPts', rosterId: rid, playerId: pid, before: a, after: b });
+        }
+      });
+    }
+    return changes;
+  }
 
   useEffect(() => {
     if (!dropdownOpen) { return; }
@@ -146,6 +212,10 @@ function LeagueScores() {
         setUsers(teamData.users);
         setPlayersData(players);
         setPlayerIdMap(idMap);
+        try {
+          const initExpanded = buildExpandedData(weeksData, week, playerGameLabels);
+          setPrevData(initExpanded);
+        } catch (_) {}
       })
       .catch(() => {
         setWeeksParsedData(null);
@@ -225,87 +295,8 @@ function LeagueScores() {
         } catch (_) {}
         
         if (cancelled || !Array.isArray(newWeeks)) { return; }
-        // Build computed breakdowns (starters/bench/totals) for prev and next
-        const idx = (typeof week === 'number' && week >= 1) ? (week - 1) : 0;
-        const prevWeekArr = Array.isArray(weeksParsedData) ? (weeksParsedData[idx] || []) : [];
-        const nextWeekArr = newWeeks[idx] || [];
-
-        const buildBreakdownMap = (weekArr) => {
-          const byRoster = getWeekScoreBreakdown(Array.isArray(weeksParsedData) ? weeksParsedData : [], week) || {};
-          // The helper above uses the component's weeksParsedData; for next week we need to reconstruct byRoster manually
-          // Build a temporary map for the provided week array
-          const tempByRoster = {};
-          (weekArr || []).forEach((e) => {
-            if (!e || e.roster_id == null) { return; }
-            tempByRoster[e.roster_id] = { starters: e.starters || [], bench: e.bench || [] };
-          });
-          return tempByRoster;
-        };
-
-        const computeOptimal = (sourceMap) => {
-          const out = {};
-          Object.keys(sourceMap || {}).forEach((rid) => {
-            const raw = sourceMap[rid];
-            const computed = raw ? StartSitSort(raw, playersData, playerIdMap) : null;
-            if (computed) {
-              out[String(rid)] = {
-                starters: Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [],
-                bench: Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [],
-                starterTotal: Number(computed.starterTotal || 0)
-              };
-            }
-          });
-          return out;
-        };
-
-        const prevRawMap = buildBreakdownMap(prevWeekArr);
-        const nextRawMap = buildBreakdownMap(nextWeekArr);
-        const prevOpt = computeOptimal(prevRawMap);
-        const nextOpt = computeOptimal(nextRawMap);
-
-        const changes = [];
-        const rosterIds = new Set([ ...Object.keys(prevOpt || {}), ...Object.keys(nextOpt || {}) ]);
-        rosterIds.forEach((rid) => {
-          const before = prevOpt[rid] || { starters: [], bench: [], starterTotal: 0 };
-          const after = nextOpt[rid] || { starters: [], bench: [], starterTotal: 0 };
-          const teamDelta = Math.round((after.starterTotal - before.starterTotal) * 100) / 100;
-
-          // Player score deltas across both starters and bench
-          const beforeMap = new Map();
-          [...before.starters, ...before.bench].forEach(p => { if (p && p.id) { beforeMap.set(p.id, Number(p.pts || 0)); } });
-          const afterMap = new Map();
-          [...after.starters, ...after.bench].forEach(p => { if (p && p.id) { afterMap.set(p.id, Number(p.pts || 0)); } });
-          const playerIds = new Set([ ...beforeMap.keys(), ...afterMap.keys() ]);
-          const playerDeltas = [];
-          playerIds.forEach((pid) => {
-            const b = beforeMap.has(pid) ? beforeMap.get(pid) : 0;
-            const a = afterMap.has(pid) ? afterMap.get(pid) : 0;
-            const d = Math.round((a - b) * 100) / 100;
-            if (Math.abs(d) > 0.001) {
-              playerDeltas.push({ playerId: pid, before: b, after: a, diff: d });
-            }
-          });
-
-          // Movement between starters and bench
-          const setOf = (arr) => new Set((arr || []).map(p => String(p.id)));
-          const beforeStar = setOf(before.starters);
-          const beforeBench = setOf(before.bench);
-          const afterStar = setOf(after.starters);
-          const afterBench = setOf(after.bench);
-          const all = new Set([ ...beforeStar, ...beforeBench, ...afterStar, ...afterBench ]);
-          const moves = [];
-          all.forEach((pid) => {
-            const from = beforeStar.has(pid) ? 'starter' : (beforeBench.has(pid) ? 'bench' : 'none');
-            const to = afterStar.has(pid) ? 'starter' : (afterBench.has(pid) ? 'bench' : 'none');
-            if (from !== to) {
-              moves.push({ playerId: pid, from, to });
-            }
-          });
-
-          if (Math.abs(teamDelta) > 0.001 || playerDeltas.length > 0 || moves.length > 0) {
-            changes.push({ rosterId: rid, teamDelta, playerDeltas, moves });
-          }
-        });
+        const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels);
+        const changes = compareExpanded(prevData, nextExpanded);
 
         const prevTs = lastDbEntryTsRef.current;
         // eslint-disable-next-line no-console
@@ -313,6 +304,7 @@ function LeagueScores() {
         if ((dbEntryTs != null && prevTs !== dbEntryTs) || changes.length > 0) {
           setWeeksParsedData(newWeeks);
           lastDbEntryTsRef.current = dbEntryTs != null ? dbEntryTs : prevTs;
+          setPrevData(nextExpanded);
         }
       } catch (_) {
         // ignore

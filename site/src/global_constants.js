@@ -28,7 +28,7 @@ export const FIREBASE_STORAGE_BUCKET = parsedSettings.FIREBASE_STORAGE_BUCKET ||
 export const FIREBASE_DATABASE_URL = parsedSettings.FIREBASE_DATABASE_URL || 'N/A';
 
 // Admin toggle: when true, never hit external APIs; read DB only
-export const PAUSE_SCRAPES = true; 
+export const PAUSE_SCRAPES = false; 
 // Testing-only: use local example data for NFL scoreboard lookup when true
 export const USE_FAKE_EXAMPLE_DATA = false;
 // Path should be placed under site/public so it can be fetched by the browser
