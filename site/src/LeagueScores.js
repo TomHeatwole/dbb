@@ -76,6 +76,8 @@ function LeagueScores() {
   const pollingRef = useRef(false);
   const lastDbEntryTsRef = useRef(null);
   const [prevData, setPrevData] = useState(null);
+  const [teamHighlightMap, setTeamHighlightMap] = useState({}); // rosterId -> 'up'|'down'|'row'
+  const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
 
   function buildExpandedData(srcWeeksParsedData, targetWeek, labels) {
     if (!srcWeeksParsedData) { return null; }
@@ -100,13 +102,17 @@ function LeagueScores() {
   function compareExpanded(prev, next) {
     if (!prev || !next) { return []; }
     const changes = [];
-    // Order changes
-    const maxLen = Math.max((prev.order || []).length, (next.order || []).length);
-    for (let i = 0; i < maxLen; i++) {
-      const a = prev.order[i];
-      const b = next.order[i];
-      if (a !== b) {
-        changes.push({ type: 'placement', index: i, before: a || null, after: b || null });
+    // Order changes: compute per-roster index movement
+    const prevIndex = {};
+    const nextIndex = {};
+    (prev.order || []).forEach((rid, i) => { if (rid != null) { prevIndex[rid] = i; } });
+    (next.order || []).forEach((rid, i) => { if (rid != null) { nextIndex[rid] = i; } });
+    const allRostersForPlacement = new Set([...(prev.order || []), ...(next.order || [])]);
+    for (const rid of allRostersForPlacement) {
+      const pi = prevIndex[rid];
+      const ni = nextIndex[rid];
+      if (typeof pi === 'number' && typeof ni === 'number' && pi !== ni) {
+        changes.push({ type: 'placement', rosterId: rid, beforeIndex: pi, afterIndex: ni, direction: ni < pi ? 'up' : 'down' });
       }
     }
     const allRosters = new Set([...(prev.order || []), ...(next.order || [])]);
@@ -305,6 +311,45 @@ function LeagueScores() {
           setWeeksParsedData(newWeeks);
           lastDbEntryTsRef.current = dbEntryTs != null ? dbEntryTs : prevTs;
           setPrevData(nextExpanded);
+
+          // Build highlight maps
+          const nextTeamMap = {};
+          const nextPlayerMap = {};
+          for (const ch of changes) {
+            if (ch.type === 'teamTotal') {
+              const dir = (ch.after || 0) > (ch.before || 0) ? 'up' : 'down';
+              nextTeamMap[String(ch.rosterId)] = dir;
+            } else if (ch.type === 'starterSlot') {
+              const beforePts = (ch.before && typeof ch.before.pts === 'number') ? ch.before.pts : 0;
+              const afterPts = (ch.after && typeof ch.after.pts === 'number') ? ch.after.pts : 0;
+              const pid = (ch.after && ch.after.id) ? String(ch.after.id) : ((ch.before && ch.before.id) ? String(ch.before.id) : null);
+              if (pid) {
+                const dir = afterPts > beforePts ? 'up' : (afterPts < beforePts ? 'down' : null);
+                if (dir) {
+                  const rid = String(ch.rosterId);
+                  if (!nextPlayerMap[rid]) { nextPlayerMap[rid] = {}; }
+                  nextPlayerMap[rid][pid] = dir;
+                }
+              }
+            } else if (ch.type === 'benchPts') {
+              const dir = (ch.after || 0) > (ch.before || 0) ? 'up' : 'down';
+              const rid = String(ch.rosterId);
+              if (!nextPlayerMap[rid]) { nextPlayerMap[rid] = {}; }
+              nextPlayerMap[rid][String(ch.playerId)] = dir;
+            } else if (ch.type === 'placement') {
+              // Only highlight the team that moved up in rank
+              if (ch.direction === 'up') {
+                nextTeamMap[String(ch.rosterId)] = 'row';
+              }
+            }
+          }
+          setTeamHighlightMap(nextTeamMap);
+          setPlayerHighlightMap(nextPlayerMap);
+          // Clear highlights after 3s
+          setTimeout(() => {
+            setTeamHighlightMap({});
+            setPlayerHighlightMap({});
+          }, 3000);
         }
       } catch (_) {
         // ignore
@@ -425,8 +470,10 @@ function LeagueScores() {
                 }
               }
 
+              const teamHighlight = teamHighlightMap && teamHighlightMap[String(rosterId)];
+              const rowClass = teamHighlight === 'row' ? ' standings-row--pulse' : (teamHighlight === 'up' ? ' standings-row--up' : (teamHighlight === 'down' ? ' standings-row--down' : ''));
               return (
-                <div key={rosterId} className="standings-row">
+                <div key={rosterId} className={`standings-row${rowClass}`}>
                   <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
                     <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
                     <span className="standings-rank" style={{ visibility: 'hidden' }}>#</span>
@@ -438,7 +485,7 @@ function LeagueScores() {
                         <span className="standings-activity-item">In-Play: {activeCount}</span>
                       </span>
                     ) : null}
-                    <span className="standings-total">{Math.round(points * 10) / 10} pts</span>
+                    <span className={`standings-total${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}>{Math.round(points * 10) / 10} pts</span>
                   </button>
                   {isExpanded && (
                     <div className="standings-row-expand">
@@ -469,6 +516,7 @@ function LeagueScores() {
                               isActiveWeek={isActiveWeek}
                               injuriesMap={injuriesMap}
                               showCurrentInjury={showCurrentInjury}
+                              playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
                             />
                           </MobileScaled>
                         ) : (
@@ -486,6 +534,7 @@ function LeagueScores() {
                             isActiveWeek={isActiveWeek}
                             injuriesMap={injuriesMap}
                             showCurrentInjury={showCurrentInjury}
+                            playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
                           />
                         )
                       )}

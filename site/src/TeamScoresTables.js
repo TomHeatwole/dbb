@@ -4,7 +4,7 @@ import { STARTER_POSITION_NAMES } from './global_constants';
 import { getInjuryAbbreviation } from './InjuryLookup';
 import useIsMobile from './useIsMobile';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false }) {
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {} }) {
   const isMobileView = useIsMobile();
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
@@ -67,6 +67,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
             } else if (isActiveWeek && gameObj.completed) {
               gameCellClasses.push('team-scores-game-completed');
             }
+            const pHighlight = playerHighlightMap && playerHighlightMap[String(p.id)];
             return (
               <tr key={p.id}>
                 <td className="team-scores-pos-cell">{posLabel}</td>
@@ -86,7 +87,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
                   ) : gameObj.text}</div>
                 </td>
-                <td className="team-scores-pts-cell">{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
+                <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
               </tr>
             );
           })}
@@ -131,6 +132,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               } else if (isActiveWeek && gameObj.completed) {
                 gameCellClasses.push('team-scores-game-completed');
               }
+              const pHighlight = playerHighlightMap && playerHighlightMap[String(p.id)];
               return (
                 <tr key={p.id}>
                   <td className="team-scores-player-cell">
@@ -149,7 +151,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                       <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
                     ) : gameObj.text}</div>
                   </td>
-                  <td className="team-scores-pts-cell">{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
+                  <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
                 </tr>
               );
             })}

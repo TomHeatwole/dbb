@@ -1,3 +1,35 @@
+.standings-row--up {
+  animation: pulse-up 3s ease-out;
+}
+.standings-row--down {
+  animation: pulse-down 3s ease-out;
+}
+.standings-row--pulse {
+  animation: pulse-row 3s ease-out;
+}
+
+.text-up {
+  color: #1db954; /* green */
+}
+.text-down {
+  color: #ff4d4f; /* red */
+}
+.text-bold {
+  font-weight: 700;
+}
+
+@keyframes pulse-up {
+  0% { background-color: rgba(29,185,84,0.25); }
+  100% { background-color: transparent; }
+}
+@keyframes pulse-down {
+  0% { background-color: rgba(255,77,79,0.25); }
+  100% { background-color: transparent; }
+}
+@keyframes pulse-row {
+  0% { background-color: rgba(29,185,84,0.25); }
+  100% { background-color: transparent; }
+}
 /* Loading center with spinner */
 .loading-center {
   display: flex;
