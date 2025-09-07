@@ -1,13 +1,15 @@
 import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH } from './global_constants';
+import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { writeApiCache, readApiCacheLatest } from './database';
 
-async function fetchJson(url) {
+async function fetchJson(url, options = {}) {
+  const { revalidateIfStale = false } = options;
   // Read from DB first; if stale (>1m), revalidate in background
   try {
     const cached = await readApiCacheLatest(url);
     if (cached && cached.data !== undefined) {
       const ageMs = Date.now() - (cached.ts || 0);
-      if (ageMs > 60_000) {
+      if (revalidateIfStale && ageMs > 60_000) {
         (async () => {
           try {
             const res2 = await fetch(url);
@@ -47,7 +49,7 @@ async function fetchDailyFromCacheOrApi(season, dayToken) {
     // ignore and fall back to API
   }
   const apiUrl = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dayToken}`;
-  return await fetchJson(apiUrl);
+  return await fetchJson(apiUrl, { revalidateIfStale: false });
 }
 
 function enumerateDatesInclusive(startIso, endIso) {
@@ -144,5 +146,6 @@ export async function fetchNflScoreboard(season, week) {
   }
 
   const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${encodeURIComponent(week)}&year=${encodeURIComponent(season)}&seasontype=2`;
-  return await fetchJson(url);
+  const isActiveWeek = (String(season) === String(CURRENT_YEAR)) && (Number(week) === getCurrentNFLWeek());
+  return await fetchJson(url, { revalidateIfStale: isActiveWeek });
 } 
