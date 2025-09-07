@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
@@ -26,6 +27,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
 
   // Close dropdown on outside click
   useEffect(() => {
+    trackPageLoad();
     if (!dropdownOpen) return;
     function handleClick(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {

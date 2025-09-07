@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
+import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS, LEAGUE_ID, DEBUG_SCORES_LOG } from './global_constants';
 import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from './DateHelper';
@@ -207,6 +208,7 @@ function LeagueScores() {
 
   // Load league scores/teams for season
   useEffect(() => {
+    trackPageLoad();
     setLoading(true);
     setError(null);
     Promise.all([

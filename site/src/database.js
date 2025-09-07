@@ -306,3 +306,23 @@ export async function writeAdminBlob(value) {
   return true;
 }
 
+// Usage tracking: log page loads with path, ip, and timestamp
+export async function logUsage(event) {
+  try {
+    const { path, ip, ts } = event || {};
+    if (!path) { return false; }
+    const db = getDb();
+    const when = Number.isFinite(ts) ? ts : Date.now();
+    const entry = {
+      path,
+      ip: ip || null,
+      ts: when,
+      at: new Date(when).toISOString()
+    };
+    await set(ref(db, `usage/${when}_${Math.random().toString(36).slice(2, 8)}`), entry);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+

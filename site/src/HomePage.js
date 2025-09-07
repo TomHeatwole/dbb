@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { trackPageLoad } from './UsageTracker';
 import { Link } from 'react-router-dom';
 import { fetchTeamData } from './TeamLookup';
 
@@ -7,6 +8,7 @@ function HomePage() {
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {
+    trackPageLoad();
     async function load() {
       try {
         const data = await fetchTeamData();

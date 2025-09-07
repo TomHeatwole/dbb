@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
+import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
@@ -33,6 +34,7 @@ function LeagueStandings() {
   const [playerIdMap, setPlayerIdMap] = useState(null);
 
   useEffect(() => {
+    trackPageLoad();
     if (!dropdownOpen) { return; }
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {

@@ -11,6 +11,7 @@ import { fetchScoresData } from './ScoresLookup';
 import TeamAnalytics from './TeamAnalytics';
 import useIsMobile from './useIsMobile';
 import InfoPageWrapper from './InfoPageWrapper';
+import { trackPageLoad } from './UsageTracker';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -44,6 +45,7 @@ function TeamPage() {
 
   // Close dropdown on outside click
   useEffect(() => {
+    trackPageLoad();
     if (!seasonDropdownOpen) { return; }
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
