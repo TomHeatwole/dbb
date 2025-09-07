@@ -25,11 +25,17 @@ export default function PositionAnalytics({
   const chartData = [];
   for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
     const weekNum = startWeek + weekIdx;
-    const week = weeksParsedData[weekNum - 1];
+    const week = Array.isArray(weeksParsedData) ? weeksParsedData[weekNum - 1] : null;
     if (!week) continue;
-    const posScores = week.map(entry => (entry && entry.starters_points && entry.starters_points[pos] != null) ? entry.starters_points[pos] : 0);
+    const posScores = week.map(entry => (
+      entry && Array.isArray(entry.starters_points) && entry.starters_points.length > pos && entry.starters_points[pos] != null
+        ? entry.starters_points[pos]
+        : 0
+    ));
     const userEntry = week.find(entry => entry && entry.roster_id === rosterId);
-    const userScore = userEntry && userEntry.starters_points && userEntry.starters_points[pos] != null ? userEntry.starters_points[pos] : 0;
+    const userScore = (userEntry && Array.isArray(userEntry.starters_points) && userEntry.starters_points.length > pos && userEntry.starters_points[pos] != null)
+      ? userEntry.starters_points[pos]
+      : 0;
     const sorted = [...posScores].sort((a, b) => b - a);
     const leagueCeiling = sorted.length ? sorted[0] : 0;
     const leagueFloor = sorted.length ? sorted[sorted.length - 1] : 0;

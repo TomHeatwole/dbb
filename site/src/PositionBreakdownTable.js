@@ -73,12 +73,12 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
             const teamScoresMap = {};
             for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
               const weekNum = startWeek + weekIdx;
-              const week = weeksParsedData[weekNum - 1];
+              const week = Array.isArray(weeksParsedData) ? weeksParsedData[weekNum - 1] : null;
               if (!week) continue;
               week.forEach(entry => {
                 if (!entry) { return; }
                 const startersPoints = (entry && Array.isArray(entry.starters_points)) ? entry.starters_points : null;
-                const value = (startersPoints && startersPoints.length > posIdx) ? startersPoints[posIdx] : null;
+                const value = (startersPoints && startersPoints.length > posIdx && startersPoints[posIdx] != null) ? startersPoints[posIdx] : null;
                 if (value == null) { return; }
                 const rid = entry.roster_id;
                 if (!teamScoresMap[rid]) teamScoresMap[rid] = [];
