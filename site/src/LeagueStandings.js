@@ -111,7 +111,7 @@ function LeagueStandings() {
     return user && user.avatar_url ? user.avatar_url : null;
   }
 
-  function sumPointsForWeeks(weeksArr, rosterId) {
+  function sumPointsForWeeks(weeksArr, rosterId, { applyCurrentWeekOverride = true } = {}) {
     if (!Array.isArray(weeksArr)) { return 0; }
     let total = 0;
     weeksArr.forEach((weekEntries, idx) => {
@@ -123,7 +123,7 @@ function LeagueStandings() {
       const isCurrentSeason = season === CURRENT_YEAR;
       const currentWeekNum = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
       const thisWeekNum = idx + 1;
-      if (isCurrentSeason && thisWeekNum === currentWeekNum && weeksParsedData && playersData) {
+      if (applyCurrentWeekOverride && isCurrentSeason && thisWeekNum === currentWeekNum && weeksParsedData && playersData) {
         try {
           const breakdown = getWeekScoreBreakdown(weeksParsedData, thisWeekNum);
           const teamScore = breakdown && breakdown[rosterId];
@@ -292,11 +292,16 @@ function LeagueStandings() {
   }
 
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
+  const showPpgColumn = completedWeeks > 1;
 
   function computeCompletedWeeksPpg(weeksArr, rosterId, capWeeks = null) {
-    const effectiveCompleted = Math.max(0, Math.min(completedWeeks, capWeeks != null ? capWeeks : (weeksArr ? weeksArr.filter(Boolean).length : 0)));
+    const currentWeekNum = getCurrentNFLWeek();
+    const baseCap = (weeksArr ? weeksArr.filter(Boolean).length : 0);
+    const limit = capWeeks != null ? Math.min(baseCap, capWeeks) : baseCap;
+    const completedOnly = Math.max(0, Math.min(completedWeeks, currentWeekNum - 1, limit));
+    const effectiveCompleted = completedOnly;
     if (effectiveCompleted === 0) { return 0; }
-    const sum = sumPointsForWeeks((weeksArr || []).slice(0, effectiveCompleted), rosterId);
+    const sum = sumPointsForWeeks((weeksArr || []).slice(0, effectiveCompleted), rosterId, { applyCurrentWeekOverride: false });
     return Math.round((sum / effectiveCompleted) * 10) / 10;
   }
 
@@ -450,7 +455,7 @@ function LeagueStandings() {
 
   return (
     <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
-      <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "")}>
+      <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "") + (showPpgColumn ? "" : " standings-list--no-ppg") }>
         {displayRows.map((row, idx) => {
           const rosterId = row.roster_id;
           const isExpanded = !!expanded[rosterId];
@@ -459,8 +464,9 @@ function LeagueStandings() {
           const avatarUrl = getAvatar(rosterId);
           const isTop4Highlight = top4Set.has(rosterId);
 
-          // Display metrics
-          const ppg = effectiveCompletedWeeks > 0 ? Math.round((sumPointsForWeeks(weeksParsedData.slice(0, effectiveCompletedWeeks), rosterId) / effectiveCompletedWeeks) * 10) / 10 : 0;
+          // Display metrics: PPG should use only completed weeks; if none, show N/A
+          const hasCompletedWeeks = completedWeeks > 0;
+          const ppgValue = hasCompletedWeeks ? computeCompletedWeeksPpg(weeksParsedData, rosterId, 17) : null;
 
           // Expanded details for every team
           const det14 = computeTotals(rosterId, weeksFirst14);
@@ -499,12 +505,12 @@ function LeagueStandings() {
                   // Desktop: render PPG + total as before
                   usePlayoffLogic && isPlayoff ? (
                     <>
-                      <span className="standings-ppg standings-ppg--playoff-mobile">Playoffs: {Math.round(row.points_scored)} pts</span>
+                      {showPpgColumn ? (<span className="standings-ppg standings-ppg--playoff-mobile">Playoffs: {Math.round(row.points_scored)} pts</span>) : null}
                       <span className="standings-total standings-total--playoff-desktop">Playoffs: {Math.round(row.points_scored)} pts</span>
                     </>
                   ) : (
                     <>
-                      <span className="standings-ppg">{ppg} ppg</span>
+                      {showPpgColumn ? (<span className="standings-ppg">{ppgValue != null ? `${ppgValue} ppg` : ''}</span>) : null}
                       <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
                         {Math.round(row.points_scored)} pts
                         {usePlayoffLogic && (
