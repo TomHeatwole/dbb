@@ -139,7 +139,7 @@ function LeagueScores() {
       fetchPlayerIdMap()
     ])
       .then(async ([weeksData, teamData, _ignored, idMap]) => {
-        const players = await fetchPlayersData(teamData && teamData.rosters ? teamData.rosters : null);
+        const players = await fetchPlayersData(season === CURRENT_YEAR ? (teamData && teamData.rosters ? teamData.rosters : null) : String(season));
         setWeeksParsedData(weeksData);
         setRosters(teamData.rosters);
         setUsers(teamData.users);

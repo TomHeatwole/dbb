@@ -6,18 +6,37 @@ import { updatePlayers, readCurrentWeekPlayersSnapshot } from './database';
 import { fetchScoresData } from './ScoresLookup';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 
-let cachedPlayersData = null;
+const cachedPlayersDataByKey = {};
 let cachedPlayerIdMap = null;
 
-export async function fetchPlayersData(rosters = null) {
-  if (cachedPlayersData) { return cachedPlayersData; }
+function getCacheKey(rostersOrSeason) {
+  if (!Array.isArray(rostersOrSeason) && rostersOrSeason != null) {
+    return String(rostersOrSeason);
+  }
+  return 'current';
+}
+
+export async function fetchPlayersData(rostersOrSeason = null) {
+  const cacheKey = getCacheKey(rostersOrSeason);
+  if (cachedPlayersDataByKey[cacheKey]) { return cachedPlayersDataByKey[cacheKey]; }
+  // Allow passing a season string instead of rosters to force legacy path
+  let rosters = Array.isArray(rostersOrSeason) ? rostersOrSeason : null;
+  const maybeSeason = !Array.isArray(rostersOrSeason) && rostersOrSeason != null ? String(rostersOrSeason) : null;
+  const effectiveSeason = maybeSeason || CURRENT_YEAR;
+  if (String(effectiveSeason) === '2024') {
+    const res = await fetch('/data/players.txt');
+    if (!res.ok) throw new Error('Failed to fetch player data');
+    const data = await res.json();
+    cachedPlayersDataByKey[cacheKey] = data;
+    return cachedPlayersDataByKey[cacheKey];
+  }
   // Try to read current week's snapshot first
   const current = await readCurrentWeekPlayersSnapshot();
   const hasSnapshot = current && current.snapshot && current.snapshot.data && Object.keys(current.snapshot.data).length > 0;
   const isFresh = hasSnapshot && Number.isFinite(current.ageMs) && current.ageMs <= 60 * 60 * 1000;
   if (hasSnapshot && isFresh) {
-    cachedPlayersData = current.snapshot.data;
-    return cachedPlayersData;
+    cachedPlayersDataByKey[cacheKey] = current.snapshot.data;
+    return cachedPlayersDataByKey[cacheKey];
   }
   // Snapshot missing or stale: fetch if we can compute cared IDs
   if (!rosters) {
@@ -50,12 +69,12 @@ export async function fetchPlayersData(rosters = null) {
     const caredPlayerIds = Array.from(caredSet);
     const res = await updatePlayers(caredPlayerIds);
     const data = (res && res.snapshot && res.snapshot.data) ? res.snapshot.data : {};
-    cachedPlayersData = data;
-    return data;
+    cachedPlayersDataByKey[cacheKey] = data;
+    return cachedPlayersDataByKey[cacheKey];
   }
   // No rosters yet: if no snapshot or snapshot empty, do not blind fetch; return empty
-  cachedPlayersData = hasSnapshot ? current.snapshot.data : {};
-  return cachedPlayersData;
+  cachedPlayersDataByKey[cacheKey] = hasSnapshot ? current.snapshot.data : {};
+  return cachedPlayersDataByKey[cacheKey];
 }
 
 export async function fetchPlayerIdMap() {
