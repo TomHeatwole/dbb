@@ -7,7 +7,7 @@ import PositionAnalytics from './PositionAnalytics';
 import PositionBreakdownTable from './PositionBreakdownTable';
 import PlayerBreakdownTable from './PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from './global_constants';
-import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount } from './DateHelper';
+import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek } from './DateHelper';
 
 const chartConfigs = [
   { title: 'Weekly Scores', key: 'weeklyScores' },
@@ -180,8 +180,21 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     };
   });
 
+  const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
+  const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
+  const showWeekInfo = isCurrentSeason && startWeek <= currentWeek && endWeek >= currentWeek;
+
   return (
     <div className="team-analytics-root">
+      {showWeekInfo && (
+        <div className="team-analytics-info">
+          <span className="info-icon" aria-label="Analytics update cadence">
+            ℹ️
+            <span className="info-icon-tooltip">Team Analytics updates after each NFL week is complete. Current week data appears once all games are final.</span>
+          </span>
+          <span className="team-analytics-info-text">Updates after each week is complete</span>
+        </div>
+      )}
       {/* Weeks Selector */}
       <div className="team-scores-week-bar">
         <span className="team-analytics-week-from">From</span>

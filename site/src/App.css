@@ -690,6 +690,16 @@
   gap: 2.5rem;
   padding: 0 0 2rem 0;
 }
+.team-analytics-info {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #cfe0ff;
+}
+.team-analytics-info .info-icon { cursor: default; }
+.team-analytics-info-text { font-weight: 600; opacity: 0.9; }
 .team-analytics-week-from {
   margin-right: 0.625rem; /* 10px -> 0.625rem */
 }
