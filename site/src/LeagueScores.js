@@ -19,6 +19,34 @@ import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
+function MobileScaled({ children, className = 'mobile-standings-scale-70' }) {
+  const innerRef = useRef(null);
+  const [heightPx, setHeightPx] = useState(null);
+  useEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const compute = () => {
+      const rect = el.getBoundingClientRect();
+      setHeightPx(rect.height);
+    };
+    compute();
+    const ro = new ResizeObserver(() => compute());
+    ro.observe(el);
+    window.addEventListener('resize', compute);
+    return () => {
+      try { ro.disconnect(); } catch (_) {}
+      window.removeEventListener('resize', compute);
+    };
+  }, []);
+  return (
+    <div style={{ height: heightPx != null ? `${heightPx}px` : 'auto' }}>
+      <div ref={innerRef} className={className}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function LeagueScores() {
   // Toggle: when true, keep the current mobile summary behavior; when false, render the full web breakdown on mobile
   const showFullScoreBreakdownOnMobile = false;
@@ -308,7 +336,25 @@ function LeagueScores() {
                           yetToPlayCount={yetToPlayCount}
                         />
                       ) : (
-                        <div className={isMobile ? 'mobile-standings-scale-70' : ''}>
+                        isMobile ? (
+                          <MobileScaled>
+                            <LeagueScoresTeamBreakdown
+                              weekBreakdown={weekBreakdown}
+                              week={week}
+                              rosterId={rosterId}
+                              benchOpen={!!benchOpen[rosterId]}
+                              onToggleBench={() => toggleBench(rosterId)}
+                              benchTotal={benchTotal}
+                              playersData={playersData}
+                              playerIdMap={playerIdMap}
+                              searchParams={searchParams}
+                              playerGameLabels={playerGameLabels}
+                              isActiveWeek={isActiveWeek}
+                              injuriesMap={injuriesMap}
+                              showCurrentInjury={showCurrentInjury}
+                            />
+                          </MobileScaled>
+                        ) : (
                           <LeagueScoresTeamBreakdown
                             weekBreakdown={weekBreakdown}
                             week={week}
@@ -324,7 +370,7 @@ function LeagueScores() {
                             injuriesMap={injuriesMap}
                             showCurrentInjury={showCurrentInjury}
                           />
-                        </div>
+                        )
                       )}
                     </div>
                   )}

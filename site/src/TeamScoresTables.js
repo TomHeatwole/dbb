@@ -2,10 +2,36 @@ import React from 'react';
 import { getPlayerInfo } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getInjuryAbbreviation } from './InjuryLookup';
+import useIsMobile from './useIsMobile';
 
 export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false }) {
+  const isMobileView = useIsMobile();
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
+  }
+
+  function formatPlayerNameForDisplay(nameOrId) {
+    const raw = nameOrId;
+    if (!isMobileView) { return raw; }
+    if (typeof raw !== 'string') { return raw; }
+    const name = raw.trim();
+    if (!name) { return raw; }
+    const parts = name.split(/\s+/);
+    const first = parts[0] || '';
+    const last = parts.slice(1).join(' ') || '';
+    if (!first && !last) { return raw; }
+    const firstInitial = first ? `${first[0].toUpperCase()}.` : '';
+    let lastShort = last;
+    if (last && last.length > 15) {
+      const hyphenIdx = last.indexOf('-');
+      if (hyphenIdx > 0) {
+        const prefix = last.slice(0, Math.min(hyphenIdx + 3, last.length));
+        lastShort = `${prefix}...`;
+      } else {
+        lastShort = `${last.slice(0, 12)}...`;
+      }
+    }
+    return `${firstInitial} ${lastShort || ''}`.trim();
   }
 
   const InjuryBadge = ({ espnId, info }) => {
@@ -46,26 +72,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                   )}
                   <span className="player-name">
-                    {(() => {
-                      const name = info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id);
-                      if (typeof name !== 'string') { return name; }
-                      const parts = name.trim().split(/\s+/);
-                      const first = parts[0] || '';
-                      const last = parts.slice(1).join(' ') || '';
-                      const firstInitial = first ? `${first[0].toUpperCase()}.` : '';
-                      let lastShort = last;
-                      if (last && last.length > 15) {
-                        // Preserve up to first hyphenated segment if present, then abbreviate
-                        const hyphenIdx = last.indexOf('-');
-                        if (hyphenIdx > 0) {
-                          const prefix = last.slice(0, Math.min(hyphenIdx + 3, last.length));
-                          lastShort = `${prefix}...`;
-                        } else {
-                          lastShort = `${last.slice(0, 12)}...`;
-                        }
-                      }
-                      return `${firstInitial} ${lastShort || ''}`.trim();
-                    })()}
+                    {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
                     {info && info.position ? ` (${info.position})` : ''}
                     {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
                     <InjuryBadge espnId={info && info.espn_id} info={info} />
@@ -128,25 +135,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                       <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                     )}
                     <span className="player-name">
-                      {(() => {
-                        const name = info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id);
-                        if (typeof name !== 'string') { return name; }
-                        const parts = name.trim().split(/\s+/);
-                        const first = parts[0] || '';
-                        const last = parts.slice(1).join(' ') || '';
-                        const firstInitial = first ? `${first[0].toUpperCase()}.` : '';
-                        let lastShort = last;
-                        if (last && last.length > 15) {
-                          const hyphenIdx = last.indexOf('-');
-                          if (hyphenIdx > 0) {
-                            const prefix = last.slice(0, Math.min(hyphenIdx + 3, last.length));
-                            lastShort = `${prefix}...`;
-                          } else {
-                            lastShort = `${last.slice(0, 12)}...`;
-                          }
-                        }
-                        return `${firstInitial} ${lastShort || ''}`.trim();
-                      })()}
+                      {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
                       {info && info.position ? ` (${info.position})` : ''}
                       {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
                       <InjuryBadge espnId={info && info.espn_id} info={info} />

@@ -1707,6 +1707,8 @@
     max-width: 100% !important;
     width: 100% !important;
   }
+  /* Reduce extra bottom gap when bench is hidden */
+  .standings-row-expand-inner { margin-bottom: 0 !important; padding-bottom: 0.25rem !important; }
   /* Remove any default margins from nested containers inside expanded area */
   .standings-row-expand-inner > div {
     margin-left: 0 !important;
@@ -1729,6 +1731,8 @@
     transform: scale(0.7);
     transform-origin: top left;
     width: 142.86% !important; /* counter-scale to keep full-width appearance */
+    display: block !important;
+    margin: 0 0 0.75rem 0 !important; /* restore a reasonable gap below */
   }
   /* Utility: visually scale expanded team content to 50% on mobile */
   .mobile-standings-scale-50 {
