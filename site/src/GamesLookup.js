@@ -1,11 +1,14 @@
 import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH } from './global_constants';
+import { writeApiCache } from './database';
 
 async function fetchJson(url) {
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to fetch ${url}: ${res.status}`);
   }
-  return res.json();
+  const json = await res.json();
+  try { await writeApiCache(url, json); } catch (_) {}
+  return json;
 }
 
 async function fetchDailyFromCacheOrApi(season, dayToken) {

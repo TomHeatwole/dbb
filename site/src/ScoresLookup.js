@@ -1,4 +1,5 @@
 import { LEAGUE_ID, PREVIOUS_YEARS } from './global_constants';
+import { writeApiCache } from './database';
 
 export async function fetchScoresData(season) {
   // Determine leagueId based on season
@@ -28,6 +29,7 @@ export async function fetchScoresData(season) {
         const resp = await fetch(apiUrl);
         if (resp.ok) {
           const weekArr = await resp.json();
+          try { await writeApiCache(apiUrl, weekArr); } catch (_) {}
           return weekArr.map(({ matchup_id, ...rest }) => rest);
         }
       } catch (e) {

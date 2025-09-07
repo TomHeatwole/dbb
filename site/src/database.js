@@ -42,8 +42,59 @@ export async function writeHelloWorld(sender = 'league_scores_refresh') {
   return { path, data };
 }
 
+function providerFromHost(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  if (host.includes('sleeper')) { return 'sleeper'; }
+  if (host.includes('espn')) { return 'espn'; }
+  return host.replace(/\./g, '_');
+}
+
+function buildCacheKeyFromUrl(urlString) {
+  try {
+    const u = new URL(urlString);
+    const provider = providerFromHost(u.hostname);
+    const pathSegs = (u.pathname || '')
+      .split('/')
+      .filter(Boolean)
+      .map(s => s.replace(/[^a-zA-Z0-9]+/g, '_'));
+    const queryPairs = [];
+    const keys = Array.from(u.searchParams.keys()).sort();
+    for (const k of keys) {
+      const vals = u.searchParams.getAll(k);
+      for (const v of vals) {
+        queryPairs.push(k.replace(/[^a-zA-Z0-9]+/g, '_'));
+        queryPairs.push(String(v).replace(/[^a-zA-Z0-9]+/g, '_'));
+      }
+    }
+    const parts = [provider, ...pathSegs, ...queryPairs].filter(Boolean);
+    return parts.join('_').replace(/_+/g, '_');
+  } catch (e) {
+    return `unknown_${Date.now()}`;
+  }
+}
+
+export async function writeApiCache(url, payload) {
+  try {
+    const db = getDb();
+    const key = buildCacheKeyFromUrl(url);
+    const ts = Date.now();
+    const path = `api_cache/${key}/${ts}`;
+    const entry = {
+      url,
+      fetchedAt: new Date(ts).toISOString(),
+      data: payload,
+    };
+    await set(ref(db, path), entry);
+    return { path, key };
+  } catch (_) {
+    // Swallow errors for cache writes to avoid breaking UI
+    return null;
+  }
+}
+
 export default {
   writeHelloWorld,
+  writeApiCache,
 };
 
 
