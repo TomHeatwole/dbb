@@ -30,6 +30,7 @@
   height: auto;
   margin-top: 16px;
   display: block;
+  opacity: 0.6;
 }
 .background-bg {
   position: fixed;
