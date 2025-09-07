@@ -1627,6 +1627,10 @@
 .standings-list--scores .standings-row-header {
   grid-template-columns: auto auto auto 0.4fr 1.2fr 6.5rem;
 }
+/* Standings page variant: hide PPG column entirely when not applicable */
+.standings-list.standings-list--no-ppg .standings-row-header {
+  grid-template-columns: auto auto auto 1fr 6.5rem; /* remove PPG column */
+}
 .standings-activity {
   display: flex;
   gap: 0.6rem;

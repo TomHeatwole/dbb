@@ -292,14 +292,20 @@ function LeagueStandings() {
   }
 
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
-  const showPpgColumn = completedWeeks > 1;
+  const showPpgColumn = (season === CURRENT_YEAR) ? (completedWeeks > 1) : (completedWeeks > 0);
 
   function computeCompletedWeeksPpg(weeksArr, rosterId, capWeeks = null) {
-    const currentWeekNum = getCurrentNFLWeek();
     const baseCap = (weeksArr ? weeksArr.filter(Boolean).length : 0);
     const limit = capWeeks != null ? Math.min(baseCap, capWeeks) : baseCap;
-    const completedOnly = Math.max(0, Math.min(completedWeeks, currentWeekNum - 1, limit));
-    const effectiveCompleted = completedOnly;
+    let effectiveCompleted = 0;
+    if (season === CURRENT_YEAR) {
+      const currentWeekNum = getCurrentNFLWeek();
+      const completedOnly = Math.max(0, Math.min(completedWeeks, currentWeekNum - 1, limit));
+      effectiveCompleted = completedOnly;
+    } else {
+      // Previous seasons: all scheduled weeks are completed
+      effectiveCompleted = Math.max(0, Math.min(completedWeeks, limit));
+    }
     if (effectiveCompleted === 0) { return 0; }
     const sum = sumPointsForWeeks((weeksArr || []).slice(0, effectiveCompleted), rosterId, { applyCurrentWeekOverride: false });
     return Math.round((sum / effectiveCompleted) * 10) / 10;
@@ -403,7 +409,7 @@ function LeagueStandings() {
               <div className="stat-v1">{typeof highestWeekly.points === 'number' ? `${highestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof highestWeekly.week === 'number' ? (
-                  <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>Week {highestWeekly.week}</Link>
+                  <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>{isMobileView ? `W${highestWeekly.week}` : `Week ${highestWeekly.week}`}</Link>
                 ) : null}
               </div>
               <div className="stat-v3"></div>
@@ -414,7 +420,7 @@ function LeagueStandings() {
               <div className="stat-v1">{typeof highestWeekly.points === 'number' ? `${highestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof highestWeekly.week === 'number' ? (
-                  <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>Week {highestWeekly.week}</Link>
+                  <Link className="standings-inline-link" to={buildWeekLink(highestWeekly.week)}>{`Week ${highestWeekly.week}`}</Link>
                 ) : null}
               </div>
               <div className="stat-v3"></div>
@@ -427,7 +433,7 @@ function LeagueStandings() {
               <div className="stat-v1">{typeof lowestWeekly.points === 'number' ? `${lowestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof lowestWeekly.week === 'number' ? (
-                  <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>Week {lowestWeekly.week}</Link>
+                  <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>{isMobileView ? `W${lowestWeekly.week}` : `Week ${lowestWeekly.week}`}</Link>
                 ) : null}
               </div>
               <div className="stat-v3"></div>
@@ -438,7 +444,7 @@ function LeagueStandings() {
               <div className="stat-v1">{typeof lowestWeekly.points === 'number' ? `${lowestWeekly.points} pts` : 'N/A'}</div>
               <div className="stat-v2">
                 {typeof lowestWeekly.week === 'number' ? (
-                  <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>Week {lowestWeekly.week}</Link>
+                  <Link className="standings-inline-link" to={buildWeekLink(lowestWeekly.week)}>{`Week ${lowestWeekly.week}`}</Link>
                 ) : null}
               </div>
               <div className="stat-v3"></div>
