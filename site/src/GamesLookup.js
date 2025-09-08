@@ -131,6 +131,18 @@ export async function fetchNflScoreboard(season, week) {
           }
         }
       }
+      // For active current week, enforce 60s TTL
+      if (!PAUSE_SCRAPES && isActiveWeek) {
+        const ageMs = Date.now() - (cached.ts || 0);
+        if (ageMs > 60 * 1000) {
+          try {
+            const refreshed = await fetchJson(url, cacheKey);
+            return refreshed;
+          } catch (_) {
+            return cached.data;
+          }
+        }
+      }
       return cached.data;
     }
   } catch (_) {}
