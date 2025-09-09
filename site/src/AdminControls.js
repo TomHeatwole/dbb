@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { deleteAllPlayerData, deletePlayerWeek, readAdminBlob, writeAdminBlob, readApiCacheLatestByKey, writeApiCacheWithKey } from './database';
+import { deleteAllPlayerData, deletePlayerWeek, readAdminBlob, writeAdminBlob, readApiCacheLatestByKey, writeApiCacheWithKey, backupLatestData, clearCacheKeepLatest } from './database';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { LEAGUE_ID } from './global_constants';
 
@@ -171,6 +171,40 @@ function AdminControls() {
               Update
             </button>
             {adminStatus ? <span className="admin-status">{adminStatus}</span> : null}
+          </div>
+        </div>
+        <div className="admin-tool-block">
+          <h2>Backups</h2>
+          <div className="admin-inline-form">
+            <button
+              type="button"
+              className="admin-button"
+              onClick={async () => {
+                try {
+                  const r = await backupLatestData();
+                  alert(`Backup created at ${r && r.path ? r.path : 'unknown path'}`);
+                } catch (e) {
+                  alert('Backup failed');
+                }
+              }}
+            >
+              Create Backup Now
+            </button>
+            <button
+              type="button"
+              className="admin-button admin-button-danger"
+              onClick={async () => {
+                if (!window.confirm('This will delete old cached entries across the DB, keeping only the most recent per key. Proceed?')) return;
+                try {
+                  const summary = await clearCacheKeepLatest();
+                  alert(`Cache cleared. Backup at ${summary.backupPath}. Removed ${summary.removed.length} entries.`);
+                } catch (e) {
+                  alert('Clear cache failed');
+                }
+              }}
+            >
+              Clear Cache (keep latest)
+            </button>
           </div>
         </div>
         <div className="admin-tool-block">

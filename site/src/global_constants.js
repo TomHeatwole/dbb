@@ -36,3 +36,5 @@ export const USE_FAKE_EXAMPLE_DATA = false;
 export const FAKE_SCOREBOARD_PATH = parsedSettings.FAKE_SCOREBOARD_PATH || '/fake_data/espn_scores_api.txt';
 // Optional debug logging for scores polling/deltas
 export const DEBUG_SCORES_LOG = false;
+// Usage logging toggle (default off)
+export const ENABLE_USAGE_LOGS = !!parsedSettings.ENABLE_USAGE_LOGS;

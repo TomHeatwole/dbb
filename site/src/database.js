@@ -330,6 +330,107 @@ export async function writeAdminBlob(value) {
   return true;
 }
 
+// Backup: snapshot latest entries of common scraped keys into backups/{ts}
+export async function backupLatestData() {
+  const db = getDb();
+  const ts = Date.now();
+  const backupPath = `backups/${ts}`;
+  const out = { createdAt: new Date(ts).toISOString() };
+
+  // 1) Sleeper weekly matchups (detect any keys under api_cache starting with sleeper_v1_league_)
+  try {
+    const rootSnap = await get(ref(db, 'api_cache'));
+    if (rootSnap && rootSnap.exists()) {
+      const val = rootSnap.val() || {};
+      const latestByKey = {};
+      for (const key of Object.keys(val)) {
+        if (!/^sleeper_v1_league_/.test(key) && !/^espn_site_v2_sports_football_nfl_scoreboard_/.test(key)) { continue; }
+        const entries = val[key] || {};
+        const list = Object.entries(entries)
+          .map(([t, v]) => ({ ts: Number(t), value: v }))
+          .filter(e => e && !isNaN(e.ts))
+          .sort((a, b) => b.ts - a.ts);
+        if (list[0]) { latestByKey[key] = list[0].value; }
+      }
+      out.api_cache = latestByKey;
+    }
+  } catch (_) {}
+
+  // 2) Players: copy latest snapshot for current season per week that exists
+  try {
+    const root = await get(ref(db, '/'));
+    const all = root && root.exists() ? (root.val() || {}) : {};
+    const playerKeys = Object.keys(all).filter(k => /^players_\d{4}_week_\d{1,2}$/.test(k));
+    const playersOut = {};
+    for (const pk of playerKeys) {
+      try {
+        const snap = await get(ref(db, pk));
+        if (snap && snap.exists()) {
+          const entries = Object.entries(snap.val() || {})
+            .map(([t, v]) => ({ ts: Number(t), value: v }))
+            .filter(e => e && !isNaN(e.ts))
+            .sort((a, b) => b.ts - a.ts);
+          if (entries[0]) { playersOut[pk] = entries[0].value; }
+        }
+      } catch (_) {}
+    }
+    out.players = playersOut;
+  } catch (_) {}
+
+  await set(ref(db, backupPath), out);
+  return { path: backupPath };
+}
+
+// Clear cache: backup latest first, then remove all but most recent timestamp entry per key
+export async function clearCacheKeepLatest() {
+  const db = getDb();
+  const backup = await backupLatestData();
+  const summary = { backupPath: backup && backup.path ? backup.path : null, removed: [] };
+
+  // Helper to prune a subtree with numeric timestamp children
+  async function pruneChildren(basePath) {
+    try {
+      const snap = await get(ref(db, basePath));
+      if (!snap || !snap.exists()) { return; }
+      const val = snap.val() || {};
+      const entries = Object.keys(val)
+        .map(ts => ({ ts: Number(ts), key: ts }))
+        .filter(e => !isNaN(e.ts))
+        .sort((a, b) => b.ts - a.ts);
+      if (entries.length <= 1) { return; }
+      const toRemove = entries.slice(1); // keep most recent only
+      for (const r of toRemove) {
+        try {
+          await remove(ref(db, `${basePath}/${r.key}`));
+          summary.removed.push(`${basePath}/${r.key}`);
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  // 1) api_cache/*
+  try {
+    const apiSnap = await get(ref(db, 'api_cache'));
+    if (apiSnap && apiSnap.exists()) {
+      const keys = Object.keys(apiSnap.val() || {});
+      for (const k of keys) {
+        await pruneChildren(`api_cache/${k}`);
+      }
+    }
+  } catch (_) {}
+
+  // 2) players_*_week_* subtrees
+  try {
+    const root = await get(ref(db, '/'));
+    const all = root && root.exists() ? (root.val() || {}) : {};
+    const playerKeys = Object.keys(all).filter(k => /^players_\d{4}_week_\d{1,2}$/.test(k));
+    for (const pk of playerKeys) {
+      await pruneChildren(pk);
+    }
+  } catch (_) {}
+
+  return summary;
+}
 // Usage tracking: log page loads with path, ip, and timestamp
 export async function logUsage(event) {
   try {

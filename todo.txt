@@ -6,3 +6,4 @@
 - Update player card with stats for previous games
 - Update scores with player stats for previous weeks
 - (fix) Incorporate when player changes team - used to work, now I see Brian Robinson 2024 as SF
+- update DB rules

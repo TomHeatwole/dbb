@@ -1,4 +1,5 @@
 import { logUsage } from './database';
+import { ENABLE_USAGE_LOGS } from './global_constants';
 
 async function fetchIp(timeoutMs = 1500) {
   try {
@@ -17,6 +18,7 @@ async function fetchIp(timeoutMs = 1500) {
 
 export async function trackPageLoad() {
   try {
+    if (!ENABLE_USAGE_LOGS) { return; }
     const path = window && window.location ? (window.location.pathname + (window.location.search || '')) : '';
     const ip = await fetchIp();
     await logUsage({ path, ip, ts: Date.now() });
