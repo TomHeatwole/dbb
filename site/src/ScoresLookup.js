@@ -2,7 +2,7 @@ import { LEAGUE_ID, PREVIOUS_YEARS, PAUSE_SCRAPES } from './global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { writeApiCacheWithKey, readApiCacheLatestByKey } from './database';
 
-export async function fetchScoresData(season) {
+export async function fetchScoresData(season, options = {}) {
   // Determine leagueId based on season
   const currentYear = new Date().getFullYear().toString();
   const isCurrentSeason = season === undefined || season === null || season === '' || season === currentYear;
@@ -19,7 +19,8 @@ export async function fetchScoresData(season) {
       if (cached && Array.isArray(cached.data)) {
         const ageMs = Date.now() - (cached.ts || 0);
         const isActiveWeek = (String(season) === String(CURRENT_YEAR)) && (Number(weekNum) === getCurrentNFLWeek());
-        if (!PAUSE_SCRAPES && isActiveWeek && ageMs > 60_000) {
+        const activeWeekTtlMs = isActiveWeek ? (Number(options.activeWeekTtlMs) || 60_000) : null;
+        if (!PAUSE_SCRAPES && isActiveWeek && activeWeekTtlMs != null && ageMs > activeWeekTtlMs) {
           (async () => {
             try {
               const r2 = await fetch(apiUrl);

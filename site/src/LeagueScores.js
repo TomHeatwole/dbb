@@ -3,7 +3,7 @@ import InfoPageWrapper from './InfoPageWrapper';
 import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS, LEAGUE_ID, DEBUG_SCORES_LOG } from './global_constants';
-import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from './DateHelper';
+import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek, shouldPollCurrentWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
@@ -317,9 +317,31 @@ function LeagueScores() {
       if (pollingRef.current) { return; }
       pollingRef.current = true;
       try {
-        const newWeeks = await fetchScoresData(season);
+        // Gate polling based on ESPN schedule/status for current week's games
         const isCurrentSeason = String(season) === String(CURRENT_YEAR);
-        const leagueId = isCurrentSeason ? LEAGUE_ID : PREVIOUS_YEARS[season];
+        const currentWk = getCurrentNFLWeek();
+        const isActiveWeek = isCurrentSeason && (Number(week) === currentWk);
+        let activeWeekTtlMs = null;
+        if (isActiveWeek) {
+          const espnCacheKey = `espn_site_v2_sports_football_nfl_scoreboard_week_${week}_year_${season}_seasontype_2`;
+          let scoreboard = null;
+          try {
+            const latestE = await readApiCacheLatestByKey(espnCacheKey);
+            scoreboard = latestE && latestE.data ? latestE.data : null;
+          } catch (_) {}
+          if (!scoreboard) {
+            try { scoreboard = await fetchNflScoreboard(Number(season), Number(week)); } catch (_) {}
+          }
+          const shouldPoll = shouldPollCurrentWeek(scoreboard);
+          activeWeekTtlMs = shouldPoll ? 60 * 1000 : 60 * 60 * 1000;
+          if (!shouldPoll) {
+            return; // skip this tick if no live or started games
+          }
+        }
+
+        const newWeeks = await fetchScoresData(season, { activeWeekTtlMs });
+        const isCurrentSeason2 = String(season) === String(CURRENT_YEAR);
+        const leagueId = isCurrentSeason2 ? LEAGUE_ID : PREVIOUS_YEARS[season];
         const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;
         let dbEntryTs = null;
         try {
