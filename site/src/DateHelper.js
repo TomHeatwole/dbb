@@ -1,7 +1,7 @@
 // DateHelper.js
 // Utility to get the current year as a string
 
-import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE } from './global_constants';
+import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE, DEBUG_SCORES_LOG } from './global_constants';
 import { readAdminBlob } from './database';
 import { PREVIOUS_YEARS } from './global_constants';
 
@@ -92,11 +92,12 @@ export async function isCurrentWeekCompleted(season = null) {
     const yearStr = String(season || new Date().getFullYear());
     const weekNum = getCurrentNFLWeek(season);
     const admin = await readAdminBlob();
-    if (admin && admin[yearStr] && admin[yearStr][String(weekNum)] && admin[yearStr][String(weekNum)].complete) {
-      return true;
+    if (admin && admin[yearStr] && admin[yearStr][String(weekNum)]) {
+      return admin[yearStr][String(weekNum)] == 'complete';
     }
   } catch (_) {}
-  return isCurrentWeekCompletedByDate(season);
+  const byDate = isCurrentWeekCompletedByDate(season);
+  return byDate;
 }
 
 // Back-compat alias

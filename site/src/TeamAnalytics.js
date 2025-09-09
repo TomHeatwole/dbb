@@ -7,7 +7,7 @@ import PositionAnalytics from './PositionAnalytics';
 import PositionBreakdownTable from './PositionBreakdownTable';
 import PlayerBreakdownTable from './PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from './global_constants';
-import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek } from './DateHelper';
+import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek, isCurrentWeekCompleted } from './DateHelper';
 
 const chartConfigs = [
   { title: 'Weekly Scores', key: 'weeklyScores' },
@@ -108,10 +108,23 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     }
   }));
 
-  // Exclude the current week entirely when viewing the current season
+  // Exclude the current week only if not completed (DB-aware)
   const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
   const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
-  const adjustedEndWeek = isCurrentSeason ? Math.min(endWeek, Math.max(0, currentWeek - 1)) : endWeek;
+  const [currentWeekCompleted, setCurrentWeekCompleted] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const done = await isCurrentWeekCompleted(urlYear || CURRENT_YEAR);
+        if (!cancelled) setCurrentWeekCompleted(!!done);
+      } catch (_) {
+        if (!cancelled) setCurrentWeekCompleted(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [urlYear]);
+  const adjustedEndWeek = isCurrentSeason && !currentWeekCompleted ? Math.min(endWeek, Math.max(0, currentWeek - 1)) : endWeek;
   const adjustedStartWeek = isCurrentSeason ? Math.min(startWeek, adjustedEndWeek) : startWeek;
 
   // When urlYear changes (season switch), reset start/end state to component defaults

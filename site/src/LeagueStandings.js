@@ -4,7 +4,7 @@ import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
-import { getCurrentNFLWeek, getCompletedWeeksCount } from './DateHelper';
+import { getCurrentNFLWeek, getCompletedWeeksCount, isCurrentWeekCompleted } from './DateHelper';
 import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
@@ -32,6 +32,27 @@ function LeagueStandings() {
   const isMobile = useIsMobile();
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
+
+  // Season/week context and DB-aware completed weeks
+  const isCurrentSeason = season === CURRENT_YEAR;
+  const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
+  const completedWeeksBase = isCurrentSeason ? getCompletedWeeksCount() : getCompletedWeeksCount(season);
+  const [completedWeeks, setCompletedWeeks] = useState(completedWeeksBase);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!isCurrentSeason) { setCompletedWeeks(completedWeeksBase); return; }
+      try {
+        const done = await isCurrentWeekCompleted();
+        const cw = getCurrentNFLWeek();
+        const val = done ? Math.max(completedWeeksBase, cw) : completedWeeksBase;
+        if (!cancelled) setCompletedWeeks(val);
+      } catch (_) {
+        if (!cancelled) setCompletedWeeks(completedWeeksBase);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [season]);
 
   useEffect(() => {
     trackPageLoad();
@@ -232,9 +253,6 @@ function LeagueStandings() {
   const standings14 = getStandings(weeksFirst14) || [];
 
   // Determine if we should apply playoff logic
-  const isCurrentSeason = season === CURRENT_YEAR;
-  const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
-  const completedWeeks = isCurrentSeason ? getCompletedWeeksCount() : getCompletedWeeksCount(season);
   const effectiveCompletedWeeks = Math.max(1, completedWeeks);
   const weeksCompletedArr = Array.isArray(weeksParsedData) ? weeksParsedData.slice(0, effectiveCompletedWeeks).filter(Boolean) : [];
   const standingsCompleted = getStandings(weeksCompletedArr) || [];

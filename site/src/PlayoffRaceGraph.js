@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { isCurrentWeekCompleted } from './DateHelper';
 import useIsMobile from './useIsMobile';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea } from 'recharts';
 
