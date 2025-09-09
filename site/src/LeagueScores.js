@@ -580,6 +580,12 @@ function LeagueScores() {
                         <span className="standings-activity-item">In-Play: {activeCount}</span>
                       </span>
                     ) : null}
+                    {isActiveWeek && isMobile ? (
+                      <div className="standings-activity standings-activity-mobile">
+                        <span className="standings-activity-item">Yet to Play: {yetToPlayCount}</span>
+                        <span className="standings-activity-item">In-Play: {activeCount}</span>
+                      </div>
+                    ) : null}
                     <span className={`standings-total${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}>{Math.round(points * 10) / 10} pts</span>
                   </button>
                   {isExpanded && (

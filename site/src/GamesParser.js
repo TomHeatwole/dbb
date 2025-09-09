@@ -148,10 +148,10 @@ export function getGameDisplayForTeam(event, teamAbbr) {
   }
 
   if (state === 'post') {
-    const win = isFinite(sSelf) && isFinite(sOpp) ? (sSelf > sOpp) : (self && self.winner === true);
-    const wl = win ? 'W' : 'L';
     const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
-    return { text: `${wl} ${scoreStr} ${perspective}`.trim(), live: false, completed: true };
+    const finalLabel = 'Final';
+    // New format: "@ BUF 40-41, Final" (perspective first, score, Final)
+    return { text: `${finalLabel} ${scoreStr} ${perspective}  `.trim(), live: false, completed: true };
   }
   if (state === 'in') {
     const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
