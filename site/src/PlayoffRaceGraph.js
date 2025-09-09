@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
 import { isCurrentWeekCompleted } from './DateHelper';
+import { StartSitSort } from './StartSitDecider';
+import { getWeekScoreBreakdown } from './ScoresParser';
 import useIsMobile from './useIsMobile';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea } from 'recharts';
 
-function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds) {
+function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds, playersData, playerIdMap) {
   if (!Array.isArray(weeksParsedData) || completedWeeks <= 0) {
     return { data: [], rosterIds: Array.from(rosterIds || []) };
   }
@@ -21,12 +23,20 @@ function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds) {
   const cappedWeeks = Math.max(0, Math.min(14, completedWeeks));
   for (let w = 1; w <= cappedWeeks; w += 1) {
     const weekEntries = weeksParsedData[w - 1] || [];
+    const breakdown = getWeekScoreBreakdown(weeksParsedData, w) || {};
     for (const entry of weekEntries) {
-      if (entry && entry.roster_id != null && typeof entry.points === 'number') {
-        const rid = Number(entry.roster_id);
-        if (cumulative[rid] == null) { cumulative[rid] = 0; }
-        cumulative[rid] += entry.points;
+      if (!entry || entry.roster_id == null) { continue; }
+      const rid = Number(entry.roster_id);
+      if (cumulative[rid] == null) { cumulative[rid] = 0; }
+      const raw = breakdown[rid];
+      let pts = 0;
+      if (raw) {
+        const computed = StartSitSort(raw, playersData, playerIdMap);
+        pts = computed && typeof computed.starterTotal === 'number' ? computed.starterTotal : 0;
+      } else if (typeof entry.points === 'number') {
+        pts = entry.points;
       }
+      cumulative[rid] += pts;
     }
 
     // Determine playoff bar for this week based on cumulative totals
@@ -81,7 +91,7 @@ function computeRoundedYDomain(data, seriesRosterIds) {
   return [floor, ceil];
 }
 
-export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rosterIdToName, rosterIds }) {
+export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rosterIdToName, rosterIds, playersData, playerIdMap }) {
   const isMobile = useIsMobile();
   function abbreviateTeamName(name) {
     if (!isMobile) { return name; }
@@ -98,8 +108,8 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
   }
   const rosterIdSet = useMemo(() => new Set(rosterIds || Object.keys(rosterIdToName || {}).map(Number)), [rosterIds, rosterIdToName]);
   const { data, rosterIds: seriesRosterIds } = useMemo(
-    () => computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIdSet),
-    [weeksParsedData, completedWeeks, rosterIdSet]
+    () => computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIdSet, playersData, playerIdMap),
+    [weeksParsedData, completedWeeks, rosterIdSet, playersData, playerIdMap]
   );
 
   const [yMinRaw, yMaxRaw] = useMemo(() => computeRoundedYDomain(data, seriesRosterIds), [data, seriesRosterIds]);

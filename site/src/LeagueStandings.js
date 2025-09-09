@@ -619,6 +619,8 @@ function LeagueStandings() {
         weeksParsedData={weeksParsedData}
         completedWeeks={completedWeeks}
         rosterIdToName={Object.fromEntries((rosters || []).map(r => [Number(r.roster_id), getTeamName(r.roster_id)]))}
+        playersData={playersData}
+        playerIdMap={playerIdMap}
       />
     </InfoPageWrapper>
   );

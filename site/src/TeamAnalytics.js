@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell } from 'recharts';
-import { getWeeklyStandings, getPositionalBreakdownData } from './ScoresParser';
+import { getWeeklyStandings, getPositionalBreakdownData, getWeekScoreBreakdown } from './ScoresParser';
+import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
 import PositionAnalytics from './PositionAnalytics';
 import PositionBreakdownTable from './PositionBreakdownTable';
@@ -189,11 +190,22 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     return endWeek;
   }, [endWeek, urlYear]);
 
-  // Build data for the chart
+  // Build data for the chart using StartSit totals per week
   const weeklyScoresData = weeklyStandings.map((weekArr, i) => {
-    // Sort by points descending (already sorted in getWeeklyStandings)
-    const user = weekArr.find(x => x.rosterId === rosterId);
-    const pointsArr = weekArr.map(x => x.points).sort((a, b) => b - a);
+    const weekNum = adjustedStartWeek + i;
+    const breakdown = getWeekScoreBreakdown(weeksParsedData, weekNum) || {};
+    const computedWeek = weekArr.map(row => {
+      const rid = row.rosterId;
+      const raw = breakdown[rid];
+      let pts = row.points;
+      if (raw) {
+        const computed = StartSitSort(raw, playersData, playerIdMap);
+        pts = computed && typeof computed.starterTotal === 'number' ? computed.starterTotal : pts;
+      }
+      return { rosterId: rid, points: pts };
+    });
+    const user = computedWeek.find(x => x.rosterId === rosterId);
+    const pointsArr = computedWeek.map(x => x.points).sort((a, b) => b - a);
     const leagueCeiling = pointsArr.length ? pointsArr[0] : 0;
     const leagueFloor = pointsArr.length ? pointsArr[pointsArr.length - 1] : 0;
     // Median: average of 5th and 6th place (0-based: 4 and 5)
@@ -206,7 +218,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
       leagueMedian = pointsArr[mid];
     }
     return {
-      name: `Week ${adjustedStartWeek + i}`,
+      name: `Week ${weekNum}`,
       points: user ? user.points : 0,
       leagueCeiling,
       leagueFloor,
