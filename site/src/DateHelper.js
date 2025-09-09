@@ -89,3 +89,37 @@ export const getDefaultDisplayWeek = function(season) {
   const isCurrentSeason = season === CURRENT_YEAR || season === null;
   return isCurrentSeason ? getCurrentNFLWeek() : 17;
 };
+
+// Decide if we should poll current week's data based on ESPN scoreboard json
+// Conditions:
+// 1) Any game shows an in-progress status
+// 2) Any game start time is <= now (kickoff reached)
+export function shouldPollCurrentWeek(espnScoreboardJson) {
+  try {
+    if (!espnScoreboardJson || !Array.isArray(espnScoreboardJson.events)) { return false; }
+    const now = Date.now();
+    for (const ev of espnScoreboardJson.events) {
+      const comps = ev && ev.competitions;
+      const comp = Array.isArray(comps) && comps.length ? comps[0] : null;
+      if (!comp) { continue; }
+      // Status check
+      const status = comp.status || (ev && ev.status) || null;
+      const type = status && status.type ? status.type : (ev && ev.status && ev.status.type ? ev.status.type : null);
+      const state = type && type.state ? String(type.state).toLowerCase() : '';
+      if (state === 'in' || state === 'inprogress' || state === 'in_progress' || state === 'live') {
+        return true;
+      }
+      // Kickoff time check
+      const dateStr = comp.date || ev && ev.date;
+      if (dateStr) {
+        const kick = Date.parse(dateStr);
+        if (!isNaN(kick) && kick <= now) {
+          return true;
+        }
+      }
+    }
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
