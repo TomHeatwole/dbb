@@ -247,7 +247,18 @@ function LeagueStandings() {
     .sort((a, b) => a.place - b.place)
     .slice(0, 4)
     .map(r => r.roster_id);
-  const top4Set = new Set(top4Ids);
+  // When in current season pre-playoffs, highlight top 4 by the same live-inclusive totals used for ordering
+  let top4Set = new Set(top4Ids);
+  if (!usePlayoffLogic && season === CURRENT_YEAR) {
+    const othersWeeks = usePlayoffLogic ? weeksCount14 : effectiveCompletedWeeks;
+    const othersWeeksLive = Math.min(17, othersWeeks + 1);
+    const liveTotalsAll = (standingsCompleted || []).map((r) => ({
+      roster_id: r.roster_id,
+      total: sumPointsForWeeks((weeksParsedData || []).slice(0, othersWeeksLive), r.roster_id)
+    })).sort((a, b) => b.total - a.total);
+    const liveTop4 = liveTotalsAll.slice(0, 4).map(x => x.roster_id);
+    top4Set = new Set(liveTop4);
+  }
 
   // Compute playoff points for weeks 15-17 and build playoff display rows
   const top4Display = usePlayoffLogic ? top4Ids
