@@ -2,9 +2,9 @@
 // Utility to look up player info by ID from a provided player data object
 
 import { PLAYER_ESPN_MAP_OVERRIDES } from './global_constants';
-import { updatePlayers, readCurrentWeekPlayersSnapshot } from './database';
+import { updatePlayers, readCurrentWeekPlayersSnapshot, readPlayersSnapshot } from './database';
 import { fetchScoresData } from './ScoresLookup';
-import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted } from './DateHelper';
 
 const cachedPlayersDataByKey = {};
 let cachedPlayerIdMap = null;
@@ -16,13 +16,14 @@ function getCacheKey(rostersOrSeason) {
   return 'current';
 }
 
-export async function fetchPlayersData(rostersOrSeason = null) {
+export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
   const cacheKey = getCacheKey(rostersOrSeason);
   if (cachedPlayersDataByKey[cacheKey]) { return cachedPlayersDataByKey[cacheKey]; }
   // Allow passing a season string instead of rosters to force legacy path
   let rosters = Array.isArray(rostersOrSeason) ? rostersOrSeason : null;
   const maybeSeason = !Array.isArray(rostersOrSeason) && rostersOrSeason != null ? String(rostersOrSeason) : null;
   const effectiveSeason = maybeSeason || CURRENT_YEAR;
+  const requestedWeek = Number(opts.week);
   if (String(effectiveSeason) === '2024') {
     const res = await fetch('/data/players.txt');
     if (!res.ok) throw new Error('Failed to fetch player data');
@@ -30,10 +31,17 @@ export async function fetchPlayersData(rostersOrSeason = null) {
     cachedPlayersDataByKey[cacheKey] = data;
     return cachedPlayersDataByKey[cacheKey];
   }
-  // Try to read current week's snapshot first
-  const current = await readCurrentWeekPlayersSnapshot();
+  // Try to read snapshot based on requested week (for historical view) or current week
+  const currentWeek = getCurrentNFLWeek();
+  const shouldUsePrevWeek = Number.isFinite(requestedWeek) && requestedWeek < currentWeek && String(effectiveSeason) === String(CURRENT_YEAR);
+  const current = shouldUsePrevWeek
+    ? await readPlayersSnapshot(CURRENT_YEAR, requestedWeek)
+    : await readCurrentWeekPlayersSnapshot();
   const hasSnapshot = current && current.snapshot && current.snapshot.data && Object.keys(current.snapshot.data).length > 0;
-  const isFresh = hasSnapshot && Number.isFinite(current.ageMs) && current.ageMs <= 60 * 60 * 1000;
+  const weekCompleted = await isCurrentWeekCompleted(CURRENT_YEAR);
+  const isFresh = hasSnapshot && (
+    weekCompleted || (Number.isFinite(current.ageMs) && current.ageMs <= 60 * 60 * 1000)
+  );
   if (hasSnapshot && isFresh) {
     cachedPlayersDataByKey[cacheKey] = current.snapshot.data;
     return cachedPlayersDataByKey[cacheKey];
@@ -51,7 +59,7 @@ export async function fetchPlayersData(rostersOrSeason = null) {
       // ignore and fall through
     }
   }
-  if (rosters && Array.isArray(rosters)) {
+  if (!weekCompleted && !shouldUsePrevWeek && rosters && Array.isArray(rosters)) {
     // eslint-disable-next-line no-console
     console.log('[players] snapshot missing/stale; computing cared IDs from rosters', { rostersCount: rosters.length });
     const caredSet = new Set();
@@ -72,6 +80,7 @@ export async function fetchPlayersData(rostersOrSeason = null) {
     cachedPlayersDataByKey[cacheKey] = data;
     return cachedPlayersDataByKey[cacheKey];
   }
+  // If week is completed, never write new snapshots; return last known snapshot (or empty)
   // No rosters yet: if no snapshot or snapshot empty, do not blind fetch; return empty
   cachedPlayersDataByKey[cacheKey] = hasSnapshot ? current.snapshot.data : {};
   return cachedPlayersDataByKey[cacheKey];

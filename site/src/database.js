@@ -254,6 +254,30 @@ export async function readCurrentWeekPlayersSnapshot() {
   return { path: basePath, snapshot: null, ageMs: Infinity };
 }
 
+// Read latest players snapshot for a specific season/week (regardless of TTL)
+export async function readPlayersSnapshot(season, week) {
+  const seasonStr = String(season || CURRENT_YEAR);
+  const weekNum = Number(week);
+  const basePath = `players_${seasonStr}_week_${weekNum}`;
+  try {
+    const weekSnap = await get(ref(getDb(), basePath));
+    if (weekSnap && weekSnap.exists()) {
+      const all = weekSnap.val() || {};
+      const entries = Object.entries(all)
+        .map(([ts, value]) => ({ ts: Number(ts), value }))
+        .filter(e => e && !isNaN(e.ts))
+        .sort((a, b) => b.ts - a.ts);
+      const latest = entries[0];
+      if (latest && latest.value) {
+        const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
+        const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+        return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, ageMs };
+      }
+    }
+  } catch (_) {}
+  return { path: basePath, snapshot: null, ageMs: Infinity };
+}
+
 // Admin: delete all player snapshots (players_* keys at root)
 export async function deleteAllPlayerData() {
   const db = getDb();

@@ -3,7 +3,7 @@ import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
-import { getPlayerInfo } from './PlayerLookup';
+import { getPlayerInfo, fetchPlayersData } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
@@ -77,9 +77,29 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
 
   const handleSelect = w => setWeek(w);
 
+  // When viewing a previous week in the current season, prefer that week's player snapshot
+  const seasonIsCurrent = String(season) === String(CURRENT_YEAR);
+  const currentWk = getCurrentNFLWeek(CURRENT_YEAR);
+  const preferHistoricalPlayers = seasonIsCurrent && Number(week) < currentWk;
+  const [playersDataForWeek, setPlayersDataForWeek] = useState(playersData);
+  useEffect(() => {
+    let cancelled = false;
+    if (preferHistoricalPlayers) {
+      (async () => {
+        try {
+          const hist = await fetchPlayersData(null, { week });
+          if (!cancelled && hist) { setPlayersDataForWeek(hist); }
+        } catch (_) {}
+      })();
+    } else {
+      setPlayersDataForWeek(playersData);
+    }
+    return () => { cancelled = true; };
+  }, [preferHistoricalPlayers, week, playersData]);
+
   // Get week breakdown for this roster
   const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
-  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersData, playerIdMap) : null;
+  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap) : null;
 
   const InjuryBadge = ({ info }) => {
     if (!showCurrentInjury || !info) { return null; }
@@ -93,7 +113,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   };
 
   const benchRows = weekBreakdown ? [...weekBreakdown.bench].map((p) => {
-    const info = getPlayerInfo(p.id, playersData, playerIdMap);
+    const info = getPlayerInfo(p.id, playersDataForWeek, playerIdMap);
     const status = showCurrentInjury && info ? (info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null)) : null;
     const ab = status ? getInjuryAbbreviation(status) : null;
     const isDeprioritized = ab === 'O' || ab === 'P' || ab === 'PUP' || ab === 'IR';
