@@ -21,6 +21,7 @@ function getFirebaseApp() {
   if (!getApps().length) {
     initializeApp(firebaseConfig);
   }
+  console.log(firebaseConfig);
   return getApps()[0];
 }
 
@@ -64,11 +65,10 @@ export async function writeApiCache(url, payload) {
   try {
     const db = getDb();
     const key = buildCacheKeyFromUrl(url);
-    const ts = Date.now();
-    const path = `api_cache/${key}/${ts}`;
+    const path = `api_cache/${key}`;
     const entry = {
       url,
-      fetchedAt: new Date(ts).toISOString(),
+      fetchedAt: new Date().toISOString(),
       data: payload,
     };
     await set(ref(db, path), entry);
@@ -83,11 +83,10 @@ export async function writeApiCacheWithKey(cacheKey, url, payload) {
   try {
     const db = getDb();
     const key = cacheKey || buildCacheKeyFromUrl(url);
-    const ts = Date.now();
-    const path = `api_cache/${key}/${ts}`;
+    const path = `api_cache/${key}`;
     const entry = {
       url,
-      fetchedAt: new Date(ts).toISOString(),
+      fetchedAt: new Date().toISOString(),
       data: payload,
     };
     await set(ref(db, path), entry);
@@ -104,16 +103,11 @@ export async function readApiCacheFresh(url, maxAgeMs = 60_000) {
     const base = ref(db, `api_cache/${key}`);
     const snap = await get(base);
     if (!snap.exists()) { return null; }
-    const all = snap.val() || {};
-    const entries = Object.entries(all)
-      .map(([ts, value]) => ({ ts: Number(ts), value }))
-      .filter(e => e && !isNaN(e.ts))
-      .sort((a, b) => b.ts - a.ts);
-    const latest = entries[0];
-    if (!latest) { return null; }
-    const age = Date.now() - latest.ts;
-    if (age <= maxAgeMs && latest.value && latest.value.data !== undefined) {
-      return { key, ts: latest.ts, data: latest.value.data };
+    const val = snap.val() || {};
+    const fetchedAtMs = val && val.fetchedAt ? Date.parse(val.fetchedAt) : NaN;
+    const age = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+    if (age <= maxAgeMs && val && val.data !== undefined) {
+      return { key, ts: fetchedAtMs, data: val.data };
     }
     return null;
   } catch (_) {
@@ -128,14 +122,10 @@ export async function readApiCacheLatest(url) {
     const base = ref(db, `api_cache/${key}`);
     const snap = await get(base);
     if (!snap.exists()) { return null; }
-    const all = snap.val() || {};
-    const entries = Object.entries(all)
-      .map(([ts, value]) => ({ ts: Number(ts), value }))
-      .filter(e => e && !isNaN(e.ts))
-      .sort((a, b) => b.ts - a.ts);
-    const latest = entries[0];
-    if (!latest || !latest.value) { return null; }
-    return { key: buildCacheKeyFromUrl(url), ts: latest.ts, data: latest.value.data };
+    const val = snap.val() || {};
+    const fetchedAtMs = val && val.fetchedAt ? Date.parse(val.fetchedAt) : NaN;
+    if (!val || val.data === undefined) { return null; }
+    return { key: buildCacheKeyFromUrl(url), ts: fetchedAtMs, data: val.data };
   } catch (_) {
     return null;
   }
@@ -147,14 +137,10 @@ export async function readApiCacheLatestByKey(cacheKey) {
     const base = ref(db, `api_cache/${cacheKey}`);
     const snap = await get(base);
     if (!snap.exists()) { return null; }
-    const all = snap.val() || {};
-    const entries = Object.entries(all)
-      .map(([ts, value]) => ({ ts: Number(ts), value }))
-      .filter(e => e && !isNaN(e.ts))
-      .sort((a, b) => b.ts - a.ts);
-    const latest = entries[0];
-    if (!latest || !latest.value) { return null; }
-    return { key: cacheKey, ts: latest.ts, data: latest.value.data };
+    const val = snap.val() || {};
+    const fetchedAtMs = val && val.fetchedAt ? Date.parse(val.fetchedAt) : NaN;
+    if (!val || val.data === undefined) { return null; }
+    return { key: cacheKey, ts: fetchedAtMs, data: val.data };
   } catch (_) {
     return null;
   }
@@ -344,13 +330,14 @@ export async function backupLatestData() {
       const val = rootSnap.val() || {};
       const latestByKey = {};
       for (const key of Object.keys(val)) {
-        if (!/^sleeper_v1_league_/.test(key) && !/^espn_site_v2_sports_football_nfl_scoreboard_/.test(key)) { continue; }
-        const entries = val[key] || {};
-        const list = Object.entries(entries)
-          .map(([t, v]) => ({ ts: Number(t), value: v }))
-          .filter(e => e && !isNaN(e.ts))
-          .sort((a, b) => b.ts - a.ts);
-        if (list[0]) { latestByKey[key] = list[0].value; }
+        const isSleeper = /^sleeper_v1_league_/.test(key);
+        const isEspn = /^espn_.*_sports_football_nfl_scoreboard_/.test(key) || /^espn_.*_scoreboard_/.test(key);
+        if (!isSleeper && !isEspn) { continue; }
+        // New format: value is the latest object directly under the key
+        const entry = val[key];
+        if (entry && typeof entry === 'object') {
+          latestByKey[key] = entry;
+        }
       }
       out.api_cache = latestByKey;
     }

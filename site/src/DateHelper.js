@@ -92,8 +92,10 @@ export async function isCurrentWeekCompleted(season = null) {
     const yearStr = String(season || new Date().getFullYear());
     const weekNum = getCurrentNFLWeek(season);
     const admin = await readAdminBlob();
-    if (admin && admin[yearStr] && admin[yearStr][String(weekNum)]) {
-      return admin[yearStr][String(weekNum)] == 'complete';
+    // New schema: admin holds arrays like "2025_completed_weeks": [1,2,...]
+    const completedKey = `${yearStr}_completed_weeks`;
+    if (admin && Array.isArray(admin[completedKey])) {
+      return admin[completedKey].includes(Number(weekNum));
     }
   } catch (_) {}
   const byDate = isCurrentWeekCompletedByDate(season);
