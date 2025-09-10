@@ -17,7 +17,7 @@ import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from './GamesParser';
 import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './InjuryLookup';
-import { readApiCacheLatestByKey } from './database';
+import { readApiCacheLatestByKey, readPollingIntervalMs } from './database';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -310,7 +310,8 @@ function LeagueScores() {
   // Poll for score updates every 15s only when tab is visible/focused; run an immediate tick on return
   useEffect(() => {
     let cancelled = false;
-    const intervalMs = 15000;
+    let intervalMs = 15000;
+    (async () => { try { intervalMs = await readPollingIntervalMs(); } catch (_) {} })();
 
     const tick = async () => {
       if (cancelled || document.visibilityState !== 'visible') { return; }

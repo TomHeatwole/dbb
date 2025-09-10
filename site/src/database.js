@@ -119,13 +119,18 @@ export async function readApiCacheFresh(url, maxAgeMs = 60_000) {
     const db = getDb();
     const key = buildCacheKeyFromUrl(url);
     await ensureSignedIn();
+    // Prefer DB-configured TTL when not explicitly provided
+    let ttlMs = maxAgeMs;
+    if (ttlMs == null) {
+      try { ttlMs = await readDbCacheTtlMs(); } catch (_) { ttlMs = 60_000; }
+    }
     const base = ref(db, `api_cache/${key}`);
     const snap = await get(base);
     if (!snap.exists()) { return null; }
     const val = snap.val() || {};
     const fetchedAtMs = val && val.fetchedAt ? Date.parse(val.fetchedAt) : NaN;
     const age = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-    if (age <= maxAgeMs && val && val.data !== undefined) {
+    if (age <= ttlMs && val && val.data !== undefined) {
       return { key, ts: fetchedAtMs, data: val.data };
     }
     return null;
@@ -173,6 +178,8 @@ export default {
   readApiCacheFresh,
   readApiCacheLatest,
   readApiCacheLatestByKey,
+  readDbCacheTtlMs,
+  readPollingIntervalMs,
   deleteAllPlayerData,
   deletePlayerWeek,
 };
@@ -191,18 +198,11 @@ export async function updatePlayers(caredPlayerIds) {
     await ensureSignedIn();
     const weekSnap = await get(ref(getDb(), basePath));
     if (weekSnap && weekSnap.exists()) {
-      const all = weekSnap.val() || {};
-      const entries = Object.entries(all)
-        .map(([ts, value]) => ({ ts: Number(ts), value }))
-        .filter(e => e && !isNaN(e.ts))
-        .sort((a, b) => b.ts - a.ts);
-      const latest = entries[0];
-      if (latest && latest.value) {
-        const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
-        const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-        if (ageMs <= 60 * 60 * 1000) {
-          return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, skipped: true };
-        }
+      const value = weekSnap.val() || {};
+      const fetchedAtMs = value && value.fetchedAt ? Date.parse(value.fetchedAt) : NaN;
+      const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+      if (ageMs <= 60 * 60 * 1000) {
+        return { path: basePath, snapshot: value, skipped: true };
       }
     }
   } catch (_) {
@@ -223,7 +223,6 @@ export async function updatePlayers(caredPlayerIds) {
     if (!isActive) { continue; }
     filtered[pid] = p;
   }
-  const ts = Date.now();
   const entry = {
     season,
     week,
@@ -234,7 +233,7 @@ export async function updatePlayers(caredPlayerIds) {
   };
   const db = getDb();
   await ensureSignedIn();
-  const writePath = `${basePath}/${ts}`;
+  const writePath = `${basePath}`;
   await set(ref(db, writePath), entry);
   return { path: writePath, snapshot: entry };
 }
@@ -248,17 +247,10 @@ export async function readCurrentWeekPlayersSnapshot() {
     await ensureSignedIn();
     const weekSnap = await get(ref(getDb(), basePath));
     if (weekSnap && weekSnap.exists()) {
-      const all = weekSnap.val() || {};
-      const entries = Object.entries(all)
-        .map(([ts, value]) => ({ ts: Number(ts), value }))
-        .filter(e => e && !isNaN(e.ts))
-        .sort((a, b) => b.ts - a.ts);
-      const latest = entries[0];
-      if (latest && latest.value) {
-        const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
-        const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-        return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, ageMs };
-      }
+      const value = weekSnap.val() || {};
+      const fetchedAtMs = value && value.fetchedAt ? Date.parse(value.fetchedAt) : NaN;
+      const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+      return { path: basePath, snapshot: value, ageMs };
     }
   } catch (_) {}
   return { path: basePath, snapshot: null, ageMs: Infinity };
@@ -273,17 +265,10 @@ export async function readPlayersSnapshot(season, week) {
     await ensureSignedIn();
     const weekSnap = await get(ref(getDb(), basePath));
     if (weekSnap && weekSnap.exists()) {
-      const all = weekSnap.val() || {};
-      const entries = Object.entries(all)
-        .map(([ts, value]) => ({ ts: Number(ts), value }))
-        .filter(e => e && !isNaN(e.ts))
-        .sort((a, b) => b.ts - a.ts);
-      const latest = entries[0];
-      if (latest && latest.value) {
-        const fetchedAtMs = latest.value && latest.value.fetchedAt ? Date.parse(latest.value.fetchedAt) : NaN;
-        const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-        return { path: `${basePath}/${latest.ts}`, snapshot: latest.value, ageMs };
-      }
+      const value = weekSnap.val() || {};
+      const fetchedAtMs = value && value.fetchedAt ? Date.parse(value.fetchedAt) : NaN;
+      const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
+      return { path: basePath, snapshot: value, ageMs };
     }
   } catch (_) {}
   return { path: basePath, snapshot: null, ageMs: Infinity };
@@ -345,6 +330,35 @@ export async function writeAdminBlob(value) {
   return true;
 }
 
+// Config getters: admin/db_cache_ttl and admin/polling_interval
+export async function readDbCacheTtlMs() {
+  try {
+    const db = getDb();
+    await ensureSignedIn();
+    const snap = await get(ref(db, 'admin/db_cache_ttl'));
+    if (!snap.exists()) { return 60_000; }
+    const v = snap.val();
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : 60_000;
+  } catch (_) {
+    return 60_000;
+  }
+}
+
+export async function readPollingIntervalMs() {
+  try {
+    const db = getDb();
+    await ensureSignedIn();
+    const snap = await get(ref(db, 'admin/polling_interval'));
+    if (!snap.exists()) { return 15_000; }
+    const v = snap.val();
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 1000 ? n : 15_000;
+  } catch (_) {
+    return 15_000;
+  }
+}
+
 // Backup: snapshot latest entries of common scraped keys into backups/{ts}
 export async function backupLatestData() {
   const db = getDb();
@@ -383,11 +397,8 @@ export async function backupLatestData() {
       try {
         const snap = await get(ref(db, pk));
         if (snap && snap.exists()) {
-          const entries = Object.entries(snap.val() || {})
-            .map(([t, v]) => ({ ts: Number(t), value: v }))
-            .filter(e => e && !isNaN(e.ts))
-            .sort((a, b) => b.ts - a.ts);
-          if (entries[0]) { playersOut[pk] = entries[0].value; }
+          const value = snap.val() || {};
+          playersOut[pk] = value;
         }
       } catch (_) {}
     }
