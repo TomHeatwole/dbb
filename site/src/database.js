@@ -2,13 +2,14 @@
 // Initializes Firebase app and exposes simple helpers for writing test data.
 
 import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getDatabase, ref, set, get, child, remove } from 'firebase/database';
-import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL } from './global_constants';
+import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL, FIREBASE_LOGIN_EMAIL, FIREBASE_LOGIN_PASSWORD, FIREBASE_API_KEY } from './global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 
-// Use environment variables for secrets/config. CRA exposes REACT_APP_*
+// Use settings-provided API key first, fallback to env
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  apiKey: FIREBASE_API_KEY,
   authDomain: FIREBASE_AUTH_DOMAIN,
   projectId: FIREBASE_PROJECT_ID,
   storageBucket: FIREBASE_STORAGE_BUCKET,
@@ -21,13 +22,28 @@ function getFirebaseApp() {
   if (!getApps().length) {
     initializeApp(firebaseConfig);
   }
-  console.log(firebaseConfig);
   return getApps()[0];
 }
 
 function getDb() {
   const app = getFirebaseApp();
   return getDatabase(app);
+}
+
+let _signInPromise = null;
+async function ensureSignedIn() {
+  try {
+    const auth = getAuth(getFirebaseApp());
+    if (auth.currentUser) { return auth.currentUser; }
+    if (!_signInPromise) {
+      _signInPromise = signInWithEmailAndPassword(auth, FIREBASE_LOGIN_EMAIL, FIREBASE_LOGIN_PASSWORD)
+        .then(cred => cred.user)
+        .catch((e) => { _signInPromise = null; throw e; });
+    }
+    return await _signInPromise;
+  } catch (_) {
+    return null;
+  }
 }
 
 function providerFromHost(hostname) {
@@ -65,6 +81,7 @@ export async function writeApiCache(url, payload) {
   try {
     const db = getDb();
     const key = buildCacheKeyFromUrl(url);
+    await ensureSignedIn();
     const path = `api_cache/${key}`;
     const entry = {
       url,
@@ -83,6 +100,7 @@ export async function writeApiCacheWithKey(cacheKey, url, payload) {
   try {
     const db = getDb();
     const key = cacheKey || buildCacheKeyFromUrl(url);
+    await ensureSignedIn();
     const path = `api_cache/${key}`;
     const entry = {
       url,
@@ -100,6 +118,7 @@ export async function readApiCacheFresh(url, maxAgeMs = 60_000) {
   try {
     const db = getDb();
     const key = buildCacheKeyFromUrl(url);
+    await ensureSignedIn();
     const base = ref(db, `api_cache/${key}`);
     const snap = await get(base);
     if (!snap.exists()) { return null; }
@@ -119,6 +138,7 @@ export async function readApiCacheLatest(url) {
   try {
     const db = getDb();
     const key = buildCacheKeyFromUrl(url);
+    await ensureSignedIn();
     const base = ref(db, `api_cache/${key}`);
     const snap = await get(base);
     if (!snap.exists()) { return null; }
@@ -134,6 +154,7 @@ export async function readApiCacheLatest(url) {
 export async function readApiCacheLatestByKey(cacheKey) {
   try {
     const db = getDb();
+    await ensureSignedIn();
     const base = ref(db, `api_cache/${cacheKey}`);
     const snap = await get(base);
     if (!snap.exists()) { return null; }
@@ -167,6 +188,7 @@ export async function updatePlayers(caredPlayerIds) {
 
   // Check latest entry under the week folder with 1-hour TTL
   try {
+    await ensureSignedIn();
     const weekSnap = await get(ref(getDb(), basePath));
     if (weekSnap && weekSnap.exists()) {
       const all = weekSnap.val() || {};
@@ -211,6 +233,7 @@ export async function updatePlayers(caredPlayerIds) {
     data: filtered,
   };
   const db = getDb();
+  await ensureSignedIn();
   const writePath = `${basePath}/${ts}`;
   await set(ref(db, writePath), entry);
   return { path: writePath, snapshot: entry };
@@ -222,6 +245,7 @@ export async function readCurrentWeekPlayersSnapshot() {
   const week = getCurrentNFLWeek(season);
   const basePath = `players_${season}_week_${week}`;
   try {
+    await ensureSignedIn();
     const weekSnap = await get(ref(getDb(), basePath));
     if (weekSnap && weekSnap.exists()) {
       const all = weekSnap.val() || {};
@@ -246,6 +270,7 @@ export async function readPlayersSnapshot(season, week) {
   const weekNum = Number(week);
   const basePath = `players_${seasonStr}_week_${weekNum}`;
   try {
+    await ensureSignedIn();
     const weekSnap = await get(ref(getDb(), basePath));
     if (weekSnap && weekSnap.exists()) {
       const all = weekSnap.val() || {};
@@ -267,6 +292,7 @@ export async function readPlayersSnapshot(season, week) {
 // Admin: delete all player snapshots (players_* keys at root)
 export async function deleteAllPlayerData() {
   const db = getDb();
+  await ensureSignedIn();
   const rootSnap = await get(ref(db, '/'));
   if (!rootSnap.exists()) { return { deleted: [] }; }
   const val = rootSnap.val() || {};
@@ -295,6 +321,7 @@ export async function deletePlayerWeek(season, week) {
   }
   const path = `players_${seasonStr}_week_${weekNum}`;
   const db = getDb();
+  await ensureSignedIn();
   await remove(ref(db, path));
   return { path };
 }
@@ -305,6 +332,7 @@ export async function deletePlayerWeek(season, week) {
 // Admin JSON blob helpers
 export async function readAdminBlob() {
   const db = getDb();
+  await ensureSignedIn();
   const snap = await get(ref(db, 'admin'));
   if (!snap.exists()) { return null; }
   return snap.val();
@@ -312,6 +340,7 @@ export async function readAdminBlob() {
 
 export async function writeAdminBlob(value) {
   const db = getDb();
+  await ensureSignedIn();
   await set(ref(db, 'admin'), value);
   return true;
 }
@@ -319,6 +348,7 @@ export async function writeAdminBlob(value) {
 // Backup: snapshot latest entries of common scraped keys into backups/{ts}
 export async function backupLatestData() {
   const db = getDb();
+  await ensureSignedIn();
   const ts = Date.now();
   const backupPath = `backups/${ts}`;
   const out = { createdAt: new Date(ts).toISOString() };
@@ -371,6 +401,7 @@ export async function backupLatestData() {
 // Clear cache: backup latest first, then remove all but most recent timestamp entry per key
 export async function clearCacheKeepLatest() {
   const db = getDb();
+  await ensureSignedIn();
   const backup = await backupLatestData();
   const summary = { backupPath: backup && backup.path ? backup.path : null, removed: [] };
 
@@ -424,6 +455,7 @@ export async function logUsage(event) {
     const { path, ip, ts } = event || {};
     if (!path) { return false; }
     const db = getDb();
+    await ensureSignedIn();
     const when = Number.isFinite(ts) ? ts : Date.now();
     const entry = {
       path,

@@ -26,6 +26,9 @@ export const FIREBASE_AUTH_DOMAIN = parsedSettings.FIREBASE_AUTH_DOMAIN || 'N/A'
 export const FIREBASE_PROJECT_ID = parsedSettings.FIREBASE_PROJECT_ID || 'N/A';
 export const FIREBASE_STORAGE_BUCKET = parsedSettings.FIREBASE_STORAGE_BUCKET || 'N/A';
 export const FIREBASE_DATABASE_URL = parsedSettings.FIREBASE_DATABASE_URL || 'N/A';
+export const FIREBASE_API_KEY = parsedSettings.FIREBASE_API_KEY || process.env.REACT_APP_FIREBASE_API_KEY || 'N/A';
+export const FIREBASE_LOGIN_EMAIL = parsedSettings.FIREBASE_LOGIN_EMAIL || 'N/A';
+export const FIREBASE_LOGIN_PASSWORD = parsedSettings.FIREBASE_LOGIN_PASSWORD || 'N/A';
 
 /* MANUAL SETTINGS */
 // Admin toggle: when true, never hit external APIs; read DB only
