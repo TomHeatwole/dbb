@@ -1701,12 +1701,21 @@
     display: flex !important;
     align-items: center;
     gap: 0.5rem;
+    position: relative !important; /* allow absolute right anchoring of total */
   }
   .standings-ppg,
   .standings-ppg--playoff-mobile { display: none !important; }
   .standings-title { flex: 1 1 auto; min-width: 0; max-width: 65%; }
   .standings-total,
-  .standings-total--playoff-desktop { display: inline !important; margin-left: auto !important; white-space: nowrap; }
+  .standings-total--playoff-desktop {
+    display: inline !important;
+    margin-left: 0 !important; /* overridden by absolute positioning */
+    white-space: nowrap;
+    position: absolute !important;
+    right: 0.7rem !important; /* match header horizontal padding */
+    top: 50% !important;
+    transform: translateY(-50%);
+  }
 } 
 
 /* Compact the entire standings card on mobile (font-size and spacing) */
@@ -1715,6 +1724,20 @@
   .standings-row-header { padding: 0.5rem 0.7rem !important; gap: 0.4rem !important; }
   .standings-avatar { width: 1.35rem !important; height: 1.35rem !important; }
   .standings-total { font-size: 0.90em !important; }
+}
+
+/* Desktop: pin the total to the far right regardless of activity presence */
+@media (min-width: 50.0625em) {
+  .standings-row-header { position: relative !important; }
+  .standings-total,
+  .standings-total--playoff-desktop {
+    position: absolute !important;
+    right: 0.9rem !important; /* match desktop header padding */
+    top: 50% !important;
+    transform: translateY(-50%);
+    margin-left: 0 !important;
+    white-space: nowrap;
+  }
 }
 
 /* Ensure totals don't wrap */

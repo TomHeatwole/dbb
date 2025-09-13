@@ -152,7 +152,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                           <InjuryBadge info={info} />
                         </span>
                       </td>
-                      <td className="team-scores-pts-cell">{p.pts}</td>
+                      <td className="team-scores-pts-cell">{Number(p.pts || 0).toFixed(1)}</td>
                     </tr>
                   );
                 })}
@@ -160,7 +160,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
               <tfoot>
                 <tr>
                   <td colSpan={3} className="team-scores-total-row">
-                    <div className="team-scores-total-inner">Total: {weekBreakdown.starterTotal}</div>
+                    <div className="team-scores-total-inner">Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}</div>
                   </td>
                 </tr>
               </tfoot>
@@ -182,14 +182,14 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                         <InjuryBadge info={info} />
                       </span>
                     </td>
-                    <td className="team-scores-pts-cell">{p.pts}</td>
+                    <td className="team-scores-pts-cell">{Number(p.pts || 0).toFixed(1)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
                   <td colSpan={2} className="team-scores-total-row">
-                    <div className="team-scores-total-inner">Total: {weekBreakdown.benchTotal}</div>
+                    <div className="team-scores-total-inner">Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}</div>
                   </td>
                 </tr>
               </tfoot>

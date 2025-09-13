@@ -87,7 +87,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
                   ) : gameObj.text}</div>
                 </td>
-                <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
+                <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : Number(p.pts || 0).toFixed(1)}</td>
               </tr>
             );
           })}
@@ -95,7 +95,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <tfoot>
           <tr>
             <td colSpan={4} className="team-scores-total-row">
-              <div className="team-scores-total-inner">Total: {weekBreakdown.starterTotal}</div>
+              <div className="team-scores-total-inner">Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}</div>
             </td>
           </tr>
         </tfoot>
@@ -151,7 +151,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                       <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
                     ) : gameObj.text}</div>
                   </td>
-                  <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : p.pts}</td>
+                  <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : Number(p.pts || 0).toFixed(1)}</td>
                 </tr>
               );
             })}
@@ -159,7 +159,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           <tfoot>
             <tr>
               <td colSpan={3} className="team-scores-total-row">
-                <div className="team-scores-total-inner">Total: {weekBreakdown.benchTotal}</div>
+                <div className="team-scores-total-inner">Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}</div>
               </td>
             </tr>
           </tfoot>
