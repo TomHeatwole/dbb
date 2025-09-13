@@ -1604,6 +1604,31 @@
 .standings-total { text-align: right; font-weight: 800; }
 .standings-row-expand { padding: 0.6rem 0.9rem 0.9rem 2.2rem; border-top: 1px solid rgba(100, 100, 140, 0.25); }
 .standings-row-expand-inner { color: #dfe6f0; }
+/* Compact banner above breakdown */
+.team-expanded-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.2rem 0.6rem 0.2rem;
+}
+.team-expanded-banner-left { display: inline-flex; align-items: center; gap: 0.5rem; }
+.team-expanded-banner-center { display: inline-flex; align-items: center; justify-content: center; flex: 1 1 auto; }
+.team-expanded-label { color: #9fb4de; font-weight: 700; }
+.team-expanded-owner { display: inline-flex; align-items: center; gap: 0.4rem; color: #4fb7ff; text-decoration: none; }
+.team-expanded-owner:hover { text-decoration: underline; }
+.team-expanded-owner-avatar { width: 1.25rem; height: 1.25rem; border-radius: 50%; object-fit: cover; background: #222; }
+.team-expanded-owner-name { font-weight: 700; color: #fff; }
+.team-expanded-banner-right { display: inline-flex; align-items: center; }
+.team-expanded-place { color: #4fb7ff; text-decoration: none; font-weight: 800; }
+.team-expanded-place:hover { text-decoration: underline; }
+
+@media (max-width: 50em) {
+  .team-expanded-banner { gap: 0.4rem; padding: 0.2rem 0.2rem 0.3rem 0.2rem; }
+  .team-expanded-owner-avatar { width: 0.74rem; height: 0.74rem; }
+  .team-expanded-owner-name { font-size: 0.65em; }
+  .team-expanded-place { font-size: 0.65em; }
+}
 /* Prevent expanded content from causing horizontal scroll */
 .standings-row-expand,
 .standings-row-expand-inner,

@@ -82,6 +82,19 @@ function LeagueScores() {
 	const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
 	const labelBaselineKeyRef = useRef(null);
 
+	function toOrdinal(n) {
+		const num = Number(n);
+		if (!Number.isFinite(num)) { return String(n); }
+		const v = num % 100;
+		if (v >= 11 && v <= 13) { return `${num}th`; }
+		switch (num % 10) {
+			case 1: return `${num}st`;
+			case 2: return `${num}nd`;
+			case 3: return `${num}rd`;
+			default: return `${num}th`;
+		}
+	}
+
 	function buildExpandedData(srcWeeksParsedData, targetWeek, labels) {
 		if (!srcWeeksParsedData) { return null; }
 		const breakdownByRoster = getWeekScoreBreakdown(srcWeeksParsedData, targetWeek) || {};
@@ -566,7 +579,7 @@ function LeagueScores() {
 							if ((a.place || 9999) !== (b.place || 9999)) { return (a.place || 9999) - (b.place || 9999); }
 							return String(a.rosterId).localeCompare(String(b.rosterId));
 						});
-						return computedEntries.map(({ rosterId, points, breakdown }) => {
+						return computedEntries.map(({ rosterId, points, place, breakdown }) => {
 							const teamName = getTeamName(rosterId);
 							const avatarUrl = getAvatar(rosterId);
 							const isExpanded = !!expanded[rosterId];
@@ -621,6 +634,28 @@ function LeagueScores() {
 									</button>
 									{isExpanded && (
 										<div className="standings-row-expand">
+											<div className="team-expanded-banner">
+												<div className="team-expanded-banner-left">
+													<span className="team-expanded-label">Owner:</span>
+													{(() => {
+														const roster = rosters && rosters.find(r => String(r.roster_id) === String(rosterId));
+														const owner = roster && users ? users.find(u => String(u.user_id) === String(roster.owner_id)) : null;
+														const ownerName = owner && owner.display_name ? owner.display_name : teamName;
+														const ownerAvatar = owner && (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url) ? (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url) : avatarUrl;
+														const teamLink = `/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+														return (
+															<a className="team-expanded-owner" href={teamLink}>
+																{ownerAvatar ? <img className="team-expanded-owner-avatar" src={ownerAvatar} alt={`${ownerName} avatar`} /> : null}
+																<span className="team-expanded-owner-name">{ownerName}</span>
+															</a>
+														);
+													})()}
+												</div>
+												<div className="team-expanded-banner-center">
+													<a className="team-expanded-place" href="/standings">Place: #{place || 9999}</a>
+												</div>
+												<div className="team-expanded-banner-right" />
+											</div>
 											{isMobile && showFullScoreBreakdownOnMobile ? (
 												<MobileTeamScoreSummary
 													weekBreakdown={weekBreakdown}
