@@ -1702,6 +1702,7 @@
     align-items: center;
     gap: 0.5rem;
     position: relative !important; /* allow absolute right anchoring of total */
+    min-height: 2.6rem !important; /* keep consistent height whether YTP/Live appear */
   }
   .standings-ppg,
   .standings-ppg--playoff-mobile { display: none !important; }
