@@ -1709,6 +1709,14 @@
   .standings-total--playoff-desktop { display: inline !important; margin-left: auto !important; white-space: nowrap; }
 } 
 
+/* Compact the entire standings card on mobile (font-size and spacing) */
+@media (max-width: 50em) {
+  .standings-row { font-size: 0.88em !important; }
+  .standings-row-header { padding: 0.5rem 0.7rem !important; gap: 0.4rem !important; }
+  .standings-avatar { width: 1.35rem !important; height: 1.35rem !important; }
+  .standings-total { font-size: 0.90em !important; }
+}
+
 /* Ensure totals don't wrap */
 .standings-total,
 .standings-total--playoff-desktop {
@@ -1827,8 +1835,32 @@
 .standings-activity-item { white-space: nowrap; }
 
 @media (max-width: 50em) {
-  /* Hide inline activity on mobile; shown in expanded summary instead */
+  /* Hide inline activity on mobile by default */
   .standings-activity { display: none; }
+  /* Show compact mobile activity inline between team name and total */
+  .standings-activity.standings-activity-mobile {
+    display: inline-flex !important;
+    width: auto !important;
+    justify-content: flex-start !important;
+    align-items: flex-end !important;
+    align-self: center !important;
+    flex-direction: column !important;
+    gap: 0.15rem !important;
+    margin-left: -0.45rem !important;
+    font-size: 0.82em !important;
+    line-height: 1.05 !important;
+    opacity: 0.95 !important;
+    text-align: right !important;
+  }
+  /* Keep header single-line on mobile */
+  .standings-row-header {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+  /* Give team name a bit less width to make room for activity */
+  .standings-title {
+    max-width: 55% !important;
+  }
 }
 
 /* Bench toggle control in Scores expanded section */
