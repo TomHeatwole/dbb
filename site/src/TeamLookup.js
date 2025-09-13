@@ -40,7 +40,14 @@ export async function fetchTeamData(season = getCurrentYear()) {
   }
 
   for (const user of users) {
-    user.avatar_url = getAvatarUrl(user.avatar);
+    const userAvatarUrl = getAvatarUrl(user.avatar);
+    const teamMetaAvatar = user && user.metadata ? (user.metadata.avatar || user.metadata.team_avatar) : null;
+    const teamAvatarUrl = getAvatarUrl(teamMetaAvatar);
+    // Preserve existing field for backward-compat
+    user.avatar_url = userAvatarUrl;
+    // New explicit fields
+    user.user_avatar_url = userAvatarUrl;
+    user.team_avatar_url = teamAvatarUrl;
   }
 
   return { rosters, users };

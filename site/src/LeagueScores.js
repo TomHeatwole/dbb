@@ -488,7 +488,9 @@ function LeagueScores() {
 		const roster = rosters.find(r => String(r.roster_id) === String(rosterId));
 		if (!roster) return null;
 		const user = users.find(u => String(u.user_id) === String(roster.owner_id));
-		return user && user.avatar_url ? user.avatar_url : null;
+		if (!user) return null;
+		// Prefer team avatar when available; fallback to user avatar
+		return user.team_avatar_url || user.user_avatar_url || user.avatar_url || null;
 	}
 
 	function toggleExpand(rosterId) {
