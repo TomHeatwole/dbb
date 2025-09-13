@@ -271,12 +271,37 @@ function LeagueScores() {
 	// Load injuries map for season/week (used for past weeks rendering)
 	useEffect(() => {
 		let cancelled = false;
-		fetchInjuriesForWeek(season, week).then((m) => {
-			if (!cancelled) {
-				const remapped = maybeRemapInjuriesKeysUsingPlayerIdMap(m || {}, playerIdMap || {});
-				setInjuriesMap(remapped);
+		(async () => {
+			try {
+				const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+				const currentWeekNum = getCurrentNFLWeek();
+				const isPreviousWeek = isCurrentSeason ? (Number(week) < currentWeekNum) : true;
+				if (isPreviousWeek) {
+					try {
+						const snap = await (await import('./database')).readPlayersSnapshot(season, week);
+						const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
+						if (data && !cancelled) {
+							const map = {};
+							for (const [pid, p] of Object.entries(data)) {
+								const status = (p && (p.injury_status || p.injury_notes || (p.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(p.status) ? p.status : null))) || null;
+								if (status) { map[String(pid)] = String(status); }
+							}
+							const remapped = maybeRemapInjuriesKeysUsingPlayerIdMap(map, playerIdMap || {});
+							setInjuriesMap(remapped);
+							return;
+						}
+					} catch (_) {}
+				}
+				// fallback to file-based
+				const m = await fetchInjuriesForWeek(season, week);
+				if (!cancelled) {
+					const remapped = maybeRemapInjuriesKeysUsingPlayerIdMap(m || {}, playerIdMap || {});
+					setInjuriesMap(remapped);
+				}
+			} catch (_) {
+				if (!cancelled) { setInjuriesMap({}); }
 			}
-		}).catch(() => { if (!cancelled) { setInjuriesMap({}); } });
+		})();
 		return () => { cancelled = true; };
 	}, [season, week, playerIdMap]);
 
@@ -561,25 +586,73 @@ function LeagueScores() {
 							.filter(e => e && e.roster_id != null);
 						// Build standings order for tie-breaks (roster_id -> place)
 						const standingsArr = getStandings(weeksParsedData) || [];
-						const placeByRosterId = {};
+						const placeByRosterIdBase = {};
+						const basePointsByRoster = {};
 						for (const r of standingsArr) {
 							if (r && r.roster_id != null) {
-								placeByRosterId[String(r.roster_id)] = r.place || 9999;
+								placeByRosterIdBase[String(r.roster_id)] = r.place || 9999;
+								basePointsByRoster[String(r.roster_id)] = typeof r.points_scored === 'number' ? r.points_scored : 0;
 							}
 						}
+						// Live-inclusive place (current season only) using StartSitSort like TeamOverview
+						let placeByRosterIdLive = null;
+						let liveTotalByRosterId = null;
+						try {
+							const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+							if (isCurrentSeason && playersData && playerIdMap) {
+								const currentWeekNum = getCurrentNFLWeek();
+								const currentBreakdown = getWeekScoreBreakdown(weeksParsedData, currentWeekNum) || {};
+								const totals = (standingsArr || []).map((s) => {
+									const raw = currentBreakdown[s.roster_id];
+									let liveTotal = s.points_scored || 0;
+									if (raw) {
+										const computed = StartSitSort(raw, playersData, playerIdMap);
+										if (computed && typeof computed.starterTotal === 'number') {
+											const priorWeeks = (weeksParsedData || []).slice(0, currentWeekNum - 1) || [];
+											const priorSum = priorWeeks.reduce((sum, wk) => {
+												if (!Array.isArray(wk)) { return sum; }
+												const e = wk.find(x => x && Number(x.roster_id) === Number(s.roster_id));
+												const pts = e && typeof e.points === 'number' ? e.points : 0;
+												return sum + pts;
+											}, 0);
+											liveTotal = Math.round((priorSum + computed.starterTotal) * 10) / 10;
+										}
+									}
+									return { roster_id: s.roster_id, liveTotal };
+								}).sort((a, b) => b.liveTotal - a.liveTotal);
+								// Tie-aware placement
+								placeByRosterIdLive = {};
+								liveTotalByRosterId = {};
+								let place = 1; let i = 0;
+								while (i < totals.length) {
+									const score = totals[i].liveTotal;
+									let j = i + 1;
+									while (j < totals.length && totals[j].liveTotal === score) { j++; }
+									for (let k = i; k < j; k++) {
+										placeByRosterIdLive[String(totals[k].roster_id)] = place;
+										liveTotalByRosterId[String(totals[k].roster_id)] = totals[k].liveTotal;
+									}
+									place += (j - i);
+									i = j;
+								}
+							}
+						} catch (_) { placeByRosterIdLive = null; liveTotalByRosterId = null; }
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
 							const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
-							const place = placeByRosterId[String(rid)] || 9999;
-							return { rosterId: rid, points: pts, place, breakdown: computed };
+							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
+							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)
+								? liveTotalByRosterId[String(rid)]
+								: (basePointsByRoster[String(rid)] || 0);
+							return { rosterId: rid, points: pts, place, pfTotal, breakdown: computed };
 						}).sort((a, b) => {
 							if (b.points !== a.points) { return b.points - a.points; }
 							if ((a.place || 9999) !== (b.place || 9999)) { return (a.place || 9999) - (b.place || 9999); }
 							return String(a.rosterId).localeCompare(String(b.rosterId));
 						});
-						return computedEntries.map(({ rosterId, points, place, breakdown }) => {
+						return computedEntries.map(({ rosterId, points, place, pfTotal, breakdown }) => {
 							const teamName = getTeamName(rosterId);
 							const avatarUrl = getAvatar(rosterId);
 							const isExpanded = !!expanded[rosterId];
@@ -652,7 +725,7 @@ function LeagueScores() {
 													})()}
 												</div>
 												<div className="team-expanded-banner-center">
-													<a className="team-expanded-place" href="/standings">Place: #{place || 9999}</a>
+													<a className="team-expanded-place" href="/standings">Place: #{place || 9999} ({Number(pfTotal || 0).toFixed(1)} PF)</a>
 												</div>
 												<div className="team-expanded-banner-right" />
 											</div>

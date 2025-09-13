@@ -8,6 +8,18 @@ import { STARTER_POSITION_NAMES } from './global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
 import { getInjuryAbbreviation } from './InjuryLookup';
+import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './InjuryLookup';
+
+// Lazy import to avoid circular deps at module init
+async function readPlayersSnapshotFromDb(season, week) {
+  try {
+    const mod = await import('./database');
+    if (mod && typeof mod.readPlayersSnapshot === 'function') {
+      return await mod.readPlayersSnapshot(season, week);
+    }
+  } catch (_) {}
+  return null;
+}
 
 const NUM_WEEKS = 17;
 
@@ -24,6 +36,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const season = searchParams.get('year') ? String(searchParams.get('year')) : String(CURRENT_YEAR);
   const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
   const showCurrentInjury = String(season) === String(CURRENT_YEAR) && week >= currentWeek;
+  const [injuriesMap, setInjuriesMap] = useState({});
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -96,6 +109,38 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     }
     return () => { cancelled = true; };
   }, [preferHistoricalPlayers, week, playersData]);
+
+  // Load injuries map for season/week (DB for previous weeks; file fallback)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+        const currentWeekNum = getCurrentNFLWeek();
+        const isPreviousWeek = isCurrentSeason ? (Number(week) < currentWeekNum) : true;
+        if (isPreviousWeek) {
+          try {
+            const snap = await readPlayersSnapshotFromDb(season, week);
+            const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
+            if (data && !cancelled) {
+              const map = {};
+              for (const [pid, p] of Object.entries(data)) {
+                const status = (p && (p.injury_status || p.injury_notes || (p.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(p.status) ? p.status : null))) || null;
+                if (status) { map[String(pid)] = String(status); }
+              }
+              setInjuriesMap(maybeRemapInjuriesKeysUsingPlayerIdMap(map, playerIdMap || {}));
+              return;
+            }
+          } catch (_) {}
+        }
+        const m = await fetchInjuriesForWeek(season, week);
+        if (!cancelled) { setInjuriesMap(maybeRemapInjuriesKeysUsingPlayerIdMap(m || {}, playerIdMap || {})); }
+      } catch (_) {
+        if (!cancelled) { setInjuriesMap({}); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [season, week, playerIdMap]);
 
   // Get week breakdown for this roster
   const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;

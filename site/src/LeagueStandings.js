@@ -12,6 +12,8 @@ import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
 import PlayoffRaceGraph from './PlayoffRaceGraph';
+import { fetchNflScoreboard } from './GamesLookup';
+import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -32,6 +34,7 @@ function LeagueStandings() {
   const isMobile = useIsMobile();
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [currentWeekLabels, setCurrentWeekLabels] = useState({}); // pid -> { live, completed, text }
 
   // Season/week context and DB-aware completed weeks
   const isCurrentSeason = season === CURRENT_YEAR;
@@ -115,6 +118,42 @@ function LeagueStandings() {
       })
       .finally(() => setLoading(false));
   }, [season]);
+
+  // Build current week player game labels (live/completed) matching LeagueScores logic
+  useEffect(() => {
+    const isCurrentSeason = season === CURRENT_YEAR;
+    if (!isCurrentSeason || !weeksParsedData || !playersData || !playerIdMap) { setCurrentWeekLabels({}); return; }
+    const currentWeekNum = getCurrentNFLWeek();
+    const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[currentWeekNum - 1] : null;
+    if (!Array.isArray(weekArr)) { setCurrentWeekLabels({}); return; }
+    const playerIdSet = new Set();
+    for (const entry of weekArr) {
+      if (entry && Array.isArray(entry.players)) {
+        for (const pid of entry.players) { playerIdSet.add(pid); }
+      }
+    }
+    const playerIds = Array.from(playerIdSet);
+    if (playerIds.length === 0) { setCurrentWeekLabels({}); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const json = await fetchNflScoreboard(Number(season), Number(currentWeekNum));
+        const mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json);
+        const labels = {};
+        for (const pid of playerIds) {
+          const item = mapping[pid];
+          const ev = item && item.event;
+          const teamForWeek = item && item.team;
+          const d = ev ? getGameDisplayForTeam(ev, teamForWeek) : { text: 'BYE', live: false };
+          labels[pid] = { ...d, team: teamForWeek || null };
+        }
+        if (!cancelled) setCurrentWeekLabels(labels);
+      } catch (_) {
+        if (!cancelled) setCurrentWeekLabels({});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [season, weeksParsedData, playersData, playerIdMap]);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) return `Team ${rosterId}`;
@@ -395,9 +434,59 @@ function LeagueStandings() {
       const qs = baseQuery ? `${baseQuery}&week=${week}&tab=Scores` : `week=${week}&tab=Scores`;
       return `/team/${rosterIdForLink}?${qs}`;
     };
+    // Compute new live/weekly summary fields
+    const isCurrentSeason = season === CURRENT_YEAR;
+    const currentWeekNum = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
+    const wbAll = getWeekScoreBreakdown(weeksParsedData, currentWeekNum) || {};
+    const rosterIdForCalc = rosterIdForLink;
+    let scoreThisWeek = 0;
+    try {
+      const raw = wbAll && wbAll[rosterIdForCalc];
+      if (raw && playersData && playerIdMap) {
+        const computed = StartSitSort(raw, playersData, playerIdMap);
+        scoreThisWeek = computed && typeof computed.starterTotal === 'number' ? Math.round(computed.starterTotal * 10) / 10 : 0;
+      }
+    } catch (_) {}
+    const completedWeeksOnlyTotal = (() => {
+      try {
+        const baseCap = (weeksParsedData ? weeksParsedData.filter(Boolean).length : 0);
+        let completedOnly = 0;
+        if (season === CURRENT_YEAR) {
+          const currentWeekNum2 = getCurrentNFLWeek();
+          completedOnly = Math.max(0, Math.min(completedWeeks, currentWeekNum2 - 1, baseCap));
+        } else {
+          completedOnly = Math.max(0, Math.min(completedWeeks, baseCap));
+        }
+        const arr = (weeksParsedData || []).slice(0, completedOnly);
+        const total = arr.reduce((sum, wk) => {
+          if (!Array.isArray(wk)) { return sum; }
+          const e = wk.find(x => x && Number(x.roster_id) === Number(rosterIdForCalc));
+          const pts = e && typeof e.points === 'number' ? e.points : 0;
+          return sum + pts;
+        }, 0);
+        return Math.round(total * 10) / 10;
+      } catch (_) { return 0; }
+    })();
+    let activeCount = 0, yetToPlayCount = 0;
+    try {
+      const wk = wbAll && wbAll[rosterIdForCalc];
+      if (isCurrentSeason && wk) {
+        const rosterPlayerIds = [...(wk.starters || []), ...(wk.bench || [])].map(p => p && p.id).filter(pid => pid && pid !== '0');
+        for (const pid of rosterPlayerIds) {
+          const label = currentWeekLabels && currentWeekLabels[pid];
+          if (!label) { continue; }
+          const isLive = !!label.live;
+          const isCompleted = !!label.completed;
+          const isBye = label && label.text === 'BYE';
+          if (isLive) { activeCount += 1; }
+          else if (!isCompleted && !isBye) { yetToPlayCount += 1; }
+        }
+      }
+    } catch (_) {}
+
     return (
-      <div className="standings-row-expand">
-        <div className="standings-row-expand-inner standings-stats-grid">
+      <div className="standings-row-expand standings-expand-split">
+        <div className="standings-row-expand-inner standings-stats-grid standings-expand-left">
           {shouldUsePlayoffLogic && isPlayoffTeam && (
             isMobileView ? (
               <>
@@ -511,6 +600,23 @@ function LeagueStandings() {
 
           <div className="standings-team-link">
             <Link to={`/team/${rosterIdForLink}${currentSearchParams && currentSearchParams.toString() ? `?${currentSearchParams.toString()}` : ''}`}>See Team Overview</Link>
+          </div>
+        </div>
+        <div className="standings-expand-right">
+          <div className="standings-extra-block">
+            <div className="standings-extra-row">
+              <span className="standings-extra-label">PF through completed weeks:</span>
+              <span className="standings-extra-val">{completedWeeksOnlyTotal} pts</span>
+            </div>
+            <div className="standings-extra-row">
+              <span className="standings-extra-label">PF this week:</span>
+              <span className="standings-extra-val">{scoreThisWeek} pts</span>
+            </div>
+            {isCurrentSeason ? (
+              <div className="standings-extra-row">
+                <span className="standings-extra-sub">(Yet To Play: {yetToPlayCount}, In-Play: {activeCount})</span>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

@@ -1604,6 +1604,20 @@
 .standings-total { text-align: right; font-weight: 800; }
 .standings-row-expand { padding: 0.6rem 0.9rem 0.9rem 2.2rem; border-top: 1px solid rgba(100, 100, 140, 0.25); }
 .standings-row-expand-inner { color: #dfe6f0; }
+/* Standings expand layout split for web */
+.standings-expand-split { display: block; }
+.standings-expand-left { }
+.standings-expand-right { margin-top: 0.6rem; }
+@media (min-width: 50.0625em) {
+  .standings-expand-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  .standings-expand-right { margin-top: 0; }
+}
+.standings-extra-block { background: #111829; border: 1px solid #2a3350; border-radius: 0.5rem; padding: 0.6rem 0.8rem; }
+.standings-extra-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.35rem; }
+.standings-extra-row:last-child { margin-bottom: 0; }
+.standings-extra-label { color: #9fb4de; font-weight: 700; }
+.standings-extra-val { color: #ffffff; font-weight: 800; }
+.standings-extra-sub { color: #cfe6ff; font-weight: 600; }
 /* Compact banner above breakdown */
 .team-expanded-banner {
   display: flex;
