@@ -159,6 +159,30 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
   const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap) : null;
 
+  // Debug: dump players missing ESPN mapping for this team/week
+  useEffect(() => {
+    try {
+      if (!weekBreakdown || !playerIdMap) { return; }
+      const rows = [...(weekBreakdown.starters || []), ...(weekBreakdown.bench || [])];
+      const missing = [];
+      for (const p of rows) {
+        const pid = String(p && p.id);
+        if (!pid || pid === '0') { continue; }
+        const mapping = playerIdMap[pid];
+        const espnId = mapping && (mapping.espn_id || (mapping.metadata && mapping.metadata.espn_id));
+        if (!espnId) {
+          const info = getPlayerInfo(pid, playersDataForWeek, playerIdMap);
+          const name = info && info.name ? info.name : pid;
+          missing.push({ id: pid, name });
+        }
+      }
+      if (missing.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log('[missing-espn-map]', { season, week, rosterId, missing });
+      }
+    } catch (_) {}
+  }, [season, week, rosterId, weekBreakdown, playerIdMap, playersDataForWeek]);
+
   const InjuryBadge = ({ playerId, info }) => {
     let status = null;
     // Previous weeks: use injuriesMap by Sleeper player id

@@ -19,6 +19,9 @@ import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from '
 import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './InjuryLookup';
 import { readApiCacheLatestByKey, readPollingIntervalMs } from './database';
 
+// Hardcoded toggle to force show the Sleeper API banner
+const show_sleeper_api_banner = false;
+
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
 function MobileScaled({ children, className = 'mobile-standings-scale-70' }) {
@@ -74,6 +77,7 @@ function LeagueScores() {
 	const isMobile = useIsMobile();
 	const [playerGameLabels, setPlayerGameLabels] = useState({});
 	const [injuriesMap, setInjuriesMap] = useState({});
+	const [apiDelayMinutes, setApiDelayMinutes] = useState(null); // null -> hide banner, number -> minutes delayed
 	const pollingRef = useRef(false);
 	const intervalRef = useRef(null);
 	const lastDbEntryTsRef = useRef(null);
@@ -410,6 +414,16 @@ function LeagueScores() {
 				try {
 					const latest = await readApiCacheLatestByKey(cacheKey);
 					dbEntryTs = latest && latest.ts ? latest.ts : null;
+					// When active games, compute delay minutes since last fetchedAt
+					if (isActiveWeek) {
+						const now = Date.now();
+						const ageMs = latest && latest.ts ? (now - latest.ts) : null;
+						if (ageMs != null && ageMs > 60 * 1000) {
+							setApiDelayMinutes(Math.floor(ageMs / 60000));
+						} else {
+							setApiDelayMinutes(null);
+						}
+					}
 				} catch (_) {}
 				if (cancelled || !Array.isArray(newWeeks)) { return; }
 				const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels);
@@ -589,6 +603,12 @@ function LeagueScores() {
 				<div>Error loading scores.</div>
 			) : (
 				<div className={`standings-list standings-list--scores${hasAnyExpanded ? ' standings-list--expanded' : ''}`}>
+					{(show_sleeper_api_banner || apiDelayMinutes != null) ? (
+						<div className="info-banner warning">
+							<span className="banner-icon" aria-hidden="true">⚠️</span>
+							Sleeper API stopped responding:  data delayed by {apiDelayMinutes != null ? apiDelayMinutes : 'unknown'} minute{apiDelayMinutes === 1 ? '' : 's'}.
+						</div>
+					) : null}
 					{(() => {
 						const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, week) || {};
 						const weekEntries = (Array.isArray(weeksParsedData) && weeksParsedData[week - 1] ? weeksParsedData[week - 1] : [])
@@ -690,6 +710,28 @@ function LeagueScores() {
 									}
 								}
 							}
+
+							// Debug: log players missing ESPN mapping (image source) for this team row
+							try {
+								if (weekBreakdown && playerIdMap) {
+									const rows = [...(weekBreakdown.starters || []), ...(weekBreakdown.bench || [])];
+									const missing = [];
+									for (const p of rows) {
+										const pid = String(p && p.id);
+										if (!pid || pid === '0') { continue; }
+										const mapping = playerIdMap[pid];
+										const espnId = mapping && (mapping.espn_id || (mapping.metadata && mapping.metadata.espn_id));
+										if (!espnId) {
+											const info = getPlayerInfo(pid, playersData, playerIdMap);
+											missing.push({ id: pid, name: (info && info.name) || pid });
+										}
+									}
+									if (missing.length > 0) {
+										// eslint-disable-next-line no-console
+										console.log('[LeagueScores missing-espn-map]', { season, week, rosterId, teamName, missing });
+									}
+								}
+							} catch (_) {}
 
 							const teamHighlight = teamHighlightMap && teamHighlightMap[String(rosterId)];
 							const rowClass = teamHighlight === 'row' ? ' standings-row--pulse' : (teamHighlight === 'up' ? ' standings-row--up' : (teamHighlight === 'down' ? ' standings-row--down' : ''));

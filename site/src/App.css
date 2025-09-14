@@ -64,6 +64,21 @@
   display: block;
   opacity: 0.6;
 }
+
+/* Reusable info banner */
+.info-banner {
+  margin: 0.5rem 0 0.75rem 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  text-align: center;
+}
+.info-banner.warning {
+  background: rgba(255, 196, 0, 0.1);
+  border: 1px solid rgba(255, 196, 0, 0.55);
+  color: #ffd166;
+}
+.info-banner .banner-icon { margin-right: 1.5rem; }
 .background-bg {
   position: fixed;
   top: 0;
