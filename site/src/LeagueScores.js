@@ -85,6 +85,7 @@ function LeagueScores() {
 	const [teamHighlightMap, setTeamHighlightMap] = useState({}); // rosterId -> 'up'|'down'|'row'
 	const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
 	const labelBaselineKeyRef = useRef(null);
+	const pollingIntervalMsRef = useRef(15000);
 
 	function toOrdinal(n) {
 		const num = Number(n);
@@ -376,8 +377,20 @@ function LeagueScores() {
 	// Poll for score updates every 15s only when tab is visible/focused; run an immediate tick on return
 	useEffect(() => {
 		let cancelled = false;
-		let intervalMs = 15000;
-		(async () => { try { intervalMs = await readPollingIntervalMs(); } catch (_) {} })();
+
+		async function refreshPollingInterval() {
+			try {
+				const ms = await readPollingIntervalMs();
+				if (typeof ms === 'number' && isFinite(ms) && ms > 0) {
+					pollingIntervalMsRef.current = ms;
+					// If an interval is already running, restart it with the new delay
+					if (intervalRef.current) {
+						clearInterval(intervalRef.current);
+						intervalRef.current = setInterval(() => { tick(); }, pollingIntervalMsRef.current);
+					}
+				}
+			} catch (_) {}
+		}
 
 		const tick = async () => {
 			if (cancelled || document.visibilityState !== 'visible') { return; }
@@ -401,30 +414,54 @@ function LeagueScores() {
 					}
 					const shouldPoll = shouldPollCurrentWeek(scoreboard);
 					activeWeekTtlMs = shouldPoll ? 60 * 1000 : 60 * 60 * 1000;
-					if (!shouldPoll) {
-						return; // skip this tick if no live or started games
-					}
+					// When not live polling, we still fetch with a 1-hour TTL to keep data fresh
 				}
 
-				const newWeeks = await fetchScoresData(season, { activeWeekTtlMs });
+				// Determine cache key and record previous fetchedAt before attempting refresh
 				const isCurrentSeason2 = String(season) === String(CURRENT_YEAR);
 				const leagueId = isCurrentSeason2 ? LEAGUE_ID : PREVIOUS_YEARS[season];
 				const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;
+				let prevDbTs = null;
+				try {
+					const prevLatest = await readApiCacheLatestByKey(cacheKey);
+					prevDbTs = prevLatest && prevLatest.ts ? prevLatest.ts : null;
+				} catch (_) {}
+
+				// Attempt to refresh scores data
+				let newWeeks = null;
+				let fetchFailed = false;
+				try {
+					newWeeks = await fetchScoresData(season, { activeWeekTtlMs });
+				} catch (_) {
+					fetchFailed = true;
+				}
+
+				// Read fetchedAt after refresh attempt
 				let dbEntryTs = null;
 				try {
-					const latest = await readApiCacheLatestByKey(cacheKey);
-					dbEntryTs = latest && latest.ts ? latest.ts : null;
-					// When active games, compute delay minutes since last fetchedAt
-					if (isActiveWeek) {
-						const now = Date.now();
-						const ageMs = latest && latest.ts ? (now - latest.ts) : null;
+					const latestAfter = await readApiCacheLatestByKey(cacheKey);
+					dbEntryTs = latestAfter && latestAfter.ts ? latestAfter.ts : null;
+				} catch (_) {}
+
+				// Only show delay banner if: active week, cache was stale before, and refresh failed (threw or ts unchanged)
+				if (isActiveWeek) {
+					const now = Date.now();
+					const prevAgeMs = prevDbTs != null ? (now - prevDbTs) : null;
+					const afterAgeMs = dbEntryTs != null ? (now - dbEntryTs) : null;
+					const wasStaleBefore = prevAgeMs != null && prevAgeMs > 60 * 1000;
+					if (wasStaleBefore && (fetchFailed || dbEntryTs === prevDbTs)) {
+						const ageMs = afterAgeMs != null ? afterAgeMs : prevAgeMs;
 						if (ageMs != null && ageMs > 60 * 1000) {
 							setApiDelayMinutes(Math.floor(ageMs / 60000));
 						} else {
 							setApiDelayMinutes(null);
 						}
+					} else {
+						setApiDelayMinutes(null);
 					}
-				} catch (_) {}
+				} else {
+					setApiDelayMinutes(null);
+				}
 				if (cancelled || !Array.isArray(newWeeks)) { return; }
 				const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels);
 				let changes = [];
@@ -489,7 +526,7 @@ function LeagueScores() {
 		const startPolling = () => {
 			if (intervalRef.current || cancelled) { return; }
 			if (document.visibilityState !== 'visible') { return; }
-			intervalRef.current = setInterval(() => { tick(); }, intervalMs);
+			intervalRef.current = setInterval(() => { tick(); }, pollingIntervalMsRef.current);
 		};
 		const stopPolling = () => {
 			if (intervalRef.current) {
@@ -517,6 +554,7 @@ function LeagueScores() {
 		};
 
 		// Initialize based on current visibility
+		refreshPollingInterval();
 		if (document.visibilityState === 'visible') {
 			startPolling();
 		}
