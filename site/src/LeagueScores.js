@@ -281,22 +281,31 @@ function LeagueScores() {
 						const snap = await (await import('./database')).readPlayersSnapshot(season, week);
 						const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
 						if (data && !cancelled) {
-							const map = {};
+							const byPlayerId = {};
 							for (const [pid, p] of Object.entries(data)) {
-								const status = (p && (p.injury_status || p.injury_notes || (p.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(p.status) ? p.status : null))) || null;
-								if (status) { map[String(pid)] = String(status); }
+								const status = (p && (p.injury_status || p.injury_notes || (p.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve|na/i.test(p.status) ? p.status : null))) || null;
+								if (status) { byPlayerId[String(pid)] = String(status); }
 							}
-							const remapped = maybeRemapInjuriesKeysUsingPlayerIdMap(map, playerIdMap || {});
-							setInjuriesMap(remapped);
+							setInjuriesMap(byPlayerId);
 							return;
 						}
 					} catch (_) {}
 				}
-				// fallback to file-based
+				// fallback to file-based; include both espnId and mapped playerId keys when possible
 				const m = await fetchInjuriesForWeek(season, week);
 				if (!cancelled) {
-					const remapped = maybeRemapInjuriesKeysUsingPlayerIdMap(m || {}, playerIdMap || {});
-					setInjuriesMap(remapped);
+					let combined = { ...(m || {}) };
+					try {
+						if (playerIdMap && typeof playerIdMap === 'object') {
+							for (const [pid, mapping] of Object.entries(playerIdMap)) {
+								const espnId = mapping && (mapping.espn_id || (mapping.metadata && mapping.metadata.espn_id));
+								if (espnId && combined[String(espnId)] && !combined[String(pid)]) {
+									combined[String(pid)] = combined[String(espnId)];
+								}
+							}
+						}
+					} catch (_) {}
+					setInjuriesMap(combined);
 				}
 			} catch (_) {
 				if (!cancelled) { setInjuriesMap({}); }

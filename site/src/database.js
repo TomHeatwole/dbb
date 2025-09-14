@@ -172,12 +172,42 @@ export async function readApiCacheLatestByKey(cacheKey) {
   }
 }
 
+// Backups helpers
+export async function readBackupsRoot() {
+  try {
+    const db = getDb();
+    await ensureSignedIn();
+    const snap = await get(ref(db, 'backups'));
+    if (!snap.exists()) { return {}; }
+    return snap.val() || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+export async function readLatestBackup() {
+  try {
+    const all = await readBackupsRoot();
+    const keys = Object.keys(all || {})
+      .filter(k => /^(\d+)$/.test(String(k)))
+      .map(k => Number(k))
+      .sort((a, b) => b - a);
+    if (!keys.length) { return null; }
+    const ts = keys[0];
+    return { ts, data: all[String(ts)] };
+  } catch (_) {
+    return null;
+  }
+}
+
 export default {
   writeApiCache,
   writeApiCacheWithKey,
   readApiCacheFresh,
   readApiCacheLatest,
   readApiCacheLatestByKey,
+  readBackupsRoot,
+  readLatestBackup,
   readDbCacheTtlMs,
   readPollingIntervalMs,
   deleteAllPlayerData,

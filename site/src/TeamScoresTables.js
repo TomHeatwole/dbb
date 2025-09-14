@@ -34,12 +34,12 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
     return `${firstInitial} ${lastShort || ''}`.trim();
   }
 
-  const InjuryBadge = ({ espnId, info }) => {
+  const InjuryBadge = ({ playerId, info }) => {
     let status = null;
-    if (!isActiveWeek && injuriesMap && espnId && injuriesMap[String(espnId)]) {
-      status = injuriesMap[String(espnId)];
-    } else if (showCurrentInjury && info && (info.injury_status || info.injury_notes || info.status)) {
-      status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended/i.test(info.status) ? info.status : null);
+    if (!isActiveWeek && injuriesMap && playerId && injuriesMap[String(playerId)]) {
+      status = injuriesMap[String(playerId)];
+    } else if (showCurrentInjury && info) {
+      status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null);
     }
     const ab = status ? getInjuryAbbreviation(status) : null;
     if (!ab) { return null; }
@@ -79,7 +79,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
                     {info && info.position ? ` (${info.position})` : ''}
                     {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
-                    <InjuryBadge espnId={info && info.espn_id} info={info} />
+                    <InjuryBadge playerId={p.id} info={info} />
                   </span>
                 </td>
                 <td className={gameCellClasses.join(' ')}>
@@ -142,8 +142,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <span className="player-name">
                       {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
                       {info && info.position ? ` (${info.position})` : ''}
-                      {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
-                      <InjuryBadge espnId={info && info.espn_id} info={info} />
+                      <InjuryBadge playerId={p.id} info={info} />
                     </span>
                   </td>
                   <td className={gameCellClasses.join(' ')}>

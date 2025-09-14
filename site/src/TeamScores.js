@@ -123,18 +123,31 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
             const snap = await readPlayersSnapshotFromDb(season, week);
             const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
             if (data && !cancelled) {
-              const map = {};
+              const byPlayerId = {};
               for (const [pid, p] of Object.entries(data)) {
-                const status = (p && (p.injury_status || p.injury_notes || (p.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(p.status) ? p.status : null))) || null;
-                if (status) { map[String(pid)] = String(status); }
+                const status = (p && (p.injury_status || p.injury_notes || (p.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve|na/i.test(p.status) ? p.status : null))) || null;
+                if (status) { byPlayerId[String(pid)] = String(status); }
               }
-              setInjuriesMap(maybeRemapInjuriesKeysUsingPlayerIdMap(map, playerIdMap || {}));
+              setInjuriesMap(byPlayerId);
               return;
             }
           } catch (_) {}
         }
         const m = await fetchInjuriesForWeek(season, week);
-        if (!cancelled) { setInjuriesMap(maybeRemapInjuriesKeysUsingPlayerIdMap(m || {}, playerIdMap || {})); }
+        if (!cancelled) {
+          let combined = { ...(m || {}) };
+          try {
+            if (playerIdMap && typeof playerIdMap === 'object') {
+              for (const [pid, mapping] of Object.entries(playerIdMap)) {
+                const espnId = mapping && (mapping.espn_id || (mapping.metadata && mapping.metadata.espn_id));
+                if (espnId && combined[String(espnId)] && !combined[String(pid)]) {
+                  combined[String(pid)] = combined[String(espnId)];
+                }
+              }
+            }
+          } catch (_) {}
+          setInjuriesMap(combined);
+        }
       } catch (_) {
         if (!cancelled) { setInjuriesMap({}); }
       }
@@ -146,9 +159,14 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
   const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap) : null;
 
-  const InjuryBadge = ({ info }) => {
-    if (!showCurrentInjury || !info) { return null; }
-    const status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended/i.test(info.status) ? info.status : null);
+  const InjuryBadge = ({ playerId, info }) => {
+    let status = null;
+    // Previous weeks: use injuriesMap by Sleeper player id
+    if (!showCurrentInjury && injuriesMap && playerId && injuriesMap[String(playerId)]) {
+      status = injuriesMap[String(playerId)];
+    } else if (showCurrentInjury && info) {
+      status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null);
+    }
     const ab = status ? getInjuryAbbreviation(status) : null;
     if (!ab) { return null; }
     const isRetired = ab === 'NA';
@@ -182,7 +200,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
             <table className="team-scores-table team-scores-table-starters-simple">
               <tbody>
                 {weekBreakdown.starters.map((p, i) => {
-                  const info = getPlayerInfo(p.id, playersData, playerIdMap);
+                  const info = getPlayerInfo(p.id, playersDataForWeek, playerIdMap);
                   const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
                   return (
                     <tr key={p.id}>
@@ -194,7 +212,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                         <span className="player-name">
                           {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                           {info && info.position ? ` (${info.position})` : ''}
-                          <InjuryBadge info={info} />
+                          <InjuryBadge playerId={p.id} info={info} />
                         </span>
                       </td>
                       <td className="team-scores-pts-cell">{Number(p.pts || 0).toFixed(1)}</td>
@@ -224,7 +242,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                       <span className="player-name">
                         {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
                         {info && info.position ? ` (${info.position})` : ''}
-                        <InjuryBadge info={info} />
+                        <InjuryBadge playerId={p.id} info={info} />
                       </span>
                     </td>
                     <td className="team-scores-pts-cell">{Number(p.pts || 0).toFixed(1)}</td>
