@@ -459,7 +459,7 @@ function LeagueScores() {
 					const wasStaleBefore = prevAgeMs != null && prevAgeMs > 60 * 1000;
 					if (wasStaleBefore && (fetchFailed || dbEntryTs === prevDbTs)) {
 						const ageMs = afterAgeMs != null ? afterAgeMs : prevAgeMs;
-						if (ageMs != null && ageMs > 60 * 1000) {
+						if (ageMs != null && ageMs >= 120000) {
 							setApiDelayMinutes(Math.floor(ageMs / 60000));
 							// removed debug log
 						} else {
