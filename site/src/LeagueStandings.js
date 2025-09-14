@@ -644,6 +644,9 @@ function LeagueStandings() {
           const place14 = getPlace(standings14, rosterId);
           const place17 = getPlace(standingsAll, rosterId);
           const placeCompleted = getPlace(standingsCompleted, rosterId);
+          const placePfLiveOrCompleted = (!usePlayoffLogic && season === CURRENT_YEAR && liveRankMap && liveRankMap.has(rosterId))
+            ? liveRankMap.get(rosterId)
+            : placeCompleted;
           const { high, low } = computeHighLow(rosterId, weeksParsedData, completedWeeks);
           const playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
           const completedPlayoffWeeks = usePlayoffLogic && isPlayoff ? (isCurrentSeason ? Math.max(0, Math.min(3, completedWeeks - 14)) : 3) : 0;
@@ -707,7 +710,7 @@ function LeagueStandings() {
                   seventeenWeekTotals: det17,
                   fourteenWeekPlace: place14,
                   seventeenWeekPlace: place17,
-                  placeCompletedRank: placeCompleted,
+                  placeCompletedRank: placePfLiveOrCompleted,
                   highestWeekly: high,
                   lowestWeekly: low,
                   rosterIdForLink: rosterId,
