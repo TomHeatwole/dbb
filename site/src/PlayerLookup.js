@@ -60,8 +60,7 @@ export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
     }
   }
   if (!weekCompleted && !shouldUsePrevWeek && rosters && Array.isArray(rosters)) {
-    // eslint-disable-next-line no-console
-    console.log('[players] snapshot missing/stale; computing cared IDs from rosters', { rostersCount: rosters.length });
+    // removed debug log
     const caredSet = new Set();
     for (const r of rosters) {
       if (r && Array.isArray(r.players)) {

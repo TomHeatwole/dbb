@@ -120,6 +120,7 @@ export function shouldPollCurrentWeek(espnScoreboardJson) {
   try {
     if (!espnScoreboardJson || !Array.isArray(espnScoreboardJson.events)) { return false; }
     const now = Date.now();
+    // removed debug log
     for (const ev of espnScoreboardJson.events) {
       const comps = ev && ev.competitions;
       const comp = Array.isArray(comps) && comps.length ? comps[0] : null;
@@ -128,18 +129,33 @@ export function shouldPollCurrentWeek(espnScoreboardJson) {
       const status = comp.status || (ev && ev.status) || null;
       const type = status && status.type ? status.type : (ev && ev.status && ev.status.type ? ev.status.type : null);
       const state = type && type.state ? String(type.state).toLowerCase() : '';
-      if (state === 'in' || state === 'inprogress' || state === 'in_progress' || state === 'live') {
+      const isLive = state === 'in' || state === 'inprogress' || state === 'in_progress' || state === 'live';
+      const isFinal = state === 'final' || state === 'post' || state === 'postgame' || state === 'status_final' || state === 'complete' || state === 'end';
+      if (isLive) {
+        // removed debug log
         return true;
       }
-      // Kickoff time check
-      const dateStr = comp.date || ev && ev.date;
+      // Kickoff window checks
+      const dateStr = comp.date || (ev && ev.date);
       if (dateStr) {
         const kick = Date.parse(dateStr);
-        if (!isNaN(kick) && kick <= now) {
-          return true;
+        if (!isNaN(kick)) {
+          const GAME_WINDOW_MS = 6 * 60 * 60 * 1000; // up to ~6h after kickoff counts as potentially live
+          const PRE_WINDOW_MS = 2 * 60 * 60 * 1000;  // within 2h before kickoff
+          // If kickoff already passed but not marked final, only treat as live within game window
+          if (!isFinal && kick <= now && (now - kick) <= GAME_WINDOW_MS) {
+            // removed debug log
+            return true;
+          }
+          // If kickoff upcoming soon, start polling ahead of time
+          if (!isFinal && kick > now && (kick - now) <= PRE_WINDOW_MS) {
+            // removed debug log
+            return true;
+          }
         }
       }
     }
+    // removed debug log
     return false;
   } catch (_) {
     return false;

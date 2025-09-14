@@ -176,10 +176,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
           missing.push({ id: pid, name });
         }
       }
-      if (missing.length > 0) {
-        // eslint-disable-next-line no-console
-        console.log('[missing-espn-map]', { season, week, rosterId, missing });
-      }
+      // removed debug log
     } catch (_) {}
   }, [season, week, rosterId, weekBreakdown, playerIdMap, playersDataForWeek]);
 

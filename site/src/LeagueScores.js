@@ -86,6 +86,7 @@ function LeagueScores() {
 	const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
 	const labelBaselineKeyRef = useRef(null);
 	const pollingIntervalMsRef = useRef(15000);
+	const isLivePollingWindowRef = useRef(false);
 
 	function toOrdinal(n) {
 		const num = Number(n);
@@ -414,9 +415,14 @@ function LeagueScores() {
 						try { scoreboard = await fetchNflScoreboard(Number(season), Number(week)); } catch (_) {}
 					}
 					const shouldPoll = shouldPollCurrentWeek(scoreboard);
-					isLivePollingWindow = !!shouldPoll;
+					isLivePollingWindow = shouldPoll;
+					isLivePollingWindowRef.current = isLivePollingWindow;
 					activeWeekTtlMs = shouldPoll ? 60 * 1000 : 60 * 60 * 1000;
+					// removed debug log
 					// When not live polling, we still fetch with a 1-hour TTL to keep data fresh
+				}
+				else {
+					isLivePollingWindowRef.current = false;
 				}
 
 				// Determine cache key and record previous fetchedAt before attempting refresh
@@ -455,14 +461,18 @@ function LeagueScores() {
 						const ageMs = afterAgeMs != null ? afterAgeMs : prevAgeMs;
 						if (ageMs != null && ageMs > 60 * 1000) {
 							setApiDelayMinutes(Math.floor(ageMs / 60000));
+							// removed debug log
 						} else {
 							setApiDelayMinutes(null);
+							// removed debug log
 						}
 					} else {
 						setApiDelayMinutes(null);
+						// removed debug log
 					}
 				} else {
 					setApiDelayMinutes(null);
+					// removed debug log
 				}
 				if (cancelled || !Array.isArray(newWeeks)) { return; }
 				const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels);
@@ -471,10 +481,7 @@ function LeagueScores() {
 					changes = compareExpanded(prevData, nextExpanded);
 				}
 				const prevTs = lastDbEntryTsRef.current;
-				if (DEBUG_SCORES_LOG) {
-					// eslint-disable-next-line no-console
-					console.log('[scores delta]', { season, week, prevDbTs: prevTs, newDbTs: dbEntryTs, changes });
-				}
+				// removed noisy debug log
 				if ((dbEntryTs != null && prevTs !== dbEntryTs) || changes.length > 0) {
 					setWeeksParsedData(newWeeks);
 					lastDbEntryTsRef.current = dbEntryTs != null ? dbEntryTs : prevTs;
@@ -767,8 +774,7 @@ function LeagueScores() {
 										}
 									}
 									if (missing.length > 0) {
-										// eslint-disable-next-line no-console
-										console.log('[LeagueScores missing-espn-map]', { season, week, rosterId, teamName, missing });
+										/* removed noisy debug log */
 									}
 								}
 							} catch (_) {}
