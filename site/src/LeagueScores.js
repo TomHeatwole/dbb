@@ -402,6 +402,7 @@ function LeagueScores() {
 				const currentWk = getCurrentNFLWeek();
 				const isActiveWeek = isCurrentSeason && (Number(week) === currentWk);
 				let activeWeekTtlMs = null;
+				let isLivePollingWindow = false;
 				if (isActiveWeek) {
 					const espnCacheKey = `espn_site_v2_sports_football_nfl_scoreboard_week_${week}_year_${season}_seasontype_2`;
 					let scoreboard = null;
@@ -413,6 +414,7 @@ function LeagueScores() {
 						try { scoreboard = await fetchNflScoreboard(Number(season), Number(week)); } catch (_) {}
 					}
 					const shouldPoll = shouldPollCurrentWeek(scoreboard);
+					isLivePollingWindow = !!shouldPoll;
 					activeWeekTtlMs = shouldPoll ? 60 * 1000 : 60 * 60 * 1000;
 					// When not live polling, we still fetch with a 1-hour TTL to keep data fresh
 				}
@@ -443,8 +445,8 @@ function LeagueScores() {
 					dbEntryTs = latestAfter && latestAfter.ts ? latestAfter.ts : null;
 				} catch (_) {}
 
-				// Only show delay banner if: active week, cache was stale before, and refresh failed (threw or ts unchanged)
-				if (isActiveWeek) {
+				// Only show delay banner if live-polling window, cache was stale before, and refresh failed (threw or ts unchanged)
+				if (isLivePollingWindow) {
 					const now = Date.now();
 					const prevAgeMs = prevDbTs != null ? (now - prevDbTs) : null;
 					const afterAgeMs = dbEntryTs != null ? (now - dbEntryTs) : null;
