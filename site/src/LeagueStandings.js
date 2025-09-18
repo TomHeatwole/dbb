@@ -46,8 +46,8 @@ function LeagueStandings() {
     (async () => {
       if (!isCurrentSeason) { setCompletedWeeks(completedWeeksBase); return; }
       try {
-        const done = await isCurrentWeekCompleted();
-        const cw = getCurrentNFLWeek();
+        const done = await isCurrentWeekCompleted(season);
+        const cw = getCurrentNFLWeek(season);
         const val = done ? Math.max(completedWeeksBase, cw) : completedWeeksBase;
         if (!cancelled) setCompletedWeeks(val);
       } catch (_) {
@@ -397,7 +397,8 @@ function LeagueStandings() {
     let effectiveCompleted = 0;
     if (season === CURRENT_YEAR) {
       const currentWeekNum = getCurrentNFLWeek();
-      const completedOnly = Math.max(0, Math.min(completedWeeks, currentWeekNum - 1, limit));
+      // Include current week if it's completed per admin/db-aware state
+      const completedOnly = Math.max(0, Math.min(completedWeeks, currentWeekNum, limit));
       effectiveCompleted = completedOnly;
     } else {
       // Previous seasons: all scheduled weeks are completed
@@ -437,6 +438,8 @@ function LeagueStandings() {
     // Compute new live/weekly summary fields
     const isCurrentSeason = season === CURRENT_YEAR;
     const currentWeekNum = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
+    const isCurrentWeekDone = isCurrentSeason ? (completedWeeksNumber >= currentWeekNum) : true;
+    const showLiveSummary = isCurrentSeason && !isCurrentWeekDone;
     const wbAll = getWeekScoreBreakdown(weeksParsedData, currentWeekNum) || {};
     const rosterIdForCalc = rosterIdForLink;
     let scoreThisWeek = 0;
@@ -602,23 +605,23 @@ function LeagueStandings() {
             <Link to={`/team/${rosterIdForLink}${currentSearchParams && currentSearchParams.toString() ? `?${currentSearchParams.toString()}` : ''}`}>See Team Overview</Link>
           </div>
         </div>
-        <div className="standings-expand-right">
-          <div className="standings-extra-block">
-            <div className="standings-extra-row">
-              <span className="standings-extra-label">PF through completed weeks:</span>
-              <span className="standings-extra-val">{completedWeeksOnlyTotal} pts</span>
-            </div>
-            <div className="standings-extra-row">
-              <span className="standings-extra-label">PF this week:</span>
-              <span className="standings-extra-val">{scoreThisWeek} pts</span>
-            </div>
-            {isCurrentSeason ? (
+        {showLiveSummary ? (
+          <div className="standings-expand-right">
+            <div className="standings-extra-block">
+              <div className="standings-extra-row">
+                <span className="standings-extra-label">PF through completed weeks:</span>
+                <span className="standings-extra-val">{completedWeeksOnlyTotal} pts</span>
+              </div>
+              <div className="standings-extra-row">
+                <span className="standings-extra-label">PF this week:</span>
+                <span className="standings-extra-val">{scoreThisWeek} pts</span>
+              </div>
               <div className="standings-extra-row">
                 <span className="standings-extra-sub">(Yet To Play: {yetToPlayCount}, In-Play: {activeCount})</span>
               </div>
-            ) : null}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     );
   }
