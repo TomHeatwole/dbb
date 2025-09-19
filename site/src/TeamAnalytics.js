@@ -92,9 +92,22 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   }, [startDropdownOpen, endDropdownOpen]);
 
   useImperativeHandle(ref, () => ({
-    resetWeek: (season) => {
+    resetWeek: async (season) => {
       const newStart = 1;
-      const newEnd = getDefaultDisplayWeek(season);
+      let newEnd = 17;
+      const isCurr = String(season || CURRENT_YEAR) === String(CURRENT_YEAR);
+      if (isCurr) {
+        try {
+          const cw = getCurrentNFLWeek(season || CURRENT_YEAR);
+          const done = await isCurrentWeekCompleted(season || CURRENT_YEAR);
+          newEnd = done ? cw : Math.max(1, cw - 1);
+        } catch (_) {
+          const cw = getCurrentNFLWeek(season || CURRENT_YEAR);
+          newEnd = Math.max(1, cw - 1);
+        }
+      } else {
+        newEnd = 17;
+      }
       setStartWeek(newStart);
       setEndWeek(newEnd);
       if (updateQueryParams) {
@@ -128,14 +141,63 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   const adjustedEndWeek = isCurrentSeason && !currentWeekCompleted ? Math.min(endWeek, Math.max(0, currentWeek - 1)) : endWeek;
   const adjustedStartWeek = isCurrentSeason ? Math.min(startWeek, adjustedEndWeek) : startWeek;
 
-  // When urlYear changes (season switch), reset start/end state to component defaults
+  // When urlYear changes (season switch), reset start/end to completed weeks only (DB-aware)
   useEffect(() => {
-    const newStart = 1;
-    const newEnd = getDefaultDisplayWeek(urlYear || CURRENT_YEAR);
-    setStartWeek(newStart);
-    setEndWeek(newEnd);
-    // Do not rewrite 'year' here to avoid race with parent; start/end will sync via their own effect
+    let cancelled = false;
+    (async () => {
+      const season = urlYear || CURRENT_YEAR;
+      const isCurr = String(season) === String(CURRENT_YEAR);
+      const newStart = 1;
+      let newEnd = 17;
+      if (isCurr) {
+        try {
+          const cw = getCurrentNFLWeek(season);
+          const done = await isCurrentWeekCompleted(season);
+          newEnd = done ? cw : Math.max(1, cw - 1);
+        } catch (_) {
+          const cw = getCurrentNFLWeek(season);
+          newEnd = Math.max(1, cw - 1);
+        }
+      } else {
+        newEnd = 17;
+      }
+      if (!cancelled) {
+        setStartWeek(newStart);
+        setEndWeek(newEnd);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [urlYear]);
+
+  // On initial mount, if no explicit start/end in URL, set defaults to completed weeks only
+  useEffect(() => {
+    if (!isNaN(urlStartWeek) || !isNaN(urlEndWeek)) { return; }
+    let cancelled = false;
+    (async () => {
+      const season = urlYear || CURRENT_YEAR;
+      const isCurr = String(season) === String(CURRENT_YEAR);
+      const newStart = 1;
+      let newEnd = 17;
+      if (isCurr) {
+        try {
+          const cw = getCurrentNFLWeek(season);
+          const done = await isCurrentWeekCompleted(season);
+          newEnd = done ? cw : Math.max(1, cw - 1);
+        } catch (_) {
+          const cw = getCurrentNFLWeek(season);
+          newEnd = Math.max(1, cw - 1);
+        }
+      } else {
+        newEnd = 17;
+      }
+      if (!cancelled) {
+        setStartWeek(newStart);
+        setEndWeek(newEnd);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Get weekly standings for the selected window (with current week excluded)
   const weeklyStandings = getWeeklyStandings(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
