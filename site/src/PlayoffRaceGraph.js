@@ -6,7 +6,7 @@ import useIsMobile from './useIsMobile';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea } from 'recharts';
 
 function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds, playersData, playerIdMap) {
-  if (!Array.isArray(weeksParsedData) || completedWeeks <= 0) {
+  if (!Array.isArray(weeksParsedData)) {
     return { data: [], rosterIds: Array.from(rosterIds || []) };
   }
 
@@ -20,6 +20,13 @@ function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds, pl
   }
 
   const chartData = [];
+  // Add Week 0 baseline: playoff bar is 0; all deltas and cumulative are 0.0
+  const week0Point = { name: 'W0' };
+  for (const rid of allRosterIds) {
+    week0Point[rid] = 0;
+    week0Point[`c_${rid}`] = 0;
+  }
+  chartData.push(week0Point);
   const cappedWeeks = Math.max(0, Math.min(14, completedWeeks));
   for (let w = 1; w <= cappedWeeks; w += 1) {
     const weekEntries = weeksParsedData[w - 1] || [];
