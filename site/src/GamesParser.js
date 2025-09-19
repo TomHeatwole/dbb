@@ -181,7 +181,7 @@ export function buildTeamToEventMap(scoreboardJson) {
  * Map player IDs to their game event for the week, using history for past games to choose the correct team.
  * Returns: { [playerId]: { event, team } }
  */
-export async function mapPlayersToGames(playerIds, playersData, playerIdMap, scoreboardJson) {
+export async function mapPlayersToGames(playerIds, playersData, playerIdMap, scoreboardJson, overrideTeamMap = null) {
   const teamToEvent = buildTeamToEventMap(scoreboardJson);
   const result = {};
   const ids = Array.isArray(playerIds) ? playerIds : [];
@@ -216,13 +216,14 @@ export async function mapPlayersToGames(playerIds, playersData, playerIdMap, sco
     const currentTeam = normalizeTeamAbbr(info && (info.team || info.team_abbr));
     const espnId = info && info.espn_id ? String(info.espn_id) : null;
 
-    let teamForWeek = currentTeam || null;
+    const forcedTeam = overrideTeamMap && overrideTeamMap[String(pid)] ? normalizeTeamAbbr(overrideTeamMap[String(pid)]) : null;
+    let teamForWeek = forcedTeam || currentTeam || null;
     if (weekFuture) {
       // Future weeks: stick to current data only; if no team, mark FA
       teamForWeek = teamForWeek || 'FA';
     } else {
       // Past or in-progress: use history to resolve team at date if available
-      if (espnId && anchorIso) {
+      if (!forcedTeam && espnId && anchorIso) {
         const history = historiesByEspn[espnId];
         const histTeam = getTeamAtDate(history, anchorIso);
         teamForWeek = normalizeTeamAbbr(histTeam) || teamForWeek || 'FA';

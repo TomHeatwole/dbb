@@ -4,7 +4,7 @@ import { STARTER_POSITION_NAMES } from './global_constants';
 import { getInjuryAbbreviation } from './InjuryLookup';
 import useIsMobile from './useIsMobile';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {} }) {
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
   const isMobileView = useIsMobile();
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
@@ -60,7 +60,8 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
             const info = getPlayerInfo(p.id, playersData, playerIdMap);
             const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
             const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false, eventId: null };
-            const teamAbbr = gameObj.team || (info && (info.team || info.team_abbr)) || null;
+            const snapshotTeam = playersTeamMap && playersTeamMap[String(p.id)];
+            const teamAbbr = snapshotTeam || gameObj.team || (info && (info.team || info.team_abbr)) || null;
             const gameCellClasses = ['team-scores-game-cell'];
             if (isActiveWeek && gameObj.live) {
               gameCellClasses.push('team-scores-game-live');
@@ -125,7 +126,8 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           <tbody>
             {benchRows.map(({ p, info }) => {
               const gameObj = playerGameLabels && playerGameLabels[p.id] ? playerGameLabels[p.id] : { text: '', live: false, team: null, completed: false, eventId: null };
-              const teamAbbr = gameObj.team || (info && (info.team || info.team_abbr)) || null;
+              const snapshotTeam = playersTeamMap && playersTeamMap[String(p.id)];
+              const teamAbbr = snapshotTeam || gameObj.team || (info && (info.team || info.team_abbr)) || null;
               const gameCellClasses = ['team-scores-game-cell'];
               if (isActiveWeek && gameObj.live) {
                 gameCellClasses.push('team-scores-game-live');

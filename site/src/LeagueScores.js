@@ -17,7 +17,7 @@ import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from './GamesParser';
 import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from './InjuryLookup';
-import { readApiCacheLatestByKey, readPollingIntervalMs } from './database';
+import { readApiCacheLatestByKey, readPollingIntervalMs, readPlayersSnapshot } from './database';
 
 // Hardcoded toggle to force show the Sleeper API banner
 const show_sleeper_api_banner = false;
@@ -85,6 +85,7 @@ function LeagueScores() {
 	const [teamHighlightMap, setTeamHighlightMap] = useState({}); // rosterId -> 'up'|'down'|'row'
 	const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
 	const labelBaselineKeyRef = useRef(null);
+	const [playersTeamMap, setPlayersTeamMap] = useState({}); // playerId -> team abbr (from weekly snapshot)
 	const pollingIntervalMsRef = useRef(15000);
 	const isLivePollingWindowRef = useRef(false);
 
@@ -334,12 +335,12 @@ function LeagueScores() {
 		const playerIds = Array.from(playerIdSet);
 		if (playerIds.length === 0) { setPlayerGameLabels({}); return; }
 
-		const seasonYear = Number(season);
+				const seasonYear = Number(season);
 		let cancelled = false;
 		fetchNflScoreboard(seasonYear, week)
-			.then(async (json) => {
+					.then(async (json) => {
 				if (cancelled) { return; }
-				const mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json);
+						let mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json, (String(season) === String(CURRENT_YEAR) ? playersTeamMap : null));
 				const labels = {};
 				for (const pid of playerIds) {
 					const item = mapping[pid];
@@ -369,6 +370,28 @@ function LeagueScores() {
 			labelBaselineKeyRef.current = key;
 		}
 	}, [playerGameLabels, weeksParsedData, season, week]);
+
+	// Load per-player team mapping from weekly players snapshot (current season only)
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+				if (!isCurrentSeason || !week || Number(week) < 1) { if (!cancelled) setPlayersTeamMap({}); return; }
+				const snap = await readPlayersSnapshot(String(season), Number(week));
+				const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
+				if (cancelled) { return; }
+				if (!data) { setPlayersTeamMap({}); return; }
+				const next = {};
+				for (const [pid, pinfo] of Object.entries(data)) {
+					const abbr = pinfo && (pinfo.team || pinfo.team_abbr || pinfo.team_abbreviation);
+					if (abbr) { next[String(pid)] = String(abbr); }
+				}
+				setPlayersTeamMap(next);
+			} catch (_) { if (!cancelled) setPlayersTeamMap({}); }
+		})();
+		return () => { cancelled = true; };
+	}, [season, week]);
 
 	// Reset label baseline key on season/week change
 	useEffect(() => {
@@ -732,7 +755,7 @@ function LeagueScores() {
 							const teamName = getTeamName(rosterId);
 							const avatarUrl = getAvatar(rosterId);
 							const isExpanded = !!expanded[rosterId];
-							const weekBreakdown = breakdown;
+									const weekBreakdown = breakdown;
 							const startersTotal = weekBreakdown ? weekBreakdown.starterTotal : 0;
 							const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
 							const isActiveWeek = (season === CURRENT_YEAR) && (week === getCurrentNFLWeek());
@@ -761,7 +784,7 @@ function LeagueScores() {
 							// Debug: log players missing ESPN mapping (image source) for this team row
 							try {
 								if (weekBreakdown && playerIdMap) {
-									const rows = [...(weekBreakdown.starters || []), ...(weekBreakdown.bench || [])];
+												const rows = [...(weekBreakdown.starters || []), ...(weekBreakdown.bench || [])];
 									const missing = [];
 									for (const p of rows) {
 										const pid = String(p && p.id);
@@ -839,7 +862,7 @@ function LeagueScores() {
 											) : (
 												isMobile ? (
 													<MobileScaled>
-														<LeagueScoresTeamBreakdown
+								<LeagueScoresTeamBreakdown
 															weekBreakdown={weekBreakdown}
 															week={week}
 															rosterId={rosterId}
@@ -853,11 +876,12 @@ function LeagueScores() {
 															isActiveWeek={isActiveWeek}
 															injuriesMap={injuriesMap}
 															showCurrentInjury={showCurrentInjury}
-															playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
+									playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
+									playersTeamMap={playersTeamMap}
 														/>
 													</MobileScaled>
 												) : (
-													<LeagueScoresTeamBreakdown
+									<LeagueScoresTeamBreakdown
 														weekBreakdown={weekBreakdown}
 														week={week}
 														rosterId={rosterId}
@@ -871,7 +895,8 @@ function LeagueScores() {
 														isActiveWeek={isActiveWeek}
 														injuriesMap={injuriesMap}
 														showCurrentInjury={showCurrentInjury}
-														playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
+										playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
+										playersTeamMap={playersTeamMap}
 													/>
 												)
 											)}
