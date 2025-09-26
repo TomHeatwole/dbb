@@ -397,7 +397,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
                   leagueMedian = runningArr[mid];
                 }
                 return {
-                  name: `Week ${startWeek + i}`,
+                  name: `Week ${adjustedStartWeek + i}`,
                   runningTotalPoints: user ? user.runningTotalPoints : 0,
                   leagueCeiling,
                   leagueFloor,
@@ -465,7 +465,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
                 }
                 const playoffBar = playoffBarAbs - leagueFloor;
                 return {
-                  name: `Week ${startWeek + i}`,
+                  name: `Week ${adjustedStartWeek + i}`,
                   runningTotalPoints: user ? Math.round((user.runningTotalPoints - leagueFloor) * 10) / 10 : 0,
                   leagueCeiling: Math.round(leagueCeiling * 10) / 10,
                   leagueMedian: Math.round(leagueMedian * 10) / 10,

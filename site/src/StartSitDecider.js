@@ -124,32 +124,33 @@ export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabe
   // Remaining pool (exclude used)
   const remaining = sortByPointsDesc(combined.filter(p => !usedIds.has(p.id)));
 
-  // SUPER slots (QB/RB/WR/TE eligible)
-  if (counts.SUPER > 0) {
-    let superLeft = counts.SUPER;
-    for (let i = 0; i < remaining.length && superLeft > 0; i++) {
-      const p = remaining[i];
-      if (!p || !p.id || usedIds.has(p.id)) { continue; }
-      if (!isEligibleForSuper(p.position)) { continue; }
-      selectedSUPER.push(p);
-      usedIds.add(p.id);
-      superLeft -= 1;
-    }
-  }
-
-  // Recompute remaining after SUPER
-  let remainingAfterSuper = sortByPointsDesc(combined.filter(p => !usedIds.has(p.id)));
-
-  // FLEX slots (RB/WR/TE eligible)
+  // FLEX then SUPER fill order per requirement
+  // FLEX slots (RB/WR/TE eligible) filled before SUPER
   if (counts.FLEX > 0) {
     let flexLeft = counts.FLEX;
-    for (let i = 0; i < remainingAfterSuper.length && flexLeft > 0; i++) {
-      const p = remainingAfterSuper[i];
+    for (let i = 0; i < remaining.length && flexLeft > 0; i++) {
+      const p = remaining[i];
       if (!p || !p.id || usedIds.has(p.id)) { continue; }
       if (!isEligibleForFlex(p.position)) { continue; }
       selectedFLEX.push(p);
       usedIds.add(p.id);
       flexLeft -= 1;
+    }
+  }
+
+  // Recompute remaining after FLEX
+  let remainingAfterFlex = sortByPointsDesc(combined.filter(p => !usedIds.has(p.id)));
+
+  // SUPER slots (QB/RB/WR/TE eligible) filled after FLEX
+  if (counts.SUPER > 0) {
+    let superLeft = counts.SUPER;
+    for (let i = 0; i < remainingAfterFlex.length && superLeft > 0; i++) {
+      const p = remainingAfterFlex[i];
+      if (!p || !p.id || usedIds.has(p.id)) { continue; }
+      if (!isEligibleForSuper(p.position)) { continue; }
+      selectedSUPER.push(p);
+      usedIds.add(p.id);
+      superLeft -= 1;
     }
   }
 
