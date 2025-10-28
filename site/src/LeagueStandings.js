@@ -223,16 +223,38 @@ function LeagueStandings() {
     if (cap === 0) {
       return { high: { points: 'N/A', week: null }, low: { points: 'N/A', week: null } };
     }
+
+    // Helper: compute a week's starter total using StartSit when possible; fallback to API points
+    const computeWeekTotal = (weekIndex1Based) => {
+      try {
+        if (playersData && playerIdMap && weeksParsedData) {
+          const wb = getWeekScoreBreakdown(weeksParsedData, weekIndex1Based) || {};
+          const raw = wb && wb[rosterId];
+          if (raw) {
+            const computed = StartSitSort(raw, playersData, playerIdMap);
+            if (computed && typeof computed.starterTotal === 'number') {
+              return Math.round(computed.starterTotal * 10) / 10;
+            }
+          }
+        }
+      } catch (_) { /* fallback below */ }
+      const wkEntries = (weeksArr && Array.isArray(weeksArr[weekIndex1Based - 1])) ? weeksArr[weekIndex1Based - 1] : null;
+      const entry = wkEntries && wkEntries.find(e => e && Number(e.roster_id) === Number(rosterId));
+      if (entry && typeof entry.points === 'number') {
+        return Math.round(entry.points * 10) / 10;
+      }
+      return null;
+    };
+
     let high = { points: -Infinity, week: null };
     let low = { points: Infinity, week: null };
-    (weeksArr || []).slice(0, cap).forEach((weekEntries, idx) => {
-      if (!Array.isArray(weekEntries)) { return; }
-      const entry = weekEntries.find(e => e && Number(e.roster_id) === Number(rosterId));
-      if (entry && typeof entry.points === 'number') {
-        if (entry.points > high.points) { high = { points: entry.points, week: idx + 1 }; }
-        if (entry.points < low.points) { low = { points: entry.points, week: idx + 1 }; }
+    for (let i = 1; i <= cap; i++) {
+      const pts = computeWeekTotal(i);
+      if (typeof pts === 'number' && isFinite(pts)) {
+        if (pts > high.points) { high = { points: pts, week: i }; }
+        if (pts < low.points) { low = { points: pts, week: i }; }
       }
-    });
+    }
     if (!isFinite(high.points)) { high = { points: 0, week: '-' }; }
     if (!isFinite(low.points)) { low = { points: 0, week: '-' }; }
     return { high, low };
