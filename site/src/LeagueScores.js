@@ -659,7 +659,7 @@ function LeagueScores() {
 	);
 
 	return (
-		<InfoPageWrapper title="Hwang Dynasty Scores" subtitle={null} leftHeader={leftHeader}>
+		<InfoPageWrapper title={isMobile ? "Scores" : "Hwang Dynasty Scores"} subtitle={null} leftHeader={leftHeader}>
 			<div className="team-scores-container">
 				<WeekSelector week={week} onChange={setWeek} />
 			</div>

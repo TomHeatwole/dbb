@@ -289,7 +289,7 @@ function LeagueStandings() {
 
   if (loading) {
     return (
-      <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
+      <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
         <div className="loading-center">
           <div className="spinner" aria-label="Loading" />
           <div className="loading-text">Loading standings…</div>
@@ -300,7 +300,7 @@ function LeagueStandings() {
   }
   if (error || !weeksParsedData || !rosters || !users) {
     return (
-      <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
+      <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
         <div>Error loading standings.</div>
       </InfoPageWrapper>
     );
@@ -649,7 +649,7 @@ function LeagueStandings() {
   }
 
   return (
-    <InfoPageWrapper title="Hwang Dynasty Standings" subtitle={null} leftHeader={leftHeader}>
+    <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
       <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "") + (showPpgColumn ? "" : " standings-list--no-ppg") }>
         {displayRows.map((row, idx) => {
           const rosterId = row.roster_id;
