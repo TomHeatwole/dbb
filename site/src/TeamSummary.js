@@ -26,18 +26,62 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
         if (cancelled || !Array.isArray(allPicks)) {
           return;
         }
-        const owned = allPicks
+        const currentYearNum = Number(CURRENT_YEAR);
+        const minSeason = currentYearNum + 1;
+        const maxSeason = currentYearNum + 3;
+
+        // Determine which of this team's own natural picks (by season/round) have been traded away.
+        // We treat a pick as traded away if its original roster_id is this team but the current owner_id is different.
+        const tradedAwaySelfKeys = new Set();
+        for (const p of allPicks) {
+          if (!p) {
+            continue;
+          }
+          const seasonNum = p.season != null ? Number(p.season) : Number(seasonForPicks);
+          const roundNum = p.round != null ? Number(p.round) : null;
+          if (!Number.isFinite(seasonNum) || !Number.isFinite(roundNum)) {
+            continue;
+          }
+          if (seasonNum < minSeason || seasonNum > maxSeason) {
+            continue;
+          }
+          const rosterIdNum = p.roster_id != null ? Number(p.roster_id) : null;
+          const ownerIdNum = p.owner_id != null ? Number(p.owner_id) : null;
+          if (rosterIdNum === Number(rosterId) && ownerIdNum !== Number(rosterId)) {
+            tradedAwaySelfKeys.add(`${seasonNum}-${roundNum}`);
+          }
+        }
+
+        // Base (assumed) picks: 1st–4th for each future year current+1 .. current+3,
+        // minus any that were traded away (as detected above).
+        const basePicks = [];
+        if (Number.isFinite(minSeason) && Number.isFinite(maxSeason)) {
+          for (let yr = minSeason; yr <= maxSeason; yr += 1) {
+            for (let round = 1; round <= 4; round += 1) {
+              const key = `${yr}-${round}`;
+              if (tradedAwaySelfKeys.has(key)) {
+                continue;
+              }
+              basePicks.push({
+                season: String(yr),
+                round,
+                owner_id: Number(rosterId),
+              });
+            }
+          }
+        }
+
+        // Traded picks that this roster currently owns within the same future window
+        const ownedTraded = allPicks
           .filter((p) => {
             if (!p || p.owner_id == null) {
               return false;
             }
             const seasonNum = p.season != null ? Number(p.season) : Number(seasonForPicks);
-            const currentYearNum = Number(CURRENT_YEAR);
-            if (!Number.isFinite(seasonNum) || !Number.isFinite(currentYearNum)) {
+            if (!Number.isFinite(seasonNum)) {
               return false;
             }
-            // Only show picks for seasons strictly after the current year
-            if (seasonNum <= currentYearNum) {
+            if (seasonNum < minSeason || seasonNum > maxSeason) {
               return false;
             }
             return Number(p.owner_id) === Number(rosterId);
@@ -51,11 +95,34 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
               team_name: viaTeamName,
             };
           });
+
+        // Combine base and traded picks, then sort by year, round, and then team name
+        const combined = [...basePicks, ...ownedTraded].sort((a, b) => {
+          const aSeason = Number(a.season);
+          const bSeason = Number(b.season);
+          if (aSeason !== bSeason) {
+            return aSeason - bSeason;
+          }
+          const aRound = Number(a.round || 0);
+          const bRound = Number(b.round || 0);
+          if (aRound !== bRound) {
+            return aRound - bRound;
+          }
+          const aIsBase = !a.team_name;
+          const bIsBase = !b.team_name;
+          if (aIsBase !== bIsBase) {
+            // Base picks first, then traded
+            return aIsBase ? -1 : 1;
+          }
+          const aName = a.team_name || '';
+          const bName = b.team_name || '';
+          return aName.localeCompare(bName);
+        });
         if (!cancelled) {
-          setTradedPicks(owned);
+          setTradedPicks(combined);
           // Temporary debug output until we render this in a column
           // eslint-disable-next-line no-console
-          console.log('Traded picks (summary) for roster', rosterId, 'season', seasonForPicks, owned);
+          console.log('Picks (summary) for roster', rosterId, 'season window', `${minSeason}-${maxSeason}`, combined);
         }
       } catch (e) {
         if (!cancelled) {
@@ -68,7 +135,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     return () => {
       cancelled = true;
     };
-  }, [urlYear, rosterId]);
+  }, [urlYear, rosterId, rosterIdToTeamInfo]);
   const myStanding = useMemo(() => {
     if (loading || !weeksParsedData) { return null; }
     const baseStandings = getStandings(weeksParsedData) || [];
