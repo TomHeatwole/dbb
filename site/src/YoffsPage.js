@@ -51,10 +51,16 @@ function YoffsPage() {
 
         const startIdx = PLAYOFF_START_WEEK - 1;
         const endIdx = PLAYOFF_END_WEEK - 1;
+
+        // Regular season weeks: everything before playoffs
+        const regularSliceFull = weeksParsedData.slice(0, startIdx);
+        const weeksRegular = regularSliceFull.filter(Boolean);
+
+        // Playoff weeks: weeks 15–17
         const playoffSlice = weeksParsedData.slice(startIdx, endIdx + 1);
         const weeksPlayoffs = playoffSlice.filter(Boolean);
 
-        if (!weeksPlayoffs.length) {
+        if (!weeksPlayoffs.length || !weeksRegular.length) {
           if (!cancelled) {
             setRows([]);
             setRosters(teamData.rosters);
@@ -64,12 +70,27 @@ function YoffsPage() {
           return;
         }
 
-        const standingsPlayoffs = getStandings(weeksPlayoffs) || [];
+        // Regular season standings used to determine playoff seeds (top 4)
+        const standingsRegular = getStandings(weeksRegular) || [];
+        const top4Regular = standingsRegular
+          .slice()
+          .sort((a, b) => a.place - b.place)
+          .slice(0, 4);
+        const seedIds = top4Regular.map(r => Number(r.roster_id));
+        const seedSet = new Set(seedIds);
+        const seedPlaceById = {};
+        top4Regular.forEach(r => {
+          seedPlaceById[Number(r.roster_id)] = r.place;
+        });
 
-        // Regular season (weeks before playoffs) stats for the same teams
-        const regularSlice = weeksParsedData.slice(0, PLAYOFF_START_WEEK - 1);
+        const standingsPlayoffsAll = getStandings(weeksPlayoffs) || [];
+        const standingsPlayoffs = standingsPlayoffsAll.filter(r =>
+          seedSet.has(Number(r.roster_id))
+        );
+
+        // Regular season (weeks before playoffs) stats (total + PPG)
         const regularStatsByRoster = {};
-        regularSlice.forEach((weekEntries) => {
+        regularSliceFull.forEach((weekEntries) => {
           if (!Array.isArray(weekEntries)) {
             return;
           }
@@ -156,9 +177,12 @@ function YoffsPage() {
           const regularPpg = regularStats.weeksPlayed > 0
             ? Math.round((regularTotal / regularStats.weeksPlayed) * 10) / 10
             : null;
+
+          const displayPlace = seedPlaceById[rid] != null ? seedPlaceById[rid] : row.place;
+
           return {
             rosterId: rid,
-            place: row.place,
+            place: displayPlace,
             pointsScored: total,
             weeksPlayed,
             ppg,
@@ -333,17 +357,6 @@ function YoffsPage() {
                 <div className="standings-row-expand">
                   <div className="standings-row-expand-inner yoffs-standings-expand">
                     <div className="yoffs-section">
-                      <div className="yoffs-section-title">Regular Season</div>
-                      <div className="yoffs-section-row">
-                        Total Score:{' '}
-                        {typeof row.regularTotal === 'number' ? row.regularTotal.toFixed(1) : 'N/A'}
-                      </div>
-                      <div className="yoffs-section-row">
-                        PPG:{' '}
-                        {row.regularPpg != null ? row.regularPpg.toFixed(1) : 'N/A'}
-                      </div>
-                    </div>
-                    <div className="yoffs-section">
                       <div className="yoffs-section-title">Playoffs</div>
                       <div className="yoffs-section-row">
                         Total Score:{' '}
@@ -360,6 +373,17 @@ function YoffsPage() {
                       <div className="yoffs-section-row">
                         Week 17 Score:{' '}
                         {row.week17Score != null ? row.week17Score.toFixed(1) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="yoffs-section">
+                      <div className="yoffs-section-title">Regular Season</div>
+                      <div className="yoffs-section-row">
+                        Total Score:{' '}
+                        {typeof row.regularTotal === 'number' ? row.regularTotal.toFixed(1) : 'N/A'}
+                      </div>
+                      <div className="yoffs-section-row">
+                        PPG:{' '}
+                        {row.regularPpg != null ? row.regularPpg.toFixed(1) : 'N/A'}
                       </div>
                     </div>
                   </div>
