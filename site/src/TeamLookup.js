@@ -10,7 +10,8 @@ function getAvatarUrl(avatarVal) {
 
 export async function fetchTeamData(season = getCurrentYear()) {
   const currentYear = getCurrentYear();
-  const leagueId = currentYear === season ? LEAGUE_ID : PREVIOUS_YEARS[season];
+  const normalizedSeason = String(season);
+  const leagueId = String(currentYear) === normalizedSeason ? LEAGUE_ID : PREVIOUS_YEARS[normalizedSeason];
 
   // Fetch rosters
   const rosterRes = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
@@ -51,4 +52,36 @@ export async function fetchTeamData(season = getCurrentYear()) {
   }
 
   return { rosters, users };
-} 
+}
+
+// Fetch traded draft picks for a given season, normalized into a simple structure
+// Example item: { round: 2, season: '2025', roster_id: 1, owner_id: 4, previous_owner_id: 1 }
+export async function fetchTradedPicks(season = getCurrentYear()) {
+  const currentYear = getCurrentYear();
+  const normalizedSeason = String(season);
+  const leagueId = String(currentYear) === normalizedSeason ? LEAGUE_ID : PREVIOUS_YEARS[normalizedSeason];
+
+  if (!leagueId) {
+    throw new Error(`No league id found for season ${normalizedSeason}`);
+  }
+
+  const res = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/traded_picks`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch traded picks');
+  }
+
+  const raw = await res.json();
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw.map((p) => {
+    return {
+      round: p && p.round != null ? Number(p.round) : null,
+      season: p && p.season != null ? String(p.season) : normalizedSeason,
+      roster_id: p && p.roster_id != null ? Number(p.roster_id) : null,
+      owner_id: p && p.owner_id != null ? Number(p.owner_id) : null,
+      previous_owner_id: p && p.previous_owner_id != null ? Number(p.previous_owner_id) : null,
+    };
+  });
+}

@@ -1,15 +1,52 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { StartSitSort } from './StartSitDecider';
 import FullRoster from './FullRoster';
+import { fetchTradedPicks } from './TeamLookup';
 
 function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playerList }) {
   const { id } = useParams();
   const rosterId = Number(id);
   const [searchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
+  const [tradedPicks, setTradedPicks] = useState([]);
+
+  // Load traded picks for this team in the summary (Overview) tab and log them for now
+  useEffect(() => {
+    let cancelled = false;
+    const seasonForPicks = urlYear ? String(urlYear) : String(CURRENT_YEAR);
+    (async () => {
+      try {
+        const allPicks = await fetchTradedPicks(seasonForPicks);
+        if (cancelled || !Array.isArray(allPicks)) {
+          return;
+        }
+        const owned = allPicks.filter((p) => {
+          if (!p || p.owner_id == null) {
+            return false;
+          }
+          return Number(p.owner_id) === Number(rosterId);
+        });
+        if (!cancelled) {
+          setTradedPicks(owned);
+          // Temporary debug output until we render this in a column
+          // eslint-disable-next-line no-console
+          console.log('Traded picks (summary) for roster', rosterId, 'season', seasonForPicks, owned);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setTradedPicks([]);
+        }
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch traded picks in TeamSummary', e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [urlYear, rosterId]);
   const myStanding = useMemo(() => {
     if (loading || !weeksParsedData) { return null; }
     const baseStandings = getStandings(weeksParsedData) || [];

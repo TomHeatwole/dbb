@@ -155,6 +155,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     return () => { cancelled = true; };
   }, [season, week, playerIdMap]);
 
+
   // Get week breakdown for this roster
   const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
   const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap) : null;
