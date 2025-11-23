@@ -14,6 +14,7 @@ import useIsMobile from './useIsMobile';
 import PlayoffRaceGraph from './PlayoffRaceGraph';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
+import StandingsRowHeader from './StandingsRowHeader';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -680,49 +681,63 @@ function LeagueStandings() {
             : null;
           const playoffPlace = usePlayoffLogic && isPlayoff ? playoffOrderMap.get(rosterId) : null;
 
+          const rankLabel = (usePlayoffLogic && isPlayoff)
+            ? playoffOrderMap.get(rosterId)
+            : (!usePlayoffLogic && season === CURRENT_YEAR && liveRankMap && liveRankMap.has(rosterId)
+              ? liveRankMap.get(rosterId)
+              : ((usePlayoffLogic ? place14 : placeCompleted) || idx + 1));
+
+          let rightHeaderContent;
+          if (isMobile) {
+            rightHeaderContent = usePlayoffLogic && isPlayoff ? (
+              <span className="standings-total">Playoffs: {Math.round(row.points_scored)} pts</span>
+            ) : (
+              <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
+                {Math.round(row.points_scored)} pts
+                {usePlayoffLogic && (
+                  <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
+                )}
+              </span>
+            );
+          } else {
+            rightHeaderContent = usePlayoffLogic && isPlayoff ? (
+              <>
+                {showPpgColumn ? (
+                  <span className="standings-ppg standings-ppg--playoff-mobile">
+                    Playoffs: {Math.round(row.points_scored)} pts
+                  </span>
+                ) : null}
+                <span className="standings-total standings-total--playoff-desktop">
+                  Playoffs: {Math.round(row.points_scored)} pts
+                </span>
+              </>
+            ) : (
+              <>
+                {showPpgColumn ? (
+                  <span className="standings-ppg">
+                    {ppgValue != null ? `${ppgValue} ppg` : ''}
+                  </span>
+                ) : null}
+                <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
+                  {Math.round(row.points_scored)} pts
+                  {usePlayoffLogic && (
+                    <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
+                  )}
+                </span>
+              </>
+            );
+          }
+
           return (
             <div key={rosterId} className={`standings-row ${isTop4Highlight ? 'standings-row--playoff' : ''}`}>
-              <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
-                <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
-                <span className="standings-rank">#{(usePlayoffLogic && isPlayoff)
-                  ? playoffOrderMap.get(rosterId)
-                  : (!usePlayoffLogic && season === CURRENT_YEAR && liveRankMap && liveRankMap.has(rosterId)
-                    ? liveRankMap.get(rosterId)
-                    : ((usePlayoffLogic ? place14 : placeCompleted) || idx + 1))}</span>
-                {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
-                <span className="standings-title">{teamName}</span>
-                {isMobile ? (
-                  // Mobile: only render total (or playoff score) on the right
-                  usePlayoffLogic && isPlayoff ? (
-                    <span className="standings-total">Playoffs: {Math.round(row.points_scored)} pts</span>
-                  ) : (
-                    <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
-                      {Math.round(row.points_scored)} pts
-                      {usePlayoffLogic && (
-                        <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
-                      )}
-                    </span>
-                  )
-                ) : (
-                  // Desktop: render PPG + total as before
-                  usePlayoffLogic && isPlayoff ? (
-                    <>
-                      {showPpgColumn ? (<span className="standings-ppg standings-ppg--playoff-mobile">Playoffs: {Math.round(row.points_scored)} pts</span>) : null}
-                      <span className="standings-total standings-total--playoff-desktop">Playoffs: {Math.round(row.points_scored)} pts</span>
-                    </>
-                  ) : (
-                    <>
-                      {showPpgColumn ? (<span className="standings-ppg">{ppgValue != null ? `${ppgValue} ppg` : ''}</span>) : null}
-                      <span className={`standings-total${usePlayoffLogic ? ' standings-metric' : ''}`}>
-                        {Math.round(row.points_scored)} pts
-                        {usePlayoffLogic && (
-                          <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
-                        )}
-                      </span>
-                    </>
-                  )
-                )}
-              </button>
+              <StandingsRowHeader
+                isExpanded={isExpanded}
+                onToggle={() => toggleExpand(rosterId)}
+                rankLabel={`#${rankLabel}`}
+                avatarUrl={avatarUrl}
+                teamName={teamName}
+                rightContent={rightHeaderContent}
+              />
               {isExpanded && (
                 renderExpandedStats({
                   isMobileView: isMobile,

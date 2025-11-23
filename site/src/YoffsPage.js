@@ -7,8 +7,9 @@ import { getStandings } from './ScoresParser';
 import { CURRENT_YEAR } from './DateHelper';
 import { PREVIOUS_YEARS } from './global_constants';
 import useIsMobile from './useIsMobile';
+import StandingsRowHeader from './StandingsRowHeader';
 
-const PLAYOFF_START_WEEK = 14;
+const PLAYOFF_START_WEEK = 15;
 const PLAYOFF_END_WEEK = 17;
 
 function YoffsPage() {
@@ -257,45 +258,36 @@ function YoffsPage() {
           const avatarUrl = getAvatar(rosterId);
           const isTop4Highlight = row.place != null && row.place <= 4;
 
+          const rightHeaderContent = isMobile ? (
+            <span className="standings-total">
+              {typeof row.pointsScored === 'number' ? `${Math.round(row.pointsScored)} pts` : ''}
+            </span>
+          ) : (
+            <>
+              <span className="standings-ppg">
+                {row.ppg != null ? `${row.ppg.toFixed(1)} ppg` : ''}
+              </span>
+              <span className="standings-total">
+                {typeof row.pointsScored === 'number' ? `${Math.round(row.pointsScored)} pts` : ''}
+              </span>
+            </>
+          );
+
           return (
             <div key={rosterId} className={`standings-row ${isTop4Highlight ? 'standings-row--playoff' : ''}`}>
-              <button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
-                <span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
-                <span className="standings-rank">#{row.place}</span>
-                {avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
-                <span className="standings-title">{teamName}</span>
-                {isMobile ? (
-                  <span className="standings-total">
-                    {typeof row.pointsScored === 'number' ? `${Math.round(row.pointsScored)} pts` : ''}
-                  </span>
-                ) : (
-                  <>
-                    <span className="standings-ppg">
-                      {row.ppg != null ? `${row.ppg.toFixed(1)} ppg` : ''}
-                    </span>
-                    <span className="standings-total">
-                      {typeof row.pointsScored === 'number' ? `${Math.round(row.pointsScored)} pts` : ''}
-                    </span>
-                  </>
-                )}
-              </button>
+              <StandingsRowHeader
+                isExpanded={isExpanded}
+                onToggle={() => toggleExpand(rosterId)}
+                rankLabel={`#${row.place}`}
+                avatarUrl={avatarUrl}
+                teamName={teamName}
+                rightContent={rightHeaderContent}
+              />
               {isExpanded && (
                 <div className="standings-row-expand">
                   <div className="standings-row-expand-inner">
-                    <div>Weeks included: {PLAYOFF_START_WEEK}–{PLAYOFF_END_WEEK}</div>
+                    <div>Playoffs:</div>
                     <div>Games played: {row.weeksPlayed}</div>
-                    <div>
-                      High score:{' '}
-                      {row.highPoints != null && row.highWeek != null
-                        ? `${row.highPoints} pts (Week ${row.highWeek})`
-                        : 'N/A'}
-                    </div>
-                    <div>
-                      Low score:{' '}
-                      {row.lowPoints != null && row.lowWeek != null
-                        ? `${row.lowPoints} pts (Week ${row.lowWeek})`
-                        : 'N/A'}
-                    </div>
                   </div>
                 </div>
               )}
