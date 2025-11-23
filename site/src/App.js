@@ -15,6 +15,7 @@ import useIsMobile from './useIsMobile';
 import LeagueStandings from './LeagueStandings';
 import LeagueScores from './LeagueScores';
 import AdminControls from './AdminControls';
+import YoffsPage from './YoffsPage';
 
 function AppInner() {
   const isMobile = useIsMobile();
@@ -29,6 +30,7 @@ function AppInner() {
       <Route path="/standings" element={<LeagueStandings />} />
       <Route path="/Scores/Week" element={<LeagueScores />} />
       <Route path="/admincontrols" element={<AdminControls />} />
+      <Route path="/yoffs" element={<YoffsPage />} />
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
   );
