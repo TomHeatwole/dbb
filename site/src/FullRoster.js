@@ -20,14 +20,33 @@ function toOrdinal(n) {
   }
 }
 
+function abbreviateTeamName(name) {
+  if (!name) {
+    return '';
+  }
+  const trimmed = String(name).trim();
+  if (trimmed.length <= 13) {
+    return trimmed;
+  }
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 0) {
+    return trimmed;
+  }
+  const firstWord = parts[0];
+  const lastWord = parts[parts.length - 1];
+  const firstInitial = firstWord.charAt(0).toUpperCase();
+  return `${firstInitial}. ${lastWord}`;
+}
+
 function formatPick(pick) {
   if (!pick) {
     return '';
   }
   const season = pick.season != null ? String(pick.season) : '';
   const roundLabel = pick.round != null ? toOrdinal(pick.round) : '';
-  const viaTeamName = pick.team_name || (pick.previous_owner_id != null ? `Team ${pick.previous_owner_id}` : '');
-  const viaLabel = viaTeamName ? ` (via ${viaTeamName})` : '';
+  const rawTeamName = pick.team_name || (pick.previous_owner_id != null ? `Team ${pick.previous_owner_id}` : '');
+  const viaTeamName = abbreviateTeamName(rawTeamName);
+  const viaLabel = viaTeamName ? ` (${viaTeamName})` : '';
   return `${season} ${roundLabel}${viaLabel}`.trim();
 }
 

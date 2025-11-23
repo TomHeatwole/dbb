@@ -855,7 +855,7 @@
 }
 .team-summary-place {
   font-weight: 700;
-  font-size: 2.5em;
+  font-size: 2.0em;
   text-align: center;
   margin-bottom: 0.2em;
   letter-spacing: 0.03em;
@@ -868,10 +868,30 @@
 }
 .team-summary-points {
   font-weight: 400;
-  font-size: 1.2em;
+  font-size: 1.0em;
   color: #aaa;
   margin-bottom: 2em;
   text-align: center;
+}
+.team-summary-root {
+  font-size: 0.9em; /* Slightly smaller overall text on team summary page */
+}
+.team-summary-root .player-column-header {
+  font-size: 1.2em; /* Down from global 1.5em for roster headers on this page */
+}
+.team-summary-root .player-avatar-style {
+  width: 2rem; /* Down from 2.5rem (~20% smaller) */
+  height: 2rem;
+  margin-right: 0.5rem; /* Slightly tighter spacing */
+}
+.team-summary-root .player-list-item {
+  padding: 0.24em 0.48em; /* Scale down padding a bit */
+}
+.team-summary-root .player-list-item-flex {
+  margin-bottom: 0.4em; /* Slightly tighter vertical spacing */
+}
+.team-summary-root .player-name {
+  font-size: 0.9em; /* Reduce name text size inside team summary */
 }
 .team-summary-top5 {
   margin-top: 1em;
