@@ -3,7 +3,35 @@ import { createPortal } from 'react-dom';
 import useIsMobile from './useIsMobile';
 import PlayerCard from './PlayerCard';
 
-function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
+function toOrdinal(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num)) {
+    return '';
+  }
+  const v = num % 100;
+  if (v >= 11 && v <= 13) {
+    return `${num}th`;
+  }
+  switch (num % 10) {
+    case 1: return `${num}st`;
+    case 2: return `${num}nd`;
+    case 3: return `${num}rd`;
+    default: return `${num}th`;
+  }
+}
+
+function formatPick(pick) {
+  if (!pick) {
+    return '';
+  }
+  const season = pick.season != null ? String(pick.season) : '';
+  const roundLabel = pick.round != null ? toOrdinal(pick.round) : '';
+  const viaTeamName = pick.team_name || (pick.previous_owner_id != null ? `Team ${pick.previous_owner_id}` : '');
+  const viaLabel = viaTeamName ? ` (via ${viaTeamName})` : '';
+  return `${season} ${roundLabel}${viaLabel}`.trim();
+}
+
+function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = [] }) {
   // Group players by position
   const playersByPosition = {};
   positions.forEach(pos => { playersByPosition[pos] = []; });
@@ -68,18 +96,27 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'] }) {
           <div key={pos} className={`player-column${isMobile ? ' roster-mobile-column' : ''}`}>
             <div className="player-column-header">{pos}</div>
             <ul className="player-list">
-              {playersByPosition[pos].map((p, i) => (
-                <li
-                  key={i}
-                  className="player-list-item player-list-item-flex player-clickable"
-                  onClick={() => setSelectedPlayer(p)}
-                >
-                  {p.espn_photo_url && (
-                    <img src={p.espn_photo_url} alt={p.name} className="player-avatar player-avatar-style" />
-                  )}
-                  <span className="player-name">{p.name}</span>
-                </li>
-              ))}
+              {pos === 'Picks'
+                ? picks.map((pick, i) => (
+                    <li
+                      key={i}
+                      className="player-list-item player-list-item-flex"
+                    >
+                      <span className="player-name">{formatPick(pick)}</span>
+                    </li>
+                  ))
+                : playersByPosition[pos].map((p, i) => (
+                    <li
+                      key={i}
+                      className="player-list-item player-list-item-flex player-clickable"
+                      onClick={() => setSelectedPlayer(p)}
+                    >
+                      {p.espn_photo_url && (
+                        <img src={p.espn_photo_url} alt={p.name} className="player-avatar player-avatar-style" />
+                      )}
+                      <span className="player-name">{p.name}</span>
+                    </li>
+                  ))}
             </ul>
           </div>
         ))}

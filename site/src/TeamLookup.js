@@ -54,6 +54,50 @@ export async function fetchTeamData(season = getCurrentYear()) {
   return { rosters, users };
 }
 
+// Build a lookup map from roster_id -> { teamName, ownerName, roster, user }
+export function buildRosterIdToTeamInfoMap(rosters, users) {
+  const map = {};
+  if (!Array.isArray(rosters) || !Array.isArray(users)) {
+    return map;
+  }
+  for (const roster of rosters) {
+    if (!roster || roster.roster_id == null) {
+      continue;
+    }
+    const ridNum = Number(roster.roster_id);
+    const ridKey = Number.isFinite(ridNum) ? ridNum : roster.roster_id;
+    const ownerIdStr = roster.owner_id != null ? String(roster.owner_id) : null;
+    const user = users.find((u) => {
+      if (!u) { return false; }
+      if (ownerIdStr && String(u.user_id) === ownerIdStr) {
+        return true;
+      }
+      if (u.roster_id != null && Number(u.roster_id) === ridNum) {
+        return true;
+      }
+      return false;
+    }) || null;
+
+    const ownerName = user && user.display_name ? user.display_name : null;
+    let teamName = null;
+    if (user && user.metadata && user.metadata.team_name) {
+      teamName = user.metadata.team_name;
+    } else if (ownerName) {
+      teamName = `Team ${ownerName}`;
+    } else {
+      teamName = `Team ${ridKey}`;
+    }
+
+    map[ridKey] = {
+      roster,
+      user,
+      teamName,
+      ownerName: ownerName || `Owner ${ridKey}`,
+    };
+  }
+  return map;
+}
+
 // Fetch traded draft picks for a given season, normalized into a simple structure
 // Example item: { round: 2, season: '2025', roster_id: 1, owner_id: 4, previous_owner_id: 1 }
 export async function fetchTradedPicks(season = getCurrentYear()) {

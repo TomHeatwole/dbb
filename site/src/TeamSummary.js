@@ -4,14 +4,17 @@ import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { StartSitSort } from './StartSitDecider';
 import FullRoster from './FullRoster';
-import { fetchTradedPicks } from './TeamLookup';
+import { fetchTradedPicks, buildRosterIdToTeamInfoMap } from './TeamLookup';
 
-function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playerList }) {
+function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playerList, rosters, users }) {
   const { id } = useParams();
   const rosterId = Number(id);
   const [searchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
   const [tradedPicks, setTradedPicks] = useState([]);
+  const rosterIdToTeamInfo = useMemo(() => {
+    return buildRosterIdToTeamInfoMap(rosters, users);
+  }, [rosters, users]);
 
   // Load traded picks for this team in the summary (Overview) tab and log them for now
   useEffect(() => {
@@ -23,12 +26,31 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
         if (cancelled || !Array.isArray(allPicks)) {
           return;
         }
-        const owned = allPicks.filter((p) => {
-          if (!p || p.owner_id == null) {
-            return false;
-          }
-          return Number(p.owner_id) === Number(rosterId);
-        });
+        const owned = allPicks
+          .filter((p) => {
+            if (!p || p.owner_id == null) {
+              return false;
+            }
+            const seasonNum = p.season != null ? Number(p.season) : Number(seasonForPicks);
+            const currentYearNum = Number(CURRENT_YEAR);
+            if (!Number.isFinite(seasonNum) || !Number.isFinite(currentYearNum)) {
+              return false;
+            }
+            // Only show picks for seasons strictly after the current year
+            if (seasonNum <= currentYearNum) {
+              return false;
+            }
+            return Number(p.owner_id) === Number(rosterId);
+          })
+          .map((p) => {
+            const prevId = p && p.previous_owner_id != null ? Number(p.previous_owner_id) : null;
+            const info = prevId != null ? rosterIdToTeamInfo[prevId] : null;
+            const viaTeamName = info && info.teamName ? info.teamName : (prevId != null ? `Team ${prevId}` : null);
+            return {
+              ...p,
+              team_name: viaTeamName,
+            };
+          });
         if (!cancelled) {
           setTradedPicks(owned);
           // Temporary debug output until we render this in a column
@@ -119,7 +141,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           <div className="team-summary-points">
             {myStanding.points_scored} Fantasy Points
           </div>
-          <FullRoster playerList={playerList} />
+          <FullRoster playerList={playerList} positions={['QB', 'WR', 'RB', 'TE', 'Picks']} picks={tradedPicks} />
         </>
       ) : (
         <div>No data for this team.</div>
