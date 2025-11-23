@@ -66,6 +66,32 @@ function YoffsPage() {
 
         const standingsPlayoffs = getStandings(weeksPlayoffs) || [];
 
+        // Regular season (weeks before playoffs) stats for the same teams
+        const regularSlice = weeksParsedData.slice(0, PLAYOFF_START_WEEK - 1);
+        const regularStatsByRoster = {};
+        regularSlice.forEach((weekEntries) => {
+          if (!Array.isArray(weekEntries)) {
+            return;
+          }
+          weekEntries.forEach((entry) => {
+            if (!entry || entry.roster_id == null) {
+              return;
+            }
+            const rid = Number(entry.roster_id);
+            const pts = typeof entry.points === 'number' ? entry.points : 0;
+            if (!regularStatsByRoster[rid]) {
+              regularStatsByRoster[rid] = {
+                total: 0,
+                weeksPlayed: 0,
+              };
+            }
+            if (typeof pts === 'number' && isFinite(pts)) {
+              regularStatsByRoster[rid].total += pts;
+            }
+            regularStatsByRoster[rid].weeksPlayed += 1;
+          });
+        });
+
         const statsByRoster = {};
         playoffSlice.forEach((weekEntries, idx) => {
           if (!Array.isArray(weekEntries)) {
@@ -81,6 +107,7 @@ function YoffsPage() {
             if (!statsByRoster[rid]) {
               statsByRoster[rid] = {
                 weeksPlayed: 0,
+                weekPoints: {},
                 highPoints: -Infinity,
                 highWeek: null,
                 lowPoints: Infinity,
@@ -91,6 +118,10 @@ function YoffsPage() {
             s.weeksPlayed += 1;
             if (typeof pts === 'number' && isFinite(pts)) {
               const roundedPts = Math.round(pts * 10) / 10;
+              if (!s.weekPoints[realWeek]) {
+                s.weekPoints[realWeek] = 0;
+              }
+              s.weekPoints[realWeek] += roundedPts;
               if (roundedPts > s.highPoints) {
                 s.highPoints = roundedPts;
                 s.highWeek = realWeek;
@@ -107,6 +138,7 @@ function YoffsPage() {
           const rid = Number(row.roster_id);
           const stats = statsByRoster[rid] || {
             weeksPlayed: 0,
+            weekPoints: {},
             highPoints: null,
             highWeek: null,
             lowPoints: null,
@@ -115,12 +147,26 @@ function YoffsPage() {
           const weeksPlayed = stats.weeksPlayed || 0;
           const total = typeof row.points_scored === 'number' ? row.points_scored : 0;
           const ppg = weeksPlayed > 0 ? Math.round((total / weeksPlayed) * 10) / 10 : null;
+          const weekPoints = stats.weekPoints || {};
+          const week15 = weekPoints[PLAYOFF_START_WEEK] != null ? weekPoints[PLAYOFF_START_WEEK] : null;
+          const week16 = weekPoints[PLAYOFF_START_WEEK + 1] != null ? weekPoints[PLAYOFF_START_WEEK + 1] : null;
+          const week17 = weekPoints[PLAYOFF_START_WEEK + 2] != null ? weekPoints[PLAYOFF_START_WEEK + 2] : null;
+          const regularStats = regularStatsByRoster[rid] || { total: 0, weeksPlayed: 0 };
+          const regularTotal = typeof regularStats.total === 'number' ? regularStats.total : 0;
+          const regularPpg = regularStats.weeksPlayed > 0
+            ? Math.round((regularTotal / regularStats.weeksPlayed) * 10) / 10
+            : null;
           return {
             rosterId: rid,
             place: row.place,
             pointsScored: total,
             weeksPlayed,
             ppg,
+            regularTotal,
+            regularPpg,
+            week15Score: week15,
+            week16Score: week16,
+            week17Score: week17,
             highPoints: isFinite(stats.highPoints) ? stats.highPoints : null,
             highWeek: stats.highWeek,
             lowPoints: isFinite(stats.lowPoints) ? stats.lowPoints : null,
@@ -285,9 +331,37 @@ function YoffsPage() {
               />
               {isExpanded && (
                 <div className="standings-row-expand">
-                  <div className="standings-row-expand-inner">
-                    <div>Playoffs:</div>
-                    <div>Games played: {row.weeksPlayed}</div>
+                  <div className="standings-row-expand-inner yoffs-standings-expand">
+                    <div className="yoffs-section">
+                      <div className="yoffs-section-title">Regular Season</div>
+                      <div className="yoffs-section-row">
+                        Total Score:{' '}
+                        {typeof row.regularTotal === 'number' ? row.regularTotal.toFixed(1) : 'N/A'}
+                      </div>
+                      <div className="yoffs-section-row">
+                        PPG:{' '}
+                        {row.regularPpg != null ? row.regularPpg.toFixed(1) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="yoffs-section">
+                      <div className="yoffs-section-title">Playoffs</div>
+                      <div className="yoffs-section-row">
+                        Total Score:{' '}
+                        {typeof row.pointsScored === 'number' ? row.pointsScored.toFixed(1) : 'N/A'}
+                      </div>
+                      <div className="yoffs-section-row">
+                        Week 15 Score:{' '}
+                        {row.week15Score != null ? row.week15Score.toFixed(1) : 'N/A'}
+                      </div>
+                      <div className="yoffs-section-row">
+                        Week 16 Score:{' '}
+                        {row.week16Score != null ? row.week16Score.toFixed(1) : 'N/A'}
+                      </div>
+                      <div className="yoffs-section-row">
+                        Week 17 Score:{' '}
+                        {row.week17Score != null ? row.week17Score.toFixed(1) : 'N/A'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -301,7 +375,7 @@ function YoffsPage() {
   return (
     <InfoPageWrapper
       title="Yoffs"
-      subtitle="Playoff standings (weeks 14–17 only)"
+      subtitle="Playoff standings (weeks 15–17 only)"
       leftHeader={leftHeader}
     >
       {content}
