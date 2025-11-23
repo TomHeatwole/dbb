@@ -12,6 +12,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
   const [searchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
   const [tradedPicks, setTradedPicks] = useState([]);
+  const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
   const rosterIdToTeamInfo = useMemo(() => {
     return buildRosterIdToTeamInfoMap(rosters, users);
   }, [rosters, users]);
@@ -19,6 +20,12 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
   // Load traded picks for this team in the summary (Overview) tab and log them for now
   useEffect(() => {
     let cancelled = false;
+    if (!isCurrentSeason) {
+      setTradedPicks([]);
+      return () => {
+        cancelled = true;
+      };
+    }
     const seasonForPicks = urlYear ? String(urlYear) : String(CURRENT_YEAR);
     (async () => {
       try {
@@ -135,11 +142,10 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     return () => {
       cancelled = true;
     };
-  }, [urlYear, rosterId, rosterIdToTeamInfo]);
+  }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason]);
   const myStanding = useMemo(() => {
     if (loading || !weeksParsedData) { return null; }
     const baseStandings = getStandings(weeksParsedData) || [];
-    const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
     if (!isCurrentSeason || !playersData || !playerIdMap) {
       return baseStandings.find(s => s.roster_id === rosterId) || null;
     }
@@ -208,7 +214,11 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           <div className="team-summary-points">
             {myStanding.points_scored} Fantasy Points
           </div>
-          <FullRoster playerList={playerList} positions={['QB', 'WR', 'RB', 'TE', 'Picks']} picks={tradedPicks} />
+          {isCurrentSeason ? (
+            <FullRoster playerList={playerList} positions={['QB', 'WR', 'RB', 'TE', 'Picks']} picks={tradedPicks} />
+          ) : (
+            <FullRoster playerList={playerList} positions={['QB', 'WR', 'RB', 'TE']} />
+          )}
         </>
       ) : (
         <div>No data for this team.</div>
