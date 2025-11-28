@@ -9,11 +9,9 @@ import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
+import YoffsScoresView from './YoffsScoresView';
 
-const PLAYOFF_START_WEEK = 15;
-const PLAYOFF_END_WEEK = 17;
-
-function Yoffs2024Format({ season, selectedTab, onTabChange }) {
+function Yoffs2024Format({ season, selectedTab, onTabChange, playoffStartWeek, playoffEndWeek }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
@@ -49,8 +47,8 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
           throw new Error('No team data');
         }
 
-        const startIdx = PLAYOFF_START_WEEK - 1;
-        const endIdx = PLAYOFF_END_WEEK - 1;
+        const startIdx = playoffStartWeek - 1;
+        const endIdx = playoffEndWeek - 1;
 
         if (!cancelled) {
           setWeeksParsedData(weeksData);
@@ -116,7 +114,7 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
 
         // Playoff stats by roster, using StartSit algorithm for every playoff week
         const statsByRoster = {};
-        for (let wk = PLAYOFF_START_WEEK; wk <= PLAYOFF_END_WEEK; wk += 1) {
+        for (let wk = playoffStartWeek; wk <= playoffEndWeek; wk += 1) {
           const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
           const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
           const basePointsByRoster = {};
@@ -182,7 +180,7 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
         }
 
         const isCurrentSeasonForPpg = season === CURRENT_YEAR;
-        const currentWeekForPpg = isCurrentSeasonForPpg ? getCurrentNFLWeek() : PLAYOFF_END_WEEK;
+        const currentWeekForPpg = isCurrentSeasonForPpg ? getCurrentNFLWeek() : playoffEndWeek;
 
         const mergedRows = top4Regular.map((seedRow) => {
           const rid = Number(seedRow.roster_id);
@@ -198,7 +196,7 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
 
           // Total playoff score uses StartSit-based week totals for all playoff weeks
           let total = 0;
-          for (let wk = PLAYOFF_START_WEEK; wk <= PLAYOFF_END_WEEK; wk += 1) {
+          for (let wk = playoffStartWeek; wk <= playoffEndWeek; wk += 1) {
             const val = weekPoints[wk];
             if (typeof val === 'number' && isFinite(val)) {
               total += val;
@@ -208,7 +206,7 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
           // For playoff PPG, only include *completed* weeks in the average.
           let completedPlayoffTotal = 0;
           let completedPlayoffWeeks = 0;
-          for (let wk = PLAYOFF_START_WEEK; wk <= PLAYOFF_END_WEEK; wk += 1) {
+          for (let wk = playoffStartWeek; wk <= playoffEndWeek; wk += 1) {
             const val = weekPoints[wk];
             if (typeof val !== 'number' || !isFinite(val)) {
               continue;
@@ -295,7 +293,7 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
     return () => {
       cancelled = true;
     };
-  }, [season, isCurrentWeekDone]);
+  }, [season, isCurrentWeekDone, playoffStartWeek, playoffEndWeek]);
 
   useEffect(() => {
     let cancelled = false;
@@ -330,7 +328,7 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
       return;
     }
     const currentWeekNum = getCurrentNFLWeek();
-    if (currentWeekNum < PLAYOFF_START_WEEK || currentWeekNum > PLAYOFF_END_WEEK) {
+    if (currentWeekNum < playoffStartWeek || currentWeekNum > playoffEndWeek) {
       setCurrentWeekLabels({});
       return;
     }
@@ -430,15 +428,15 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
   }
 
   if (!rows.length) {
-    return <div>No playoff data found for weeks {PLAYOFF_START_WEEK}–{PLAYOFF_END_WEEK}.</div>;
+    return <div>No playoff data found for weeks {playoffStartWeek}–{playoffEndWeek}.</div>;
   }
 
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
   const isCurrentSeason = season === CURRENT_YEAR;
   const currentWeekNum = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
   const isPlayoffWeekInProgress = isCurrentSeason
-    && currentWeekNum >= PLAYOFF_START_WEEK
-    && currentWeekNum <= PLAYOFF_END_WEEK
+    && currentWeekNum >= playoffStartWeek
+    && currentWeekNum <= playoffEndWeek
     && !isCurrentWeekDone
     && weeksParsedData
     && playersData
@@ -476,10 +474,10 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
         const isTop4Highlight = row.place != null && row.place <= 4;
         const rawWeekPoints = row.rawWeekPoints || {};
         const weekTiles = [
-          PLAYOFF_START_WEEK,
-          PLAYOFF_START_WEEK + 1,
-          PLAYOFF_START_WEEK + 2,
-        ].filter((wk) => wk <= PLAYOFF_END_WEEK);
+          playoffStartWeek,
+          playoffStartWeek + 1,
+          playoffStartWeek + 2,
+        ].filter((wk) => wk <= playoffEndWeek);
 
         const rightHeaderContent = isMobile ? (
           <span className="standings-total">
@@ -556,7 +554,7 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
                       }
                       try {
                         let sumCompleted = 0;
-                        for (let wk = PLAYOFF_START_WEEK; wk < currentWeekNum && wk <= PLAYOFF_END_WEEK; wk += 1) {
+                        for (let wk = playoffStartWeek; wk < currentWeekNum && wk <= playoffEndWeek; wk += 1) {
                           const val = rawWeekPoints[wk];
                           if (typeof val === 'number' && isFinite(val)) {
                             sumCompleted += val;
@@ -614,9 +612,12 @@ function Yoffs2024Format({ season, selectedTab, onTabChange }) {
       )}
 
       {selectedTab === 'Scores' && (
-        <div className="yoffs-tab-placeholder">
-          TODO: Playoff Scores tab.
-        </div>
+        <YoffsScoresView
+          season={season}
+          rows={rows}
+          startWeek={playoffStartWeek}
+          endWeek={playoffEndWeek}
+        />
       )}
 
       {selectedTab === 'Head to Head' && (

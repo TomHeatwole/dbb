@@ -1,6 +1,7 @@
 import React from 'react';
+import YoffsScoresView from './YoffsScoresView';
 
-function Yoffs2025Format({ selectedTab, onTabChange }) {
+function Yoffs2025Format({ season, selectedTab, onTabChange, playoffStartWeek, playoffEndWeek }) {
   const tabOptions = ['Bracket', 'Scores', 'Matchups'];
 
   return (
@@ -29,9 +30,12 @@ function Yoffs2025Format({ selectedTab, onTabChange }) {
       )}
 
       {selectedTab === 'Scores' && (
-        <div className="yoffs-tab-placeholder">
-          TODO: Playoff Scores tab.
-        </div>
+        <YoffsScoresView
+          season={season}
+          rows={null}
+          startWeek={playoffStartWeek}
+          endWeek={playoffEndWeek}
+        />
       )}
 
       {selectedTab === 'Matchups' && (

@@ -8,6 +8,9 @@ import Yoffs2024Format from './Yoffs2024Format';
 import Yoffs2025Format from './Yoffs2025Format';
 import { useSearchParams } from 'react-router-dom';
 
+const PLAYOFF_START_WEEK = 15;
+const PLAYOFF_END_WEEK = 17;
+
 function YoffsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
@@ -186,8 +189,24 @@ function YoffsPage() {
   );
 
   const content = mode === 'bracket'
-    ? <Yoffs2025Format season={season} selectedTab={selectedTab} onTabChange={setSelectedTab} />
-    : <Yoffs2024Format season={season} selectedTab={selectedTab} onTabChange={setSelectedTab} />;
+    ? (
+      <Yoffs2025Format
+        season={season}
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        playoffStartWeek={PLAYOFF_START_WEEK}
+        playoffEndWeek={PLAYOFF_END_WEEK}
+      />
+    )
+    : (
+      <Yoffs2024Format
+        season={season}
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        playoffStartWeek={PLAYOFF_START_WEEK}
+        playoffEndWeek={PLAYOFF_END_WEEK}
+      />
+    );
 
   return (
     <InfoPageWrapper
