@@ -1819,11 +1819,17 @@
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   margin-top: 1rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 .yoffs-bracket-column {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .yoffs-bracket-column--right {
   display: grid;
@@ -1841,10 +1847,20 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .yoffs-bracket-match--final {
   min-height: 5rem;
   justify-content: center;
+}
+.yoffs-bracket-match-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.yoffs-bracket-match-group + .yoffs-bracket-match-group {
+  margin-top: 0.8rem;
 }
 .yoffs-bracket-team {
   display: flex;
@@ -1886,6 +1902,33 @@
   margin-left: 0.4rem;
   white-space: nowrap;
 }
+.yoffs-bracket-matchup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(200, 155, 40, 0.8);
+  background: linear-gradient(
+    135deg,
+    rgba(200, 155, 40, 0.18),
+    rgba(26, 22, 40, 0.95)
+  );
+  color: #f5e2a2;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.yoffs-bracket-matchup-button:hover {
+  background: rgba(200, 155, 40, 0.24);
+  text-decoration: none;
+}
+.yoffs-bracket-match-footer {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.4rem;
+}
 .yoffs-bracket-final-label,
 .yoffs-bracket-round-label {
   font-size: 0.85rem;
@@ -1904,13 +1947,24 @@
   flex: 1 1 auto;
   width: 100%;
 }
+.yoffs-bracket-final-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
 @media (max-width: 50em) {
   .yoffs-bracket {
     grid-template-columns: 1fr;
   }
 }
 @media (min-width: 50.0625em) {
+  .yoffs-bracket-match-group + .yoffs-bracket-match-group {
+    margin-top: 1.6rem;
+  }
+}
+@media (min-width: 50.0625em) {
   .yoffs-bracket {
+    width: calc(100% - 16px);
     margin-left: 8px;
     margin-right: 8px;
   }
