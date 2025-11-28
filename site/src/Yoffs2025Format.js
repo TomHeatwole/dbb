@@ -9,7 +9,15 @@ import useIsMobile from './useIsMobile';
 import { CURRENT_YEAR, getCompletedWeeksCount } from './DateHelper';
 import { Link } from 'react-router-dom';
 
-function Yoffs2025Format({ season, selectedTab, onTabChange, playoffStartWeek, playoffEndWeek }) {
+function Yoffs2025Format({
+  season,
+  selectedTab,
+  onTabChange,
+  playoffStartWeek,
+  playoffEndWeek,
+  showPlayoffPictureWarning,
+  playoffSeedLockWeek
+}) {
   const tabOptions = ['Bracket', 'Scores', 'Matchups'];
   const [seedTeams, setSeedTeams] = useState(null);
   const [loadingSeeds, setLoadingSeeds] = useState(true);
@@ -287,6 +295,17 @@ function Yoffs2025Format({ season, selectedTab, onTabChange, playoffStartWeek, p
           </button>
         ))}
       </div>
+
+      {showPlayoffPictureWarning && (
+        <div className="team-analytics-info yoffs-playoff-info">
+          <span className="warning-icon" aria-label="Playoff picture notice">
+            ⚠️
+          </span>
+          <span className="team-analytics-info-text">
+            This is the current playoff picture. Teams and seeds are subject to change until Week {playoffSeedLockWeek} has concluded.
+          </span>
+        </div>
+      )}
 
       {selectedTab === 'Bracket' && (
         <>

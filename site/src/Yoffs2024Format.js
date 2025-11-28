@@ -11,7 +11,15 @@ import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 import YoffsScoresView from './YoffsScoresView';
 
-function Yoffs2024Format({ season, selectedTab, onTabChange, playoffStartWeek, playoffEndWeek }) {
+function Yoffs2024Format({
+  season,
+  selectedTab,
+  onTabChange,
+  playoffStartWeek,
+  playoffEndWeek,
+  showPlayoffPictureWarning,
+  playoffSeedLockWeek
+}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
@@ -463,6 +471,17 @@ function Yoffs2024Format({ season, selectedTab, onTabChange, playoffStartWeek, p
           </button>
         ))}
       </div>
+
+      {showPlayoffPictureWarning && (
+        <div className="team-analytics-info yoffs-playoff-info">
+          <span className="warning-icon" aria-label="Playoff picture notice">
+            ⚠️
+          </span>
+          <span className="team-analytics-info-text">
+            This is the current playoff picture. Teams and seeds are subject to change until Week {playoffSeedLockWeek} has concluded.
+          </span>
+        </div>
+      )}
 
       {selectedTab === 'Overview' && (
         <div className={'standings-list' + (hasAnyExpanded ? ' standings-list--expanded' : '')}>

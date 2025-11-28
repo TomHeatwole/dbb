@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
 import { trackPageLoad } from './UsageTracker';
-import { CURRENT_YEAR } from './DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount } from './DateHelper';
 import { PREVIOUS_YEARS } from './global_constants';
 import PlayoffRulesToolTip from './PlayoffRulesToolTip';
 import Yoffs2024Format from './Yoffs2024Format';
@@ -92,6 +92,14 @@ function YoffsPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [modeDropdownOpen]);
 
+  const playoffSeedLockWeek = PLAYOFF_START_WEEK - 1;
+  const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+  const completedWeeksForSeason = isCurrentSeason ? getCompletedWeeksCount(CURRENT_YEAR) : null;
+  const showPlayoffPictureWarning =
+    isCurrentSeason &&
+    Number.isFinite(completedWeeksForSeason) &&
+    completedWeeksForSeason < playoffSeedLockWeek;
+
   // React to external URL changes (browser nav) for year/format
   useEffect(() => {
     if (urlYear && urlYear !== season) {
@@ -170,6 +178,8 @@ function YoffsPage() {
         onTabChange={handleTabChange}
         playoffStartWeek={PLAYOFF_START_WEEK}
         playoffEndWeek={PLAYOFF_END_WEEK}
+        showPlayoffPictureWarning={showPlayoffPictureWarning}
+        playoffSeedLockWeek={playoffSeedLockWeek}
       />
     )
     : (
@@ -179,6 +189,8 @@ function YoffsPage() {
         onTabChange={handleTabChange}
         playoffStartWeek={PLAYOFF_START_WEEK}
         playoffEndWeek={PLAYOFF_END_WEEK}
+        showPlayoffPictureWarning={showPlayoffPictureWarning}
+        playoffSeedLockWeek={playoffSeedLockWeek}
       />
     );
 
