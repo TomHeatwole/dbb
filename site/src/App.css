@@ -701,6 +701,36 @@
     font-size: 1em;
   }
 }
+
+/* Wide playoff rules tooltip */
+.playoff-rules-tooltip .info-icon-tooltip {
+  width: 90vw;
+  max-width: 90vw;
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, 4px);
+  text-align: left;
+  z-index: 6000;
+}
+.playoff-rules-tooltip {
+  position: relative;
+  z-index: 5000;
+}
+.playoff-rules-tooltip .playoff-rules-tooltip-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.playoff-rules-tooltip .playoff-rules-section-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.15em;
+  font-weight: 700;
+}
+.playoff-rules-tooltip .playoff-rules-section-body {
+  margin: 0;
+  font-size: 0.98em;
+  line-height: 1.5;
+}
 .team-scores-table tr:not(:last-child) td {
   border-bottom: 1px solid #292944;
 }

@@ -1,0 +1,7 @@
+The 2025 bracket format includes a head-to-head semifinal that runs for <b>TWO WEEKS</b> through week 15 and week 16 and let's the cumulative score winner move onto the finals.
+This is a standard bracket setup where #1 plays #4 and #2 plays #3. <br/><br/>
+
+The one week final in week 17 carrys over <b>50% of the delta</b> in scoring between the finalists from week 15 and 16.
+i.e. if one finalist scored 300 in week 15-16 and the other scored 280, the finals would start with a 10 point advantage to the team scoring 300. <br/><br/>
+
+Third and Fourth place are determined by better score in week 15-16 of the two teams losing the head-to-head matchup.

@@ -95,23 +95,11 @@ function YoffsPage() {
             onClick={() => setModeDropdownOpen(open => !open)}
           >
             <span>
-              {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket Format (2025 rules)'}
+              {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket Format (2025 Rules)'}
             </span>
             <span className="team-season-dropdown-arrow">{modeDropdownOpen ? '▲' : '▼'}</span>
             {modeDropdownOpen && (
               <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-                <div
-                  className={
-                    'team-season-dropdown-option' +
-                    (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
-                  }
-                  onClick={() => {
-                    setMode('cumulative');
-                    setModeDropdownOpen(false);
-                  }}
-                >
-                  Cumulative Score (2024 rules)
-                </div>
                 <div
                   className={
                     'team-season-dropdown-option' +
@@ -123,6 +111,18 @@ function YoffsPage() {
                   }}
                 >
                   Bracket Format (2025 rules)
+                </div>
+                <div
+                  className={
+                    'team-season-dropdown-option' +
+                    (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
+                  }
+                  onClick={() => {
+                    setMode('cumulative');
+                    setModeDropdownOpen(false);
+                  }}
+                >
+                  Cumulative Score (2024 rules)
                 </div>
               </div>
             )}
