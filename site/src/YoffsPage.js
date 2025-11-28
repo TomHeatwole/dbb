@@ -12,19 +12,32 @@ function YoffsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
   const urlFormat = searchParams.get('format');
+  const urlTab = searchParams.get('tab');
 
   const initialSeason = urlYear && String(urlYear) !== 'null' ? urlYear : CURRENT_YEAR;
   const initialModeFromUrl =
     urlFormat === 'bracket' || urlFormat === 'cumulative' ? urlFormat : null;
   const initialMode = initialModeFromUrl || (initialSeason === '2024' ? 'cumulative' : 'bracket');
 
+  function getTabOptionsForMode(modeValue) {
+    if (modeValue === 'bracket') {
+      return ['Bracket', 'Scores', 'Matchups'];
+    }
+    return ['Overview', 'Scores', 'Head to Head'];
+  }
+
+  const initialTabOptions = getTabOptionsForMode(initialMode);
+  const initialTab = urlTab && initialTabOptions.includes(urlTab) ? urlTab : initialTabOptions[0];
+
   const [season, setSeason] = useState(initialSeason);
   const [mode, setMode] = useState(initialMode); // 'cumulative' | 'bracket'
   const [hasAppliedInitialSeasonDefault, setHasAppliedInitialSeasonDefault] = useState(false);
+  const [hasAppliedInitialTabDefault, setHasAppliedInitialTabDefault] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const yearDropdownRef = useRef(null);
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
   const modeDropdownRef = useRef(null);
+  const [selectedTab, setSelectedTab] = useState(initialTab);
 
   const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -106,6 +119,43 @@ function YoffsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlYear, urlFormat]);
 
+  // Sync tab with query params whenever selectedTab or mode changes
+  useEffect(() => {
+    const tabOptions = getTabOptionsForMode(mode);
+    const safeTab = tabOptions.includes(selectedTab) ? selectedTab : tabOptions[0];
+    const newParams = new URLSearchParams(searchParams);
+    if (safeTab) {
+      newParams.set('tab', safeTab);
+    } else {
+      newParams.delete('tab');
+    }
+    setSearchParams(newParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTab, mode]);
+
+  // React to external URL tab changes (browser nav) when valid for current mode
+  useEffect(() => {
+    const tabOptions = getTabOptionsForMode(mode);
+    if (urlTab && tabOptions.includes(urlTab) && selectedTab !== urlTab) {
+      setSelectedTab(urlTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlTab, mode]);
+
+  // Default tab to leftmost when season or mode changes, but only after first render
+  useEffect(() => {
+    if (!hasAppliedInitialTabDefault) {
+      setHasAppliedInitialTabDefault(true);
+      return;
+    }
+    const tabOptions = getTabOptionsForMode(mode);
+    const defaultTab = tabOptions[0];
+    if (selectedTab !== defaultTab) {
+      setSelectedTab(defaultTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [season, mode, hasAppliedInitialTabDefault]);
+
   const leftHeader = (
     <div className="yoffs-header-filters">
       <div
@@ -136,8 +186,8 @@ function YoffsPage() {
   );
 
   const content = mode === 'bracket'
-    ? <Yoffs2025Format season={season} />
-    : <Yoffs2024Format season={season} />;
+    ? <Yoffs2025Format season={season} selectedTab={selectedTab} onTabChange={setSelectedTab} />
+    : <Yoffs2024Format season={season} selectedTab={selectedTab} onTabChange={setSelectedTab} />;
 
   return (
     <InfoPageWrapper

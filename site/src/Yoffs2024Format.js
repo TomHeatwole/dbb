@@ -10,10 +10,10 @@ import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 
-const PLAYOFF_START_WEEK = 14;
+const PLAYOFF_START_WEEK = 15;
 const PLAYOFF_END_WEEK = 17;
 
-function Yoffs2024Format({ season }) {
+function Yoffs2024Format({ season, selectedTab, onTabChange }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
@@ -25,6 +25,7 @@ function Yoffs2024Format({ season }) {
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [currentWeekLabels, setCurrentWeekLabels] = useState({});
   const [isCurrentWeekDone, setIsCurrentWeekDone] = useState(true);
+  const tabOptions = ['Overview', 'Scores', 'Head to Head'];
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -447,8 +448,27 @@ function Yoffs2024Format({ season }) {
     : null;
 
   return (
-    <div className={'standings-list' + (hasAnyExpanded ? ' standings-list--expanded' : '')}>
-      {rows.map((row) => {
+    <>
+      <div className="team-tabs-bar">
+        {tabOptions.map((tab) => (
+          <button
+            key={tab}
+            className={`team-tab${selectedTab === tab ? ' team-tab-active' : ''}`}
+            onClick={() => {
+              if (onTabChange) {
+                onTabChange(tab);
+              }
+            }}
+            type="button"
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {selectedTab === 'Overview' && (
+        <div className={'standings-list' + (hasAnyExpanded ? ' standings-list--expanded' : '')}>
+          {rows.map((row) => {
         const rosterId = row.rosterId;
         const isExpanded = !!expanded[rosterId];
         const teamName = getTeamName(rosterId);
@@ -590,7 +610,21 @@ function Yoffs2024Format({ season }) {
           </div>
         );
       })}
-    </div>
+        </div>
+      )}
+
+      {selectedTab === 'Scores' && (
+        <div className="yoffs-tab-placeholder">
+          TODO: Playoff Scores tab.
+        </div>
+      )}
+
+      {selectedTab === 'Head to Head' && (
+        <div className="yoffs-tab-placeholder">
+          TODO: Playoff Head to Head tab.
+        </div>
+      )}
+    </>
   );
 }
 
