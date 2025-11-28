@@ -1772,6 +1772,46 @@
 .standings-expand-split { display: block; }
 .standings-expand-left { }
 .standings-expand-right { margin-top: 0.6rem; }
+/* Yoffs 2024 expanded styling */
+.yoffs-total-block {
+  padding: 0.4rem 0.1rem 0.2rem 0.1rem;
+}
+.yoffs-total-label {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9fb4de;
+  font-weight: 700;
+  margin-bottom: 0.1rem;
+}
+.yoffs-total-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+.yoffs-weeks-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0 0.4rem 2.2rem;
+}
+.yoffs-week-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.1rem 0.4rem 0.1rem 0;
+}
+.yoffs-week-label {
+  font-size: 0.8rem;
+  color: #9fb4de;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+.yoffs-week-value {
+  font-size: 1.05rem;
+  color: #ffffff;
+  font-weight: 800;
+}
 @media (min-width: 50.0625em) {
   .standings-expand-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
   .standings-expand-right { margin-top: 0; }

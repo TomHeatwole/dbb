@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
-import { getStandings } from './ScoresParser';
+import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
 import useIsMobile from './useIsMobile';
 import StandingsRowHeader from './StandingsRowHeader';
+import { CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted } from './DateHelper';
+import { StartSitSort } from './StartSitDecider';
+import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
+import { fetchNflScoreboard } from './GamesLookup';
+import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 
 const PLAYOFF_START_WEEK = 14;
 const PLAYOFF_END_WEEK = 17;
@@ -15,6 +20,11 @@ function Yoffs2024Format({ season }) {
   const [rosters, setRosters] = useState(null);
   const [users, setUsers] = useState(null);
   const [expanded, setExpanded] = useState({});
+  const [weeksParsedData, setWeeksParsedData] = useState(null);
+  const [playersData, setPlayersData] = useState(null);
+  const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [currentWeekLabels, setCurrentWeekLabels] = useState({});
+  const [isCurrentWeekDone, setIsCurrentWeekDone] = useState(true);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -24,12 +34,14 @@ function Yoffs2024Format({ season }) {
       setLoading(true);
       setError(null);
       try {
-        const [weeksParsedData, teamData] = await Promise.all([
+        const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),
-          fetchTeamData(season)
+          fetchTeamData(season),
+          fetchPlayersData(),
+          fetchPlayerIdMap()
         ]);
 
-        if (!weeksParsedData || !Array.isArray(weeksParsedData)) {
+        if (!weeksData || !Array.isArray(weeksData)) {
           throw new Error('No scores data');
         }
         if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
@@ -39,19 +51,25 @@ function Yoffs2024Format({ season }) {
         const startIdx = PLAYOFF_START_WEEK - 1;
         const endIdx = PLAYOFF_END_WEEK - 1;
 
-        // Regular season weeks: everything before playoffs
-        const regularSliceFull = weeksParsedData.slice(0, startIdx);
+        if (!cancelled) {
+          setWeeksParsedData(weeksData);
+          setRosters(teamData.rosters);
+          setUsers(teamData.users);
+          setPlayersData(players);
+          setPlayerIdMap(idMap);
+        }
+
+        // Regular season weeks for seeding: cumulative through first 14 weeks
+        const regularSliceFull = weeksData.slice(0, 14);
         const weeksRegular = regularSliceFull.filter(Boolean);
 
         // Playoff weeks: weeks 14–17
-        const playoffSlice = weeksParsedData.slice(startIdx, endIdx + 1);
+        const playoffSlice = weeksData.slice(startIdx, endIdx + 1);
         const weeksPlayoffs = playoffSlice.filter(Boolean);
 
         if (!weeksPlayoffs.length || !weeksRegular.length) {
           if (!cancelled) {
             setRows([]);
-            setRosters(teamData.rosters);
-            setUsers(teamData.users);
             setLoading(false);
           }
           return;
@@ -69,11 +87,6 @@ function Yoffs2024Format({ season }) {
         top4Regular.forEach(r => {
           seedPlaceById[Number(r.roster_id)] = r.place;
         });
-
-        const standingsPlayoffsAll = getStandings(weeksPlayoffs) || [];
-        const standingsPlayoffs = standingsPlayoffsAll.filter(r =>
-          seedSet.has(Number(r.roster_id))
-        );
 
         // Regular season (weeks before playoffs) stats (total + PPG)
         const regularStatsByRoster = {};
@@ -100,18 +113,30 @@ function Yoffs2024Format({ season }) {
           });
         });
 
+        // Playoff stats by roster, using StartSit algorithm for every playoff week
         const statsByRoster = {};
-        playoffSlice.forEach((weekEntries, idx) => {
-          if (!Array.isArray(weekEntries)) {
-            return;
-          }
-          const realWeek = PLAYOFF_START_WEEK + idx;
+        for (let wk = PLAYOFF_START_WEEK; wk <= PLAYOFF_END_WEEK; wk += 1) {
+          const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
+          const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
+          const basePointsByRoster = {};
           weekEntries.forEach((entry) => {
             if (!entry || entry.roster_id == null) {
               return;
             }
             const rid = Number(entry.roster_id);
-            const pts = typeof entry.points === 'number' ? entry.points : 0;
+            if (!basePointsByRoster[rid]) {
+              basePointsByRoster[rid] = 0;
+            }
+            if (typeof entry.points === 'number' && isFinite(entry.points)) {
+              basePointsByRoster[rid] += Math.round(entry.points * 10) / 10;
+            }
+          });
+
+          Object.keys(breakdown).forEach((ridKey) => {
+            const rid = Number(ridKey);
+            if (!seedSet.has(rid)) {
+              return;
+            }
             if (!statsByRoster[rid]) {
               statsByRoster[rid] = {
                 weeksPlayed: 0,
@@ -122,28 +147,44 @@ function Yoffs2024Format({ season }) {
                 lowWeek: null,
               };
             }
-            const s = statsByRoster[rid];
-            s.weeksPlayed += 1;
-            if (typeof pts === 'number' && isFinite(pts)) {
-              const roundedPts = Math.round(pts * 10) / 10;
-              if (!s.weekPoints[realWeek]) {
-                s.weekPoints[realWeek] = 0;
+            let weekTotal = basePointsByRoster[rid] || 0;
+            try {
+              if (players && idMap) {
+                const teamScore = breakdown[ridKey];
+                if (teamScore) {
+                  const computed = StartSitSort(teamScore, players, idMap);
+                  if (computed && typeof computed.starterTotal === 'number') {
+                    weekTotal = Math.round(computed.starterTotal * 10) / 10;
+                  }
+                }
               }
-              s.weekPoints[realWeek] += roundedPts;
-              if (roundedPts > s.highPoints) {
-                s.highPoints = roundedPts;
-                s.highWeek = realWeek;
+            } catch (_) {
+              // fall back to base API points
+            }
+            if (typeof weekTotal === 'number' && isFinite(weekTotal)) {
+              const s = statsByRoster[rid];
+              s.weeksPlayed += 1;
+              if (!s.weekPoints[wk]) {
+                s.weekPoints[wk] = 0;
               }
-              if (roundedPts < s.lowPoints) {
-                s.lowPoints = roundedPts;
-                s.lowWeek = realWeek;
+              s.weekPoints[wk] += weekTotal;
+              if (weekTotal > s.highPoints) {
+                s.highPoints = weekTotal;
+                s.highWeek = wk;
+              }
+              if (weekTotal < s.lowPoints) {
+                s.lowPoints = weekTotal;
+                s.lowWeek = wk;
               }
             }
           });
-        });
+        }
 
-        const mergedRows = standingsPlayoffs.map((row) => {
-          const rid = Number(row.roster_id);
+        const isCurrentSeasonForPpg = season === CURRENT_YEAR;
+        const currentWeekForPpg = isCurrentSeasonForPpg ? getCurrentNFLWeek() : PLAYOFF_END_WEEK;
+
+        const mergedRows = top4Regular.map((seedRow) => {
+          const rid = Number(seedRow.roster_id);
           const stats = statsByRoster[rid] || {
             weeksPlayed: 0,
             weekPoints: {},
@@ -152,43 +193,86 @@ function Yoffs2024Format({ season }) {
             lowPoints: null,
             lowWeek: null,
           };
-          const weeksPlayed = stats.weeksPlayed || 0;
-          const total = typeof row.points_scored === 'number' ? row.points_scored : 0;
-          const ppg = weeksPlayed > 0 ? Math.round((total / weeksPlayed) * 10) / 10 : null;
           const weekPoints = stats.weekPoints || {};
-          const week15 = weekPoints[PLAYOFF_START_WEEK] != null ? weekPoints[PLAYOFF_START_WEEK] : null;
-          const week16 = weekPoints[PLAYOFF_START_WEEK + 1] != null ? weekPoints[PLAYOFF_START_WEEK + 1] : null;
-          const week17 = weekPoints[PLAYOFF_START_WEEK + 2] != null ? weekPoints[PLAYOFF_START_WEEK + 2] : null;
+
+          // Total playoff score uses StartSit-based week totals for all playoff weeks
+          let total = 0;
+          for (let wk = PLAYOFF_START_WEEK; wk <= PLAYOFF_END_WEEK; wk += 1) {
+            const val = weekPoints[wk];
+            if (typeof val === 'number' && isFinite(val)) {
+              total += val;
+            }
+          }
+
+          // For playoff PPG, only include *completed* weeks in the average.
+          let completedPlayoffTotal = 0;
+          let completedPlayoffWeeks = 0;
+          for (let wk = PLAYOFF_START_WEEK; wk <= PLAYOFF_END_WEEK; wk += 1) {
+            const val = weekPoints[wk];
+            if (typeof val !== 'number' || !isFinite(val)) {
+              continue;
+            }
+            let isCompletedWeek = true;
+            if (isCurrentSeasonForPpg) {
+              if (wk > currentWeekForPpg) {
+                isCompletedWeek = false;
+              } else if (wk === currentWeekForPpg && !isCurrentWeekDone) {
+                isCompletedWeek = false;
+              }
+            }
+            if (isCompletedWeek) {
+              completedPlayoffTotal += val;
+              completedPlayoffWeeks += 1;
+            }
+          }
+
+          const ppg = completedPlayoffWeeks > 0
+            ? Math.round((completedPlayoffTotal / completedPlayoffWeeks) * 10) / 10
+            : null;
+
           const regularStats = regularStatsByRoster[rid] || { total: 0, weeksPlayed: 0 };
           const regularTotal = typeof regularStats.total === 'number' ? regularStats.total : 0;
           const regularPpg = regularStats.weeksPlayed > 0
             ? Math.round((regularTotal / regularStats.weeksPlayed) * 10) / 10
             : null;
 
-          const displayPlace = seedPlaceById[rid] != null ? seedPlaceById[rid] : row.place;
+          const displayPlace = seedPlaceById[rid] != null ? seedPlaceById[rid] : seedRow.place;
 
           return {
             rosterId: rid,
             place: displayPlace,
             pointsScored: total,
-            weeksPlayed,
+            weeksPlayed: completedPlayoffWeeks,
             ppg,
             regularTotal,
             regularPpg,
-            week15Score: week15,
-            week16Score: week16,
-            week17Score: week17,
             highPoints: isFinite(stats.highPoints) ? stats.highPoints : null,
             highWeek: stats.highWeek,
             lowPoints: isFinite(stats.lowPoints) ? stats.lowPoints : null,
             lowWeek: stats.lowWeek,
+            rawWeekPoints: stats.weekPoints || {}
           };
-        }).slice(0, 4);
+        })
+          .slice(0, 4)
+          .sort((a, b) => {
+            const ap = typeof a.pointsScored === 'number' ? a.pointsScored : 0;
+            const bp = typeof b.pointsScored === 'number' ? b.pointsScored : 0;
+            if (bp !== ap) {
+              return bp - ap;
+            }
+            // tie-breaker: lower seed (place) first
+            const aPlace = a.place != null ? a.place : 999;
+            const bPlace = b.place != null ? b.place : 999;
+            return aPlace - bPlace;
+          });
 
         if (!cancelled) {
           setRows(mergedRows);
-          setRosters(teamData.rosters);
-          setUsers(teamData.users);
+          const initialExpanded = {};
+          mergedRows.forEach((r) => {
+            initialExpanded[r.rosterId] = true;
+          });
+          setExpanded(initialExpanded);
           setLoading(false);
         }
       } catch (e) {
@@ -197,6 +281,9 @@ function Yoffs2024Format({ season }) {
           setRows([]);
           setRosters(null);
           setUsers(null);
+          setWeeksParsedData(null);
+          setPlayersData(null);
+          setPlayerIdMap(null);
           setLoading(false);
         }
       }
@@ -207,7 +294,89 @@ function Yoffs2024Format({ season }) {
     return () => {
       cancelled = true;
     };
+  }, [season, isCurrentWeekDone]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const isCurrentSeasonLocal = season === CURRENT_YEAR;
+    if (!isCurrentSeasonLocal) {
+      setIsCurrentWeekDone(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+    (async () => {
+      try {
+        const done = await isCurrentWeekCompleted(season);
+        if (!cancelled) {
+          setIsCurrentWeekDone(done);
+        }
+      } catch (_) {
+        if (!cancelled) {
+          setIsCurrentWeekDone(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [season]);
+
+  useEffect(() => {
+    const isCurrentSeasonLocal = season === CURRENT_YEAR;
+    if (!isCurrentSeasonLocal || !weeksParsedData || !playersData || !playerIdMap) {
+      setCurrentWeekLabels({});
+      return;
+    }
+    const currentWeekNum = getCurrentNFLWeek();
+    if (currentWeekNum < PLAYOFF_START_WEEK || currentWeekNum > PLAYOFF_END_WEEK) {
+      setCurrentWeekLabels({});
+      return;
+    }
+    const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[currentWeekNum - 1] : null;
+    if (!Array.isArray(weekArr)) {
+      setCurrentWeekLabels({});
+      return;
+    }
+    const playerIdSet = new Set();
+    for (const entry of weekArr) {
+      if (entry && Array.isArray(entry.players)) {
+        for (const pid of entry.players) {
+          playerIdSet.add(pid);
+        }
+      }
+    }
+    const playerIds = Array.from(playerIdSet);
+    if (playerIds.length === 0) {
+      setCurrentWeekLabels({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const json = await fetchNflScoreboard(Number(season), Number(currentWeekNum));
+        const mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json);
+        const labels = {};
+        for (const pid of playerIds) {
+          const item = mapping[pid];
+          const ev = item && item.event;
+          const teamForWeek = item && item.team;
+          const d = ev ? getGameDisplayForTeam(ev, teamForWeek) : { text: 'BYE', live: false };
+          labels[pid] = { ...d, team: teamForWeek || null };
+        }
+        if (!cancelled) {
+          setCurrentWeekLabels(labels);
+        }
+      } catch (_) {
+        if (!cancelled) {
+          setCurrentWeekLabels({});
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [season, weeksParsedData, playersData, playerIdMap]);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) {
@@ -260,10 +429,22 @@ function Yoffs2024Format({ season }) {
   }
 
   if (!rows.length) {
-    return <div>No playoff data found for weeks 14–17.</div>;
+    return <div>No playoff data found for weeks {PLAYOFF_START_WEEK}–{PLAYOFF_END_WEEK}.</div>;
   }
 
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
+  const isCurrentSeason = season === CURRENT_YEAR;
+  const currentWeekNum = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
+  const isPlayoffWeekInProgress = isCurrentSeason
+    && currentWeekNum >= PLAYOFF_START_WEEK
+    && currentWeekNum <= PLAYOFF_END_WEEK
+    && !isCurrentWeekDone
+    && weeksParsedData
+    && playersData
+    && playerIdMap;
+  const liveWeekBreakdown = isPlayoffWeekInProgress && weeksParsedData
+    ? (getWeekScoreBreakdown(weeksParsedData, currentWeekNum) || {})
+    : null;
 
   return (
     <div className={'standings-list' + (hasAnyExpanded ? ' standings-list--expanded' : '')}>
@@ -273,6 +454,12 @@ function Yoffs2024Format({ season }) {
         const teamName = getTeamName(rosterId);
         const avatarUrl = getAvatar(rosterId);
         const isTop4Highlight = row.place != null && row.place <= 4;
+        const rawWeekPoints = row.rawWeekPoints || {};
+        const weekTiles = [
+          PLAYOFF_START_WEEK,
+          PLAYOFF_START_WEEK + 1,
+          PLAYOFF_START_WEEK + 2,
+        ].filter((wk) => wk <= PLAYOFF_END_WEEK);
 
         const rightHeaderContent = isMobile ? (
           <span className="standings-total">
@@ -300,29 +487,104 @@ function Yoffs2024Format({ season }) {
               rightContent={rightHeaderContent}
             />
             {isExpanded && (
-              <div className="standings-row-expand">
-                <div className="standings-row-expand-inner yoffs-standings-expand">
-                  <div className="yoffs-section-row">
-                    Total:{' '}
-                    {typeof row.pointsScored === 'number' ? row.pointsScored.toFixed(1) : 'N/A'}
-                  </div>
-                  <div className="yoffs-section-row">
-                    Avg:{' '}
-                    {row.ppg != null ? row.ppg.toFixed(1) : 'N/A'}
-                  </div>
-                  <div className="yoffs-section-row">
-                    Week 15:{' '}
-                    {row.week15Score != null ? row.week15Score.toFixed(1) : 'N/A'}
-                  </div>
-                  <div className="yoffs-section-row">
-                    Week 16:{' '}
-                    {row.week16Score != null ? row.week16Score.toFixed(1) : 'N/A'}
-                  </div>
-                  <div className="yoffs-section-row">
-                    Week 17:{' '}
-                    {row.week17Score != null ? row.week17Score.toFixed(1) : 'N/A'}
+              <div className="standings-row-expand standings-expand-split">
+                <div className="standings-row-expand-inner yoffs-standings-expand standings-expand-left">
+                  <div className="yoffs-total-block">
+                    <div className="yoffs-total-label">Total Playoff Score</div>
+                    <div className="yoffs-total-value">
+                      {typeof row.pointsScored === 'number' ? row.pointsScored.toFixed(1) : 'N/A'}
+                    </div>
                   </div>
                 </div>
+                {isPlayoffWeekInProgress && liveWeekBreakdown && (
+                  <div className="standings-expand-right">
+                    {(() => {
+                      let scoreThisWeek = 0;
+                      let completedPlayoffTotal = 0;
+                      let activeCount = 0;
+                      let yetToPlayCount = 0;
+                      try {
+                        const wbAll = liveWeekBreakdown;
+                        const raw = wbAll && wbAll[rosterId];
+                        if (raw && playersData && playerIdMap) {
+                          const computed = StartSitSort(raw, playersData, playerIdMap);
+                          if (computed && typeof computed.starterTotal === 'number') {
+                            scoreThisWeek = Math.round(computed.starterTotal * 10) / 10;
+                          }
+                          const rosterPlayerIds = [
+                            ...(computed && Array.isArray(computed.starters) ? computed.starters : []),
+                            ...(computed && Array.isArray(computed.bench) ? computed.bench : [])
+                          ]
+                            .map(p => p && p.id)
+                            .filter(pid => pid && pid !== '0');
+                          for (const pid of rosterPlayerIds) {
+                            const label = currentWeekLabels && currentWeekLabels[pid];
+                            if (!label) {
+                              continue;
+                            }
+                            const isLive = !!label.live;
+                            const isCompleted = !!label.completed;
+                            const isBye = label && label.text === 'BYE';
+                            if (isLive) {
+                              activeCount += 1;
+                            } else if (!isCompleted && !isBye) {
+                              yetToPlayCount += 1;
+                            }
+                          }
+                        }
+                      } catch (_) {
+                      }
+                      try {
+                        let sumCompleted = 0;
+                        for (let wk = PLAYOFF_START_WEEK; wk < currentWeekNum && wk <= PLAYOFF_END_WEEK; wk += 1) {
+                          const val = rawWeekPoints[wk];
+                          if (typeof val === 'number' && isFinite(val)) {
+                            sumCompleted += val;
+                          }
+                        }
+                        completedPlayoffTotal = Math.round(sumCompleted * 10) / 10;
+                      } catch (_) {
+                      }
+                      return (
+                        <div className="standings-extra-block">
+                          <div className="standings-extra-row">
+                            <span className="standings-extra-label">PF through completed weeks:</span>
+                            <span className="standings-extra-val">
+                              {Number.isFinite(completedPlayoffTotal) ? `${completedPlayoffTotal.toFixed(1)} pts` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="standings-extra-row">
+                            <span className="standings-extra-label">PF this week:</span>
+                            <span className="standings-extra-val">
+                              {Number.isFinite(scoreThisWeek) ? `${scoreThisWeek.toFixed(1)} pts` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="standings-extra-row">
+                            <span className="standings-extra-sub">
+                              (Yet To Play: {yetToPlayCount}, In-Play: {activeCount})
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+            {isExpanded && weekTiles.length > 0 && (
+              <div className="yoffs-weeks-row">
+                {weekTiles.map((wk) => {
+                  const val = rawWeekPoints[wk];
+                  const display = typeof val === 'number' && isFinite(val) ? val.toFixed(1) : 'N/A';
+                  return (
+                    <div key={wk} className="yoffs-week-cell">
+                      <div className="yoffs-week-label">
+                        {isMobile ? `Week ${wk}` : `Week ${wk} Score`}
+                      </div>
+                      <div className="yoffs-week-value">{display}</div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
