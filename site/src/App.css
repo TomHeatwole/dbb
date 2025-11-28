@@ -1862,6 +1862,14 @@
   font-style: italic;
   color: #f5e2a2;
 }
+.yoffs-bracket-team--winner .yoffs-bracket-seed,
+.yoffs-bracket-team--winner .yoffs-bracket-name,
+.yoffs-bracket-team--winner .yoffs-bracket-score {
+  color: #ffe9a5;
+}
+.yoffs-bracket-team--loser {
+  opacity: 0.45;
+}
 .yoffs-bracket-seed {
   font-weight: 800;
   color: #f5d26a;
@@ -1871,6 +1879,12 @@
   font-weight: 700;
   color: #ffffff;
   flex: 1 1 auto;
+}
+.yoffs-bracket-score {
+  font-weight: 800;
+  color: #ffffff;
+  margin-left: 0.4rem;
+  white-space: nowrap;
 }
 .yoffs-bracket-final-label,
 .yoffs-bracket-round-label {
