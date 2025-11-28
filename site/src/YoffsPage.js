@@ -21,6 +21,22 @@ function YoffsPage() {
     trackPageLoad();
   }, []);
 
+  // When the season changes, choose an initial/default playoff format:
+  // - 2024: Cumulative Score
+  // - any other year: Bracket Format
+  // After that, the user can freely toggle formats within that year.
+  useEffect(() => {
+    if (season === '2024') {
+      if (mode !== 'cumulative') {
+        setMode('cumulative');
+      }
+    } else if (mode !== 'bracket') {
+      setMode('bracket');
+    }
+    // we intentionally only react to season changes, not mode changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [season]);
+
   useEffect(() => {
     if (!yearDropdownOpen) {
       return;
