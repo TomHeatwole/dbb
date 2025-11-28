@@ -398,7 +398,7 @@ function YoffsPage() {
 
   return (
     <InfoPageWrapper
-      title="Yoffs"
+      title="Playoffs"
       subtitle="Playoff standings (weeks 15–17 only)"
       leftHeader={leftHeader}
     >
