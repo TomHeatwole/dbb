@@ -700,11 +700,23 @@
     left: -2rem;
     font-size: 1em;
   }
+
+  /* Mobile-only card styling for the playoff rules modal */
+  .playoff-rules-modal-content {
+    background: rgba(5, 8, 30, 0.99);
+    color: #fff;
+    border: 1px solid #aaaaaa;
+  }
 }
 
 .playoff-rules-tooltip {
   position: relative;
   z-index: 5000;
+}
+.playoff-rules-modal-content {
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
 }
 .playoff-rules-tooltip .playoff-rules-tooltip-inner {
   display: flex;
@@ -722,13 +734,6 @@
   line-height: 1.5;
 }
 
-@media (min-width: 50.0625em) {
-  /* On web, make the playoff rules tooltip ~30% wider than the default info tooltip */
-  .playoff-rules-tooltip .info-icon-tooltip {
-    width: 28rem;
-    max-width: 90vw;
-  }
-}
 .team-scores-table tr:not(:last-child) td {
   border-bottom: 1px solid #292944;
 }
@@ -1633,6 +1638,12 @@
   font-size: 0.9em;
   cursor: default;
   position: relative;
+}
+.playoff-rules-tooltip.info-icon {
+  /* Ensure the mobile button version of the icon looks like the span version */
+  border: none;
+  background: none;
+  padding: 0;
 }
 .info-icon .info-icon-tooltip {
   position: absolute;
