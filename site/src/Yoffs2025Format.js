@@ -214,12 +214,23 @@ function Yoffs2025Format({ season, selectedTab, onTabChange, playoffStartWeek, p
 
           let topFinal = computeFinalBase(topWinner.rosterId);
           let bottomFinal = computeFinalBase(bottomWinner.rosterId);
+          let bufferRecipient = null;
 
           if (buffer > 0) {
             if (topWinnerSemi > bottomWinnerSemi) {
               topFinal += buffer;
+              bufferRecipient = {
+                teamName: topWinner.teamName,
+                avatarUrl: topWinner.avatarUrl || null,
+                amount: buffer,
+              };
             } else if (bottomWinnerSemi > topWinnerSemi) {
               bottomFinal += buffer;
+              bufferRecipient = {
+                teamName: bottomWinner.teamName,
+                avatarUrl: bottomWinner.avatarUrl || null,
+                amount: buffer,
+              };
             }
           }
 
@@ -235,6 +246,7 @@ function Yoffs2025Format({ season, selectedTab, onTabChange, playoffStartWeek, p
               ...bottomWinner,
               finalsTotal: bottomFinal,
             },
+            buffer: bufferRecipient,
           };
         }
 
@@ -472,6 +484,24 @@ function Yoffs2025Format({ season, selectedTab, onTabChange, playoffStartWeek, p
                       </div>
                       <div className="yoffs-bracket-final-spacer">
                         <div className="yoffs-bracket-final-inner">
+                          {semisCompleted && finalsInfo && finalsInfo.buffer && (
+                            <div className="yoffs-bracket-buffer">
+                              Semis Buffer:{' '}
+                              {finalsInfo.buffer.avatarUrl && (
+                                <img
+                                  className="yoffs-bracket-buffer-avatar"
+                                  src={finalsInfo.buffer.avatarUrl}
+                                  alt={`${finalsInfo.buffer.teamName} avatar`}
+                                />
+                              )}
+                              <span className="yoffs-bracket-buffer-team">
+                                {finalsInfo.buffer.teamName}
+                              </span>
+                              <span className="yoffs-bracket-buffer-value">
+                                {` +${finalsInfo.buffer.amount.toFixed(1)}`}
+                              </span>
+                            </div>
+                          )}
                           <div className="yoffs-bracket-match yoffs-bracket-match--final">
                             {finalsInfo ? (
                               <>

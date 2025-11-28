@@ -1952,6 +1952,29 @@
   flex-direction: column;
   width: 100%;
 }
+.yoffs-bracket-buffer {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  color: #f5e2a2;
+  font-weight: 600;
+}
+.yoffs-bracket-buffer-team {
+  font-weight: 700;
+}
+.yoffs-bracket-buffer-value {
+  margin-left: 0.35rem;
+  color: #4fd27a;
+  font-weight: 800;
+}
+.yoffs-bracket-buffer-avatar {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  object-fit: cover;
+  vertical-align: middle;
+}
 @media (max-width: 50em) {
   .yoffs-bracket {
     grid-template-columns: 1fr;
