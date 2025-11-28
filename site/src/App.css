@@ -734,6 +734,14 @@
   line-height: 1.5;
 }
 
+@media (min-width: 50.0625em) {
+  /* On web, make the playoff rules tooltip ~50% wider than the default info tooltip */
+  .playoff-rules-tooltip .info-icon-tooltip {
+    width: 33rem !important;
+    max-width: 90vw !important;
+  }
+}
+
 .team-scores-table tr:not(:last-child) td {
   border-bottom: 1px solid #292944;
 }
