@@ -702,16 +702,6 @@
   }
 }
 
-/* Wide playoff rules tooltip */
-.playoff-rules-tooltip .info-icon-tooltip {
-  width: 90vw;
-  max-width: 90vw;
-  left: 50%;
-  right: auto;
-  transform: translate(-50%, 4px);
-  text-align: left;
-  z-index: 6000;
-}
 .playoff-rules-tooltip {
   position: relative;
   z-index: 5000;
@@ -728,8 +718,16 @@
 }
 .playoff-rules-tooltip .playoff-rules-section-body {
   margin: 0;
-  font-size: 0.98em;
+  font-size: 1.08em;
   line-height: 1.5;
+}
+
+@media (min-width: 50.0625em) {
+  /* On web, make the playoff rules tooltip ~30% wider than the default info tooltip */
+  .playoff-rules-tooltip .info-icon-tooltip {
+    width: 28rem;
+    max-width: 90vw;
+  }
 }
 .team-scores-table tr:not(:last-child) td {
   border-bottom: 1px solid #292944;
