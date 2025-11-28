@@ -1982,7 +1982,7 @@
 }
 @media (min-width: 50.0625em) {
   .yoffs-bracket-match-group + .yoffs-bracket-match-group {
-    margin-top: 1.6rem;
+    margin-top: 6.4rem;
   }
 }
 @media (min-width: 50.0625em) {
@@ -1990,6 +1990,11 @@
     width: calc(100% - 16px);
     margin-left: 8px;
     margin-right: 8px;
+  }
+}
+@media (min-width: 50.0625em) {
+  .yoffs-bracket-final-inner {
+    margin-top: -2.15rem;
   }
 }
 @media (min-width: 50.0625em) {
