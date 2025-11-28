@@ -9,3 +9,4 @@
 - Make team scores page as good as league scores.
 - Make pages more calendar aware. I.e. when we get to 2026 there's gonna be 2029 picks instantly rendered, and 2025 picks gone. Ideally we'll default to a 2026 tab, but then we need all of the previous pages gone. To accomplish this, we may want to add a good testing feature to simulate it being any time of year.
 - In draft picks, add links to pages. 
+- h2h page that can be used or linked in /yoffs bracket format
