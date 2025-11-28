@@ -9,11 +9,12 @@ import { PREVIOUS_YEARS } from './global_constants';
 import useIsMobile from './useIsMobile';
 import StandingsRowHeader from './StandingsRowHeader';
 
-const PLAYOFF_START_WEEK = 15;
+const PLAYOFF_START_WEEK = 14;
 const PLAYOFF_END_WEEK = 17;
 
 function YoffsPage() {
   const [season, setSeason] = useState(CURRENT_YEAR);
+  const [mode, setMode] = useState('cumulative'); // 'cumulative' | 'bracket'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
@@ -22,6 +23,8 @@ function YoffsPage() {
   const [expanded, setExpanded] = useState({});
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const yearDropdownRef = useRef(null);
+  const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
+  const modeDropdownRef = useRef(null);
   const isMobile = useIsMobile();
 
   const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
@@ -34,6 +37,11 @@ function YoffsPage() {
     let cancelled = false;
 
     async function load() {
+      if (mode !== 'cumulative') {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -220,7 +228,7 @@ function YoffsPage() {
     return () => {
       cancelled = true;
     };
-  }, [season]);
+  }, [season, mode]);
 
   useEffect(() => {
     if (!yearDropdownOpen) {
@@ -234,6 +242,19 @@ function YoffsPage() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [yearDropdownOpen]);
+
+  useEffect(() => {
+    if (!modeDropdownOpen) {
+      return;
+    }
+    const handleClickOutside = (e) => {
+      if (modeDropdownRef.current && !modeDropdownRef.current.contains(e.target)) {
+        setModeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [modeDropdownOpen]);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) {
@@ -298,15 +319,55 @@ function YoffsPage() {
           </div>
         )}
       </div>
-      <div className="team-season-dropdown yoffs-mode-dropdown">
-        <span>(bracket 2024 rules)</span>
-        <span className="team-season-dropdown-arrow">▼</span>
+      <div
+        ref={modeDropdownRef}
+        className="team-season-dropdown yoffs-mode-dropdown"
+        onClick={() => setModeDropdownOpen(open => !open)}
+      >
+        <span>
+          {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket (2025 rules)'}
+        </span>
+        <span className="team-season-dropdown-arrow">{modeDropdownOpen ? '▲' : '▼'}</span>
+        {modeDropdownOpen && (
+          <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
+            <div
+              className={
+                'team-season-dropdown-option' +
+                (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
+              }
+              onClick={() => {
+                setMode('cumulative');
+                setModeDropdownOpen(false);
+              }}
+            >
+              Cumulative Score (2024 rules)
+            </div>
+            <div
+              className={
+                'team-season-dropdown-option' +
+                (mode === 'bracket' ? ' team-season-dropdown-option-active' : '')
+              }
+              onClick={() => {
+                setMode('bracket');
+                setModeDropdownOpen(false);
+              }}
+            >
+              Bracket (2025 rules)
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 
   let content = null;
-  if (loading) {
+  if (mode === 'bracket') {
+    content = (
+      <div className="yoffs-bracket-todo">
+        TODO: Bracket (2025 rules) view coming soon.
+      </div>
+    );
+  } else if (loading) {
     content = (
       <div className="loading-center">
         <div className="spinner" aria-label="Loading" />
@@ -356,35 +417,25 @@ function YoffsPage() {
               {isExpanded && (
                 <div className="standings-row-expand">
                   <div className="standings-row-expand-inner yoffs-standings-expand">
-                    <div className="yoffs-section">
-                      <div className="yoffs-section-title">Playoffs</div>
-                      <div className="yoffs-section-row">
-                        Total Score:{' '}
-                        {typeof row.pointsScored === 'number' ? row.pointsScored.toFixed(1) : 'N/A'}
-                      </div>
-                      <div className="yoffs-section-row">
-                        Week 15 Score:{' '}
-                        {row.week15Score != null ? row.week15Score.toFixed(1) : 'N/A'}
-                      </div>
-                      <div className="yoffs-section-row">
-                        Week 16 Score:{' '}
-                        {row.week16Score != null ? row.week16Score.toFixed(1) : 'N/A'}
-                      </div>
-                      <div className="yoffs-section-row">
-                        Week 17 Score:{' '}
-                        {row.week17Score != null ? row.week17Score.toFixed(1) : 'N/A'}
-                      </div>
+                    <div className="yoffs-section-row">
+                      Total:{' '}
+                      {typeof row.pointsScored === 'number' ? row.pointsScored.toFixed(1) : 'N/A'}
                     </div>
-                    <div className="yoffs-section">
-                      <div className="yoffs-section-title">Regular Season</div>
-                      <div className="yoffs-section-row">
-                        Total Score:{' '}
-                        {typeof row.regularTotal === 'number' ? row.regularTotal.toFixed(1) : 'N/A'}
-                      </div>
-                      <div className="yoffs-section-row">
-                        PPG:{' '}
-                        {row.regularPpg != null ? row.regularPpg.toFixed(1) : 'N/A'}
-                      </div>
+                    <div className="yoffs-section-row">
+                      Avg:{' '}
+                      {row.ppg != null ? row.ppg.toFixed(1) : 'N/A'}
+                    </div>
+                    <div className="yoffs-section-row">
+                      Week 15:{' '}
+                      {row.week15Score != null ? row.week15Score.toFixed(1) : 'N/A'}
+                    </div>
+                    <div className="yoffs-section-row">
+                      Week 16:{' '}
+                      {row.week16Score != null ? row.week16Score.toFixed(1) : 'N/A'}
+                    </div>
+                    <div className="yoffs-section-row">
+                      Week 17:{' '}
+                      {row.week17Score != null ? row.week17Score.toFixed(1) : 'N/A'}
                     </div>
                   </div>
                 </div>

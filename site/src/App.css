@@ -625,7 +625,7 @@
   gap: 0.75rem;
 }
 .yoffs-mode-dropdown {
-  cursor: default;
+  cursor: pointer;
 }
 
 /* --- Yoffs expanded standings details --- */
@@ -640,6 +640,11 @@
 .yoffs-standings-expand .yoffs-section-row {
   padding-left: 1rem;
   font-size: 0.96em;
+}
+
+.yoffs-bracket-todo {
+  margin-top: 1rem;
+  font-size: 1.05em;
 }
 .team-scores-table tr:not(:last-child) td {
   border-bottom: 1px solid #292944;
