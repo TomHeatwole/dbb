@@ -6,10 +6,21 @@ import { PREVIOUS_YEARS } from './global_constants';
 import PlayoffRulesToolTip from './PlayoffRulesToolTip';
 import Yoffs2024Format from './Yoffs2024Format';
 import Yoffs2025Format from './Yoffs2025Format';
+import { useSearchParams } from 'react-router-dom';
 
 function YoffsPage() {
-  const [season, setSeason] = useState(CURRENT_YEAR);
-  const [mode, setMode] = useState('cumulative'); // 'cumulative' | 'bracket'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlYear = searchParams.get('year');
+  const urlFormat = searchParams.get('format');
+
+  const initialSeason = urlYear && String(urlYear) !== 'null' ? urlYear : CURRENT_YEAR;
+  const initialModeFromUrl =
+    urlFormat === 'bracket' || urlFormat === 'cumulative' ? urlFormat : null;
+  const initialMode = initialModeFromUrl || (initialSeason === '2024' ? 'cumulative' : 'bracket');
+
+  const [season, setSeason] = useState(initialSeason);
+  const [mode, setMode] = useState(initialMode); // 'cumulative' | 'bracket'
+  const [hasAppliedInitialSeasonDefault, setHasAppliedInitialSeasonDefault] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const yearDropdownRef = useRef(null);
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
@@ -21,11 +32,13 @@ function YoffsPage() {
     trackPageLoad();
   }, []);
 
-  // When the season changes, choose an initial/default playoff format:
-  // - 2024: Cumulative Score
-  // - any other year: Bracket Format
-  // After that, the user can freely toggle formats within that year.
+  // When the season changes (via user dropdown), choose an initial/default playoff format,
+  // but only after the first render. On first render we respect any explicit format in the URL.
   useEffect(() => {
+    if (!hasAppliedInitialSeasonDefault) {
+      setHasAppliedInitialSeasonDefault(true);
+      return;
+    }
     if (season === '2024') {
       if (mode !== 'cumulative') {
         setMode('cumulative');
@@ -35,7 +48,7 @@ function YoffsPage() {
     }
     // we intentionally only react to season changes, not mode changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [season]);
+  }, [season, hasAppliedInitialSeasonDefault]);
 
   useEffect(() => {
     if (!yearDropdownOpen) {
@@ -62,6 +75,36 @@ function YoffsPage() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [modeDropdownOpen]);
+
+  // Keep year/format in sync with query params
+  useEffect(() => {
+    const newParams = new URLSearchParams(searchParams);
+    if (season && String(season) !== String(CURRENT_YEAR)) {
+      newParams.set('year', String(season));
+    } else {
+      newParams.delete('year');
+    }
+    if (mode === 'bracket' || mode === 'cumulative') {
+      newParams.set('format', mode);
+    } else {
+      newParams.delete('format');
+    }
+    setSearchParams(newParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [season, mode]);
+
+  // React to external URL changes (browser nav) for year/format
+  useEffect(() => {
+    if (urlYear && urlYear !== season) {
+      setSeason(urlYear);
+    } else if (!urlYear && season !== CURRENT_YEAR) {
+      setSeason(CURRENT_YEAR);
+    }
+    if (urlFormat && urlFormat !== mode && (urlFormat === 'bracket' || urlFormat === 'cumulative')) {
+      setMode(urlFormat);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlYear, urlFormat]);
 
   const leftHeader = (
     <div className="yoffs-header-filters">
