@@ -63,7 +63,11 @@ function YoffsPage() {
     const tabOptions = getTabOptionsForMode(mode);
     const safeTab = tabOptions.includes(tab) ? tab : tabOptions[0];
     setSelectedTab(safeTab);
-    updateQueryParams({ tab: safeTab });
+    const changes = { tab: safeTab };
+    if (safeTab !== 'Matchups') {
+      changes.matchup = null;
+    }
+    updateQueryParams(changes);
   }, [mode, updateQueryParams]);
 
   useEffect(() => {
@@ -158,6 +162,7 @@ function YoffsPage() {
                     year: String(nextSeason) === String(CURRENT_YEAR) ? null : nextSeason,
                     format: nextMode,
                     tab: nextTab,
+                    matchup: null,
                   });
                 }}
               >
@@ -227,7 +232,7 @@ function YoffsPage() {
                     setMode(nextMode);
                     setSelectedTab(nextTab);
                     setModeDropdownOpen(false);
-                    updateQueryParams({ format: nextMode, tab: nextTab });
+                    updateQueryParams({ format: nextMode, tab: nextTab, matchup: null });
                   }}
                 >
                   Bracket Format (2025 rules)
@@ -245,7 +250,7 @@ function YoffsPage() {
                     setMode(nextMode);
                     setSelectedTab(nextTab);
                     setModeDropdownOpen(false);
-                    updateQueryParams({ format: nextMode, tab: nextTab });
+                    updateQueryParams({ format: nextMode, tab: nextTab, matchup: null });
                   }}
                 >
                   Cumulative Score (2024 rules)

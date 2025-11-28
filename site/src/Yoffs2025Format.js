@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import YoffsScoresView from './YoffsScoresView';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
@@ -7,7 +7,7 @@ import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
 import { CURRENT_YEAR, getCompletedWeeksCount } from './DateHelper';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 function Yoffs2025Format({
   season,
@@ -23,7 +23,74 @@ function Yoffs2025Format({
   const [loadingSeeds, setLoadingSeeds] = useState(true);
   const [seedError, setSeedError] = useState(null);
   const [finalsInfo, setFinalsInfo] = useState(null);
+  const [selectedMatchupId, setSelectedMatchupId] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [matchupDropdownOpen, setMatchupDropdownOpen] = useState(false);
+  const matchupDropdownRef = useRef(null);
   const isMobile = useIsMobile();
+
+  const matchupOptions = [
+    { id: 1, label: 'Semifinal 1' },
+    { id: 2, label: 'Semifinal 2' },
+    { id: 3, label: 'Championship' },
+  ];
+
+  const semiStartGlobal = playoffStartWeek;
+  const semiEndGlobal = Math.max(playoffStartWeek, playoffEndWeek - 1);
+  const completedWeeksForSeason = getCompletedWeeksCount(season);
+  const isCurrentSeasonGlobal = String(season) === String(CURRENT_YEAR);
+  const semisCompletedGlobal =
+    semiEndGlobal <= completedWeeksForSeason || !isCurrentSeasonGlobal;
+
+  const urlMatchupRaw = searchParams.get('matchup');
+  const urlMatchupId = urlMatchupRaw && ['1', '2', '3'].includes(urlMatchupRaw)
+    ? Number(urlMatchupRaw)
+    : null;
+
+  useEffect(() => {
+    if (selectedTab !== 'Matchups') {
+      return;
+    }
+    const defaultId = semisCompletedGlobal ? 3 : 1;
+    const effectiveId = urlMatchupId || defaultId;
+    if (effectiveId !== selectedMatchupId) {
+      setSelectedMatchupId(effectiveId);
+    }
+    // If there was no matchup specified in the URL, write our default back
+    if (!urlMatchupId) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('matchup', String(effectiveId));
+      setSearchParams(nextParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlMatchupId, semisCompletedGlobal, selectedTab]);
+
+  useEffect(() => {
+    if (!matchupDropdownOpen) {
+      return;
+    }
+    const handleClickOutside = (e) => {
+      if (matchupDropdownRef.current && !matchupDropdownRef.current.contains(e.target)) {
+        setMatchupDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [matchupDropdownOpen]);
+
+  useEffect(() => {
+    setMatchupDropdownOpen(false);
+  }, [selectedMatchupId]);
+
+  const handleMatchupChange = (nextId) => {
+    if (nextId === selectedMatchupId) {
+      return;
+    }
+    setSelectedMatchupId(nextId);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('matchup', String(nextId));
+    setSearchParams(nextParams, { replace: true });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -621,8 +688,64 @@ function Yoffs2025Format({
       )}
 
       {selectedTab === 'Matchups' && (
-        <div className="yoffs-tab-placeholder">
-          TODO: Playoff Matchups tab.
+        <div className="yoffs-matchups-root team-scores-container">
+          <div className="team-scores-week-bar">
+            <button
+              className="team-scores-arrow"
+              type="button"
+              onClick={() => handleMatchupChange(Math.max(1, selectedMatchupId - 1))}
+              disabled={selectedMatchupId === 1}
+              aria-label="Previous matchup"
+            >
+              &#8592;
+            </button>
+            <div
+              className="team-scores-week-dropdown yoffs-matchup-dropdown"
+              onClick={() => setMatchupDropdownOpen((open) => !open)}
+              ref={matchupDropdownRef}
+            >
+              {matchupOptions.find((m) => m.id === selectedMatchupId)?.label || 'Semifinal 1'}
+              <span className="team-scores-week-dropdown-arrow">
+                {matchupDropdownOpen ? '▲' : '▼'}
+              </span>
+              {matchupDropdownOpen && (
+                <div className="team-scores-week-dropdown-list">
+                  {matchupOptions.map((opt) => (
+                    <div
+                      key={opt.id}
+                      className={
+                        'team-scores-week-dropdown-option' +
+                        (selectedMatchupId === opt.id
+                          ? ' team-scores-week-dropdown-option-active'
+                          : '')
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMatchupChange(opt.id);
+                        setMatchupDropdownOpen(false);
+                      }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              className="team-scores-arrow"
+              type="button"
+              onClick={() => handleMatchupChange(Math.min(3, selectedMatchupId + 1))}
+              disabled={selectedMatchupId === 3}
+              aria-label="Next matchup"
+            >
+              &#8594;
+            </button>
+          </div>
+
+          <div className="yoffs-tab-placeholder">
+            TODO: Playoff Matchups tab for{' '}
+            {matchupOptions.find((m) => m.id === selectedMatchupId)?.label || 'Semifinal 1'}.
+          </div>
     </div>
       )}
     </>
