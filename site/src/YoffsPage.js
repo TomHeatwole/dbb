@@ -34,8 +34,6 @@ function YoffsPage() {
 
   const [season, setSeason] = useState(initialSeason);
   const [mode, setMode] = useState(initialMode); // 'cumulative' | 'bracket'
-  const [hasAppliedInitialSeasonDefault, setHasAppliedInitialSeasonDefault] = useState(false);
-  const [hasAppliedInitialTabDefault, setHasAppliedInitialTabDefault] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const yearDropdownRef = useRef(null);
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
@@ -48,23 +46,25 @@ function YoffsPage() {
     trackPageLoad();
   }, []);
 
-  // When the season changes (via user dropdown), choose an initial/default playoff format,
-  // but only after the first render. On first render we respect any explicit format in the URL.
-  useEffect(() => {
-    if (!hasAppliedInitialSeasonDefault) {
-      setHasAppliedInitialSeasonDefault(true);
-      return;
-    }
-    if (season === '2024') {
-      if (mode !== 'cumulative') {
-        setMode('cumulative');
+  const updateQueryParams = React.useCallback((changes) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.keys(changes || {}).forEach((key) => {
+      const val = changes[key];
+      if (val === null || val === undefined || val === '') {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, String(val));
       }
-    } else if (mode !== 'bracket') {
-      setMode('bracket');
-    }
-    // we intentionally only react to season changes, not mode changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [season, hasAppliedInitialSeasonDefault]);
+    });
+    setSearchParams(newParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const handleTabChange = React.useCallback((tab) => {
+    const tabOptions = getTabOptionsForMode(mode);
+    const safeTab = tabOptions.includes(tab) ? tab : tabOptions[0];
+    setSelectedTab(safeTab);
+    updateQueryParams({ tab: safeTab });
+  }, [mode, updateQueryParams]);
 
   useEffect(() => {
     if (!yearDropdownOpen) {
@@ -92,23 +92,6 @@ function YoffsPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [modeDropdownOpen]);
 
-  // Keep year/format in sync with query params
-  useEffect(() => {
-    const newParams = new URLSearchParams(searchParams);
-    if (season && String(season) !== String(CURRENT_YEAR)) {
-      newParams.set('year', String(season));
-    } else {
-      newParams.delete('year');
-    }
-    if (mode === 'bracket' || mode === 'cumulative') {
-      newParams.set('format', mode);
-    } else {
-      newParams.delete('format');
-    }
-    setSearchParams(newParams, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [season, mode]);
-
   // React to external URL changes (browser nav) for year/format
   useEffect(() => {
     if (urlYear && urlYear !== season) {
@@ -122,20 +105,6 @@ function YoffsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlYear, urlFormat]);
 
-  // Sync tab with query params whenever selectedTab or mode changes
-  useEffect(() => {
-    const tabOptions = getTabOptionsForMode(mode);
-    const safeTab = tabOptions.includes(selectedTab) ? selectedTab : tabOptions[0];
-    const newParams = new URLSearchParams(searchParams);
-    if (safeTab) {
-      newParams.set('tab', safeTab);
-    } else {
-      newParams.delete('tab');
-    }
-    setSearchParams(newParams, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTab, mode]);
-
   // React to external URL tab changes (browser nav) when valid for current mode
   useEffect(() => {
     const tabOptions = getTabOptionsForMode(mode);
@@ -144,20 +113,6 @@ function YoffsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab, mode]);
-
-  // Default tab to leftmost when season or mode changes, but only after first render
-  useEffect(() => {
-    if (!hasAppliedInitialTabDefault) {
-      setHasAppliedInitialTabDefault(true);
-      return;
-    }
-    const tabOptions = getTabOptionsForMode(mode);
-    const defaultTab = tabOptions[0];
-    if (selectedTab !== defaultTab) {
-      setSelectedTab(defaultTab);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [season, mode, hasAppliedInitialTabDefault]);
 
   const leftHeader = (
     <div className="yoffs-header-filters">
@@ -175,8 +130,27 @@ function YoffsPage() {
                 key={opt}
                 className={'team-season-dropdown-option' + (opt === season ? ' team-season-dropdown-option-active' : '')}
                 onClick={() => {
-                  setSeason(opt);
+                  // User explicitly changed season via dropdown: update state and query params.
+                  const nextSeason = opt;
+                  let nextMode = mode;
+                  if (String(nextSeason) === '2024') {
+                    nextMode = 'cumulative';
+                  } else {
+                    nextMode = 'bracket';
+                  }
+                  const tabOptionsForNext = getTabOptionsForMode(nextMode);
+                  const nextTab = tabOptionsForNext[0];
+
+                  setSeason(nextSeason);
+                  setMode(nextMode);
+                  setSelectedTab(nextTab);
                   setYearDropdownOpen(false);
+
+                  updateQueryParams({
+                    year: String(nextSeason) === String(CURRENT_YEAR) ? null : nextSeason,
+                    format: nextMode,
+                    tab: nextTab,
+                  });
                 }}
               >
                 {opt}
@@ -193,7 +167,7 @@ function YoffsPage() {
       <Yoffs2025Format
         season={season}
         selectedTab={selectedTab}
-        onTabChange={setSelectedTab}
+        onTabChange={handleTabChange}
         playoffStartWeek={PLAYOFF_START_WEEK}
         playoffEndWeek={PLAYOFF_END_WEEK}
       />
@@ -202,7 +176,7 @@ function YoffsPage() {
       <Yoffs2024Format
         season={season}
         selectedTab={selectedTab}
-        onTabChange={setSelectedTab}
+        onTabChange={handleTabChange}
         playoffStartWeek={PLAYOFF_START_WEEK}
         playoffEndWeek={PLAYOFF_END_WEEK}
       />
@@ -234,8 +208,14 @@ function YoffsPage() {
                     (mode === 'bracket' ? ' team-season-dropdown-option-active' : '')
                   }
                   onClick={() => {
-                    setMode('bracket');
+                    // User explicitly chose bracket format; update mode, tab, and query params.
+                    const nextMode = 'bracket';
+                    const tabOptionsForNext = getTabOptionsForMode(nextMode);
+                    const nextTab = tabOptionsForNext[0];
+                    setMode(nextMode);
+                    setSelectedTab(nextTab);
                     setModeDropdownOpen(false);
+                    updateQueryParams({ format: nextMode, tab: nextTab });
                   }}
                 >
                   Bracket Format (2025 rules)
@@ -246,8 +226,14 @@ function YoffsPage() {
                     (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
                   }
                   onClick={() => {
-                    setMode('cumulative');
+                    // User explicitly chose cumulative format; update mode, tab, and query params.
+                    const nextMode = 'cumulative';
+                    const tabOptionsForNext = getTabOptionsForMode(nextMode);
+                    const nextTab = tabOptionsForNext[0];
+                    setMode(nextMode);
+                    setSelectedTab(nextTab);
                     setModeDropdownOpen(false);
+                    updateQueryParams({ format: nextMode, tab: nextTab });
                   }}
                 >
                   Cumulative Score (2024 rules)
