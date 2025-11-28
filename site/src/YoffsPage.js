@@ -8,6 +8,7 @@ import { CURRENT_YEAR } from './DateHelper';
 import { PREVIOUS_YEARS } from './global_constants';
 import useIsMobile from './useIsMobile';
 import StandingsRowHeader from './StandingsRowHeader';
+import PlayoffRulesToolTip from './PlayoffRulesToolTip';
 
 const PLAYOFF_START_WEEK = 14;
 const PLAYOFF_END_WEEK = 17;
@@ -319,44 +320,6 @@ function YoffsPage() {
           </div>
         )}
       </div>
-      <div
-        ref={modeDropdownRef}
-        className="team-season-dropdown yoffs-mode-dropdown"
-        onClick={() => setModeDropdownOpen(open => !open)}
-      >
-        <span>
-          {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket (2025 rules)'}
-        </span>
-        <span className="team-season-dropdown-arrow">{modeDropdownOpen ? '▲' : '▼'}</span>
-        {modeDropdownOpen && (
-          <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-            <div
-              className={
-                'team-season-dropdown-option' +
-                (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
-              }
-              onClick={() => {
-                setMode('cumulative');
-                setModeDropdownOpen(false);
-              }}
-            >
-              Cumulative Score (2024 rules)
-            </div>
-            <div
-              className={
-                'team-season-dropdown-option' +
-                (mode === 'bracket' ? ' team-season-dropdown-option-active' : '')
-              }
-              onClick={() => {
-                setMode('bracket');
-                setModeDropdownOpen(false);
-              }}
-            >
-              Bracket (2025 rules)
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 
@@ -450,9 +413,50 @@ function YoffsPage() {
   return (
     <InfoPageWrapper
       title="Playoffs"
-      subtitle="Playoff standings (weeks 15–17 only)"
+      subtitle={null}
       leftHeader={leftHeader}
     >
+      <div className="yoffs-mode-row">
+        <PlayoffRulesToolTip />
+        <div
+          ref={modeDropdownRef}
+          className="team-season-dropdown yoffs-mode-dropdown"
+          onClick={() => setModeDropdownOpen(open => !open)}
+        >
+          <span>
+            {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket Format (2025 rules)'}
+          </span>
+          <span className="team-season-dropdown-arrow">{modeDropdownOpen ? '▲' : '▼'}</span>
+          {modeDropdownOpen && (
+            <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
+              <div
+                className={
+                  'team-season-dropdown-option' +
+                  (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
+                }
+                onClick={() => {
+                  setMode('cumulative');
+                  setModeDropdownOpen(false);
+                }}
+              >
+                Cumulative Score (2024 rules)
+              </div>
+              <div
+                className={
+                  'team-season-dropdown-option' +
+                  (mode === 'bracket' ? ' team-season-dropdown-option-active' : '')
+                }
+                onClick={() => {
+                  setMode('bracket');
+                  setModeDropdownOpen(false);
+                }}
+              >
+                Bracket Format (2025 rules)
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       {content}
     </InfoPageWrapper>
   );
