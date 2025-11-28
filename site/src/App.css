@@ -658,17 +658,27 @@
 .yoffs-mode-label {
   font-weight: 600;
 }
-.yoffs-mode-row .yoffs-mode-dropdown {
+.yoffs-mode-dropdown-wrapper {
+  position: relative;
   width: 20rem;
-  min-width: 20rem;
-  max-width: 20rem;
+  height: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.yoffs-mode-dropdown-wrapper .yoffs-mode-dropdown {
+  width: 100%;
   justify-content: space-between;
   padding-top: 0.35em;
   padding-bottom: 0.35em;
 }
-.yoffs-mode-row .info-icon {
-  font-size: 1.4em;
-  margin-right: 0.5rem;
+.yoffs-mode-dropdown-wrapper .info-icon {
+  position: absolute;
+  left: -2.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+   line-height: 1;
+  font-size: 1.2em;
 }
 
 @media (max-width: 50em) {
@@ -677,17 +687,18 @@
     margin-top: 0.35rem;
     margin-bottom: 0.75rem;
   }
-  .yoffs-mode-row .yoffs-mode-dropdown {
+  .yoffs-mode-dropdown-wrapper {
     width: 17rem;
-    min-width: 17rem;
-    max-width: 17rem;
+    height: 2.3rem;
+  }
+  .yoffs-mode-dropdown-wrapper .yoffs-mode-dropdown {
     font-size: 0.9em;
     padding-top: 0.28em;
     padding-bottom: 0.28em;
   }
-  .yoffs-mode-row .info-icon {
-    font-size: 1.15em;
-    margin-right: 0.35rem;
+  .yoffs-mode-dropdown-wrapper .info-icon {
+    left: -2rem;
+    font-size: 1em;
   }
 }
 .team-scores-table tr:not(:last-child) td {

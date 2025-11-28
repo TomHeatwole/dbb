@@ -417,44 +417,46 @@ function YoffsPage() {
       leftHeader={leftHeader}
     >
       <div className="yoffs-mode-row">
-        <PlayoffRulesToolTip />
-        <div
-          ref={modeDropdownRef}
-          className="team-season-dropdown yoffs-mode-dropdown"
-          onClick={() => setModeDropdownOpen(open => !open)}
-        >
-          <span>
-            {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket Format (2025 rules)'}
-          </span>
-          <span className="team-season-dropdown-arrow">{modeDropdownOpen ? '▲' : '▼'}</span>
-          {modeDropdownOpen && (
-            <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-              <div
-                className={
-                  'team-season-dropdown-option' +
-                  (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
-                }
-                onClick={() => {
-                  setMode('cumulative');
-                  setModeDropdownOpen(false);
-                }}
-              >
-                Cumulative Score (2024 rules)
+        <div className="yoffs-mode-dropdown-wrapper">
+          <PlayoffRulesToolTip />
+          <div
+            ref={modeDropdownRef}
+            className="team-season-dropdown yoffs-mode-dropdown"
+            onClick={() => setModeDropdownOpen(open => !open)}
+          >
+            <span>
+              {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket Format (2025 rules)'}
+            </span>
+            <span className="team-season-dropdown-arrow">{modeDropdownOpen ? '▲' : '▼'}</span>
+            {modeDropdownOpen && (
+              <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className={
+                    'team-season-dropdown-option' +
+                    (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
+                  }
+                  onClick={() => {
+                    setMode('cumulative');
+                    setModeDropdownOpen(false);
+                  }}
+                >
+                  Cumulative Score (2024 rules)
+                </div>
+                <div
+                  className={
+                    'team-season-dropdown-option' +
+                    (mode === 'bracket' ? ' team-season-dropdown-option-active' : '')
+                  }
+                  onClick={() => {
+                    setMode('bracket');
+                    setModeDropdownOpen(false);
+                  }}
+                >
+                  Bracket Format (2025 rules)
+                </div>
               </div>
-              <div
-                className={
-                  'team-season-dropdown-option' +
-                  (mode === 'bracket' ? ' team-season-dropdown-option-active' : '')
-                }
-                onClick={() => {
-                  setMode('bracket');
-                  setModeDropdownOpen(false);
-                }}
-              >
-                Bracket Format (2025 rules)
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       {content}
