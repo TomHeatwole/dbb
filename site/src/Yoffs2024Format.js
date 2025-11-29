@@ -97,28 +97,38 @@ function Yoffs2024Format({
 
         // Regular season (weeks before playoffs) stats (total + PPG)
         const regularStatsByRoster = {};
-        regularSliceFull.forEach((weekEntries) => {
-          if (!Array.isArray(weekEntries)) {
-            return;
-          }
+        for (let wk = 1; wk <= 14; wk += 1) {
+          const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
+          const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
           weekEntries.forEach((entry) => {
             if (!entry || entry.roster_id == null) {
               return;
             }
             const rid = Number(entry.roster_id);
-            const pts = typeof entry.points === 'number' ? entry.points : 0;
             if (!regularStatsByRoster[rid]) {
               regularStatsByRoster[rid] = {
                 total: 0,
                 weeksPlayed: 0,
               };
             }
+            let pts = 0;
+            const raw = breakdown[rid];
+            if (raw && players && idMap) {
+              try {
+                const computed = StartSitSort(raw, players, idMap);
+                if (computed && typeof computed.starterTotal === 'number') {
+                  pts = Math.round(computed.starterTotal * 10) / 10;
+                }
+              } catch (_) {
+                // If StartSitSort fails, pts remains 0
+              }
+            }
             if (typeof pts === 'number' && isFinite(pts)) {
               regularStatsByRoster[rid].total += pts;
+              regularStatsByRoster[rid].weeksPlayed += 1;
             }
-            regularStatsByRoster[rid].weeksPlayed += 1;
           });
-        });
+        }
 
         // Playoff stats by roster, using StartSit algorithm for every playoff week
         const statsByRoster = {};

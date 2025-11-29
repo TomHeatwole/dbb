@@ -736,9 +736,27 @@ function MatchupView({
   let headerLeftTotal = '—';
   let headerRightTotal = '—';
 
+  // Add buffer to totals for championship
+  const hasBuffer =
+    effectiveWeeks.length === 1 &&
+    typeof playoffBufferAmount === 'number' &&
+    playoffBufferAmount > 0 &&
+    (playoffBufferSide === 'left' || playoffBufferSide === 'right');
+
   if (weekBlocks.length === 1) {
-    headerLeftTotal = weekBlocks[0].leftTotalText;
-    headerRightTotal = weekBlocks[0].rightTotalText;
+    let leftVal = weekBlocks[0].leftTotalValue != null ? weekBlocks[0].leftTotalValue : 0;
+    let rightVal = weekBlocks[0].rightTotalValue != null ? weekBlocks[0].rightTotalValue : 0;
+    
+    if (hasBuffer) {
+      if (playoffBufferSide === 'left') {
+        leftVal += playoffBufferAmount;
+      } else if (playoffBufferSide === 'right') {
+        rightVal += playoffBufferAmount;
+      }
+    }
+    
+    headerLeftTotal = weekBlocks[0].leftTotalValue != null ? leftVal.toFixed(1) : '—';
+    headerRightTotal = weekBlocks[0].rightTotalValue != null ? rightVal.toFixed(1) : '—';
   } else {
     const leftSum = weekBlocks.reduce((acc, block) => {
       if (block.leftTotalValue != null) {
@@ -869,6 +887,33 @@ function MatchupView({
           </div>
         </div>
       </div>
+      {hasBuffer && (
+        <MatchupWeekView
+          key="playoff-buffer"
+          positions={[]}
+          starters1={[]}
+          starters2={[]}
+          bench1={[]}
+          bench2={[]}
+          renderPlayerSide={() => null}
+          expanded={false}
+          onToggleExpanded={null}
+          week={null}
+          leftTotalText={
+            playoffBufferSide === 'left'
+              ? `+${playoffBufferAmount.toFixed(1)}`
+              : '-'
+          }
+          rightTotalText={
+            playoffBufferSide === 'right'
+              ? `+${playoffBufferAmount.toFixed(1)}`
+              : '-'
+          }
+          labelOverride="Semis Buffer"
+          isBufferRow
+          bufferSide={playoffBufferSide}
+        />
+      )}
       {weekBlocks.map((block) => (
         <MatchupWeekView
           key={block.weekNumber}
@@ -913,36 +958,6 @@ function MatchupView({
           }
         />
       ))}
-      {isSingleWeekWithNoWeeksProp &&
-        typeof playoffBufferAmount === 'number' &&
-        playoffBufferAmount > 0 &&
-        (playoffBufferSide === 'left' || playoffBufferSide === 'right') && (
-          <MatchupWeekView
-            key="playoff-buffer"
-            positions={[]}
-            starters1={[]}
-            starters2={[]}
-            bench1={[]}
-            bench2={[]}
-            renderPlayerSide={() => null}
-            expanded={false}
-            onToggleExpanded={null}
-            week={null}
-            leftTotalText={
-              playoffBufferSide === 'left'
-                ? `+${playoffBufferAmount.toFixed(1)}`
-                : '-'
-            }
-            rightTotalText={
-              playoffBufferSide === 'right'
-                ? `+${playoffBufferAmount.toFixed(1)}`
-                : '-'
-            }
-            labelOverride="Playoff Buffer"
-            isBufferRow
-            bufferSide={playoffBufferSide}
-          />
-        )}
     </div>
   );
 }

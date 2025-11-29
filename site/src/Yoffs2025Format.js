@@ -285,28 +285,17 @@ function Yoffs2025Format({
           const computeFinalBase = (rid) => {
             let weekTotal = 0;
             const raw = finalsBreakdown[rid];
-            try {
-              if (raw && players && idMap) {
+            if (raw && players && idMap) {
+              try {
                 const computed = StartSitSort(raw, players, idMap);
                 if (computed && typeof computed.starterTotal === 'number') {
                   weekTotal = Math.round(computed.starterTotal * 10) / 10;
                 }
-              }
-            } catch (_) {
-              // fallback below
-            }
-            if (!weekTotal) {
-              const weekEntries = Array.isArray(weeksData[finalsWeek - 1])
-                ? weeksData[finalsWeek - 1]
-                : [];
-              const entry = weekEntries.find(
-                (e) => e && Number(e.roster_id) === Number(rid)
-              );
-              if (entry && typeof entry.points === 'number') {
-                weekTotal = Math.round(entry.points * 10) / 10;
+              } catch (_) {
+                // If StartSitSort fails, weekTotal remains 0
               }
             }
-            return weekTotal || 0;
+            return weekTotal;
           };
 
           let topFinal = computeFinalBase(topWinner.rosterId);
