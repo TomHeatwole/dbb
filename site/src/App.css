@@ -1791,7 +1791,6 @@
 .standings-row-expand-inner { color: #dfe6f0; }
 /* Standings expand layout split for web */
 .standings-expand-split { display: block; }
-.standings-expand-left { }
 .standings-expand-right { margin-top: 0.6rem; }
 /* Yoffs 2024 expanded styling */
 .yoffs-total-block {
@@ -1935,6 +1934,40 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  min-width: 100%;
+}
+.yoffs-matchup-team-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.yoffs-matchup-team-block--left {
+  align-items: flex-start;
+}
+.yoffs-matchup-team-block--right {
+  align-items: flex-end;
+}
+.yoffs-matchup-team-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.yoffs-matchup-avatar-large {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+}
+.yoffs-matchup-team-score {
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+.yoffs-matchup-team-bottom {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 .yoffs-matchup-side {
   flex: 1 1 0;
@@ -2037,6 +2070,55 @@
   font-size: 0.85rem;
   font-weight: 700;
   color: #f5e2a2;
+  width: 28rem;
+}
+
+.yoffs-matchup-view {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 50.0625em) {
+  .yoffs-matchup-row {
+    column-gap: 1.1rem;
+  }
+  .yoffs-matchup-header-row {
+    width: 55rem;
+  }
+}
+
+@media (max-width: 58em) {
+  /* Let matchup view align with other content inside the mobile Info wrapper */
+  .mobile-info-container .yoffs-matchups-root.team-scores-container {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    align-items: stretch !important;
+  }
+  .mobile-info-container .yoffs-matchups-root .team-scores-week-bar {
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
 }
 .yoffs-bracket-matchup-button {
   display: inline-flex;

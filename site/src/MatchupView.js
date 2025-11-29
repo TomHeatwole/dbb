@@ -6,7 +6,7 @@ import { getWeekScoreBreakdown } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
-import { CURRENT_YEAR } from './DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import useIsMobile from './useIsMobile';
 
@@ -65,6 +65,10 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
   const [scoresError, setScoresError] = useState(null);
 
   const isMobileView = useIsMobile();
+  const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+  const currentWeekNum = getCurrentNFLWeek();
+  const isActiveWeek =
+    isCurrentSeason && Number(week) === Number(currentWeekNum);
 
   useEffect(() => {
     let cancelled = false;
@@ -278,9 +282,9 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     const ptsText = showDash ? '-' : ptsVal.toFixed(1);
 
     const gameCellClasses = ['team-scores-game-cell', 'team-scores-game-cell--compact'];
-    if (gameObj.live) {
+    if (isActiveWeek && gameObj.live) {
       gameCellClasses.push('team-scores-game-live');
-    } else if (gameObj.completed) {
+    } else if (isActiveWeek && gameObj.completed) {
       gameCellClasses.push('team-scores-game-completed');
     }
 
@@ -378,6 +382,12 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     breakdown1 && Array.isArray(breakdown1.starters) ? breakdown1.starters : [];
   const starters2 =
     breakdown2 && Array.isArray(breakdown2.starters) ? breakdown2.starters : [];
+  const leftTotalText = breakdown1
+    ? Number(breakdown1.starterTotal || 0).toFixed(1)
+    : '—';
+  const rightTotalText = breakdown2
+    ? Number(breakdown2.starterTotal || 0).toFixed(1)
+    : '—';
   const positions = STARTER_POSITION_NAMES || [];
   const rowCount = positions.length || Math.max(starters1.length, starters2.length);
 
@@ -385,36 +395,46 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     <div className="yoffs-matchup-view">
       <div className="yoffs-matchup-header-row">
         <div className="yoffs-matchup-side yoffs-matchup-side--left">
-          <div className="yoffs-bracket-team">
-            {displaySeeds && seed1 != null && (
-              <span className="yoffs-bracket-seed">#{seed1}</span>
-            )}
-            {leftMeta.avatarUrl && (
-              <img
-                className="standings-avatar"
-                src={leftMeta.avatarUrl}
-                alt={`${leftMeta.teamName} avatar`}
-              />
-            )}
-            <span className="yoffs-bracket-name">{leftMeta.teamName}</span>
+          <div className="yoffs-matchup-team-block yoffs-matchup-team-block--left">
+            <div className="yoffs-matchup-team-top">
+              {leftMeta.avatarUrl && (
+                <img
+                  className="yoffs-matchup-avatar-large"
+                  src={leftMeta.avatarUrl}
+                  alt={`${leftMeta.teamName} avatar`}
+                />
+              )}
+              <span className="yoffs-matchup-team-score">{leftTotalText}</span>
+            </div>
+            <div className="yoffs-matchup-team-bottom">
+              {displaySeeds && seed1 != null && (
+                <span className="yoffs-bracket-seed">#{seed1}</span>
+              )}
+              <span className="yoffs-bracket-name">{leftMeta.teamName}</span>
+            </div>
           </div>
         </div>
         <div className="yoffs-matchup-center">
           <span className="yoffs-matchup-week-label">Week {week}</span>
         </div>
         <div className="yoffs-matchup-side yoffs-matchup-side--right">
-          <div className="yoffs-bracket-team">
-            {displaySeeds && seed2 != null && (
-              <span className="yoffs-bracket-seed">#{seed2}</span>
-            )}
-            {rightMeta.avatarUrl && (
-              <img
-                className="standings-avatar"
-                src={rightMeta.avatarUrl}
-                alt={`${rightMeta.teamName} avatar`}
-              />
-            )}
-            <span className="yoffs-bracket-name">{rightMeta.teamName}</span>
+          <div className="yoffs-matchup-team-block yoffs-matchup-team-block--right">
+            <div className="yoffs-matchup-team-top">
+              {rightMeta.avatarUrl && (
+                <img
+                  className="yoffs-matchup-avatar-large"
+                  src={rightMeta.avatarUrl}
+                  alt={`${rightMeta.teamName} avatar`}
+                />
+              )}
+              <span className="yoffs-matchup-team-score">{rightTotalText}</span>
+            </div>
+            <div className="yoffs-matchup-team-bottom">
+              {displaySeeds && seed2 != null && (
+                <span className="yoffs-bracket-seed">#{seed2}</span>
+              )}
+              <span className="yoffs-bracket-name">{rightMeta.teamName}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -437,17 +457,6 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
             </div>
           );
         })}
-        {breakdown1 && breakdown2 && (
-          <div className="yoffs-matchup-footer-row">
-            <div className="yoffs-matchup-total yoffs-matchup-total--left">
-              Total: {Number(breakdown1.starterTotal || 0).toFixed(1)} pts
-            </div>
-            <div className="yoffs-matchup-footer-spacer" />
-            <div className="yoffs-matchup-total yoffs-matchup-total--right">
-              Total: {Number(breakdown2.starterTotal || 0).toFixed(1)} pts
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
