@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-function useIsMobile(maxWidth = 800) {
+function useIsMobile(maxWidth = 1000) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= maxWidth);
 
   useEffect(() => {

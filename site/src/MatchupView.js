@@ -64,12 +64,16 @@ function MatchupView({
   weeks = null,
   displaySeeds = false,
   seed1 = null,
-  seed2 = null
+  seed2 = null,
+  preloadedTeamData = null,
+  preloadedWeeksData = null,
+  preloadedPlayersData = null,
+  preloadedPlayerIdMap = null
 }) {
-  const [teamData, setTeamData] = useState(null);
-  const [weeksParsedData, setWeeksParsedData] = useState(null);
-  const [playersData, setPlayersData] = useState(null);
-  const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [teamData, setTeamData] = useState(preloadedTeamData || null);
+  const [weeksParsedData, setWeeksParsedData] = useState(preloadedWeeksData || null);
+  const [playersData, setPlayersData] = useState(preloadedPlayersData || null);
+  const [playerIdMap, setPlayerIdMap] = useState(preloadedPlayerIdMap || null);
   const [playerGameLabelsByWeek, setPlayerGameLabelsByWeek] = useState({});
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [loadingScores, setLoadingScores] = useState(true);
@@ -87,6 +91,10 @@ function MatchupView({
       ? [week]
       : [];
   const hasAnyWeeks = effectiveWeeks.length > 0;
+
+  const isSingleWeekWithNoWeeksProp =
+    effectiveWeeks.length === 1 &&
+    !(Array.isArray(weeks) && weeks.length > 0);
 
   // When the matchup (teams/weeks/season) changes, reset per-week expansion
   // so defaults are recalculated for the new game.
@@ -146,6 +154,11 @@ function MatchupView({
     let cancelled = false;
 
     async function loadTeams() {
+      if (preloadedTeamData) {
+        setTeamData(preloadedTeamData);
+        setLoadingTeams(false);
+        return;
+      }
       setLoadingTeams(true);
       setError(null);
       try {
@@ -169,13 +182,20 @@ function MatchupView({
     return () => {
       cancelled = true;
     };
-  }, [season]);
+  }, [season, preloadedTeamData]);
 
   // Load scores + player metadata for the given season
   useEffect(() => {
     let cancelled = false;
     async function loadScores() {
       if (!season) {
+        return;
+      }
+      if (preloadedWeeksData && preloadedPlayerIdMap && preloadedPlayersData) {
+        setWeeksParsedData(preloadedWeeksData);
+        setPlayerIdMap(preloadedPlayerIdMap);
+        setPlayersData(preloadedPlayersData);
+        setLoadingScores(false);
         return;
       }
       setLoadingScores(true);
@@ -228,7 +248,7 @@ function MatchupView({
     return () => {
       cancelled = true;
     };
-  }, [season, teamData]);
+  }, [season, teamData, preloadedWeeksData, preloadedPlayerIdMap, preloadedPlayersData]);
 
   // Build per-player game labels (matchup info) for this week, using only these two teams
   useEffect(() => {
@@ -255,12 +275,6 @@ function MatchupView({
         const playerIdSet = new Set();
         weekArr.forEach((entry) => {
           if (!entry || entry.roster_id == null) {
-            return;
-          }
-          if (
-            Number(entry.roster_id) !== Number(team1Id) &&
-            Number(entry.roster_id) !== Number(team2Id)
-          ) {
             return;
           }
           if (Array.isArray(entry.players)) {
@@ -610,6 +624,27 @@ function MatchupView({
     (block) => block.breakdown1 || block.breakdown2
   );
 
+  // Debug logging for championship / single-week matchups to inspect
+  // why matchup labels might be missing.
+  if (process.env.NODE_ENV !== 'production' && effectiveWeeks.length === 1) {
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[MatchupView finals debug]', {
+        season,
+        week: effectiveWeeks[0],
+        team1Id,
+        team2Id,
+        weekBlock: weekBlocks[0],
+        labelsForWeek:
+          playerGameLabelsByWeek && playerGameLabelsByWeek[effectiveWeeks[0]]
+            ? playerGameLabelsByWeek[effectiveWeeks[0]]
+            : null,
+      });
+    } catch (_) {
+      // ignore logging errors
+    }
+  }
+
   if (!hasAnyBreakdown) {
     return (
       <div className="yoffs-matchup-view-error">
@@ -763,6 +798,9 @@ function MatchupView({
           bench1={block.bench1}
           bench2={block.bench2}
           renderPlayerSide={block.renderPlayerSide}
+          week={block.weekNumber}
+          leftTotalText={block.leftTotalText}
+          rightTotalText={block.rightTotalText}
           isCurrentWeek={block.isCurrentWeekBlock}
           leftYetToPlayLabel={block.leftYetToPlayLabel}
           leftLiveLabel={block.leftLiveLabel}
@@ -776,23 +814,23 @@ function MatchupView({
               ? gridExpandedByWeek[block.weekNumber]
               : true
           }
-          onToggleExpanded={() =>
-            setGridExpandedByWeek((prev) => {
-              const currentValue = Object.prototype.hasOwnProperty.call(
-                prev,
-                block.weekNumber
-              )
-                ? prev[block.weekNumber]
-                : true;
-              return {
-                ...prev,
-                [block.weekNumber]: !currentValue
-              };
-            })
+          onToggleExpanded={
+            isSingleWeekWithNoWeeksProp
+              ? null
+              : () =>
+                  setGridExpandedByWeek((prev) => {
+                    const currentValue = Object.prototype.hasOwnProperty.call(
+                      prev,
+                      block.weekNumber
+                    )
+                      ? prev[block.weekNumber]
+                      : true;
+                    return {
+                      ...prev,
+                      [block.weekNumber]: !currentValue
+                    };
+                  })
           }
-          week={block.weekNumber}
-          leftTotalText={block.leftTotalText}
-          rightTotalText={block.rightTotalText}
         />
       ))}
     </div>

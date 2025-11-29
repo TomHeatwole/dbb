@@ -8,8 +8,8 @@ import Yoffs2024Format from './Yoffs2024Format';
 import Yoffs2025Format from './Yoffs2025Format';
 import { useSearchParams } from 'react-router-dom';
 
-const PLAYOFF_START_WEEK = 15;
-const PLAYOFF_END_WEEK = 17;
+const PLAYOFF_START_WEEK = 11;
+const PLAYOFF_END_WEEK = 13;
 
 function YoffsPage() {
   const [searchParams, setSearchParams] = useSearchParams();

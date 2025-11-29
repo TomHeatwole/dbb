@@ -30,7 +30,7 @@ function Yoffs2025Format({
   const matchupDropdownRef = useRef(null);
   const isMobile = useIsMobile();
 
-  const matchupOptions = [
+  const matchupOptionsBase = [
     { id: 1, label: 'Semifinal 1' },
     { id: 2, label: 'Semifinal 2' },
     { id: 3, label: 'Championship' },
@@ -43,17 +43,35 @@ function Yoffs2025Format({
   const semisCompletedGlobal =
     semiEndGlobal <= completedWeeksForSeason || !isCurrentSeasonGlobal;
 
+  const [baseWeeksData, setBaseWeeksData] = useState(null);
+  const [baseTeamData, setBaseTeamData] = useState(null);
+  const [basePlayersData, setBasePlayersData] = useState(null);
+  const [basePlayerIdMap, setBasePlayerIdMap] = useState(null);
+
+  const matchupOptions = semisCompletedGlobal
+    ? matchupOptionsBase
+    : matchupOptionsBase.filter((opt) => opt.id !== 3);
+  const availableMatchupIds = matchupOptions.map((opt) => opt.id);
+  const minMatchupId = Math.min(...availableMatchupIds);
+  const maxMatchupId = Math.max(...availableMatchupIds);
+
   const urlMatchupRaw = searchParams.get('matchup');
-  const urlMatchupId = urlMatchupRaw && ['1', '2', '3'].includes(urlMatchupRaw)
-    ? Number(urlMatchupRaw)
-    : null;
+  const urlMatchupId =
+    urlMatchupRaw && ['1', '2', '3'].includes(urlMatchupRaw)
+      ? Number(urlMatchupRaw)
+      : null;
 
   useEffect(() => {
     if (selectedTab !== 'Matchups') {
       return;
     }
     const defaultId = semisCompletedGlobal ? 3 : 1;
-    const effectiveId = urlMatchupId || defaultId;
+    let effectiveId = urlMatchupId || defaultId;
+
+    // If semis are not complete, do not allow Championship (3) as the active matchup.
+    if (!semisCompletedGlobal && effectiveId === 3) {
+      effectiveId = 1;
+    }
     if (effectiveId !== selectedMatchupId) {
       setSelectedMatchupId(effectiveId);
     }
@@ -85,6 +103,9 @@ function Yoffs2025Format({
 
   const handleMatchupChange = (nextId) => {
     if (nextId === selectedMatchupId) {
+      return;
+    }
+    if (!availableMatchupIds.includes(nextId)) {
       return;
     }
     setSelectedMatchupId(nextId);
@@ -694,8 +715,10 @@ function Yoffs2025Format({
             <button
               className="team-scores-arrow"
               type="button"
-              onClick={() => handleMatchupChange(Math.max(1, selectedMatchupId - 1))}
-              disabled={selectedMatchupId === 1}
+              onClick={() =>
+                handleMatchupChange(Math.max(minMatchupId, selectedMatchupId - 1))
+              }
+              disabled={selectedMatchupId === minMatchupId}
               aria-label="Previous matchup"
             >
               &#8592;
@@ -735,8 +758,10 @@ function Yoffs2025Format({
             <button
               className="team-scores-arrow"
               type="button"
-              onClick={() => handleMatchupChange(Math.min(3, selectedMatchupId + 1))}
-              disabled={selectedMatchupId === 3}
+              onClick={() =>
+                handleMatchupChange(Math.min(maxMatchupId, selectedMatchupId + 1))
+              }
+              disabled={selectedMatchupId === maxMatchupId}
               aria-label="Next matchup"
             >
               &#8594;
@@ -772,6 +797,10 @@ function Yoffs2025Format({
                       team2Id={seed4Team.rosterId}
                       week={playoffStartWeek}
                       weeks={[playoffStartWeek, playoffStartWeek + 1]}
+                      preloadedTeamData={baseTeamData}
+                      preloadedWeeksData={baseWeeksData}
+                      preloadedPlayersData={basePlayersData}
+                      preloadedPlayerIdMap={basePlayerIdMap}
                       displaySeeds
                       seed1={1}
                       seed2={4}
@@ -786,6 +815,10 @@ function Yoffs2025Format({
                       team2Id={seed3Team.rosterId}
                       week={playoffStartWeek}
                       weeks={[playoffStartWeek, playoffStartWeek + 1]}
+                      preloadedTeamData={baseTeamData}
+                      preloadedWeeksData={baseWeeksData}
+                      preloadedPlayersData={basePlayersData}
+                      preloadedPlayerIdMap={basePlayerIdMap}
                       displaySeeds
                       seed1={2}
                       seed2={3}
@@ -807,6 +840,10 @@ function Yoffs2025Format({
                     team1Id={finalsInfo.top.rosterId}
                     team2Id={finalsInfo.bottom.rosterId}
                     week={playoffEndWeek}
+                    preloadedTeamData={baseTeamData}
+                    preloadedWeeksData={baseWeeksData}
+                    preloadedPlayersData={basePlayersData}
+                    preloadedPlayerIdMap={basePlayerIdMap}
                     displaySeeds
                     seed1={finalsInfo.top.seed}
                     seed2={finalsInfo.bottom.seed}

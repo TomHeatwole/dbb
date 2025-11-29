@@ -1988,6 +1988,13 @@
 .yoffs-matchup-activity-item {
   opacity: 0.9;
 }
+.yoffs-matchup-week-label-static {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f5d26a;
+}
 .yoffs-matchup-side {
   flex: 1 1 0;
   min-width: 0;

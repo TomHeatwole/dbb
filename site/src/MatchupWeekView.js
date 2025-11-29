@@ -84,10 +84,8 @@ function MatchupWeekView({
                 <span className="yoffs-matchup-week-arrow">{arrowSymbol}</span>
               </button>
             ) : (
-              <span className="yoffs-matchup-week-pill">
-                <span className="yoffs-matchup-week-label">
-                  {week != null ? `Week ${week}` : 'Week'}
-                </span>
+              <span className="yoffs-matchup-week-label-static">
+                {week != null ? `Week ${week}` : 'Week'}
               </span>
             )}
           </div>
@@ -119,30 +117,30 @@ function MatchupWeekView({
 
   return (
     <div className="yoffs-matchup-table">
-      {onToggleExpanded && (
-        <div className="yoffs-matchup-row yoffs-matchup-row--summary">
-          <div className="yoffs-matchup-cell yoffs-matchup-cell--left">
-            <div className="yoffs-matchup-summary">
-              <span className="yoffs-matchup-summary-score">
-                {leftTotalText}
-              </span>
-            </div>
-            {isCurrentWeek && (leftYetToPlayLabel || leftLiveLabel) && (
-              <div className="yoffs-matchup-activity">
-                {leftYetToPlayLabel && (
-                  <span className="yoffs-matchup-activity-item">
-                    {leftYetToPlayLabel}
-                  </span>
-                )}
-                {leftLiveLabel && (
-                  <span className="yoffs-matchup-activity-item">
-                    {leftLiveLabel}
-                  </span>
-                )}
-              </div>
-            )}
+      <div className="yoffs-matchup-row yoffs-matchup-row--summary">
+        <div className="yoffs-matchup-cell yoffs-matchup-cell--left">
+          <div className="yoffs-matchup-summary">
+            <span className="yoffs-matchup-summary-score">
+              {leftTotalText}
+            </span>
           </div>
-          <div className="yoffs-matchup-pos-col">
+          {isCurrentWeek && (leftYetToPlayLabel || leftLiveLabel) && (
+            <div className="yoffs-matchup-activity">
+              {leftYetToPlayLabel && (
+                <span className="yoffs-matchup-activity-item">
+                  {leftYetToPlayLabel}
+                </span>
+              )}
+              {leftLiveLabel && (
+                <span className="yoffs-matchup-activity-item">
+                  {leftLiveLabel}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="yoffs-matchup-pos-col">
+          {onToggleExpanded ? (
             <button
               type="button"
               className="yoffs-matchup-week-pill"
@@ -153,30 +151,34 @@ function MatchupWeekView({
               </span>
               <span className="yoffs-matchup-week-arrow">{arrowSymbol}</span>
             </button>
-          </div>
-          <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
-            <div className="yoffs-matchup-summary yoffs-matchup-summary--right">
-              <span className="yoffs-matchup-summary-score">
-                {rightTotalText}
-              </span>
-            </div>
-            {isCurrentWeek && (rightYetToPlayLabel || rightLiveLabel) && (
-              <div className="yoffs-matchup-activity yoffs-matchup-activity--right">
-                {rightYetToPlayLabel && (
-                  <span className="yoffs-matchup-activity-item">
-                    {rightYetToPlayLabel}
-                  </span>
-                )}
-                {rightLiveLabel && (
-                  <span className="yoffs-matchup-activity-item">
-                    {rightLiveLabel}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          ) : (
+            <span className="yoffs-matchup-week-label-static">
+              {week != null ? `Week ${week}` : 'Week'}
+            </span>
+          )}
         </div>
-      )}
+        <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
+          <div className="yoffs-matchup-summary yoffs-matchup-summary--right">
+            <span className="yoffs-matchup-summary-score">
+              {rightTotalText}
+            </span>
+          </div>
+          {isCurrentWeek && (rightYetToPlayLabel || rightLiveLabel) && (
+            <div className="yoffs-matchup-activity yoffs-matchup-activity--right">
+              {rightYetToPlayLabel && (
+                <span className="yoffs-matchup-activity-item">
+                  {rightYetToPlayLabel}
+                </span>
+              )}
+              {rightLiveLabel && (
+                <span className="yoffs-matchup-activity-item">
+                  {rightLiveLabel}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
       {Array.from({ length: rowCount }).map((_, idx) => {
         const posLabel = safePositions[idx] || `S${idx + 1}`;
         const leftSlot = starters1[idx];
