@@ -8,6 +8,7 @@ import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
 import { CURRENT_YEAR, getCompletedWeeksCount } from './DateHelper';
 import { Link, useSearchParams } from 'react-router-dom';
+import MatchupView from './MatchupView';
 
 function Yoffs2025Format({
   season,
@@ -742,9 +743,75 @@ function Yoffs2025Format({
             </button>
           </div>
 
-          <div className="yoffs-tab-placeholder">
-            TODO: Playoff Matchups tab for{' '}
-            {matchupOptions.find((m) => m.id === selectedMatchupId)?.label || 'Semifinal 1'}.
+          <div className="yoffs-matchup-view-container">
+            {(!seedTeams || seedTeams.length < 2) && !loadingSeeds && !seedError && (
+              <div>No playoff teams found for this season.</div>
+            )}
+            {loadingSeeds && (
+              <div className="loading-center">
+                <div className="spinner" aria-label="Loading matchup" />
+              </div>
+            )}
+            {!loadingSeeds && seedError && <div>{seedError}</div>}
+            {!loadingSeeds && !seedError && seedTeams && seedTeams.length >= 2 && (
+              (() => {
+                const seed1Team = seedTeams.find((t) => t.seed === 1) || seedTeams[0];
+                const seed4Team =
+                  seedTeams.find((t) => t.seed === 4) ||
+                  seedTeams[seedTeams.length - 1];
+                const seed2Team = seedTeams.find((t) => t.seed === 2) || seedTeams[1];
+                const seed3Team =
+                  seedTeams.find((t) => t.seed === 3) ||
+                  seedTeams[Math.min(2, seedTeams.length - 1)];
+
+                if (selectedMatchupId === 1) {
+                  return (
+                    <MatchupView
+                      season={season}
+                      team1Id={seed1Team.rosterId}
+                      team2Id={seed4Team.rosterId}
+                      week={playoffStartWeek}
+                      displaySeeds
+                      seed1={1}
+                      seed2={4}
+                    />
+                  );
+                }
+                if (selectedMatchupId === 2) {
+                  return (
+                    <MatchupView
+                      season={season}
+                      team1Id={seed2Team.rosterId}
+                      team2Id={seed3Team.rosterId}
+                      week={playoffStartWeek}
+                      displaySeeds
+                      seed1={2}
+                      seed2={3}
+                    />
+                  );
+                }
+
+                // Championship
+                if (!semisCompletedGlobal || !finalsInfo) {
+                  return (
+                    <div className="yoffs-tab-placeholder">
+                      Championship matchup will appear once the semifinals are complete.
+                    </div>
+                  );
+                }
+                return (
+                  <MatchupView
+                    season={season}
+                    team1Id={finalsInfo.top.rosterId}
+                    team2Id={finalsInfo.bottom.rosterId}
+                    week={playoffEndWeek}
+                    displaySeeds
+                    seed1={finalsInfo.top.seed}
+                    seed2={finalsInfo.bottom.seed}
+                  />
+                );
+              })()
+            )}
           </div>
     </div>
       )}

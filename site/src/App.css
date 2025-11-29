@@ -1923,6 +1923,40 @@
   margin-left: 0.4rem;
   white-space: nowrap;
 }
+.yoffs-matchup-view {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 900px;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+.yoffs-matchup-side {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.yoffs-matchup-side--left {
+  display: flex;
+  justify-content: flex-start;
+}
+.yoffs-matchup-side--right {
+  display: flex;
+  justify-content: flex-end;
+}
+.yoffs-matchup-center {
+  flex: 0 0 auto;
+  padding: 0 1rem;
+  text-align: center;
+}
+.yoffs-matchup-week-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f5d26a;
+}
+.yoffs-matchup-view-error {
+  color: #ff8080;
+  margin-top: 0.75rem;
+}
 .yoffs-bracket-matchup-button {
   display: inline-flex;
   align-items: center;
