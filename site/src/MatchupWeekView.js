@@ -17,6 +17,9 @@ import React from 'react';
  * - onToggleExpanded: function() – toggles expanded state
  * - week: number – week number label for collapsed row
  * - leftTotalText / rightTotalText: string – totals for each team in collapsed row
+ * - isCurrentWeek: boolean – whether this block corresponds to the current NFL week
+ * - leftYetToPlayLabel / leftLiveLabel / rightYetToPlayLabel / rightLiveLabel:
+ *   optional strings for activity summary (Yet to Play / Live) under the header
  */
 function MatchupWeekView({
   positions,
@@ -30,6 +33,11 @@ function MatchupWeekView({
   week = null,
   leftTotalText = '',
   rightTotalText = '',
+  isCurrentWeek = false,
+  leftYetToPlayLabel = '',
+  leftLiveLabel = '',
+  rightYetToPlayLabel = '',
+  rightLiveLabel = '',
 }) {
   const safePositions = Array.isArray(positions) ? positions : [];
   const rowCount =
@@ -48,6 +56,20 @@ function MatchupWeekView({
                 {leftTotalText}
               </span>
             </div>
+            {isCurrentWeek && (leftYetToPlayLabel || leftLiveLabel) && (
+              <div className="yoffs-matchup-activity">
+                {leftYetToPlayLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {leftYetToPlayLabel}
+                  </span>
+                )}
+                {leftLiveLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {leftLiveLabel}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="yoffs-matchup-pos-col">
             {onToggleExpanded ? (
@@ -75,6 +97,20 @@ function MatchupWeekView({
                 {rightTotalText}
               </span>
             </div>
+            {isCurrentWeek && (rightYetToPlayLabel || rightLiveLabel) && (
+              <div className="yoffs-matchup-activity yoffs-matchup-activity--right">
+                {rightYetToPlayLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {rightYetToPlayLabel}
+                  </span>
+                )}
+                {rightLiveLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {rightLiveLabel}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -91,6 +127,20 @@ function MatchupWeekView({
                 {leftTotalText}
               </span>
             </div>
+            {isCurrentWeek && (leftYetToPlayLabel || leftLiveLabel) && (
+              <div className="yoffs-matchup-activity">
+                {leftYetToPlayLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {leftYetToPlayLabel}
+                  </span>
+                )}
+                {leftLiveLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {leftLiveLabel}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="yoffs-matchup-pos-col">
             <button
@@ -110,6 +160,20 @@ function MatchupWeekView({
                 {rightTotalText}
               </span>
             </div>
+            {isCurrentWeek && (rightYetToPlayLabel || rightLiveLabel) && (
+              <div className="yoffs-matchup-activity yoffs-matchup-activity--right">
+                {rightYetToPlayLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {rightYetToPlayLabel}
+                  </span>
+                )}
+                {rightLiveLabel && (
+                  <span className="yoffs-matchup-activity-item">
+                    {rightLiveLabel}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

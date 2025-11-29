@@ -1976,6 +1976,18 @@
   align-items: center;
   gap: 0.4rem;
 }
+.yoffs-matchup-activity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.1rem;
+  font-size: 0.8rem;
+  color: #cfe0ff;
+  justify-content: center;
+}
+.yoffs-matchup-activity-item {
+  opacity: 0.9;
+}
 .yoffs-matchup-side {
   flex: 1 1 0;
   min-width: 0;
@@ -2195,6 +2207,7 @@
     max-width: 100% !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
+    margin-bottom: 0.4rem !important;
   }
   .mobile-info-container .yoffs-matchups-root .yoffs-matchup-table {
     width: 100% !important;

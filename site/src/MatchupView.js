@@ -88,6 +88,60 @@ function MatchupView({
       : [];
   const hasAnyWeeks = effectiveWeeks.length > 0;
 
+  // When the matchup (teams/weeks/season) changes, reset per-week expansion
+  // so defaults are recalculated for the new game.
+  useEffect(() => {
+    setGridExpandedByWeek({});
+  }, [season, team1Id, team2Id, effectiveWeeks]);
+
+  useEffect(() => {
+    if (!hasAnyWeeks) {
+      return;
+    }
+    const completedWeeks = getCompletedWeeksCount(season);
+    setGridExpandedByWeek((prev) => {
+      if (prev && Object.keys(prev).length > 0) {
+        return prev;
+      }
+      const next = {};
+      if (effectiveWeeks.length === 1) {
+        // Finals or single-week view: always expanded by default
+        next[effectiveWeeks[0]] = true;
+      } else if (effectiveWeeks.length >= 2) {
+        // Semifinals: use Week N and Week N+1 rules
+        const weekN = effectiveWeeks[0];
+        const weekNp1 = effectiveWeeks[1];
+        const weekNCompleted =
+          !isCurrentSeason || Number(weekN) <= Number(completedWeeks);
+        const weekNp1Completed =
+          !isCurrentSeason || Number(weekNp1) <= Number(completedWeeks);
+
+        if (weekNCompleted && !weekNp1Completed) {
+          // 2) Week N concluded, collapse N, expand N+1
+          next[weekN] = false;
+          next[weekNp1] = true;
+        } else if (!weekNCompleted) {
+          // 3) Week N not completed, expand N, collapse N+1
+          next[weekN] = true;
+          next[weekNp1] = false;
+        } else if (weekNCompleted && weekNp1Completed) {
+          // 4) Both weeks concluded, collapse both
+          next[weekN] = false;
+          next[weekNp1] = false;
+        }
+
+        // Any additional weeks default collapsed
+        for (let i = 0; i < effectiveWeeks.length; i += 1) {
+          const w = effectiveWeeks[i];
+          if (!Object.prototype.hasOwnProperty.call(next, w)) {
+            next[w] = false;
+          }
+        }
+      }
+      return next;
+    });
+  }, [season, hasAnyWeeks, effectiveWeeks, isCurrentSeason]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -455,6 +509,82 @@ function MatchupView({
     const rightTotalText =
       rightTotalValue != null ? rightTotalValue.toFixed(1) : '—';
 
+    // Compute Yet to Play / Live counts for the current NFL week if this
+    // block corresponds to the current week.
+    let isCurrentWeekBlock = false;
+    let leftYetToPlayLabel = '';
+    let leftLiveLabel = '';
+    let rightYetToPlayLabel = '';
+    let rightLiveLabel = '';
+
+    if (
+      isCurrentSeason &&
+      Number(w) === Number(currentWeekNum) &&
+      playerGameLabelsByWeek
+    ) {
+      const labelsForActivity =
+        playerGameLabelsByWeek[w] || {};
+      let leftActiveCount = 0;
+      let leftYetToPlayCount = 0;
+      let rightActiveCount = 0;
+      let rightYetToPlayCount = 0;
+
+      const leftSlots = [...starters1, ...bench1];
+      const rightSlots = [...starters2, ...bench2];
+
+      leftSlots.forEach((slot) => {
+        const pid = slot && slot.id;
+        if (!pid || String(pid) === '0') {
+          return;
+        }
+        const label = labelsForActivity[pid];
+        if (!label) {
+          return;
+        }
+        const isLive = !!label.live;
+        const isCompleted = !!label.completed;
+        const isBye = label && label.text === 'BYE';
+        if (isLive) {
+          leftActiveCount += 1;
+        } else if (!isCompleted && !isBye) {
+          leftYetToPlayCount += 1;
+        }
+      });
+
+      rightSlots.forEach((slot) => {
+        const pid = slot && slot.id;
+        if (!pid || String(pid) === '0') {
+          return;
+        }
+        const label = labelsForActivity[pid];
+        if (!label) {
+          return;
+        }
+        const isLive = !!label.live;
+        const isCompleted = !!label.completed;
+        const isBye = label && label.text === 'BYE';
+        if (isLive) {
+          rightActiveCount += 1;
+        } else if (!isCompleted && !isBye) {
+          rightYetToPlayCount += 1;
+        }
+      });
+
+      isCurrentWeekBlock = true;
+      leftYetToPlayLabel = isMobileView
+        ? `YTP ${leftYetToPlayCount}`
+        : `Yet to Play: ${leftYetToPlayCount}`;
+      leftLiveLabel = isMobileView
+        ? `Live ${leftActiveCount}`
+        : `Live: ${leftActiveCount}`;
+      rightYetToPlayLabel = isMobileView
+        ? `YTP ${rightYetToPlayCount}`
+        : `Yet to Play: ${rightYetToPlayCount}`;
+      rightLiveLabel = isMobileView
+        ? `Live ${rightActiveCount}`
+        : `Live: ${rightActiveCount}`;
+    }
+
     return {
       weekNumber: w,
       breakdown1,
@@ -467,7 +597,12 @@ function MatchupView({
       rightTotalValue,
       leftTotalText,
       rightTotalText,
-      renderPlayerSide: makeRenderPlayerSideForWeek(w)
+      renderPlayerSide: makeRenderPlayerSideForWeek(w),
+      isCurrentWeekBlock,
+      leftYetToPlayLabel,
+      leftLiveLabel,
+      rightYetToPlayLabel,
+      rightLiveLabel
     };
   });
 
@@ -628,6 +763,11 @@ function MatchupView({
           bench1={block.bench1}
           bench2={block.bench2}
           renderPlayerSide={block.renderPlayerSide}
+          isCurrentWeek={block.isCurrentWeekBlock}
+          leftYetToPlayLabel={block.leftYetToPlayLabel}
+          leftLiveLabel={block.leftLiveLabel}
+          rightYetToPlayLabel={block.rightYetToPlayLabel}
+          rightLiveLabel={block.rightLiveLabel}
           expanded={
             Object.prototype.hasOwnProperty.call(
               gridExpandedByWeek,
