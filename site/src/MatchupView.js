@@ -414,9 +414,6 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
             </div>
           </div>
         </div>
-        <div className="yoffs-matchup-center">
-          <span className="yoffs-matchup-week-label">Week {week}</span>
-        </div>
         <div className="yoffs-matchup-side yoffs-matchup-side--right">
           <div className="yoffs-matchup-team-block yoffs-matchup-team-block--right">
             <div className="yoffs-matchup-team-top">

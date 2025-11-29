@@ -1981,16 +1981,6 @@
   display: flex;
   justify-content: flex-end;
 }
-.yoffs-matchup-center {
-  flex: 0 0 auto;
-  padding: 0 1rem;
-  text-align: center;
-}
-.yoffs-matchup-week-label {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #f5d26a;
-}
 .yoffs-matchup-view-error {
   color: #ff8080;
   margin-top: 0.75rem;
@@ -2088,7 +2078,7 @@
 }
 
 @media (max-width: 58em) {
-  /* Let matchup view align with other content inside the mobile Info wrapper */
+  /* Matchups tab: mobile-only layout tweaks */
   .mobile-info-container .yoffs-matchups-root.team-scores-container {
     margin-left: 0 !important;
     margin-right: 0 !important;
@@ -2100,6 +2090,7 @@
     width: 100% !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
+    justify-content: center !important;
   }
   .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view-container {
     width: 100% !important;
@@ -2118,6 +2109,47 @@
     max-width: 100% !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
+  }
+  /* Scale down typography and avatars without shrinking overall width */
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-avatar-large {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-team-score {
+    font-size: 1.05rem;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-week-label {
+    font-size: 0.5rem;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-row {
+    gap: 0.3rem;
+    padding: 0.16rem 0;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-player-pts {
+    font-size: 0.65rem;
+    margin-right: 0.2rem;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view .player-name {
+    font-size: 0.6rem;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-pos-pill {
+    font-size: 0.55rem;
+    padding: 0.06rem 0.35rem;
+    margin: 0 0.2rem;
+  }
+  /* Scale down player avatars and game text only within matchup tables */
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view .player-avatar-style {
+    width: 1.4rem;
+    height: 1.4rem;
+    margin-right: 0.5rem;
+    margin-left: 0.15rem;
+  }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view .team-scores-game-text {
+    font-size: 0.6rem;
+  }
+  /* Smaller team name text in header on mobile only */
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-team-block .yoffs-bracket-name {
+    font-size: 0.72rem;
   }
 }
 .yoffs-bracket-matchup-button {
