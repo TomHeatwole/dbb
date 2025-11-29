@@ -10,6 +10,7 @@ import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from './DateH
 import { STARTER_POSITION_NAMES } from './global_constants';
 import useIsMobile from './useIsMobile';
 import MatchupWeekView from './MatchupWeekView';
+import { fetchInjuriesForWeek, getInjuryAbbreviation } from './InjuryLookup';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
@@ -75,6 +76,7 @@ function MatchupView({
   const [playersData, setPlayersData] = useState(preloadedPlayersData || null);
   const [playerIdMap, setPlayerIdMap] = useState(preloadedPlayerIdMap || null);
   const [playerGameLabelsByWeek, setPlayerGameLabelsByWeek] = useState({});
+  const [injuriesByWeek, setInjuriesByWeek] = useState({});
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [loadingScores, setLoadingScores] = useState(true);
   const [error, setError] = useState(null);
@@ -343,6 +345,61 @@ function MatchupView({
     team2Id
   ]);
 
+  // Load injuries per week for all effective weeks so we can show injury
+  // badges next to player names in the matchup view, similar to ScoresView.
+  useEffect(() => {
+    if (!hasAnyWeeks || !playerIdMap) {
+      setInjuriesByWeek({});
+      return;
+    }
+    let cancelled = false;
+    async function loadInjuries() {
+      const next = {};
+      for (let i = 0; i < effectiveWeeks.length; i += 1) {
+        const w = effectiveWeeks[i];
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          const m = await fetchInjuriesForWeek(season, w);
+          if (cancelled) {
+            return;
+          }
+          let combined = { ...(m || {}) };
+          try {
+            if (playerIdMap && typeof playerIdMap === 'object') {
+              // Mirror the remapping logic from TeamScores: if we have an
+              // injury keyed by ESPN ID, also expose it under the Sleeper ID.
+              Object.entries(playerIdMap).forEach(([pid, mapping]) => {
+                const espnId =
+                  mapping &&
+                  (mapping.espn_id ||
+                    (mapping.metadata && mapping.metadata.espn_id));
+                if (
+                  espnId &&
+                  combined[String(espnId)] &&
+                  !combined[String(pid)]
+                ) {
+                  combined[String(pid)] = combined[String(espnId)];
+                }
+              });
+            }
+          } catch (_) {
+            // ignore mapping errors; fall back to raw map
+          }
+          next[w] = combined;
+        } catch (e) {
+          next[w] = {};
+        }
+      }
+      if (!cancelled) {
+        setInjuriesByWeek(next);
+      }
+    }
+    loadInjuries();
+    return () => {
+      cancelled = true;
+    };
+  }, [season, hasAnyWeeks, effectiveWeeks, playerIdMap]);
+
   function formatPlayerNameForDisplay(nameOrId) {
     const raw = nameOrId;
     if (!isMobileView) {
@@ -380,6 +437,47 @@ function MatchupView({
       (playerGameLabelsByWeek && playerGameLabelsByWeek[weekNumber]) || {};
     const isActiveWeekForDisplay =
       isCurrentSeason && Number(weekNumber) === Number(currentWeekNum);
+    const injuriesForWeek =
+      (injuriesByWeek && injuriesByWeek[weekNumber]) || {};
+    const showCurrentInjuryForWeek =
+      String(season) === String(CURRENT_YEAR) &&
+      Number(weekNumber) >= Number(currentWeekNum);
+
+    function renderInjuryBadge(playerId, info) {
+      let status = null;
+      if (
+        !showCurrentInjuryForWeek &&
+        injuriesForWeek &&
+        playerId &&
+        injuriesForWeek[String(playerId)]
+      ) {
+        status = injuriesForWeek[String(playerId)];
+      } else if (showCurrentInjuryForWeek && info) {
+        status =
+          info.injury_status ||
+          info.injury_notes ||
+          (info.status &&
+          /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(
+            info.status
+          )
+            ? info.status
+            : null);
+      }
+      const ab = status ? getInjuryAbbreviation(status) : null;
+      if (!ab) {
+        return null;
+      }
+      const isRetired = ab === 'NA';
+      const label = isRetired ? 'Retired 😂' : ab;
+      const cls = isRetired
+        ? 'injury-badge injury-badge--retired'
+        : 'injury-badge';
+      return (
+        <span className={cls} title={status}>
+          {label}
+        </span>
+      );
+    }
 
     function renderPlayerSide(slot, align) {
       if (!slot || !slot.id || String(slot.id) === '0') {
@@ -410,6 +508,7 @@ function MatchupView({
       const playerName = formatPlayerNameForDisplay(
         info && info.name ? info.name : slot.id === '0' ? '\u00A0' : slot.id
       );
+      const injuryBadge = renderInjuryBadge(slot.id, info);
 
       return (
         <div className={`yoffs-matchup-player yoffs-matchup-player--${align}`}>
@@ -424,6 +523,7 @@ function MatchupView({
             <span className="player-name">
               {playerName}
               {info && info.position ? ` (${info.position})` : ''}
+              {injuryBadge}
             </span>
             <span className="yoffs-matchup-player-pts">{ptsText}</span>
           </div>
