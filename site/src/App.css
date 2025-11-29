@@ -1941,6 +1941,13 @@
   flex-direction: column;
   gap: 0.2rem;
 }
+.yoffs-matchup-team-block--winner .yoffs-bracket-name,
+.yoffs-matchup-team-block--winner .yoffs-matchup-team-score {
+  color: #ffe9a5;
+}
+.yoffs-matchup-team-block--loser {
+  opacity: 0.45;
+}
 .yoffs-matchup-team-block--left {
   align-items: flex-start;
 }
@@ -1991,6 +1998,7 @@
   border: 1px solid #2a3350;
   background: radial-gradient(circle at top, #1b2440 0%, #060913 60%, #050713 100%);
   padding: 0.4rem 0.6rem 0.6rem 0.6rem;
+  margin-bottom: 8px;
 }
 .yoffs-matchup-table--collapsed {
   padding: 0.35rem 0.6rem 0.4rem 0.6rem;
@@ -2031,6 +2039,11 @@
   color: #cfe6ff;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  /* Uniform width for position labels (fits ~5 characters) */
+  min-width: 3.6rem;
+  max-width: 3.6rem;
+  text-align: center;
+  display: inline-block;
 }
 .yoffs-matchup-player {
   display: flex;
@@ -2123,7 +2136,7 @@
   white-space: nowrap;
 }
 .yoffs-matchup-week-arrow {
-  font-size: 0.85em;
+  font-size: 0.75em;
 }
 
 .yoffs-matchup-divider-row {
@@ -2160,6 +2173,7 @@
   .mobile-info-container .yoffs-matchups-root.team-scores-container {
     margin-left: 0 !important;
     margin-right: 0 !important;
+    margin-bottom: 0.4rem !important;
     width: 100% !important;
     max-width: 100% !important;
     align-items: stretch !important;

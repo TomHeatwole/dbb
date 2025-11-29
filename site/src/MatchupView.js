@@ -6,7 +6,7 @@ import { getWeekScoreBreakdown } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
-import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from './DateHelper';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import useIsMobile from './useIsMobile';
 import MatchupWeekView from './MatchupWeekView';
@@ -49,28 +49,44 @@ function resolveTeamMeta(teamData, rosterId) {
  * - season: string | number (ESPN/Sleeper season identifier)
  * - team1Id: roster_id for the left team
  * - team2Id: roster_id for the right team
- * - week: number (current matchup week; not yet used for scoring)
+ * - week: number (single-week view; kept for backwards compatibility)
+ * - weeks: array of numbers (optional) – if provided, render one MatchupWeekView
+ *          per week and use the cumulative total across all weeks in the header.
  * - displaySeeds: boolean (optional) – if true, show seeds before team names
  * - seed1: number (optional) – seed for team1
  * - seed2: number (optional) – seed for team2
  */
-function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, seed1 = null, seed2 = null }) {
+function MatchupView({
+  season,
+  team1Id,
+  team2Id,
+  week,
+  weeks = null,
+  displaySeeds = false,
+  seed1 = null,
+  seed2 = null
+}) {
   const [teamData, setTeamData] = useState(null);
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
-  const [playerGameLabels, setPlayerGameLabels] = useState({});
+  const [playerGameLabelsByWeek, setPlayerGameLabelsByWeek] = useState({});
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [loadingScores, setLoadingScores] = useState(true);
   const [error, setError] = useState(null);
   const [scoresError, setScoresError] = useState(null);
-  const [gridExpanded, setGridExpanded] = useState(true);
+  const [gridExpandedByWeek, setGridExpandedByWeek] = useState({});
 
   const isMobileView = useIsMobile();
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
   const currentWeekNum = getCurrentNFLWeek();
-  const isActiveWeek =
-    isCurrentSeason && Number(week) === Number(currentWeekNum);
+  const effectiveWeeks =
+    Array.isArray(weeks) && weeks.length > 0
+      ? weeks
+      : week != null
+      ? [week]
+      : [];
+  const hasAnyWeeks = effectiveWeeks.length > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -162,78 +178,102 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
 
   // Build per-player game labels (matchup info) for this week, using only these two teams
   useEffect(() => {
-    if (!weeksParsedData || !playersData || !playerIdMap || !week) {
-      setPlayerGameLabels({});
+    if (!weeksParsedData || !playersData || !playerIdMap || !hasAnyWeeks) {
+      setPlayerGameLabelsByWeek({});
       return;
     }
-    const weekIdx = Number(week) - 1;
-    const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[weekIdx] : null;
-    if (!Array.isArray(weekArr)) {
-      setPlayerGameLabels({});
-      return;
-    }
-    const playerIdSet = new Set();
-    weekArr.forEach((entry) => {
-      if (!entry || entry.roster_id == null) {
-        return;
-      }
-      if (
-        Number(entry.roster_id) !== Number(team1Id) &&
-        Number(entry.roster_id) !== Number(team2Id)
-      ) {
-        return;
-      }
-      if (Array.isArray(entry.players)) {
-        entry.players.forEach((pid) => {
-          if (pid) {
-            playerIdSet.add(pid);
-          }
-        });
-      }
-    });
-    const playerIds = Array.from(playerIdSet);
-    if (!playerIds.length) {
-      setPlayerGameLabels({});
-      return;
-    }
-
     let cancelled = false;
     const seasonYear = Number(season);
-    fetchNflScoreboard(seasonYear, week)
-      .then(async (json) => {
-        if (cancelled) {
-          return;
+    async function loadLabels() {
+      const nextLabelsByWeek = {};
+
+      for (let i = 0; i < effectiveWeeks.length; i += 1) {
+        const w = effectiveWeeks[i];
+        const weekIdx = Number(w) - 1;
+        const weekArr = Array.isArray(weeksParsedData)
+          ? weeksParsedData[weekIdx]
+          : null;
+        if (!Array.isArray(weekArr)) {
+          // No data for this week
+          // eslint-disable-next-line no-continue
+          continue;
         }
-        const mapping = await mapPlayersToGames(
-          playerIds,
-          playersData,
-          playerIdMap,
-          json,
-          null
-        );
-        const labels = {};
-        for (const pid of playerIds) {
-          const item = mapping[pid];
-          const ev = item && item.event;
-          const teamForWeek = item && item.team;
-          const d = ev
-            ? getGameDisplayForTeam(ev, teamForWeek)
-            : { text: 'BYE', live: false, completed: false, eventId: null };
-          labels[pid] = { ...d, team: teamForWeek || null };
+        const playerIdSet = new Set();
+        weekArr.forEach((entry) => {
+          if (!entry || entry.roster_id == null) {
+            return;
+          }
+          if (
+            Number(entry.roster_id) !== Number(team1Id) &&
+            Number(entry.roster_id) !== Number(team2Id)
+          ) {
+            return;
+          }
+          if (Array.isArray(entry.players)) {
+            entry.players.forEach((pid) => {
+              if (pid) {
+                playerIdSet.add(pid);
+              }
+            });
+          }
+        });
+        const playerIds = Array.from(playerIdSet);
+        if (!playerIds.length) {
+          // eslint-disable-next-line no-continue
+          continue;
         }
-        if (!cancelled) {
-          setPlayerGameLabels(labels);
+
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          const json = await fetchNflScoreboard(seasonYear, w);
+          if (cancelled) {
+            return;
+          }
+          // eslint-disable-next-line no-await-in-loop
+          const mapping = await mapPlayersToGames(
+            playerIds,
+            playersData,
+            playerIdMap,
+            json,
+            null
+          );
+          const labels = {};
+          for (let j = 0; j < playerIds.length; j += 1) {
+            const pid = playerIds[j];
+            const item = mapping[pid];
+            const ev = item && item.event;
+            const teamForWeek = item && item.team;
+            const d = ev
+              ? getGameDisplayForTeam(ev, teamForWeek)
+              : { text: 'BYE', live: false, completed: false, eventId: null };
+            labels[pid] = { ...d, team: teamForWeek || null };
+          }
+          nextLabelsByWeek[w] = labels;
+        } catch (e) {
+          nextLabelsByWeek[w] = {};
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPlayerGameLabels({});
-        }
-      });
+      }
+
+      if (!cancelled) {
+        setPlayerGameLabelsByWeek(nextLabelsByWeek);
+      }
+    }
+
+    loadLabels();
+
     return () => {
       cancelled = true;
     };
-  }, [season, week, weeksParsedData, playersData, playerIdMap, team1Id, team2Id]);
+  }, [
+    season,
+    hasAnyWeeks,
+    effectiveWeeks,
+    weeksParsedData,
+    playersData,
+    playerIdMap,
+    team1Id,
+    team2Id
+  ]);
 
   function formatPlayerNameForDisplay(nameOrId) {
     const raw = nameOrId;
@@ -267,67 +307,79 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     return `${firstInitial} ${lastShort || ''}`.trim();
   }
 
-  function renderPlayerSide(slot, align) {
-    if (!slot || !slot.id || String(slot.id) === '0') {
+  function makeRenderPlayerSideForWeek(weekNumber) {
+    const labelsForWeek =
+      (playerGameLabelsByWeek && playerGameLabelsByWeek[weekNumber]) || {};
+    const isActiveWeekForDisplay =
+      isCurrentSeason && Number(weekNumber) === Number(currentWeekNum);
+
+    function renderPlayerSide(slot, align) {
+      if (!slot || !slot.id || String(slot.id) === '0') {
+        return (
+          <div className="yoffs-matchup-player yoffs-matchup-player--empty">
+            <span className="yoffs-matchup-player-empty">—</span>
+          </div>
+        );
+      }
+      const info = getPlayerInfo(slot.id, playersData, playerIdMap);
+      const gameObj =
+        (labelsForWeek && labelsForWeek[slot.id]) ||
+        { text: '', live: false, completed: false, eventId: null };
+      const ptsVal = Number(slot.pts || 0);
+      const showDash = !gameObj.live && !gameObj.completed && ptsVal === 0;
+      const ptsText = showDash ? '-' : ptsVal.toFixed(1);
+
+      const gameCellClasses = [
+        'team-scores-game-cell',
+        'team-scores-game-cell--compact'
+      ];
+      if (isActiveWeekForDisplay && gameObj.live) {
+        gameCellClasses.push('team-scores-game-live');
+      } else if (isActiveWeekForDisplay && gameObj.completed) {
+        gameCellClasses.push('team-scores-game-completed');
+      }
+
+      const playerName = formatPlayerNameForDisplay(
+        info && info.name ? info.name : slot.id === '0' ? '\u00A0' : slot.id
+      );
+
       return (
-        <div className="yoffs-matchup-player yoffs-matchup-player--empty">
-          <span className="yoffs-matchup-player-empty">—</span>
+        <div className={`yoffs-matchup-player yoffs-matchup-player--${align}`}>
+          <div className="yoffs-matchup-player-main">
+            {info && info.espn_photo_url && (
+              <img
+                className="player-avatar player-avatar-style team-scores-player-img-margin"
+                src={info.espn_photo_url}
+                alt={info.name}
+              />
+            )}
+            <span className="player-name">
+              {playerName}
+              {info && info.position ? ` (${info.position})` : ''}
+            </span>
+            <span className="yoffs-matchup-player-pts">{ptsText}</span>
+          </div>
+          <div className={gameCellClasses.join(' ')}>
+            <div className="team-scores-game-text">
+              {gameObj && gameObj.eventId ? (
+                <a
+                  href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="team-scores-game-link"
+                >
+                  {gameObj.text}
+                </a>
+              ) : (
+                gameObj.text
+              )}
+            </div>
+          </div>
         </div>
       );
     }
-    const info = getPlayerInfo(slot.id, playersData, playerIdMap);
-    const gameObj =
-      (playerGameLabels && playerGameLabels[slot.id]) ||
-      { text: '', live: false, completed: false, eventId: null };
-    const ptsVal = Number(slot.pts || 0);
-    const showDash = !gameObj.live && !gameObj.completed && ptsVal === 0;
-    const ptsText = showDash ? '-' : ptsVal.toFixed(1);
 
-    const gameCellClasses = ['team-scores-game-cell', 'team-scores-game-cell--compact'];
-    if (isActiveWeek && gameObj.live) {
-      gameCellClasses.push('team-scores-game-live');
-    } else if (isActiveWeek && gameObj.completed) {
-      gameCellClasses.push('team-scores-game-completed');
-    }
-
-    const playerName = formatPlayerNameForDisplay(
-      info && info.name ? info.name : slot.id === '0' ? '\u00A0' : slot.id
-    );
-
-    return (
-      <div className={`yoffs-matchup-player yoffs-matchup-player--${align}`}>
-        <div className="yoffs-matchup-player-main">
-          {info && info.espn_photo_url && (
-            <img
-              className="player-avatar player-avatar-style team-scores-player-img-margin"
-              src={info.espn_photo_url}
-              alt={info.name}
-            />
-          )}
-          <span className="player-name">
-            {playerName}
-            {info && info.position ? ` (${info.position})` : ''}
-          </span>
-          <span className="yoffs-matchup-player-pts">{ptsText}</span>
-        </div>
-        <div className={gameCellClasses.join(' ')}>
-          <div className="team-scores-game-text">
-            {gameObj && gameObj.eventId ? (
-              <a
-                href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="team-scores-game-link"
-              >
-                {gameObj.text}
-              </a>
-            ) : (
-              gameObj.text
-            )}
-          </div>
-        </div>
-      </div>
-    );
+    return renderPlayerSide;
   }
 
   const leftMeta = resolveTeamMeta(teamData, team1Id);
@@ -351,7 +403,7 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     );
   }
 
-  if (!weeksParsedData || !week) {
+  if (!weeksParsedData || !hasAnyWeeks) {
     return (
       <div className="yoffs-matchup-view-error">
         No matchup data found for this week.
@@ -359,20 +411,71 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     );
   }
 
-  const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, week) || {};
-  const raw1 = breakdownByRoster[team1Id] || null;
-  const raw2 = breakdownByRoster[team2Id] || null;
+  const weekBlocks = effectiveWeeks.map((w) => {
+    const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, w) || {};
+    const raw1 = breakdownByRoster[team1Id] || null;
+    const raw2 = breakdownByRoster[team2Id] || null;
 
-  const breakdown1 =
-    raw1 && playersData && playerIdMap
-      ? StartSitSort(raw1, playersData, playerIdMap, playerGameLabels)
-      : null;
-  const breakdown2 =
-    raw2 && playersData && playerIdMap
-      ? StartSitSort(raw2, playersData, playerIdMap, playerGameLabels)
-      : null;
+    const labelsForWeek =
+      (playerGameLabelsByWeek && playerGameLabelsByWeek[w]) || {};
 
-  if (!breakdown1 && !breakdown2) {
+    const breakdown1 =
+      raw1 && playersData && playerIdMap
+        ? StartSitSort(raw1, playersData, playerIdMap, labelsForWeek)
+        : null;
+    const breakdown2 =
+      raw2 && playersData && playerIdMap
+        ? StartSitSort(raw2, playersData, playerIdMap, labelsForWeek)
+        : null;
+
+    const starters1 =
+      breakdown1 && Array.isArray(breakdown1.starters)
+        ? breakdown1.starters
+        : [];
+    const starters2 =
+      breakdown2 && Array.isArray(breakdown2.starters)
+        ? breakdown2.starters
+        : [];
+    const bench1 =
+      breakdown1 && Array.isArray(breakdown1.bench) ? breakdown1.bench : [];
+    const bench2 =
+      breakdown2 && Array.isArray(breakdown2.bench) ? breakdown2.bench : [];
+
+    const leftTotalValue =
+      breakdown1 && typeof breakdown1.starterTotal === 'number'
+        ? Number(breakdown1.starterTotal)
+        : null;
+    const rightTotalValue =
+      breakdown2 && typeof breakdown2.starterTotal === 'number'
+        ? Number(breakdown2.starterTotal)
+        : null;
+
+    const leftTotalText =
+      leftTotalValue != null ? leftTotalValue.toFixed(1) : '—';
+    const rightTotalText =
+      rightTotalValue != null ? rightTotalValue.toFixed(1) : '—';
+
+    return {
+      weekNumber: w,
+      breakdown1,
+      breakdown2,
+      starters1,
+      starters2,
+      bench1,
+      bench2,
+      leftTotalValue,
+      rightTotalValue,
+      leftTotalText,
+      rightTotalText,
+      renderPlayerSide: makeRenderPlayerSideForWeek(w)
+    };
+  });
+
+  const hasAnyBreakdown = weekBlocks.some(
+    (block) => block.breakdown1 || block.breakdown2
+  );
+
+  if (!hasAnyBreakdown) {
     return (
       <div className="yoffs-matchup-view-error">
         No starter data available for this matchup.
@@ -380,27 +483,99 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     );
   }
 
-  const starters1 =
-    breakdown1 && Array.isArray(breakdown1.starters) ? breakdown1.starters : [];
-  const starters2 =
-    breakdown2 && Array.isArray(breakdown2.starters) ? breakdown2.starters : [];
-  const bench1 =
-    breakdown1 && Array.isArray(breakdown1.bench) ? breakdown1.bench : [];
-  const bench2 =
-    breakdown2 && Array.isArray(breakdown2.bench) ? breakdown2.bench : [];
-  const leftTotalText = breakdown1
-    ? Number(breakdown1.starterTotal || 0).toFixed(1)
-    : '—';
-  const rightTotalText = breakdown2
-    ? Number(breakdown2.starterTotal || 0).toFixed(1)
-    : '—';
+  let headerLeftTotal = '—';
+  let headerRightTotal = '—';
+
+  if (weekBlocks.length === 1) {
+    headerLeftTotal = weekBlocks[0].leftTotalText;
+    headerRightTotal = weekBlocks[0].rightTotalText;
+  } else {
+    const leftSum = weekBlocks.reduce((acc, block) => {
+      if (block.leftTotalValue != null) {
+        return acc + block.leftTotalValue;
+      }
+      return acc;
+    }, 0);
+    const rightSum = weekBlocks.reduce((acc, block) => {
+      if (block.rightTotalValue != null) {
+        return acc + block.rightTotalValue;
+      }
+      return acc;
+    }, 0);
+
+    const hasLeft = weekBlocks.some(
+      (block) => block.leftTotalValue != null
+    );
+    const hasRight = weekBlocks.some(
+      (block) => block.rightTotalValue != null
+    );
+
+    headerLeftTotal = hasLeft ? leftSum.toFixed(1) : '—';
+    headerRightTotal = hasRight ? rightSum.toFixed(1) : '—';
+  }
+
+  const completedWeeks = getCompletedWeeksCount(season);
+  const lastWeekNumber =
+    effectiveWeeks.length > 0 ? effectiveWeeks[effectiveWeeks.length - 1] : null;
+  const allWeeksCompleted =
+    lastWeekNumber != null &&
+    (!isCurrentSeason || Number(lastWeekNumber) <= Number(completedWeeks));
+
+  let leftIsWinner = false;
+  let rightIsWinner = false;
+  let leftIsLoser = false;
+  let rightIsLoser = false;
+
+  if (allWeeksCompleted) {
+    const leftVal = parseFloat(headerLeftTotal);
+    const rightVal = parseFloat(headerRightTotal);
+    if (Number.isFinite(leftVal) && Number.isFinite(rightVal)) {
+      if (leftVal > rightVal) {
+        leftIsWinner = true;
+        rightIsLoser = true;
+      } else if (rightVal > leftVal) {
+        rightIsWinner = true;
+        leftIsLoser = true;
+      } else if (
+        effectiveWeeks.length > 1 &&
+        seed1 != null &&
+        seed2 != null &&
+        seed1 !== seed2
+      ) {
+        if (Number(seed1) < Number(seed2)) {
+          leftIsWinner = true;
+          rightIsLoser = true;
+        } else {
+          rightIsWinner = true;
+          leftIsLoser = true;
+        }
+      }
+    }
+  }
+
+  const leftTeamBlockClasses = ['yoffs-matchup-team-block', 'yoffs-matchup-team-block--left'];
+  const rightTeamBlockClasses = [
+    'yoffs-matchup-team-block',
+    'yoffs-matchup-team-block--right'
+  ];
+  if (leftIsWinner) {
+    leftTeamBlockClasses.push('yoffs-matchup-team-block--winner');
+  } else if (leftIsLoser) {
+    leftTeamBlockClasses.push('yoffs-matchup-team-block--loser');
+  }
+  if (rightIsWinner) {
+    rightTeamBlockClasses.push('yoffs-matchup-team-block--winner');
+  } else if (rightIsLoser) {
+    rightTeamBlockClasses.push('yoffs-matchup-team-block--loser');
+  }
+
   const positions = STARTER_POSITION_NAMES || [];
 
   return (
     <div className="yoffs-matchup-view">
       <div className="yoffs-matchup-header-row">
         <div className="yoffs-matchup-side yoffs-matchup-side--left">
-          <div className="yoffs-matchup-team-block yoffs-matchup-team-block--left">
+          <div className={leftTeamBlockClasses.join(' ')}>
             <div className="yoffs-matchup-team-top">
               {leftMeta.avatarUrl && (
                 <img
@@ -409,7 +584,9 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
                   alt={`${leftMeta.teamName} avatar`}
                 />
               )}
-              <span className="yoffs-matchup-team-score">{leftTotalText}</span>
+              <span className="yoffs-matchup-team-score">
+                {headerLeftTotal}
+              </span>
             </div>
             <div className="yoffs-matchup-team-bottom">
               {displaySeeds && seed1 != null && (
@@ -420,7 +597,7 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
           </div>
         </div>
         <div className="yoffs-matchup-side yoffs-matchup-side--right">
-          <div className="yoffs-matchup-team-block yoffs-matchup-team-block--right">
+          <div className={rightTeamBlockClasses.join(' ')}>
             <div className="yoffs-matchup-team-top">
               {rightMeta.avatarUrl && (
                 <img
@@ -429,7 +606,9 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
                   alt={`${rightMeta.teamName} avatar`}
                 />
               )}
-              <span className="yoffs-matchup-team-score">{rightTotalText}</span>
+              <span className="yoffs-matchup-team-score">
+                {headerRightTotal}
+              </span>
             </div>
             <div className="yoffs-matchup-team-bottom">
               {displaySeeds && seed2 != null && (
@@ -440,19 +619,42 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
           </div>
         </div>
       </div>
-      <MatchupWeekView
-        positions={positions}
-        starters1={starters1}
-        starters2={starters2}
-        bench1={bench1}
-        bench2={bench2}
-        renderPlayerSide={renderPlayerSide}
-        expanded={gridExpanded}
-        onToggleExpanded={() => setGridExpanded((prev) => !prev)}
-        week={week}
-        leftTotalText={leftTotalText}
-        rightTotalText={rightTotalText}
-      />
+      {weekBlocks.map((block) => (
+        <MatchupWeekView
+          key={block.weekNumber}
+          positions={positions}
+          starters1={block.starters1}
+          starters2={block.starters2}
+          bench1={block.bench1}
+          bench2={block.bench2}
+          renderPlayerSide={block.renderPlayerSide}
+          expanded={
+            Object.prototype.hasOwnProperty.call(
+              gridExpandedByWeek,
+              block.weekNumber
+            )
+              ? gridExpandedByWeek[block.weekNumber]
+              : true
+          }
+          onToggleExpanded={() =>
+            setGridExpandedByWeek((prev) => {
+              const currentValue = Object.prototype.hasOwnProperty.call(
+                prev,
+                block.weekNumber
+              )
+                ? prev[block.weekNumber]
+                : true;
+              return {
+                ...prev,
+                [block.weekNumber]: !currentValue
+              };
+            })
+          }
+          week={block.weekNumber}
+          leftTotalText={block.leftTotalText}
+          rightTotalText={block.rightTotalText}
+        />
+      ))}
     </div>
   );
 }

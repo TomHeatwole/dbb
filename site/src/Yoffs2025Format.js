@@ -771,6 +771,7 @@ function Yoffs2025Format({
                       team1Id={seed1Team.rosterId}
                       team2Id={seed4Team.rosterId}
                       week={playoffStartWeek}
+                      weeks={[playoffStartWeek, playoffStartWeek + 1]}
                       displaySeeds
                       seed1={1}
                       seed2={4}
@@ -784,6 +785,7 @@ function Yoffs2025Format({
                       team1Id={seed2Team.rosterId}
                       team2Id={seed3Team.rosterId}
                       week={playoffStartWeek}
+                      weeks={[playoffStartWeek, playoffStartWeek + 1]}
                       displaySeeds
                       seed1={2}
                       seed2={3}

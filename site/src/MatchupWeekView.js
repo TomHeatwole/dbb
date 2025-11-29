@@ -36,7 +36,7 @@ function MatchupWeekView({
     safePositions.length ||
     Math.max(starters1.length || 0, starters2.length || 0);
   const benchRowCount = Math.max(bench1.length || 0, bench2.length || 0);
-  const arrowSymbol = expanded ? '▴' : '▾';
+  const arrowSymbol = expanded ? '▾' : '▸';
 
   if (!expanded) {
     return (
