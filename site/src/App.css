@@ -1994,7 +1994,8 @@
 }
 .yoffs-matchup-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* Fixed-width middle column so position labels are uniform */
+  grid-template-columns: minmax(0, 1fr) 3.5rem minmax(0, 1fr);
   gap: 0.45rem;
   align-items: stretch;
   padding: 0.25rem 0;
@@ -2002,6 +2003,9 @@
 }
 .yoffs-matchup-row:first-child {
   border-top: none;
+}
+.yoffs-matchup-row--bench {
+  opacity: 0.9;
 }
 .yoffs-matchup-cell {
   min-width: 0;
@@ -2021,6 +2025,8 @@
   color: #cfe6ff;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  width: 3.1rem;
+  text-align: center;
 }
 .yoffs-matchup-player {
   display: flex;
@@ -2061,6 +2067,21 @@
   font-weight: 700;
   color: #f5e2a2;
   width: 28rem;
+}
+
+.yoffs-matchup-divider-row {
+  margin: 0.3rem 0 0.15rem 0;
+}
+.yoffs-matchup-divider {
+  height: 0.28rem;
+  width: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    rgba(215, 100, 120, 0.4),
+    rgba(275, 120, 180, 1),
+    rgba(215, 100, 120, 0.4)
+  );
 }
 
 .yoffs-matchup-view {
@@ -2150,6 +2171,10 @@
   /* Smaller team name text in header on mobile only */
   .mobile-info-container .yoffs-matchups-root .yoffs-matchup-team-block .yoffs-bracket-name {
     font-size: 0.72rem;
+  }
+  /* Ensure header team blocks start just outside the middle position column */
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-side--left {
+    padding-right: 2.0rem;
   }
 }
 .yoffs-bracket-matchup-button {

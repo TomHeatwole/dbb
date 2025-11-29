@@ -382,6 +382,10 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     breakdown1 && Array.isArray(breakdown1.starters) ? breakdown1.starters : [];
   const starters2 =
     breakdown2 && Array.isArray(breakdown2.starters) ? breakdown2.starters : [];
+  const bench1 =
+    breakdown1 && Array.isArray(breakdown1.bench) ? breakdown1.bench : [];
+  const bench2 =
+    breakdown2 && Array.isArray(breakdown2.bench) ? breakdown2.bench : [];
   const leftTotalText = breakdown1
     ? Number(breakdown1.starterTotal || 0).toFixed(1)
     : '—';
@@ -390,6 +394,7 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     : '—';
   const positions = STARTER_POSITION_NAMES || [];
   const rowCount = positions.length || Math.max(starters1.length, starters2.length);
+  const benchRowCount = Math.max(bench1.length, bench2.length);
 
   return (
     <div className="yoffs-matchup-view">
@@ -454,6 +459,35 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
             </div>
           );
         })}
+        {benchRowCount > 0 && (
+          <>
+            <div className="yoffs-matchup-divider-row">
+              <div className="yoffs-matchup-divider" />
+            </div>
+            {Array.from({ length: benchRowCount }).map((_, idx) => {
+              const leftBench = bench1[idx];
+              const rightBench = bench2[idx];
+              return (
+                <div
+                  key={`bench-${idx}`}
+                  className="yoffs-matchup-row yoffs-matchup-row--bench"
+                >
+                  <div className="yoffs-matchup-cell yoffs-matchup-cell--left">
+                    {renderPlayerSide(leftBench, 'left')}
+                  </div>
+                  <div className="yoffs-matchup-pos-col">
+                    <span className="yoffs-matchup-pos-pill yoffs-matchup-pos-pill--bench">
+                      BN
+                    </span>
+                  </div>
+                  <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
+                    {renderPlayerSide(rightBench, 'right')}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
     </div>
   );
