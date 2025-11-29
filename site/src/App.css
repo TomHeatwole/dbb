@@ -1992,16 +1992,22 @@
   background: radial-gradient(circle at top, #1b2440 0%, #060913 60%, #050713 100%);
   padding: 0.4rem 0.6rem 0.6rem 0.6rem;
 }
+.yoffs-matchup-table--collapsed {
+  padding: 0.35rem 0.6rem 0.4rem 0.6rem;
+}
 .yoffs-matchup-row {
   display: grid;
-  /* Fixed-width middle column so position labels are uniform */
-  grid-template-columns: minmax(0, 1fr) 3.5rem minmax(0, 1fr);
+  /* Original layout: middle column auto-sizes to content */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 0.45rem;
   align-items: stretch;
   padding: 0.25rem 0;
   border-top: 1px solid rgba(53, 69, 110, 0.7);
 }
 .yoffs-matchup-row:first-child {
+  border-top: none;
+}
+.yoffs-matchup-row--summary {
   border-top: none;
 }
 .yoffs-matchup-row--bench {
@@ -2025,8 +2031,6 @@
   color: #cfe6ff;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  width: 3.1rem;
-  text-align: center;
 }
 .yoffs-matchup-player {
   display: flex;
@@ -2067,6 +2071,59 @@
   font-weight: 700;
   color: #f5e2a2;
   width: 28rem;
+}
+
+.yoffs-matchup-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.yoffs-matchup-summary--top {
+  justify-content: flex-start;
+}
+.yoffs-matchup-summary--right {
+  flex-direction: row-reverse;
+}
+.yoffs-matchup-summary-score {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+.yoffs-matchup-summary-button {
+  padding: 0.1rem 0.65rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(159, 180, 222, 0.6);
+  background: rgba(11, 23, 55, 0.9);
+  color: #cfe0ff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.yoffs-matchup-summary-button:hover {
+  background: rgba(17, 32, 72, 0.95);
+}
+.yoffs-matchup-week-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.2rem 1.4rem;
+  border-radius: 9999px;
+  background: rgba(159, 180, 222, 0.3);
+  border: 1px solid rgba(159, 180, 222, 0.7);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #e7f1ff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.yoffs-matchup-week-label {
+  white-space: nowrap;
+}
+.yoffs-matchup-week-arrow {
+  font-size: 0.85em;
 }
 
 .yoffs-matchup-divider-row {
@@ -2136,11 +2193,14 @@
     width: 1.35rem;
     height: 1.35rem;
   }
+  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-summary-score {
+    font-size: 0.9rem;
+  }
   .mobile-info-container .yoffs-matchups-root .yoffs-matchup-team-score {
     font-size: 1.05rem;
   }
   .mobile-info-container .yoffs-matchups-root .yoffs-matchup-week-label {
-    font-size: 0.5rem;
+    font-size: 0.95rem;
   }
   .mobile-info-container .yoffs-matchups-root .yoffs-matchup-row {
     gap: 0.3rem;

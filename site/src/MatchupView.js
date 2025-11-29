@@ -9,6 +9,7 @@ import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { STARTER_POSITION_NAMES } from './global_constants';
 import useIsMobile from './useIsMobile';
+import MatchupWeekView from './MatchupWeekView';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
@@ -63,6 +64,7 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
   const [loadingScores, setLoadingScores] = useState(true);
   const [error, setError] = useState(null);
   const [scoresError, setScoresError] = useState(null);
+  const [gridExpanded, setGridExpanded] = useState(true);
 
   const isMobileView = useIsMobile();
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
@@ -393,8 +395,6 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
     ? Number(breakdown2.starterTotal || 0).toFixed(1)
     : '—';
   const positions = STARTER_POSITION_NAMES || [];
-  const rowCount = positions.length || Math.max(starters1.length, starters2.length);
-  const benchRowCount = Math.max(bench1.length, bench2.length);
 
   return (
     <div className="yoffs-matchup-view">
@@ -440,55 +440,19 @@ function MatchupView({ season, team1Id, team2Id, week, displaySeeds = false, see
           </div>
         </div>
       </div>
-      <div className="yoffs-matchup-table">
-        {Array.from({ length: rowCount }).map((_, idx) => {
-          const posLabel = positions[idx] || `S${idx + 1}`;
-          const leftSlot = starters1[idx];
-          const rightSlot = starters2[idx];
-          return (
-            <div key={posLabel + idx} className="yoffs-matchup-row">
-              <div className="yoffs-matchup-cell yoffs-matchup-cell--left">
-                {renderPlayerSide(leftSlot, 'left')}
-              </div>
-              <div className="yoffs-matchup-pos-col">
-                <span className="yoffs-matchup-pos-pill">{posLabel}</span>
-              </div>
-              <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
-                {renderPlayerSide(rightSlot, 'right')}
-              </div>
-            </div>
-          );
-        })}
-        {benchRowCount > 0 && (
-          <>
-            <div className="yoffs-matchup-divider-row">
-              <div className="yoffs-matchup-divider" />
-            </div>
-            {Array.from({ length: benchRowCount }).map((_, idx) => {
-              const leftBench = bench1[idx];
-              const rightBench = bench2[idx];
-              return (
-                <div
-                  key={`bench-${idx}`}
-                  className="yoffs-matchup-row yoffs-matchup-row--bench"
-                >
-                  <div className="yoffs-matchup-cell yoffs-matchup-cell--left">
-                    {renderPlayerSide(leftBench, 'left')}
-                  </div>
-                  <div className="yoffs-matchup-pos-col">
-                    <span className="yoffs-matchup-pos-pill yoffs-matchup-pos-pill--bench">
-                      BN
-                    </span>
-                  </div>
-                  <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
-                    {renderPlayerSide(rightBench, 'right')}
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
-      </div>
+      <MatchupWeekView
+        positions={positions}
+        starters1={starters1}
+        starters2={starters2}
+        bench1={bench1}
+        bench2={bench2}
+        renderPlayerSide={renderPlayerSide}
+        expanded={gridExpanded}
+        onToggleExpanded={() => setGridExpanded((prev) => !prev)}
+        week={week}
+        leftTotalText={leftTotalText}
+        rightTotalText={rightTotalText}
+      />
     </div>
   );
 }
