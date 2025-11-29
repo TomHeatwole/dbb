@@ -347,6 +347,10 @@ function Yoffs2025Format({
           };
         }
 
+        setBaseWeeksData(weeksData);
+        setBaseTeamData(teamData);
+        setBasePlayersData(players);
+        setBasePlayerIdMap(idMap);
         setSeedTeams(seeds);
         setFinalsInfo(finalsLocal);
         setLoadingSeeds(false);
@@ -840,6 +844,7 @@ function Yoffs2025Format({
                     team1Id={finalsInfo.top.rosterId}
                     team2Id={finalsInfo.bottom.rosterId}
                     week={playoffEndWeek}
+                    weeks={[playoffEndWeek]}
                     preloadedTeamData={baseTeamData}
                     preloadedWeeksData={baseWeeksData}
                     preloadedPlayersData={basePlayersData}
