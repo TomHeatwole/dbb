@@ -124,7 +124,7 @@ function Yoffs2025Format({
         const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),
           fetchTeamData(season),
-          fetchPlayersData(),
+          fetchPlayersData(season),
           fetchPlayerIdMap()
         ]);
         if (cancelled) {
@@ -317,6 +317,7 @@ function Yoffs2025Format({
             if (topWinnerSemi > bottomWinnerSemi) {
               topFinal += buffer;
               bufferRecipient = {
+                rosterId: topWinner.rosterId,
                 teamName: topWinner.teamName,
                 avatarUrl: topWinner.avatarUrl || null,
                 amount: buffer,
@@ -324,6 +325,7 @@ function Yoffs2025Format({
             } else if (bottomWinnerSemi > topWinnerSemi) {
               bottomFinal += buffer;
               bufferRecipient = {
+                rosterId: bottomWinner.rosterId,
                 teamName: bottomWinner.teamName,
                 avatarUrl: bottomWinner.avatarUrl || null,
                 amount: buffer,
@@ -852,6 +854,18 @@ function Yoffs2025Format({
                     displaySeeds
                     seed1={finalsInfo.top.seed}
                     seed2={finalsInfo.bottom.seed}
+                    playoffBufferAmount={
+                      finalsInfo.buffer ? finalsInfo.buffer.amount : 0
+                    }
+                    playoffBufferSide={
+                      finalsInfo.buffer
+                      && finalsInfo.buffer.rosterId === finalsInfo.top.rosterId
+                        ? 'left'
+                        : finalsInfo.buffer
+                        && finalsInfo.buffer.rosterId === finalsInfo.bottom.rosterId
+                        ? 'right'
+                        : null
+                    }
                   />
                 );
               })()

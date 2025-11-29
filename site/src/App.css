@@ -2122,6 +2122,9 @@
   font-weight: 900;
   color: #ffffff;
 }
+.yoffs-matchup-summary-score--buffer-plus {
+  color: #4ade80;
+}
 .yoffs-matchup-summary-button {
   padding: 0.1rem 0.65rem;
   border-radius: 9999px;

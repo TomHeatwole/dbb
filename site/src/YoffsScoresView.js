@@ -37,7 +37,7 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
       try {
         const [weeksData, players, idMap] = await Promise.all([
           fetchScoresData(season),
-          fetchPlayersData(),
+          fetchPlayersData(season),
           fetchPlayerIdMap()
         ]);
 

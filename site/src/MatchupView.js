@@ -69,7 +69,9 @@ function MatchupView({
   preloadedTeamData = null,
   preloadedWeeksData = null,
   preloadedPlayersData = null,
-  preloadedPlayerIdMap = null
+  preloadedPlayerIdMap = null,
+  playoffBufferAmount = 0,
+  playoffBufferSide = null
 }) {
   const [teamData, setTeamData] = useState(preloadedTeamData || null);
   const [weeksParsedData, setWeeksParsedData] = useState(preloadedWeeksData || null);
@@ -487,10 +489,10 @@ function MatchupView({
           </div>
         );
       }
-      const info = getPlayerInfo(slot.id, playersData, playerIdMap);
-      const gameObj =
-        (labelsForWeek && labelsForWeek[slot.id]) ||
-        { text: '', live: false, completed: false, eventId: null };
+    const info = getPlayerInfo(slot.id, playersData, playerIdMap);
+    const gameObj =
+      (labelsForWeek && labelsForWeek[slot.id]) ||
+      { text: '', live: false, completed: false, eventId: null };
       const ptsVal = Number(slot.pts || 0);
       const showDash = !gameObj.live && !gameObj.completed && ptsVal === 0;
       const ptsText = showDash ? '-' : ptsVal.toFixed(1);
@@ -505,9 +507,8 @@ function MatchupView({
         gameCellClasses.push('team-scores-game-completed');
       }
 
-      const playerName = formatPlayerNameForDisplay(
-        info && info.name ? info.name : slot.id === '0' ? '\u00A0' : slot.id
-      );
+      const rawName = info && info.name ? info.name : (slot.id === '0' ? '\u00A0' : String(slot.id || ''));
+      const playerName = formatPlayerNameForDisplay(rawName);
       const injuryBadge = renderInjuryBadge(slot.id, info);
 
       return (
@@ -724,27 +725,6 @@ function MatchupView({
     (block) => block.breakdown1 || block.breakdown2
   );
 
-  // Debug logging for championship / single-week matchups to inspect
-  // why matchup labels might be missing.
-  if (process.env.NODE_ENV !== 'production' && effectiveWeeks.length === 1) {
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[MatchupView finals debug]', {
-        season,
-        week: effectiveWeeks[0],
-        team1Id,
-        team2Id,
-        weekBlock: weekBlocks[0],
-        labelsForWeek:
-          playerGameLabelsByWeek && playerGameLabelsByWeek[effectiveWeeks[0]]
-            ? playerGameLabelsByWeek[effectiveWeeks[0]]
-            : null,
-      });
-    } catch (_) {
-      // ignore logging errors
-    }
-  }
-
   if (!hasAnyBreakdown) {
     return (
       <div className="yoffs-matchup-view-error">
@@ -933,6 +913,36 @@ function MatchupView({
           }
         />
       ))}
+      {isSingleWeekWithNoWeeksProp &&
+        typeof playoffBufferAmount === 'number' &&
+        playoffBufferAmount > 0 &&
+        (playoffBufferSide === 'left' || playoffBufferSide === 'right') && (
+          <MatchupWeekView
+            key="playoff-buffer"
+            positions={[]}
+            starters1={[]}
+            starters2={[]}
+            bench1={[]}
+            bench2={[]}
+            renderPlayerSide={() => null}
+            expanded={false}
+            onToggleExpanded={null}
+            week={null}
+            leftTotalText={
+              playoffBufferSide === 'left'
+                ? `+${playoffBufferAmount.toFixed(1)}`
+                : '-'
+            }
+            rightTotalText={
+              playoffBufferSide === 'right'
+                ? `+${playoffBufferAmount.toFixed(1)}`
+                : '-'
+            }
+            labelOverride="Playoff Buffer"
+            isBufferRow
+            bufferSide={playoffBufferSide}
+          />
+        )}
     </div>
   );
 }

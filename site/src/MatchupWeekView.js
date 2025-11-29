@@ -20,6 +20,9 @@ import React from 'react';
  * - isCurrentWeek: boolean – whether this block corresponds to the current NFL week
  * - leftYetToPlayLabel / leftLiveLabel / rightYetToPlayLabel / rightLiveLabel:
  *   optional strings for activity summary (Yet to Play / Live) under the header
+ * - labelOverride: string (optional) – custom center label (e.g. "Playoff Buffer")
+ * - isBufferRow: boolean (optional) – whether this row is the playoff buffer row
+ * - bufferSide: 'left' | 'right' | null – which side receives the buffer (for styling)
  */
 function MatchupWeekView({
   positions,
@@ -38,6 +41,9 @@ function MatchupWeekView({
   leftLiveLabel = '',
   rightYetToPlayLabel = '',
   rightLiveLabel = '',
+  labelOverride = null,
+  isBufferRow = false,
+  bufferSide = null,
 }) {
   const safePositions = Array.isArray(positions) ? positions : [];
   const rowCount =
@@ -45,6 +51,8 @@ function MatchupWeekView({
     Math.max(starters1.length || 0, starters2.length || 0);
   const benchRowCount = Math.max(bench1.length || 0, bench2.length || 0);
   const arrowSymbol = expanded ? '▾' : '▸';
+  const labelText =
+    labelOverride || (week != null ? `Week ${week}` : 'Week');
 
   if (!expanded) {
     return (
@@ -52,7 +60,14 @@ function MatchupWeekView({
         <div className="yoffs-matchup-row yoffs-matchup-row--summary">
           <div className="yoffs-matchup-cell yoffs-matchup-cell--left">
             <div className="yoffs-matchup-summary">
-              <span className="yoffs-matchup-summary-score">
+              <span
+                className={
+                  'yoffs-matchup-summary-score' +
+                  (isBufferRow && bufferSide === 'left'
+                    ? ' yoffs-matchup-summary-score--buffer-plus'
+                    : '')
+                }
+              >
                 {leftTotalText}
               </span>
             </div>
@@ -79,19 +94,26 @@ function MatchupWeekView({
                 onClick={onToggleExpanded}
               >
                 <span className="yoffs-matchup-week-label">
-                  {week != null ? `Week ${week}` : 'Week'}
+                  {labelText}
                 </span>
                 <span className="yoffs-matchup-week-arrow">{arrowSymbol}</span>
               </button>
             ) : (
               <span className="yoffs-matchup-week-label-static">
-                {week != null ? `Week ${week}` : 'Week'}
+                {labelText}
               </span>
             )}
           </div>
           <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
             <div className="yoffs-matchup-summary yoffs-matchup-summary--right">
-              <span className="yoffs-matchup-summary-score">
+              <span
+                className={
+                  'yoffs-matchup-summary-score' +
+                  (isBufferRow && bufferSide === 'right'
+                    ? ' yoffs-matchup-summary-score--buffer-plus'
+                    : '')
+                }
+              >
                 {rightTotalText}
               </span>
             </div>
@@ -120,9 +142,16 @@ function MatchupWeekView({
       <div className="yoffs-matchup-row yoffs-matchup-row--summary">
         <div className="yoffs-matchup-cell yoffs-matchup-cell--left">
           <div className="yoffs-matchup-summary">
-            <span className="yoffs-matchup-summary-score">
-              {leftTotalText}
-            </span>
+              <span
+                className={
+                  'yoffs-matchup-summary-score' +
+                  (isBufferRow && bufferSide === 'left'
+                    ? ' yoffs-matchup-summary-score--buffer-plus'
+                    : '')
+                }
+              >
+                {leftTotalText}
+              </span>
           </div>
           {isCurrentWeek && (leftYetToPlayLabel || leftLiveLabel) && (
             <div className="yoffs-matchup-activity">
@@ -147,21 +176,28 @@ function MatchupWeekView({
               onClick={onToggleExpanded}
             >
               <span className="yoffs-matchup-week-label">
-                {week != null ? `Week ${week}` : 'Week'}
+                {labelText}
               </span>
               <span className="yoffs-matchup-week-arrow">{arrowSymbol}</span>
             </button>
           ) : (
             <span className="yoffs-matchup-week-label-static">
-              {week != null ? `Week ${week}` : 'Week'}
+              {labelText}
             </span>
           )}
         </div>
         <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
           <div className="yoffs-matchup-summary yoffs-matchup-summary--right">
-            <span className="yoffs-matchup-summary-score">
-              {rightTotalText}
-            </span>
+              <span
+                className={
+                  'yoffs-matchup-summary-score' +
+                  (isBufferRow && bufferSide === 'right'
+                    ? ' yoffs-matchup-summary-score--buffer-plus'
+                    : '')
+                }
+              >
+                {rightTotalText}
+              </span>
           </div>
           {isCurrentWeek && (rightYetToPlayLabel || rightLiveLabel) && (
             <div className="yoffs-matchup-activity yoffs-matchup-activity--right">
