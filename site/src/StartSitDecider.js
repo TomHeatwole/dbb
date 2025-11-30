@@ -5,14 +5,20 @@ import { STARTER_POSITION_NAMES } from './global_constants';
 import { getPlayerInfo } from './PlayerLookup';
 
 // Helper: determine if a player is injured based on their injury status
+// NOTE: "Q" (Questionable) is NOT considered injured for start/sit purposes
+// Only Out, Doubtful, IR, Suspended, PUP, NA are considered injured
 function isPlayerInjured(playerId, playersData, playerIdMap, injuriesMap) {
   // First check the injuriesMap (used for past weeks)
   if (injuriesMap && typeof injuriesMap === 'object') {
     const status = injuriesMap[String(playerId)];
     if (status) {
-      // Use regex pattern similar to other injury checks in the codebase
+      const s = String(status).toLowerCase();
+      // Exclude questionable - it's not considered injured for lineup decisions
+      if (s === 'questionable' || s === 'q') {
+        return false;
+      }
+      // Check for actual injury statuses
       if (/out|pup|doubtful|suspended|ir|injured reserve|na/i.test(status)) {
-        console.log('[StartSitDecider] Player', playerId, 'is injured (from injuriesMap) with status:', status);
         return true;
       }
     }
@@ -25,9 +31,16 @@ function isPlayerInjured(playerId, playersData, playerIdMap, injuriesMap) {
       const status = info.injury_status || 
                      info.injury_notes || 
                      (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null);
-      if (status && /out|pup|doubtful|suspended|ir|injured reserve|na/i.test(status)) {
-        console.log('[StartSitDecider] Player', playerId, 'is injured (from playersData) with status:', status);
-        return true;
+      if (status) {
+        const s = String(status).toLowerCase();
+        // Exclude questionable - it's not considered injured for lineup decisions
+        if (s === 'questionable' || s === 'q') {
+          return false;
+        }
+        // Check for actual injury statuses
+        if (/out|pup|doubtful|suspended|ir|injured reserve|na/i.test(status)) {
+          return true;
+        }
       }
     }
   }
@@ -35,27 +48,55 @@ function isPlayerInjured(playerId, playersData, playerIdMap, injuriesMap) {
   return false;
 }
 
-// Helper: sort descending by pts, then by started (started > not started when equal pts), then by injury status (non-injured > injured when equal pts), then stable id
+// Helper: sort players by priority rules
+// Precedence (highest priority first):
+// 1. Score (highest first)
+// 2. Injury status (healthy/Q > injured)
+// 3. Game status (unplayed > in-progress > completed)
+// 4. Player ID (stable sort)
 function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap) {
   return function sortByGameAware(players) {
     return players.slice().sort((a, b) => {
+      // RULE 1: Score - highest score wins
       if (b.pts !== a.pts) {
         return b.pts - a.pts;
       }
-      const aLab = playerGameLabels && playerGameLabels[a.id];
-      const bLab = playerGameLabels && playerGameLabels[b.id];
-      const aStarted = !!(aLab && (aLab.live || aLab.completed));
-      const bStarted = !!(bLab && (bLab.live || bLab.completed));
-      if (aStarted !== bStarted) {
-        return bStarted ? 1 : -1;
-      }
-      // When points and game status are equal, prefer non-injured players
+      
+      // RULE 2: Injury status - healthy/questionable preferred over injured
+      // (Out, Doubtful, IR, Suspended, PUP, NA lose priority)
       const aInjured = isPlayerInjured(a.id, playersData, playerIdMap, injuriesMap);
       const bInjured = isPlayerInjured(b.id, playersData, playerIdMap, injuriesMap);
       if (aInjured !== bInjured) {
-        console.log('[StartSitDecider] Sorting by injury: player', a.id, 'injured:', aInjured, 'vs player', b.id, 'injured:', bInjured);
-        return aInjured ? 1 : -1;
+        return aInjured ? 1 : -1; // non-injured (false) sorts before injured (true)
       }
+      
+      // RULE 3: Game status - unplayed > in-progress > completed
+      // Determine game status for each player
+      const aLab = playerGameLabels && playerGameLabels[a.id];
+      const bLab = playerGameLabels && playerGameLabels[b.id];
+      
+      // Game status values: 0 = unplayed, 1 = in-progress, 2 = completed
+      const getGameStatus = (label) => {
+        if (!label) {
+          return 0; // no game info = unplayed
+        }
+        if (label.completed) {
+          return 2; // completed
+        }
+        if (label.live) {
+          return 1; // in-progress
+        }
+        return 0; // unplayed
+      };
+      
+      const aGameStatus = getGameStatus(aLab);
+      const bGameStatus = getGameStatus(bLab);
+      
+      if (aGameStatus !== bGameStatus) {
+        return aGameStatus - bGameStatus; // lower value (unplayed) sorts first
+      }
+      
+      // RULE 4: Stable sort by player ID
       const aId = String(a.id || '');
       const bId = String(b.id || '');
       if (aId < bId) {
