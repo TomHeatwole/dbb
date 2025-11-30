@@ -117,7 +117,7 @@ function LeagueScores() {
 		const rows = weekEntries.map((e) => {
 			const rid = e.roster_id;
 			const raw = breakdownByRoster[rid];
-			const computed = raw ? StartSitSort(raw, playersData, playerIdMap, labels || playerGameLabels) : null;
+			const computed = raw ? StartSitSort(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap) : null;
 			const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 			const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
 			const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
@@ -705,7 +705,7 @@ function LeagueScores() {
 									const raw = currentBreakdown[s.roster_id];
 									let liveTotal = s.points_scored || 0;
 									if (raw) {
-										const computed = StartSitSort(raw, playersData, playerIdMap);
+										const computed = StartSitSort(raw, playersData, playerIdMap, null, injuriesMap);
 										if (computed && typeof computed.starterTotal === 'number') {
 											const priorWeeks = (weeksParsedData || []).slice(0, currentWeekNum - 1) || [];
 											const priorSum = priorWeeks.reduce((sum, wk) => {
@@ -739,7 +739,7 @@ function LeagueScores() {
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
-							const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels) : null;
+							const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)

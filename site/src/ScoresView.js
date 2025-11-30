@@ -426,7 +426,7 @@ function ScoresView({
           const raw = currentBreakdown[s.roster_id];
           let liveTotal = s.points_scored || 0;
           if (raw) {
-            const computed = StartSitSort(raw, playersData, playerIdMap);
+            const computed = StartSitSort(raw, playersData, playerIdMap, null, injuriesMap);
             if (computed && typeof computed.starterTotal === 'number') {
               const priorWeeks = (weeksParsedData || []).slice(0, currentWeekNum - 1) || [];
               const priorSum = priorWeeks.reduce((sum, wkArr) => {
@@ -472,7 +472,7 @@ function ScoresView({
     .map((e) => {
       const rid = e.roster_id;
       const raw = breakdownByRoster[rid];
-      const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels) : null;
+      const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap) : null;
       const pts = computed
         ? computed.starterTotal
         : typeof e.points === 'number'

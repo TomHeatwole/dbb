@@ -4,20 +4,66 @@
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getPlayerInfo } from './PlayerLookup';
 
-// Helper: sort descending by pts, then by started (started > not started when equal pts), then stable id
-function buildSorter(playerGameLabels) {
+// Helper: determine if a player is injured based on their injury status
+function isPlayerInjured(playerId, playersData, playerIdMap, injuriesMap) {
+  // First check the injuriesMap (used for past weeks)
+  if (injuriesMap && typeof injuriesMap === 'object') {
+    const status = injuriesMap[String(playerId)];
+    if (status) {
+      // Use regex pattern similar to other injury checks in the codebase
+      if (/out|pup|doubtful|suspended|ir|injured reserve|na/i.test(status)) {
+        console.log('[StartSitDecider] Player', playerId, 'is injured (from injuriesMap) with status:', status);
+        return true;
+      }
+    }
+  }
+  
+  // Also check playersData for current week injury status
+  if (playersData && playerIdMap) {
+    const info = getPlayerInfo(playerId, playersData, playerIdMap);
+    if (info) {
+      const status = info.injury_status || 
+                     info.injury_notes || 
+                     (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null);
+      if (status && /out|pup|doubtful|suspended|ir|injured reserve|na/i.test(status)) {
+        console.log('[StartSitDecider] Player', playerId, 'is injured (from playersData) with status:', status);
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+// Helper: sort descending by pts, then by started (started > not started when equal pts), then by injury status (non-injured > injured when equal pts), then stable id
+function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap) {
   return function sortByGameAware(players) {
     return players.slice().sort((a, b) => {
-      if (b.pts !== a.pts) { return b.pts - a.pts; }
+      if (b.pts !== a.pts) {
+        return b.pts - a.pts;
+      }
       const aLab = playerGameLabels && playerGameLabels[a.id];
       const bLab = playerGameLabels && playerGameLabels[b.id];
       const aStarted = !!(aLab && (aLab.live || aLab.completed));
       const bStarted = !!(bLab && (bLab.live || bLab.completed));
-      if (aStarted !== bStarted) { return bStarted ? 1 : -1; }
+      if (aStarted !== bStarted) {
+        return bStarted ? 1 : -1;
+      }
+      // When points and game status are equal, prefer non-injured players
+      const aInjured = isPlayerInjured(a.id, playersData, playerIdMap, injuriesMap);
+      const bInjured = isPlayerInjured(b.id, playersData, playerIdMap, injuriesMap);
+      if (aInjured !== bInjured) {
+        console.log('[StartSitDecider] Sorting by injury: player', a.id, 'injured:', aInjured, 'vs player', b.id, 'injured:', bInjured);
+        return aInjured ? 1 : -1;
+      }
       const aId = String(a.id || '');
       const bId = String(b.id || '');
-      if (aId < bId) { return -1; }
-      if (aId > bId) { return 1; }
+      if (aId < bId) {
+        return -1;
+      }
+      if (aId > bId) {
+        return 1;
+      }
       return 0;
     });
   };
@@ -56,10 +102,29 @@ function attachPositions(players, playersData, playerIdMap) {
 }
 
 // Core export: compute optimal starters/bench
-export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabels = null) {
-  if (!teamScore) { return teamScore; }
+export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabels = null, injuriesMap = null) {
+  if (!teamScore) {
+    return teamScore;
+  }
+  
+  // Debug: log if we have injuries data
+  if (injuriesMap && typeof injuriesMap === 'object') {
+    const injuryCount = Object.keys(injuriesMap).length;
+    console.log('[StartSitDecider] StartSitSort called with', injuryCount, 'injuries');
+    if (injuryCount > 0) {
+      console.log('[StartSitDecider] Injuries map sample:', Object.keys(injuriesMap).slice(0, 5), 'first entries:', Object.entries(injuriesMap).slice(0, 3));
+    }
+  } else {
+    console.log('[StartSitDecider] StartSitSort called WITHOUT injuries map');
+  }
+  
   const starters = Array.isArray(teamScore.starters) ? teamScore.starters : [];
   const bench = Array.isArray(teamScore.bench) ? teamScore.bench : [];
+  
+  // Debug: log player IDs we're working with
+  const allPlayerIds = [...starters, ...bench].filter((p) => p && p.id && String(p.id) !== '0').map(p => p.id);
+  console.log('[StartSitDecider] Processing players:', allPlayerIds);
+  
   // Filter out API placeholder rows that use id '0' or missing ids
   const filtered = [...starters, ...bench].filter((p) => p && p.id && String(p.id) !== '0');
   const combined = attachPositions(filtered, playersData, playerIdMap).map((p) => ({
@@ -71,7 +136,7 @@ export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabe
   const counts = getPositionCountsFromConfig();
 
   // Group by position
-  const sortByPointsDesc = buildSorter(playerGameLabels);
+  const sortByPointsDesc = buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap);
   const qbs = sortByPointsDesc(combined.filter(p => p.position === 'QB'));
   const rbs = sortByPointsDesc(combined.filter(p => p.position === 'RB'));
   const wrs = sortByPointsDesc(combined.filter(p => p.position === 'WR'));

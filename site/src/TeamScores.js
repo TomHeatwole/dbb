@@ -158,7 +158,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
 
   // Get week breakdown for this roster
   const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
-  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap) : null;
+  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap, null, injuriesMap) : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
   useEffect(() => {

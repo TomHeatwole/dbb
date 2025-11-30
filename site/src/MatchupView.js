@@ -587,14 +587,17 @@ function MatchupView({
 
     const labelsForWeek =
       (playerGameLabelsByWeek && playerGameLabelsByWeek[w]) || {};
+    
+    const injuriesForWeek =
+      (injuriesByWeek && injuriesByWeek[w]) || {};
 
     const breakdown1 =
       raw1 && playersData && playerIdMap
-        ? StartSitSort(raw1, playersData, playerIdMap, labelsForWeek)
+        ? StartSitSort(raw1, playersData, playerIdMap, labelsForWeek, injuriesForWeek)
         : null;
     const breakdown2 =
       raw2 && playersData && playerIdMap
-        ? StartSitSort(raw2, playersData, playerIdMap, labelsForWeek)
+        ? StartSitSort(raw2, playersData, playerIdMap, labelsForWeek, injuriesForWeek)
         : null;
 
     const starters1 =
