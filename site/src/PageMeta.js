@@ -1,5 +1,4 @@
-import React from 'react';
-import { Helmet } from './HelmetShim';
+import React, { useEffect } from 'react';
 
 const DEFAULT_TITLE = 'The Hwang Dynasty';
 const DEFAULT_DESCRIPTION = 'Because Sleeper is too lazy for BestBall in browser';
@@ -19,17 +18,66 @@ function PageMeta({ title, description, image, url }) {
     }
   }
 
-  return (
-    <Helmet>
-      <title>{fullTitle}</title>
-      <meta name="description" content={desc} />
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={desc} />
-      <meta property="og:image" content={img} />
-      {href && <meta property="og:url" content={href} />}
-      <meta property="og:type" content="website" />
-    </Helmet>
-  );
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    // Update document title
+    document.title = fullTitle;
+
+    // Helper to upsert a <meta> tag in <head>
+    function upsertMeta(selector, attributes) {
+      if (!selector || !attributes) {
+        return;
+      }
+      let el = document.head.querySelector(selector);
+      if (!el) {
+        el = document.createElement('meta');
+        document.head.appendChild(el);
+      }
+      Object.keys(attributes).forEach((key) => {
+        const value = attributes[key];
+        if (value != null) {
+          el.setAttribute(key, value);
+        }
+      });
+    }
+
+    upsertMeta('meta[name="description"]', {
+      name: 'description',
+      content: desc,
+    });
+
+    upsertMeta('meta[property="og:title"]', {
+      property: 'og:title',
+      content: fullTitle,
+    });
+
+    upsertMeta('meta[property="og:description"]', {
+      property: 'og:description',
+      content: desc,
+    });
+
+    upsertMeta('meta[property="og:image"]', {
+      property: 'og:image',
+      content: img,
+    });
+
+    if (href) {
+      upsertMeta('meta[property="og:url"]', {
+        property: 'og:url',
+        content: href,
+      });
+    }
+
+    upsertMeta('meta[property="og:type"]', {
+      property: 'og:type',
+      content: 'website',
+    });
+  }, [fullTitle, desc, img, href]);
+
+  return null;
 }
 
 export default PageMeta;

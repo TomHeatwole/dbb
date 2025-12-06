@@ -1,25 +1,22 @@
 import React from 'react';
-import {
-  Helmet as AsyncHelmet,
-  HelmetProvider as AsyncHelmetProvider
-} from 'react-helmet-async';
 
 /**
  * HelmetShim
  *
- * Thin adapter around react-helmet-async so the rest of the app can depend
- * only on this module. If we ever swap out the underlying library or add
- * SSR/prerender-specific behavior, it all lives here.
+ * Previously this wrapped `react-helmet-async`, but that package's peer
+ * dependencies do not yet declare support for React 19, which caused
+ * `npm ERR! ERESOLVE` failures during installs/builds.
+ *
+ * To avoid that dependency conflict while still letting the rest of the app
+ * use the same API, this shim now provides a very thin `HelmetProvider`
+ * that simply renders its children. Per-page meta handling is done inside
+ * `PageMeta` without any external library.
  */
 export function HelmetProvider({ children }) {
   return (
-    <AsyncHelmetProvider>
+    <>
       {children}
-    </AsyncHelmetProvider>
+    </>
   );
-}
-
-export function Helmet(props) {
-  return <AsyncHelmet {...props} />;
 }
 
