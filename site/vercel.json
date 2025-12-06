@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/api/apitest" },
+    { "source": "/home/", "destination": "/api/apitest" }
   ]
 }
 
