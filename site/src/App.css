@@ -2197,6 +2197,10 @@
   }
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 @media (max-width: 58em) {
   /* Matchups tab: mobile-only layout tweaks */
   .mobile-info-container .yoffs-matchups-root.team-scores-container {

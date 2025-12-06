@@ -695,7 +695,10 @@ function Yoffs2024Format({
                 team1Id={h2hSelectedIds[0]}
                 team2Id={h2hSelectedIds[1]}
                 week={playoffStartWeek}
-                weeks={[playoffStartWeek]}
+                weeks={Array.from(
+                  { length: playoffEndWeek - playoffStartWeek + 1 },
+                  (_, idx) => playoffStartWeek + idx
+                )}
                 preloadedTeamData={
                   rosters && users ? { rosters, users } : null
                 }

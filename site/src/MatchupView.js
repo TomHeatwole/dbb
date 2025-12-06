@@ -105,54 +105,24 @@ function MatchupView({
   useEffect(() => {
     setGridExpandedByWeek({});
   }, [season, team1Id, team2Id, effectiveWeeks]);
-
   useEffect(() => {
     if (!hasAnyWeeks) {
       return;
     }
-    const completedWeeks = getCompletedWeeksCount(season);
     setGridExpandedByWeek((prev) => {
+      // Preserve any user-toggled state once it exists
       if (prev && Object.keys(prev).length > 0) {
         return prev;
       }
       const next = {};
-      if (effectiveWeeks.length === 1) {
-        // Finals or single-week view: always expanded by default
-        next[effectiveWeeks[0]] = true;
-      } else if (effectiveWeeks.length >= 2) {
-        // Semifinals: use Week N and Week N+1 rules
-        const weekN = effectiveWeeks[0];
-        const weekNp1 = effectiveWeeks[1];
-        const weekNCompleted =
-          !isCurrentSeason || Number(weekN) <= Number(completedWeeks);
-        const weekNp1Completed =
-          !isCurrentSeason || Number(weekNp1) <= Number(completedWeeks);
-
-        if (weekNCompleted && !weekNp1Completed) {
-          // 2) Week N concluded, collapse N, expand N+1
-          next[weekN] = false;
-          next[weekNp1] = true;
-        } else if (!weekNCompleted) {
-          // 3) Week N not completed, expand N, collapse N+1
-          next[weekN] = true;
-          next[weekNp1] = false;
-        } else if (weekNCompleted && weekNp1Completed) {
-          // 4) Both weeks concluded, collapse both
-          next[weekN] = false;
-          next[weekNp1] = false;
-        }
-
-        // Any additional weeks default collapsed
-        for (let i = 0; i < effectiveWeeks.length; i += 1) {
-          const w = effectiveWeeks[i];
-          if (!Object.prototype.hasOwnProperty.call(next, w)) {
-            next[w] = false;
-          }
-        }
-      }
+      effectiveWeeks.forEach((w) => {
+        const isCurrentWeekForDisplay =
+          isCurrentSeason && Number(w) === Number(currentWeekNum);
+        next[w] = isCurrentWeekForDisplay;
+      });
       return next;
     });
-  }, [season, hasAnyWeeks, effectiveWeeks, isCurrentSeason]);
+  }, [hasAnyWeeks, effectiveWeeks, isCurrentSeason, currentWeekNum]);
 
   useEffect(() => {
     let cancelled = false;
