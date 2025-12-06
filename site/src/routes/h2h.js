@@ -14,6 +14,8 @@ import WeekSelector from '../scores/WeekSelector';
 import PageMeta from '../PageMeta';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
+const OG_TITLE = 'Head to Head';
+const OG_DESCRIPTION = '';
 
 function H2hPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -373,12 +375,9 @@ function H2hPage() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  const pageTitle = 'Head to Head – The Hwang Dynasty';
-  const pageDescription = 'Compare BestBall head-to-head results across seasons, formats, and weeks in The Hwang Dynasty league.';
-
   return (
     <>
-      <PageMeta title={pageTitle} description={pageDescription} />
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper title="Head to Head" subtitle={null} leftHeader={leftHeader}>
       <div className="yoffs-mode-row">
         <div className="yoffs-mode-dropdown-wrapper">

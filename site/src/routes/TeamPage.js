@@ -12,8 +12,11 @@ import TeamAnalytics from '../teams/TeamAnalytics';
 import useIsMobile from '../hooks/useIsMobile';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
+import PageMeta from '../PageMeta';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
+const OG_TITLE = 'The Hwang Dynasty';
+const OG_DESCRIPTION = '';
 
 function TeamPage() {
   const { id } = useParams();
@@ -157,12 +160,15 @@ function TeamPage() {
 
   if (loading || !playersData || !playerIdMap || !rosters || !users) {
     return (
+      <>
+        <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper title="Team" subtitle={null} leftHeader={null}>
         <div className="loading-center">
           <div className="spinner" aria-label="Loading" />
           <div className="loading-text">Loading…</div>
         </div>
       </InfoPageWrapper>
+      </>
     );
   }
   if (error) return <div>Error: {error}</div>;
@@ -221,6 +227,8 @@ function TeamPage() {
   );
 
   return (
+    <>
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
     <InfoPageWrapper
       leftHeader={leftHeader}
       title={teamName}
@@ -250,6 +258,7 @@ function TeamPage() {
       {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} updateQueryParams={updateQueryParams} />}
       {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} updateQueryParams={updateQueryParams} />}
     </InfoPageWrapper>
+    </>
   );
 }
 

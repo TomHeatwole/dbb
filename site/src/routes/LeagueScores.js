@@ -18,6 +18,10 @@ import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from '../scores/GamesParser';
 import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from '../lookups/InjuryLookup';
 import { readApiCacheLatestByKey, readPollingIntervalMs, readPlayersSnapshot } from '../utils/database';
+import PageMeta from '../PageMeta';
+
+const OG_TITLE = 'Hwang Dynasty Scores';
+const OG_DESCRIPTION = '';
 
 // Hardcoded toggle to force show the Sleeper API banner
 const show_sleeper_api_banner = false;
@@ -665,6 +669,11 @@ function LeagueScores() {
 	);
 
 	return (
+		<>
+			<PageMeta
+				title={OG_TITLE}
+				description={OG_DESCRIPTION}
+			/>
 		<InfoPageWrapper title={isMobile ? "Scores" : "Hwang Dynasty Scores"} subtitle={null} leftHeader={leftHeader}>
 			<div className="team-scores-container">
 				<WeekSelector week={week} onChange={setWeek} />
@@ -915,6 +924,7 @@ function LeagueScores() {
 				</div>
 			)}
 		</InfoPageWrapper>
+		</>
 	);
 }
 

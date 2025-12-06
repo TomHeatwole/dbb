@@ -14,6 +14,10 @@ import PlayoffRaceGraph from '../standings/PlayoffRaceGraph';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
 import StandingsRowHeader from '../standings/StandingsRowHeader';
+import PageMeta from '../PageMeta';
+
+const OG_TITLE = 'Hwang Dynasty Standings';
+const OG_DESCRIPTION = '';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -293,6 +297,8 @@ function LeagueStandings() {
 
   if (loading) {
     return (
+      <>
+        <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
         <div className="loading-center">
           <div className="spinner" aria-label="Loading" />
@@ -300,13 +306,17 @@ function LeagueStandings() {
           <img src="/logo.jpg" alt="Site logo" className="loading-logo" />
         </div>
       </InfoPageWrapper>
+      </>
     );
   }
   if (error || !weeksParsedData || !rosters || !users) {
     return (
+      <>
+        <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
         <div>Error loading standings.</div>
       </InfoPageWrapper>
+      </>
     );
   }
 
@@ -653,6 +663,8 @@ function LeagueStandings() {
   }
 
   return (
+    <>
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
     <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
       <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "") + (showPpgColumn ? "" : " standings-list--no-ppg") }>
         {displayRows.map((row, idx) => {
@@ -776,6 +788,7 @@ function LeagueStandings() {
         playerIdMap={playerIdMap}
       />
     </InfoPageWrapper>
+    </>
   );
 }
 

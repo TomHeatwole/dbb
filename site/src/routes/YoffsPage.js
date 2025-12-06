@@ -7,9 +7,12 @@ import PlayoffRulesToolTip from '../yoffs/PlayoffRulesToolTip';
 import Yoffs2024Format from '../yoffs/Yoffs2024Format';
 import Yoffs2025Format from '../yoffs/Yoffs2025Format';
 import { useSearchParams } from 'react-router-dom';
+import PageMeta from '../PageMeta';
 
 const PLAYOFF_START_WEEK = 15;
 const PLAYOFF_END_WEEK = 17;
+const OG_TITLE = 'Playoffs – The Hwang Dynasty';
+const OG_DESCRIPTION = '';
 
 function YoffsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -245,6 +248,8 @@ function YoffsPage() {
     );
 
   return (
+    <>
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
     <InfoPageWrapper
       title="Playoffs"
       subtitle={null}
@@ -309,6 +314,7 @@ function YoffsPage() {
       </div>
       {content}
     </InfoPageWrapper>
+    </>
   );
 }
 

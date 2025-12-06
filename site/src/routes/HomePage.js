@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { trackPageLoad } from '../utils/UsageTracker';
 import { Link } from 'react-router-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
+import PageMeta from '../PageMeta';
+
+const OG_TITLE = 'The Hwang Dynasty';
+const OG_DESCRIPTION = '';
 
 function HomePage() {
   const [showTeams, setShowTeams] = useState(false);
@@ -41,6 +45,11 @@ function HomePage() {
   }, []);
 
   return(
+    <>
+      <PageMeta
+        title={OG_TITLE}
+        description={OG_DESCRIPTION}
+      />
     <main className="home-main">
       {!showTeams && (
         <div className="home-cta-container">
@@ -81,6 +90,7 @@ function HomePage() {
         </>
       )}
     </main>
+    </>
   );
 }
 

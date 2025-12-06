@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { deleteAllPlayerData, deletePlayerWeek, readAdminBlob, writeAdminBlob, readApiCacheLatestByKey, writeApiCacheWithKey, backupLatestData, clearCacheKeepLatest } from '../utils/database';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { LEAGUE_ID } from '../utils/global_constants';
+import PageMeta from '../PageMeta';
+
+const OG_TITLE = 'The Hwang Dynasty';
+const OG_DESCRIPTION = '';
 
 function AdminControls() {
   const [password, setPassword] = useState('');
@@ -48,6 +52,11 @@ function AdminControls() {
 
   if (!authed) {
     return (
+      <>
+        <PageMeta
+          title={OG_TITLE}
+          description={OG_DESCRIPTION}
+        />
       <div className="info-container info-shared info-rel">
         <h1 className="info-title">Admin Controls</h1>
         <form onSubmit={submit} className="admin-controls-form">
@@ -64,10 +73,16 @@ function AdminControls() {
           {error ? <div className="admin-error">{error}</div> : null}
         </form>
       </div>
+      </>
     );
   }
 
   return (
+    <>
+      <PageMeta
+        title={OG_TITLE}
+        description={OG_DESCRIPTION}
+      />
     <div className="info-container info-shared info-rel">
       <h1 className="info-title">Admin Controls</h1>
       <div className="admin-tools">
@@ -243,6 +258,7 @@ function AdminControls() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

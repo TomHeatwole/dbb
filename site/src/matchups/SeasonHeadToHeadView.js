@@ -208,26 +208,28 @@ function SeasonHeadToHeadView({
         playersData &&
         playerIdMap && (
           <div className="yoffs-matchup-view-container season-h2h-matchup-wrapper">
-            <MatchupView
-              season={season}
-              team1Id={team1Id}
-              team2Id={team2Id}
-              week={null}
-              weeks={matchupWeeks}
-              expandedWeeksOverride={expandedWeeksOverride}
-              preloadedTeamData={preloadedTeamData}
-              preloadedWeeksData={weeksParsedData}
-              preloadedPlayersData={playersData}
-              preloadedPlayerIdMap={playerIdMap}
-              displaySeeds={false}
-              bufferLabel={bufferLabel}
-              bufferLeftText={bufferLeftText}
-              bufferRightText={bufferRightText}
-              headerLeftOverride={headerLeftOverride}
-              headerRightOverride={headerRightOverride}
-              highlightMode="seasonFinalOnly"
-              highlightThreshold={highlightThreshold}
-            />
+            <div className="season-h2h-matchup-height-shell">
+              <MatchupView
+                season={season}
+                team1Id={team1Id}
+                team2Id={team2Id}
+                week={null}
+                weeks={matchupWeeks}
+                expandedWeeksOverride={expandedWeeksOverride}
+                preloadedTeamData={preloadedTeamData}
+                preloadedWeeksData={weeksParsedData}
+                preloadedPlayersData={playersData}
+                preloadedPlayerIdMap={playerIdMap}
+                displaySeeds={false}
+                bufferLabel={bufferLabel}
+                bufferLeftText={bufferLeftText}
+                bufferRightText={bufferRightText}
+                headerLeftOverride={headerLeftOverride}
+                headerRightOverride={headerRightOverride}
+                highlightMode="seasonFinalOnly"
+                highlightThreshold={highlightThreshold}
+              />
+            </div>
           </div>
         )}
     </div>

@@ -2282,6 +2282,18 @@ html {
   color: #4fb7ff;
 }
 
+/* Season head-to-head: keep the matchup area from collapsing between weeks
+ * so scrolling stays stable when changing the selected week. */
+.season-h2h-matchup-height-shell {
+  min-height: 46rem;
+}
+
+@media (max-width: 50em) {
+  .season-h2h-matchup-height-shell {
+    min-height: 38rem;
+  }
+}
+
 /* Head to Head selector styles – unified mobile + desktop */
 .yoffs-head-to-head-container {
   width: 100%;
