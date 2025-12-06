@@ -1,4 +1,7 @@
 
+import fs from "fs";
+import path from "path";
+
 export default function handler(req, res) {
     // 1. Load your existing HTML (the file your app would normally serve)
     const filePath = path.join(process.cwd(), "public", "index.html");
