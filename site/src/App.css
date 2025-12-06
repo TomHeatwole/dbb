@@ -2356,6 +2356,8 @@ html {
   max-width: none;
   margin: 0;
   padding-top: 0.5rem;
+  /* Extra space below selector before MatchupView in head-to-head views */
+  margin-bottom: 2.25rem;
 }
 
 .h2h-web-instruction {
