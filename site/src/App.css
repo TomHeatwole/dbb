@@ -1929,6 +1929,13 @@
   width: 100%;
   margin-top: 0.75rem;
 }
+/* Shared shell for all MatchupView usages (2024 + 2025) */
+.yoffs-matchup-view-container {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0.75rem auto 0;
+  box-sizing: border-box;
+}
 .yoffs-matchup-header-row {
   display: flex;
   align-items: center;
@@ -2193,12 +2200,12 @@
 @media (max-width: 58em) {
   /* Matchups tab: mobile-only layout tweaks */
   .mobile-info-container .yoffs-matchups-root.team-scores-container {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     margin-bottom: 0.4rem !important;
     width: 100% !important;
     max-width: 100% !important;
-    align-items: stretch !important;
+    align-items: center !important;
   }
   .mobile-info-container .yoffs-matchups-root .team-scores-week-bar {
     width: 100% !important;
@@ -2206,44 +2213,25 @@
     padding-right: 0 !important;
     justify-content: center !important;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 0.4rem !important;
-  }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-table {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
   /* Scale down typography and avatars without shrinking overall width */
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-avatar-large {
+  .mobile-info-container .yoffs-matchup-avatar-large {
     width: 1.35rem;
     height: 1.35rem;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-summary-score {
+  .mobile-info-container .yoffs-matchup-summary-score {
     font-size: 0.9rem;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-team-score {
+  .mobile-info-container .yoffs-matchup-team-score {
     font-size: 1.05rem;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-week-label {
+  .mobile-info-container .yoffs-matchup-week-label {
     font-size: 0.95rem;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-row {
+  .mobile-info-container .yoffs-matchup-row {
     gap: 0.3rem;
     padding: 0.16rem 0;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-player-pts {
+  .mobile-info-container .yoffs-matchup-player-pts {
     font-size: 0.65rem;
     margin-right: 0.2rem;
   }
@@ -2417,33 +2405,6 @@
   flex: 1 1 auto;
 }
 
-.h2h-web-summary {
-  margin-top: 0.75rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
-  font-size: 0.9rem;
-  color: #cfe0ff;
-}
-
-.h2h-web-summary-item {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-}
-
-.h2h-web-summary-label {
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #9fb4de;
-}
-
-.h2h-web-summary-value {
-  font-weight: 700;
-  color: #ffffff;
-}
-
 @media (min-width: 40em) {
   .h2h-web-list {
     flex-direction: row;
@@ -2466,30 +2427,30 @@
 }
 
 @media (max-width: 58em) {
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view .player-name {
+  .mobile-info-container .yoffs-matchup-view .player-name {
     font-size: 0.6rem;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-pos-pill {
+  .mobile-info-container .yoffs-matchup-pos-pill {
     font-size: 0.55rem;
     padding: 0.06rem 0.35rem;
     margin: 0 0.2rem;
   }
   /* Scale down player avatars and game text only within matchup tables */
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view .player-avatar-style {
+  .mobile-info-container .yoffs-matchup-view .player-avatar-style {
     width: 1.4rem;
     height: 1.4rem;
     margin-right: 0.5rem;
     margin-left: 0.15rem;
   }
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-view .team-scores-game-text {
+  .mobile-info-container .yoffs-matchup-view .team-scores-game-text {
     font-size: 0.6rem;
   }
   /* Smaller team name text in header on mobile only */
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-team-block .yoffs-bracket-name {
+  .mobile-info-container .yoffs-matchup-team-block .yoffs-bracket-name {
     font-size: 0.72rem;
   }
   /* Ensure header team blocks start just outside the middle position column */
-  .mobile-info-container .yoffs-matchups-root .yoffs-matchup-side--left {
+  .mobile-info-container .yoffs-matchup-side--left {
     padding-right: 2.0rem;
   }
 }

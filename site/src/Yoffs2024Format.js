@@ -44,10 +44,9 @@ function Yoffs2024Format({
       setLoading(true);
       setError(null);
       try {
-        const [weeksData, teamData, players, idMap] = await Promise.all([
+        const [weeksData, teamData, idMap] = await Promise.all([
           fetchScoresData(season),
           fetchTeamData(season),
-          fetchPlayersData(),
           fetchPlayerIdMap()
         ]);
 
@@ -56,6 +55,19 @@ function Yoffs2024Format({
         }
         if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
           throw new Error('No team data');
+        }
+
+        // Build playersData so that every playoff player has metadata (name, avatar, etc.).
+        // For the current season, prefer using actual rosters; for past seasons, use the season key.
+        let players = null;
+        try {
+          const useRosters =
+            String(season) === String(CURRENT_YEAR) && Array.isArray(teamData.rosters)
+              ? teamData.rosters
+              : String(season);
+          players = await fetchPlayersData(useRosters);
+        } catch (_) {
+          players = null;
         }
 
         const startIdx = playoffStartWeek - 1;

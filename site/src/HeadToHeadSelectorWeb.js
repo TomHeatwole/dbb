@@ -26,14 +26,6 @@ function HeadToHeadSelectorWeb({ teams, onSelectionChange = null }) {
     return <div>No playoff teams found for this season.</div>;
   }
 
-  const teamA =
-    selectedOrder.length > 0
-      ? teams.find((t) => t.rosterId === selectedOrder[0]) || null
-      : null;
-  const teamB =
-    selectedOrder.length > 1
-      ? teams.find((t) => t.rosterId === selectedOrder[1]) || null
-      : null;
   const selectionFull = selectedOrder.length >= 2;
 
   return (
@@ -73,20 +65,6 @@ function HeadToHeadSelectorWeb({ teams, onSelectionChange = null }) {
             </button>
           );
         })}
-      </div>
-      <div className="h2h-web-summary">
-        <div className="h2h-web-summary-item">
-          <span className="h2h-web-summary-label">Team A:</span>
-          <span className="h2h-web-summary-value">
-            {teamA ? teamA.teamName : 'NONE'}
-          </span>
-        </div>
-        <div className="h2h-web-summary-item">
-          <span className="h2h-web-summary-label">Team B:</span>
-          <span className="h2h-web-summary-value">
-            {teamB ? teamB.teamName : 'NONE'}
-          </span>
-        </div>
       </div>
     </div>
   );

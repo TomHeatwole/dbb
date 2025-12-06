@@ -121,10 +121,9 @@ function Yoffs2025Format({
       setLoadingSeeds(true);
       setSeedError(null);
       try {
-        const [weeksData, teamData, players, idMap] = await Promise.all([
+        const [weeksData, teamData, idMap] = await Promise.all([
           fetchScoresData(season),
           fetchTeamData(season),
-          fetchPlayersData(season),
           fetchPlayerIdMap()
         ]);
         if (cancelled) {
@@ -135,6 +134,20 @@ function Yoffs2025Format({
         }
         if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
           throw new Error('No team data');
+        }
+
+        // For current-season brackets, build playersData from the actual rosters so
+        // any player that appears in playoff lineups has metadata (name, avatar, etc.).
+        // For past seasons, fall back to season-based lookup.
+        let players = null;
+        try {
+          const useRosters =
+            String(season) === String(CURRENT_YEAR) && Array.isArray(teamData.rosters)
+              ? teamData.rosters
+              : String(season);
+          players = await fetchPlayersData(useRosters);
+        } catch (_) {
+          players = null;
         }
 
         const regularSliceFull = weeksData.slice(0, 14);
