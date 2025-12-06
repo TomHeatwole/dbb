@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import YoffsScoresView from './YoffsScoresView';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
-import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
+import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
@@ -168,6 +168,7 @@ function Yoffs2025Format({
         const seedSet = new Set(seedIds);
 
         // Compute cumulative semifinal totals for each playoff team (StartSit-based)
+        const seasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
         const semiStart = playoffStartWeek;
         const semiEnd = Math.max(playoffStartWeek, playoffEndWeek - 1);
         const semiTotals = {};
@@ -201,7 +202,7 @@ function Yoffs2025Format({
               if (players && idMap) {
                 const teamScore = breakdown[ridKey];
                 if (teamScore) {
-                  const computed = StartSitSort(teamScore, players, idMap);
+                  const computed = StartSitSort(teamScore, players, idMap, null, null, seasonTotalsMap);
                   if (computed && typeof computed.starterTotal === 'number') {
                     weekTotal = Math.round(computed.starterTotal * 10) / 10;
                   }
@@ -301,7 +302,7 @@ function Yoffs2025Format({
             const raw = finalsBreakdown[rid];
             if (raw && players && idMap) {
               try {
-                const computed = StartSitSort(raw, players, idMap);
+                const computed = StartSitSort(raw, players, idMap, null, null, seasonTotalsMap);
                 if (computed && typeof computed.starterTotal === 'number') {
                   weekTotal = Math.round(computed.starterTotal * 10) / 10;
                 }

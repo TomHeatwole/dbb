@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
+import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 import { StartSitSort } from './StartSitDecider';
 import FullRoster from './FullRoster';
@@ -143,6 +143,9 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
       cancelled = true;
     };
   }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason]);
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
   const myStanding = useMemo(() => {
     if (loading || !weeksParsedData) { return null; }
     const baseStandings = getStandings(weeksParsedData) || [];
@@ -156,7 +159,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
         const raw = breakdown[s.roster_id];
         let live = s.points_scored || 0;
         if (raw) {
-          const computed = StartSitSort(raw, playersData, playerIdMap);
+          const computed = StartSitSort(raw, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
           if (computed && typeof computed.starterTotal === 'number') {
             const priorWeeks = (weeksParsedData || []).slice(0, currentWeek - 1) || [];
             const priorSum = priorWeeks.reduce((sum, wk) => {
@@ -188,7 +191,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     } catch (_) {
       return baseStandings.find(s => s.roster_id === rosterId) || null;
     }
-  }, [loading, weeksParsedData, rosterId, playersData, playerIdMap, urlYear]);
+  }, [loading, weeksParsedData, rosterId, playersData, playerIdMap, urlYear, playerSeasonTotalsMap]);
 
   if (loading) return (
     <div className="loading-center">

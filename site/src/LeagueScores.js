@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
 import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek, shouldPollCurre
 import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
-import { getWeekScoreBreakdown, getStandings } from './ScoresParser';
+import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import TeamScoresTables from './TeamScoresTables';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
@@ -89,6 +89,10 @@ function LeagueScores() {
 	const pollingIntervalMsRef = useRef(15000);
 	const isLivePollingWindowRef = useRef(false);
 
+	const playerSeasonTotalsMap = useMemo(() => {
+		return getPlayerSeasonTotalsMap(weeksParsedData);
+	}, [weeksParsedData]);
+
 	function toOrdinal(n) {
 		const num = Number(n);
 		if (!Number.isFinite(num)) { return String(n); }
@@ -102,7 +106,7 @@ function LeagueScores() {
 		}
 	}
 
-	function buildExpandedData(srcWeeksParsedData, targetWeek, labels) {
+	function buildExpandedData(srcWeeksParsedData, targetWeek, labels, seasonTotalsMap) {
 		if (!srcWeeksParsedData) { return null; }
 		const breakdownByRoster = getWeekScoreBreakdown(srcWeeksParsedData, targetWeek) || {};
 		const standings = getStandings(srcWeeksParsedData) || [];
@@ -117,7 +121,7 @@ function LeagueScores() {
 		const rows = weekEntries.map((e) => {
 			const rid = e.roster_id;
 			const raw = breakdownByRoster[rid];
-			const computed = raw ? StartSitSort(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap) : null;
+			const computed = raw ? StartSitSort(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap, seasonTotalsMap) : null;
 			const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 			const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
 			const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
@@ -260,7 +264,8 @@ function LeagueScores() {
 				setPlayersData(players);
 				setPlayerIdMap(idMap);
 				try {
-					const initExpanded = buildExpandedData(weeksData, week, playerGameLabels);
+					const seasonTotals = getPlayerSeasonTotalsMap(weeksData);
+					const initExpanded = buildExpandedData(weeksData, week, playerGameLabels, seasonTotals);
 					setPrevData(initExpanded);
 				} catch (_) {}
 			})
@@ -363,10 +368,10 @@ function LeagueScores() {
 		if (labelsCount === 0) { return; }
 		const key = `${season}-${week}`;
 		if (labelBaselineKeyRef.current !== key) {
-			try {
-				const baseline = buildExpandedData(weeksParsedData, week, playerGameLabels);
-				setPrevData(baseline);
-			} catch (_) {}
+		try {
+			const baseline = buildExpandedData(weeksParsedData, week, playerGameLabels, playerSeasonTotalsMap);
+			setPrevData(baseline);
+		} catch (_) {}
 			labelBaselineKeyRef.current = key;
 		}
 	}, [playerGameLabels, weeksParsedData, season, week]);
@@ -498,7 +503,8 @@ function LeagueScores() {
 					// removed debug log
 				}
 				if (cancelled || !Array.isArray(newWeeks)) { return; }
-				const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels);
+				const seasonTotals = getPlayerSeasonTotalsMap(newWeeks);
+				const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels, seasonTotals);
 				let changes = [];
 				if (prevData) {
 					changes = compareExpanded(prevData, nextExpanded);
@@ -705,7 +711,7 @@ function LeagueScores() {
 									const raw = currentBreakdown[s.roster_id];
 									let liveTotal = s.points_scored || 0;
 									if (raw) {
-										const computed = StartSitSort(raw, playersData, playerIdMap, null, injuriesMap);
+										const computed = StartSitSort(raw, playersData, playerIdMap, null, injuriesMap, playerSeasonTotalsMap);
 										if (computed && typeof computed.starterTotal === 'number') {
 											const priorWeeks = (weeksParsedData || []).slice(0, currentWeekNum - 1) || [];
 											const priorSum = priorWeeks.reduce((sum, wk) => {
@@ -739,7 +745,7 @@ function LeagueScores() {
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
-							const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap) : null;
+							const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)

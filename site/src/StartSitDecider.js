@@ -4,76 +4,115 @@
 import { STARTER_POSITION_NAMES } from './global_constants';
 import { getPlayerInfo } from './PlayerLookup';
 
-// Helper: determine if a player is injured based on their injury status
-// NOTE: "Q" (Questionable) is NOT considered injured for start/sit purposes
-// Only Out, Doubtful, IR, Suspended, PUP, NA are considered injured
-function isPlayerInjured(playerId, playersData, playerIdMap, injuriesMap) {
+// Helper: determine detailed injury category for a player.
+// Categories:
+// - 'healthy'       -> no notable designation
+// - 'questionable'  -> Q
+// - 'doubtful'      -> D
+// - 'injured'       -> Out, IR, Suspended, PUP, NA, etc.
+function getInjuryCategory(playerId, playersData, playerIdMap, injuriesMap) {
+  function extractStatus(raw) {
+    if (!raw) {
+      return null;
+    }
+    const s = String(raw).toLowerCase();
+    if (s === 'q' || s.includes('questionable')) {
+      return 'questionable';
+    }
+    if (s === 'd' || s.includes('doubtful')) {
+      return 'doubtful';
+    }
+    if (/out|pup|suspended|ir|injured reserve|na/.test(s)) {
+      return 'injured';
+    }
+    return null;
+  }
+
   // First check the injuriesMap (used for past weeks)
   if (injuriesMap && typeof injuriesMap === 'object') {
-    const status = injuriesMap[String(playerId)];
-    if (status) {
-      const s = String(status).toLowerCase();
-      // Exclude questionable - it's not considered injured for lineup decisions
-      if (s === 'questionable' || s === 'q') {
-        return false;
-      }
-      // Check for actual injury statuses
-      if (/out|pup|doubtful|suspended|ir|injured reserve|na/i.test(status)) {
-        return true;
-      }
+    const raw = injuriesMap[String(playerId)];
+    const cat = extractStatus(raw);
+    if (cat) {
+      return cat;
     }
   }
-  
+
   // Also check playersData for current week injury status
   if (playersData && playerIdMap) {
     const info = getPlayerInfo(playerId, playersData, playerIdMap);
     if (info) {
-      const status = info.injury_status || 
-                     info.injury_notes || 
-                     (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null);
-      if (status) {
-        const s = String(status).toLowerCase();
-        // Exclude questionable - it's not considered injured for lineup decisions
-        if (s === 'questionable' || s === 'q') {
-          return false;
-        }
-        // Check for actual injury statuses
-        if (/out|pup|doubtful|suspended|ir|injured reserve|na/i.test(status)) {
-          return true;
-        }
+      const raw =
+        info.injury_status ||
+        info.injury_notes ||
+        (info.status &&
+          /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(
+            info.status
+          )
+          ? info.status
+          : null);
+      const cat = extractStatus(raw);
+      if (cat) {
+        return cat;
       }
     }
   }
-  
-  return false;
+
+  return 'healthy';
+}
+
+// Backwards-compatible helper: determine if a player should be treated as injured
+// for lineup decisions. Doubtful and the more severe categories are considered injured;
+// Questionable (Q) is not.
+function isPlayerInjured(playerId, playersData, playerIdMap, injuriesMap) {
+  const cat = getInjuryCategory(playerId, playersData, playerIdMap, injuriesMap);
+  return cat === 'doubtful' || cat === 'injured';
 }
 
 // Helper: sort players by priority rules
 // Precedence (highest priority first):
 // 1. Score (highest first)
-// 2. Injury status (healthy/Q > injured)
-// 3. Game status (unplayed > in-progress > completed)
-// 4. Player ID (stable sort)
-function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap) {
+// 2. Injury status (healthy/Q > injured) – only when scores are equal
+// 3. BYE status (non-BYE > BYE) – only when scores and injury are equal
+// 4. Game status (unplayed > in-progress > completed) – only when scores, injury and BYE are equal
+// 5. Season totals (highest first) – only when scores, injury, BYE and game status are equal
+// 6. Player ID (stable sort)
+function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap) {
   return function sortByGameAware(players) {
     return players.slice().sort((a, b) => {
       // RULE 1: Score - highest score wins
       if (b.pts !== a.pts) {
         return b.pts - a.pts;
       }
-      
-      // RULE 2: Injury status - healthy/questionable preferred over injured
-      // (Out, Doubtful, IR, Suspended, PUP, NA lose priority)
-      const aInjured = isPlayerInjured(a.id, playersData, playerIdMap, injuriesMap);
-      const bInjured = isPlayerInjured(b.id, playersData, playerIdMap, injuriesMap);
-      if (aInjured !== bInjured) {
-        return aInjured ? 1 : -1; // non-injured (false) sorts before injured (true)
+
+      // From here down, scores are exactly equal.
+
+      // RULE 2: Injury tier (within equal scores)
+      // Tier order (best to worst):
+      //   healthy/questionable  <  doubtful (D)  <  injured (Out/IR/Susp/etc.)
+      const aInjuryCat = getInjuryCategory(a.id, playersData, playerIdMap, injuriesMap);
+      const bInjuryCat = getInjuryCategory(b.id, playersData, playerIdMap, injuriesMap);
+      function injuryRank(cat) {
+        if (cat === 'doubtful') { return 1; }
+        if (cat === 'injured') { return 2; }
+        // 'healthy' and 'questionable' treated the same
+        return 0;
       }
-      
-      // RULE 3: Game status - unplayed > in-progress > completed
+      const aInjuryRank = injuryRank(aInjuryCat);
+      const bInjuryRank = injuryRank(bInjuryCat);
+      if (aInjuryRank !== bInjuryRank) {
+        return aInjuryRank - bInjuryRank; // lower rank (healthier) sorts first
+      }
+
       // Determine game status for each player
       const aLab = playerGameLabels && playerGameLabels[a.id];
       const bLab = playerGameLabels && playerGameLabels[b.id];
+
+      // RULE 3: BYE status - non-BYE before BYE when otherwise tied
+      const aBye = !!(aLab && aLab.text === 'BYE');
+      const bBye = !!(bLab && bLab.text === 'BYE');
+      if (aBye !== bBye) {
+        return aBye ? 1 : -1; // non-BYE (false) sorts before BYE (true)
+      }
       
       // Game status values: 0 = unplayed, 1 = in-progress, 2 = completed
       const getGameStatus = (label) => {
@@ -92,11 +131,21 @@ function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap) {
       const aGameStatus = getGameStatus(aLab);
       const bGameStatus = getGameStatus(bLab);
       
+      // RULE 4: Game status - unplayed > in-progress > completed
       if (aGameStatus !== bGameStatus) {
         return aGameStatus - bGameStatus; // lower value (unplayed) sorts first
       }
-      
-      // RULE 4: Stable sort by player ID
+
+      // RULE 5: Season totals - higher season total wins
+      if (playerSeasonTotalsMap) {
+        const aSeasonTotal = playerSeasonTotalsMap[String(a.id)] || 0;
+        const bSeasonTotal = playerSeasonTotalsMap[String(b.id)] || 0;
+        if (aSeasonTotal !== bSeasonTotal) {
+          return bSeasonTotal - aSeasonTotal; // higher total sorts first
+        }
+      }
+
+      // RULE 6: Stable sort by player ID
       const aId = String(a.id || '');
       const bId = String(b.id || '');
       if (aId < bId) {
@@ -143,7 +192,7 @@ function attachPositions(players, playersData, playerIdMap) {
 }
 
 // Core export: compute optimal starters/bench
-export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabels = null, injuriesMap = null) {
+export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabels = null, injuriesMap = null, playerSeasonTotalsMap = null) {
   if (!teamScore) {
     return teamScore;
   }
@@ -177,7 +226,7 @@ export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabe
   const counts = getPositionCountsFromConfig();
 
   // Group by position
-  const sortByPointsDesc = buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap);
+  const sortByPointsDesc = buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap);
   const qbs = sortByPointsDesc(combined.filter(p => p.position === 'QB'));
   const rbs = sortByPointsDesc(combined.filter(p => p.position === 'RB'));
   const wrs = sortByPointsDesc(combined.filter(p => p.position === 'WR'));

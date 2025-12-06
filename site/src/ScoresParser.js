@@ -64,6 +64,38 @@ export function getPlayerTotals(weeksParsedData) {
   return result;
 }
 
+export function getPlayerSeasonTotalsMap(weeksParsedData) {
+  // Returns: { playerId: totalSeasonPoints }
+  // This aggregates points across ALL rosters for each player
+  const result = {};
+  if (!weeksParsedData || !Array.isArray(weeksParsedData)) {
+    return result;
+  }
+  for (const week of weeksParsedData) {
+    if (!week || !Array.isArray(week)) {
+      continue;
+    }
+    for (const entry of week) {
+      if (!entry || !entry.players_points) {
+        continue;
+      }
+      for (const [pid, pts] of Object.entries(entry.players_points)) {
+        if (pid && pts != null && typeof pts === 'number') {
+          if (!result[pid]) {
+            result[pid] = 0;
+          }
+          result[pid] += pts;
+        }
+      }
+    }
+  }
+  // Round to one decimal for consistency
+  for (const pid in result) {
+    result[pid] = Math.round(result[pid] * 10) / 10;
+  }
+  return result;
+}
+
 export function getWeekScoreBreakdown(weeksParsedData, week) {
   // week is 1-based index
   if (!weeksParsedData || !weeksParsedData[week - 1]) return {};

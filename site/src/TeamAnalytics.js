@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell } from 'recharts';
-import { getWeeklyStandings, getPositionalBreakdownData, getWeekScoreBreakdown } from './ScoresParser';
+import { getWeeklyStandings, getPositionalBreakdownData, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
 import PositionAnalytics from './PositionAnalytics';
@@ -252,6 +252,10 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     return endWeek;
   }, [endWeek, urlYear]);
 
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
+
   // Build data for the chart using StartSit totals per week
   const weeklyScoresData = weeklyStandings.map((weekArr, i) => {
     const weekNum = adjustedStartWeek + i;
@@ -261,7 +265,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
       const raw = breakdown[rid];
       let pts = row.points;
       if (raw) {
-        const computed = StartSitSort(raw, playersData, playerIdMap);
+        const computed = StartSitSort(raw, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
         pts = computed && typeof computed.starterTotal === 'number' ? computed.starterTotal : pts;
       }
       return { rosterId: rid, points: pts };

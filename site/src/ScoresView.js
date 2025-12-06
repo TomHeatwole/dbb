@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from './DateHelper';
 import WeekSelector from './WeekSelector';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
-import { getWeekScoreBreakdown, getStandings } from './ScoresParser';
+import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import useIsMobile from './useIsMobile';
@@ -224,6 +224,10 @@ function ScoresView({
     };
   }, [season, week, playerIdMap]);
 
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
+
   // Compute player->game labels for the selected week (web tables)
   useEffect(() => {
     if (!playersData || !playerIdMap || !weeksParsedData) {
@@ -426,7 +430,7 @@ function ScoresView({
           const raw = currentBreakdown[s.roster_id];
           let liveTotal = s.points_scored || 0;
           if (raw) {
-            const computed = StartSitSort(raw, playersData, playerIdMap, null, injuriesMap);
+            const computed = StartSitSort(raw, playersData, playerIdMap, null, injuriesMap, playerSeasonTotalsMap);
             if (computed && typeof computed.starterTotal === 'number') {
               const priorWeeks = (weeksParsedData || []).slice(0, currentWeekNum - 1) || [];
               const priorSum = priorWeeks.reduce((sum, wkArr) => {
@@ -472,7 +476,7 @@ function ScoresView({
     .map((e) => {
       const rid = e.roster_id;
       const raw = breakdownByRoster[rid];
-      const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap) : null;
+      const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap) : null;
       const pts = computed
         ? computed.starterTotal
         : typeof e.points === 'number'

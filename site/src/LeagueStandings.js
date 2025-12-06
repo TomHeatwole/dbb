@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import InfoPageWrapper from './InfoPageWrapper';
 import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
 import { CURRENT_YEAR } from './DateHelper';
 import { getCurrentNFLWeek, getCompletedWeeksCount, isCurrentWeekCompleted } from './DateHelper';
-import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
+import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
 import { StartSitSort } from './StartSitDecider';
@@ -156,6 +156,10 @@ function LeagueStandings() {
     return () => { cancelled = true; };
   }, [season, weeksParsedData, playersData, playerIdMap]);
 
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
+
   function getTeamName(rosterId) {
     if (!rosters || !users) return `Team ${rosterId}`;
     const roster = rosters.find(r => String(r.roster_id) === String(rosterId));
@@ -192,7 +196,7 @@ function LeagueStandings() {
           const breakdown = getWeekScoreBreakdown(weeksParsedData, thisWeekNum);
           const teamScore = breakdown && breakdown[rosterId];
           if (teamScore) {
-            const computed = StartSitSort(teamScore, playersData, playerIdMap);
+            const computed = StartSitSort(teamScore, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
             if (computed && typeof computed.starterTotal === 'number') {
               pts = computed.starterTotal;
             }
@@ -232,7 +236,7 @@ function LeagueStandings() {
           const wb = getWeekScoreBreakdown(weeksParsedData, weekIndex1Based) || {};
           const raw = wb && wb[rosterId];
           if (raw) {
-            const computed = StartSitSort(raw, playersData, playerIdMap);
+            const computed = StartSitSort(raw, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
             if (computed && typeof computed.starterTotal === 'number') {
               return Math.round(computed.starterTotal * 10) / 10;
             }
@@ -469,7 +473,7 @@ function LeagueStandings() {
     try {
       const raw = wbAll && wbAll[rosterIdForCalc];
       if (raw && playersData && playerIdMap) {
-        const computed = StartSitSort(raw, playersData, playerIdMap);
+        const computed = StartSitSort(raw, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
         scoreThisWeek = computed && typeof computed.starterTotal === 'number' ? Math.round(computed.starterTotal * 10) / 10 : 0;
       }
     } catch (_) {}

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { trackPageLoad } from './UsageTracker';
 import { useSearchParams, useParams } from 'react-router-dom';
-import { getWeekScoreBreakdown } from './ScoresParser';
+import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { getPlayerInfo, fetchPlayersData } from './PlayerLookup';
 import { STARTER_POSITION_NAMES } from './global_constants';
@@ -155,10 +155,13 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     return () => { cancelled = true; };
   }, [season, week, playerIdMap]);
 
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
 
   // Get week breakdown for this roster
   const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
-  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap, null, injuriesMap) : null;
+  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap, null, injuriesMap, playerSeasonTotalsMap) : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
   useEffect(() => {

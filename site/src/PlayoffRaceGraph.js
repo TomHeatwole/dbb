@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { isCurrentWeekCompleted } from './DateHelper';
 import { StartSitSort } from './StartSitDecider';
-import { getWeekScoreBreakdown } from './ScoresParser';
+import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import useIsMobile from './useIsMobile';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea } from 'recharts';
 
-function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds, playersData, playerIdMap) {
+function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds, playersData, playerIdMap, playerSeasonTotalsMap) {
   if (!Array.isArray(weeksParsedData)) {
     return { data: [], rosterIds: Array.from(rosterIds || []) };
   }
@@ -38,7 +38,7 @@ function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds, pl
       const raw = breakdown[rid];
       let pts = 0;
       if (raw) {
-        const computed = StartSitSort(raw, playersData, playerIdMap);
+        const computed = StartSitSort(raw, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
         pts = computed && typeof computed.starterTotal === 'number' ? computed.starterTotal : 0;
       } else if (typeof entry.points === 'number') {
         pts = entry.points;
@@ -114,9 +114,12 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
     return n.length > 8 ? (n.slice(0, 8) + '…') : n;
   }
   const rosterIdSet = useMemo(() => new Set(rosterIds || Object.keys(rosterIdToName || {}).map(Number)), [rosterIds, rosterIdToName]);
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
   const { data, rosterIds: seriesRosterIds } = useMemo(
-    () => computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIdSet, playersData, playerIdMap),
-    [weeksParsedData, completedWeeks, rosterIdSet, playersData, playerIdMap]
+    () => computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIdSet, playersData, playerIdMap, playerSeasonTotalsMap),
+    [weeksParsedData, completedWeeks, rosterIdSet, playersData, playerIdMap, playerSeasonTotalsMap]
   );
 
   const [yMinRaw, yMaxRaw] = useMemo(() => computeRoundedYDomain(data, seriesRosterIds), [data, seriesRosterIds]);

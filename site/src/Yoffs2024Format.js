@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
-import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
+import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import useIsMobile from './useIsMobile';
 import StandingsRowHeader from './StandingsRowHeader';
 import { CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted } from './DateHelper';
@@ -113,6 +113,7 @@ function Yoffs2024Format({
         });
 
         // Regular season (weeks before playoffs) stats (total + PPG)
+        const seasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
         const regularStatsByRoster = {};
         for (let wk = 1; wk <= 14; wk += 1) {
           const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
@@ -132,7 +133,7 @@ function Yoffs2024Format({
             const raw = breakdown[rid];
             if (raw && players && idMap) {
               try {
-                const computed = StartSitSort(raw, players, idMap);
+                const computed = StartSitSort(raw, players, idMap, null, null, seasonTotalsMap);
                 if (computed && typeof computed.starterTotal === 'number') {
                   pts = Math.round(computed.starterTotal * 10) / 10;
                 }
@@ -186,7 +187,7 @@ function Yoffs2024Format({
               if (players && idMap) {
                 const teamScore = breakdown[ridKey];
                 if (teamScore) {
-                  const computed = StartSitSort(teamScore, players, idMap);
+                  const computed = StartSitSort(teamScore, players, idMap, null, null, seasonTotalsMap);
                   if (computed && typeof computed.starterTotal === 'number') {
                     weekTotal = Math.round(computed.starterTotal * 10) / 10;
                   }
@@ -355,6 +356,10 @@ function Yoffs2024Format({
       cancelled = true;
     };
   }, [season]);
+
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
 
   useEffect(() => {
     const isCurrentSeasonLocal = season === CURRENT_YEAR;
@@ -571,7 +576,7 @@ function Yoffs2024Format({
                         const wbAll = liveWeekBreakdown;
                         const raw = wbAll && wbAll[rosterId];
                         if (raw && playersData && playerIdMap) {
-                          const computed = StartSitSort(raw, playersData, playerIdMap);
+                          const computed = StartSitSort(raw, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
                           if (computed && typeof computed.starterTotal === 'number') {
                             scoreThisWeek = Math.round(computed.starterTotal * 10) / 10;
                           }

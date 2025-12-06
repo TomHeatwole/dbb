@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import ScoresView from './ScoresView';
 import { fetchScoresData } from './ScoresLookup';
-import { getStandings, getWeekScoreBreakdown } from './ScoresParser';
+import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 
@@ -69,6 +69,7 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
           seedPlaceById[Number(r.roster_id)] = r.place;
         });
 
+        const seasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
         const statsByRoster = {};
         for (let wk = startWeek; wk <= endWeek; wk += 1) {
           const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
@@ -102,7 +103,7 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
               if (players && idMap) {
                 const teamScore = breakdown[ridKey];
                 if (teamScore) {
-                  const computed = StartSitSort(teamScore, players, idMap);
+                  const computed = StartSitSort(teamScore, players, idMap, null, null, seasonTotalsMap);
                   if (computed && typeof computed.starterTotal === 'number') {
                     weekTotal = Math.round(computed.starterTotal * 10) / 10;
                   }

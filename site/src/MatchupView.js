@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { fetchTeamData } from './TeamLookup';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from './PlayerLookup';
-import { getWeekScoreBreakdown } from './ScoresParser';
+import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from './StartSitDecider';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
@@ -107,6 +107,10 @@ function MatchupView({
   const isSingleWeekWithNoWeeksProp =
     effectiveWeeks.length === 1 &&
     !(Array.isArray(weeks) && weeks.length > 0);
+
+  const playerSeasonTotalsMap = useMemo(() => {
+    return getPlayerSeasonTotalsMap(weeksParsedData);
+  }, [weeksParsedData]);
 
   // When the matchup (teams/weeks/season) changes, reset per-week expansion
   // so defaults are recalculated for the new game.
@@ -598,14 +602,6 @@ function MatchupView({
     );
   }
 
-  if (!weeksParsedData || !hasAnyWeeks) {
-    return (
-      <div className="yoffs-matchup-view-error">
-        No matchup data found for this week.
-      </div>
-    );
-  }
-
   const weekBlocks = effectiveWeeks.map((w) => {
     const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, w) || {};
     const raw1 = breakdownByRoster[team1Id] || null;
@@ -619,11 +615,11 @@ function MatchupView({
 
     const breakdown1 =
       raw1 && playersData && playerIdMap
-        ? StartSitSort(raw1, playersData, playerIdMap, labelsForWeek, injuriesForWeek)
+        ? StartSitSort(raw1, playersData, playerIdMap, labelsForWeek, injuriesForWeek, playerSeasonTotalsMap)
         : null;
     const breakdown2 =
       raw2 && playersData && playerIdMap
-        ? StartSitSort(raw2, playersData, playerIdMap, labelsForWeek, injuriesForWeek)
+        ? StartSitSort(raw2, playersData, playerIdMap, labelsForWeek, injuriesForWeek, playerSeasonTotalsMap)
         : null;
 
     const starters1 =
