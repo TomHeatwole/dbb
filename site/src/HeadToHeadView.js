@@ -44,7 +44,9 @@ function HeadToHeadView({
   preloadedPlayerIdMap = null,
   usePlayoffTheme = true,
   displaySeeds = false,
-  expandedWeeksOverride = null
+  expandedWeeksOverride = null,
+  showMatchup = true,
+  controls = null
 }) {
   const safeSelected = normalizeSelectedIds(selectedIds);
   const [team1Id, team2Id] = useMemo(() => {
@@ -92,14 +94,18 @@ function HeadToHeadView({
         <div>No teams found for this season.</div>
       )}
       {!loading && !error && teams && teams.length > 0 && (
-        <HeadToHeadSelectorWeb
-          teams={teams}
-          initialSelection={safeSelected}
-          onSelectionChange={handleSelectionChange}
-          usePlayoffTheme={usePlayoffTheme}
-        />
+        <>
+          <HeadToHeadSelectorWeb
+            teams={teams}
+            initialSelection={safeSelected}
+            onSelectionChange={handleSelectionChange}
+            usePlayoffTheme={usePlayoffTheme}
+          />
+          {controls}
+        </>
       )}
-      {!loading &&
+      {showMatchup &&
+        !loading &&
         !error &&
         preloadedWeeksData &&
         preloadedPlayersData &&

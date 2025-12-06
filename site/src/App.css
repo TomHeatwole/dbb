@@ -2278,6 +2278,10 @@ html {
   }
 }
 
+.season-h2h-matchup-wrapper .yoffs-matchup-week-label-static {
+  color: #4fb7ff;
+}
+
 /* Head to Head selector styles – unified mobile + desktop */
 .yoffs-head-to-head-container {
   width: 100%;
@@ -2497,6 +2501,44 @@ html {
     margin-top: 0.02rem; /* tighten gap between top row and name */
     text-align: center;
   }
+}
+
+.h2h-season-compressed-root {
+  margin-top: 1.5rem;
+}
+.h2h-season-buffer-row {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto 1.25rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(60, 80, 130, 0.7);
+  background: radial-gradient(circle at top left, rgba(79, 183, 255, 0.08), transparent),
+    rgba(15, 21, 50, 0.96);
+  box-sizing: border-box;
+}
+.h2h-season-buffer-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #cfe0ff;
+  margin-bottom: 0.25rem;
+}
+.h2h-season-buffer-totals {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+.h2h-season-buffer-total {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+.h2h-season-buffer-total--left {
+  text-align: left;
+}
+.h2h-season-buffer-total--right {
+  text-align: right;
 }
 
 @media (min-width: 40em) {

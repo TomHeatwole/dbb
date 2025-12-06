@@ -11,6 +11,7 @@ import { STARTER_POSITION_NAMES } from './global_constants';
 import useIsMobile from './useIsMobile';
 import MatchupWeekView from './MatchupWeekView';
 import { fetchInjuriesForWeek, getInjuryAbbreviation } from './InjuryLookup';
+import { readPlayersSnapshot } from './database';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -79,7 +80,12 @@ function MatchupView({
   preloadedPlayersData = null,
   preloadedPlayerIdMap = null,
   playoffBufferAmount = 0,
-  playoffBufferSide = null
+  playoffBufferSide = null,
+  bufferLabel = null,
+  bufferLeftText = null,
+  bufferRightText = null,
+  headerLeftOverride = null,
+  headerRightOverride = null
 }) {
   const [teamData, setTeamData] = useState(preloadedTeamData || null);
   const [weeksParsedData, setWeeksParsedData] = useState(preloadedWeeksData || null);
@@ -349,12 +355,51 @@ function MatchupView({
       for (let i = 0; i < effectiveWeeks.length; i += 1) {
         const w = effectiveWeeks[i];
         try {
-          // eslint-disable-next-line no-await-in-loop
-          const m = await fetchInjuriesForWeek(season, w);
-          if (cancelled) {
-            return;
+          const isCurrentSeasonLocal = String(season) === String(CURRENT_YEAR);
+          const currentWeekNum = getCurrentNFLWeek();
+          const isPreviousWeek = isCurrentSeasonLocal ? Number(w) < currentWeekNum : true;
+
+          let combined = {};
+
+          if (isPreviousWeek) {
+            try {
+              // eslint-disable-next-line no-await-in-loop
+              const snap = await readPlayersSnapshot(String(season), Number(w));
+              const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
+              if (data && !cancelled) {
+                const byPlayerId = {};
+                for (const [pid, p] of Object.entries(data)) {
+                  const status =
+                    (p &&
+                      (p.injury_status ||
+                        p.injury_notes ||
+                        (p.status &&
+                          /out|pup|questionable|doubtful|suspended|ir|injured reserve|na/i.test(
+                            p.status
+                          )
+                          ? p.status
+                          : null))) ||
+                    null;
+                  if (status) {
+                    byPlayerId[String(pid)] = String(status);
+                  }
+                }
+                combined = byPlayerId;
+              }
+            } catch (_) {
+              // fall through to file-based
+            }
           }
-          let combined = { ...(m || {}) };
+
+          if (!combined || Object.keys(combined).length === 0) {
+            // eslint-disable-next-line no-await-in-loop
+            const m = await fetchInjuriesForWeek(season, w);
+            if (cancelled) {
+              return;
+            }
+            combined = { ...(m || {}) };
+          }
+
           try {
             if (playerIdMap && typeof playerIdMap === 'object') {
               // Mirror the remapping logic from TeamScores: if we have an
@@ -769,9 +814,12 @@ function MatchupView({
   // Add buffer to totals for championship
   const hasBuffer =
     effectiveWeeks.length === 1 &&
-    typeof playoffBufferAmount === 'number' &&
-    playoffBufferAmount > 0 &&
-    (playoffBufferSide === 'left' || playoffBufferSide === 'right');
+    (
+      (typeof playoffBufferAmount === 'number' && playoffBufferAmount > 0 &&
+        (playoffBufferSide === 'left' || playoffBufferSide === 'right')) ||
+      bufferLeftText != null ||
+      bufferRightText != null
+    );
 
   if (weekBlocks.length === 1) {
     let leftVal = weekBlocks[0].leftTotalValue != null ? weekBlocks[0].leftTotalValue : 0;
@@ -812,6 +860,13 @@ function MatchupView({
     headerRightTotal = hasRight ? rightSum.toFixed(1) : headerRightTotal;
   }
 
+  if (headerLeftOverride != null) {
+    headerLeftTotal = headerLeftOverride;
+  }
+  if (headerRightOverride != null) {
+    headerRightTotal = headerRightOverride;
+  }
+
   const completedWeeks = getCompletedWeeksCount(season);
   const lastWeekNumber =
     effectiveWeeks.length > 0 ? effectiveWeeks[effectiveWeeks.length - 1] : null;
@@ -824,7 +879,10 @@ function MatchupView({
   let leftIsLoser = false;
   let rightIsLoser = false;
 
-  if (allWeeksCompleted) {
+  const seasonComplete =
+    !isCurrentSeason || Number(completedWeeks) >= 17;
+
+  if (seasonComplete && allWeeksCompleted) {
     const leftVal = parseFloat(headerLeftTotal);
     const rightVal = parseFloat(headerRightTotal);
     if (Number.isFinite(leftVal) && Number.isFinite(rightVal)) {
@@ -946,16 +1004,20 @@ function MatchupView({
           onToggleExpanded={null}
           week={null}
           leftTotalText={
-            playoffBufferSide === 'left'
-              ? `+${playoffBufferAmount.toFixed(1)}`
-              : '-'
+            bufferLeftText != null
+              ? bufferLeftText
+              : (playoffBufferSide === 'left'
+                ? `+${playoffBufferAmount.toFixed(1)}`
+                : '-')
           }
           rightTotalText={
-            playoffBufferSide === 'right'
-              ? `+${playoffBufferAmount.toFixed(1)}`
-              : '-'
+            bufferRightText != null
+              ? bufferRightText
+              : (playoffBufferSide === 'right'
+                ? `+${playoffBufferAmount.toFixed(1)}`
+                : '-')
           }
-          labelOverride="Semis Buffer"
+          labelOverride={bufferLabel != null ? bufferLabel : 'Semis Buffer'}
           isBufferRow
           bufferSide={playoffBufferSide}
         />
