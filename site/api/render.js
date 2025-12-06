@@ -6,7 +6,7 @@ export default function handler(req, res) {
   // 1. Load your existing HTML (the file your app would normally serve)
   console.log("render hit:", req.url);
   console.log("lol");
-  const filePath = path.join(process.cwd(), "site", "build", "index.html");
+  const filePath = path.join(process.cwd(), "build", "index.html");
   let html = fs.readFileSync(filePath, "utf8");
   // html = html.replace(/"\/static\//g, '"/build/static/');
 

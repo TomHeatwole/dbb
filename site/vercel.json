@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/render.js": {
-      "includeFiles": "site/build/index.html"
+      "includeFiles": "build/index.html"
     }
   },
   "rewrites": [
