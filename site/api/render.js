@@ -1,17 +1,16 @@
 
 export default function handler(req, res) {
-    // Return HTML that includes a meta tag
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    // 1. Load your existing HTML (the file your app would normally serve)
+    const filePath = path.join(process.cwd(), "public", "index.html");
+    let html = fs.readFileSync(filePath, "utf8");
   
-    res.status(200).send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta name="hello" content="world">
-        </head>
-        <body>
-          <h1>Hello from your Vercel server-side function!</h1>
-        </body>
-      </html>
-    `);
+    // 2. Inject your server-side meta tag
+    const metaTag = `<meta name="hello" content="world">`;
+  
+    // simple injection before </head>
+    html = html.replace("</head>", `  ${metaTag}\n</head>`);
+  
+    // 3. Return the modified HTML
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.status(200).send(html);
   }
