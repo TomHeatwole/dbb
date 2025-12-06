@@ -5,6 +5,7 @@
     }
   },
   "rewrites": [
+    { "source": "/home/", "destination": "/api/render" }
   ]
 }
 
