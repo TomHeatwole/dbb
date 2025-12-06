@@ -1,2 +1,4 @@
 settings/settings.json
 lol.*
+.vercel
+.env*.local
