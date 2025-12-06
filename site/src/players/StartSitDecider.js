@@ -197,23 +197,8 @@ export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabe
     return teamScore;
   }
   
-  // Debug: log if we have injuries data
-  if (injuriesMap && typeof injuriesMap === 'object') {
-    const injuryCount = Object.keys(injuriesMap).length;
-    console.log('[StartSitDecider] StartSitSort called with', injuryCount, 'injuries');
-    if (injuryCount > 0) {
-      console.log('[StartSitDecider] Injuries map sample:', Object.keys(injuriesMap).slice(0, 5), 'first entries:', Object.entries(injuriesMap).slice(0, 3));
-    }
-  } else {
-    console.log('[StartSitDecider] StartSitSort called WITHOUT injuries map');
-  }
-  
   const starters = Array.isArray(teamScore.starters) ? teamScore.starters : [];
   const bench = Array.isArray(teamScore.bench) ? teamScore.bench : [];
-  
-  // Debug: log player IDs we're working with
-  const allPlayerIds = [...starters, ...bench].filter((p) => p && p.id && String(p.id) !== '0').map(p => p.id);
-  console.log('[StartSitDecider] Processing players:', allPlayerIds);
   
   // Filter out API placeholder rows that use id '0' or missing ids
   const filtered = [...starters, ...bench].filter((p) => p && p.id && String(p.id) !== '0');
