@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { deleteAllPlayerData, deletePlayerWeek, readAdminBlob, writeAdminBlob, readApiCacheLatestByKey, writeApiCacheWithKey, backupLatestData, clearCacheKeepLatest } from '../utils/database';
-import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { getCurrentNFLWeek } from '../utils/DateHelper';
 import { LEAGUE_ID } from '../utils/global_constants';
 import PageMeta from '../PageMeta';
 
@@ -95,14 +95,13 @@ function AdminControls() {
               onClick={async () => {
                 setFakeStatus(null);
                 try {
-                  const season = CURRENT_YEAR;
                   const week = getCurrentNFLWeek();
                   const leagueId = LEAGUE_ID;
                   const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;
                   const latest = await readApiCacheLatestByKey(cacheKey);
                   const data = latest && latest.data ? latest.data : [];
                   setFakeJson(JSON.stringify(data, null, 2));
-                  setFakeStatus(`Loaded season ${season}, week ${week}`);
+                  setFakeStatus(`Loaded week ${week}`);
                 } catch (e) {
                   setFakeStatus('Load failed');
                 }
@@ -125,7 +124,6 @@ function AdminControls() {
               onClick={async () => {
                 setFakeStatus(null);
                 try {
-                  const season = CURRENT_YEAR;
                   const week = getCurrentNFLWeek();
                   const leagueId = LEAGUE_ID;
                   const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;

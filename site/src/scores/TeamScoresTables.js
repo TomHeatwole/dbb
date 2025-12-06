@@ -144,6 +144,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <span className="player-name">
                       {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
                       {info && info.position ? ` (${info.position})` : ''}
+                      {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
                       <InjuryBadge playerId={p.id} info={info} />
                     </span>
                   </td>

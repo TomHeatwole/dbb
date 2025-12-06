@@ -1,22 +1,14 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getWeeklyStandings, getPositionalBreakdownData, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
-import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
+import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import PositionAnalytics from '../players/PositionAnalytics';
 import PositionBreakdownTable from '../players/PositionBreakdownTable';
 import PlayerBreakdownTable from '../players/PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
-
-const chartConfigs = [
-  { title: 'Weekly Scores', key: 'weeklyScores' },
-  { title: 'Bench Points Trend', key: 'benchTrend' },
-  { title: 'Starter Consistency', key: 'starterConsistency' },
-  { title: 'Weekly Score Differential', key: 'scoreDiff' },
-  { title: 'Projected vs Actual Points', key: 'projVsActual' },
-];
 
 const WEEKS = Array.from({ length: 17 }, (_, i) => i + 1);
 

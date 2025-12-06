@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 const DEFAULT_TITLE = 'The Hwang Dynasty';
 const DEFAULT_DESCRIPTION = 'Because Sleeper is too lazy for BestBall in browser';

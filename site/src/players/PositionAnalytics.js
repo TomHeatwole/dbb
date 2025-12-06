@@ -130,7 +130,6 @@ export default function PositionAnalytics({
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
-                      const userTeam = positionalBreakdown.find(t => t.roster_id === rosterId);
                       const totalStarts = endWeek - startWeek + 1;
                       const playerStarts = d.count;
                       const startPct = totalStarts > 0 ? Math.round((playerStarts / totalStarts) * 1000) / 10 : 0;

@@ -1,9 +1,8 @@
 // DateHelper.js
 // Utility to get the current year as a string
 
-import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE, DEBUG_SCORES_LOG } from './global_constants';
+import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE } from './global_constants';
 import { readAdminBlob } from './database';
-import { PREVIOUS_YEARS } from './global_constants';
 
 export function getCurrentYear() {
   return String(new Date().getFullYear());

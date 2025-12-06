@@ -26,13 +26,17 @@ export function getStandings(weeksParsedData) {
   let place = 1;
   let i = 0;
   while (i < arr.length) {
-    const tieGroup = arr.filter(x => x.points_scored === arr[i].points_scored);
-    const numTied = tieGroup.length;
-    for (let j = 0; j < numTied; ++j) {
-      arr[i + j].place = place;
-      arr[i + j].numTied = numTied;
+    const pointsForPlace = arr[i].points_scored;
+    let j = i;
+    while (j < arr.length && arr[j].points_scored === pointsForPlace) {
+      j += 1;
     }
-    i += numTied;
+    const numTied = j - i;
+    for (let k = i; k < j; k += 1) {
+      arr[k].place = place;
+      arr[k].numTied = numTied;
+    }
+    i = j;
     place += numTied;
   }
   // Already sorted by score descending

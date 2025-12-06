@@ -1,5 +1,5 @@
 import { getPlayerInfo } from '../lookups/PlayerLookup';
-import { fetchPlayerHistoryByEspnId, fetchHistoriesByEspnIds, getTeamAtDate } from '../players/PlayerGameHistory';
+import { fetchHistoriesByEspnIds, getTeamAtDate } from '../players/PlayerGameHistory';
 
 const TEAM_ABBR_ALIASES = {
   WAS: 'WSH',

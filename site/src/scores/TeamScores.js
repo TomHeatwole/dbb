@@ -8,7 +8,7 @@ import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from './WeekSelector';
 import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
-import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from '../lookups/InjuryLookup';
+import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 
 // Lazy import to avoid circular deps at module init
 async function readPlayersSnapshotFromDb(season, week) {

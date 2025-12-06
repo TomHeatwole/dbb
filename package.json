@@ -1,4 +1,7 @@
 {
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "path-browserify": "^1.0.1",
     "react-router-dom": "^7.7.1"

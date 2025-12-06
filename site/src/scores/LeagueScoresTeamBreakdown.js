@@ -1,9 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import TeamScoresTables from './TeamScoresTables';
 
 export default function LeagueScoresTeamBreakdown({ weekBreakdown, week, rosterId, benchOpen, onToggleBench, benchTotal, playersData, playerIdMap, searchParams, playerGameLabels, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
-  const qs = searchParams && searchParams.toString() ? `?${searchParams.toString()}` : '';
   return (
     <div className="standings-row-expand-inner">
       <TeamScoresTables weekBreakdown={weekBreakdown} playersData={playersData} playerIdMap={playerIdMap} renderOnly="starters" playerGameLabels={playerGameLabels} isActiveWeek={isActiveWeek} injuriesMap={injuriesMap} showCurrentInjury={showCurrentInjury} playerHighlightMap={playerHighlightMap} playersTeamMap={playersTeamMap} />

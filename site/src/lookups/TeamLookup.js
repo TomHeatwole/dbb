@@ -1,4 +1,4 @@
-import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES, teamOverrides } from '../utils/global_constants';
+import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from '../utils/global_constants';
 import { getCurrentYear } from '../utils/DateHelper';
 
 // Helper to get avatar URL from value (ID or URL)

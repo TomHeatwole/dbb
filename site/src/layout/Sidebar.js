@@ -7,7 +7,7 @@ const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
 
 function Sidebar() {
   const [teams, setTeams] = useState([]);
-  const [_, setPlayers] = useState([]);
+  const [, setPlayers] = useState([]);
   const [teamsOpen, setTeamsOpen] = useState(true);
   const location = useLocation();
   const isHome = location.pathname === '/home/';

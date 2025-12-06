@@ -60,14 +60,6 @@ function getInjuryCategory(playerId, playersData, playerIdMap, injuriesMap) {
   return 'healthy';
 }
 
-// Backwards-compatible helper: determine if a player should be treated as injured
-// for lineup decisions. Doubtful and the more severe categories are considered injured;
-// Questionable (Q) is not.
-function isPlayerInjured(playerId, playersData, playerIdMap, injuriesMap) {
-  const cat = getInjuryCategory(playerId, playersData, playerIdMap, injuriesMap);
-  return cat === 'doubtful' || cat === 'injured';
-}
-
 // Helper: sort players by priority rules
 // Precedence (highest priority first):
 // 1. Score (highest first)

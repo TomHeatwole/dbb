@@ -104,12 +104,15 @@ function MatchupView({
   const isMobileView = useIsMobile();
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
   const currentWeekNum = getCurrentNFLWeek();
-  const effectiveWeeks =
-    Array.isArray(weeks) && weeks.length > 0
-      ? weeks
-      : week != null
-      ? [week]
-      : [];
+  const effectiveWeeks = useMemo(() => {
+    if (Array.isArray(weeks) && weeks.length > 0) {
+      return weeks;
+    }
+    if (week != null) {
+      return [week];
+    }
+    return [];
+  }, [weeks, week]);
   const hasAnyWeeks = effectiveWeeks.length > 0;
 
   const isSingleWeekWithNoWeeksProp =

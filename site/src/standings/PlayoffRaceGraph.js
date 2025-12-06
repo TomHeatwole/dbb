@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { isCurrentWeekCompleted } from '../utils/DateHelper';
 import { StartSitSort } from '../players/StartSitDecider';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import useIsMobile from '../hooks/useIsMobile';

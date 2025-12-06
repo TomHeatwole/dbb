@@ -4,12 +4,10 @@ import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from '../lookups/Pl
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { PREVIOUS_YEARS  } from '../utils/global_constants';
 import { CURRENT_YEAR } from '../utils/DateHelper';
-import FullRoster from '../teams/FullRoster';
 import TeamSummary from '../teams/TeamSummary';
 import TeamScores from '../scores/TeamScores';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import TeamAnalytics from '../teams/TeamAnalytics';
-import useIsMobile from '../hooks/useIsMobile';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import PageMeta from '../PageMeta';
@@ -43,7 +41,6 @@ function TeamPage() {
   const [users, setUsers] = useState(null);
   const teamAnalyticsRef = useRef();
   const teamScoresRef = useRef();
-  const isMobile = useIsMobile();
   const dropdownRef = useRef(null);
 
   const updateQueryParams = React.useCallback((changes) => {

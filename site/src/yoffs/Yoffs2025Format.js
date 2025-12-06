@@ -35,7 +35,6 @@ function Yoffs2025Format({
     { id: 3, label: 'Championship' },
   ];
 
-  const semiStartGlobal = playoffStartWeek;
   const semiEndGlobal = Math.max(playoffStartWeek, playoffEndWeek - 1);
   const completedWeeksForSeason = getCompletedWeeksCount(season);
   const isCurrentSeasonGlobal = String(season) === String(CURRENT_YEAR);

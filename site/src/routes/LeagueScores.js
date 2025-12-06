@@ -1,22 +1,21 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
-import { PREVIOUS_YEARS, LEAGUE_ID, DEBUG_SCORES_LOG } from '../utils/global_constants';
+import { PREVIOUS_YEARS, LEAGUE_ID } from '../utils/global_constants';
 import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek, shouldPollCurrentWeek } from '../utils/DateHelper';
 import WeekSelector from '../scores/WeekSelector';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
-import TeamScoresTables from '../scores/TeamScoresTables';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
 import MobileTeamScoreSummary from '../scores/MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
-import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from '../scores/GamesParser';
-import { fetchInjuriesForWeek, maybeRemapInjuriesKeysUsingPlayerIdMap } from '../lookups/InjuryLookup';
+import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
+import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { readApiCacheLatestByKey, readPollingIntervalMs, readPlayersSnapshot } from '../utils/database';
 import PageMeta from '../PageMeta';
 
@@ -31,6 +30,9 @@ const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b
 function MobileScaled({ children, className = 'mobile-standings-scale-70' }) {
 	const innerRef = useRef(null);
 	const [heightPx, setHeightPx] = useState(null);
+	// Align prevData baseline with first-loaded labels; intentionally
+	// depends only on coarse-grained keys to avoid excessive recalcs.
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		const el = innerRef.current;
 		if (!el) return;
@@ -97,20 +99,7 @@ function LeagueScores() {
 		return getPlayerSeasonTotalsMap(weeksParsedData);
 	}, [weeksParsedData]);
 
-	function toOrdinal(n) {
-		const num = Number(n);
-		if (!Number.isFinite(num)) { return String(n); }
-		const v = num % 100;
-		if (v >= 11 && v <= 13) { return `${num}th`; }
-		switch (num % 10) {
-			case 1: return `${num}st`;
-			case 2: return `${num}nd`;
-			case 3: return `${num}rd`;
-			default: return `${num}th`;
-		}
-	}
-
-	function buildExpandedData(srcWeeksParsedData, targetWeek, labels, seasonTotalsMap) {
+	const buildExpandedData = useCallback((srcWeeksParsedData, targetWeek, labels, seasonTotalsMap) => {
 		if (!srcWeeksParsedData) { return null; }
 		const breakdownByRoster = getWeekScoreBreakdown(srcWeeksParsedData, targetWeek) || {};
 		const standings = getStandings(srcWeeksParsedData) || [];
@@ -143,7 +132,7 @@ function LeagueScores() {
 		const teams = {};
 		rows.forEach(r => { teams[r.rosterId] = { total: r.total, starters: r.starters, bench: r.bench }; });
 		return { order, teams };
-	}
+	}, [playersData, playerIdMap, playerGameLabels, injuriesMap]);
 
 	function compareExpanded(prev, next) {
 		if (!prev || !next) { return []; }
@@ -267,11 +256,6 @@ function LeagueScores() {
 				setUsers(teamData.users);
 				setPlayersData(players);
 				setPlayerIdMap(idMap);
-				try {
-					const seasonTotals = getPlayerSeasonTotalsMap(weeksData);
-					const initExpanded = buildExpandedData(weeksData, week, playerGameLabels, seasonTotals);
-					setPrevData(initExpanded);
-				} catch (_) {}
 			})
 			.catch(() => {
 				setWeeksParsedData(null);
@@ -363,7 +347,7 @@ function LeagueScores() {
 			})
 			.catch(() => { if (!cancelled) { setPlayerGameLabels({}); } });
 		return () => { cancelled = true; };
-	}, [season, week, playersData, playerIdMap, weeksParsedData]);
+	}, [season, week, playersData, playerIdMap, weeksParsedData, playersTeamMap]);
 
 	// Align prevData baseline with first-loaded playerGameLabels for this season/week
 	useEffect(() => {
@@ -378,9 +362,12 @@ function LeagueScores() {
 		} catch (_) {}
 			labelBaselineKeyRef.current = key;
 		}
-	}, [playerGameLabels, weeksParsedData, season, week]);
+	}, [playerGameLabels, weeksParsedData, season, week, buildExpandedData, playerSeasonTotalsMap]);
 
 	// Load per-player team mapping from weekly players snapshot (current season only)
+	// Live polling effect has intentionally curated dependencies; suppress
+	// exhaustive-deps noise for this complex flow.
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		let cancelled = false;
 		(async () => {
@@ -611,7 +598,7 @@ function LeagueScores() {
 			window.removeEventListener('focus', handleFocus);
 			window.removeEventListener('blur', handleBlur);
 		};
-	}, [season, week, weeksParsedData, playersData, playerIdMap, playerGameLabels]);
+	}, [season, week, weeksParsedData, playersData, playerIdMap, playerGameLabels, buildExpandedData, prevData]);
 
 
 	function getTeamName(rosterId) {
@@ -770,8 +757,7 @@ function LeagueScores() {
 							const teamName = getTeamName(rosterId);
 							const avatarUrl = getAvatar(rosterId);
 							const isExpanded = !!expanded[rosterId];
-									const weekBreakdown = breakdown;
-							const startersTotal = weekBreakdown ? weekBreakdown.starterTotal : 0;
+								const weekBreakdown = breakdown;
 							const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
 							const isActiveWeek = (season === CURRENT_YEAR) && (week === getCurrentNFLWeek());
 							const showCurrentInjury = (String(season) === String(CURRENT_YEAR)) && (week >= getCurrentNFLWeek());
@@ -852,15 +838,15 @@ function LeagueScores() {
 														const ownerAvatar = owner && (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url) ? (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url) : avatarUrl;
 														const teamLink = `/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
 														return (
-															<a className="team-expanded-owner" href={teamLink}>
+															<Link className="team-expanded-owner" to={teamLink}>
 																{ownerAvatar ? <img className="team-expanded-owner-avatar" src={ownerAvatar} alt={`${ownerName} avatar`} /> : null}
 																<span className="team-expanded-owner-name">{ownerName}</span>
-															</a>
+															</Link>
 														);
 													})()}
 												</div>
 												<div className="team-expanded-banner-center">
-													<a className="team-expanded-place" href="/standings">Place: #{place || 9999} ({Number(pfTotal || 0).toFixed(1)} PF)</a>
+													<Link className="team-expanded-place" to="/standings">Place: #{place || 9999} ({Number(pfTotal || 0).toFixed(1)} PF)</Link>
 												</div>
 												<div className="team-expanded-banner-right" />
 											</div>

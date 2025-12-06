@@ -247,19 +247,6 @@ function H2hPage() {
     return Array.from({ length: capped }, (_, idx) => idx + 1);
   }, [lastWeek, isCurrentSeason]);
 
-  const seedByRosterId = useMemo(() => {
-    const map = {};
-    (teamsForSelector || []).forEach((t) => {
-      if (!t || t.rosterId == null) {
-        return;
-      }
-      if (t.seed != null) {
-        map[String(t.rosterId)] = t.seed;
-      }
-    });
-    return map;
-  }, [teamsForSelector]);
-
   const handleHeadToHeadSelectionChange = (nextSlots) => {
     const safe = Array.isArray(nextSlots) ? nextSlots.slice(0, 2) : [null, null];
     while (safe.length < 2) {
@@ -314,17 +301,6 @@ function H2hPage() {
       )}
     </div>
   );
-
-  const [team1Id, team2Id] = useMemo(() => {
-    if (!Array.isArray(h2hSelectedIds) || h2hSelectedIds.length !== 2) {
-      return [null, null];
-    }
-    const a = h2hSelectedIds[0] != null ? Number(h2hSelectedIds[0]) : null;
-    const b = h2hSelectedIds[1] != null ? Number(h2hSelectedIds[1]) : null;
-    const safeA = Number.isFinite(a) ? a : null;
-    const safeB = Number.isFinite(b) ? b : null;
-    return [safeA, safeB];
-  }, [h2hSelectedIds]);
 
   useEffect(() => {
     if (!Array.isArray(weeksParsedData) || weeksParsedData.length === 0) {

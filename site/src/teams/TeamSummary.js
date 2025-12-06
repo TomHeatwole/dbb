@@ -191,7 +191,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     } catch (_) {
       return baseStandings.find(s => s.roster_id === rosterId) || null;
     }
-  }, [loading, weeksParsedData, rosterId, playersData, playerIdMap, urlYear, playerSeasonTotalsMap]);
+  }, [loading, weeksParsedData, rosterId, playersData, playerIdMap, playerSeasonTotalsMap, isCurrentSeason]);
 
   if (loading) return (
     <div className="loading-center">

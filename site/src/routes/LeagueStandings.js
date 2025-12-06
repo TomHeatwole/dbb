@@ -42,7 +42,6 @@ function LeagueStandings() {
 
   // Season/week context and DB-aware completed weeks
   const isCurrentSeason = season === CURRENT_YEAR;
-  const currentWeek = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
   const completedWeeksBase = isCurrentSeason ? getCompletedWeeksCount() : getCompletedWeeksCount(season);
   const [completedWeeks, setCompletedWeeks] = useState(completedWeeksBase);
   useEffect(() => {
@@ -59,7 +58,7 @@ function LeagueStandings() {
       }
     })();
     return () => { cancelled = true; };
-  }, [season]);
+  }, [season, completedWeeksBase, isCurrentSeason]);
 
   useEffect(() => {
     trackPageLoad();
@@ -320,7 +319,6 @@ function LeagueStandings() {
     );
   }
 
-  const weeksCount = Array.isArray(weeksParsedData) ? weeksParsedData.filter(Boolean).length : 0;
   const weeksFirst14 = Array.isArray(weeksParsedData) ? weeksParsedData.slice(0, 14).filter(Boolean) : [];
   const weeksCount14 = weeksFirst14.length;
   const weeks15to17 = Array.isArray(weeksParsedData) ? weeksParsedData.slice(14, 17).filter(Boolean) : [];
