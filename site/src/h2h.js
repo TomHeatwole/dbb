@@ -3,7 +3,7 @@ import InfoPageWrapper from './InfoPageWrapper';
 import { trackPageLoad } from './UsageTracker';
 import { useSearchParams } from 'react-router-dom';
 import { PREVIOUS_YEARS } from './global_constants';
-import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from './DateHelper';
 import { fetchScoresData } from './ScoresLookup';
 import { fetchTeamData } from './TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
@@ -20,6 +20,7 @@ function H2hPage() {
   const urlFormat = searchParams.get('format');
   const urlTeamA = searchParams.get('a');
   const urlTeamB = searchParams.get('b');
+  const urlWeek = searchParams.get('week');
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
 
   const [season, setSeason] = useState(initialSeason);
@@ -35,7 +36,10 @@ function H2hPage() {
 
   const [teamsForSelector, setTeamsForSelector] = useState([]);
   const [h2hSelectedIds, setH2hSelectedIds] = useState([null, null]);
-  const validFormats = useMemo(() => (new Set(['season', 'seasonExpanded', 'weekly'])), []);
+  const validFormats = useMemo(
+    () => new Set(['season', 'seasonExpanded', 'season14', 'season14Expanded', 'weekly']),
+    []
+  );
   const initialFormat = validFormats.has(urlFormat) ? urlFormat : 'season';
   const [h2hFormat, setH2hFormat] = useState(initialFormat);
   const [formatDropdownOpen, setFormatDropdownOpen] = useState(false);
@@ -61,9 +65,11 @@ function H2hPage() {
   useEffect(() => {
     if (season === CURRENT_YEAR) {
       searchParams.delete('year');
+      searchParams.delete('week');
       setSearchParams(searchParams, { replace: true });
     } else if (allYears.includes(season)) {
       searchParams.set('year', season);
+      searchParams.delete('week');
       setSearchParams(searchParams, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,6 +102,8 @@ function H2hPage() {
     } else {
       nextParams.set('format', h2hFormat);
     }
+    // Reset any explicit week selection when switching formats
+    nextParams.delete('week');
     setSearchParams(nextParams, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [h2hFormat]);
@@ -326,18 +334,43 @@ function H2hPage() {
       }
       return max;
     }, 0);
+
+    const parsedUrlWeek = (() => {
+      if (!urlWeek) { return null; }
+      const n = parseInt(urlWeek, 10);
+      return Number.isFinite(n) && n >= 1 && n <= 17 ? n : null;
+    })();
+
     if (String(season) !== String(CURRENT_YEAR)) {
-      setH2hWeek(maxWeekWithData > 0 ? Math.min(17, maxWeekWithData) : 1);
+      const base = parsedUrlWeek != null
+        ? parsedUrlWeek
+        : (maxWeekWithData > 0 ? maxWeekWithData : 1);
+      const upper = maxWeekWithData > 0 ? Math.min(17, maxWeekWithData) : 17;
+      setH2hWeek(Math.min(upper, Math.max(1, base)));
     } else {
       const current = getCurrentNFLWeek();
       if (!Number.isFinite(current) || current < 1) {
         setH2hWeek(1);
       } else {
-        const upper = maxWeekWithData > 0 ? maxWeekWithData : current;
-        setH2hWeek(Math.min(upper, Math.max(1, current)));
+        const upper = maxWeekWithData > 0
+          ? Math.min(current, maxWeekWithData)
+          : current;
+        const base = parsedUrlWeek != null ? parsedUrlWeek : current;
+        setH2hWeek(Math.min(upper, Math.max(1, base)));
       }
     }
-  }, [season, weeksParsedData]);
+  }, [season, weeksParsedData, urlWeek]);
+
+  const handleWeekChange = (nextWeek) => {
+    setH2hWeek(nextWeek);
+    const nextParams = new URLSearchParams(searchParams);
+    if (!Number.isFinite(nextWeek) || nextWeek == null) {
+      nextParams.delete('week');
+    } else {
+      nextParams.set('week', String(nextWeek));
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   return (
     <InfoPageWrapper title="Head to Head" subtitle={null} leftHeader={leftHeader}>
@@ -353,7 +386,11 @@ function H2hPage() {
                 ? 'Season (Cumulative)'
                 : h2hFormat === 'seasonExpanded'
                   ? 'Season (Expanded)'
-                  : 'Week by Week'}
+                  : h2hFormat === 'season14'
+                    ? 'Season 14-week (Cumulative)'
+                    : h2hFormat === 'season14Expanded'
+                      ? 'Season 14-week (Expanded)'
+                      : 'Week by Week'}
             </span>
             <span className="team-season-dropdown-arrow">
               {formatDropdownOpen ? '▲' : '▼'}
@@ -387,6 +424,50 @@ function H2hPage() {
                 >
                   Season (Expanded)
                 </div>
+                {(() => {
+                  if (!Array.isArray(weeksParsedData) || weeksParsedData.length < 14) {
+                    return false;
+                  }
+                  const first14HaveData = weeksParsedData
+                    .slice(0, 14)
+                    .every((wk) => Array.isArray(wk) && wk.length > 0);
+                  if (!first14HaveData) {
+                    return false;
+                  }
+                  const isCurrentSeasonLocal = String(season) === String(CURRENT_YEAR);
+                  if (!isCurrentSeasonLocal) {
+                    return true;
+                  }
+                  const completedWeeksForSeason = getCompletedWeeksCount(season);
+                  return Number.isFinite(completedWeeksForSeason) && completedWeeksForSeason >= 14;
+                })() && (
+                  <>
+                    <div
+                      className={
+                        'team-season-dropdown-option' +
+                        (h2hFormat === 'season14' ? ' team-season-dropdown-option-active' : '')
+                      }
+                      onClick={() => {
+                        setH2hFormat('season14');
+                        setFormatDropdownOpen(false);
+                      }}
+                    >
+                      Season 14-week (Cumulative)
+                    </div>
+                    <div
+                      className={
+                        'team-season-dropdown-option' +
+                        (h2hFormat === 'season14Expanded' ? ' team-season-dropdown-option-active' : '')
+                      }
+                      onClick={() => {
+                        setH2hFormat('season14Expanded');
+                        setFormatDropdownOpen(false);
+                      }}
+                    >
+                      Season 14-week (Expanded)
+                    </div>
+                  </>
+                )}
                 <div
                   className={
                     'team-season-dropdown-option' +
@@ -422,7 +503,11 @@ function H2hPage() {
     selectedWeek={h2hWeek}
     controls={
       <div className="team-scores-container">
-        <WeekSelector week={h2hWeek} onChange={setH2hWeek} />
+        <WeekSelector
+          week={h2hWeek}
+          onChange={handleWeekChange}
+          maxWeek={matchupWeeks.length > 0 ? matchupWeeks[matchupWeeks.length - 1] : 1}
+        />
       </div>
     }
         />
@@ -445,6 +530,50 @@ function H2hPage() {
         />
       )}
 
+      {h2hFormat === 'season14' && weeksParsedData && playersData && playerIdMap && (
+        <SeasonHeadToHeadView
+          season={season}
+          loading={loading}
+          error={error}
+          teams={teamsForSelector}
+          selectedIds={h2hSelectedIds}
+          onSelectionChange={handleHeadToHeadSelectionChange}
+          allWeeks={Array.from({ length: 14 }, (_, idx) => idx + 1)}
+          weeksParsedData={weeksParsedData}
+          playersData={playersData}
+          playerIdMap={playerIdMap}
+          preloadedTeamData={rosters && users ? { rosters, users } : null}
+          mode="season"
+          selectedWeek={h2hWeek}
+          controls={
+            <div className="team-scores-container">
+              <WeekSelector
+                week={Math.min(h2hWeek, 14)}
+                onChange={handleWeekChange}
+                maxWeek={14}
+              />
+            </div>
+          }
+        />
+      )}
+
+      {h2hFormat === 'season14Expanded' && weeksParsedData && playersData && playerIdMap && (
+        <SeasonHeadToHeadView
+          season={season}
+          loading={loading}
+          error={error}
+          teams={teamsForSelector}
+          selectedIds={h2hSelectedIds}
+          onSelectionChange={handleHeadToHeadSelectionChange}
+          allWeeks={Array.from({ length: 14 }, (_, idx) => idx + 1)}
+          weeksParsedData={weeksParsedData}
+          playersData={playersData}
+          playerIdMap={playerIdMap}
+          preloadedTeamData={rosters && users ? { rosters, users } : null}
+          mode="expanded"
+        />
+      )}
+
       {h2hFormat === 'weekly' && (
         <HeadToHeadView
           season={season}
@@ -464,7 +593,11 @@ function H2hPage() {
           showMatchup
           controls={
             <div className="team-scores-container">
-              <WeekSelector week={h2hWeek} onChange={setH2hWeek} />
+              <WeekSelector
+                week={h2hWeek}
+                onChange={handleWeekChange}
+                maxWeek={matchupWeeks.length > 0 ? matchupWeeks[matchupWeeks.length - 1] : 1}
+              />
             </div>
           }
         />
