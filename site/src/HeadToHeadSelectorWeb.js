@@ -1,23 +1,35 @@
 import React, { useState } from 'react';
 
 function HeadToHeadSelectorWeb({ teams }) {
-  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [selectedOrder, setSelectedOrder] = useState([]);
 
   const handleToggle = (rosterId) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(rosterId)) {
-        next.delete(rosterId);
-      } else {
-        next.add(rosterId);
+    setSelectedOrder((prev) => {
+      if (prev.includes(rosterId)) {
+        // Deselect: remove from order
+        return prev.filter((id) => id !== rosterId);
       }
-      return next;
+      if (prev.length >= 2) {
+        // Already have 2 selected; ignore new clicks
+        return prev;
+      }
+      return [...prev, rosterId];
     });
   };
 
   if (!teams || teams.length === 0) {
     return <div>No playoff teams found for this season.</div>;
   }
+
+  const teamA =
+    selectedOrder.length > 0
+      ? teams.find((t) => t.rosterId === selectedOrder[0]) || null
+      : null;
+  const teamB =
+    selectedOrder.length > 1
+      ? teams.find((t) => t.rosterId === selectedOrder[1]) || null
+      : null;
+  const selectionFull = selectedOrder.length >= 2;
 
   return (
     <div className="h2h-web-root">
@@ -26,15 +38,18 @@ function HeadToHeadSelectorWeb({ teams }) {
       </div>
       <div className="h2h-web-list">
         {teams.map((team) => {
-          const isSelected = selectedIds.has(team.rosterId);
+          const isSelected = selectedOrder.includes(team.rosterId);
+          const isDisabled = selectionFull && !isSelected;
           return (
             <button
               key={team.rosterId}
               type="button"
               className={
                 'h2h-web-card' +
-                (isSelected ? ' h2h-web-card--selected' : '')
+                (isSelected ? ' h2h-web-card--selected' : '') +
+                (isDisabled ? ' h2h-web-card--disabled' : '')
               }
+              disabled={isDisabled}
               onClick={() => handleToggle(team.rosterId)}
             >
               <span className="yoffs-bracket-seed">
@@ -53,6 +68,20 @@ function HeadToHeadSelectorWeb({ teams }) {
             </button>
           );
         })}
+      </div>
+      <div className="h2h-web-summary">
+        <div className="h2h-web-summary-item">
+          <span className="h2h-web-summary-label">Team A:</span>
+          <span className="h2h-web-summary-value">
+            {teamA ? teamA.teamName : 'NONE'}
+          </span>
+        </div>
+        <div className="h2h-web-summary-item">
+          <span className="h2h-web-summary-label">Team B:</span>
+          <span className="h2h-web-summary-value">
+            {teamB ? teamB.teamName : 'NONE'}
+          </span>
+        </div>
       </div>
     </div>
   );
