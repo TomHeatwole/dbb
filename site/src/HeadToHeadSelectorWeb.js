@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 
-function HeadToHeadSelectorWeb({ teams }) {
+function HeadToHeadSelectorWeb({ teams, onSelectionChange = null }) {
   const [selectedOrder, setSelectedOrder] = useState([]);
 
   const handleToggle = (rosterId) => {
     setSelectedOrder((prev) => {
+      let next;
       if (prev.includes(rosterId)) {
         // Deselect: remove from order
-        return prev.filter((id) => id !== rosterId);
-      }
-      if (prev.length >= 2) {
+        next = prev.filter((id) => id !== rosterId);
+      } else if (prev.length >= 2) {
         // Already have 2 selected; ignore new clicks
-        return prev;
+        next = prev;
+      } else {
+        next = [...prev, rosterId];
       }
-      return [...prev, rosterId];
+      if (onSelectionChange) {
+        onSelectionChange(next);
+      }
+      return next;
     });
   };
 

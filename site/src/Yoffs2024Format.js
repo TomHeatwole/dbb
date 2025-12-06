@@ -11,6 +11,7 @@ import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 import YoffsScoresView from './YoffsScoresView';
 import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
+import MatchupView from './MatchupView';
 
 function Yoffs2024Format({
   season,
@@ -32,6 +33,7 @@ function Yoffs2024Format({
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [currentWeekLabels, setCurrentWeekLabels] = useState({});
   const [isCurrentWeekDone, setIsCurrentWeekDone] = useState(true);
+  const [h2hSelectedIds, setH2hSelectedIds] = useState([]);
   const tabOptions = ['Overview', 'Scores', 'Head to Head'];
   const isMobile = useIsMobile();
 
@@ -671,7 +673,36 @@ function Yoffs2024Format({
                 seed: row.place != null ? row.place : (idx + 1),
                 displaySeed: row.place != null ? row.place : (idx + 1),
               }))}
+              onSelectionChange={setH2hSelectedIds}
             />
+          )}
+          {!loading && !error && h2hSelectedIds && h2hSelectedIds.length === 2 && weeksParsedData && playersData && playerIdMap && (
+            <div className="yoffs-matchup-view-container">
+              <MatchupView
+                season={season}
+                team1Id={h2hSelectedIds[0]}
+                team2Id={h2hSelectedIds[1]}
+                week={playoffStartWeek}
+                weeks={[playoffStartWeek]}
+                preloadedTeamData={
+                  rosters && users ? { rosters, users } : null
+                }
+                preloadedWeeksData={weeksParsedData}
+                preloadedPlayersData={playersData}
+                preloadedPlayerIdMap={playerIdMap}
+                displaySeeds
+                seed1={
+                  (rows.find((r) => r.rosterId === h2hSelectedIds[0])
+                    && rows.find((r) => r.rosterId === h2hSelectedIds[0]).place)
+                  || null
+                }
+                seed2={
+                  (rows.find((r) => r.rosterId === h2hSelectedIds[1])
+                    && rows.find((r) => r.rosterId === h2hSelectedIds[1]).place)
+                  || null
+                }
+              />
+            </div>
           )}
         </div>
       )}
