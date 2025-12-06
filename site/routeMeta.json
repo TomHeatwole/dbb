@@ -1,0 +1,36 @@
+{
+  "/home/": {
+    "ogTitle": "The Hwang Dynasty",
+    "ogDescription": ""
+  },
+  "/Scores/Week": {
+    "ogTitle": "Hwang Dynasty Scores",
+    "ogDescription": ""
+  },
+  "/standings": {
+    "ogTitle": "Hwang Dynasty Standings",
+    "ogDescription": ""
+  },
+  "/h2h": {
+    "ogTitle": "Head to Head",
+    "ogDescription": ""
+  },
+  "/yoffs": {
+    "ogTitle": "Playoffs \u2013 The Hwang Dynasty",
+    "ogDescription": ""
+  },
+  "/admincontrols": {
+    "ogTitle": "The Hwang Dynasty",
+    "ogDescription": ""
+  },
+  "/team/": {
+    "ogTitle": "The Hwang Dynasty",
+    "ogDescription": ""
+  },
+  "*": {
+    "ogTitle": "The Hwang Dynasty",
+    "ogDescription": ""
+  }
+}
+
+
