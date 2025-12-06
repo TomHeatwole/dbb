@@ -13,8 +13,12 @@ import MatchupWeekView from './MatchupWeekView';
 import { fetchInjuriesForWeek, getInjuryAbbreviation } from './InjuryLookup';
 
 function resolveTeamMeta(teamData, rosterId) {
+  if (rosterId == null) {
+    return { teamName: '????', avatarUrl: null, isPlaceholder: true };
+  }
+
   if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
-    return { teamName: `Team ${rosterId}`, avatarUrl: null };
+    return { teamName: `Team ${rosterId}`, avatarUrl: null, isPlaceholder: false };
   }
 
   const roster = teamData.rosters.find(
@@ -40,7 +44,7 @@ function resolveTeamMeta(teamData, rosterId) {
         user.avatar_url)) ||
     null;
 
-  return { teamName, avatarUrl };
+  return { teamName, avatarUrl, isPlaceholder: false };
 }
 
 /**
@@ -452,6 +456,28 @@ function MatchupView({
     }
 
     function renderPlayerSide(slot, align) {
+      const isPlaceholderSide =
+        (align === 'left' && leftIsPlaceholder) ||
+        (align === 'right' && rightIsPlaceholder);
+
+      if (isPlaceholderSide) {
+        const gameCellClasses = [
+          'team-scores-game-cell',
+          'team-scores-game-cell--compact'
+        ];
+        return (
+          <div className={`yoffs-matchup-player yoffs-matchup-player--${align}`}>
+            <div className="yoffs-matchup-player-main">
+              <span className="player-name">?</span>
+              <span className="yoffs-matchup-player-pts">-</span>
+            </div>
+            <div className={gameCellClasses.join(' ')}>
+              <div className="team-scores-game-text">-</div>
+            </div>
+          </div>
+        );
+      }
+
       if (!slot || !slot.id || String(slot.id) === '0') {
         return (
           <div className="yoffs-matchup-player yoffs-matchup-player--empty">
@@ -520,9 +546,6 @@ function MatchupView({
 
     return renderPlayerSide;
   }
-
-  const leftMeta = resolveTeamMeta(teamData, team1Id);
-  const rightMeta = resolveTeamMeta(teamData, team2Id);
 
   const isLoading = loadingTeams || loadingScores;
 
@@ -694,11 +717,16 @@ function MatchupView({
     };
   });
 
+  const leftMeta = resolveTeamMeta(teamData, team1Id);
+  const rightMeta = resolveTeamMeta(teamData, team2Id);
+  const leftIsPlaceholder = !!leftMeta.isPlaceholder;
+  const rightIsPlaceholder = !!rightMeta.isPlaceholder;
+
   const hasAnyBreakdown = weekBlocks.some(
     (block) => block.breakdown1 || block.breakdown2
-  );
+  ) || leftIsPlaceholder || rightIsPlaceholder;
 
-  if (!hasAnyBreakdown) {
+  if (!hasAnyBreakdown && !leftIsPlaceholder && !rightIsPlaceholder) {
     return (
       <div className="yoffs-matchup-view-error">
         No starter data available for this matchup.
@@ -706,8 +734,8 @@ function MatchupView({
     );
   }
 
-  let headerLeftTotal = '—';
-  let headerRightTotal = '—';
+  let headerLeftTotal = leftIsPlaceholder ? '-' : '—';
+  let headerRightTotal = rightIsPlaceholder ? '-' : '—';
 
   // Add buffer to totals for championship
   const hasBuffer =
@@ -751,8 +779,8 @@ function MatchupView({
       (block) => block.rightTotalValue != null
     );
 
-    headerLeftTotal = hasLeft ? leftSum.toFixed(1) : '—';
-    headerRightTotal = hasRight ? rightSum.toFixed(1) : '—';
+    headerLeftTotal = hasLeft ? leftSum.toFixed(1) : headerLeftTotal;
+    headerRightTotal = hasRight ? rightSum.toFixed(1) : headerRightTotal;
   }
 
   const completedWeeks = getCompletedWeeksCount(season);
@@ -816,48 +844,64 @@ function MatchupView({
     <div className="yoffs-matchup-view">
       <div className="yoffs-matchup-header-row">
         <div className="yoffs-matchup-side yoffs-matchup-side--left">
-          <div className={leftTeamBlockClasses.join(' ')}>
-            <div className="yoffs-matchup-team-top">
-              {leftMeta.avatarUrl && (
-                <img
-                  className="yoffs-matchup-avatar-large"
-                  src={leftMeta.avatarUrl}
-                  alt={`${leftMeta.teamName} avatar`}
-                />
-              )}
-              <span className="yoffs-matchup-team-score">
-                {headerLeftTotal}
-              </span>
+          {leftIsPlaceholder ? (
+            <div className="yoffs-matchup-team-block yoffs-matchup-team-block--placeholder">
+              <div className="yoffs-matchup-team-placeholder">
+                <span className="yoffs-matchup-team-placeholder-text">?????</span>
+              </div>
             </div>
-            <div className="yoffs-matchup-team-bottom">
-              {displaySeeds && seed1 != null && (
-                <span className="yoffs-bracket-seed">#{seed1}</span>
-              )}
-              <span className="yoffs-bracket-name">{leftMeta.teamName}</span>
+          ) : (
+            <div className={leftTeamBlockClasses.join(' ')}>
+              <div className="yoffs-matchup-team-top">
+                {leftMeta.avatarUrl && (
+                  <img
+                    className="yoffs-matchup-avatar-large"
+                    src={leftMeta.avatarUrl}
+                    alt={`${leftMeta.teamName} avatar`}
+                  />
+                )}
+                <span className="yoffs-matchup-team-score">
+                  {headerLeftTotal}
+                </span>
+              </div>
+              <div className="yoffs-matchup-team-bottom">
+                {displaySeeds && seed1 != null && (
+                  <span className="yoffs-bracket-seed">#{seed1}</span>
+                )}
+                <span className="yoffs-bracket-name">{leftMeta.teamName}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <div className="yoffs-matchup-side yoffs-matchup-side--right">
-          <div className={rightTeamBlockClasses.join(' ')}>
-            <div className="yoffs-matchup-team-top">
-              {rightMeta.avatarUrl && (
-                <img
-                  className="yoffs-matchup-avatar-large"
-                  src={rightMeta.avatarUrl}
-                  alt={`${rightMeta.teamName} avatar`}
-                />
-              )}
-              <span className="yoffs-matchup-team-score">
-                {headerRightTotal}
-              </span>
+          {rightIsPlaceholder ? (
+            <div className="yoffs-matchup-team-block yoffs-matchup-team-block--placeholder">
+              <div className="yoffs-matchup-team-placeholder">
+                <span className="yoffs-matchup-team-placeholder-text">?????</span>
+              </div>
             </div>
-            <div className="yoffs-matchup-team-bottom">
-              {displaySeeds && seed2 != null && (
-                <span className="yoffs-bracket-seed">#{seed2}</span>
-              )}
-              <span className="yoffs-bracket-name">{rightMeta.teamName}</span>
+          ) : (
+            <div className={rightTeamBlockClasses.join(' ')}>
+              <div className="yoffs-matchup-team-top">
+                {rightMeta.avatarUrl && (
+                  <img
+                    className="yoffs-matchup-avatar-large"
+                    src={rightMeta.avatarUrl}
+                    alt={`${rightMeta.teamName} avatar`}
+                  />
+                )}
+                <span className="yoffs-matchup-team-score">
+                  {headerRightTotal}
+                </span>
+              </div>
+              <div className="yoffs-matchup-team-bottom">
+                {displaySeeds && seed2 != null && (
+                  <span className="yoffs-bracket-seed">#{seed2}</span>
+                )}
+                <span className="yoffs-bracket-name">{rightMeta.teamName}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
       {hasBuffer && (

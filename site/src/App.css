@@ -1948,6 +1948,27 @@
   flex-direction: column;
   gap: 0.2rem;
 }
+.yoffs-matchup-team-block--placeholder {
+  align-items: center;
+}
+.yoffs-matchup-team-placeholder {
+  width: 100%;
+  text-align: center;
+}
+.yoffs-matchup-team-placeholder-text {
+  display: inline-block;
+  font-size: 3.71rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
+}
+@media (max-width: 50em) {
+  .yoffs-matchup-team-placeholder-text {
+    font-size: 1.6rem;
+  }
+}
 .yoffs-matchup-team-block--winner .yoffs-bracket-name,
 .yoffs-matchup-team-block--winner .yoffs-matchup-team-score {
   color: #ffe9a5;

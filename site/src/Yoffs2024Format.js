@@ -688,12 +688,12 @@ function Yoffs2024Format({
               onSelectionChange={setH2hSelectedIds}
             />
           )}
-          {!loading && !error && h2hSelectedIds && h2hSelectedIds.length === 2 && weeksParsedData && playersData && playerIdMap && (
+          {!loading && !error && weeksParsedData && playersData && playerIdMap && (
             <div className="yoffs-matchup-view-container">
               <MatchupView
                 season={season}
-                team1Id={h2hSelectedIds[0]}
-                team2Id={h2hSelectedIds[1]}
+                team1Id={h2hSelectedIds && h2hSelectedIds.length > 0 ? h2hSelectedIds[0] : null}
+                team2Id={h2hSelectedIds && h2hSelectedIds.length > 1 ? h2hSelectedIds[1] : null}
                 week={playoffStartWeek}
                 weeks={Array.from(
                   { length: playoffEndWeek - playoffStartWeek + 1 },
