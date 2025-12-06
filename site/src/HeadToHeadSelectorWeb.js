@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-function HeadToHeadSelectorWeb({ teams, onSelectionChange = null }) {
+function HeadToHeadSelectorWeb({ teams, initialSelection = null, onSelectionChange = null }) {
   // Explicit slots so Team A/B positions don't shift when unselecting.
   // selectedSlots[0] -> Team A, selectedSlots[1] -> Team B
-  const [selectedSlots, setSelectedSlots] = useState([null, null]);
+  const [selectedSlots, setSelectedSlots] = useState(
+    Array.isArray(initialSelection) && initialSelection.length === 2
+      ? initialSelection
+      : [null, null]
+  );
+
+  useEffect(() => {
+    if (Array.isArray(initialSelection) && initialSelection.length === 2) {
+      setSelectedSlots(initialSelection);
+    } else {
+      setSelectedSlots([null, null]);
+    }
+  }, [initialSelection]);
 
   const handleToggle = (rosterId) => {
     setSelectedSlots((prev) => {

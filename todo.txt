@@ -1,16 +1,15 @@
 - Hover on player for popup of information
-- Figure out if we can understand what games a player was/wasn't active for for per-game stats.
-- playoffs and/or head to head
 - "Scenarios" page where you can see what would happen if a team did or didn't have another player
 - Consider removing or adjusting the grpahs for cumulative score and relative cumulative score in team page
 - Update player card with stats for previous games
-- Update scores with player stats for previous weeks
-- (fix) Incorporate when player changes team - used to work, now I see Brian Robinson 2024 as SF
 - Make team scores page as good as league scores.
+- (fix) Incorporate when player changes team - used to work, now I see Brian Robinson 2024 as SF
 - Make pages more calendar aware. I.e. when we get to 2026 there's gonna be 2029 picks instantly rendered, and 2025 picks gone. Ideally we'll default to a 2026 tab, but then we need all of the previous pages gone. To accomplish this, we may want to add a good testing feature to simulate it being any time of year.
 - h2h page that can be used or linked in /yoffs bracket format
 - redo entire home page to show smaller links and some stats
+  - Maybe we could do "cards" like a standings overview with arrows for change in the oast week, commissioner notes, playoff picture, various "races" like playoffs, tanking, first. These can link to the other pages where necessary, including the h2h view.
 - Once yoffs is a completed product:
   - Link it somewhere on home page
   - Link it from scores when viewing 15 16 or 17
   - like it from standings during that part of the season
+- head to head pay

@@ -16,6 +16,8 @@ function YoffsPage() {
   const urlYear = searchParams.get('year');
   const urlFormat = searchParams.get('format');
   const urlTab = searchParams.get('tab');
+  const urlTeamA = searchParams.get('a');
+  const urlTeamB = searchParams.get('b');
 
   const initialSeason = urlYear && String(urlYear) !== 'null' ? urlYear : CURRENT_YEAR;
   const initialModeFromUrl =
@@ -46,6 +48,8 @@ function YoffsPage() {
     trackPageLoad();
   }, []);
 
+  const [h2hSelectedIds, setH2hSelectedIds] = useState([null, null]);
+
   const updateQueryParams = React.useCallback((changes) => {
     const newParams = new URLSearchParams(searchParams);
     Object.keys(changes || {}).forEach((key) => {
@@ -66,6 +70,11 @@ function YoffsPage() {
     const changes = { tab: safeTab };
     if (safeTab !== 'Matchups') {
       changes.matchup = null;
+    }
+    if (safeTab !== 'Head to Head') {
+      changes.a = null;
+      changes.b = null;
+      setH2hSelectedIds([null, null]);
     }
     updateQueryParams(changes);
   }, [mode, updateQueryParams]);
@@ -107,6 +116,31 @@ function YoffsPage() {
     !isCurrentSeason ||
     (Number.isFinite(completedWeeksForSeason) &&
       completedWeeksForSeason >= PLAYOFF_START_WEEK);
+
+  // Keep Head-to-Head selection in sync with URL params (back/forward nav).
+  useEffect(() => {
+    const nextA = urlTeamA ? Number(urlTeamA) : null;
+    const nextB = urlTeamB ? Number(urlTeamB) : null;
+    setH2hSelectedIds((prev) => {
+      if (prev[0] === nextA && prev[1] === nextB) {
+        return prev;
+      }
+      return [nextA, nextB];
+    });
+  }, [urlTeamA, urlTeamB]);
+
+  const handleHeadToHeadSelectionChange = React.useCallback((nextSlots) => {
+    const safe = Array.isArray(nextSlots) ? nextSlots.slice(0, 2) : [null, null];
+    while (safe.length < 2) {
+      safe.push(null);
+    }
+    setH2hSelectedIds(safe);
+    const [teamA, teamB] = safe;
+    updateQueryParams({
+      a: teamA != null ? teamA : null,
+      b: teamB != null ? teamB : null,
+    });
+  }, [updateQueryParams]);
 
   // React to external URL changes (browser nav) for year/format
   useEffect(() => {
@@ -167,7 +201,10 @@ function YoffsPage() {
                     format: nextMode,
                     tab: nextTab,
                     matchup: null,
+                    a: null,
+                    b: null,
                   });
+                  setH2hSelectedIds([null, null]);
                 }}
               >
                 {opt}
@@ -202,6 +239,8 @@ function YoffsPage() {
         showPlayoffPictureWarning={showPlayoffPictureWarning}
         playoffSeedLockWeek={playoffSeedLockWeek}
         playoffsStarted={playoffsStarted}
+        h2hSelectedIds={h2hSelectedIds}
+        onH2hSelectedIdsChange={handleHeadToHeadSelectionChange}
       />
     );
 
@@ -238,7 +277,8 @@ function YoffsPage() {
                     setMode(nextMode);
                     setSelectedTab(nextTab);
                     setModeDropdownOpen(false);
-                    updateQueryParams({ format: nextMode, tab: nextTab, matchup: null });
+                    updateQueryParams({ format: nextMode, tab: nextTab, matchup: null, a: null, b: null });
+                    setH2hSelectedIds([null, null]);
                   }}
                 >
                   Bracket Format (2025 rules)
@@ -256,7 +296,8 @@ function YoffsPage() {
                     setMode(nextMode);
                     setSelectedTab(nextTab);
                     setModeDropdownOpen(false);
-                    updateQueryParams({ format: nextMode, tab: nextTab, matchup: null });
+                    updateQueryParams({ format: nextMode, tab: nextTab, matchup: null, a: null, b: null });
+                    setH2hSelectedIds([null, null]);
                   }}
                 >
                   Cumulative Score (2024 rules)

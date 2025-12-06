@@ -21,7 +21,9 @@ function Yoffs2024Format({
   playoffEndWeek,
   showPlayoffPictureWarning,
   playoffSeedLockWeek,
-  playoffsStarted
+  playoffsStarted,
+  h2hSelectedIds,
+  onH2hSelectedIdsChange
 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,7 +36,6 @@ function Yoffs2024Format({
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [currentWeekLabels, setCurrentWeekLabels] = useState({});
   const [isCurrentWeekDone, setIsCurrentWeekDone] = useState(true);
-  const [h2hSelectedIds, setH2hSelectedIds] = useState([]);
   const tabOptions = ['Overview', 'Scores', 'Head to Head'];
   const isMobile = useIsMobile();
 
@@ -686,7 +687,8 @@ function Yoffs2024Format({
                 seed: row.place != null ? row.place : (idx + 1),
                 displaySeed: row.place != null ? row.place : (idx + 1),
               }))}
-              onSelectionChange={setH2hSelectedIds}
+              initialSelection={h2hSelectedIds}
+              onSelectionChange={onH2hSelectedIdsChange}
             />
           )}
           {!loading && !error && weeksParsedData && playersData && playerIdMap && (
