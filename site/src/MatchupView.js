@@ -496,10 +496,10 @@ function MatchupView({
           </div>
         );
       }
-    const info = getPlayerInfo(slot.id, playersData, playerIdMap);
-    const gameObj =
-      (labelsForWeek && labelsForWeek[slot.id]) ||
-      { text: '', live: false, completed: false, eventId: null };
+      const info = getPlayerInfo(slot.id, playersData, playerIdMap);
+      const gameObj =
+        (labelsForWeek && labelsForWeek[slot.id]) ||
+        { text: '', live: false, completed: false, eventId: null };
       const ptsVal = Number(slot.pts || 0);
       const showDash = !gameObj.live && !gameObj.completed && ptsVal === 0;
       const ptsText = showDash ? '-' : ptsVal.toFixed(1);
@@ -518,22 +518,44 @@ function MatchupView({
       const playerName = formatPlayerNameForDisplay(rawName);
       const injuryBadge = renderInjuryBadge(slot.id, info);
 
+      const avatarNode = info && info.espn_photo_url ? (
+        <img
+          className="player-avatar player-avatar-style team-scores-player-img-margin"
+          src={info.espn_photo_url}
+          alt={info.name}
+        />
+      ) : null;
+
+      const nameNode = (
+        <span className="player-name">
+          {playerName}
+          {info && info.position ? ` (${info.position})` : ''}
+          {injuryBadge}
+        </span>
+      );
+
+      const ptsNode = (
+        <span className="yoffs-matchup-player-pts">{ptsText}</span>
+      );
+
+      const isRight = align === 'right';
+
       return (
         <div className={`yoffs-matchup-player yoffs-matchup-player--${align}`}>
           <div className="yoffs-matchup-player-main">
-            {info && info.espn_photo_url && (
-              <img
-                className="player-avatar player-avatar-style team-scores-player-img-margin"
-                src={info.espn_photo_url}
-                alt={info.name}
-              />
+            {isRight ? (
+              <>
+                {ptsNode}
+                {nameNode}
+                {avatarNode}
+              </>
+            ) : (
+              <>
+                {avatarNode}
+                {nameNode}
+                {ptsNode}
+              </>
             )}
-            <span className="player-name">
-              {playerName}
-              {info && info.position ? ` (${info.position})` : ''}
-              {injuryBadge}
-            </span>
-            <span className="yoffs-matchup-player-pts">{ptsText}</span>
           </div>
           <div className={gameCellClasses.join(' ')}>
             <div className="team-scores-game-text">

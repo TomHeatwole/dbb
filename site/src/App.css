@@ -2108,12 +2108,19 @@
   font-weight: 800;
   color: #ffffff;
 }
+.yoffs-matchup-player--right .yoffs-matchup-player-pts {
+  margin-left: 0;
+  margin-right: auto;
+}
 .yoffs-matchup-player-empty {
   color: #65729e;
   font-style: italic;
 }
 .team-scores-game-cell--compact {
   padding: 0.05rem 0.25rem;
+}
+.yoffs-matchup-player--right .team-scores-game-text {
+  text-align: right;
 }
 .yoffs-matchup-footer-row {
   display: grid;
