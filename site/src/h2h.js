@@ -11,6 +11,7 @@ import { getStandings } from './ScoresParser';
 import HeadToHeadView from './HeadToHeadView';
 import SeasonHeadToHeadView from './SeasonHeadToHeadView';
 import WeekSelector from './WeekSelector';
+import PageMeta from './PageMeta';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -372,8 +373,13 @@ function H2hPage() {
     setSearchParams(nextParams, { replace: true });
   };
 
+  const pageTitle = 'Head to Head – The Hwang Dynasty';
+  const pageDescription = 'Compare BestBall head-to-head results across seasons, formats, and weeks in The Hwang Dynasty league.';
+
   return (
-    <InfoPageWrapper title="Head to Head" subtitle={null} leftHeader={leftHeader}>
+    <>
+      <PageMeta title={pageTitle} description={pageDescription} />
+      <InfoPageWrapper title="Head to Head" subtitle={null} leftHeader={leftHeader}>
       <div className="yoffs-mode-row">
         <div className="yoffs-mode-dropdown-wrapper">
           <div
@@ -499,21 +505,22 @@ function H2hPage() {
           playersData={playersData}
           playerIdMap={playerIdMap}
           preloadedTeamData={rosters && users ? { rosters, users } : null}
-    mode="season"
-    selectedWeek={h2hWeek}
-    controls={
-      <div className="team-scores-container">
-        <WeekSelector
-          week={h2hWeek}
-          onChange={handleWeekChange}
-          maxWeek={matchupWeeks.length > 0 ? matchupWeeks[matchupWeeks.length - 1] : 1}
-        />
-      </div>
-    }
+          mode="season"
+          selectedWeek={h2hWeek}
+          highlightThreshold={17}
+          controls={
+            <div className="team-scores-container">
+              <WeekSelector
+                week={h2hWeek}
+                onChange={handleWeekChange}
+                maxWeek={matchupWeeks.length > 0 ? matchupWeeks[matchupWeeks.length - 1] : 1}
+              />
+            </div>
+          }
         />
       )}
 
-      {h2hFormat === 'seasonExpanded' && (
+      {h2hFormat === 'seasonExpanded' && weeksParsedData && playersData && playerIdMap && (
         <SeasonHeadToHeadView
           season={season}
           loading={loading}
@@ -526,7 +533,8 @@ function H2hPage() {
           playersData={playersData}
           playerIdMap={playerIdMap}
           preloadedTeamData={rosters && users ? { rosters, users } : null}
-    mode="expanded"
+          mode="expanded"
+          highlightThreshold={17}
         />
       )}
 
@@ -545,6 +553,7 @@ function H2hPage() {
           preloadedTeamData={rosters && users ? { rosters, users } : null}
           mode="season"
           selectedWeek={h2hWeek}
+          highlightThreshold={14}
           controls={
             <div className="team-scores-container">
               <WeekSelector
@@ -571,6 +580,7 @@ function H2hPage() {
           playerIdMap={playerIdMap}
           preloadedTeamData={rosters && users ? { rosters, users } : null}
           mode="expanded"
+          highlightThreshold={14}
         />
       )}
 
@@ -603,6 +613,7 @@ function H2hPage() {
         />
       )}
     </InfoPageWrapper>
+    </>
   );
 }
 

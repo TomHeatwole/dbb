@@ -76,6 +76,7 @@ function SeasonHeadToHeadView({
   playerIdMap,
   preloadedTeamData,
   mode, // 'season' | 'expanded'
+  highlightThreshold = null,
   selectedWeek = null,
   controls = null
 }) {
@@ -224,6 +225,8 @@ function SeasonHeadToHeadView({
               bufferRightText={bufferRightText}
               headerLeftOverride={headerLeftOverride}
               headerRightOverride={headerRightOverride}
+              highlightMode="seasonFinalOnly"
+              highlightThreshold={highlightThreshold}
             />
           </div>
         )}

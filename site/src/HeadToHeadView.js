@@ -46,7 +46,9 @@ function HeadToHeadView({
   displaySeeds = false,
   expandedWeeksOverride = null,
   showMatchup = true,
-  controls = null
+  controls = null,
+  highlightMode = 'default',
+  highlightThreshold = null
 }) {
   const safeSelected = normalizeSelectedIds(selectedIds);
   const [team1Id, team2Id] = useMemo(() => {
@@ -126,6 +128,8 @@ function HeadToHeadView({
               displaySeeds={displaySeeds}
               seed1={seed1}
               seed2={seed2}
+              highlightMode={highlightMode}
+              highlightThreshold={highlightThreshold}
             />
           </div>
         )}

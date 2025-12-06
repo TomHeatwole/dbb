@@ -85,7 +85,9 @@ function MatchupView({
   bufferLeftText = null,
   bufferRightText = null,
   headerLeftOverride = null,
-  headerRightOverride = null
+  headerRightOverride = null,
+  highlightMode = 'default', // 'default' | 'weekly' | 'seasonFinalOnly'
+  highlightThreshold = null
 }) {
   const [teamData, setTeamData] = useState(preloadedTeamData || null);
   const [weeksParsedData, setWeeksParsedData] = useState(preloadedWeeksData || null);
@@ -118,33 +120,39 @@ function MatchupView({
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
 
-  // When the matchup (teams/weeks/season) changes, reset per-week expansion
-  // so defaults are recalculated for the new game.
-  useEffect(() => {
-    setGridExpandedByWeek({});
-  }, [season, team1Id, team2Id, effectiveWeeks]);
   useEffect(() => {
     if (!hasAnyWeeks) {
       return;
     }
     setGridExpandedByWeek((prev) => {
-      // Preserve any user-toggled state once it exists
-      if (prev && Object.keys(prev).length > 0) {
-        return prev;
-      }
-      const next = {};
+      const next = { ...prev };
       const hasOverride = Array.isArray(expandedWeeksOverride);
       effectiveWeeks.forEach((w) => {
-        if (hasOverride) {
-          next[w] = expandedWeeksOverride.some(
-            (ow) => Number(ow) === Number(w)
-          );
-        } else {
-          const isCurrentWeekForDisplay =
-            isCurrentSeason && Number(w) === Number(currentWeekNum);
-          next[w] = isCurrentWeekForDisplay;
+        if (!Object.prototype.hasOwnProperty.call(next, w)) {
+          if (hasOverride) {
+            next[w] = expandedWeeksOverride.some(
+              (ow) => Number(ow) === Number(w)
+            );
+          } else {
+            const isCurrentWeekForDisplay =
+              isCurrentSeason && Number(w) === Number(currentWeekNum);
+            next[w] = isCurrentWeekForDisplay;
+          }
         }
       });
+
+      // Remove any weeks that are no longer visible so state does not
+      // accumulate stale entries over time.
+      Object.keys(next).forEach((key) => {
+        const numericKey = Number(key);
+        const stillVisible = effectiveWeeks.some(
+          (w) => Number(w) === numericKey
+        );
+        if (!stillVisible) {
+          delete next[numericKey];
+        }
+      });
+
       return next;
     });
   }, [hasAnyWeeks, effectiveWeeks, isCurrentSeason, currentWeekNum, expandedWeeksOverride]);
@@ -879,10 +887,28 @@ function MatchupView({
   let leftIsLoser = false;
   let rightIsLoser = false;
 
-  const seasonComplete =
+  const seasonCompleteFor17 =
     !isCurrentSeason || Number(completedWeeks) >= 17;
 
-  if (seasonComplete && allWeeksCompleted) {
+  let enableHighlight = false;
+
+  if (highlightMode === 'weekly') {
+    // Highlight any completed week, regardless of overall season completion
+    enableHighlight = !!allWeeksCompleted;
+  } else if (highlightMode === 'seasonFinalOnly') {
+    const threshold = highlightThreshold != null
+      ? Number(highlightThreshold)
+      : (lastWeekNumber || 0);
+    const seasonDoneForView = !isCurrentSeason || Number(completedWeeks) >= threshold;
+    const viewingFinalWeek = lastWeekNumber != null && Number(lastWeekNumber) === threshold;
+    enableHighlight = !!allWeeksCompleted && seasonDoneForView && viewingFinalWeek;
+  } else {
+    // Default: highlight only when full 17-week season is complete
+    const seasonComplete = seasonCompleteFor17;
+    enableHighlight = !!allWeeksCompleted && seasonComplete;
+  }
+
+  if (enableHighlight) {
     const leftVal = parseFloat(headerLeftTotal);
     const rightVal = parseFloat(headerRightTotal);
     if (Number.isFinite(leftVal) && Number.isFinite(rightVal)) {
