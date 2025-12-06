@@ -65,6 +65,8 @@ function HeadToHeadSelectorWeb({
           const selectedClass = isSelected
             ? (usePlayoffTheme ? ' h2h-web-card--selected' : ' h2h-web-card--selected-primary')
             : '';
+          const rawSeed = team.seed != null ? team.seed : team.displaySeed;
+          const showSeedPill = usePlayoffTheme && rawSeed != null;
           return (
             <button
               key={team.rosterId}
@@ -77,15 +79,11 @@ function HeadToHeadSelectorWeb({
               disabled={isDisabled}
               onClick={() => handleToggle(team.rosterId)}
             >
-              <span className="yoffs-bracket-seed">
-                {(() => {
-                  const rawSeed = team.seed != null ? team.seed : team.displaySeed;
-                  if (rawSeed == null) {
-                    return '';
-                  }
-                  return usePlayoffTheme ? `#${rawSeed}` : rawSeed;
-                })()}
-              </span>
+              {showSeedPill && (
+                <span className="yoffs-bracket-seed">
+                  {`#${rawSeed}`}
+                </span>
+              )}
               {team.avatarUrl && (
                 <img
                   className="standings-avatar h2h-web-avatar"

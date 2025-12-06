@@ -983,7 +983,7 @@ function MatchupView({
               block.weekNumber
             )
               ? gridExpandedByWeek[block.weekNumber]
-              : true
+              : false
           }
           onToggleExpanded={
             isSingleWeekWithNoWeeksProp

@@ -113,13 +113,18 @@ function H2hPage() {
 
         const standings = getStandings(weeksData) || [];
         const seedByRosterId = {};
+        const placeByRosterId = {};
         standings.forEach((row) => {
-          if (row && row.roster_id != null && row.place != null) {
-            seedByRosterId[String(row.roster_id)] = row.place;
+          if (row && row.roster_id != null) {
+            const key = String(row.roster_id);
+            if (row.place != null) {
+              seedByRosterId[key] = row.place;
+            }
+            placeByRosterId[key] = row.place != null ? row.place : 999;
           }
         });
 
-        const teams = (teamData.rosters || []).map((roster) => {
+        const teamsUnsorted = (teamData.rosters || []).map((roster) => {
           const rid = roster && roster.roster_id != null ? Number(roster.roster_id) : null;
           if (rid == null) {
             return null;
@@ -146,6 +151,15 @@ function H2hPage() {
             displaySeed: seed
           };
         }).filter(Boolean);
+
+        const teams = teamsUnsorted.slice().sort((a, b) => {
+          const pa = placeByRosterId[String(a.rosterId)] != null ? placeByRosterId[String(a.rosterId)] : 999;
+          const pb = placeByRosterId[String(b.rosterId)] != null ? placeByRosterId[String(b.rosterId)] : 999;
+          if (pa !== pb) {
+            return pa - pb;
+          }
+          return Number(a.rosterId) - Number(b.rosterId);
+        });
 
         setTeamsForSelector(teams);
       } catch (e) {
@@ -251,7 +265,7 @@ function H2hPage() {
   );
 
   return (
-    <InfoPageWrapper title="Head to Head View" subtitle={null} leftHeader={leftHeader}>
+    <InfoPageWrapper title="Head to Head" subtitle={null} leftHeader={leftHeader}>
       <HeadToHeadView
         season={season}
         loading={loading}
@@ -265,7 +279,7 @@ function H2hPage() {
         preloadedPlayersData={playersData}
         preloadedPlayerIdMap={playerIdMap}
         usePlayoffTheme={false}
-        displaySeeds
+        displaySeeds={false}
         expandedWeeksOverride={null}
       />
     </InfoPageWrapper>
