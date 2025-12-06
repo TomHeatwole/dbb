@@ -414,7 +414,7 @@ function Yoffs2024Format({
     return () => {
       cancelled = true;
     };
-  }, [season, weeksParsedData, playersData, playerIdMap]);
+  }, [season, weeksParsedData, playersData, playerIdMap, playoffStartWeek, playoffEndWeek]);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) {

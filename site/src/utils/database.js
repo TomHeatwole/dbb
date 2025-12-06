@@ -3,7 +3,7 @@
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, set, get, child, remove } from 'firebase/database';
+import { getDatabase, ref, set, get, remove } from 'firebase/database';
 import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL, FIREBASE_LOGIN_EMAIL, FIREBASE_LOGIN_PASSWORD, FIREBASE_API_KEY } from './global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
 
@@ -200,7 +200,7 @@ export async function readLatestBackup() {
   }
 }
 
-export default {
+const databaseApi = {
   writeApiCache,
   writeApiCacheWithKey,
   readApiCacheFresh,
@@ -213,6 +213,8 @@ export default {
   deleteAllPlayerData,
   deletePlayerWeek,
 };
+
+export default databaseApi;
 
 // Fetch Sleeper players, filter to active players intersecting caredPlayerIds, and store snapshot for current week
 export async function updatePlayers(caredPlayerIds) {

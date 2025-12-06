@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import YoffsScoresView from './YoffsScoresView';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
-import useIsMobile from '../hooks/useIsMobile';
 import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { Link, useSearchParams } from 'react-router-dom';
 import MatchupView from '../matchups/MatchupView';
@@ -29,7 +28,6 @@ function Yoffs2025Format({
   const [searchParams, setSearchParams] = useSearchParams();
   const [matchupDropdownOpen, setMatchupDropdownOpen] = useState(false);
   const matchupDropdownRef = useRef(null);
-  const isMobile = useIsMobile();
 
   const matchupOptionsBase = [
     { id: 1, label: 'Semifinal 1' },
@@ -374,7 +372,7 @@ function Yoffs2025Format({
     return () => {
       cancelled = true;
     };
-  }, [season]);
+  }, [season, playoffStartWeek, playoffEndWeek]);
 
   return (
     <>
