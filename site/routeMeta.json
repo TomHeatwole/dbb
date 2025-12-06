@@ -1,35 +1,43 @@
 {
   "/home/": {
     "ogTitle": "The Hwang Dynasty",
-    "ogDescription": ""
+    "ogDescription": "Becasuse sleeper was actually too lazy to do this.",
+    "ogImage": "/logo.png"
   },
   "/Scores/Week": {
     "ogTitle": "Hwang Dynasty Scores",
-    "ogDescription": ""
+    "ogDescription": "",
+    "ogImage": "/logo.png"
   },
   "/standings": {
     "ogTitle": "Hwang Dynasty Standings",
-    "ogDescription": ""
+    "ogDescription": "",
+    "ogImage": "/logo.png"
   },
   "/h2h": {
     "ogTitle": "Head to Head",
-    "ogDescription": ""
+    "ogDescription": "",
+    "ogImage": "/logo.png"
   },
   "/yoffs": {
     "ogTitle": "Playoffs \u2013 The Hwang Dynasty",
-    "ogDescription": ""
+    "ogDescription": "",
+    "ogImage": "/logo.png"
   },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",
-    "ogDescription": ""
+    "ogDescription": "",
+    "ogImage": "/logo.png"
   },
   "/team/": {
     "ogTitle": "The Hwang Dynasty",
-    "ogDescription": ""
+    "ogDescription": "",
+    "ogImage": "/logo.png"
   },
   "*": {
     "ogTitle": "The Hwang Dynasty",
-    "ogDescription": ""
+    "ogDescription": "",
+    "ogImage": "/ogo.png"
   }
 }
 

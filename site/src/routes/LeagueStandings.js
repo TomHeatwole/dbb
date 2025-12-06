@@ -303,7 +303,7 @@ function LeagueStandings() {
         <div className="loading-center">
           <div className="spinner" aria-label="Loading" />
           <div className="loading-text">Loading standings…</div>
-          <img src="/logo.jpg" alt="Site logo" className="loading-logo" />
+          <img src="/logo.png" alt="Site logo" className="loading-logo" />
         </div>
       </InfoPageWrapper>
       </>

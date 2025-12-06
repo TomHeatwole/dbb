@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 
 const DEFAULT_TITLE = 'The Hwang Dynasty';
 const DEFAULT_DESCRIPTION = 'Because Sleeper is too lazy for BestBall in browser';
-const DEFAULT_IMAGE = `${process.env.PUBLIC_URL || ''}/logo.jpg`;
+const DEFAULT_IMAGE = `${process.env.PUBLIC_URL || ''}/logo.png`;
 
 function PageMeta({ title, description, image, url }) {
   const fullTitle = title || DEFAULT_TITLE;

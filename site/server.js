@@ -66,14 +66,16 @@ function renderIndexForPath(urlPath) {
     console.error('Failed to read build/index.html at request time:', e.message);
     return '';
   }
-  const { ogTitle, ogDescription } = getMetaForPath(urlPath);
+  const { ogTitle, ogDescription, ogImage } = getMetaForPath(urlPath);
 
   const safeTitle = ogTitle != null ? String(ogTitle) : '';
   const safeDescription = ogDescription != null ? String(ogDescription) : '';
+  const safeImage = ogImage != null ? String(ogImage) : '/logo.png';
 
   return baseHtml
     .replace(/__OG_TITLE__/g, safeTitle)
-    .replace(/__OG_DESCRIPTION__/g, safeDescription);
+    .replace(/__OG_DESCRIPTION__/g, safeDescription)
+    .replace(/__OG_IMAGE__/g, safeImage);
 }
 
 // Serve static assets from the CRA build folder, but do NOT auto-serve index.html.
