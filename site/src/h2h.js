@@ -332,10 +332,9 @@ function H2hPage() {
       const current = getCurrentNFLWeek();
       if (!Number.isFinite(current) || current < 1) {
         setH2hWeek(1);
-      } else if (maxWeekWithData >= 17) {
-        setH2hWeek(17);
       } else {
-        setH2hWeek(Math.min(current, Math.max(1, maxWeekWithData || current)));
+        const upper = maxWeekWithData > 0 ? maxWeekWithData : current;
+        setH2hWeek(Math.min(upper, Math.max(1, current)));
       }
     }
   }, [season, weeksParsedData]);
