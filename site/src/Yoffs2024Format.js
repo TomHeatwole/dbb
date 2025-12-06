@@ -10,6 +10,7 @@ import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 import YoffsScoresView from './YoffsScoresView';
+import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
 
 function Yoffs2024Format({
   season,
@@ -650,8 +651,28 @@ function Yoffs2024Format({
       )}
 
       {selectedTab === 'Head to Head' && (
-        <div className="yoffs-tab-placeholder">
-          TODO: Playoff Head to Head tab.
+        <div className="yoffs-head-to-head-container">
+          {loading && (
+            <div className="loading-center">
+              <div className="spinner" aria-label="Loading" />
+              <div className="loading-text">Loading teams…</div>
+            </div>
+          )}
+          {!loading && error && <div>{error}</div>}
+          {!loading && !error && (!rows || rows.length === 0) && (
+            <div>No playoff teams found for this season.</div>
+          )}
+          {!loading && !error && rows && rows.length > 0 && (
+            <HeadToHeadSelectorWeb
+              teams={rows.map((row, idx) => ({
+                rosterId: row.rosterId,
+                teamName: getTeamName(row.rosterId),
+                avatarUrl: getAvatar(row.rosterId),
+                seed: row.place != null ? row.place : (idx + 1),
+                displaySeed: row.place != null ? row.place : (idx + 1),
+              }))}
+            />
+          )}
         </div>
       )}
     </>
