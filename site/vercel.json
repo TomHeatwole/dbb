@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/render.js": {
+      "includeFiles": "public/index.html"
+    }
+  },
   "rewrites": [
     { "source": "/", "destination": "/api/render" },
     { "source": "/home/", "destination": "/api/render" }
