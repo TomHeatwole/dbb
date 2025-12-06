@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "_builds_disabled": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build"
+    },
+    {
+      "src": "api/render.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "_rewrites_disabled": [
+    { "source": "/", "destination": "/api/render" },
+    { "source": "/home/", "destination": "/api/render" },
+    { "source": "/standings", "destination": "/api/render" },
+    { "source": "/Scores/Week", "destination": "/api/render" },
+    { "source": "/h2h", "destination": "/api/render" },
+    { "source": "/yoffs", "destination": "/api/render" },
+    { "source": "/admincontrols", "destination": "/api/render" },
+    { "source": "/team/:id", "destination": "/api/render" }
+  ]
+}
+
+
