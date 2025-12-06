@@ -10,8 +10,7 @@ import { fetchPlayersData, fetchPlayerIdMap } from './PlayerLookup';
 import { fetchNflScoreboard } from './GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from './GamesParser';
 import YoffsScoresView from './YoffsScoresView';
-import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
-import MatchupView from './MatchupView';
+import HeadToHeadView from './HeadToHeadView';
 
 function Yoffs2024Format({
   season,
@@ -672,71 +671,39 @@ function Yoffs2024Format({
       )}
 
       {selectedTab === 'Head to Head' && (
-        <div className="yoffs-head-to-head-container">
-          {loading && (
-            <div className="loading-center">
-              <div className="spinner" aria-label="Loading" />
-              <div className="loading-text">Loading teams…</div>
-            </div>
+        <HeadToHeadView
+          season={season}
+          loading={loading}
+          error={error}
+          teams={rows.map((row, idx) => ({
+            rosterId: row.rosterId,
+            teamName: getTeamName(row.rosterId),
+            avatarUrl: getAvatar(row.rosterId),
+            seed: row.place != null ? row.place : (idx + 1),
+            displaySeed: row.place != null ? row.place : (idx + 1),
+          }))}
+          selectedIds={h2hSelectedIds}
+          onSelectionChange={onH2hSelectedIdsChange}
+          weeks={Array.from(
+            { length: playoffEndWeek - playoffStartWeek + 1 },
+            (_, idx) => playoffStartWeek + idx
           )}
-          {!loading && error && <div>{error}</div>}
-          {!loading && !error && (!rows || rows.length === 0) && (
-            <div>No playoff teams found for this season.</div>
-          )}
-          {!loading && !error && rows && rows.length > 0 && (
-            <HeadToHeadSelectorWeb
-              teams={rows.map((row, idx) => ({
-                rosterId: row.rosterId,
-                teamName: getTeamName(row.rosterId),
-                avatarUrl: getAvatar(row.rosterId),
-                seed: row.place != null ? row.place : (idx + 1),
-                displaySeed: row.place != null ? row.place : (idx + 1),
-              }))}
-              initialSelection={h2hSelectedIds}
-              onSelectionChange={onH2hSelectedIdsChange}
-            />
-          )}
-          {!loading && !error && weeksParsedData && playersData && playerIdMap && (
-            <div className="yoffs-matchup-view-container">
-              <MatchupView
-                season={season}
-                team1Id={Array.isArray(h2hSelectedIds) ? h2hSelectedIds[0] : null}
-                team2Id={Array.isArray(h2hSelectedIds) ? h2hSelectedIds[1] : null}
-                week={playoffStartWeek}
-                weeks={Array.from(
-                  { length: playoffEndWeek - playoffStartWeek + 1 },
-                  (_, idx) => playoffStartWeek + idx
-                )}
-                expandedWeeksOverride={
-                  !h2hSelectedIds ||
-                  !Array.isArray(h2hSelectedIds) ||
-                  h2hSelectedIds.every((id) => id == null)
-                    ? []
-                    : !playoffsStarted
-                      ? [playoffStartWeek]
-                      : null
-                }
-                preloadedTeamData={
-                  rosters && users ? { rosters, users } : null
-                }
-                preloadedWeeksData={weeksParsedData}
-                preloadedPlayersData={playersData}
-                preloadedPlayerIdMap={playerIdMap}
-                displaySeeds
-                seed1={
-                  (rows.find((r) => r.rosterId === h2hSelectedIds[0])
-                    && rows.find((r) => r.rosterId === h2hSelectedIds[0]).place)
-                  || null
-                }
-                seed2={
-                  (rows.find((r) => r.rosterId === h2hSelectedIds[1])
-                    && rows.find((r) => r.rosterId === h2hSelectedIds[1]).place)
-                  || null
-                }
-              />
-            </div>
-          )}
-        </div>
+          preloadedTeamData={rosters && users ? { rosters, users } : null}
+          preloadedWeeksData={weeksParsedData}
+          preloadedPlayersData={playersData}
+          preloadedPlayerIdMap={playerIdMap}
+          usePlayoffTheme
+          displaySeeds
+          expandedWeeksOverride={
+            !h2hSelectedIds ||
+            !Array.isArray(h2hSelectedIds) ||
+            h2hSelectedIds.every((id) => id == null)
+              ? []
+              : !playoffsStarted
+                ? [playoffStartWeek]
+                : null
+          }
+        />
       )}
     </>
   );

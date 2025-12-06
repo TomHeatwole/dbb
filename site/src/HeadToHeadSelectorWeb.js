@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
-function HeadToHeadSelectorWeb({ teams, initialSelection = null, onSelectionChange = null }) {
+function HeadToHeadSelectorWeb({
+  teams,
+  initialSelection = null,
+  onSelectionChange = null,
+  usePlayoffTheme = true
+}) {
   // Explicit slots so Team A/B positions don't shift when unselecting.
   // selectedSlots[0] -> Team A, selectedSlots[1] -> Team B
   const [selectedSlots, setSelectedSlots] = useState(
@@ -57,20 +62,29 @@ function HeadToHeadSelectorWeb({ teams, initialSelection = null, onSelectionChan
         {teams.map((team) => {
           const isSelected = selectedSlots.includes(team.rosterId);
           const isDisabled = selectionFull && !isSelected;
+          const selectedClass = isSelected
+            ? (usePlayoffTheme ? ' h2h-web-card--selected' : ' h2h-web-card--selected-primary')
+            : '';
           return (
             <button
               key={team.rosterId}
               type="button"
               className={
                 'h2h-web-card' +
-                (isSelected ? ' h2h-web-card--selected' : '') +
+                selectedClass +
                 (isDisabled ? ' h2h-web-card--disabled' : '')
               }
               disabled={isDisabled}
               onClick={() => handleToggle(team.rosterId)}
             >
               <span className="yoffs-bracket-seed">
-                #{team.seed != null ? team.seed : team.displaySeed}
+                {(() => {
+                  const rawSeed = team.seed != null ? team.seed : team.displaySeed;
+                  if (rawSeed == null) {
+                    return '';
+                  }
+                  return usePlayoffTheme ? `#${rawSeed}` : rawSeed;
+                })()}
               </span>
               {team.avatarUrl && (
                 <img
