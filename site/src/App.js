@@ -8,15 +8,15 @@ import {
 } from 'react-router-dom';
 
 import './App.css';
-import TeamPage from './TeamPage';
-import HomePage from './HomePage';
-import Sidebar from './Sidebar';
-import useIsMobile from './useIsMobile';
-import LeagueStandings from './LeagueStandings';
-import LeagueScores from './LeagueScores';
-import AdminControls from './AdminControls';
-import YoffsPage from './YoffsPage';
-import H2hPage from './h2h';
+import TeamPage from './routes/TeamPage';
+import HomePage from './routes/HomePage';
+import Sidebar from './layout/Sidebar';
+import useIsMobile from './hooks/useIsMobile';
+import LeagueStandings from './routes/LeagueStandings';
+import LeagueScores from './routes/LeagueScores';
+import AdminControls from './routes/AdminControls';
+import YoffsPage from './routes/YoffsPage';
+import H2hPage from './routes/h2h';
 
 function AppInner() {
   const isMobile = useIsMobile();

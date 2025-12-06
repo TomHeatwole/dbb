@@ -1,5 +1,5 @@
 import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from './HelmetShim';
 
 const DEFAULT_TITLE = 'The Hwang Dynasty';
 const DEFAULT_DESCRIPTION = 'Because Sleeper is too lazy for BestBall in browser';

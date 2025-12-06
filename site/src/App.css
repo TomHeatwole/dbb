@@ -98,7 +98,7 @@
   height: 100%;
   z-index: 1;
   pointer-events: none;
-  background: url('./watermark.png') center center no-repeat;
+  background: url('./assets/watermark.png') center center no-repeat;
   background-size: contain;
   opacity: 0.042;
 }
@@ -256,11 +256,11 @@
 }
 
 .scroll-top {
-  background-image: url('./scroll-top.png');
+  background-image: url('./assets/scroll-top.png');
 }
 
 .scroll-bottom {
-  background-image: url('./scroll-bottom.png');
+  background-image: url('./assets/scroll-bottom.png');
 }
 
 .scroll-body {
