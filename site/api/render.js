@@ -1,6 +1,7 @@
 
 import fs from "fs";
 import path from "path";
+import { fetchTeamData, buildRosterIdToTeamInfoMap } from "../src/lookups/TeamLookup.js";
 
 // Cache route metadata so we don't hit the filesystem on every request
 let routeMetaCache = null;
@@ -76,7 +77,7 @@ function getOrigin(req) {
   return `${protocol}://${host}`.replace(/\/+$/, "");
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const filePath = path.join(__dirname, "..", "build", "index.html");
 
   let html;
@@ -97,13 +98,44 @@ export default function handler(req, res) {
     "Because Sleeper is too lazy for BestBall in browser";
   const defaultImage = "/logo.png";
 
-  const ogTitle = metaConfig.ogTitle || defaultTitle;
+  let ogTitle = metaConfig.ogTitle || defaultTitle;
   const ogDescription =
     (typeof metaConfig.ogDescription === "string" &&
       metaConfig.ogDescription.length > 0
       ? metaConfig.ogDescription
       : defaultDescription);
   const ogImagePath = metaConfig.ogImage || defaultImage;
+
+  // Special-case override: Head-to-Head page with both a/b query params set.
+  // Build OG title as "<ownerA> vs <ownerB>" using the Sleeper team lookup.
+  try {
+    const rawUrl =
+      (req.originalUrl && typeof req.originalUrl === "string"
+        ? req.originalUrl
+        : null) || (typeof req.url === "string" ? req.url : "/");
+    const queryStr = rawUrl.includes("?") ? rawUrl.split("?")[1] : "";
+    const params = new URLSearchParams(queryStr);
+    const aParam = params.get("a");
+    const bParam = params.get("b");
+    const isH2hPath = requestPath === "/h2h" || requestPath.startsWith("/h2h?");
+
+    if (isH2hPath && aParam && bParam) {
+      const teamData = await fetchTeamData();
+      if (teamData && Array.isArray(teamData.rosters) && Array.isArray(teamData.users)) {
+        const map = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
+        const aKey = Number.isFinite(Number(aParam)) ? Number(aParam) : aParam;
+        const bKey = Number.isFinite(Number(bParam)) ? Number(bParam) : bParam;
+        const infoA = map[aKey] || map[String(aKey)];
+        const infoB = map[bKey] || map[String(bKey)];
+        const ownerA = infoA && infoA.ownerName ? infoA.ownerName : `Team ${aParam}`;
+        const ownerB = infoB && infoB.ownerName ? infoB.ownerName : `Team ${bParam}`;
+        ogTitle = `${ownerA} vs ${ownerB}`;
+      }
+    }
+  } catch (err) {
+    // If anything fails (network, parsing, etc.), silently fall back to default OG title.
+    console.error("Failed to build H2H OG title override", err);
+  }
 
   const canonicalPath =
     requestPath && requestPath.startsWith("/")
