@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "builds": [
+  "_builds_disabled": [
     {
       "src": "package.json",
       "use": "@vercel/static-build"
@@ -10,7 +10,7 @@
       "use": "@vercel/node"
     }
   ],
-  "rewrites": [
+  "_rewrites_disabled": [
     { "source": "/", "destination": "/api/render" },
     { "source": "/home/", "destination": "/api/render" },
     { "source": "/standings", "destination": "/api/render" },
