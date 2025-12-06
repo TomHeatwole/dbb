@@ -20,7 +20,8 @@ function Yoffs2024Format({
   playoffStartWeek,
   playoffEndWeek,
   showPlayoffPictureWarning,
-  playoffSeedLockWeek
+  playoffSeedLockWeek,
+  playoffsStarted
 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -692,13 +693,22 @@ function Yoffs2024Format({
             <div className="yoffs-matchup-view-container">
               <MatchupView
                 season={season}
-                team1Id={h2hSelectedIds && h2hSelectedIds.length > 0 ? h2hSelectedIds[0] : null}
-                team2Id={h2hSelectedIds && h2hSelectedIds.length > 1 ? h2hSelectedIds[1] : null}
+                team1Id={Array.isArray(h2hSelectedIds) ? h2hSelectedIds[0] : null}
+                team2Id={Array.isArray(h2hSelectedIds) ? h2hSelectedIds[1] : null}
                 week={playoffStartWeek}
                 weeks={Array.from(
                   { length: playoffEndWeek - playoffStartWeek + 1 },
                   (_, idx) => playoffStartWeek + idx
                 )}
+                expandedWeeksOverride={
+                  !h2hSelectedIds ||
+                  !Array.isArray(h2hSelectedIds) ||
+                  h2hSelectedIds.every((id) => id == null)
+                    ? []
+                    : !playoffsStarted
+                      ? [playoffStartWeek]
+                      : null
+                }
                 preloadedTeamData={
                   rosters && users ? { rosters, users } : null
                 }

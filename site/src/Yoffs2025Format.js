@@ -17,7 +17,8 @@ function Yoffs2025Format({
   playoffStartWeek,
   playoffEndWeek,
   showPlayoffPictureWarning,
-  playoffSeedLockWeek
+  playoffSeedLockWeek,
+  playoffsStarted
 }) {
   const tabOptions = ['Bracket', 'Scores', 'Matchups'];
   const [seedTeams, setSeedTeams] = useState(null);
@@ -805,6 +806,9 @@ function Yoffs2025Format({
                       team2Id={seed4Team.rosterId}
                       week={playoffStartWeek}
                       weeks={[playoffStartWeek, playoffStartWeek + 1]}
+                      expandedWeeksOverride={
+                        !playoffsStarted ? [playoffStartWeek] : null
+                      }
                       preloadedTeamData={baseTeamData}
                       preloadedWeeksData={baseWeeksData}
                       preloadedPlayersData={basePlayersData}
@@ -823,6 +827,9 @@ function Yoffs2025Format({
                       team2Id={seed3Team.rosterId}
                       week={playoffStartWeek}
                       weeks={[playoffStartWeek, playoffStartWeek + 1]}
+                      expandedWeeksOverride={
+                        !playoffsStarted ? [playoffStartWeek] : null
+                      }
                       preloadedTeamData={baseTeamData}
                       preloadedWeeksData={baseWeeksData}
                       preloadedPlayersData={basePlayersData}

@@ -103,6 +103,10 @@ function YoffsPage() {
     isCurrentSeason &&
     Number.isFinite(completedWeeksForSeason) &&
     completedWeeksForSeason < playoffSeedLockWeek;
+  const playoffsStarted =
+    !isCurrentSeason ||
+    (Number.isFinite(completedWeeksForSeason) &&
+      completedWeeksForSeason >= PLAYOFF_START_WEEK);
 
   // React to external URL changes (browser nav) for year/format
   useEffect(() => {
@@ -185,6 +189,7 @@ function YoffsPage() {
         playoffEndWeek={PLAYOFF_END_WEEK}
         showPlayoffPictureWarning={showPlayoffPictureWarning}
         playoffSeedLockWeek={playoffSeedLockWeek}
+        playoffsStarted={playoffsStarted}
       />
     )
     : (
@@ -196,6 +201,7 @@ function YoffsPage() {
         playoffEndWeek={PLAYOFF_END_WEEK}
         showPlayoffPictureWarning={showPlayoffPictureWarning}
         playoffSeedLockWeek={playoffSeedLockWeek}
+        playoffsStarted={playoffsStarted}
       />
     );
 

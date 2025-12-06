@@ -60,6 +60,9 @@ function resolveTeamMeta(teamData, rosterId) {
  * - displaySeeds: boolean (optional) – if true, show seeds before team names
  * - seed1: number (optional) – seed for team1
  * - seed2: number (optional) – seed for team2
+ * - expandedWeeksOverride: number[] (optional) – list of week numbers that
+ *   should be expanded by default on initial render; when provided, this
+ *   overrides the “expand current NFL week” behavior.
  */
 function MatchupView({
   season,
@@ -70,6 +73,7 @@ function MatchupView({
   displaySeeds = false,
   seed1 = null,
   seed2 = null,
+  expandedWeeksOverride = null,
   preloadedTeamData = null,
   preloadedWeeksData = null,
   preloadedPlayersData = null,
@@ -119,14 +123,21 @@ function MatchupView({
         return prev;
       }
       const next = {};
+      const hasOverride = Array.isArray(expandedWeeksOverride);
       effectiveWeeks.forEach((w) => {
-        const isCurrentWeekForDisplay =
-          isCurrentSeason && Number(w) === Number(currentWeekNum);
-        next[w] = isCurrentWeekForDisplay;
+        if (hasOverride) {
+          next[w] = expandedWeeksOverride.some(
+            (ow) => Number(ow) === Number(w)
+          );
+        } else {
+          const isCurrentWeekForDisplay =
+            isCurrentSeason && Number(w) === Number(currentWeekNum);
+          next[w] = isCurrentWeekForDisplay;
+        }
       });
       return next;
     });
-  }, [hasAnyWeeks, effectiveWeeks, isCurrentSeason, currentWeekNum]);
+  }, [hasAnyWeeks, effectiveWeeks, isCurrentSeason, currentWeekNum, expandedWeeksOverride]);
 
   useEffect(() => {
     let cancelled = false;
@@ -468,11 +479,11 @@ function MatchupView({
         return (
           <div className={`yoffs-matchup-player yoffs-matchup-player--${align}`}>
             <div className="yoffs-matchup-player-main">
-              <span className="player-name">?</span>
-              <span className="yoffs-matchup-player-pts">-</span>
+              <span className="player-name">{'\u00A0'}</span>
+              <span className="yoffs-matchup-player-pts">{'\u00A0'}</span>
             </div>
             <div className={gameCellClasses.join(' ')}>
-              <div className="team-scores-game-text">-</div>
+              <div className="team-scores-game-text">{'\u00A0'}</div>
             </div>
           </div>
         );

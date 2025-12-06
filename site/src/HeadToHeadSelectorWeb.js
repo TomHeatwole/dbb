@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
 
 function HeadToHeadSelectorWeb({ teams, onSelectionChange = null }) {
-  const [selectedOrder, setSelectedOrder] = useState([]);
+  // Explicit slots so Team A/B positions don't shift when unselecting.
+  // selectedSlots[0] -> Team A, selectedSlots[1] -> Team B
+  const [selectedSlots, setSelectedSlots] = useState([null, null]);
 
   const handleToggle = (rosterId) => {
-    setSelectedOrder((prev) => {
-      let next;
-      if (prev.includes(rosterId)) {
-        // Deselect: remove from order
-        next = prev.filter((id) => id !== rosterId);
-      } else if (prev.length >= 2) {
-        // Already have 2 selected; ignore new clicks
-        next = prev;
+    setSelectedSlots((prev) => {
+      const next = [...prev];
+      const existingIdx = prev.findIndex((id) => id === rosterId);
+
+      if (existingIdx !== -1) {
+        // Deselect: clear that specific slot, do NOT shift the other team.
+        next[existingIdx] = null;
       } else {
-        next = [...prev, rosterId];
+        // Select: fill the first open slot (Team A first, then Team B).
+        const openIdx = prev.findIndex((id) => id == null);
+        if (openIdx === -1) {
+          // Already have 2 selected; ignore new clicks
+          return prev;
+        }
+        next[openIdx] = rosterId;
       }
+
       if (onSelectionChange) {
         onSelectionChange(next);
       }
@@ -26,7 +34,7 @@ function HeadToHeadSelectorWeb({ teams, onSelectionChange = null }) {
     return <div>No playoff teams found for this season.</div>;
   }
 
-  const selectionFull = selectedOrder.length >= 2;
+  const selectionFull = selectedSlots.every((id) => id != null);
 
   return (
     <div className="h2h-web-root">
@@ -35,7 +43,7 @@ function HeadToHeadSelectorWeb({ teams, onSelectionChange = null }) {
       </div>
       <div className="h2h-web-list">
         {teams.map((team) => {
-          const isSelected = selectedOrder.includes(team.rosterId);
+          const isSelected = selectedSlots.includes(team.rosterId);
           const isDisabled = selectionFull && !isSelected;
           return (
             <button
