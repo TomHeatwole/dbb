@@ -2,14 +2,82 @@
 import fs from "fs";
 import path from "path";
 
-export default function handler(req, res) {
-  // 1. Load your existing HTML (the file your app would normally serve)
-  console.log("render hit:", req.url);
-  console.log("lol");
+// Cache route metadata so we don't hit the filesystem on every request
+let routeMetaCache = null;
+function loadRouteMeta() {
+  if (routeMetaCache) {
+    return routeMetaCache;
+  }
+  const metaPath = path.join(__dirname, "..", "routeMeta.json");
+  try {
+    const raw = fs.readFileSync(metaPath, "utf8");
+    routeMetaCache = JSON.parse(raw);
+  } catch (err) {
+    console.error("Failed to load routeMeta.json from", metaPath, err);
+    routeMetaCache = {};
+  }
+  return routeMetaCache;
+}
 
-  // __dirname = /var/task/site/api
+function getPathFromRequest(req) {
+  // Prefer original URL when behind Express; fall back to req.url
+  const rawUrl =
+    (req.originalUrl && typeof req.originalUrl === "string"
+      ? req.originalUrl
+      : null) || (typeof req.url === "string" ? req.url : "/");
+  const pathOnly = rawUrl.split("?")[0] || "/";
+  return pathOnly;
+}
+
+function pickMetaForPath(routeMeta, pathOnly) {
+  if (!routeMeta || typeof routeMeta !== "object") {
+    return null;
+  }
+
+  const keys = Object.keys(routeMeta);
+  if (!keys.length) {
+    return null;
+  }
+
+  // Exact match or longest-prefix match (for things like "/team/:id")
+  let bestConfig = null;
+  let bestLen = -1;
+  for (const key of keys) {
+    if (key === "*") {
+      continue;
+    }
+    if (pathOnly === key || pathOnly.startsWith(key)) {
+      if (key.length > bestLen) {
+        bestLen = key.length;
+        bestConfig = routeMeta[key];
+      }
+    }
+  }
+
+  if (!bestConfig && routeMeta["*"]) {
+    bestConfig = routeMeta["*"];
+  }
+
+  return bestConfig || null;
+}
+
+function getOrigin(req) {
+  const host =
+    req.headers["x-forwarded-host"] ||
+    req.headers.host ||
+    "";
+  const protoHeader = req.headers["x-forwarded-proto"] || "https";
+  const protocol = Array.isArray(protoHeader)
+    ? protoHeader[0]
+    : String(protoHeader).split(",")[0];
+  if (!host) {
+    return "";
+  }
+  return `${protocol}://${host}`.replace(/\/+$/, "");
+}
+
+export default function handler(req, res) {
   const filePath = path.join(__dirname, "..", "build", "index.html");
-  //                 /var/task/site/api  ..  -> /var/task/site/build/index.html
 
   let html;
   try {
@@ -19,11 +87,72 @@ export default function handler(req, res) {
     return res.status(500).send("Template not found");
   }
 
-  // 3. (Optional) Inject any server-side meta tags
-  const metaTag = `<meta name="hello" content="world">`;
-  html = html.replace("</head>", `  ${metaTag}\n</head>`);
+  const routeMeta = loadRouteMeta();
+  const requestPath = getPathFromRequest(req);
+  const origin = getOrigin(req);
 
-  // 4. Return the modified HTML
+  const metaConfig = pickMetaForPath(routeMeta, requestPath) || {};
+  const defaultTitle = "The Hwang Dynasty";
+  const defaultDescription =
+    "Because Sleeper is too lazy for BestBall in browser";
+  const defaultImage = "/logo.png";
+
+  const ogTitle = metaConfig.ogTitle || defaultTitle;
+  const ogDescription =
+    (typeof metaConfig.ogDescription === "string" &&
+      metaConfig.ogDescription.length > 0
+      ? metaConfig.ogDescription
+      : defaultDescription);
+  const ogImagePath = metaConfig.ogImage || defaultImage;
+
+  const canonicalPath =
+    requestPath && requestPath.startsWith("/")
+      ? requestPath
+      : `/${requestPath || ""}`;
+  const ogUrl = origin ? `${origin}${canonicalPath}` : canonicalPath;
+  const ogImage = origin
+    ? `${origin}${ogImagePath.startsWith("/") ? ogImagePath : `/${ogImagePath}`}`
+    : ogImagePath;
+
+  // Strip any existing description/OG meta tags from the built HTML
+  html = html
+    .replace(
+      /<meta[^>]+name=["']description["'][^>]*>\s*/i,
+      ""
+    )
+    .replace(
+      /<meta[^>]+property=["']og:title["'][^>]*>\s*/i,
+      ""
+    )
+    .replace(
+      /<meta[^>]+property=["']og:description["'][^>]*>\s*/i,
+      ""
+    )
+    .replace(
+      /<meta[^>]+property=["']og:image["'][^>]*>\s*/i,
+      ""
+    )
+    .replace(
+      /<meta[^>]+property=["']og:url["'][^>]*>\s*/i,
+      ""
+    )
+    .replace(
+      /<meta[^>]+property=["']og:type["'][^>]*>\s*/i,
+      ""
+    );
+
+  const ogMetaBlock = [
+    `<meta name="description" content="${ogDescription}">`,
+    `<meta property="og:title" content="${ogTitle}">`,
+    `<meta property="og:description" content="${ogDescription}">`,
+    `<meta property="og:image" content="${ogImage}">`,
+    `<meta property="og:url" content="${ogUrl}">`,
+    `<meta property="og:type" content="website">`,
+  ].join("\n  ");
+
+  // Inject our OG/meta block just before </head>
+  html = html.replace("</head>", `  ${ogMetaBlock}\n</head>`);
+
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.status(200).send(html);
 }
