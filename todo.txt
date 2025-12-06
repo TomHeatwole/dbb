@@ -1,3 +1,10 @@
+- Head to Head modes:
+  - A selector comes up under the two selected teams with "Season-Long" selected by default
+  - Options:
+    - Season-Long: Weeks 1-N-1 as just a block with total score) Perahps an "info" icon on it explaining to use "Expanded"
+    - Season-Long (Expaned) (Weeks 1-N are all present too)
+    - Week-by-Week: Only display a single week and drop the weekly selector under it
+
 - Hover on player for popup of information
 - "Scenarios" page where you can see what would happen if a team did or didn't have another player
 - Consider removing or adjusting the grpahs for cumulative score and relative cumulative score in team page
