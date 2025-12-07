@@ -96,15 +96,12 @@ function HeadToHeadView({
         <div>No teams found for this season.</div>
       )}
       {!loading && !error && teams && teams.length > 0 && (
-        <>
-          <HeadToHeadSelectorWeb
-            teams={teams}
-            initialSelection={safeSelected}
-            onSelectionChange={handleSelectionChange}
-            usePlayoffTheme={usePlayoffTheme}
-          />
-          {controls}
-        </>
+        <HeadToHeadSelectorWeb
+          teams={teams}
+          initialSelection={safeSelected}
+          onSelectionChange={handleSelectionChange}
+          usePlayoffTheme={usePlayoffTheme}
+        />
       )}
       {showMatchup &&
         !loading &&
@@ -113,24 +110,27 @@ function HeadToHeadView({
         preloadedPlayersData &&
         preloadedPlayerIdMap &&
         preloadedTeamData && (
-          <div className="yoffs-matchup-view-container">
-            <MatchupView
-              season={season}
-              team1Id={team1Id}
-              team2Id={team2Id}
-              week={null}
-              weeks={defaultWeeks}
-              expandedWeeksOverride={expandedWeeksOverride}
-              preloadedTeamData={preloadedTeamData}
-              preloadedWeeksData={preloadedWeeksData}
-              preloadedPlayersData={preloadedPlayersData}
-              preloadedPlayerIdMap={preloadedPlayerIdMap}
-              displaySeeds={displaySeeds}
-              seed1={seed1}
-              seed2={seed2}
-              highlightMode={highlightMode}
-              highlightThreshold={highlightThreshold}
-            />
+          <div className="yoffs-matchups-root team-scores-container">
+            {controls}
+            <div className="yoffs-matchup-view-container">
+              <MatchupView
+                season={season}
+                team1Id={team1Id}
+                team2Id={team2Id}
+                week={null}
+                weeks={defaultWeeks}
+                expandedWeeksOverride={expandedWeeksOverride}
+                preloadedTeamData={preloadedTeamData}
+                preloadedWeeksData={preloadedWeeksData}
+                preloadedPlayersData={preloadedPlayersData}
+                preloadedPlayerIdMap={preloadedPlayerIdMap}
+                displaySeeds={displaySeeds}
+                seed1={seed1}
+                seed2={seed2}
+                highlightMode={highlightMode}
+                highlightThreshold={highlightThreshold}
+              />
+            </div>
           </div>
         )}
     </div>

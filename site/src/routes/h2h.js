@@ -577,13 +577,11 @@ function H2hPage() {
           expandedWeeksOverride={[h2hWeek]}
           showMatchup
           controls={
-            <div className="team-scores-container">
-              <WeekSelector
-                week={h2hWeek}
-                onChange={handleWeekChange}
-                maxWeek={matchupWeeks.length > 0 ? matchupWeeks[matchupWeeks.length - 1] : 1}
-              />
-            </div>
+            <WeekSelector
+              week={h2hWeek}
+              onChange={handleWeekChange}
+              maxWeek={matchupWeeks.length > 0 ? matchupWeeks[matchupWeeks.length - 1] : 1}
+            />
           }
         />
       )}

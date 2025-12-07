@@ -1,10 +1,4 @@
-- Head to Head modes:
-  - A selector comes up under the two selected teams with "Season-Long" selected by default
-  - Options:
-    - Season-Long: Weeks 1-N-1 as just a block with total score) Perahps an "info" icon on it explaining to use "Expanded"
-    - Season-Long (Expaned) (Weeks 1-N are all present too)
-    - Week-by-Week: Only display a single week and drop the weekly selector under it
-
+- In h2h, maybe for mobile only, we can collapse the selector down to the two selected teams and change the text to say "unselect to choose a new matchup" or similar
 - Improve the live scores lookup - specifically on refresh or page load we should always bypass cache.
 - Hover on player for popup of information
 - "Scenarios" page where you can see what would happen if a team did or didn't have another player
