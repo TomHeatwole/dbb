@@ -2585,9 +2585,11 @@ html {
     font-size: 0.6rem;
   }
   .mobile-info-container .yoffs-matchup-pos-pill {
-    font-size: 0.55rem;
-    padding: 0.06rem 0.35rem;
+    font-size: 0.45rem;
+    padding: 0.06rem 0.3rem;
     margin: 0 0.2rem;
+    min-width: 1.6rem;
+    max-width: 1.6rem;
   }
   /* Scale down player avatars and game text only within matchup tables */
   .mobile-info-container .yoffs-matchup-view .player-avatar-style {
