@@ -78,7 +78,8 @@ function SeasonHeadToHeadView({
   mode, // 'season' | 'expanded'
   highlightThreshold = null,
   selectedWeek = null,
-  controls = null
+  controls = null,
+  enableMobileSelectorCollapse = false
 }) {
   const safeSelected = normalizeSelectedIds(selectedIds);
   const [team1Id, team2Id] = useMemo(() => {
@@ -197,6 +198,7 @@ function SeasonHeadToHeadView({
             initialSelection={safeSelected}
             onSelectionChange={handleSelectionChange}
             usePlayoffTheme={false}
+            enableMobileSelectorCollapse={enableMobileSelectorCollapse}
           />
           {controls}
         </>

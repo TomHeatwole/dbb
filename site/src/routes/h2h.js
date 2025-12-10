@@ -483,6 +483,7 @@ function H2hPage() {
           mode="season"
           selectedWeek={h2hWeek}
           highlightThreshold={17}
+          enableMobileSelectorCollapse
           controls={
             <div className="team-scores-container">
               <WeekSelector
@@ -510,6 +511,7 @@ function H2hPage() {
           preloadedTeamData={rosters && users ? { rosters, users } : null}
           mode="expanded"
           highlightThreshold={17}
+          enableMobileSelectorCollapse
         />
       )}
 
@@ -529,6 +531,7 @@ function H2hPage() {
           mode="season"
           selectedWeek={h2hWeek}
           highlightThreshold={14}
+          enableMobileSelectorCollapse
           controls={
             <div className="team-scores-container">
               <WeekSelector
@@ -556,6 +559,7 @@ function H2hPage() {
           preloadedTeamData={rosters && users ? { rosters, users } : null}
           mode="expanded"
           highlightThreshold={14}
+          enableMobileSelectorCollapse
         />
       )}
 
@@ -576,6 +580,7 @@ function H2hPage() {
           displaySeeds={false}
           expandedWeeksOverride={[h2hWeek]}
           showMatchup
+          enableMobileSelectorCollapse
           controls={
             <WeekSelector
               week={h2hWeek}

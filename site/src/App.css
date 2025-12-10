@@ -2388,6 +2388,14 @@ html {
   margin: 0 0 0.75rem 0;
 }
 
+.h2h-web-list-anim-shell {
+  max-height: 100rem;
+  overflow: hidden;
+  transition: max-height 0.4s ease-in-out;
+  padding-top: 0.2rem;
+  padding-bottom: 0.25rem;
+}
+
 .h2h-web-list {
   display: flex;
   flex-direction: column;
@@ -2507,6 +2515,9 @@ html {
     justify-content: center;
     text-align: center;
     min-height: 5.58rem; /* slightly larger minimum height for better tap target */
+  }
+  .h2h-web-list-anim-shell--collapsed-mobile {
+    max-height: 11rem; /* enough for two rows of cards plus spacing and shadows */
   }
   .h2h-web-avatar {
     width: 1.2rem;

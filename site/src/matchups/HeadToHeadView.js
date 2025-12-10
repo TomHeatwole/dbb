@@ -43,6 +43,7 @@ function HeadToHeadView({
   preloadedPlayersData = null,
   preloadedPlayerIdMap = null,
   usePlayoffTheme = true,
+  enableMobileSelectorCollapse = false,
   displaySeeds = false,
   expandedWeeksOverride = null,
   showMatchup = true,
@@ -101,6 +102,7 @@ function HeadToHeadView({
           initialSelection={safeSelected}
           onSelectionChange={handleSelectionChange}
           usePlayoffTheme={usePlayoffTheme}
+          enableMobileSelectorCollapse={enableMobileSelectorCollapse}
         />
       )}
       {showMatchup &&

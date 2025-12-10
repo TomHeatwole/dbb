@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import useIsMobile from '../hooks/useIsMobile';
 
 function HeadToHeadSelectorWeb({
   teams,
   initialSelection = null,
   onSelectionChange = null,
-  usePlayoffTheme = true
+  usePlayoffTheme = true,
+  enableMobileSelectorCollapse = false
 }) {
   // Explicit slots so Team A/B positions don't shift when unselecting.
   // selectedSlots[0] -> Team A, selectedSlots[1] -> Team B
@@ -13,6 +15,9 @@ function HeadToHeadSelectorWeb({
       ? initialSelection
       : [null, null]
   );
+
+  const isMobile = useIsMobile();
+  const isMobileCollapseActive = enableMobileSelectorCollapse && isMobile;
 
   useEffect(() => {
     if (Array.isArray(initialSelection) && initialSelection.length === 2) {
@@ -52,51 +57,65 @@ function HeadToHeadSelectorWeb({
   }
 
   const selectionFull = selectedSlots.every((id) => id != null);
+  const isCollapsed = isMobileCollapseActive && selectionFull;
+
+  const visibleTeams = isCollapsed
+    ? teams.filter((team) => selectedSlots.includes(team.rosterId))
+    : teams;
 
   return (
     <div className="h2h-web-root">
       <div className="h2h-web-instruction">
-        Select 2 teams for Head to Head view
+        {isCollapsed
+          ? 'Unselect a team to pick a different matchup'
+          : 'Select 2 teams for Head to Head view'}
       </div>
-      <div className="h2h-web-list">
-        {teams.map((team) => {
-          const isSelected = selectedSlots.includes(team.rosterId);
-          const isDisabled = selectionFull && !isSelected;
-          const selectedClass = isSelected
-            ? (usePlayoffTheme ? ' h2h-web-card--selected' : ' h2h-web-card--selected-primary')
-            : '';
-          const rawSeed = team.seed != null ? team.seed : team.displaySeed;
-          const showSeedPill = usePlayoffTheme && rawSeed != null;
-          return (
-            <button
-              key={team.rosterId}
-              type="button"
-              className={
-                'h2h-web-card' +
-                selectedClass +
-                (isDisabled ? ' h2h-web-card--disabled' : '')
-              }
-              disabled={isDisabled}
-              onClick={() => handleToggle(team.rosterId)}
-            >
-              {showSeedPill && (
-                <span className="yoffs-bracket-seed">
-                  {`#${rawSeed}`}
+      <div
+        className={
+          'h2h-web-list-anim-shell' +
+          (isCollapsed ? ' h2h-web-list-anim-shell--collapsed-mobile' : '')
+        }
+      >
+        <div className="h2h-web-list">
+          {visibleTeams.map((team) => {
+            const isSelected = selectedSlots.includes(team.rosterId);
+            const isDisabled = selectionFull && !isSelected;
+            const selectedClass = isSelected
+              ? (usePlayoffTheme ? ' h2h-web-card--selected' : ' h2h-web-card--selected-primary')
+              : '';
+            const rawSeed = team.seed != null ? team.seed : team.displaySeed;
+            const showSeedPill = usePlayoffTheme && rawSeed != null;
+            return (
+              <button
+                key={team.rosterId}
+                type="button"
+                className={
+                  'h2h-web-card' +
+                  selectedClass +
+                  (isDisabled ? ' h2h-web-card--disabled' : '')
+                }
+                disabled={isDisabled}
+                onClick={() => handleToggle(team.rosterId)}
+              >
+                {showSeedPill && (
+                  <span className="yoffs-bracket-seed">
+                    {`#${rawSeed}`}
+                  </span>
+                )}
+                {team.avatarUrl && (
+                  <img
+                    className="standings-avatar h2h-web-avatar"
+                    src={team.avatarUrl}
+                    alt={`${team.teamName} avatar`}
+                  />
+                )}
+                <span className="yoffs-bracket-name h2h-web-name">
+                  {team.teamName}
                 </span>
-              )}
-              {team.avatarUrl && (
-                <img
-                  className="standings-avatar h2h-web-avatar"
-                  src={team.avatarUrl}
-                  alt={`${team.teamName} avatar`}
-                />
-              )}
-              <span className="yoffs-bracket-name h2h-web-name">
-                {team.teamName}
-              </span>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
