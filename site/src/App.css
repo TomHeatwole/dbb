@@ -920,6 +920,38 @@
   margin-top: 0.4rem;
   margin-bottom: 0.7rem;
 }
+.yoffs-link-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.yoffs-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6em 1.6em;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f6e05e, #f6ad55);
+  color: #1a202c;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, filter 0.12s ease-out;
+}
+.yoffs-link-button:hover,
+.yoffs-link-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+  filter: brightness(1.05);
+}
+.yoffs-link-button:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
 .team-analytics-week-from {
   margin-right: 0.625rem; /* 10px -> 0.625rem */
 }

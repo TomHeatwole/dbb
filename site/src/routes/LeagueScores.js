@@ -18,6 +18,7 @@ import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser'
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { readApiCacheLatestByKey, readPollingIntervalMs, readPlayersSnapshot } from '../utils/database';
 import PageMeta from '../PageMeta';
+import YoffsLink from '../yoffs/YoffsLink';
 
 const OG_TITLE = 'Hwang Dynasty Scores';
 const OG_DESCRIPTION = '';
@@ -665,6 +666,7 @@ function LeagueScores() {
 			<div className="team-scores-container">
 				<WeekSelector week={week} onChange={setWeek} />
 			</div>
+			{week >= 15 ? <YoffsLink /> : null}
 			{loading ? (
 				<div className="loading-center">
 					<div className="spinner" aria-label="Loading" />

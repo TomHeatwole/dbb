@@ -11,6 +11,7 @@ import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
 import PlayoffRaceGraph from '../standings/PlayoffRaceGraph';
+import YoffsLink from '../yoffs/YoffsLink';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
 import StandingsRowHeader from '../standings/StandingsRowHeader';
@@ -161,6 +162,8 @@ function LeagueStandings() {
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
+  const currentWeekForSeason = getCurrentNFLWeek(season);
+  const showYoffsLink = !isCurrentSeason || (Number.isFinite(currentWeekForSeason) && currentWeekForSeason >= 15);
 
   function getTeamName(rosterId) {
     if (!rosters || !users) return `Team ${rosterId}`;
@@ -664,6 +667,7 @@ function LeagueStandings() {
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
     <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
+      {showYoffsLink ? <YoffsLink /> : null}
       <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "") + (showPpgColumn ? "" : " standings-list--no-ppg") }>
         {displayRows.map((row, idx) => {
           const rosterId = row.roster_id;
