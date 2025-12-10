@@ -185,6 +185,7 @@ function SeasonHeadToHeadView({
         <div className="loading-center">
           <div className="spinner" aria-label="Loading" />
           <div className="loading-text">Loading teams…</div>
+          <img src="/logo.png" alt="Site logo" className="loading-logo" />
         </div>
       )}
       {!loading && error && <div>{error}</div>}

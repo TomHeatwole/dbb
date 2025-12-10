@@ -467,7 +467,15 @@ function H2hPage() {
         </div>
       </div>
 
-      {h2hFormat === 'season' && weeksParsedData && playersData && playerIdMap && (
+      {loading && (
+        <div className="loading-center">
+          <div className="spinner" aria-label="Loading" />
+          <div className="loading-text">Loading head to head…</div>
+          <img src="/logo.png" alt="Site logo" className="loading-logo" />
+        </div>
+      )}
+
+      {!loading && h2hFormat === 'season' && weeksParsedData && playersData && playerIdMap && (
         <SeasonHeadToHeadView
           season={season}
           loading={loading}
@@ -496,7 +504,7 @@ function H2hPage() {
         />
       )}
 
-      {h2hFormat === 'seasonExpanded' && weeksParsedData && playersData && playerIdMap && (
+      {!loading && h2hFormat === 'seasonExpanded' && weeksParsedData && playersData && playerIdMap && (
         <SeasonHeadToHeadView
           season={season}
           loading={loading}
@@ -515,7 +523,7 @@ function H2hPage() {
         />
       )}
 
-      {h2hFormat === 'season14' && weeksParsedData && playersData && playerIdMap && (
+      {!loading && h2hFormat === 'season14' && weeksParsedData && playersData && playerIdMap && (
         <SeasonHeadToHeadView
           season={season}
           loading={loading}
@@ -544,7 +552,7 @@ function H2hPage() {
         />
       )}
 
-      {h2hFormat === 'season14Expanded' && weeksParsedData && playersData && playerIdMap && (
+      {!loading && h2hFormat === 'season14Expanded' && weeksParsedData && playersData && playerIdMap && (
         <SeasonHeadToHeadView
           season={season}
           loading={loading}
@@ -563,7 +571,7 @@ function H2hPage() {
         />
       )}
 
-      {h2hFormat === 'weekly' && (
+      {!loading && h2hFormat === 'weekly' && (
         <HeadToHeadView
           season={season}
           loading={loading}
