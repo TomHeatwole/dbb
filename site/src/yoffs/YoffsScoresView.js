@@ -159,6 +159,16 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
     };
   }, [season, startWeek, endWeek, rows]);
 
+  if (effectiveRows === null) {
+    return (
+      <div className="loading-center">
+        <div className="spinner" aria-label="Loading" />
+        <div className="loading-text">Loading scores…</div>
+        <img src="/logo.png" alt="Site logo" className="loading-logo" />
+      </div>
+    );
+  }
+
   const cleanRows = Array.isArray(effectiveRows) ? effectiveRows.slice(0, 4) : [];
   const includedRosterIds = cleanRows.length ? cleanRows.map((r) => r.rosterId) : null;
 
