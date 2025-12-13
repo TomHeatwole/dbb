@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchTeamData } from '../lookups/TeamLookup';
+import LoadingState from '../LoadingState';
 
 function HeadToHeadSelector({ teamIds }) {
   const [selectedTeams, setSelectedTeams] = useState(new Set());
@@ -86,11 +87,7 @@ function HeadToHeadSelector({ teamIds }) {
 
   if (loading) {
     return (
-      <div className="loading-center">
-        <div className="spinner" aria-label="Loading" />
-        <div className="loading-text">Loading teams…</div>
-        <img src="/logo.png" alt="Site logo" className="loading-logo" />
-      </div>
+      <LoadingState label="Loading teams…" />
     );
   }
 

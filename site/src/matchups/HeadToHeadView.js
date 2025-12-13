@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
 import MatchupView from './MatchupView';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import LoadingState from '../LoadingState';
 
 function buildSeedMap(teams) {
   const map = {};
@@ -87,11 +88,7 @@ function HeadToHeadView({
   return (
     <div className="yoffs-head-to-head-container">
       {loading && (
-        <div className="loading-center">
-          <div className="spinner" aria-label="Loading" />
-          <div className="loading-text">Loading teams…</div>
-          <img src="/logo.png" alt="Site logo" className="loading-logo" />
-        </div>
+        <LoadingState label="Loading teams…" />
       )}
       {!loading && error && <div>{error}</div>}
       {!loading && !error && (!teams || teams.length === 0) && (

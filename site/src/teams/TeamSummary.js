@@ -5,6 +5,7 @@ import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { StartSitSort } from '../players/StartSitDecider';
 import FullRoster from './FullRoster';
 import { fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
+import LoadingState from '../LoadingState';
 
 function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playerList, rosters, users }) {
   const { id } = useParams();
@@ -193,13 +194,11 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     }
   }, [loading, weeksParsedData, rosterId, playersData, playerIdMap, playerSeasonTotalsMap, isCurrentSeason]);
 
-  if (loading) return (
-    <div className="loading-center">
-      <div className="spinner" aria-label="Loading" />
-      <div className="loading-text">Loading summary…</div>
-      <img src="/logo.png" alt="Site logo" className="loading-logo" />
-    </div>
-  );
+  if (loading) {
+    return (
+      <LoadingState label="Loading summary…" />
+    );
+  }
   if (!weeksParsedData) return <div>No summary data found.</div>;
 
   return (

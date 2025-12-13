@@ -12,6 +12,7 @@ import HeadToHeadView from '../matchups/HeadToHeadView';
 import SeasonHeadToHeadView from '../matchups/SeasonHeadToHeadView';
 import WeekSelector from '../scores/WeekSelector';
 import PageMeta from '../PageMeta';
+import LoadingState from '../LoadingState';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 const OG_TITLE = 'Head to Head';
@@ -468,11 +469,7 @@ function H2hPage() {
       </div>
 
       {loading && (
-        <div className="loading-center">
-          <div className="spinner" aria-label="Loading" />
-          <div className="loading-text">Loading head to head…</div>
-          <img src="/logo.png" alt="Site logo" className="loading-logo" />
-        </div>
+        <LoadingState label="Loading head to head…" />
       )}
 
       {!loading && h2hFormat === 'season' && weeksParsedData && playersData && playerIdMap && (

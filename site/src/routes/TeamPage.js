@@ -11,6 +11,7 @@ import TeamAnalytics from '../teams/TeamAnalytics';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import PageMeta from '../PageMeta';
+import LoadingState from '../LoadingState';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 const OG_TITLE = 'The Hwang Dynasty';
@@ -160,10 +161,7 @@ function TeamPage() {
       <>
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper title="Team" subtitle={null} leftHeader={null}>
-        <div className="loading-center">
-          <div className="spinner" aria-label="Loading" />
-          <div className="loading-text">Loading…</div>
-        </div>
+        <LoadingState label="Loading team…" />
       </InfoPageWrapper>
       </>
     );

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import LoadingState from '../LoadingState';
 import ScoresView from '../scores/ScoresView';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
@@ -161,11 +162,7 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
 
   if (effectiveRows === null) {
     return (
-      <div className="loading-center">
-        <div className="spinner" aria-label="Loading" />
-        <div className="loading-text">Loading scores…</div>
-        <img src="/logo.png" alt="Site logo" className="loading-logo" />
-      </div>
+      <LoadingState label="Loading scores…" />
     );
   }
 

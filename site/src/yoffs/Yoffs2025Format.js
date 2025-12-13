@@ -8,6 +8,7 @@ import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { Link, useSearchParams } from 'react-router-dom';
 import MatchupView from '../matchups/MatchupView';
+import LoadingState from '../LoadingState';
 
 function Yoffs2025Format({
   season,
@@ -406,10 +407,7 @@ function Yoffs2025Format({
       {selectedTab === 'Bracket' && (
         <>
           {loadingSeeds && (
-            <div className="loading-center">
-              <div className="spinner" aria-label="Loading" />
-              <div className="loading-text">Loading bracket…</div>
-            </div>
+            <LoadingState label="Loading bracket…" />
           )}
           {!loadingSeeds && seedError && <div>{seedError}</div>}
           {!loadingSeeds && !seedError && (!seedTeams || seedTeams.length === 0) && (
@@ -780,9 +778,11 @@ function Yoffs2025Format({
               <div>No playoff teams found for this season.</div>
             )}
             {loadingSeeds && (
-              <div className="loading-center">
-                <div className="spinner" aria-label="Loading matchup" />
-              </div>
+              <LoadingState
+                className="yoffs-matchup-view"
+                label="Loading matchup…"
+                ariaLabel="Loading matchup"
+              />
             )}
             {!loadingSeeds && seedError && <div>{seedError}</div>}
             {!loadingSeeds && !seedError && seedTeams && seedTeams.length >= 2 && (

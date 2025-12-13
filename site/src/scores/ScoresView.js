@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import LoadingState from '../LoadingState';
 import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from './WeekSelector';
 import { fetchScoresData } from '../lookups/ScoresLookup';
@@ -370,11 +371,7 @@ function ScoresView({
 
   if (loading) {
     return (
-      <div className="loading-center">
-        <div className="spinner" aria-label="Loading" />
-        <div className="loading-text">Loading scores…</div>
-        <img src="/logo.png" alt="Site logo" className="loading-logo" />
-      </div>
+      <LoadingState label="Loading scores…" />
     );
   }
 

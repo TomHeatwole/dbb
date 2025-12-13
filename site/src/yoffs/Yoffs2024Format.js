@@ -11,6 +11,7 @@ import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
 import YoffsScoresView from './YoffsScoresView';
 import HeadToHeadView from '../matchups/HeadToHeadView';
+import LoadingState from '../LoadingState';
 
 function Yoffs2024Format({
   season,
@@ -455,10 +456,7 @@ function Yoffs2024Format({
 
   if (loading) {
     return (
-      <div className="loading-center">
-        <div className="spinner" aria-label="Loading" />
-        <div className="loading-text">Loading playoff standings…</div>
-      </div>
+      <LoadingState label="Loading playoff standings…" />
     );
   }
 

@@ -16,6 +16,7 @@ import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
 import StandingsRowHeader from '../standings/StandingsRowHeader';
 import PageMeta from '../PageMeta';
+import LoadingState from '../LoadingState';
 
 const OG_TITLE = 'Hwang Dynasty Standings';
 const OG_DESCRIPTION = '';
@@ -302,11 +303,7 @@ function LeagueStandings() {
       <>
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
-        <div className="loading-center">
-          <div className="spinner" aria-label="Loading" />
-          <div className="loading-text">Loading standings…</div>
-          <img src="/logo.png" alt="Site logo" className="loading-logo" />
-        </div>
+        <LoadingState label="Loading standings…" />
       </InfoPageWrapper>
       </>
     );

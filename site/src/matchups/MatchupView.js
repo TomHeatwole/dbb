@@ -13,6 +13,7 @@ import MatchupWeekView from './MatchupWeekView';
 import { fetchInjuriesForWeek, getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { readPlayersSnapshot } from '../utils/database';
 import { createLiveScoresPoller } from '../utils/livePolling';
+import LoadingState from '../LoadingState';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -681,9 +682,11 @@ function MatchupView({
 
   if (isLoading) {
     return (
-      <div className="yoffs-matchup-view loading-center">
-        <div className="spinner" aria-label="Loading matchup" />
-      </div>
+      <LoadingState
+        className="yoffs-matchup-view"
+        label="Loading matchup…"
+        ariaLabel="Loading matchup"
+      />
     );
   }
 

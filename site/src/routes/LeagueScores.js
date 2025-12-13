@@ -20,6 +20,7 @@ import { readApiCacheLatestByKey, readPlayersSnapshot } from '../utils/database'
 import PageMeta from '../PageMeta';
 import YoffsLink from '../yoffs/YoffsLink';
 import { createLiveScoresPoller } from '../utils/livePolling';
+import LoadingState from '../LoadingState';
 
 const OG_TITLE = 'Hwang Dynasty Scores';
 const OG_DESCRIPTION = '';
@@ -557,11 +558,7 @@ function LeagueScores() {
 			</div>
 			{week >= 15 ? <YoffsLink /> : null}
 			{loading ? (
-				<div className="loading-center">
-					<div className="spinner" aria-label="Loading" />
-					<div className="loading-text">Loading scores…</div>
-					<img src="/logo.png" alt="Site logo" className="loading-logo" />
-				</div>
+				<LoadingState label="Loading scores…" />
 			) : error || !weeksParsedData || !rosters || !users ? (
 				<div>Error loading scores.</div>
 			) : (
