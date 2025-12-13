@@ -7,9 +7,26 @@ import { fetchTeamData } from './lookups/TeamLookup';
 // automatic selection algorithm (top score from the previous week).
 export const HOT_TEAM_OVERRIDE_ROSTER_ID = null;
 
-export async function selectHotTeam() {
+// options:
+// - currentWeekOverride: number | string | null
+//     If provided, this is treated as the "current week" instead of using
+//     getCurrentNFLWeek, and the hot team is selected from (currentWeekOverride - 1).
+export async function selectHotTeam(options = {}) {
   const season = CURRENT_YEAR;
-  const currentWeek = getCurrentNFLWeek(season);
+  const rawOverrideWeek =
+    options && Object.prototype.hasOwnProperty.call(options, 'currentWeekOverride')
+      ? options.currentWeekOverride
+      : null;
+
+  let currentWeek = getCurrentNFLWeek(season);
+
+  if (rawOverrideWeek != null) {
+    const parsed = Number(rawOverrideWeek);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      currentWeek = parsed;
+    }
+  }
+
   const targetWeek = Math.max(1, currentWeek - 1);
 
   const [weeksData, teamData] = await Promise.all([
@@ -107,7 +124,7 @@ export async function selectHotTeam() {
     null;
 
   let recent = null;
-  if (targetWeek > 2) {
+  if (targetWeek >= 2) {
     const startWeek = Math.max(1, targetWeek - 2);
     const temp = [];
     for (let wk = startWeek; wk <= targetWeek; wk += 1) {
