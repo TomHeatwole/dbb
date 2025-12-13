@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import HomeCard from './HomeCard';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './utils/DateHelper';
 import { fetchScoresData } from './lookups/ScoresLookup';
@@ -110,23 +111,7 @@ function HotTeamCard() {
             }
           }
           if (temp.length >= 2) {
-            const values = temp.map((r) => r.points);
-            const minPts = Math.min(...values);
-            const maxPts = Math.max(...values);
-            recent = temp.map((r) => {
-              let bucket = 'mid';
-              if (maxPts !== minPts) {
-                const ratio = (r.points - minPts) / (maxPts - minPts);
-                if (ratio < 0.34) {
-                  bucket = 'low';
-                } else if (ratio < 0.67) {
-                  bucket = 'mid';
-                } else {
-                  bucket = 'high';
-                }
-              }
-              return { ...r, bucket };
-            });
+            recent = temp;
           }
         }
 
@@ -201,18 +186,28 @@ function HotTeamCard() {
           </div>
           {Array.isArray(hotTeam.recent) && hotTeam.recent.length >= 2 && (
             <div className="hot-team-trend">
-              {hotTeam.recent.map((r) => (
-                <div key={r.week} className="hot-team-trend-item">
-                  <div
-                    className={
-                      `hot-team-trend-bar hot-team-trend-bar--${r.bucket}`
-                    }
+              <ResponsiveContainer width="100%" height={60}>
+                <LineChart
+                  data={hotTeam.recent}
+                  margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
+                >
+                  <XAxis dataKey="week" hide />
+                  <YAxis hide domain={['dataMin', 'dataMax']} />
+                  <Tooltip
+                    formatter={(v) => [`${Number(v).toFixed(1)} pts`, 'Score']}
+                    labelFormatter={(w) => `Week ${w}`}
+                    contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }}
                   />
-                  <div className="hot-team-trend-week">
-                    W{r.week}
-                  </div>
-                </div>
-              ))}
+                  <Line
+                    type="monotone"
+                    dataKey="points"
+                    stroke="#f6e05e"
+                    strokeWidth={2}
+                    dot={{ r: 2 }}
+                    activeDot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>

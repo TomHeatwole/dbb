@@ -10,7 +10,7 @@ function Sidebar() {
   const [, setPlayers] = useState([]);
   const [teamsOpen, setTeamsOpen] = useState(true);
   const location = useLocation();
-  const isHome = location.pathname === '/home/';
+  const isHome = location.pathname === '/home/' || location.pathname === '/althome';
   const [playUnroll, setPlayUnroll] = useState(false);
 
 
