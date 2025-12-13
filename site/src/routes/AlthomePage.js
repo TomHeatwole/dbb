@@ -1,5 +1,6 @@
 import React from 'react';
 import ActivePlayoffsCard from '../ActivePlayoffsCard';
+import HotTeamCard from '../HotTeamCard';
 import HomeCardExample1 from '../HomeCardExample1';
 import HomeCardExample2 from '../HomeCardExample2';
 
@@ -8,6 +9,7 @@ function AlthomePage() {
     <main className="home-main">
       <div className="home-cards-grid">
         <ActivePlayoffsCard />
+        <HotTeamCard />
         <HomeCardExample1 />
         <HomeCardExample2 />
         <HomeCardExample1 />

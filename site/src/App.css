@@ -1757,6 +1757,102 @@
   text-decoration: underline;
 }
 
+.hot-team-body {
+  margin-top: 0.35rem;
+}
+
+.hot-team-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  text-align: center;
+}
+
+.hot-team-avatar {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+}
+
+.hot-team-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  align-items: center;
+}
+
+.hot-team-team-line {
+  font-size: 1.0rem;
+  font-weight: 700;
+}
+
+.hot-team-team-name {
+  color: #edf2f7;
+}
+
+.hot-team-score-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.hot-team-week-label {
+  color: #a0aec0;
+  font-weight: 600;
+}
+
+.hot-team-score {
+  color: #f6e05e;
+  font-weight: 800;
+  font-size: 1.0rem;
+}
+
+.hot-team-trend {
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.hot-team-trend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+}
+
+.hot-team-trend-bar {
+  width: 0.5rem;
+  border-radius: 999px;
+  background: #2d3748;
+}
+
+.hot-team-trend-bar--low {
+  height: 0.7rem;
+  background: #4a5568;
+}
+
+.hot-team-trend-bar--mid {
+  height: 1.1rem;
+  background: #63b3ed;
+}
+
+.hot-team-trend-bar--high {
+  height: 1.6rem;
+  background: #f6e05e;
+}
+
+.hot-team-trend-week {
+  font-size: 0.7rem;
+  color: #a0aec0;
+}
+
 @media (max-width: 50em) {
   .active-playoffs-row {
     padding: 0.28rem 0.5rem;
@@ -1779,6 +1875,65 @@
 
   .active-playoffs-vs-dot {
     font-size: 0.6rem;
+  }
+
+  .hot-team-avatar {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .hot-team-team-line {
+    font-size: 0.8rem;
+  }
+
+  .hot-team-score-line {
+    font-size: 0.75rem;
+    gap: 0.35rem;
+  }
+
+  .hot-team-score {
+    font-size: 0.85rem;
+  }
+
+  .hot-team-trend {
+    gap: 0.3rem;
+  }
+
+  .hot-team-trend-bar {
+    width: 0.4rem;
+  }
+
+  .hot-team-trend-bar--low {
+    height: 0.5rem;
+  }
+
+  .hot-team-trend-bar--mid {
+    height: 0.85rem;
+  }
+
+  .hot-team-trend-bar--high {
+    height: 1.2rem;
+  }
+
+  .hot-team-trend-week {
+    font-size: 0.6rem;
+  }
+
+  .home-card-title {
+    font-size: 0.95rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .home-card-inner {
+    gap: 0.35rem;
+  }
+
+  .active-playoffs-link-row {
+    margin-top: 0.6rem;
+  }
+
+  .active-playoffs-link {
+    font-size: 0.7rem;
   }
 
   .home-cards-grid {
