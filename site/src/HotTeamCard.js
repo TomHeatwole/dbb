@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid
+} from 'recharts';
 import HomeCard from './HomeCard';
 import { CURRENT_YEAR, getCurrentNFLWeek } from './utils/DateHelper';
 import { fetchScoresData } from './lookups/ScoresLookup';
@@ -176,23 +184,61 @@ function HotTeamCard() {
               <div className="hot-team-team-line">
                 <span className="hot-team-team-name">{hotTeam.teamName}</span>
               </div>
-              <div className="hot-team-score-line">
-                <span className="hot-team-week-label">Week {hotTeam.week}</span>
-                <span className="hot-team-score">
-                  {hotTeam.points.toFixed(1)} pts
-                </span>
+              <div className="hot-team-score-lines">
+                {(() => {
+                  const rows = [];
+                  if (Array.isArray(hotTeam.recent) && hotTeam.recent.length) {
+                    const recentDesc = [...hotTeam.recent]
+                      .sort((a, b) => b.week - a.week)
+                      .slice(0, 3);
+                    recentDesc.forEach((entry) => {
+                      rows.push({
+                        week: entry.week,
+                        points: entry.points,
+                      });
+                    });
+                  } else {
+                    rows.push({
+                      week: hotTeam.week,
+                      points: hotTeam.points,
+                    });
+                  }
+                  return rows.map((row) => (
+                    <div className="hot-team-score-line" key={row.week}>
+                      <span className="hot-team-week-label">Week {row.week}</span>
+                      <span className="hot-team-score">
+                        {row.points.toFixed(1)}
+                        <span className="hot-team-score-units"> pts</span>
+                      </span>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           </div>
           {Array.isArray(hotTeam.recent) && hotTeam.recent.length >= 2 && (
             <div className="hot-team-trend">
-              <ResponsiveContainer width="100%" height={60}>
+              <ResponsiveContainer width="100%" height={90}>
                 <LineChart
                   data={hotTeam.recent}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
+                  margin={{ top: 8, right: 6, left: 0, bottom: 6 }}
                 >
-                  <XAxis dataKey="week" hide />
-                  <YAxis hide domain={['dataMin', 'dataMax']} />
+                  <CartesianGrid stroke="#2d3748" strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="week"
+                    tick={{ fill: '#a0aec0', fontSize: 10 }}
+                    axisLine={{ stroke: '#4a5568' }}
+                    tickLine={{ stroke: '#4a5568' }}
+                    tickFormatter={(value) => Math.round(value)}
+                    allowDecimals={false}
+                  />
+                  <YAxis
+                    tick={{ fill: '#a0aec0', fontSize: 10 }}
+                    axisLine={{ stroke: '#4a5568' }}
+                    tickLine={{ stroke: '#4a5568' }}
+                    width={32}
+                    domain={['dataMin', 'dataMax']}
+                  />
                   <Tooltip
                     formatter={(v) => [`${Number(v).toFixed(1)} pts`, 'Score']}
                     labelFormatter={(w) => `Week ${w}`}

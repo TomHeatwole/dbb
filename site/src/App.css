@@ -1581,6 +1581,12 @@
 }
 
 .home-card {
+  /* Shared sizing tokens for all HomeCard usages */
+  --home-card-title-font-size: 1.35rem;
+  --home-card-title-margin-bottom: 0.25rem;
+  --home-card-body-font-size: 0.98rem;
+  --home-card-inner-gap: 0.5rem;
+
   display: block;
   width: 100%;
   margin: 0 0 1.5rem 0;
@@ -1590,6 +1596,7 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   box-sizing: border-box;
   padding: 1.25rem 1.5rem;
+  font-size: var(--home-card-body-font-size);
   color: #e2e8f0;
   break-inside: avoid;
 }
@@ -1597,19 +1604,19 @@
 .home-card-inner {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--home-card-inner-gap);
 }
 
 .home-card-title {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.35rem;
+  margin: 0 0 var(--home-card-title-margin-bottom) 0;
+  font-size: var(--home-card-title-font-size);
   font-weight: 700;
   letter-spacing: 0.03em;
 }
 
 .home-card-body {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: var(--home-card-body-font-size);
 }
 
 .home-card-list {
@@ -1775,7 +1782,7 @@
   flex-direction: row;
   align-items: center;
   gap: 0.6rem;
-  flex: 1 1 auto;
+  flex: 1 1 50%;
   min-width: 0;
 }
 
@@ -1810,6 +1817,12 @@
   font-size: 0.9rem;
 }
 
+.hot-team-score-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .hot-team-week-label {
   color: #a0aec0;
   font-weight: 600;
@@ -1821,14 +1834,19 @@
   font-size: 1.0rem;
 }
 
+.hot-team-score-units {
+  margin-left: 0.15rem;
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+
 .hot-team-trend {
   margin-top: 0.25rem;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: flex-end;
-  gap: 0.4rem;
-  flex: 0 0 7.5rem;
-  width: 7.5rem;
+  flex: 1 1 50%;
+  min-width: 7.5rem;
 }
 
 .hot-team-trend-item {
@@ -1865,6 +1883,14 @@
 }
 
 @media (max-width: 50em) {
+  /* Compact all HomeCards on mobile via shared sizing tokens */
+  .home-card {
+    --home-card-title-font-size: 0.95rem;
+    --home-card-title-margin-bottom: 0.15rem;
+    --home-card-inner-gap: 0.35rem;
+    --home-card-body-font-size: 0.88rem;
+  }
+
   .hot-team-main {
     gap: 0.5rem;
   }
@@ -1914,10 +1940,13 @@
     font-size: 0.85rem;
   }
 
+  .hot-team-score-units {
+    display: none;
+  }
+
   .hot-team-trend {
-    gap: 0.25rem;
-    flex: 0 0 5.5rem;
-    width: 5.5rem;
+    flex: 1 1 55%;
+    min-width: 5.5rem;
   }
 
   .hot-team-trend-bar {
@@ -1938,15 +1967,6 @@
 
   .hot-team-trend-week {
     font-size: 0.6rem;
-  }
-
-  .home-card-title {
-    font-size: 0.95rem;
-    margin-bottom: 0.15rem;
-  }
-
-  .home-card-inner {
-    gap: 0.35rem;
   }
 
   .active-playoffs-link-row {
