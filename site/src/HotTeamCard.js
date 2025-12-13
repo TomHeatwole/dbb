@@ -179,40 +179,42 @@ function HotTeamCard() {
     body = (
       <div className="hot-team-body">
         <div className="hot-team-main">
-          {hotTeam.avatarUrl && (
-            <img
-              className="hot-team-avatar"
-              src={hotTeam.avatarUrl}
-              alt={`${hotTeam.teamName} avatar`}
-            />
-          )}
-          <div className="hot-team-text">
-            <div className="hot-team-team-line">
-              <span className="hot-team-team-name">{hotTeam.teamName}</span>
-            </div>
-            <div className="hot-team-score-line">
-              <span className="hot-team-week-label">Week {hotTeam.week}</span>
-              <span className="hot-team-score">
-                {hotTeam.points.toFixed(1)} pts
-              </span>
-            </div>
-            {Array.isArray(hotTeam.recent) && hotTeam.recent.length >= 2 && (
-              <div className="hot-team-trend">
-                {hotTeam.recent.map((r) => (
-                  <div key={r.week} className="hot-team-trend-item">
-                    <div
-                      className={
-                        `hot-team-trend-bar hot-team-trend-bar--${r.bucket}`
-                      }
-                    />
-                    <div className="hot-team-trend-week">
-                      W{r.week}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="hot-team-left">
+            {hotTeam.avatarUrl && (
+              <img
+                className="hot-team-avatar"
+                src={hotTeam.avatarUrl}
+                alt={`${hotTeam.teamName} avatar`}
+              />
             )}
+            <div className="hot-team-text">
+              <div className="hot-team-team-line">
+                <span className="hot-team-team-name">{hotTeam.teamName}</span>
+              </div>
+              <div className="hot-team-score-line">
+                <span className="hot-team-week-label">Week {hotTeam.week}</span>
+                <span className="hot-team-score">
+                  {hotTeam.points.toFixed(1)} pts
+                </span>
+              </div>
+            </div>
           </div>
+          {Array.isArray(hotTeam.recent) && hotTeam.recent.length >= 2 && (
+            <div className="hot-team-trend">
+              {hotTeam.recent.map((r) => (
+                <div key={r.week} className="hot-team-trend-item">
+                  <div
+                    className={
+                      `hot-team-trend-bar hot-team-trend-bar--${r.bucket}`
+                    }
+                  />
+                  <div className="hot-team-trend-week">
+                    W{r.week}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
