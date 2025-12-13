@@ -1628,6 +1628,19 @@
   padding: 0.75rem 0.9rem;
 }
 
+.commissioner-note-content,
+.commissioner-note-content p,
+.commissioner-note-content span,
+.commissioner-note-content li,
+.commissioner-note-content h1,
+.commissioner-note-content h2,
+.commissioner-note-content h3,
+.commissioner-note-content h4,
+.commissioner-note-content h5,
+.commissioner-note-content h6 {
+  color: #e2e8f0 !important;
+}
+
 .commissioner-note-content--clamped {
   max-height: 12rem;
   overflow: hidden;
