@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
-import { CURRENT_YEAR, getCompletedWeeksCount } from './utils/DateHelper';
+import LoadingState from './LoadingState';
+import { CURRENT_YEAR } from './utils/DateHelper';
 import { fetchScoresData } from './lookups/ScoresLookup';
 import { fetchTeamData } from './lookups/TeamLookup';
 
@@ -20,20 +21,6 @@ function ActivePlayoffsCard() {
       setError(null);
       try {
         const season = CURRENT_YEAR;
-        const completedWeeks = getCompletedWeeksCount(season);
-        const playoffsStarted = completedWeeks >= PLAYOFF_START_WEEK;
-
-        if (!playoffsStarted) {
-          setSemis({
-            started: false,
-            seed1: null,
-            seed4: null,
-            seed2: null,
-            seed3: null,
-          });
-          setLoading(false);
-          return;
-        }
 
         const [weeksData, teamData] = await Promise.all([
           fetchScoresData(season),
@@ -55,7 +42,26 @@ function ActivePlayoffsCard() {
         const weeksRegular = regularSliceFull.filter(Boolean);
         if (!weeksRegular.length) {
           setSemis({
-            started: true,
+            started: false,
+            seed1: null,
+            seed4: null,
+            seed2: null,
+            seed3: null,
+          });
+          setLoading(false);
+          return;
+        }
+
+        const semiWeekStart = PLAYOFF_START_WEEK;
+        const semiWeekEnd = PLAYOFF_START_WEEK + 1;
+
+        const hasPlayoffData =
+          Array.isArray(weeksData[semiWeekStart - 1]) &&
+          weeksData[semiWeekStart - 1].length > 0;
+
+        if (!hasPlayoffData) {
+          setSemis({
+            started: false,
             seed1: null,
             seed4: null,
             seed2: null,
@@ -74,8 +80,6 @@ function ActivePlayoffsCard() {
           .slice(0, 4);
 
         const seedIds = top4Regular.map((r) => Number(r.roster_id));
-        const semiWeekStart = PLAYOFF_START_WEEK;
-        const semiWeekEnd = PLAYOFF_START_WEEK + 1;
         const semiTotals = {};
 
         for (let wk = semiWeekStart; wk <= semiWeekEnd; wk += 1) {
@@ -206,9 +210,11 @@ function ActivePlayoffsCard() {
 
   if (loading) {
     body = (
-      <div className="active-playoffs-status">
-        Loading playoff matchups…
-      </div>
+      <LoadingState
+        className="active-playoffs-loading"
+        label="Loading playoff matchups…"
+        ariaLabel="Loading playoff matchups"
+      />
     );
   } else if (error) {
     body = (

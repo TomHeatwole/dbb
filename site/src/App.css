@@ -39,6 +39,11 @@
   padding: 40px 0;
 }
 
+.loading-icon-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .loading-text {
   margin-top: 12px;
 }
@@ -63,6 +68,14 @@
   margin-top: 16px;
   display: block;
   opacity: 0.6;
+}
+
+.loading-spinner-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 /* Reusable info banner */
@@ -444,6 +457,7 @@
 }
 .sidebar-dropdown-list-item {
   padding-left: 1.125rem; /* 18px -> 1.125rem */
+  font-size: 0.8rem;
 }
 
 /* --- TeamPage Tabs --- */
@@ -1678,6 +1692,19 @@
 
 .active-playoffs-status--error {
   color: #fed7d7;
+}
+
+.active-playoffs-loading {
+  padding: 0.25rem 0 0.5rem 0;
+}
+
+.active-playoffs-loading.loading-center {
+  padding: 0;
+  align-items: center;
+}
+
+.active-playoffs-loading .loading-text {
+  display: none;
 }
 
 .active-playoffs-link-row {
