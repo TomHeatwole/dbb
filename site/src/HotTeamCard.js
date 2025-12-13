@@ -7,12 +7,10 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  CartesianGrid
+  CartesianGrid,
 } from 'recharts';
 import HomeCard from './HomeCard';
-import { CURRENT_YEAR, getCurrentNFLWeek } from './utils/DateHelper';
-import { fetchScoresData } from './lookups/ScoresLookup';
-import { fetchTeamData } from './lookups/TeamLookup';
+import { selectHotTeam } from './HotTeamSelector';
 
 function HotTeamCard() {
   const [loading, setLoading] = useState(true);
@@ -26,111 +24,17 @@ function HotTeamCard() {
       setLoading(true);
       setError(null);
       try {
-        const season = CURRENT_YEAR;
-        const currentWeek = getCurrentNFLWeek(season);
-        const targetWeek = Math.max(1, currentWeek - 1);
+        if (cancelled) {
+          return;
+        }
 
-        const [weeksData, teamData] = await Promise.all([
-          fetchScoresData(season),
-          fetchTeamData(season),
-        ]);
+        const { hotTeam: selectedHotTeam } = await selectHotTeam();
 
         if (cancelled) {
           return;
         }
 
-        if (!weeksData || !Array.isArray(weeksData)) {
-          throw new Error('No scores data');
-        }
-        if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
-          throw new Error('No team data');
-        }
-
-        const weekArrRaw =
-          Array.isArray(weeksData[targetWeek - 1]) && weeksData[targetWeek - 1]
-            ? weeksData[targetWeek - 1]
-            : [];
-        const weekArr = weekArrRaw.filter(
-          (e) => e && e.roster_id != null && typeof e.points === 'number',
-        );
-
-        if (!weekArr.length) {
-          setHotTeam(null);
-          setLoading(false);
-          return;
-        }
-
-        let best = null;
-        weekArr.forEach((entry) => {
-          const pts = Number.isFinite(entry.points) ? entry.points : 0;
-          if (!best || pts > best.points) {
-            best = { rosterId: Number(entry.roster_id), points: pts };
-          }
-        });
-
-        if (!best) {
-          setHotTeam(null);
-          setLoading(false);
-          return;
-        }
-
-        const roster = teamData.rosters.find(
-          (r) => String(r.roster_id) === String(best.rosterId),
-        );
-        const user =
-          roster && teamData.users
-            ? teamData.users.find(
-                (u) => String(u.user_id) === String(roster.owner_id),
-              )
-            : null;
-
-        let teamName = `Team ${best.rosterId}`;
-        if (user && user.metadata && user.metadata.team_name) {
-          teamName = user.metadata.team_name;
-        } else if (user && user.display_name) {
-          teamName = `Team ${user.display_name}`;
-        }
-
-        const avatarUrl =
-          (user &&
-            (user.team_avatar_url ||
-              user.user_avatar_url ||
-              user.avatar_url)) ||
-          null;
-
-        let recent = null;
-        if (targetWeek > 2) {
-          const startWeek = Math.max(1, targetWeek - 2);
-          const temp = [];
-          for (let wk = startWeek; wk <= targetWeek; wk += 1) {
-            const wkArrRaw =
-              Array.isArray(weeksData[wk - 1]) && weeksData[wk - 1]
-                ? weeksData[wk - 1]
-                : [];
-            const wkArr = wkArrRaw.filter(
-              (e) => e && Number(e.roster_id) === Number(best.rosterId),
-            );
-            if (wkArr.length === 0) {
-              continue;
-            }
-            const entry = wkArr[0];
-            if (typeof entry.points === 'number' && Number.isFinite(entry.points)) {
-              temp.push({ week: wk, points: entry.points });
-            }
-          }
-          if (temp.length >= 2) {
-            recent = temp;
-          }
-        }
-
-        setHotTeam({
-          rosterId: best.rosterId,
-          teamName,
-          avatarUrl,
-          week: targetWeek,
-          points: best.points,
-          recent,
-        });
+        setHotTeam(selectedHotTeam);
         setLoading(false);
       } catch (e) {
         if (!cancelled) {
