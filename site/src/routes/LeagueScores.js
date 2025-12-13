@@ -400,6 +400,7 @@ function LeagueScores() {
 		const poller = createLiveScoresPoller({
 			season,
 			week,
+			forceOnStartAndFocus: true,
 			onData: ({ newWeeks, dbEntryTs }) => {
 				if (cancelled || !Array.isArray(newWeeks)) {
 					return;

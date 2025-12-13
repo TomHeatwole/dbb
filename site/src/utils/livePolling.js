@@ -25,6 +25,11 @@ export function createLiveScoresPoller({
   onData,
   onDelayMinutesChange,
   onLiveWindowChange,
+  // When true, the first tick on mount and any tick triggered when the page
+  // becomes visible/focused will force a fresh Sleeper fetch (bypassing the
+  // cached snapshot) while regular interval ticks continue to use TTL-based
+  // behavior.
+  forceOnStartAndFocus = false,
 }) {
   let polling = false;
   let pollingIntervalMs = 15000;
@@ -44,7 +49,7 @@ export function createLiveScoresPoller({
         if (intervalId) {
           clearInterval(intervalId);
           intervalId = setInterval(() => {
-            void tick();
+            void tick(false);
           }, pollingIntervalMs);
         }
       }
@@ -61,7 +66,7 @@ export function createLiveScoresPoller({
       return;
     }
     intervalId = setInterval(() => {
-      void tick();
+      void tick(false);
     }, pollingIntervalMs);
   }
 
@@ -72,7 +77,7 @@ export function createLiveScoresPoller({
     }
   }
 
-  async function tick() {
+  async function tick(forceUpdate = false) {
     if (stopped) {
       return;
     }
@@ -139,7 +144,7 @@ export function createLiveScoresPoller({
       let newWeeks = null;
       let fetchFailed = false;
       try {
-        newWeeks = await fetchScoresData(season, { activeWeekTtlMs });
+        newWeeks = await fetchScoresData(season, { activeWeekTtlMs, forceUpdate });
       } catch (_) {
         fetchFailed = true;
       }
@@ -213,7 +218,7 @@ export function createLiveScoresPoller({
         return;
       }
       if (document.visibilityState === 'visible') {
-        void tick();
+        void tick(forceOnStartAndFocus);
         startIntervalIfVisible();
       } else {
         stopInterval();
@@ -225,7 +230,7 @@ export function createLiveScoresPoller({
         return;
       }
       if (document.visibilityState === 'visible') {
-        void tick();
+        void tick(forceOnStartAndFocus);
         startIntervalIfVisible();
       }
     };
@@ -236,6 +241,7 @@ export function createLiveScoresPoller({
 
     if (typeof document !== 'undefined') {
       if (document.visibilityState === 'visible') {
+        void tick(forceOnStartAndFocus);
         startIntervalIfVisible();
       }
       document.addEventListener('visibilitychange', visibilityHandler);

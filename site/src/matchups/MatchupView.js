@@ -467,6 +467,7 @@ function MatchupView({
     const poller = createLiveScoresPoller({
       season,
       week: liveWeek,
+      forceOnStartAndFocus: true,
       onData: ({ newWeeks }) => {
         if (cancelled || !Array.isArray(newWeeks)) {
           return;

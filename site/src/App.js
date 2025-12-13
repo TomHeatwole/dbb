@@ -10,6 +10,7 @@ import {
 import './App.css';
 import TeamPage from './routes/TeamPage';
 import HomePage from './routes/HomePage';
+import AlthomePage from './routes/AlthomePage';
 import Sidebar from './layout/Sidebar';
 import useIsMobile from './hooks/useIsMobile';
 import LeagueStandings from './routes/LeagueStandings';
@@ -28,6 +29,7 @@ function AppInner() {
     <Routes>
       <Route path="/team/:id" element={<TeamPage />} />
       <Route path="/home/" element={<HomePage />} />
+      <Route path="/althome" element={<AlthomePage />} />
       <Route path="/standings" element={<LeagueStandings />} />
       <Route path="/Scores/Week" element={<LeagueScores />} />
       <Route path="/admincontrols" element={<AdminControls />} />
