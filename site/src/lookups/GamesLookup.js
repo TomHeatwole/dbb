@@ -1,6 +1,6 @@
 import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH, PAUSE_SCRAPES } from '../utils/global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
-import { writeApiCacheWithKey, readApiCacheLatestByKey } from '../utils/database';
+import { writeApiCacheWithKey, readApiCacheLatestByKey, recordRateLimitHit } from '../utils/database';
 
 async function fetchJson(url, cacheKeyOverride = null) {
   // Helper to perform network fetch and write to cache with stable cache key
@@ -9,6 +9,9 @@ async function fetchJson(url, cacheKeyOverride = null) {
   }
   const res = await fetch(url);
   if (!res.ok) {
+    if (res.status === 429) {
+      try { await recordRateLimitHit('espn'); } catch (_) {}
+    }
     throw new Error(`Failed to fetch ${url}: ${res.status}`);
   }
   const json = await res.json();

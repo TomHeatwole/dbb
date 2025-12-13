@@ -210,6 +210,7 @@ const databaseApi = {
   readLatestBackup,
   readDbCacheTtlMs,
   readPollingIntervalMs,
+  recordRateLimitHit,
   deleteAllPlayerData,
   deletePlayerWeek,
 };
@@ -242,6 +243,9 @@ export async function updatePlayers(caredPlayerIds) {
   }
   const url = 'https://api.sleeper.app/v1/players/nfl';
   const res = await fetch(url);
+  if (res && res.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
   if (!res || !res.ok) {
     throw new Error(`Failed to fetch players from Sleeper: ${res ? res.status : 'no response'}`);
   }
@@ -388,6 +392,43 @@ export async function readPollingIntervalMs() {
     return Number.isFinite(n) && n >= 1000 ? n : 15_000;
   } catch (_) {
     return 15_000;
+  }
+}
+
+// Rate limit tracking: record HTTP 429 responses from external providers so
+// we can later implement adaptive backoff or diagnostics. For now we keep a
+// simple counter and last-seen timestamp per provider (e.g. "sleeper", "espn").
+export async function recordRateLimitHit(provider) {
+  try {
+    const raw = String(provider || '').toLowerCase();
+    const key =
+      raw === 'sleeper' || raw === 'espn'
+        ? raw
+        : providerFromHost(raw);
+    if (!key) {
+      return false;
+    }
+    const db = getDb();
+    await ensureSignedIn();
+    const path = `rate_limits/${key}`;
+    const snap = await get(ref(db, path));
+    const existing = snap && snap.exists() ? (snap.val() || {}) : {};
+    const prevCount =
+      existing &&
+      typeof existing.count === 'number' &&
+      Number.isFinite(existing.count)
+        ? existing.count
+        : 0;
+    const now = Date.now();
+    const entry = {
+      count: prevCount + 1,
+      lastTs: now,
+      lastAt: new Date(now).toISOString(),
+    };
+    await set(ref(db, path), entry);
+    return true;
+  } catch (_) {
+    return false;
   }
 }
 

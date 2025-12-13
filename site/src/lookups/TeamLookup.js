@@ -1,5 +1,6 @@
 import { LEAGUE_ID, PREVIOUS_YEARS, PREVIOUS_ROSTER_OVERRIDES } from '../utils/global_constants';
 import { getCurrentYear } from '../utils/DateHelper';
+import { recordRateLimitHit } from '../utils/database';
 
 // Helper to get avatar URL from value (ID or URL)
 function getAvatarUrl(avatarVal) {
@@ -15,11 +16,17 @@ export async function fetchTeamData(season = getCurrentYear()) {
 
   // Fetch rosters
   const rosterRes = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
+  if (rosterRes.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
   if (!rosterRes.ok) throw new Error('Failed to fetch rosters');
   const rosters = await rosterRes.json();
 
   // Fetch users
   const usersRes = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/users`);
+  if (usersRes.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
   if (!usersRes.ok) throw new Error('Failed to fetch users');
   const users = await usersRes.json();
 
@@ -110,6 +117,9 @@ export async function fetchTradedPicks(season = getCurrentYear()) {
   }
 
   const res = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/traded_picks`);
+  if (res.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
   if (!res.ok) {
     throw new Error('Failed to fetch traded picks');
   }

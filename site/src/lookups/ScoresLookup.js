@@ -1,6 +1,6 @@
 import { LEAGUE_ID, PREVIOUS_YEARS, PAUSE_SCRAPES } from '../utils/global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
-import { writeApiCacheWithKey, readApiCacheLatestByKey } from '../utils/database';
+import { writeApiCacheWithKey, readApiCacheLatestByKey, recordRateLimitHit } from '../utils/database';
 
 export async function fetchScoresData(season, options = {}) {
   // Determine leagueId based on season
@@ -33,6 +33,9 @@ export async function fetchScoresData(season, options = {}) {
               try {
                 const r2 = await fetch(apiUrl);
                 if (!r2.ok) {
+                  if (r2.status === 429) {
+                    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+                  }
                   return;
                 }
                 const j2 = await r2.json();
@@ -57,6 +60,9 @@ export async function fetchScoresData(season, options = {}) {
     try {
       if (PAUSE_SCRAPES) { return null; }
       const resp = await fetch(apiUrl);
+      if (resp.status === 429) {
+        try { await recordRateLimitHit('sleeper'); } catch (_) {}
+      }
       if (resp.ok) {
         const weekArr = await resp.json();
         try { await writeApiCacheWithKey(cacheKey, apiUrl, weekArr); } catch (_) {}
