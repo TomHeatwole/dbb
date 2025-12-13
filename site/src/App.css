@@ -1623,6 +1623,33 @@
 .commissioner-note-content {
   white-space: pre-wrap;
   line-height: 1.5;
+  background: rgba(11, 18, 35, 0.9);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.commissioner-note-content--clamped {
+  max-height: 12rem;
+  overflow: hidden;
+}
+
+.commissioner-note-content--expanded {
+  max-height: none;
+}
+
+.commissioner-note-toggle {
+  margin-top: 0.6rem;
+  background: none;
+  border: none;
+  color: #90cdf4;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.commissioner-note-toggle:hover {
+  text-decoration: underline;
 }
 
 .home-card-list {

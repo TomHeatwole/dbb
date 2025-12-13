@@ -6,6 +6,7 @@ function CommissionerNoteCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [noteHtml, setNoteHtml] = useState('');
+  const [showFull, setShowFull] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,10 +55,23 @@ function CommissionerNoteCard() {
     );
   } else if (noteHtml) {
     body = (
-      <div
-        className="home-card-body commissioner-note-content"
-        dangerouslySetInnerHTML={{ __html: noteHtml }}
-      />
+      <>
+        <div
+          className={`home-card-body commissioner-note-content ${
+            showFull ? 'commissioner-note-content--expanded' : 'commissioner-note-content--clamped'
+          }`}
+          dangerouslySetInnerHTML={{ __html: noteHtml }}
+        />
+        <button
+          type="button"
+          className="commissioner-note-toggle"
+          onClick={() => {
+            setShowFull((prev) => !prev);
+          }}
+        >
+          {showFull ? 'See Less' : 'See More'}
+        </button>
+      </>
     );
   } else {
     body = (

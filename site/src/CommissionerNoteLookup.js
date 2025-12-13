@@ -25,6 +25,8 @@ export async function fetchCommissionerNoteHtml() {
     throw new Error('Commissioner note content not found in document.');
   }
 
+  // Return the raw inner HTML from the doc content and let the browser
+  // render it as-is inside the card.
   return contents.innerHTML.trim();
 }
 
