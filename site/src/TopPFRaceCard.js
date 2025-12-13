@@ -152,7 +152,7 @@ function getAvatar(rosters, users, rosterId) {
   return user.team_avatar_url || user.user_avatar_url || user.avatar_url || null;
 }
 
-function renderTankTooltip({ active, payload, label }) {
+function renderTopPFTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) {
     return null;
   }
@@ -195,15 +195,6 @@ function renderTankTooltip({ active, payload, label }) {
           </div>
         );
       })}
-      <div
-        style={{
-          marginTop: '4px',
-          fontStyle: 'italic',
-          opacity: 0.8,
-        }}
-      >
-        (cumulative score relative to playoff bar)
-      </div>
     </div>
   );
 }
@@ -434,7 +425,7 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
                     width={40}
                     domain={[yMin, yMax]}
                   />
-                  <Tooltip content={renderTankTooltip} />
+                  <Tooltip content={renderTopPFTooltip} />
                   {topTeams && topTeams[0] && (
                     <Line
                       type="monotone"
