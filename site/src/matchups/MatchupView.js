@@ -12,6 +12,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import MatchupWeekView from './MatchupWeekView';
 import { fetchInjuriesForWeek, getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { readPlayersSnapshot } from '../utils/database';
+import { createLiveScoresPoller } from '../utils/livePolling';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -446,6 +447,41 @@ function MatchupView({
       cancelled = true;
     };
   }, [season, hasAnyWeeks, effectiveWeeks, playerIdMap]);
+
+  // Live polling: when viewing a matchup that includes the current NFL week
+  // in the current season, periodically refresh weeksParsedData using the
+  // shared live polling helper so scores update while games are live.
+  useEffect(() => {
+    if (!isCurrentSeason || !hasAnyWeeks) {
+      return;
+    }
+    const liveWeek = effectiveWeeks.find(
+      (w) => Number(w) === Number(currentWeekNum)
+    );
+    if (!liveWeek) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const poller = createLiveScoresPoller({
+      season,
+      week: liveWeek,
+      onData: ({ newWeeks }) => {
+        if (cancelled || !Array.isArray(newWeeks)) {
+          return;
+        }
+        setWeeksParsedData(newWeeks);
+      },
+    });
+
+    poller.start();
+
+    return () => {
+      cancelled = true;
+      poller.stop();
+    };
+  }, [season, isCurrentSeason, currentWeekNum, hasAnyWeeks, effectiveWeeks]);
 
   function formatPlayerNameForDisplay(nameOrId) {
     const raw = nameOrId;

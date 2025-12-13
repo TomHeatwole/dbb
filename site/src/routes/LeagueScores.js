@@ -3,7 +3,7 @@ import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS, LEAGUE_ID } from '../utils/global_constants';
-import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek, shouldPollCurrentWeek } from '../utils/DateHelper';
+import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from '../scores/WeekSelector';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
@@ -16,9 +16,10 @@ import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
-import { readApiCacheLatestByKey, readPollingIntervalMs, readPlayersSnapshot } from '../utils/database';
+import { readApiCacheLatestByKey, readPlayersSnapshot } from '../utils/database';
 import PageMeta from '../PageMeta';
 import YoffsLink from '../yoffs/YoffsLink';
+import { createLiveScoresPoller } from '../utils/livePolling';
 
 const OG_TITLE = 'Hwang Dynasty Scores';
 const OG_DESCRIPTION = '';
@@ -85,16 +86,12 @@ function LeagueScores() {
 	const [playerGameLabels, setPlayerGameLabels] = useState({});
 	const [injuriesMap, setInjuriesMap] = useState({});
 	const [apiDelayMinutes, setApiDelayMinutes] = useState(null); // null -> hide banner, number -> minutes delayed
-	const pollingRef = useRef(false);
-	const intervalRef = useRef(null);
 	const lastDbEntryTsRef = useRef(null);
 	const [prevData, setPrevData] = useState(null);
 	const [teamHighlightMap, setTeamHighlightMap] = useState({}); // rosterId -> 'up'|'down'|'row'
 	const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
 	const labelBaselineKeyRef = useRef(null);
 	const [playersTeamMap, setPlayersTeamMap] = useState({}); // playerId -> team abbr (from weekly snapshot)
-	const pollingIntervalMsRef = useRef(15000);
-	const isLivePollingWindowRef = useRef(false);
 
 	const playerSeasonTotalsMap = useMemo(() => {
 		return getPlayerSeasonTotalsMap(weeksParsedData);
@@ -395,114 +392,30 @@ function LeagueScores() {
 		labelBaselineKeyRef.current = null;
 	}, [season, week]);
 
-	// Poll for score updates every 15s only when tab is visible/focused; run an immediate tick on return
+	// Poll for score updates using shared live polling helper; only active while
+	// this route is mounted and the tab is visible.
 	useEffect(() => {
 		let cancelled = false;
 
-		async function refreshPollingInterval() {
-			try {
-				const ms = await readPollingIntervalMs();
-				if (typeof ms === 'number' && isFinite(ms) && ms > 0) {
-					pollingIntervalMsRef.current = ms;
-					// If an interval is already running, restart it with the new delay
-					if (intervalRef.current) {
-						clearInterval(intervalRef.current);
-						intervalRef.current = setInterval(() => { tick(); }, pollingIntervalMsRef.current);
-					}
+		const poller = createLiveScoresPoller({
+			season,
+			week,
+			onData: ({ newWeeks, dbEntryTs }) => {
+				if (cancelled || !Array.isArray(newWeeks)) {
+					return;
 				}
-			} catch (_) {}
-		}
-
-		const tick = async () => {
-			if (cancelled || document.visibilityState !== 'visible') { return; }
-			if (pollingRef.current) { return; }
-			pollingRef.current = true;
-			try {
-				// Gate polling based on ESPN schedule/status for current week's games
-				const isCurrentSeason = String(season) === String(CURRENT_YEAR);
-				const currentWk = getCurrentNFLWeek();
-				const isActiveWeek = isCurrentSeason && (Number(week) === currentWk);
-				let activeWeekTtlMs = null;
-				let isLivePollingWindow = false;
-				if (isActiveWeek) {
-					const espnCacheKey = `espn_site_v2_sports_football_nfl_scoreboard_week_${week}_year_${season}_seasontype_2`;
-					let scoreboard = null;
-					try {
-						const latestE = await readApiCacheLatestByKey(espnCacheKey);
-						scoreboard = latestE && latestE.data ? latestE.data : null;
-					} catch (_) {}
-					if (!scoreboard) {
-						try { scoreboard = await fetchNflScoreboard(Number(season), Number(week)); } catch (_) {}
-					}
-					const shouldPoll = shouldPollCurrentWeek(scoreboard);
-					isLivePollingWindow = shouldPoll;
-					isLivePollingWindowRef.current = isLivePollingWindow;
-					activeWeekTtlMs = shouldPoll ? 60 * 1000 : 60 * 60 * 1000;
-					// removed debug log
-					// When not live polling, we still fetch with a 1-hour TTL to keep data fresh
-				}
-				else {
-					isLivePollingWindowRef.current = false;
-				}
-
-				// Determine cache key and record previous fetchedAt before attempting refresh
-				const isCurrentSeason2 = String(season) === String(CURRENT_YEAR);
-				const leagueId = isCurrentSeason2 ? LEAGUE_ID : PREVIOUS_YEARS[season];
-				const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${week}`;
-				let prevDbTs = null;
-				try {
-					const prevLatest = await readApiCacheLatestByKey(cacheKey);
-					prevDbTs = prevLatest && prevLatest.ts ? prevLatest.ts : null;
-				} catch (_) {}
-
-				// Attempt to refresh scores data
-				let newWeeks = null;
-				let fetchFailed = false;
-				try {
-					newWeeks = await fetchScoresData(season, { activeWeekTtlMs });
-				} catch (_) {
-					fetchFailed = true;
-				}
-
-				// Read fetchedAt after refresh attempt
-				let dbEntryTs = null;
-				try {
-					const latestAfter = await readApiCacheLatestByKey(cacheKey);
-					dbEntryTs = latestAfter && latestAfter.ts ? latestAfter.ts : null;
-				} catch (_) {}
-
-				// Only show delay banner if live-polling window, cache was stale before, and refresh failed (threw or ts unchanged)
-				if (isLivePollingWindow) {
-					const now = Date.now();
-					const prevAgeMs = prevDbTs != null ? (now - prevDbTs) : null;
-					const afterAgeMs = dbEntryTs != null ? (now - dbEntryTs) : null;
-					const wasStaleBefore = prevAgeMs != null && prevAgeMs > 60 * 1000;
-					if (wasStaleBefore && (fetchFailed || dbEntryTs === prevDbTs)) {
-						const ageMs = afterAgeMs != null ? afterAgeMs : prevAgeMs;
-						if (ageMs != null && ageMs >= 120000) {
-							setApiDelayMinutes(Math.floor(ageMs / 60000));
-							// removed debug log
-						} else {
-							setApiDelayMinutes(null);
-							// removed debug log
-						}
-					} else {
-						setApiDelayMinutes(null);
-						// removed debug log
-					}
-				} else {
-					setApiDelayMinutes(null);
-					// removed debug log
-				}
-				if (cancelled || !Array.isArray(newWeeks)) { return; }
 				const seasonTotals = getPlayerSeasonTotalsMap(newWeeks);
-				const nextExpanded = buildExpandedData(newWeeks, week, playerGameLabels, seasonTotals);
+				const nextExpanded = buildExpandedData(
+					newWeeks,
+					week,
+					playerGameLabels,
+					seasonTotals
+				);
 				let changes = [];
 				if (prevData) {
 					changes = compareExpanded(prevData, nextExpanded);
 				}
 				const prevTs = lastDbEntryTsRef.current;
-				// removed noisy debug log
 				if ((dbEntryTs != null && prevTs !== dbEntryTs) || changes.length > 0) {
 					setWeeksParsedData(newWeeks);
 					lastDbEntryTsRef.current = dbEntryTs != null ? dbEntryTs : prevTs;
@@ -514,21 +427,37 @@ function LeagueScores() {
 							const dir = (ch.after || 0) > (ch.before || 0) ? 'up' : 'down';
 							nextTeamMap[String(ch.rosterId)] = dir;
 						} else if (ch.type === 'starterSlot') {
-							const beforePts = (ch.before && typeof ch.before.pts === 'number') ? ch.before.pts : 0;
-							const afterPts = (ch.after && typeof ch.after.pts === 'number') ? ch.after.pts : 0;
-							const pid = (ch.after && ch.after.id) ? String(ch.after.id) : ((ch.before && ch.before.id) ? String(ch.before.id) : null);
+							const beforePts =
+								ch.before && typeof ch.before.pts === 'number' ? ch.before.pts : 0;
+							const afterPts =
+								ch.after && typeof ch.after.pts === 'number' ? ch.after.pts : 0;
+							const pid =
+								ch.after && ch.after.id
+									? String(ch.after.id)
+									: ch.before && ch.before.id
+									? String(ch.before.id)
+									: null;
 							if (pid) {
-								const dir = afterPts > beforePts ? 'up' : (afterPts < beforePts ? 'down' : null);
+								const dir =
+									afterPts > beforePts
+										? 'up'
+										: afterPts < beforePts
+										? 'down'
+										: null;
 								if (dir) {
 									const rid = String(ch.rosterId);
-									if (!nextPlayerMap[rid]) { nextPlayerMap[rid] = {}; }
+									if (!nextPlayerMap[rid]) {
+										nextPlayerMap[rid] = {};
+									}
 									nextPlayerMap[rid][pid] = dir;
 								}
 							}
 						} else if (ch.type === 'benchPts') {
 							const dir = (ch.after || 0) > (ch.before || 0) ? 'up' : 'down';
 							const rid = String(ch.rosterId);
-							if (!nextPlayerMap[rid]) { nextPlayerMap[rid] = {}; }
+							if (!nextPlayerMap[rid]) {
+								nextPlayerMap[rid] = {};
+							}
 							nextPlayerMap[rid][String(ch.playerId)] = dir;
 						} else if (ch.type === 'placement') {
 							if (ch.direction === 'up') {
@@ -546,60 +475,19 @@ function LeagueScores() {
 						}, 3000);
 					}
 				}
-			} catch (_) {
-				// ignore
-			} finally {
-				pollingRef.current = false;
-			}
-		};
+			},
+			onDelayMinutesChange: (mins) => {
+				setApiDelayMinutes(mins);
+			},
+		});
 
-		const startPolling = () => {
-			if (intervalRef.current || cancelled) { return; }
-			if (document.visibilityState !== 'visible') { return; }
-			intervalRef.current = setInterval(() => { tick(); }, pollingIntervalMsRef.current);
-		};
-		const stopPolling = () => {
-			if (intervalRef.current) {
-				clearInterval(intervalRef.current);
-				intervalRef.current = null;
-			}
-		};
-
-		const handleVisibility = () => {
-			if (document.visibilityState === 'visible') {
-				tick();
-				startPolling();
-			} else {
-				stopPolling();
-			}
-		};
-		const handleFocus = () => {
-			if (document.visibilityState === 'visible') {
-				tick();
-				startPolling();
-			}
-		};
-		const handleBlur = () => {
-			stopPolling();
-		};
-
-		// Initialize based on current visibility
-		refreshPollingInterval();
-		if (document.visibilityState === 'visible') {
-			startPolling();
-		}
-		document.addEventListener('visibilitychange', handleVisibility);
-		window.addEventListener('focus', handleFocus);
-		window.addEventListener('blur', handleBlur);
+		poller.start();
 
 		return () => {
 			cancelled = true;
-			stopPolling();
-			document.removeEventListener('visibilitychange', handleVisibility);
-			window.removeEventListener('focus', handleFocus);
-			window.removeEventListener('blur', handleBlur);
+			poller.stop();
 		};
-	}, [season, week, weeksParsedData, playersData, playerIdMap, playerGameLabels, buildExpandedData, prevData]);
+	}, [season, week, playerGameLabels, buildExpandedData, prevData]);
 
 
 	function getTeamName(rosterId) {
