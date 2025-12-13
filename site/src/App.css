@@ -1827,7 +1827,8 @@
   align-items: flex-end;
   justify-content: flex-end;
   gap: 0.4rem;
-  flex: 0 0 auto;
+  flex: 0 0 7.5rem;
+  width: 7.5rem;
 }
 
 .hot-team-trend-item {
@@ -1915,6 +1916,8 @@
 
   .hot-team-trend {
     gap: 0.25rem;
+    flex: 0 0 5.5rem;
+    width: 5.5rem;
   }
 
   .hot-team-trend-bar {
