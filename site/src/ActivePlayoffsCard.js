@@ -120,10 +120,17 @@ function ActivePlayoffsCard() {
             } else if (user && user.display_name) {
               teamName = `Team ${user.display_name}`;
             }
+            const avatarUrl =
+              (user &&
+                (user.team_avatar_url ||
+                  user.user_avatar_url ||
+                  user.avatar_url)) ||
+              null;
             return {
               rosterId: rid,
               seed: row.place,
               teamName,
+              avatarUrl,
               total: semiTotals[rid] != null ? semiTotals[rid] : null,
             };
           })
@@ -172,16 +179,16 @@ function ActivePlayoffsCard() {
     if (!left || !right) {
       return (
         <div className="active-playoffs-row">
-          <div className="active-playoffs-side">
-            <div className="active-playoffs-team-name">TBD</div>
-            <div className="active-playoffs-score">—</div>
+          <div className="active-playoffs-side active-playoffs-side--left">
+            <span className="active-playoffs-team-name">TBD</span>
           </div>
+          <div className="active-playoffs-score active-playoffs-score--left">—</div>
           <div className="active-playoffs-vs">
-            <span className="active-playoffs-vs-label">{label}</span>
+            <span className="active-playoffs-vs-dot">vs.</span>
           </div>
+          <div className="active-playoffs-score active-playoffs-score--right">—</div>
           <div className="active-playoffs-side active-playoffs-side--right">
-            <div className="active-playoffs-team-name">TBD</div>
-            <div className="active-playoffs-score">—</div>
+            <span className="active-playoffs-team-name">TBD</span>
           </div>
         </div>
       );
@@ -189,18 +196,34 @@ function ActivePlayoffsCard() {
 
     return (
       <div className="active-playoffs-row">
-        <div className="active-playoffs-side">
-          <div className="active-playoffs-team-seed">#{left.seed}</div>
-          <div className="active-playoffs-team-name">{left.teamName}</div>
-          <div className="active-playoffs-score">{formatScore(left.total)}</div>
+        <div className="active-playoffs-side active-playoffs-side--left">
+          {left.avatarUrl && (
+            <img
+              className="active-playoffs-avatar"
+              src={left.avatarUrl}
+              alt={`${left.teamName} avatar`}
+            />
+          )}
+          <span className="active-playoffs-team-name">{left.teamName}</span>
+        </div>
+        <div className="active-playoffs-score active-playoffs-score--left">
+          {formatScore(left.total)}
         </div>
         <div className="active-playoffs-vs">
-          <span className="active-playoffs-vs-label">{label}</span>
+          <span className="active-playoffs-vs-dot">vs.</span>
+        </div>
+        <div className="active-playoffs-score active-playoffs-score--right">
+          {formatScore(right.total)}
         </div>
         <div className="active-playoffs-side active-playoffs-side--right">
-          <div className="active-playoffs-team-seed">#{right.seed}</div>
-          <div className="active-playoffs-team-name">{right.teamName}</div>
-          <div className="active-playoffs-score">{formatScore(right.total)}</div>
+          {right.avatarUrl && (
+            <img
+              className="active-playoffs-avatar"
+              src={right.avatarUrl}
+              alt={`${right.teamName} avatar`}
+            />
+          )}
+          <span className="active-playoffs-team-name">{right.teamName}</span>
         </div>
       </div>
     );
