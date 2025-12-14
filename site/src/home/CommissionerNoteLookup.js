@@ -23,8 +23,6 @@ function scopeCssToCommissionerNote(rawCss) {
       return;
     }
 
-    // Handle comma-separated selectors and prefix each one with the
-    // commissioner note container so we don't leak styles globally.
     const scopedSelectors = selectorPart
       .split(',')
       .map((selector) => selector.trim())
@@ -50,12 +48,6 @@ export async function fetchCommissionerNoteHtml() {
 
   const html = await response.text();
 
-  // Parse the published Google Doc HTML and extract just the commissioner note content.
-  // Based on the sample HTML in lol.txt, the main body lives inside:
-  //   <div id="contents">
-  //     ...
-  //     <div class="c3 doc-content"> ... NOTE HTML ... </div>
-  //   </div>
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
@@ -65,16 +57,12 @@ export async function fetchCommissionerNoteHtml() {
     throw new Error('Commissioner note content not found in document.');
   }
 
-  // Grab the inline CSS that Google Docs injects for this published view and
-  // scope it to the commissioner note container so bold/typography/etc.
-  // render correctly without overriding the rest of the app.
   const inlineStyle = doc.querySelector('#contents style[type="text/css"]');
   const rawCss = inlineStyle ? inlineStyle.textContent || '' : '';
   const scopedCss = scopeCssToCommissionerNote(rawCss);
 
   const cssBlock = scopedCss ? `<style>${scopedCss}</style>` : '';
 
-  // Return the scoped CSS plus the original inner HTML from the doc content.
   return `${cssBlock}${contents.innerHTML.trim()}`;
 }
 

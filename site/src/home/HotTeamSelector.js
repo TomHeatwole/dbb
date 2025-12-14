@@ -1,16 +1,9 @@
-import { CURRENT_YEAR, getCurrentNFLWeek } from './utils/DateHelper';
-import { fetchScoresData } from './lookups/ScoresLookup';
-import { fetchTeamData } from './lookups/TeamLookup';
+import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { fetchScoresData } from '../lookups/ScoresLookup';
+import { fetchTeamData } from '../lookups/TeamLookup';
 
-// Optional manual override: set this to a roster_id (number or string) to force
-// a specific team to be shown as the "hot team". Leave as null to use the
-// automatic selection algorithm (top score from the previous week).
 export const HOT_TEAM_OVERRIDE_ROSTER_ID = null;
 
-// options:
-// - currentWeekOverride: number | string | null
-//     If provided, this is treated as the "current week" instead of using
-//     getCurrentNFLWeek, and the hot team is selected from (currentWeekOverride - 1).
 export async function selectHotTeam(options = {}) {
   const season = CURRENT_YEAR;
   const rawOverrideWeek =

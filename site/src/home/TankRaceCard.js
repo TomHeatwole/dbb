@@ -10,13 +10,13 @@ import {
   Tooltip,
 } from 'recharts';
 import HomeCard from './HomeCard';
-import LoadingState from './LoadingState';
-import { CURRENT_YEAR, getCurrentNFLWeek } from './utils/DateHelper';
-import { fetchScoresData } from './lookups/ScoresLookup';
-import { fetchTeamData } from './lookups/TeamLookup';
-import { fetchPlayersData, fetchPlayerIdMap } from './lookups/PlayerLookup';
-import { StartSitSort } from './players/StartSitDecider';
-import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './scores/ScoresParser';
+import LoadingState from '../LoadingState';
+import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { fetchScoresData } from '../lookups/ScoresLookup';
+import { fetchTeamData } from '../lookups/TeamLookup';
+import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { StartSitSort } from '../players/StartSitDecider';
+import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 
 function computeTankRaceSeries(weeksParsedData, completedWeeks, playersData, playerIdMap, playerSeasonTotalsMap) {
   if (!Array.isArray(weeksParsedData)) {

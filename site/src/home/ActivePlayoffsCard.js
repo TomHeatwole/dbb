@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
-import LoadingState from './LoadingState';
-import { CURRENT_YEAR } from './utils/DateHelper';
-import { fetchScoresData } from './lookups/ScoresLookup';
-import { fetchTeamData } from './lookups/TeamLookup';
-import { fetchPlayersData, fetchPlayerIdMap } from './lookups/PlayerLookup';
-import { StartSitSort } from './players/StartSitDecider';
-import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './scores/ScoresParser';
+import LoadingState from '../LoadingState';
+import { CURRENT_YEAR } from '../utils/DateHelper';
+import { fetchScoresData } from '../lookups/ScoresLookup';
+import { fetchTeamData } from '../lookups/TeamLookup';
+import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { StartSitSort } from '../players/StartSitDecider';
+import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 
 const PLAYOFF_START_WEEK = 15;
 
@@ -78,7 +78,7 @@ function ActivePlayoffsCard() {
           return;
         }
 
-        const { getStandings } = await import('./scores/ScoresParser');
+        const { getStandings } = await import('../scores/ScoresParser');
 
         const standingsRegular = getStandings(weeksRegular) || [];
         const top4Regular = standingsRegular
@@ -125,13 +125,13 @@ function ActivePlayoffsCard() {
           .map((row) => {
             const rid = Number(row.roster_id);
             const roster = teamData.rosters.find(
-              (r) => String(r.roster_id) === String(rid)
+              (r) => String(r.roster_id) === String(rid),
             );
             const user =
               roster && teamData.users
                 ? teamData.users.find(
                     (u) =>
-                      String(u.user_id) === String(roster.owner_id)
+                      String(u.user_id) === String(roster.owner_id),
                   )
                 : null;
             let teamName = `Team ${rid}`;
