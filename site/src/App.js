@@ -11,7 +11,7 @@ import {
 import './App.css';
 import TeamPage from './routes/TeamPage';
 import HomePage from './routes/HomePage';
-import AlthomePage from './routes/AlthomePage';
+import OldHomePage from './routes/OldHomePage';
 import Sidebar from './layout/Sidebar';
 import useIsMobile from './hooks/useIsMobile';
 import LeagueStandings from './routes/LeagueStandings';
@@ -38,7 +38,7 @@ function MobileTopNav() {
           <Link to="/yoffs" className="mobile-top-home-card-link">
             Playoffs
           </Link>
-          <Link to="/home/?view=teams" className="mobile-top-home-card-link">
+          <Link to="/oldhome/?view=teams" className="mobile-top-home-card-link">
             Teams
           </Link>
         </div>
@@ -50,14 +50,14 @@ function MobileTopNav() {
 function AppInner() {
   const isMobile = useIsMobile();
   const location = useLocation();
-  const isHomeRoute = location.pathname === '/home/';
+  const isHomeRoute = location.pathname === '/oldhome/';
   const mainClassName = `${isMobile ? 'mobile-main-content' : 'main-content'}${isHomeRoute ? ' home-watermark' : ''}`;
 
   const routes = (
     <Routes>
       <Route path="/team/:id" element={<TeamPage />} />
       <Route path="/home/" element={<HomePage />} />
-      <Route path="/althome" element={<AlthomePage />} />
+      <Route path="/oldhome/" element={<OldHomePage />} />
       <Route path="/standings" element={<LeagueStandings />} />
       <Route path="/Scores/Week" element={<LeagueScores />} />
       <Route path="/admincontrols" element={<AdminControls />} />
