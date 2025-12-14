@@ -1894,6 +1894,12 @@
   text-decoration: underline;
 }
 
+.current-playoff-picture-caption {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: #cbd5f5;
+}
+
 .hot-team-body {
   margin-top: 0.35rem;
 }
@@ -2102,6 +2108,104 @@
   opacity: 0.9;
 }
 
+.week-stars-body {
+  margin-top: 0.35rem;
+}
+
+.week-stars-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.week-stars-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0;
+}
+
+.week-stars-pos {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #cbd5f5;
+  min-width: 2.1rem;
+}
+
+.week-stars-player {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.25rem;
+}
+
+.week-stars-player-avatar {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+}
+
+.week-stars-player-name {
+  min-width: 0;
+  font-weight: 600;
+  color: #edf2f7;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.week-stars-team {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.week-stars-team-avatar {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+}
+
+.week-stars-team-name {
+  min-width: 0;
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.week-stars-points {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f6e05e;
+  white-space: nowrap;
+}
+
+.week-stars-points-units {
+  font-weight: 500;
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.week-stars-status {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.week-stars-status--error {
+  color: #fed7d7;
+}
+
 .tank-race-right,
 .top-pf-right {
   margin-top: 0.15rem;
@@ -2174,6 +2278,41 @@
   .hot-team-score-line {
     font-size: 0.75rem;
     gap: 0.35rem;
+  }
+
+  .week-stars-row {
+    gap: 0.3rem;
+  }
+
+  .week-stars-pos {
+    font-size: 0.7rem;
+    min-width: 1.8rem;
+  }
+
+  .week-stars-player-avatar {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .week-stars-points {
+    font-size: 0.7rem;
+  }
+
+  .week-stars-points-units {
+    font-size: 0.62rem;
+  }
+
+  .week-stars-player-name {
+    font-size: 0.72rem;
+  }
+
+  .week-stars-team-avatar {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .week-stars-team-name {
+    font-size: 0.7rem;
   }
 
   .hot-team-score {
