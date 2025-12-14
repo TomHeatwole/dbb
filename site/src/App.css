@@ -1353,6 +1353,90 @@
   }
 } 
 
+.mobile-top-home-card-wrapper {
+  display: none;
+}
+
+@media (max-width: 50em) {
+  .mobile-top-home-card-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 0.25rem 0 0.35rem 0;
+  }
+
+  .mobile-top-home-card {
+    background: #C49A6C; /* match scroll-body background */
+    color: #5A3B1E;      /* match scroll text color */
+    border-radius: 0.9rem;
+    padding: 0.25rem 0.85rem;
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  .mobile-top-home-card-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 0.75rem;
+    row-gap: 0.15rem;
+  }
+
+  .mobile-top-home-card-link {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .mobile-top-home-card-teams-toggle {
+    border: none;
+    background: none;
+    padding: 0;
+    margin-top: 0.15rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .mobile-top-home-card-teams-arrow {
+    font-size: 0.7rem;
+  }
+
+  .mobile-top-home-card-teams {
+    margin-top: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 0.35rem;
+    row-gap: 0.12rem;
+  }
+
+  .mobile-top-home-card-team-link {
+    flex: 0 0 20%;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .mobile-top-home-card-team-link:active,
+  .mobile-top-home-card-team-link:focus-visible {
+    text-decoration: underline;
+  }
+
+  .mobile-top-home-card-link:active,
+  .mobile-top-home-card-link:focus-visible {
+    text-decoration: underline;
+  }
+}
+
 /* Sidebar unroll animation for Home page */
 .scroll-animating .scroll-body {
   max-height: 0;
@@ -1971,6 +2055,9 @@
 .top-pf-team-place {
   font-weight: 800;
   font-size: 0.9rem;
+  /* Fixed width so avatars line up even when ranks have different digit counts */
+  min-width: 2.5rem;
+  text-align: right;
 }
 
 .tank-race-team-place {

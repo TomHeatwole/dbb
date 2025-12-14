@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { trackPageLoad } from '../utils/UsageTracker';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import PageMeta from '../PageMeta';
 
@@ -8,7 +8,10 @@ const OG_TITLE = 'The Hwang Dynasty';
 const OG_DESCRIPTION = '';
 
 function HomePage() {
-  const [showTeams, setShowTeams] = useState(false);
+  const [searchParams] = useSearchParams();
+  const initialShowTeams = searchParams.get('view') === 'teams';
+
+  const [showTeams, setShowTeams] = useState(initialShowTeams);
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {
@@ -73,21 +76,16 @@ function HomePage() {
         </div>
       )}
       {showTeams && (
-        <>
-          <div className="home-back-container">
-            <button type="button" className="home-back-btn" onClick={() => setShowTeams(false)}>← Back</button>
-          </div>
-          <div className="home-team-links" aria-label="Team Links">
-            {teams.map(t => (
-              <Link key={t.rosterId} to={`/team/${t.rosterId}`} className="home-team-link">
-                {t.avatarUrl && (
-                  <img className="home-team-link-avatar" src={t.avatarUrl} alt={`${t.ownerName} avatar`} />
-                )}
-                <span className="home-team-link-text">{t.teamName} - {t.ownerName}</span>
-              </Link>
-            ))}
-          </div>
-        </>
+        <div className="home-team-links" aria-label="Team Links">
+          {teams.map(t => (
+            <Link key={t.rosterId} to={`/team/${t.rosterId}`} className="home-team-link">
+              {t.avatarUrl && (
+                <img className="home-team-link-avatar" src={t.avatarUrl} alt={`${t.ownerName} avatar`} />
+              )}
+              <span className="home-team-link-text">{t.teamName} - {t.ownerName}</span>
+            </Link>
+          ))}
+        </div>
       )}
     </main>
     </>

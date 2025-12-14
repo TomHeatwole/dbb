@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-  useLocation
+  useLocation,
+  Link,
 } from 'react-router-dom';
 
 import './App.css';
@@ -18,6 +19,33 @@ import LeagueScores from './routes/LeagueScores';
 import AdminControls from './routes/AdminControls';
 import YoffsPage from './routes/YoffsPage';
 import H2hPage from './routes/h2h';
+import { fetchTeamData } from './lookups/TeamLookup';
+
+function MobileTopNav() {
+  return (
+    <div className="mobile-top-home-card-wrapper">
+      <nav className="mobile-top-home-card" aria-label="Main navigation">
+        <div className="mobile-top-home-card-links">
+          <Link to="/Scores/Week" className="mobile-top-home-card-link">
+            Scores
+          </Link>
+          <Link to="/standings" className="mobile-top-home-card-link">
+            Standings
+          </Link>
+          <Link to="/h2h" className="mobile-top-home-card-link">
+            Head&nbsp;to&nbsp;Head
+          </Link>
+          <Link to="/yoffs" className="mobile-top-home-card-link">
+            Playoffs
+          </Link>
+          <Link to="/home/?view=teams" className="mobile-top-home-card-link">
+            Teams
+          </Link>
+        </div>
+      </nav>
+    </div>
+  );
+}
 
 function AppInner() {
   const isMobile = useIsMobile();
@@ -46,6 +74,7 @@ function AppInner() {
         <Sidebar />
         <div className={mainClassName}>
           <div className="watermark-bg" />
+          {isMobile && <MobileTopNav />}
           {isMobile ? <div className="mobile-scale-container">{routes}</div> : routes}
         </div>
       </div>

@@ -5,6 +5,9 @@ import LoadingState from './LoadingState';
 import { CURRENT_YEAR } from './utils/DateHelper';
 import { fetchScoresData } from './lookups/ScoresLookup';
 import { fetchTeamData } from './lookups/TeamLookup';
+import { fetchPlayersData, fetchPlayerIdMap } from './lookups/PlayerLookup';
+import { StartSitSort } from './players/StartSitDecider';
+import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './scores/ScoresParser';
 
 const PLAYOFF_START_WEEK = 15;
 
@@ -22,9 +25,11 @@ function ActivePlayoffsCard() {
       try {
         const season = CURRENT_YEAR;
 
-        const [weeksData, teamData] = await Promise.all([
+        const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),
           fetchTeamData(season),
+          fetchPlayersData(),
+          fetchPlayerIdMap(),
         ]);
 
         if (cancelled) {
@@ -37,6 +42,8 @@ function ActivePlayoffsCard() {
         if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
           throw new Error('No team data');
         }
+
+        const playerSeasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
 
         const regularSliceFull = weeksData.slice(0, 14);
         const weeksRegular = regularSliceFull.filter(Boolean);
@@ -84,6 +91,8 @@ function ActivePlayoffsCard() {
 
         for (let wk = semiWeekStart; wk <= semiWeekEnd; wk += 1) {
           const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
+          const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
+
           weekEntries.forEach((entry) => {
             if (!entry || entry.roster_id == null) {
               return;
@@ -95,9 +104,20 @@ function ActivePlayoffsCard() {
             if (!semiTotals[rid]) {
               semiTotals[rid] = 0;
             }
-            if (typeof entry.points === 'number' && Number.isFinite(entry.points)) {
-              semiTotals[rid] += Math.round(entry.points * 10) / 10;
+
+            const raw = breakdown[rid];
+            let pts = 0;
+
+            if (raw) {
+              const computed = StartSitSort(raw, players, idMap, null, null, playerSeasonTotalsMap);
+              if (computed && typeof computed.starterTotal === 'number') {
+                pts = computed.starterTotal;
+              }
+            } else if (typeof entry.points === 'number' && Number.isFinite(entry.points)) {
+              pts = entry.points;
             }
+
+            semiTotals[rid] += Math.round(pts * 10) / 10;
           });
         }
 
