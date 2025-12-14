@@ -7,6 +7,7 @@ import TopPFRaceCard from './TopPFRaceCard';
 import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
+import useIsMobile from '../hooks/useIsMobile';
 import { getCompletedWeeksCount } from '../utils/DateHelper';
 
 // Optional manual override for the "current week" used by home cards.
@@ -15,6 +16,7 @@ import { getCompletedWeeksCount } from '../utils/DateHelper';
 const ALT_HOME_WEEK_OVERRIDE = null;
 
 function HomePage() {
+  const isMobile = useIsMobile();
   const WEEK_14 = 14;
 
   let showPlayoffMatchupsCard = false;
@@ -31,21 +33,63 @@ function HomePage() {
     }
   }
 
+  const playoffCard = showPlayoffMatchupsCard ? (
+    <ActivePlayoffsCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+  ) : (
+    <CurrentPlayoffPictureCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+  );
+
+  if (isMobile) {
+    // Mobile ordering:
+    // 1) Playoffs (picture or matchups)
+    // 2) Hot Team Alert
+    // 3) Race for the PF
+    // 4) Week 14 Top Scores
+    // 5) Race for the 1.01
+    // 6) Commissioner Note
+    // 7) Podcast
+    return (
+      <main className="home-main">
+        <div className="home-cards-grid home-cards-grid--single">
+          {playoffCard}
+          <HotTeamCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <TopPFRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <LastWeeksTopPerformanceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <TankRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <CommissionerNoteCard />
+          <PodcastCard />
+        </div>
+      </main>
+    );
+  }
+
+  // Web ordering:
+  //
+  // Left column:
+  //  - Playoffs (picture or matchups)
+  //  - Race for the PF
+  //  - Race for the 1.01
+  //  - Podcast
+  //
+  // Right column:
+  //  - Hot Team Alert
+  //  - Week 14 Top Scores
+  //  - Commissioner Note
+
   return (
     <main className="home-main">
-      <div className="home-cards-grid">
-        {!showPlayoffMatchupsCard && (
-          <CurrentPlayoffPictureCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-        )}
-        {showPlayoffMatchupsCard && (
-          <ActivePlayoffsCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-        )}
-        <TopPFRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-        <TankRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-        <HotTeamCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-        <LastWeeksTopPerformanceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-        <CommissionerNoteCard />
-        <PodcastCard />
+      <div className="home-cards-grid home-cards-grid--split">
+        <div className="home-cards-column home-cards-column--left">
+          {playoffCard}
+          <TopPFRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <TankRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <PodcastCard />
+        </div>
+        <div className="home-cards-column home-cards-column--right">
+          <HotTeamCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <LastWeeksTopPerformanceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <CommissionerNoteCard />
+        </div>
       </div>
     </main>
   );
