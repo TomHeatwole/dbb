@@ -120,8 +120,13 @@ function Yoffs2025Format({
       setLoadingSeeds(true);
       setSeedError(null);
       try {
+        const forceWeeks = [];
+        for (let wk = playoffStartWeek; wk <= playoffEndWeek; wk += 1) {
+          forceWeeks.push(wk);
+        }
+
         const [weeksData, teamData, idMap] = await Promise.all([
-          fetchScoresData(season),
+          fetchScoresData(season, { forceWeeks }),
           fetchTeamData(season),
           fetchPlayerIdMap()
         ]);

@@ -9,9 +9,6 @@
 
 - althome cards:
   - Standings (reg season) w/ up/down arrows
-  - Commissioner note (where link at the bottom is an expand button instead)
-  - Latest Poddcast (ep description + link)
   - Recent trades (for off season)
   - Scenario or "what if" clickbait
-  - Week's top scoreres (players) with link to scores
   - Playoff race (regular season)

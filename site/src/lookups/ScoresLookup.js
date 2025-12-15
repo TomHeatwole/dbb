@@ -10,10 +10,22 @@ export async function fetchScoresData(season, options = {}) {
 
   let weeksParsedData = null;
 
+  const forceWeeksArray = Array.isArray(options.forceWeeks)
+    ? options.forceWeeks
+        .map((w) => Number(w))
+        .filter((w) => Number.isFinite(w) && w >= 1 && w <= 17)
+    : [];
+
   const fetchWeekData = async (season, weekNum) => {
     const apiUrl = `https://api.sleeper.app/v1/league/${leagueId}/matchups/${weekNum}`;
     const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${weekNum}`;
     const forceUpdate = !!options.forceUpdate;
+
+    const isActiveWeek =
+      String(season) === String(CURRENT_YEAR) &&
+      Number(weekNum) === getCurrentNFLWeek();
+    const isPastSeason = String(season) !== String(CURRENT_YEAR);
+    const isForcedWeek = forceWeeksArray.includes(Number(weekNum));
 
     // When not forcing, read from DB cache first and optionally trigger a
     // background refresh based on TTL for the active week.
@@ -22,9 +34,6 @@ export async function fetchScoresData(season, options = {}) {
         const cached = await readApiCacheLatestByKey(cacheKey);
         if (cached && Array.isArray(cached.data)) {
           const ageMs = Date.now() - (cached.ts || 0);
-          const isActiveWeek =
-            String(season) === String(CURRENT_YEAR) &&
-            Number(weekNum) === getCurrentNFLWeek();
           const activeWeekTtlMs = isActiveWeek
             ? Number(options.activeWeekTtlMs) || 60_000
             : null;
@@ -53,10 +62,9 @@ export async function fetchScoresData(season, options = {}) {
       }
     }
 
-    // No cache (or forceUpdate): fetch once if it's the active week OR it's a past season (seed DB)
-    const isActiveWeek = (String(season) === String(CURRENT_YEAR)) && (Number(weekNum) === getCurrentNFLWeek());
-    const isPastSeason = String(season) !== String(CURRENT_YEAR);
-    if (!isActiveWeek && !isPastSeason) { return null; }
+    // No cache (or forceUpdate): fetch once if it's the active week, a past season,
+    // or an explicitly forced week (e.g., future playoff weeks for bracket view).
+    if (!isActiveWeek && !isPastSeason && !isForcedWeek) { return null; }
     try {
       if (PAUSE_SCRAPES) { return null; }
       const resp = await fetch(apiUrl);
@@ -72,10 +80,11 @@ export async function fetchScoresData(season, options = {}) {
     return null;
   };
 
-  // For all seasons, read from DB first; only fetch if cache missing AND active week
+  // For all seasons, read from DB first; only fetch if cache missing AND
+  // active week, past season, or an explicitly forced week.
   weeksParsedData = await Promise.all(
     Array.from({ length: 17 }, (_, i) => fetchWeekData(season || currentYear, i + 1))
   );
 
   return weeksParsedData;
-} 
+}

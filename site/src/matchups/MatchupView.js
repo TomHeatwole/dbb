@@ -102,6 +102,7 @@ function MatchupView({
   const [error, setError] = useState(null);
   const [scoresError, setScoresError] = useState(null);
   const [gridExpandedByWeek, setGridExpandedByWeek] = useState({});
+  const [playersTeamMapByWeek, setPlayersTeamMapByWeek] = useState({});
 
   const isMobileView = useIsMobile();
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
@@ -304,6 +305,12 @@ function MatchupView({
         }
 
         try {
+          const overrideTeamMap =
+            String(season) === String(CURRENT_YEAR) &&
+            playersTeamMapByWeek &&
+            playersTeamMapByWeek[w]
+              ? playersTeamMapByWeek[w]
+              : null;
           // eslint-disable-next-line no-await-in-loop
           const json = await fetchNflScoreboard(seasonYear, w);
           if (cancelled) {
@@ -315,7 +322,7 @@ function MatchupView({
             playersData,
             playerIdMap,
             json,
-            null
+            overrideTeamMap
           );
           const labels = {};
           for (let j = 0; j < playerIds.length; j += 1) {
@@ -351,9 +358,63 @@ function MatchupView({
     weeksParsedData,
     playersData,
     playerIdMap,
+    playersTeamMapByWeek,
     team1Id,
     team2Id
   ]);
+
+  // Load per-player team mapping from weekly players snapshot for each
+  // effective week (current season only), so we can override historical
+  // team inference and always use the correct team for 2025 matchups.
+  useEffect(() => {
+    if (!hasAnyWeeks || !isCurrentSeason) {
+      setPlayersTeamMapByWeek({});
+      return;
+    }
+    let cancelled = false;
+    async function loadPlayersTeamMaps() {
+      const next = {};
+      for (let i = 0; i < effectiveWeeks.length; i += 1) {
+        const w = effectiveWeeks[i];
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          const snap = await readPlayersSnapshot(String(season), Number(w));
+          if (cancelled) {
+            return;
+          }
+          const data =
+            snap && snap.snapshot && snap.snapshot.data
+              ? snap.snapshot.data
+              : null;
+          if (!data) {
+            // eslint-disable-next-line no-continue
+            continue;
+          }
+          const mapForWeek = {};
+          Object.entries(data).forEach(([pid, pinfo]) => {
+            const abbr =
+              pinfo &&
+              (pinfo.team ||
+                pinfo.team_abbr ||
+                pinfo.team_abbreviation);
+            if (abbr) {
+              mapForWeek[String(pid)] = String(abbr);
+            }
+          });
+          next[w] = mapForWeek;
+        } catch (e) {
+          // Ignore snapshot errors for this week; leave it unmapped.
+        }
+      }
+      if (!cancelled) {
+        setPlayersTeamMapByWeek(next);
+      }
+    }
+    loadPlayersTeamMaps();
+    return () => {
+      cancelled = true;
+    };
+  }, [season, hasAnyWeeks, effectiveWeeks, isCurrentSeason]);
 
   // Load injuries per week for all effective weeks so we can show injury
   // badges next to player names in the matchup view, similar to ScoresView.
