@@ -33,29 +33,38 @@ export async function fetchScoresData(season, options = {}) {
       try {
         const cached = await readApiCacheLatestByKey(cacheKey);
         if (cached && Array.isArray(cached.data)) {
-          const ageMs = Date.now() - (cached.ts || 0);
-          const activeWeekTtlMs = isActiveWeek
-            ? Number(options.activeWeekTtlMs) || 60_000
-            : null;
-          if (!PAUSE_SCRAPES && isActiveWeek && activeWeekTtlMs != null && ageMs > activeWeekTtlMs) {
-            (async () => {
-              try {
-                const r2 = await fetch(apiUrl);
-                if (!r2.ok) {
-                  if (r2.status === 429) {
-                    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+          const cachedArr = cached.data;
+          const isEmptyCachedWeek = !cachedArr || cachedArr.length === 0;
+
+          // For explicitly forced weeks, treat an empty cached array as stale
+          // and fall through to the network fetch below.
+          if (!isForcedWeek || !isEmptyCachedWeek) {
+            const ageMs = Date.now() - (cached.ts || 0);
+            const activeWeekTtlMs = isActiveWeek
+              ? Number(options.activeWeekTtlMs) || 60_000
+              : null;
+            if (!PAUSE_SCRAPES && isActiveWeek && activeWeekTtlMs != null && ageMs > activeWeekTtlMs) {
+              (async () => {
+                try {
+                  const r2 = await fetch(apiUrl);
+                  if (!r2.ok) {
+                    if (r2.status === 429) {
+                      try { await recordRateLimitHit('sleeper'); } catch (_) {}
+                    }
+                    return;
                   }
-                  return;
+                  const j2 = await r2.json();
+                  await writeApiCacheWithKey(cacheKey, apiUrl, j2);
+                } catch (_) {
+                  /* ignore */
                 }
-                const j2 = await r2.json();
-                await writeApiCacheWithKey(cacheKey, apiUrl, j2);
-              } catch (_) {
-                /* ignore */
-              }
-            })();
+              })();
+            }
+            const weekArr = cachedArr;
+            return weekArr.map(({ matchup_id, ...rest }) => rest);
           }
-          const weekArr = cached.data;
-          return weekArr.map(({ matchup_id, ...rest }) => rest);
+          // else: forced week with empty cached data -> treat as missing and
+          // allow network fetch below.
         }
       } catch (_) {
         // fall through to network fetch

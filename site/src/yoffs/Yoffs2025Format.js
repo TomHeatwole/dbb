@@ -812,10 +812,6 @@ function Yoffs2025Format({
                       expandedWeeksOverride={
                         !playoffsStarted ? [playoffStartWeek] : null
                       }
-                      preloadedTeamData={baseTeamData}
-                      preloadedWeeksData={baseWeeksData}
-                      preloadedPlayersData={basePlayersData}
-                      preloadedPlayerIdMap={basePlayerIdMap}
                       displaySeeds
                       seed1={1}
                       seed2={4}
@@ -833,10 +829,6 @@ function Yoffs2025Format({
                       expandedWeeksOverride={
                         !playoffsStarted ? [playoffStartWeek] : null
                       }
-                      preloadedTeamData={baseTeamData}
-                      preloadedWeeksData={baseWeeksData}
-                      preloadedPlayersData={basePlayersData}
-                      preloadedPlayerIdMap={basePlayerIdMap}
                       displaySeeds
                       seed1={2}
                       seed2={3}
@@ -859,10 +851,6 @@ function Yoffs2025Format({
                     team2Id={finalsInfo.bottom.rosterId}
                     week={playoffEndWeek}
                     weeks={[playoffEndWeek]}
-                    preloadedTeamData={baseTeamData}
-                    preloadedWeeksData={baseWeeksData}
-                    preloadedPlayersData={basePlayersData}
-                    preloadedPlayerIdMap={basePlayerIdMap}
                     displaySeeds
                     seed1={finalsInfo.top.seed}
                     seed2={finalsInfo.bottom.seed}
