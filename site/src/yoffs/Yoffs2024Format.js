@@ -116,7 +116,7 @@ function Yoffs2024Format({
         const seasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
         const regularStatsByRoster = {};
         for (let wk = 1; wk <= 14; wk += 1) {
-          const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
+          const breakdown = getWeekScoreBreakdown(weeksData, wk, teamData.rosters) || {};
           const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
           weekEntries.forEach((entry) => {
             if (!entry || entry.roster_id == null) {
@@ -151,7 +151,7 @@ function Yoffs2024Format({
         // Playoff stats by roster, using StartSit algorithm for every playoff week
         const statsByRoster = {};
         for (let wk = playoffStartWeek; wk <= playoffEndWeek; wk += 1) {
-          const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
+          const breakdown = getWeekScoreBreakdown(weeksData, wk, teamData.rosters) || {};
           const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
           const basePointsByRoster = {};
           weekEntries.forEach((entry) => {
@@ -379,9 +379,19 @@ function Yoffs2024Format({
     }
     const playerIdSet = new Set();
     for (const entry of weekArr) {
-      if (entry && Array.isArray(entry.players)) {
-        for (const pid of entry.players) {
-          playerIdSet.add(pid);
+      if (entry) {
+        let playersArray = entry.players;
+        // If players array is empty/missing, fall back to roster data
+        if ((!playersArray || playersArray.length === 0) && rosters && Array.isArray(rosters)) {
+          const roster = rosters.find(r => r && Number(r.roster_id) === Number(entry.roster_id));
+          if (roster && Array.isArray(roster.players)) {
+            playersArray = roster.players;
+          }
+        }
+        if (Array.isArray(playersArray)) {
+          for (const pid of playersArray) {
+            playerIdSet.add(pid);
+          }
         }
       }
     }

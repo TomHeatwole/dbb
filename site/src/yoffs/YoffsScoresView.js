@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import LoadingState from '../LoadingState';
 import ScoresView from '../scores/ScoresView';
 import { fetchScoresData } from '../lookups/ScoresLookup';
+import { fetchTeamData } from '../lookups/TeamLookup';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
@@ -36,8 +37,9 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
 
     async function loadPlayoffRows() {
       try {
-        const [weeksData, players, idMap] = await Promise.all([
+        const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),
+          fetchTeamData(season),
           fetchPlayersData(season),
           fetchPlayerIdMap()
         ]);
@@ -73,7 +75,7 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
         const seasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
         const statsByRoster = {};
         for (let wk = startWeek; wk <= endWeek; wk += 1) {
-          const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
+          const breakdown = getWeekScoreBreakdown(weeksData, wk, teamData.rosters) || {};
           const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
           const basePointsByRoster = {};
           weekEntries.forEach((entry) => {

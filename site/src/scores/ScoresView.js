@@ -240,9 +240,19 @@ function ScoresView({
     }
     const playerIdSet = new Set();
     for (const entry of weekArr) {
-      if (entry && Array.isArray(entry.players)) {
-        for (const pid of entry.players) {
-          playerIdSet.add(pid);
+      if (entry) {
+        let playersArray = entry.players;
+        // If players array is empty/missing, fall back to roster data
+        if ((!playersArray || playersArray.length === 0) && rosters && Array.isArray(rosters)) {
+          const roster = rosters.find(r => r && Number(r.roster_id) === Number(entry.roster_id));
+          if (roster && Array.isArray(roster.players)) {
+            playersArray = roster.players;
+          }
+        }
+        if (Array.isArray(playersArray)) {
+          for (const pid of playersArray) {
+            playerIdSet.add(pid);
+          }
         }
       }
     }
@@ -379,7 +389,7 @@ function ScoresView({
     return <div>Error loading scores.</div>;
   }
 
-  const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, week) || {};
+  const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, week, rosters) || {};
   const rawWeekEntries = (Array.isArray(weeksParsedData) && weeksParsedData[week - 1]
     ? weeksParsedData[week - 1]
     : []
@@ -421,7 +431,7 @@ function ScoresView({
     const isCurrentSeason = String(season) === String(CURRENT_YEAR);
     if (isCurrentSeason && playersData && playerIdMap) {
       const currentWeekNum = getCurrentNFLWeek();
-      const currentBreakdown = getWeekScoreBreakdown(weeksParsedData, currentWeekNum) || {};
+      const currentBreakdown = getWeekScoreBreakdown(weeksParsedData, currentWeekNum, rosters) || {};
       const totals = (standingsArr || [])
         .map((s) => {
           const raw = currentBreakdown[s.roster_id];

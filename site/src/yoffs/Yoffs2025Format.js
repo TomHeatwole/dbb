@@ -176,7 +176,7 @@ function Yoffs2025Format({
         const semiEnd = Math.max(playoffStartWeek, playoffEndWeek - 1);
         const semiTotals = {};
         for (let wk = semiStart; wk <= semiEnd; wk += 1) {
-          const breakdown = getWeekScoreBreakdown(weeksData, wk) || {};
+          const breakdown = getWeekScoreBreakdown(weeksData, wk, teamData.rosters) || {};
           const weekEntries = Array.isArray(weeksData[wk - 1]) ? weeksData[wk - 1] : [];
           const basePointsByRoster = {};
           weekEntries.forEach((entry) => {
@@ -298,7 +298,7 @@ function Yoffs2025Format({
 
           const finalsWeek = playoffEndWeek;
           const finalsBreakdown =
-            getWeekScoreBreakdown(weeksData, finalsWeek) || {};
+            getWeekScoreBreakdown(weeksData, finalsWeek, teamData.rosters) || {};
 
           const computeFinalBase = (rid) => {
             let weekTotal = 0;
@@ -812,6 +812,10 @@ function Yoffs2025Format({
                       expandedWeeksOverride={
                         !playoffsStarted ? [playoffStartWeek] : null
                       }
+                      preloadedTeamData={baseTeamData}
+                      preloadedWeeksData={baseWeeksData}
+                      preloadedPlayersData={basePlayersData}
+                      preloadedPlayerIdMap={basePlayerIdMap}
                       displaySeeds
                       seed1={1}
                       seed2={4}
@@ -829,6 +833,10 @@ function Yoffs2025Format({
                       expandedWeeksOverride={
                         !playoffsStarted ? [playoffStartWeek] : null
                       }
+                      preloadedTeamData={baseTeamData}
+                      preloadedWeeksData={baseWeeksData}
+                      preloadedPlayersData={basePlayersData}
+                      preloadedPlayerIdMap={basePlayerIdMap}
                       displaySeeds
                       seed1={2}
                       seed2={3}
@@ -851,6 +859,10 @@ function Yoffs2025Format({
                     team2Id={finalsInfo.bottom.rosterId}
                     week={playoffEndWeek}
                     weeks={[playoffEndWeek]}
+                    preloadedTeamData={baseTeamData}
+                    preloadedWeeksData={baseWeeksData}
+                    preloadedPlayersData={basePlayersData}
+                    preloadedPlayerIdMap={basePlayerIdMap}
                     displaySeeds
                     seed1={finalsInfo.top.seed}
                     seed2={finalsInfo.bottom.seed}

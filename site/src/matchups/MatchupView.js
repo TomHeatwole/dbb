@@ -290,8 +290,16 @@ function MatchupView({
           if (!entry || entry.roster_id == null) {
             return;
           }
-          if (Array.isArray(entry.players)) {
-            entry.players.forEach((pid) => {
+          let playersArray = entry.players;
+          // If players array is empty/missing, fall back to roster data
+          if ((!playersArray || playersArray.length === 0) && teamData && Array.isArray(teamData.rosters)) {
+            const roster = teamData.rosters.find(r => r && Number(r.roster_id) === Number(entry.roster_id));
+            if (roster && Array.isArray(roster.players)) {
+              playersArray = roster.players;
+            }
+          }
+          if (Array.isArray(playersArray)) {
+            playersArray.forEach((pid) => {
               if (pid) {
                 playerIdSet.add(pid);
               }
@@ -360,7 +368,8 @@ function MatchupView({
     playerIdMap,
     playersTeamMapByWeek,
     team1Id,
-    team2Id
+    team2Id,
+    teamData
   ]);
 
   // Load per-player team mapping from weekly players snapshot for each
@@ -530,6 +539,7 @@ function MatchupView({
       season,
       week: liveWeek,
       forceOnStartAndFocus: true,
+      forceWeeks: effectiveWeeks, // Pass all weeks we're displaying so they stay loaded
       onData: ({ newWeeks }) => {
         if (cancelled || !Array.isArray(newWeeks)) {
           return;
@@ -760,7 +770,7 @@ function MatchupView({
   }
 
   const weekBlocks = effectiveWeeks.map((w) => {
-    const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, w) || {};
+    const breakdownByRoster = getWeekScoreBreakdown(weeksParsedData, w, teamData?.rosters) || {};
     const raw1 = breakdownByRoster[team1Id] || null;
     const raw2 = breakdownByRoster[team2Id] || null;
 

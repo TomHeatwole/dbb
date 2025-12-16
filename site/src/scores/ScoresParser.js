@@ -100,20 +100,35 @@ export function getPlayerSeasonTotalsMap(weeksParsedData) {
   return result;
 }
 
-export function getWeekScoreBreakdown(weeksParsedData, week) {
+export function getWeekScoreBreakdown(weeksParsedData, week, rostersData = null) {
   // week is 1-based index
   if (!weeksParsedData || !weeksParsedData[week - 1]) return {};
   const weekData = weeksParsedData[week - 1];
   const result = {};
   for (const entry of weekData) {
     if (!entry || entry.roster_id == null) continue;
-    const starters = (entry.starters || []).map((pid, i) => ({
+    
+    // Use entry.players if available, otherwise fall back to roster.players
+    let playersArray = entry.players;
+    let startersArray = entry.starters;
+    
+    // If players array is missing/empty and we have roster data, use roster as fallback
+    if ((!playersArray || playersArray.length === 0) && rostersData && Array.isArray(rostersData)) {
+      const roster = rostersData.find(r => r && Number(r.roster_id) === Number(entry.roster_id));
+      if (roster && Array.isArray(roster.players)) {
+        playersArray = roster.players;
+        // For future weeks with no lineup set, treat all roster players as bench
+        startersArray = [];
+      }
+    }
+    
+    const starters = (startersArray || []).map((pid, i) => ({
       id: pid,
       pts: entry.starters_points && entry.starters_points[i] != null ? entry.starters_points[i] : 0
     }));
     // Bench = all players not in starters
-    const starterSet = new Set(entry.starters || []);
-    const bench = (entry.players || [])
+    const starterSet = new Set(startersArray || []);
+    const bench = (playersArray || [])
       .filter(pid => !starterSet.has(pid))
       .map(pid => ({
         id: pid,

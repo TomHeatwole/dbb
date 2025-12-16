@@ -30,6 +30,8 @@ export function createLiveScoresPoller({
   // cached snapshot) while regular interval ticks continue to use TTL-based
   // behavior.
   forceOnStartAndFocus = false,
+  // Array of week numbers to force-fetch even if they're not the active week
+  forceWeeks = null,
 }) {
   let polling = false;
   let pollingIntervalMs = 15000;
@@ -144,7 +146,11 @@ export function createLiveScoresPoller({
       let newWeeks = null;
       let fetchFailed = false;
       try {
-        newWeeks = await fetchScoresData(season, { activeWeekTtlMs, forceUpdate });
+        const options = { activeWeekTtlMs, forceUpdate };
+        if (forceWeeks && Array.isArray(forceWeeks)) {
+          options.forceWeeks = forceWeeks;
+        }
+        newWeeks = await fetchScoresData(season, options);
       } catch (_) {
         fetchFailed = true;
       }

@@ -320,8 +320,18 @@ function LeagueScores() {
 		if (!Array.isArray(weekArr)) { return; }
 		const playerIdSet = new Set();
 		for (const entry of weekArr) {
-			if (entry && Array.isArray(entry.players)) {
-				for (const pid of entry.players) { playerIdSet.add(pid); }
+			if (entry) {
+				let playersArray = entry.players;
+				// If players array is empty/missing, fall back to roster data
+				if ((!playersArray || playersArray.length === 0) && rosters && Array.isArray(rosters)) {
+					const roster = rosters.find(r => r && Number(r.roster_id) === Number(entry.roster_id));
+					if (roster && Array.isArray(roster.players)) {
+						playersArray = roster.players;
+					}
+				}
+				if (Array.isArray(playersArray)) {
+					for (const pid of playersArray) { playerIdSet.add(pid); }
+				}
 			}
 		}
 		const playerIds = Array.from(playerIdSet);

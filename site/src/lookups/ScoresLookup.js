@@ -35,11 +35,22 @@ export async function fetchScoresData(season, options = {}) {
         if (cached && Array.isArray(cached.data)) {
           const cachedArr = cached.data;
           const isEmptyCachedWeek = !cachedArr || cachedArr.length === 0;
+          const ageMs = Date.now() - (cached.ts || 0);
+          
+          // For forced weeks with empty cache, check TTL before deciding to use cache
+          if (isForcedWeek && isEmptyCachedWeek) {
+            // For empty forced weeks, refetch if cache is older than 5 minutes
+            // (matchups might have been created since last check)
+            const emptyForcedWeekTtlMs = 300_000; // 5 minutes
+            if (ageMs > emptyForcedWeekTtlMs) {
+              // Cache is stale, skip cache and fall through to network fetch below
+            } else {
+              // Cache is recent and empty, use it to avoid excessive API calls
+              return cachedArr.map(({ matchup_id, ...rest }) => rest);
+            }
+          } else {
 
-          // For explicitly forced weeks, treat an empty cached array as stale
-          // and fall through to the network fetch below.
-          if (!isForcedWeek || !isEmptyCachedWeek) {
-            const ageMs = Date.now() - (cached.ts || 0);
+            // Use cached data
             const activeWeekTtlMs = isActiveWeek
               ? Number(options.activeWeekTtlMs) || 60_000
               : null;
@@ -63,16 +74,14 @@ export async function fetchScoresData(season, options = {}) {
             const weekArr = cachedArr;
             return weekArr.map(({ matchup_id, ...rest }) => rest);
           }
-          // else: forced week with empty cached data -> treat as missing and
-          // allow network fetch below.
         }
       } catch (_) {
         // fall through to network fetch
       }
     }
 
-    // No cache (or forceUpdate): fetch once if it's the active week, a past season,
-    // or an explicitly forced week (e.g., future playoff weeks for bracket view).
+    // No cache (or forceUpdate or forced week with empty cache): 
+    // fetch once if it's the active week, a past season, or an explicitly forced week
     if (!isActiveWeek && !isPastSeason && !isForcedWeek) { return null; }
     try {
       if (PAUSE_SCRAPES) { return null; }
