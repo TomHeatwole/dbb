@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
+import useIsMobile from '../hooks/useIsMobile';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
@@ -236,10 +237,12 @@ function renderTankTooltip({ active, payload, label }) {
 }
 
 function TankRaceCard({ currentWeekOverride = null }) {
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bottomTeams, setBottomTeams] = useState(null);
   const [chartData, setChartData] = useState(null);
+  const [mobileTooltip, setMobileTooltip] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -422,7 +425,11 @@ function TankRaceCard({ currentWeekOverride = null }) {
           <div className="tank-race-left">
             <div className="tank-race-teams">
               {bottomTeams.map((team) => (
-                <div className="tank-race-team-row" key={team.rosterId}>
+                <Link
+                  to={`/team/${team.rosterId}`}
+                  className="tank-race-team-row tank-race-team-row--clickable"
+                  key={team.rosterId}
+                >
                   <div className="tank-race-team-place">
                     #{team.place}
                   </div>
@@ -445,14 +452,38 @@ function TankRaceCard({ currentWeekOverride = null }) {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
           {chartData && chartData.length >= 2 && (
             <div className="tank-race-right">
               <ResponsiveContainer width="100%" height={110}>
-                <LineChart data={chartData} margin={{ top: 6, right: 6, left: 0, bottom: 2 }}>
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 6, right: 6, left: 0, bottom: 2 }}
+                  onClick={(e) => {
+                    if (!isMobile || !e || !e.activePayload || !e.activePayload[0]) {
+                      return;
+                    }
+                    const payload = e.activePayload[0].payload;
+                    setMobileTooltip({
+                      week: payload.week,
+                      teams: [
+                        {
+                          name: bottomTeams[0]?.teamName || '',
+                          value: payload.t0,
+                          color: '#9f7aea',
+                        },
+                        {
+                          name: bottomTeams[1]?.teamName || '',
+                          value: payload.t1,
+                          color: '#f56565',
+                        },
+                      ].filter(t => t.value != null),
+                    });
+                  }}
+                >
                   <CartesianGrid stroke="#2d3748" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="week"
@@ -467,7 +498,10 @@ function TankRaceCard({ currentWeekOverride = null }) {
                     width={32}
                     domain={[yMin, yMax]}
                   />
-                  <Tooltip content={renderTankTooltip} />
+                  <Tooltip
+                    content={renderTankTooltip}
+                    wrapperClassName={isMobile ? 'home-chart-tooltip-hidden' : ''}
+                  />
                   {bottomTeams && bottomTeams[0] && (
                     <Line
                       type="monotone"
@@ -494,6 +528,35 @@ function TankRaceCard({ currentWeekOverride = null }) {
                   )}
                 </LineChart>
               </ResponsiveContainer>
+              {isMobile && mobileTooltip && (
+                <div className="home-chart-mobile-tooltip">
+                  <button
+                    className="home-chart-mobile-tooltip-close"
+                    onClick={() => setMobileTooltip(null)}
+                    aria-label="Close tooltip"
+                  >
+                    ×
+                  </button>
+                  <div className="home-chart-mobile-tooltip-content">
+                    <div className="home-chart-mobile-tooltip-label">
+                      Week {mobileTooltip.week}
+                    </div>
+                    {mobileTooltip.teams.map((team, idx) => (
+                      <div key={idx} className="home-chart-mobile-tooltip-team">
+                        <span className="home-chart-mobile-tooltip-team-name" style={{ color: team.color }}>
+                          {team.name}
+                        </span>
+                        <span className="home-chart-mobile-tooltip-value">
+                          {team.value.toFixed(1)} pts
+                        </span>
+                      </div>
+                    ))}
+                    <div className="home-chart-mobile-tooltip-note">
+                      (cumulative score relative to playoff bar)
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

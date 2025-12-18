@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
+import PlayerCard from '../players/PlayerCard';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
@@ -11,6 +13,8 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
   const [error, setError] = useState(null);
   const [targetWeek, setTargetWeek] = useState(null);
   const [starsByPos, setStarsByPos] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [playersDataForModal, setPlayersDataForModal] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,6 +129,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
         }
 
         setStarsByPos(bestByPos);
+        setPlayersDataForModal(playersData);
         setLoading(false);
       } catch (e) {
         if (!cancelled) {
@@ -141,6 +146,27 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
       cancelled = true;
     };
   }, [currentWeekOverride]);
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        setSelectedPlayer(null);
+      }
+    }
+    if (selectedPlayer) {
+      document.addEventListener('keydown', onKeyDown);
+    }
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedPlayer]);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [selectedPlayer]);
 
   const title = targetWeek ? `⭐ Week ${targetWeek} Top Scores` : '⭐ Week Stars';
 
@@ -186,10 +212,23 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
                 </div>
               );
             }
+            const playerData = playersDataForModal && item.playerId
+              ? playersDataForModal[item.playerId]
+              : null;
+
             return (
               <div className="week-stars-row" key={pos}>
                 <div className="week-stars-pos">{pos}</div>
-                <div className="week-stars-player">
+                <button
+                  type="button"
+                  className="week-stars-player week-stars-player--clickable"
+                  onClick={() => {
+                    if (playerData) {
+                      setSelectedPlayer(playerData);
+                    }
+                  }}
+                  disabled={!playerData}
+                >
                   <span className="week-stars-points">
                     {Number(item.points || 0).toFixed(1)}
                     <span className="week-stars-points-units"> pts</span>
@@ -204,8 +243,11 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
                   <span className="week-stars-player-name">
                     {item.playerName}
                   </span>
-                </div>
-                <div className="week-stars-team">
+                </button>
+                <Link
+                  to={`/team/${item.rosterId}`}
+                  className="week-stars-team week-stars-team--clickable"
+                >
                   <div className="week-stars-team-logo">
                     {item.avatarUrl && (
                       <img
@@ -218,7 +260,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
                   <div className="week-stars-team-name">
                     {item.teamName}
                   </div>
-                </div>
+                </Link>
               </div>
             );
           })}
@@ -234,6 +276,21 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
     ? `See Week ${targetWeek} Scores →`
     : 'See Scores →';
 
+  const modal = selectedPlayer ? (
+    <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+      <div
+        className="player-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        <PlayerCard player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+      </div>
+    </div>
+  ) : null;
+
   return (
     <HomeCard>
       <div className="home-card-inner">
@@ -247,6 +304,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
           </Link>
         </div>
       </div>
+      {modal && createPortal(modal, document.body)}
     </HomeCard>
   );
 }

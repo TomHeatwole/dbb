@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import HomeCard from './HomeCard';
 import { selectHotTeam } from './HotTeamSelector';
+import useIsMobile from '../hooks/useIsMobile';
 
 function computeYAxisDomain(hotTeam) {
   if (!hotTeam) {
@@ -52,9 +53,11 @@ function computeYAxisDomain(hotTeam) {
 }
 
 function HotTeamCard({ currentWeekOverride = null }) {
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hotTeam, setHotTeam] = useState(null);
+  const [mobileTooltip, setMobileTooltip] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,17 +121,19 @@ function HotTeamCard({ currentWeekOverride = null }) {
       <div className="hot-team-body">
         <div className="hot-team-main">
           <div className="hot-team-left">
-            {hotTeam.avatarUrl && (
-              <img
-                className="hot-team-avatar"
-                src={hotTeam.avatarUrl}
-                alt={`${hotTeam.teamName} avatar`}
-              />
-            )}
-            <div className="hot-team-text">
+            <Link to={`/team/${hotTeam.rosterId}`} className="hot-team-header hot-team-header--clickable">
+              {hotTeam.avatarUrl && (
+                <img
+                  className="hot-team-avatar"
+                  src={hotTeam.avatarUrl}
+                  alt={`${hotTeam.teamName} avatar`}
+                />
+              )}
               <div className="hot-team-team-line">
                 <span className="hot-team-team-name">{hotTeam.teamName}</span>
               </div>
+            </Link>
+            <div className="hot-team-text">
               <div className="hot-team-score-lines">
                 {(() => {
                   const rows = [];
@@ -149,13 +154,17 @@ function HotTeamCard({ currentWeekOverride = null }) {
                     });
                   }
                   return rows.map((row) => (
-                    <div className="hot-team-score-line" key={row.week}>
+                    <Link
+                      to={`/team/${hotTeam.rosterId}?tab=scores&week=${row.week}`}
+                      className="hot-team-score-line hot-team-score-line--clickable"
+                      key={row.week}
+                    >
                       <span className="hot-team-week-label">Week {row.week}</span>
                       <span className="hot-team-score">
                         {row.points.toFixed(1)}
                         <span className="hot-team-score-units"> pts</span>
                       </span>
-                    </div>
+                    </Link>
                   ));
                 })()}
               </div>
@@ -167,49 +176,84 @@ function HotTeamCard({ currentWeekOverride = null }) {
             <div className="hot-team-trend">
               {(() => {
                 const [yMin, yMax] = computeYAxisDomain(hotTeam);
+                
+                const handleChartClick = (e) => {
+                  if (!isMobile || !e || !e.activePayload || !e.activePayload[0]) {
+                    return;
+                  }
+                  const payload = e.activePayload[0].payload;
+                  setMobileTooltip({
+                    week: payload.week,
+                    points: payload.points,
+                  });
+                };
+
                 return (
-                  <ResponsiveContainer width="100%" height={110}>
-                    <LineChart
-                      data={hotTeam.recent}
-                      margin={{ top: 6, right: 6, left: 0, bottom: 2 }}
-                    >
-                      <CartesianGrid stroke="#2d3748" strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="week"
-                        tick={{ fill: '#a0aec0', fontSize: 10 }}
-                        axisLine={{ stroke: '#4a5568' }}
-                        tickLine={{ stroke: '#4a5568' }}
-                        tickFormatter={(value) => Math.round(value)}
-                        allowDecimals={false}
-                      />
-                      <YAxis
-                        tick={{ fill: '#a0aec0', fontSize: 10 }}
-                        axisLine={{ stroke: '#4a5568' }}
-                        tickLine={{ stroke: '#4a5568' }}
-                        width={32}
-                        domain={[yMin, yMax]}
-                        allowDecimals={false}
-                        tickFormatter={(value) => Math.round(value)}
-                      />
-                      <Tooltip
-                        formatter={(v) => [`${Number(v).toFixed(1)} pts`, 'Score']}
-                        labelFormatter={(w) => `Week ${w}`}
-                        contentStyle={{
-                          backgroundColor: '#0f1430',
-                          border: '1px solid #3a4466',
-                          color: '#fff',
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="points"
-                        stroke="#f6e05e"
-                        strokeWidth={2}
-                        dot={{ r: 2 }}
-                        activeDot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <>
+                    <ResponsiveContainer width="100%" height={110}>
+                      <LineChart
+                        data={hotTeam.recent}
+                        margin={{ top: 6, right: 6, left: 0, bottom: 2 }}
+                        onClick={handleChartClick}
+                      >
+                        <CartesianGrid stroke="#2d3748" strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="week"
+                          tick={{ fill: '#a0aec0', fontSize: 10 }}
+                          axisLine={{ stroke: '#4a5568' }}
+                          tickLine={{ stroke: '#4a5568' }}
+                          tickFormatter={(value) => Math.round(value)}
+                          allowDecimals={false}
+                        />
+                        <YAxis
+                          tick={{ fill: '#a0aec0', fontSize: 10 }}
+                          axisLine={{ stroke: '#4a5568' }}
+                          tickLine={{ stroke: '#4a5568' }}
+                          width={32}
+                          domain={[yMin, yMax]}
+                          allowDecimals={false}
+                          tickFormatter={(value) => Math.round(value)}
+                        />
+                        <Tooltip
+                          formatter={(v) => [`${Number(v).toFixed(1)} pts`, 'Score']}
+                          labelFormatter={(w) => `Week ${w}`}
+                          contentStyle={{
+                            backgroundColor: '#0f1430',
+                            border: '1px solid #3a4466',
+                            color: '#fff',
+                          }}
+                          wrapperClassName={isMobile ? 'home-chart-tooltip-hidden' : ''}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="points"
+                          stroke="#f6e05e"
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                          activeDot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                    {isMobile && mobileTooltip && (
+                      <div className="home-chart-mobile-tooltip">
+                        <button
+                          className="home-chart-mobile-tooltip-close"
+                          onClick={() => setMobileTooltip(null)}
+                          aria-label="Close tooltip"
+                        >
+                          ×
+                        </button>
+                        <div className="home-chart-mobile-tooltip-content">
+                          <div className="home-chart-mobile-tooltip-label">
+                            Week {mobileTooltip.week}
+                          </div>
+                          <div className="home-chart-mobile-tooltip-value">
+                            {Number(mobileTooltip.points).toFixed(1)} pts
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
             </div>

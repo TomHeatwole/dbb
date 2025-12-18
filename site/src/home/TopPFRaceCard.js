@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
+import useIsMobile from '../hooks/useIsMobile';
 import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
@@ -200,10 +201,12 @@ function renderTopPFTooltip({ active, payload, label }) {
 }
 
 function TopPFRaceCard({ currentWeekOverride = null }) {
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [topTeams, setTopTeams] = useState(null);
   const [chartData, setChartData] = useState(null);
+  const [mobileTooltip, setMobileTooltip] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -380,7 +383,11 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
           <div className="top-pf-left">
             <div className="top-pf-teams">
               {topTeams.map((team) => (
-                <div className="top-pf-team-row" key={team.rosterId}>
+                <Link
+                  to={`/team/${team.rosterId}`}
+                  className="top-pf-team-row top-pf-team-row--clickable"
+                  key={team.rosterId}
+                >
                   <div className="top-pf-team-place">
                     #{team.place}
                   </div>
@@ -403,14 +410,38 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
           {chartData && chartData.length >= 2 && (
             <div className="top-pf-right">
               <ResponsiveContainer width="100%" height={110}>
-                <LineChart data={chartData} margin={{ top: 6, right: 6, left: 0, bottom: 2 }}>
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 6, right: 6, left: 0, bottom: 2 }}
+                  onClick={(e) => {
+                    if (!isMobile || !e || !e.activePayload || !e.activePayload[0]) {
+                      return;
+                    }
+                    const payload = e.activePayload[0].payload;
+                    setMobileTooltip({
+                      week: payload.week,
+                      teams: [
+                        {
+                          name: topTeams[0]?.teamName || '',
+                          value: payload.t0,
+                          color: '#63b3ed',
+                        },
+                        {
+                          name: topTeams[1]?.teamName || '',
+                          value: payload.t1,
+                          color: '#48bb78',
+                        },
+                      ].filter(t => t.value != null),
+                    });
+                  }}
+                >
                   <CartesianGrid stroke="#2d3748" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="week"
@@ -425,7 +456,10 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
                     width={40}
                     domain={[yMin, yMax]}
                   />
-                  <Tooltip content={renderTopPFTooltip} />
+                  <Tooltip
+                    content={renderTopPFTooltip}
+                    wrapperClassName={isMobile ? 'home-chart-tooltip-hidden' : ''}
+                  />
                   {topTeams && topTeams[0] && (
                     <Line
                       type="monotone"
@@ -452,6 +486,32 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
                   )}
                 </LineChart>
               </ResponsiveContainer>
+              {isMobile && mobileTooltip && (
+                <div className="home-chart-mobile-tooltip">
+                  <button
+                    className="home-chart-mobile-tooltip-close"
+                    onClick={() => setMobileTooltip(null)}
+                    aria-label="Close tooltip"
+                  >
+                    ×
+                  </button>
+                  <div className="home-chart-mobile-tooltip-content">
+                    <div className="home-chart-mobile-tooltip-label">
+                      Week {mobileTooltip.week}
+                    </div>
+                    {mobileTooltip.teams.map((team, idx) => (
+                      <div key={idx} className="home-chart-mobile-tooltip-team">
+                        <span className="home-chart-mobile-tooltip-team-name" style={{ color: team.color }}>
+                          {team.name}
+                        </span>
+                        <span className="home-chart-mobile-tooltip-value">
+                          {team.value.toFixed(1)} pts
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

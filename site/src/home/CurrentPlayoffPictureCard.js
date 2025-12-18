@@ -335,7 +335,10 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
 
     return (
       <div className="active-playoffs-row">
-        <div className="active-playoffs-side active-playoffs-side--left">
+        <Link
+          to={`/team/${left.rosterId}`}
+          className="active-playoffs-side active-playoffs-side--left active-playoffs-side--clickable"
+        >
           {left.avatarUrl && (
             <img
               className="active-playoffs-avatar"
@@ -352,7 +355,7 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
               <span className="active-playoffs-team-name">{left.teamName}</span>
             </div>
           </div>
-        </div>
+        </Link>
         <div className="active-playoffs-score active-playoffs-score--left">
           {formatScore(left.totalPoints)}
         </div>
@@ -362,7 +365,10 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
         <div className="active-playoffs-score active-playoffs-score--right">
           {formatScore(right.totalPoints)}
         </div>
-        <div className="active-playoffs-side active-playoffs-side--right">
+        <Link
+          to={`/team/${right.rosterId}`}
+          className="active-playoffs-side active-playoffs-side--right active-playoffs-side--clickable"
+        >
           {right.avatarUrl && (
             <img
               className="active-playoffs-avatar"
@@ -379,7 +385,7 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
               <span className="active-playoffs-team-name">{right.teamName}</span>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
     );
   };

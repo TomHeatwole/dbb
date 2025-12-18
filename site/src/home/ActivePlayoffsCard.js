@@ -195,7 +195,7 @@ function ActivePlayoffsCard() {
     return '—';
   };
 
-  const renderRow = (left, right, label) => {
+  const renderRow = (left, right, label, matchupNum) => {
     if (!left || !right) {
       return (
         <div className="active-playoffs-row">
@@ -215,7 +215,10 @@ function ActivePlayoffsCard() {
     }
 
     return (
-      <div className="active-playoffs-row">
+      <Link
+        to={`/yoffs?format=bracket&tab=Matchups&a=${left.rosterId}&b=${right.rosterId}&matchup=${matchupNum}`}
+        className="active-playoffs-row active-playoffs-row--clickable"
+      >
         <div className="active-playoffs-side active-playoffs-side--left">
           {left.avatarUrl && (
             <img
@@ -245,7 +248,7 @@ function ActivePlayoffsCard() {
           )}
           <span className="active-playoffs-team-name">{right.teamName}</span>
         </div>
-      </div>
+      </Link>
     );
   };
 
@@ -274,8 +277,8 @@ function ActivePlayoffsCard() {
   } else {
     body = (
       <div className="active-playoffs-body">
-        {renderRow(semis.seed1, semis.seed4, 'Semifinal 1')}
-        {renderRow(semis.seed2, semis.seed3, 'Semifinal 2')}
+        {renderRow(semis.seed1, semis.seed4, 'Semifinal 1', 1)}
+        {renderRow(semis.seed2, semis.seed3, 'Semifinal 2', 2)}
       </div>
     );
   }
@@ -286,7 +289,7 @@ function ActivePlayoffsCard() {
         <h2 className="home-card-title">🥇 Playoff Matchups</h2>
         {body}
         <div className="active-playoffs-link-row">
-          <Link className="active-playoffs-link" to="/yoffs?format=bracket&tab=Matchups">
+          <Link className="active-playoffs-link" to="/yoffs">
             Go to Playoffs →
           </Link>
         </div>

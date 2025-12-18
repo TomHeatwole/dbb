@@ -1925,11 +1925,16 @@
 
 .hot-team-left {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.35rem;
   flex: 1 1 50%;
   min-width: 0;
+}
+
+.hot-team-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .hot-team-avatar {
@@ -1959,6 +1964,7 @@
 .hot-team-score-line {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.9rem;
 }
@@ -2217,6 +2223,106 @@
 
 .week-stars-status--error {
   color: #fed7d7;
+}
+
+/* Clickable styles for home cards */
+.active-playoffs-row--clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s ease, transform 0.08s ease;
+}
+
+.active-playoffs-row--clickable:hover {
+  background-color: rgba(79, 183, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.active-playoffs-row--clickable:active {
+  transform: translateY(0);
+}
+
+.active-playoffs-side--clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.active-playoffs-side--clickable:hover {
+  opacity: 0.85;
+}
+
+.hot-team-header--clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hot-team-header--clickable:hover {
+  opacity: 0.85;
+}
+
+.hot-team-score-line--clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.15rem 0.35rem;
+  margin: -0.15rem -0.35rem;
+  border-radius: 0.25rem;
+}
+
+.hot-team-score-line--clickable:hover {
+  background-color: rgba(79, 183, 255, 0.08);
+}
+
+.tank-race-team-row--clickable,
+.top-pf-team-row--clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s ease;
+  border-radius: 0.35rem;
+}
+
+.tank-race-team-row--clickable:hover,
+.top-pf-team-row--clickable:hover {
+  background-color: rgba(79, 183, 255, 0.08);
+}
+
+.week-stars-player--clickable {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.week-stars-player--clickable:hover {
+  opacity: 0.85;
+}
+
+.week-stars-player--clickable:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.week-stars-team--clickable {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.week-stars-team--clickable:hover {
+  opacity: 0.85;
 }
 
 .tank-race-right,
@@ -4269,4 +4375,95 @@ body.modal-open {
 }
 .team-scores-team-abbr {
   margin-left: 0.35rem;
+}
+
+.home-chart-tooltip-hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.hot-team-trend {
+  position: relative;
+}
+
+.top-pf-right {
+  position: relative;
+}
+
+.tank-race-right {
+  position: relative;
+}
+
+.home-chart-mobile-tooltip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #0f1430;
+  border: 1px solid #3a4466;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  min-width: 200px;
+  max-width: 90%;
+}
+
+.home-chart-mobile-tooltip-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.home-chart-mobile-tooltip-close:hover {
+  color: #fff;
+}
+
+.home-chart-mobile-tooltip-content {
+  margin-top: 0.25rem;
+}
+
+.home-chart-mobile-tooltip-label {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.home-chart-mobile-tooltip-value {
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.home-chart-mobile-tooltip-team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.home-chart-mobile-tooltip-team-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.home-chart-mobile-tooltip-note {
+  margin-top: 0.5rem;
+  font-style: italic;
+  opacity: 0.8;
+  font-size: 0.75rem;
+  color: #a0aec0;
 } 
