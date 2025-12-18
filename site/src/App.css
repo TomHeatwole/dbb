@@ -2147,7 +2147,7 @@
   flex-direction: row;
   align-items: center;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 1 1 60%;
   gap: 0.25rem;
 }
 
@@ -2160,22 +2160,20 @@
 }
 
 .week-stars-player-name {
-  min-width: 0;
   font-weight: 600;
   color: #edf2f7;
   font-size: 0.82rem;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .week-stars-team {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  min-width: 0;
-  flex: 0 0 auto;
+  width: 10rem;
+  flex: 0 0 10rem;
   margin-left: auto;
+  justify-content: flex-start;
 }
 
 .week-stars-team-avatar {
@@ -2184,6 +2182,7 @@
   border-radius: 50%;
   object-fit: cover;
   background: #222;
+  flex-shrink: 0;
 }
 
 .week-stars-team-name {
@@ -2191,6 +2190,10 @@
   color: #e2e8f0;
   font-size: 0.78rem;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
 }
 
 .week-stars-points {
@@ -2291,38 +2294,57 @@
   }
 
   .week-stars-row {
-    gap: 0.3rem;
+    gap: 0.25rem;
+    align-items: flex-start;
   }
 
   .week-stars-pos {
-    font-size: 0.7rem;
-    min-width: 1.8rem;
+    font-size: 0.65rem;
+    min-width: 1.6rem;
+    padding-top: 0.15rem;
   }
 
   .week-stars-player-avatar {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1rem;
+    height: 1rem;
   }
 
   .week-stars-points {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 
   .week-stars-points-units {
-    font-size: 0.62rem;
+    font-size: 0.56rem;
   }
 
   .week-stars-player-name {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
+  }
+
+  .week-stars-team {
+    width: 6rem;
+    flex: 0 0 6rem;
+    align-items: flex-start;
+    padding-top: 0.15rem;
+    justify-content: flex-start;
   }
 
   .week-stars-team-avatar {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
   }
 
   .week-stars-team-name {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
+    white-space: normal;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-align: left;
   }
 
   .hot-team-score {
