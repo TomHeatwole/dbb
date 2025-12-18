@@ -1791,10 +1791,6 @@
   gap: 0.55rem;
 }
 
-.active-playoffs-side--right {
-  justify-content: flex-end;
-}
-
 .active-playoffs-team-content {
   display: flex;
   flex-direction: column;
@@ -1802,16 +1798,15 @@
   gap: 0.25rem;
 }
 
-.active-playoffs-team-main {
+.active-playoffs-team-header {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 0.4rem;
 }
 
-.active-playoffs-team-main--right {
+.active-playoffs-team-header--right {
   flex-direction: row-reverse;
-  justify-content: flex-end;
 }
 
 .active-playoffs-avatar {
@@ -1833,10 +1828,7 @@
   font-size: 0.98rem;
   font-weight: 600;
   min-width: 0;
-}
-
-.active-playoffs-team-main--right .active-playoffs-team-name {
-  text-align: right;
+  text-align: center;
 }
 
 .active-playoffs-score {
@@ -2371,18 +2363,20 @@
 
   .active-playoffs-row {
     padding: 0.5rem 0.5rem;
-    min-height: 4.5rem;
+    min-height: 3.8rem;
     gap: 0.28rem;
   }
 
   .active-playoffs-team-content {
-    gap: 0.35rem;
+    gap: 0.3rem;
+  }
+
+  .active-playoffs-team-header {
+    gap: 0.3rem;
   }
 
   .active-playoffs-team-seed {
     font-size: 0.6rem;
-    min-height: 0.85rem;
-    padding-bottom: 0.15rem;
   }
 
   .active-playoffs-avatar {

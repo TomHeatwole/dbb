@@ -221,8 +221,8 @@ function ActivePlayoffsCard() {
       >
         <div className="active-playoffs-side active-playoffs-side--left">
           <div className="active-playoffs-team-content">
-            <span className="active-playoffs-team-seed">#{left.seed}</span>
-            <div className="active-playoffs-team-main">
+            <div className="active-playoffs-team-header">
+              <span className="active-playoffs-team-seed">#{left.seed}</span>
               {left.avatarUrl && (
                 <img
                   className="active-playoffs-avatar"
@@ -230,8 +230,8 @@ function ActivePlayoffsCard() {
                   alt={`${left.teamName} avatar`}
                 />
               )}
-              <span className="active-playoffs-team-name">{left.teamName}</span>
             </div>
+            <span className="active-playoffs-team-name">{left.teamName}</span>
           </div>
         </div>
         <div className="active-playoffs-score active-playoffs-score--left">
@@ -245,8 +245,7 @@ function ActivePlayoffsCard() {
         </div>
         <div className="active-playoffs-side active-playoffs-side--right">
           <div className="active-playoffs-team-content active-playoffs-team-content--right">
-            <span className="active-playoffs-team-seed">#{right.seed}</span>
-            <div className="active-playoffs-team-main active-playoffs-team-main--right">
+            <div className="active-playoffs-team-header active-playoffs-team-header--right">
               {right.avatarUrl && (
                 <img
                   className="active-playoffs-avatar"
@@ -254,8 +253,9 @@ function ActivePlayoffsCard() {
                   alt={`${right.teamName} avatar`}
                 />
               )}
-              <span className="active-playoffs-team-name">{right.teamName}</span>
+              <span className="active-playoffs-team-seed">#{right.seed}</span>
             </div>
+            <span className="active-playoffs-team-name">{right.teamName}</span>
           </div>
         </div>
       </Link>
