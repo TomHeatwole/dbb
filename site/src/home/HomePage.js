@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ActivePlayoffsCard from './ActivePlayoffsCard';
 import CurrentPlayoffPictureCard from './CurrentPlayoffPictureCard';
 import HotTeamCard from './HotTeamCard';
@@ -8,7 +8,7 @@ import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
 import useIsMobile from '../hooks/useIsMobile';
-import { getCompletedWeeksCount } from '../utils/DateHelper';
+import { getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
 
 // Optional manual override for the "current week" used by home cards.
 // - Set this to a positive integer (e.g. 10) to pretend the current week is 10.
@@ -19,24 +19,57 @@ function HomePage() {
   const isMobile = useIsMobile();
   const WEEK_14 = 14;
 
+  // Home page specific logic: as soon as a week is completed, advance to the next week
+  const [homePageCurrentWeek, setHomePageCurrentWeek] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function computeHomeWeek() {
+      try {
+        const baseWeek = getCurrentNFLWeek();
+        const weekCompleted = await isCurrentWeekCompleted();
+        
+        // If the current week is completed, advance to the next week for home page display
+        const effectiveWeek = weekCompleted ? baseWeek + 1 : baseWeek;
+        
+        if (!cancelled) {
+          setHomePageCurrentWeek(effectiveWeek);
+        }
+      } catch (_) {
+        // Fallback to base week on error
+        if (!cancelled) {
+          setHomePageCurrentWeek(getCurrentNFLWeek());
+        }
+      }
+    }
+
+    computeHomeWeek();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Determine which week to pass to cards
+  const effectiveWeekOverride = ALT_HOME_WEEK_OVERRIDE != null 
+    ? ALT_HOME_WEEK_OVERRIDE 
+    : homePageCurrentWeek;
+
+  // Determine if we should show playoff matchups card
   let showPlayoffMatchupsCard = false;
 
-  if (ALT_HOME_WEEK_OVERRIDE != null) {
-    const parsed = Number(ALT_HOME_WEEK_OVERRIDE);
+  if (effectiveWeekOverride != null) {
+    const parsed = Number(effectiveWeekOverride);
     if (Number.isFinite(parsed) && parsed >= WEEK_14) {
-      showPlayoffMatchupsCard = true;
-    }
-  } else {
-    const completedWeeks = getCompletedWeeksCount();
-    if (Number.isFinite(completedWeeks) && completedWeeks >= WEEK_14) {
       showPlayoffMatchupsCard = true;
     }
   }
 
   const playoffCard = showPlayoffMatchupsCard ? (
-    <ActivePlayoffsCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+    <ActivePlayoffsCard currentWeekOverride={effectiveWeekOverride} />
   ) : (
-    <CurrentPlayoffPictureCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+    <CurrentPlayoffPictureCard currentWeekOverride={effectiveWeekOverride} />
   );
 
   if (isMobile) {
@@ -52,10 +85,10 @@ function HomePage() {
       <main className="home-main">
         <div className="home-cards-grid home-cards-grid--single">
           {playoffCard}
-          <HotTeamCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-          <TopPFRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-          <LastWeeksTopPerformanceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-          <TankRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <HotTeamCard currentWeekOverride={effectiveWeekOverride} />
+          <TopPFRaceCard currentWeekOverride={effectiveWeekOverride} />
+          <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
+          <TankRaceCard currentWeekOverride={effectiveWeekOverride} />
           <CommissionerNoteCard />
           <PodcastCard />
         </div>
@@ -81,13 +114,13 @@ function HomePage() {
       <div className="home-cards-grid home-cards-grid--split">
         <div className="home-cards-column home-cards-column--left">
           {playoffCard}
-          <TopPFRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-          <TankRaceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <TopPFRaceCard currentWeekOverride={effectiveWeekOverride} />
+          <TankRaceCard currentWeekOverride={effectiveWeekOverride} />
           <PodcastCard />
         </div>
         <div className="home-cards-column home-cards-column--right">
-          <HotTeamCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
-          <LastWeeksTopPerformanceCard currentWeekOverride={ALT_HOME_WEEK_OVERRIDE} />
+          <HotTeamCard currentWeekOverride={effectiveWeekOverride} />
+          <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
           <CommissionerNoteCard />
         </div>
       </div>
