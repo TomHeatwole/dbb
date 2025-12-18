@@ -9,6 +9,7 @@ import PositionBreakdownTable from '../players/PositionBreakdownTable';
 import PlayerBreakdownTable from '../players/PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
+import LoadingState from '../LoadingState';
 
 const WEEKS = Array.from({ length: 17 }, (_, i) => i + 1);
 
@@ -44,12 +45,26 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
 
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     const param = (String(urlYear || CURRENT_YEAR) === String(CURRENT_YEAR)) ? null : String(urlYear);
     let cancelled = false;
-    fetchPlayersData(param).then((p) => { if (!cancelled) setPlayersData(p); });
-    fetchPlayerIdMap().then((m) => { if (!cancelled) setPlayerIdMap(m); });
+    setDataLoading(true);
+    Promise.all([
+      fetchPlayersData(param),
+      fetchPlayerIdMap()
+    ]).then(([p, m]) => {
+      if (!cancelled) {
+        setPlayersData(p);
+        setPlayerIdMap(m);
+        setDataLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setDataLoading(false);
+      }
+    });
     return () => { cancelled = true; };
   }, [urlYear]);
 
@@ -285,6 +300,14 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   });
 
   const showWeekInfo = isCurrentSeason && startWeek <= currentWeek && endWeek >= currentWeek;
+
+  if (dataLoading || !playersData || !playerIdMap) {
+    return (
+      <div className="team-analytics-root">
+        <LoadingState label="Loading analytics…" />
+      </div>
+    );
+  }
 
   return (
     <div className="team-analytics-root">

@@ -480,7 +480,10 @@ function Yoffs2025Format({
                         {semiLabel}
                       </div>
                       <div className="yoffs-bracket-match-group">
-                        <div className="yoffs-bracket-match">
+                        <Link
+                          className="yoffs-bracket-match yoffs-bracket-match--clickable"
+                          to={`/yoffs?year=${season}&format=bracket&tab=Matchups&matchup=1`}
+                        >
                           <div
                             className={
                               'yoffs-bracket-team' +
@@ -527,18 +530,13 @@ function Yoffs2025Format({
                               {formatScore(seed4.semiTotal)}
                             </span>
                           </div>
-                        </div>
-                        <div className="yoffs-bracket-match-footer">
-                          <Link
-                            className="yoffs-bracket-matchup-button"
-                            to={`/yoffs?year=${season}&format=bracket&tab=Matchups&matchup=1`}
-                          >
-                            View Matchup
-                          </Link>
-                        </div>
+                        </Link>
                       </div>
                       <div className="yoffs-bracket-match-group">
-                        <div className="yoffs-bracket-match">
+                        <Link
+                          className="yoffs-bracket-match yoffs-bracket-match--clickable"
+                          to={`/yoffs?year=${season}&format=bracket&tab=Matchups&matchup=2`}
+                        >
                           <div
                             className={
                               'yoffs-bracket-team' +
@@ -585,15 +583,7 @@ function Yoffs2025Format({
                               {formatScore(seed3.semiTotal)}
                             </span>
                           </div>
-                        </div>
-                        <div className="yoffs-bracket-match-footer">
-                          <Link
-                            className="yoffs-bracket-matchup-button"
-                            to={`/yoffs?year=${season}&format=bracket&tab=Matchups&matchup=2`}
-                          >
-                            View Matchup
-                          </Link>
-                        </div>
+                        </Link>
                       </div>
                     </div>
                     <div className="yoffs-bracket-column yoffs-bracket-column--right">
@@ -620,83 +610,87 @@ function Yoffs2025Format({
                               </span>
                             </div>
                           )}
-                          <div className="yoffs-bracket-match yoffs-bracket-match--final">
-                            {finalsInfo ? (
-                              <>
-                                <div
-                                  className={
-                                    'yoffs-bracket-team' +
-                                    (finalsCompleted
-                                      ? finalsTopWinner
-                                        ? ' yoffs-bracket-team--winner'
-                                        : ' yoffs-bracket-team--loser'
-                                      : '')
-                                  }
-                                >
-                                  <span className="yoffs-bracket-seed">
-                                    #{finalsInfo.top.seed}
-                                  </span>
-                                  {finalsInfo.top.avatarUrl && (
-                                    <img
-                                      className="standings-avatar"
-                                      src={finalsInfo.top.avatarUrl}
-                                      alt={`${finalsInfo.top.teamName} avatar`}
-                                    />
-                                  )}
-                                  <span className="yoffs-bracket-name">
-                                    {finalsInfo.top.teamName}
-                                  </span>
-                                  <span className="yoffs-bracket-score">
-                                    {formatScore(finalsInfo.top.finalsTotal)}
-                                  </span>
-                                </div>
-                                <div
-                                  className={
-                                    'yoffs-bracket-team' +
-                                    (finalsCompleted
-                                      ? !finalsTopWinner
-                                        ? ' yoffs-bracket-team--winner'
-                                        : ' yoffs-bracket-team--loser'
-                                      : '')
-                                  }
-                                >
-                                  <span className="yoffs-bracket-seed">
-                                    #{finalsInfo.bottom.seed}
-                                  </span>
-                                  {finalsInfo.bottom.avatarUrl && (
-                                    <img
-                                      className="standings-avatar"
-                                      src={finalsInfo.bottom.avatarUrl}
-                                      alt={`${finalsInfo.bottom.teamName} avatar`}
-                                    />
-                                  )}
-                                  <span className="yoffs-bracket-name">
-                                    {finalsInfo.bottom.teamName}
-                                  </span>
-                                  <span className="yoffs-bracket-score">
-                                    {formatScore(finalsInfo.bottom.finalsTotal)}
-                                  </span>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="yoffs-bracket-team yoffs-bracket-team--placeholder">
-                                  Winner of #1 vs #4
-                                </div>
-                                <div className="yoffs-bracket-team yoffs-bracket-team--placeholder">
-                                  Winner of #2 vs #3
-                                </div>
-                              </>
-                            )}
-                          </div>
-                          {semisCompleted && (
-                            <div className="yoffs-bracket-match-footer">
-                              <Link
-                                className="yoffs-bracket-matchup-button"
-                                to={`/yoffs?year=${season}&format=bracket&tab=Matchups&matchup=3`}
-                              >
-                                View Matchup
-                              </Link>
+                          {semisCompleted ? (
+                            <Link
+                              className="yoffs-bracket-match yoffs-bracket-match--final yoffs-bracket-match--clickable"
+                              to={`/yoffs?year=${season}&format=bracket&tab=Matchups&matchup=3`}
+                            >
+                              {finalsInfo ? (
+                                <>
+                                  <div
+                                    className={
+                                      'yoffs-bracket-team' +
+                                      (finalsCompleted
+                                        ? finalsTopWinner
+                                          ? ' yoffs-bracket-team--winner'
+                                          : ' yoffs-bracket-team--loser'
+                                        : '')
+                                    }
+                                  >
+                                    <span className="yoffs-bracket-seed">
+                                      #{finalsInfo.top.seed}
+                                    </span>
+                                    {finalsInfo.top.avatarUrl && (
+                                      <img
+                                        className="standings-avatar"
+                                        src={finalsInfo.top.avatarUrl}
+                                        alt={`${finalsInfo.top.teamName} avatar`}
+                                      />
+                                    )}
+                                    <span className="yoffs-bracket-name">
+                                      {finalsInfo.top.teamName}
+                                    </span>
+                                    <span className="yoffs-bracket-score">
+                                      {formatScore(finalsInfo.top.finalsTotal)}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className={
+                                      'yoffs-bracket-team' +
+                                      (finalsCompleted
+                                        ? !finalsTopWinner
+                                          ? ' yoffs-bracket-team--winner'
+                                          : ' yoffs-bracket-team--loser'
+                                        : '')
+                                    }
+                                  >
+                                    <span className="yoffs-bracket-seed">
+                                      #{finalsInfo.bottom.seed}
+                                    </span>
+                                    {finalsInfo.bottom.avatarUrl && (
+                                      <img
+                                        className="standings-avatar"
+                                        src={finalsInfo.bottom.avatarUrl}
+                                        alt={`${finalsInfo.bottom.teamName} avatar`}
+                                      />
+                                    )}
+                                    <span className="yoffs-bracket-name">
+                                      {finalsInfo.bottom.teamName}
+                                    </span>
+                                    <span className="yoffs-bracket-score">
+                                      {formatScore(finalsInfo.bottom.finalsTotal)}
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="yoffs-bracket-team yoffs-bracket-team--placeholder">
+                                    Winner of #1 vs #4
+                                  </div>
+                                  <div className="yoffs-bracket-team yoffs-bracket-team--placeholder">
+                                    Winner of #2 vs #3
+                                  </div>
+                                </>
+                              )}
+                            </Link>
+                          ) : (
+                            <div className="yoffs-bracket-match yoffs-bracket-match--final">
+                              <div className="yoffs-bracket-team yoffs-bracket-team--placeholder">
+                                Winner of #1 vs #4
+                              </div>
+                              <div className="yoffs-bracket-team yoffs-bracket-team--placeholder">
+                                Winner of #2 vs #3
+                              </div>
                             </div>
                           )}
                         </div>

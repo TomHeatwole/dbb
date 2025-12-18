@@ -1787,12 +1787,31 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: 0.55rem;
 }
 
 .active-playoffs-side--right {
+  justify-content: flex-end;
+}
+
+.active-playoffs-team-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.active-playoffs-team-main {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.active-playoffs-team-main--right {
   flex-direction: row-reverse;
-  text-align: right;
+  justify-content: flex-end;
 }
 
 .active-playoffs-avatar {
@@ -1803,33 +1822,21 @@
   background: #222;
 }
 
-.active-playoffs-team-shell {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.1rem;
-}
-
-.active-playoffs-team-shell--right {
-  align-items: flex-end;
-}
-
-.active-playoffs-team-main {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-}
-
-
 .active-playoffs-team-seed {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #a0aec0;
+  color: #f6e05e;
+  flex-shrink: 0;
 }
 
 .active-playoffs-team-name {
   font-size: 0.98rem;
   font-weight: 600;
+  min-width: 0;
+}
+
+.active-playoffs-team-main--right .active-playoffs-team-name {
+  text-align: right;
 }
 
 .active-playoffs-score {
@@ -2373,6 +2380,10 @@
     height: 1.1rem;
   }
 
+  .active-playoffs-team-seed {
+    font-size: 0.6rem;
+  }
+
   .active-playoffs-team-name {
     font-size: 0.65rem;
   }
@@ -2859,9 +2870,34 @@
   gap: 0.4rem;
   max-width: 100%;
   box-sizing: border-box;
+  min-height: 6.5rem;
+  justify-content: center;
 }
+
+.yoffs-bracket-match--clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.yoffs-bracket-match--clickable:hover {
+  transform: translateY(-2px);
+  border-color: rgba(200, 155, 40, 0.8);
+  box-shadow: 0 4px 12px rgba(200, 155, 40, 0.2);
+  background: linear-gradient(
+    135deg,
+    rgba(70, 55, 15, 0.45),
+    rgba(36, 30, 50, 0.98)
+  );
+}
+
+.yoffs-bracket-match--clickable:active {
+  transform: translateY(-1px);
+}
+
 .yoffs-bracket-match--final {
-  min-height: 5rem;
+  min-height: 6.5rem;
   justify-content: center;
 }
 .yoffs-bracket-match-group {

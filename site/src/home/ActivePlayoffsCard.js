@@ -220,14 +220,19 @@ function ActivePlayoffsCard() {
         className="active-playoffs-row active-playoffs-row--clickable"
       >
         <div className="active-playoffs-side active-playoffs-side--left">
-          {left.avatarUrl && (
-            <img
-              className="active-playoffs-avatar"
-              src={left.avatarUrl}
-              alt={`${left.teamName} avatar`}
-            />
-          )}
-          <span className="active-playoffs-team-name">{left.teamName}</span>
+          <div className="active-playoffs-team-content">
+            <span className="active-playoffs-team-seed">#{left.seed}</span>
+            <div className="active-playoffs-team-main">
+              {left.avatarUrl && (
+                <img
+                  className="active-playoffs-avatar"
+                  src={left.avatarUrl}
+                  alt={`${left.teamName} avatar`}
+                />
+              )}
+              <span className="active-playoffs-team-name">{left.teamName}</span>
+            </div>
+          </div>
         </div>
         <div className="active-playoffs-score active-playoffs-score--left">
           {formatScore(left.total)}
@@ -239,14 +244,19 @@ function ActivePlayoffsCard() {
           {formatScore(right.total)}
         </div>
         <div className="active-playoffs-side active-playoffs-side--right">
-          {right.avatarUrl && (
-            <img
-              className="active-playoffs-avatar"
-              src={right.avatarUrl}
-              alt={`${right.teamName} avatar`}
-            />
-          )}
-          <span className="active-playoffs-team-name">{right.teamName}</span>
+          <div className="active-playoffs-team-content active-playoffs-team-content--right">
+            <span className="active-playoffs-team-seed">#{right.seed}</span>
+            <div className="active-playoffs-team-main active-playoffs-team-main--right">
+              {right.avatarUrl && (
+                <img
+                  className="active-playoffs-avatar"
+                  src={right.avatarUrl}
+                  alt={`${right.teamName} avatar`}
+                />
+              )}
+              <span className="active-playoffs-team-name">{right.teamName}</span>
+            </div>
+          </div>
         </div>
       </Link>
     );
