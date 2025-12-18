@@ -1824,6 +1824,10 @@
   flex-shrink: 0;
 }
 
+.active-playoffs-team-seed--pending {
+  color: #a0aec0;
+}
+
 .active-playoffs-team-name {
   font-size: 0.98rem;
   font-weight: 600;
