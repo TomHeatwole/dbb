@@ -417,9 +417,9 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
         <div className="active-playoffs-link-row">
           <Link
             className="active-playoffs-link"
-            to="/yoffs?format=bracket&tab=Bracket"
+            to="/Standings"
           >
-            View Playoff Page →
+            View Standings →
           </Link>
         </div>
       </div>

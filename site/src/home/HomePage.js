@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ActivePlayoffsCard from './ActivePlayoffsCard';
 import CurrentPlayoffPictureCard from './CurrentPlayoffPictureCard';
+import BubbleCard from './BubbleCard';
 import HotTeamCard from './HotTeamCard';
 import TankRaceCard from './TankRaceCard';
 import TopPFRaceCard from './TopPFRaceCard';
@@ -72,20 +73,26 @@ function HomePage() {
     <CurrentPlayoffPictureCard currentWeekOverride={effectiveWeekOverride} />
   );
 
+  const bubbleCard = !showPlayoffMatchupsCard ? (
+    <BubbleCard currentWeekOverride={effectiveWeekOverride} />
+  ) : null;
+
   if (isMobile) {
     // Mobile ordering:
     // 1) Playoffs (picture or matchups)
     // 2) Hot Team Alert
-    // 3) Race for the PF
-    // 4) Week 14 Top Scores
-    // 5) Race for the 1.01
-    // 6) Commissioner Note
-    // 7) Podcast
+    // 3) On the Bubble (if before week 14)
+    // 4) Race for the PF
+    // 5) Week 14 Top Scores
+    // 6) Race for the 1.01
+    // 7) Commissioner Note
+    // 8) Podcast
     return (
       <main className="home-main">
         <div className="home-cards-grid home-cards-grid--single">
           {playoffCard}
           <HotTeamCard currentWeekOverride={effectiveWeekOverride} />
+          {bubbleCard}
           <TopPFRaceCard currentWeekOverride={effectiveWeekOverride} />
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
           <TankRaceCard currentWeekOverride={effectiveWeekOverride} />
@@ -106,6 +113,7 @@ function HomePage() {
   //
   // Right column:
   //  - Hot Team Alert
+  //  - On the Bubble (if before week 14)
   //  - Week 14 Top Scores
   //  - Commissioner Note
 
@@ -120,6 +128,7 @@ function HomePage() {
         </div>
         <div className="home-cards-column home-cards-column--right">
           <HotTeamCard currentWeekOverride={effectiveWeekOverride} />
+          {bubbleCard}
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
           <CommissionerNoteCard />
         </div>
