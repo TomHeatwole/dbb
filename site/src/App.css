@@ -2370,9 +2370,19 @@
   }
 
   .active-playoffs-row {
-    padding: 0.28rem 0.5rem;
-    min-height: 2.4rem;
+    padding: 0.5rem 0.5rem;
+    min-height: 4.5rem;
     gap: 0.28rem;
+  }
+
+  .active-playoffs-team-content {
+    gap: 0.35rem;
+  }
+
+  .active-playoffs-team-seed {
+    font-size: 0.6rem;
+    min-height: 0.85rem;
+    padding-bottom: 0.15rem;
   }
 
   .active-playoffs-avatar {
@@ -2380,12 +2390,9 @@
     height: 1.1rem;
   }
 
-  .active-playoffs-team-seed {
-    font-size: 0.6rem;
-  }
-
   .active-playoffs-team-name {
     font-size: 0.65rem;
+    line-height: 1.1;
   }
 
   .active-playoffs-score {
