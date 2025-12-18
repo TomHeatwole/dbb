@@ -431,7 +431,7 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
                         {
                           name: topTeams[0]?.teamName || '',
                           value: payload.t0,
-                          color: '#63b3ed',
+                          color: '#ecc94b',
                         },
                         {
                           name: topTeams[1]?.teamName || '',
@@ -465,7 +465,7 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
                       type="monotone"
                       dataKey="t0"
                       name={topTeams[0].teamName}
-                      stroke="#63b3ed"
+                      stroke="#ecc94b"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 3 }}

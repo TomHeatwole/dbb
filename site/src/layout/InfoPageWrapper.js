@@ -1,10 +1,20 @@
 import React from 'react';
-import useIsMobile from '../hooks/useIsMobile';
+import useViewportMode, { VIEWPORT_MODES } from '../hooks/useViewportMode';
 import { Link } from 'react-router-dom';
 
 function InfoPageWrapper({ leftHeader, title, subtitle, children }) {
-  const isMobile = useIsMobile();
-  const containerClass = `${isMobile ? 'mobile-info-container' : 'info-container'} info-shared info-rel`;
+  const viewportMode = useViewportMode();
+  const isMobile = viewportMode === VIEWPORT_MODES.MOBILE;
+  const isTablet = viewportMode === VIEWPORT_MODES.TABLET;
+  
+  let containerClass = 'info-shared info-rel';
+  if (isMobile) {
+    containerClass += ' mobile-info-container';
+  } else if (isTablet) {
+    containerClass += ' tablet-info-container';
+  } else {
+    containerClass += ' info-container';
+  }
 
   return (
     <div className={containerClass}>

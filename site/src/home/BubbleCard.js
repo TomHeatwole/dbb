@@ -475,17 +475,17 @@ function BubbleCard({ currentWeekOverride = null }) {
                         {
                           name: bubbleTeams[0]?.teamName || '',
                           value: payload.t0,
-                          color: '#4fd1c5',
+                          color: '#48bb78',
                         },
                         {
                           name: bubbleTeams[1]?.teamName || '',
                           value: payload.t1,
-                          color: '#f687b3',
+                          color: '#4fd1c5',
                         },
                         {
                           name: bubbleTeams[2]?.teamName || '',
                           value: payload.t2,
-                          color: '#b794f4',
+                          color: '#4299e1',
                         },
                       ].filter(t => t.value != null),
                     });
@@ -532,7 +532,7 @@ function BubbleCard({ currentWeekOverride = null }) {
                       type="monotone"
                       dataKey="t0"
                       name={bubbleTeams[0].teamName}
-                      stroke="#4fd1c5"
+                      stroke="#48bb78"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 3 }}
@@ -544,7 +544,7 @@ function BubbleCard({ currentWeekOverride = null }) {
                       type="monotone"
                       dataKey="t1"
                       name={bubbleTeams[1].teamName}
-                      stroke="#f687b3"
+                      stroke="#4fd1c5"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 3 }}
@@ -556,7 +556,7 @@ function BubbleCard({ currentWeekOverride = null }) {
                       type="monotone"
                       dataKey="t2"
                       name={bubbleTeams[2].teamName}
-                      stroke="#b794f4"
+                      stroke="#4299e1"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 3 }}
@@ -608,6 +608,16 @@ function BubbleCard({ currentWeekOverride = null }) {
           🫧 On the Bubble
         </h2>
         {body}
+        {bubbleTeams && bubbleTeams.length > 0 && (
+          <div className="active-playoffs-link-row">
+            <Link
+              className="active-playoffs-link"
+              to="/Standings"
+            >
+              View Standings →
+            </Link>
+          </div>
+        )}
       </div>
     </HomeCard>
   );

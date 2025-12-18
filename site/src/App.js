@@ -13,7 +13,11 @@ import TeamPage from './routes/TeamPage';
 import HomePage from './routes/HomePage';
 import OldHomePage from './routes/OldHomePage';
 import Sidebar from './layout/Sidebar';
-import useIsMobile from './hooks/useIsMobile';
+import useViewportMode, { 
+  useShowVerticalSidebar, 
+  useShowHorizontalNav,
+  VIEWPORT_MODES 
+} from './hooks/useViewportMode';
 import LeagueStandings from './routes/LeagueStandings';
 import LeagueScores from './routes/LeagueScores';
 import AdminControls from './routes/AdminControls';
@@ -48,10 +52,24 @@ function MobileTopNav() {
 }
 
 function AppInner() {
-  const isMobile = useIsMobile();
+  const viewportMode = useViewportMode();
+  const showVerticalSidebar = useShowVerticalSidebar();
+  const showHorizontalNav = useShowHorizontalNav();
   const location = useLocation();
   const isHomeRoute = location.pathname === '/oldhome/';
-  const mainClassName = `${isMobile ? 'mobile-main-content' : 'main-content'}${isHomeRoute ? ' home-watermark' : ''}`;
+  
+  // Determine main content class based on viewport mode
+  let mainClassName = 'main-content-shared';
+  if (viewportMode === VIEWPORT_MODES.MOBILE) {
+    mainClassName += ' mobile-main-content';
+  } else if (viewportMode === VIEWPORT_MODES.TABLET) {
+    mainClassName += ' tablet-main-content';
+  } else {
+    mainClassName += ' main-content';
+  }
+  if (isHomeRoute) {
+    mainClassName += ' home-watermark';
+  }
 
   const routes = (
     <Routes>
@@ -71,11 +89,15 @@ function AppInner() {
     <div className="App">
       <div className="background-bg" />
       <div className="content-wrapper">
-        <Sidebar />
+        {showVerticalSidebar && <Sidebar />}
         <div className={mainClassName}>
           <div className="watermark-bg" />
-          {isMobile && <MobileTopNav />}
-          {isMobile ? <div className="mobile-scale-container">{routes}</div> : routes}
+          {showHorizontalNav && <MobileTopNav />}
+          {viewportMode === VIEWPORT_MODES.MOBILE ? (
+            <div className="mobile-scale-container">{routes}</div>
+          ) : (
+            routes
+          )}
         </div>
       </div>
     </div>

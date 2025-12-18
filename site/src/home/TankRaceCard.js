@@ -473,12 +473,12 @@ function TankRaceCard({ currentWeekOverride = null }) {
                         {
                           name: bottomTeams[0]?.teamName || '',
                           value: payload.t0,
-                          color: '#9f7aea',
+                          color: '#8b8aed',
                         },
                         {
                           name: bottomTeams[1]?.teamName || '',
                           value: payload.t1,
-                          color: '#f56565',
+                          color: '#fc8181',
                         },
                       ].filter(t => t.value != null),
                     });
@@ -507,7 +507,7 @@ function TankRaceCard({ currentWeekOverride = null }) {
                       type="monotone"
                       dataKey="t0"
                       name={bottomTeams[0].teamName}
-                      stroke="#9f7aea"
+                      stroke="#8b8aed"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 3 }}
@@ -519,7 +519,7 @@ function TankRaceCard({ currentWeekOverride = null }) {
                       type="monotone"
                       dataKey="t1"
                       name={bottomTeams[1].teamName}
-                      stroke="#f56565"
+                      stroke="#fc8181"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 3 }}

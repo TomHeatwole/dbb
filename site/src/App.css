@@ -142,6 +142,15 @@
   align-items: center;
 }
 
+.tablet-main-content {
+  position: relative;
+  margin: 0 auto;
+  padding: 1.5rem;
+  flex: 1 1 0;
+  max-width: 90rem;
+  width: 100%;
+}
+
 .content-wrapper h1 {
   letter-spacing: 0.1em;
   font-size: 2.5em;
@@ -1146,8 +1155,8 @@
   to { opacity: 1; }
 }
 
-/* Sidebar desktop-only visibility */
-@media (max-width: 50em) {
+/* Sidebar desktop-only visibility - hide below 1200px (75em) */
+@media (max-width: 75em) {
   .sidebar,
   .scroll-sidebar {
     display: none !important;
@@ -1357,7 +1366,8 @@
   display: none;
 }
 
-@media (max-width: 50em) {
+/* Show horizontal nav below 1200px (75em) */
+@media (max-width: 75em) {
   .mobile-top-home-card-wrapper {
     position: relative;
     z-index: 2;
@@ -2089,12 +2099,39 @@
   color: #fc8181;
 }
 
-.bubble-team-row .tank-race-team-place {
-  color: #63b3ed;
+/* Tank Race Card - match graph colors (purple-blue #10, red #9) */
+.tank-race-teams .tank-race-team-row:not(.bubble-team-row):nth-child(1) .tank-race-team-place {
+  color: #8b8aed;
+}
+
+.tank-race-teams .tank-race-team-row:not(.bubble-team-row):nth-child(2) .tank-race-team-place {
+  color: #fc8181;
+}
+
+/* Bubble Card - match graph colors (green #4, teal #5, blue #6) */
+.tank-race-teams .bubble-team-row:nth-child(1) .tank-race-team-place {
+  color: #48bb78;
+}
+
+.tank-race-teams .bubble-team-row:nth-child(2) .tank-race-team-place {
+  color: #4fd1c5;
+}
+
+.tank-race-teams .bubble-team-row:nth-child(3) .tank-race-team-place {
+  color: #4299e1;
 }
 
 .top-pf-team-place {
   color: #f6e05e;
+}
+
+/* Top PF Race Card - match graph colors (gold #1, green #2) */
+.top-pf-teams .top-pf-team-row:nth-child(1) .top-pf-team-place {
+  color: #ecc94b;
+}
+
+.top-pf-teams .top-pf-team-row:nth-child(2) .top-pf-team-place {
+  color: #48bb78;
 }
 
 .tank-race-team-meta,
@@ -2558,6 +2595,15 @@
   margin-right: 14.375rem; /* space for sidebar on desktop */
   min-height: calc(90vh);
   margin: 0;
+}
+.tablet-info-container {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 2rem;
+  min-height: calc(90vh);
+  margin: 0 auto;
+  max-width: 90rem;
+  width: 100%;
 }
 .mobile-info-container {
   padding-left: 18px !important;
