@@ -33,7 +33,19 @@ function TeamPage() {
   // Tab state
   const tabOptions = ['Overview', 'Scores', 'Analytics'];
   const urlTabRaw = searchParams.get('tab');
-  const urlTab = urlTabRaw === 'Summary' || urlTabRaw === 'Roster' ? 'Overview' : urlTabRaw;
+  
+  // Normalize tab parameter (case-insensitive matching)
+  let urlTab = urlTabRaw;
+  if (urlTabRaw === 'Summary' || urlTabRaw === 'Roster') {
+    urlTab = 'Overview';
+  } else if (urlTabRaw) {
+    // Case-insensitive match
+    const matchedTab = tabOptions.find(
+      option => option.toLowerCase() === urlTabRaw.toLowerCase()
+    );
+    urlTab = matchedTab || urlTabRaw;
+  }
+  
   const initialTab = tabOptions.includes(urlTab) ? urlTab : tabOptions[0];
   const [selectedTab, setSelectedTab] = useState(initialTab);
   const [weeksParsedData, setWeeksParsedData] = useState(null);

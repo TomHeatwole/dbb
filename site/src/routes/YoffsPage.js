@@ -35,7 +35,19 @@ function YoffsPage() {
   }
 
   const initialTabOptions = getTabOptionsForMode(initialMode);
-  const initialTab = urlTab && initialTabOptions.includes(urlTab) ? urlTab : initialTabOptions[0];
+  
+  // Normalize tab parameter (case-insensitive matching)
+  let normalizedUrlTab = urlTab;
+  if (urlTab) {
+    const matchedTab = initialTabOptions.find(
+      option => option.toLowerCase() === urlTab.toLowerCase()
+    );
+    normalizedUrlTab = matchedTab || urlTab;
+  }
+  
+  const initialTab = normalizedUrlTab && initialTabOptions.includes(normalizedUrlTab) 
+    ? normalizedUrlTab 
+    : initialTabOptions[0];
 
   const [season, setSeason] = useState(initialSeason);
   const [mode, setMode] = useState(initialMode); // 'cumulative' | 'bracket'
@@ -161,8 +173,14 @@ function YoffsPage() {
   // React to external URL tab changes (browser nav) when valid for current mode
   useEffect(() => {
     const tabOptions = getTabOptionsForMode(mode);
-    if (urlTab && tabOptions.includes(urlTab) && selectedTab !== urlTab) {
-      setSelectedTab(urlTab);
+    if (urlTab) {
+      // Case-insensitive match
+      const matchedTab = tabOptions.find(
+        option => option.toLowerCase() === urlTab.toLowerCase()
+      );
+      if (matchedTab && selectedTab !== matchedTab) {
+        setSelectedTab(matchedTab);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab, mode]);
