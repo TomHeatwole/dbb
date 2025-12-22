@@ -1,14 +1,22 @@
 - Hover on player for popup of information
+  - Include stats
+  - May need pulling from another API
 - "Scenarios" page where you can see what would happen if a team did or didn't have another player
 - Consider removing or adjusting the grpahs for cumulative score and relative cumulative score in team page
 - Update player card with stats for previous games
 - Make team scores page as good as league scores.
 - Make pages more calendar aware. I.e. when we get to 2026 there's gonna be 2029 picks instantly rendered, and 2025 picks gone. Ideally we'll default to a 2026 tab, but then we need all of the previous pages gone. To accomplish this, we may want to add a good testing feature to simulate it being any time of year.
 - Basic ios app wrapper
+- More advanced analytics
+  - HVOB or something (Hwang Value Over Bench) - How much the player's scores increased the team's total score over the bench replacement
+  - Perhaps a "Team Analytics" and "Player Analytics" where the player analytics has a page for reach player you can toggle through 
+  - And then player popups everywhere could link to player analytics
 
-- althome cards:
+- Home cards:
   - League History
   - Standings (reg season) w/ up/down arrows
     - Or maybe just incorporate up or down arrows into the existing 3 races tabs?
   - Recent trades (for off season)
   - Scenario or "what if" clickbait
+  - Countdown to next season starting
+  - FantasyDisaster link?
