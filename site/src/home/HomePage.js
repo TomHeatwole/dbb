@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ActivePlayoffsCard from './ActivePlayoffsCard';
+import ChampionshipCard from './ChampionshipCard';
 import CurrentPlayoffPictureCard from './CurrentPlayoffPictureCard';
 import BubbleCard from './BubbleCard';
 import HotTeamCard from './HotTeamCard';
@@ -57,29 +58,36 @@ function HomePage() {
     ? ALT_HOME_WEEK_OVERRIDE 
     : homePageCurrentWeek;
 
-  // Determine if we should show playoff matchups card
+  // Determine which playoff card to show
   let showPlayoffMatchupsCard = false;
+  let showChampionshipCard = false;
 
   if (effectiveWeekOverride != null) {
     const parsed = Number(effectiveWeekOverride);
-    if (Number.isFinite(parsed) && parsed >= WEEK_14) {
-      showPlayoffMatchupsCard = true;
+    if (Number.isFinite(parsed)) {
+      if (parsed >= 17) {
+        showChampionshipCard = true;
+      } else if (parsed >= WEEK_14) {
+        showPlayoffMatchupsCard = true;
+      }
     }
   }
 
-  const playoffCard = showPlayoffMatchupsCard ? (
+  const playoffCard = showChampionshipCard ? (
+    <ChampionshipCard currentWeekOverride={effectiveWeekOverride} />
+  ) : showPlayoffMatchupsCard ? (
     <ActivePlayoffsCard currentWeekOverride={effectiveWeekOverride} />
   ) : (
     <CurrentPlayoffPictureCard currentWeekOverride={effectiveWeekOverride} />
   );
 
-  const bubbleCard = !showPlayoffMatchupsCard ? (
+  const bubbleCard = !showPlayoffMatchupsCard && !showChampionshipCard ? (
     <BubbleCard currentWeekOverride={effectiveWeekOverride} />
   ) : null;
 
   if (isMobile) {
     // Mobile ordering:
-    // 1) Playoffs (picture or matchups)
+    // 1) Playoffs (picture, matchups, or championship)
     // 2) Hot Team Alert
     // 3) On the Bubble (if before week 14)
     // 4) Race for the PF
@@ -106,7 +114,7 @@ function HomePage() {
   // Web ordering:
   //
   // Left column:
-  //  - Playoffs (picture or matchups)
+  //  - Playoffs (picture, matchups, or championship)
   //  - Race for the PF
   //  - Race for the 1.01
   //  - Podcast
