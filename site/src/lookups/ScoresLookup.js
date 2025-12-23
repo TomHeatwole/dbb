@@ -26,6 +26,7 @@ export async function fetchScoresData(season, options = {}) {
       Number(weekNum) === getCurrentNFLWeek();
     const isPastSeason = String(season) !== String(CURRENT_YEAR);
     const isForcedWeek = forceWeeksArray.includes(Number(weekNum));
+    const isCurrentSeasonWeek = !isPastSeason; // Any week in the current season
 
     // When not forcing, read from DB cache first and optionally trigger a
     // background refresh based on TTL for the active week.
@@ -81,8 +82,8 @@ export async function fetchScoresData(season, options = {}) {
     }
 
     // No cache (or forceUpdate or forced week with empty cache): 
-    // fetch once if it's the active week, a past season, or an explicitly forced week
-    if (!isActiveWeek && !isPastSeason && !isForcedWeek) { return null; }
+    // fetch once if it's the active week, a past season, an explicitly forced week, or any week in current season
+    if (!isActiveWeek && !isPastSeason && !isForcedWeek && !isCurrentSeasonWeek) { return null; }
     try {
       if (PAUSE_SCRAPES) { return null; }
       const resp = await fetch(apiUrl);
@@ -99,7 +100,7 @@ export async function fetchScoresData(season, options = {}) {
   };
 
   // For all seasons, read from DB first; only fetch if cache missing AND
-  // active week, past season, or an explicitly forced week.
+  // (active week, past season, explicitly forced week, or any week in current season).
   weeksParsedData = await Promise.all(
     Array.from({ length: 17 }, (_, i) => fetchWeekData(season || currentYear, i + 1))
   );
