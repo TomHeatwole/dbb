@@ -207,6 +207,9 @@ function LeagueScores() {
 		// eslint-disable-next-line
 	}, [urlYear]);
 
+	// Track previous season to detect actual changes (not initial mount)
+	const prevSeasonRef = useRef(initialSeason);
+	
 	useEffect(() => {
 		if (season === CURRENT_YEAR) {
 			searchParams.delete('year');
@@ -215,9 +218,12 @@ function LeagueScores() {
 			searchParams.set('year', season);
 			setSearchParams(searchParams, { replace: true });
 		}
-		// Reset week to default for the selected season
-		const newWeek = getDefaultDisplayWeek(season);
-		setWeek(newWeek);
+		// Only reset week to default if season actually changed (not on initial mount)
+		if (prevSeasonRef.current !== season) {
+			const newWeek = getDefaultDisplayWeek(season);
+			setWeek(newWeek);
+			prevSeasonRef.current = season;
+		}
 		// eslint-disable-next-line
 	}, [season]);
 
