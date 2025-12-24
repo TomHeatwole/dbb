@@ -210,6 +210,7 @@ const databaseApi = {
   readLatestBackup,
   readDbCacheTtlMs,
   readPollingIntervalMs,
+  readCommishNotes,
   recordRateLimitHit,
   deleteAllPlayerData,
   deletePlayerWeek,
@@ -392,6 +393,19 @@ export async function readPollingIntervalMs() {
     return Number.isFinite(n) && n >= 1000 ? n : 15_000;
   } catch (_) {
     return 15_000;
+  }
+}
+
+export async function readCommishNotes() {
+  try {
+    const db = getDb();
+    await ensureSignedIn();
+    const snap = await get(ref(db, 'admin/commish_notes'));
+    if (!snap.exists()) { return []; }
+    const v = snap.val();
+    return Array.isArray(v) ? v : [];
+  } catch (_) {
+    return [];
   }
 }
 

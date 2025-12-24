@@ -24,6 +24,11 @@
     "ogDescription": "",
     "ogImage": "/og_playoffs.png"
   },
+  "/notes": {
+    "ogTitle": "Commissioner Notes – The Hwang Dynasty",
+    "ogDescription": "All commissioner notes for the league",
+    "ogImage": "/logo.png"
+  },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",
     "ogDescription": "",

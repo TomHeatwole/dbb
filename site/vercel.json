@@ -11,6 +11,7 @@
     { "source": "/Scores/Week", "destination": "/api/render" },
     { "source": "/h2h", "destination": "/api/render" },
     { "source": "/yoffs", "destination": "/api/render" },
+    { "source": "/notes", "destination": "/api/render" },
     { "source": "/admincontrols", "destination": "/api/render" },
     { "source": "/team/:id", "destination": "/api/render" }
   ]

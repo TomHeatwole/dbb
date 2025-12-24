@@ -23,6 +23,7 @@ import LeagueScores from './routes/LeagueScores';
 import AdminControls from './routes/AdminControls';
 import YoffsPage from './routes/YoffsPage';
 import H2hPage from './routes/h2h';
+import NotesPage from './routes/NotesPage';
 import { fetchTeamData } from './lookups/TeamLookup';
 
 function MobileTopNav() {
@@ -81,6 +82,7 @@ function AppInner() {
       <Route path="/admincontrols" element={<AdminControls />} />
       <Route path="/yoffs" element={<YoffsPage />} />
       <Route path="/h2h" element={<H2hPage />} />
+      <Route path="/notes" element={<NotesPage />} />
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
   );

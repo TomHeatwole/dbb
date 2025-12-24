@@ -1,5 +1,4 @@
-const COMMISSIONER_NOTE_URL =
-  'https://docs.google.com/document/d/e/2PACX-1vSOWNbNZgPI_v-vm4KCfROqC8OXqJDsFneDPiKpgxDgzWMx4sHS2EUsn2Jyi0YQrmOPlzm2cFOA2cC0/pub';
+import { readCommishNotes } from '../utils/database';
 
 function scopeCssToCommissionerNote(rawCss) {
   if (!rawCss) {
@@ -39,8 +38,12 @@ function scopeCssToCommissionerNote(rawCss) {
   return scopedRules.join('\n');
 }
 
-export async function fetchCommissionerNoteHtml() {
-  const response = await fetch(COMMISSIONER_NOTE_URL);
+export async function fetchCommissionerNoteHtmlFromUrl(url) {
+  if (!url) {
+    throw new Error('No commissioner note URL provided');
+  }
+
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
@@ -64,6 +67,17 @@ export async function fetchCommissionerNoteHtml() {
   const cssBlock = scopedCss ? `<style>${scopedCss}</style>` : '';
 
   return `${cssBlock}${contents.innerHTML.trim()}`;
+}
+
+export async function fetchCommissionerNoteHtml() {
+  const commishNotes = await readCommishNotes();
+  const commissionerNoteUrl = commishNotes && commishNotes.length > 0 ? commishNotes[0] : null;
+
+  if (!commissionerNoteUrl) {
+    throw new Error('No commissioner note URL configured');
+  }
+
+  return await fetchCommissionerNoteHtmlFromUrl(commissionerNoteUrl);
 }
 
 
