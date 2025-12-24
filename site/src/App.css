@@ -1860,6 +1860,12 @@
   background: rgba(97, 218, 251, 0.3);
 }
 
+.commissioner-note-shadow-host {
+  width: 100%;
+  min-height: 50px;
+  display: block;
+}
+
 /* Mobile styles for notes page */
 @media (max-width: 768px) {
   .notes-page-content {
@@ -4108,6 +4114,7 @@ html {
   width: 100%;
   max-width: 56rem;
   margin: 0 auto;
+  padding-bottom: 2rem;
 }
 @media (max-width: 50em) {
   .standings-list--scores {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import PageMeta from '../PageMeta';
 import { readCommishNotes } from '../utils/database';
 import { fetchCommissionerNoteHtmlFromUrl } from '../home/CommissionerNoteLookup';
@@ -10,6 +10,7 @@ function CommissionerNoteItem({ url, index }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [noteHtml, setNoteHtml] = useState('');
+  const shadowHostRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +43,57 @@ function CommissionerNoteItem({ url, index }) {
     };
   }, [url]);
 
+  // Render HTML into Shadow DOM for complete CSS isolation
+  useEffect(() => {
+    if (noteHtml && shadowHostRef.current) {
+      // Attach shadow root if not already present
+      if (!shadowHostRef.current.shadowRoot) {
+        shadowHostRef.current.attachShadow({ mode: 'open' });
+      }
+
+      // Base styles for the shadow DOM to match dark theme
+      const baseStyles = `
+        <style>
+          :host {
+            display: block;
+            width: 100%;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          body, div, p, span, h1, h2, h3, h4, h5, h6 {
+            color: #e2e8f0;
+            font-family: Roboto, arial, sans-serif;
+          }
+          a {
+            color: #90cdf4 !important;
+            text-decoration: none;
+          }
+          a:hover {
+            text-decoration: underline !important;
+          }
+          p {
+            margin: 0.5em 0;
+            line-height: 1.6;
+          }
+          p:first-child {
+            margin-top: 0;
+          }
+          h1, h2, h3, h4, h5, h6 {
+            margin: 0.75em 0 0.5em 0;
+            line-height: 1.3;
+          }
+          h1:first-child, h2:first-child, h3:first-child {
+            margin-top: 0;
+          }
+        </style>
+      `;
+
+      // Inject base styles + note HTML (which includes its own inline styles) into shadow root
+      shadowHostRef.current.shadowRoot.innerHTML = baseStyles + noteHtml;
+    }
+  }, [noteHtml]);
+
   if (loading) {
     return (
       <div className="notes-page-section">
@@ -62,10 +114,7 @@ function CommissionerNoteItem({ url, index }) {
 
   return (
     <div className="notes-page-section">
-      <div
-        className="commissioner-note-content commissioner-note-content--expanded"
-        dangerouslySetInnerHTML={{ __html: noteHtml }}
-      />
+      <div ref={shadowHostRef} className="commissioner-note-shadow-host" />
     </div>
   );
 }
