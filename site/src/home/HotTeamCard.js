@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import HomeCard from './HomeCard';
+import LoadingState from '../LoadingState';
 import { selectHotTeam } from './HotTeamSelector';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -100,9 +101,11 @@ function HotTeamCard({ currentWeekOverride = null }) {
 
   if (loading) {
     body = (
-      <div className="active-playoffs-status">
-        Loading…
-      </div>
+      <LoadingState
+        className="active-playoffs-loading"
+        label="Loading hot team…"
+        ariaLabel="Loading hot team"
+      />
     );
   } else if (error) {
     body = (

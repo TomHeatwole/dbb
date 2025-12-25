@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import PageMeta from '../PageMeta';
+import LoadingState from '../LoadingState';
 import { readCommishNotes } from '../utils/database';
 import { fetchCommissionerNoteHtmlFromUrl } from '../home/CommissionerNoteLookup';
 
@@ -86,7 +87,10 @@ function CommissionerNoteItem({ url, index }) {
   if (loading) {
     return (
       <div className="notes-page-section">
-        <div className="active-playoffs-status">Loading…</div>
+        <LoadingState
+          label="Loading note…"
+          ariaLabel="Loading commissioner note"
+        />
       </div>
     );
   }
@@ -156,7 +160,10 @@ function NotesPage() {
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
         <div className="info-container info-shared info-rel">
           <h1 className="info-title">Commissioner Notes</h1>
-          <div className="active-playoffs-status">Loading…</div>
+          <LoadingState
+            label="Loading notes…"
+            ariaLabel="Loading commissioner notes"
+          />
         </div>
       </>
     );

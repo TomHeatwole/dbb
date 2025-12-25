@@ -9,6 +9,7 @@ import TopPFRaceCard from './TopPFRaceCard';
 import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
+import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import { getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
 
@@ -52,6 +53,15 @@ function HomePage() {
       cancelled = true;
     };
   }, []);
+
+  // Show loading state while determining which week to display
+  if (homePageCurrentWeek === null) {
+    return (
+      <main className="home-main">
+        <LoadingState label="Loading…" ariaLabel="Loading home page" />
+      </main>
+    );
+  }
 
   // Determine which week to pass to cards
   const effectiveWeekOverride = ALT_HOME_WEEK_OVERRIDE != null 

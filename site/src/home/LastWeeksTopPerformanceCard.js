@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
+import LoadingState from '../LoadingState';
 import PlayerCard from '../players/PlayerCard';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
@@ -174,9 +175,11 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
 
   if (loading) {
     body = (
-      <div className="week-stars-status">
-        Loading…
-      </div>
+      <LoadingState
+        className="week-stars-loading"
+        label="Loading top performers…"
+        ariaLabel="Loading top performers"
+      />
     );
   } else if (error) {
     body = (

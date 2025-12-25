@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
+import LoadingState from '../LoadingState';
 import { fetchCommissionerNoteHtml } from './CommissionerNoteLookup';
 
 function CommissionerNoteCard() {
@@ -43,9 +45,10 @@ function CommissionerNoteCard() {
 
   if (loading) {
     body = (
-      <div className="active-playoffs-status">
-        Loading…
-      </div>
+      <LoadingState
+        label="Loading commissioner note…"
+        ariaLabel="Loading commissioner note"
+      />
     );
   } else if (error) {
     body = (
@@ -56,21 +59,39 @@ function CommissionerNoteCard() {
   } else if (noteHtml) {
     body = (
       <>
-        <div
-          className={`home-card-body commissioner-note-content ${
-            showFull ? 'commissioner-note-content--expanded' : 'commissioner-note-content--clamped'
-          }`}
-          dangerouslySetInnerHTML={{ __html: noteHtml }}
-        />
-        <button
-          type="button"
-          className="commissioner-note-toggle"
-          onClick={() => {
-            setShowFull((prev) => !prev);
-          }}
-        >
-          {showFull ? 'See Less' : 'See More'}
-        </button>
+        <div className="commissioner-note-wrapper">
+          <div
+            className={`home-card-body commissioner-note-content ${
+              showFull ? 'commissioner-note-content--expanded' : 'commissioner-note-content--clamped'
+            }`}
+            dangerouslySetInnerHTML={{ __html: noteHtml }}
+          />
+          {!showFull && (
+            <button
+              type="button"
+              className="commissioner-note-toggle commissioner-note-toggle--overlay"
+              onClick={() => {
+                setShowFull(true);
+              }}
+            >
+              See More
+            </button>
+          )}
+        </div>
+        {showFull && (
+          <button
+            type="button"
+            className="commissioner-note-toggle"
+            onClick={() => {
+              setShowFull(false);
+            }}
+          >
+            See Less
+          </button>
+        )}
+        <Link to="/Notes" className="commissioner-note-link">
+          Commissioner Notes →
+        </Link>
       </>
     );
   } else {

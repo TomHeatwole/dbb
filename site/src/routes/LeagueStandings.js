@@ -308,7 +308,20 @@ function LeagueStandings() {
     </div>
   );
 
-  if (loading) {
+  // Show error state if there's an error
+  if (error && !weeksParsedData) {
+    return (
+      <>
+        <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
+      <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
+        <div>Error loading standings.</div>
+      </InfoPageWrapper>
+      </>
+    );
+  }
+
+  // Allow rendering with partial data - show loading state only if we have nothing
+  if (loading && !weeksParsedData) {
     return (
       <>
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
@@ -318,12 +331,14 @@ function LeagueStandings() {
       </>
     );
   }
-  if (error || !weeksParsedData || !rosters || !users) {
+
+  // If we don't have minimum required data, show loading
+  if (!rosters || !users) {
     return (
       <>
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
-        <div>Error loading standings.</div>
+        <LoadingState label="Loading standings…" />
       </InfoPageWrapper>
       </>
     );
@@ -685,31 +700,42 @@ function LeagueStandings() {
           const isTop4Highlight = top4Set.has(rosterId);
 
           // Display metrics: PPG should use only completed weeks; if none, show N/A
+          // Only compute for header display - expanded stats computed separately when expanded
           const hasCompletedWeeks = completedWeeks > 0;
-          const ppgValue = hasCompletedWeeks ? computeCompletedWeeksPpg(weeksParsedData, rosterId, 17) : null;
+          const ppgValue = hasCompletedWeeks && weeksParsedData ? computeCompletedWeeksPpg(weeksParsedData, rosterId, 17) : null;
 
-          // Expanded details for every team
-          const det14 = computeTotals(rosterId, weeksFirst14);
-          const det17 = computeTotals(rosterId, weeksParsedData);
+          // Compute cheap lookups needed for header (used regardless of expansion)
           const place14 = getPlace(standings14, rosterId);
-          const place17 = getPlace(standingsAll, rosterId);
           const placeCompleted = getPlace(standingsCompleted, rosterId);
-          const placePfLiveOrCompleted = (!usePlayoffLogic && season === CURRENT_YEAR && liveRankMap && liveRankMap.has(rosterId))
-            ? liveRankMap.get(rosterId)
-            : placeCompleted;
-          const { high, low } = computeHighLow(rosterId, weeksParsedData, completedWeeks);
-          const playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
-          const completedPlayoffWeeks = usePlayoffLogic && isPlayoff ? (isCurrentSeason ? Math.max(0, Math.min(3, completedWeeks - 14)) : 3) : 0;
-          const playoffPpg = usePlayoffLogic && isPlayoff && completedPlayoffWeeks > 0
-            ? Math.round((sumPointsForWeeks(weeks15to17.slice(0, completedPlayoffWeeks), rosterId) / completedPlayoffWeeks) * 10) / 10
-            : null;
-          const playoffPlace = usePlayoffLogic && isPlayoff ? playoffOrderMap.get(rosterId) : null;
 
           const rankLabel = (usePlayoffLogic && isPlayoff)
             ? playoffOrderMap.get(rosterId)
             : (!usePlayoffLogic && season === CURRENT_YEAR && liveRankMap && liveRankMap.has(rosterId)
               ? liveRankMap.get(rosterId)
               : ((usePlayoffLogic ? place14 : placeCompleted) || idx + 1));
+
+          // OPTIMIZATION: Only compute expensive expanded details when actually expanded
+          let det14, det17, place17, placePfLiveOrCompleted;
+          let high, low, playoffPts, completedPlayoffWeeks, playoffPpg, playoffPlace;
+          let ppg14Completed, ppg17Completed;
+
+          if (isExpanded) {
+            det14 = computeTotals(rosterId, weeksFirst14);
+            det17 = computeTotals(rosterId, weeksParsedData);
+            place17 = getPlace(standingsAll, rosterId);
+            placePfLiveOrCompleted = (!usePlayoffLogic && season === CURRENT_YEAR && liveRankMap && liveRankMap.has(rosterId))
+              ? liveRankMap.get(rosterId)
+              : placeCompleted;
+            ({ high, low } = computeHighLow(rosterId, weeksParsedData, completedWeeks));
+            playoffPts = usePlayoffLogic && isPlayoff ? Math.round(sumPointsForWeeks(weeks15to17, rosterId)) : null;
+            completedPlayoffWeeks = usePlayoffLogic && isPlayoff ? (isCurrentSeason ? Math.max(0, Math.min(3, completedWeeks - 14)) : 3) : 0;
+            playoffPpg = usePlayoffLogic && isPlayoff && completedPlayoffWeeks > 0
+              ? Math.round((sumPointsForWeeks(weeks15to17.slice(0, completedPlayoffWeeks), rosterId) / completedPlayoffWeeks) * 10) / 10
+              : null;
+            playoffPlace = usePlayoffLogic && isPlayoff ? playoffOrderMap.get(rosterId) : null;
+            ppg14Completed = computeCompletedWeeksPpg(weeksFirst14, rosterId, 14);
+            ppg17Completed = computeCompletedWeeksPpg(weeksParsedData, rosterId, 17);
+          }
 
           let rightHeaderContent;
           if (isMobile) {
@@ -763,26 +789,37 @@ function LeagueStandings() {
                 rightContent={rightHeaderContent}
               />
               {isExpanded && (
-                renderExpandedStats({
-                  isMobileView: isMobile,
-                  shouldUsePlayoffLogic: usePlayoffLogic,
-                  isPlayoffTeam: isPlayoff,
-                  playoffPointsTotal: playoffPts,
-                  playoffPointsPerGame: playoffPpg,
-                  playoffStandingPlace: playoffPlace,
-                  fourteenWeekTotals: det14,
-                  seventeenWeekTotals: det17,
-                  fourteenWeekPlace: place14,
-                  seventeenWeekPlace: place17,
-                  placeCompletedRank: placePfLiveOrCompleted,
-                  highestWeekly: high,
-                  lowestWeekly: low,
-                  rosterIdForLink: rosterId,
-                  currentSearchParams: searchParams,
-                  completedWeeksNumber: effectiveCompletedWeeks,
-                  ppg14Completed: computeCompletedWeeksPpg(weeksFirst14, rosterId, 14),
-                  ppg17Completed: computeCompletedWeeksPpg(weeksParsedData, rosterId, 17)
-                })
+                // Show loading state if we don't have complete data yet
+                (!playersData || !playerIdMap) ? (
+                  <div className="standings-row-expand">
+                    <LoadingState
+                      label="Loading stats…"
+                      ariaLabel="Loading team statistics"
+                      className="standings-expand-loading"
+                    />
+                  </div>
+                ) : (
+                  renderExpandedStats({
+                    isMobileView: isMobile,
+                    shouldUsePlayoffLogic: usePlayoffLogic,
+                    isPlayoffTeam: isPlayoff,
+                    playoffPointsTotal: playoffPts,
+                    playoffPointsPerGame: playoffPpg,
+                    playoffStandingPlace: playoffPlace,
+                    fourteenWeekTotals: det14,
+                    seventeenWeekTotals: det17,
+                    fourteenWeekPlace: place14,
+                    seventeenWeekPlace: place17,
+                    placeCompletedRank: placePfLiveOrCompleted,
+                    highestWeekly: high,
+                    lowestWeekly: low,
+                    rosterIdForLink: rosterId,
+                    currentSearchParams: searchParams,
+                    completedWeeksNumber: effectiveCompletedWeeks,
+                    ppg14Completed,
+                    ppg17Completed
+                  })
+                )
               )}
             </div>
           );
