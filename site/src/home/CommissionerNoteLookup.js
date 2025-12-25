@@ -38,7 +38,7 @@ function scopeCssToCommissionerNote(rawCss) {
   return scopedRules.join('\n');
 }
 
-export async function fetchCommissionerNoteHtmlFromUrl(url) {
+export async function fetchCommissionerNoteHtmlFromUrl(url, useScoping = true) {
   if (!url) {
     throw new Error('No commissioner note URL provided');
   }
@@ -62,9 +62,10 @@ export async function fetchCommissionerNoteHtmlFromUrl(url) {
 
   const inlineStyle = doc.querySelector('#contents style[type="text/css"]');
   const rawCss = inlineStyle ? inlineStyle.textContent || '' : '';
-  const scopedCss = scopeCssToCommissionerNote(rawCss);
-
-  const cssBlock = scopedCss ? `<style>${scopedCss}</style>` : '';
+  
+  // For Shadow DOM, we don't need scoping since Shadow DOM provides isolation
+  const css = useScoping ? scopeCssToCommissionerNote(rawCss) : rawCss;
+  const cssBlock = css ? `<style>${css}</style>` : '';
 
   return `${cssBlock}${contents.innerHTML.trim()}`;
 }

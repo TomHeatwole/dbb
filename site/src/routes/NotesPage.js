@@ -20,7 +20,8 @@ function CommissionerNoteItem({ url, index }) {
       setError(null);
 
       try {
-        const html = await fetchCommissionerNoteHtmlFromUrl(url);
+        // Pass false to disable CSS scoping since Shadow DOM provides isolation
+        const html = await fetchCommissionerNoteHtmlFromUrl(url, false);
 
         if (cancelled) {
           return;
@@ -52,6 +53,7 @@ function CommissionerNoteItem({ url, index }) {
       }
 
       // Base styles for the shadow DOM to match dark theme
+      // Override Google Doc colors but preserve font-weight and font-size
       const baseStyles = `
         <style>
           :host {
@@ -61,30 +63,17 @@ function CommissionerNoteItem({ url, index }) {
           * {
             box-sizing: border-box;
           }
-          body, div, p, span, h1, h2, h3, h4, h5, h6 {
-            color: #e2e8f0;
-            font-family: Roboto, arial, sans-serif;
+          /* Override all Google Doc colors with dark theme colors */
+          body, p, span, li, div, h1, h2, h3, h4, h5, h6 {
+            color: #e2e8f0 !important;
           }
+          /* Preserve link colors */
           a {
             color: #90cdf4 !important;
             text-decoration: none;
           }
           a:hover {
             text-decoration: underline !important;
-          }
-          p {
-            margin: 0.5em 0;
-            line-height: 1.6;
-          }
-          p:first-child {
-            margin-top: 0;
-          }
-          h1, h2, h3, h4, h5, h6 {
-            margin: 0.75em 0 0.5em 0;
-            line-height: 1.3;
-          }
-          h1:first-child, h2:first-child, h3:first-child {
-            margin-top: 0;
           }
         </style>
       `;
