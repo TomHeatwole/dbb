@@ -687,6 +687,11 @@ function MatchupView({
       const playerName = formatPlayerNameForDisplay(rawName);
       const injuryBadge = renderInjuryBadge(slot.id, info);
 
+      const playersTeamMapForWeek =
+        (playersTeamMapByWeek && playersTeamMapByWeek[weekNumber]) || {};
+      const snapshotTeam = playersTeamMapForWeek[String(slot.id)];
+      const teamAbbr = snapshotTeam || gameObj.team || (info && (info.team || info.team_abbr)) || null;
+
       const avatarNode = info && info.espn_photo_url ? (
         <img
           className="player-avatar player-avatar-style team-scores-player-img-margin"
@@ -699,6 +704,7 @@ function MatchupView({
         <span className="player-name">
           {playerName}
           {info && info.position ? ` (${info.position})` : ''}
+          {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
           {injuryBadge}
         </span>
       );
