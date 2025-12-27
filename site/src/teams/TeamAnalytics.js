@@ -206,11 +206,16 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Get weekly standings for the selected window (with current week excluded)
-  const weeklyStandings = getWeeklyStandings(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
+  // Memoize expensive data computations
+  const weeklyStandings = useMemo(() => {
+    if (!weeksParsedData) return [];
+    return getWeeklyStandings(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
+  }, [weeksParsedData, adjustedStartWeek, adjustedEndWeek]);
 
-  // Positional breakdown over the same adjusted range
-  const positionalBreakdown = getPositionalBreakdownData(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
+  const positionalBreakdown = useMemo(() => {
+    if (!weeksParsedData) return [];
+    return getPositionalBreakdownData(weeksParsedData, adjustedStartWeek, adjustedEndWeek);
+  }, [weeksParsedData, adjustedStartWeek, adjustedEndWeek]);
 
   // Build a stable, uniformly distributed playerId -> color mapping for this roster/time window
   const playerColorMap = useMemo(() => {
@@ -263,6 +268,15 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
 
+  // Early return AFTER all hooks: Show loading state until all required data is ready
+  if (dataLoading || !playersData || !playerIdMap || !weeksParsedData || !Array.isArray(weeksParsedData) || weeksParsedData.length === 0) {
+    return (
+      <div className="team-analytics-root">
+        <LoadingState label="Loading analytics…" />
+      </div>
+    );
+  }
+
   // Build data for the chart using StartSit totals per week
   const weeklyScoresData = weeklyStandings.map((weekArr, i) => {
     const weekNum = adjustedStartWeek + i;
@@ -300,14 +314,6 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   });
 
   const showWeekInfo = isCurrentSeason && startWeek <= currentWeek && endWeek >= currentWeek;
-
-  if (dataLoading || !playersData || !playerIdMap) {
-    return (
-      <div className="team-analytics-root">
-        <LoadingState label="Loading analytics…" />
-      </div>
-    );
-  }
 
   return (
     <div className="team-analytics-root">
