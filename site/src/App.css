@@ -368,6 +368,9 @@
   transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), text-shadow 0.18s;
   display: inline-block;
 }
+.team-scores-table-fixed-width .player-name {
+  font-size: 0.95em;
+}
 
 /* --- TeamPage.js extracted styles --- */
 .team-info-rel {
@@ -506,6 +509,19 @@
   margin-top: 0.5em;
   position: relative;
 }
+.team-scores-activity-banner {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 1.5rem 1rem 1.5rem;
+  background: rgba(35, 35, 58, 0.6);
+  border-radius: 0.5rem;
+  border: 1px solid #444;
+  font-weight: 700;
+  font-size: 0.95em;
+}
 .team-scores-week-bar {
   display: flex;
   align-items: center;
@@ -625,10 +641,10 @@
   border-radius: 0.5rem; /* 8px -> 0.5rem */
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  font-size: 0.97em;
+  font-size: 0.88em;
 }
 .team-scores-table th, .team-scores-table td {
-  padding: 0.38em 0.5em;
+  padding: 0.3em 0.4em;
   text-align: left;
 }
 .team-scores-table th {
@@ -815,16 +831,25 @@
 
 .team-scores-tables-flex {
   display: flex;
-  gap: 2.5vw;
+  gap: 2.25rem;
   justify-content: center;
   align-items: flex-start;
   width: 100%;
-  max-width: 56.25rem; /* 900px -> 56.25rem */
+  max-width: 58rem;
   margin: 0 auto 1.5em auto;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
 }
 .team-scores-tables-col {
   flex: 1 1 0;
   min-width: 0;
+}
+.team-scores-tables-col:first-child {
+  border-right: none;
+  padding-right: 0;
+}
+.team-scores-tables-col:last-child {
+  padding-left: 0;
 }
 @media (max-width: 50em) { /* 800px -> 50em */
   .team-scores-tables-flex {
@@ -1026,12 +1051,26 @@
   color: #888;
 }
 .team-scores-starters-bench-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   font-weight: 600;
   font-size: 1.1em;
   margin-bottom: 0.5rem; /* 8px -> 0.5rem */
 }
+
+.team-scores-total-top {
+  font-weight: 900;
+  font-size: 1em; /* same size for starters + bench */
+  color: #61dafb;
+  white-space: nowrap;
+}
 .team-scores-player-img-margin {
-  margin-right: 0.5rem; /* 8px -> 0.5rem */
+  margin-right: 0.4rem;
+}
+.team-scores-table-fixed-width .player-avatar {
+  width: 2em;
+  height: 2em;
 }
 .team-summary-root {
   display: flex;
@@ -1201,39 +1240,171 @@
   table-layout: fixed !important;
 } 
 
+/* TeamScores (team page) override:
+   Keep matchup column narrow and give player column real width (so names don't disappear). */
+.team-scores-container--team-page .team-scores-table-fixed-width {
+  table-layout: auto !important;
+}
+.team-scores-container--team-page .team-scores-table-fixed-width th:nth-child(2),
+.team-scores-container--team-page .team-scores-table-fixed-width td:nth-child(2) {
+  width: auto !important;
+  min-width: 11.5rem !important;
+  max-width: none !important;
+  padding-right: 0.35rem !important;
+}
+.team-scores-container--team-page .team-scores-table-fixed-width th:nth-child(3),
+.team-scores-container--team-page .team-scores-table-fixed-width td:nth-child(3) {
+  width: 8.25rem !important;
+  min-width: 8.25rem !important;
+  max-width: 8.25rem !important;
+  padding-left: 0.25rem !important;
+}
+
+/* Bench table: same approach (keep matchup narrow, player wide) */
+.team-scores-container--team-page .team-scores-table-bench {
+  table-layout: auto !important;
+}
+.team-scores-container--team-page .team-scores-table-bench th:first-child,
+.team-scores-container--team-page .team-scores-table-bench td:first-child {
+  width: auto !important;
+  min-width: 11.5rem !important;
+  max-width: none !important;
+  padding-right: 0.35rem !important;
+}
+.team-scores-container--team-page .team-scores-table-bench th:nth-child(2),
+.team-scores-container--team-page .team-scores-table-bench td:nth-child(2) {
+  width: 8.25rem !important;
+  min-width: 8.25rem !important;
+  max-width: 8.25rem !important;
+  padding-left: 0.25rem !important;
+}
+.team-scores-container--team-page .team-scores-table-bench th:last-child,
+.team-scores-container--team-page .team-scores-table-bench td:last-child {
+  width: 3.5em !important;
+  min-width: 3.5em !important;
+  max-width: 3.5em !important;
+}
+
+/* TeamScores: give the player line more usable width (reduce ugly wraps), and
+   rely on compact matchup text to keep the matchup column narrow. */
+.team-scores-container--team-page .team-scores-player-cell .player-name {
+  display: block;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* TeamScores: ensure Starters + Bench totals render at the same size */
+.team-scores-container--team-page .team-scores-total-row {
+  font-size: 1.1em;
+}
+
+/* TeamScores mobile-only tightening */
+@media (max-width: 50em) {
+  .team-scores-container--team-page .team-scores-tables-flex {
+    max-width: 100% !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .team-scores-container--team-page .team-scores-table {
+    font-size: 0.72em;
+  }
+
+  .team-scores-container--team-page .team-scores-table th,
+  .team-scores-container--team-page .team-scores-table td {
+    padding: 0.22em 0.28em;
+  }
+
+  /* Allow more wrapping on mobile and shrink avatars */
+  .team-scores-container--team-page .team-scores-player-cell .player-name {
+    line-clamp: 3;
+    -webkit-line-clamp: 3;
+  }
+  .team-scores-container--team-page .player-avatar {
+    width: 1.6em;
+    height: 1.6em;
+  }
+
+  /* Override TeamScores desktop min-widths so the tables don't overflow on small screens */
+  .team-scores-container--team-page .team-scores-table-fixed-width th:nth-child(2),
+  .team-scores-container--team-page .team-scores-table-fixed-width td:nth-child(2),
+  .team-scores-container--team-page .team-scores-table-bench th:first-child,
+  .team-scores-container--team-page .team-scores-table-bench td:first-child {
+    min-width: 0 !important;
+  }
+
+  /* Keep matchup column narrow on mobile */
+  .team-scores-container--team-page .team-scores-table-fixed-width th:nth-child(3),
+  .team-scores-container--team-page .team-scores-table-fixed-width td:nth-child(3),
+  .team-scores-container--team-page .team-scores-table-bench th:nth-child(2),
+  .team-scores-container--team-page .team-scores-table-bench td:nth-child(2) {
+    width: 7.2rem !important;
+    min-width: 7.2rem !important;
+    max-width: 7.2rem !important;
+  }
+
+  /* Tighten pos/pts columns slightly on mobile */
+  .team-scores-container--team-page .team-scores-table-fixed-width th:first-child,
+  .team-scores-container--team-page .team-scores-table-fixed-width td:first-child {
+    width: 2.4em !important;
+    min-width: 2.4em !important;
+    max-width: 2.4em !important;
+  }
+  .team-scores-container--team-page .team-scores-table-fixed-width th:last-child,
+  .team-scores-container--team-page .team-scores-table-fixed-width td:last-child,
+  .team-scores-container--team-page .team-scores-table-bench th:last-child,
+  .team-scores-container--team-page .team-scores-table-bench td:last-child {
+    width: 3.2em !important;
+    min-width: 3.2em !important;
+    max-width: 3.2em !important;
+  }
+}
+
 .team-scores-table-fixed-width th,
 .team-scores-table-fixed-width td {
   text-align: right !important;
 }
 .team-scores-table-fixed-width th:first-child,
 .team-scores-table-fixed-width td:first-child {
-  width: 3.5em !important;
-  min-width: 2.5em !important;
+  width: 2.8em !important;
+  min-width: 2.8em !important;
+  max-width: 2.8em !important;
   text-align: left !important;
+  font-size: 0.88em;
+  padding-left: 0.25em !important;
+  padding-right: 0.15em !important;
 }
 .team-scores-table-fixed-width th:last-child,
 .team-scores-table-fixed-width td:last-child {
-  width: 4.5em !important;
-  min-width: 3em !important;
+  width: 3.5em !important;
+  min-width: 3.5em !important;
+  max-width: 3.5em !important;
   text-align: right !important;
+  padding-left: 0.15em !important;
+  padding-right: 0.35em !important;
 }
 .team-scores-table-fixed-width th:nth-child(2),
 .team-scores-table-fixed-width td:nth-child(2) {
-  width: auto !important;
-  min-width: 10em !important;
-  max-width: 100% !important;
+  width: 40% !important;
+  min-width: 9em !important;
+  max-width: 40% !important;
   text-align: left !important;
+  padding-right: 0.4rem !important;
+  padding-left: 0.25rem !important;
 }
 /* Game column (3rd) */
 .team-scores-table-fixed-width th:nth-child(3),
 .team-scores-table-fixed-width td:nth-child(3) {
-  width: 16em !important;
-  min-width: 12em !important;
+  width: 9em !important;
+  min-width: 8em !important;
+  max-width: 9em !important;
   text-align: left !important;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
 }
-/* Add breathing room between Player (2nd) and Game (3rd) columns */
-.team-scores-table-fixed-width td:nth-child(2) { padding-right: 0.6rem !important; }
-.team-scores-table-fixed-width td:nth-child(3) { padding-left: 0.6rem !important; }
 
 .team-scores-table-bench {
   width: 100% !important;
@@ -1241,21 +1412,23 @@
 }
 .team-scores-table-bench th:first-child,
 .team-scores-table-bench td:first-child {
-  width: auto !important;
-  min-width: 10em !important;
-  max-width: 100% !important;
+  width: 48% !important;
+  min-width: 11em !important;
+  max-width: 48% !important;
   text-align: left !important;
+  padding-right: 0.6rem !important;
+  padding-left: 0.4rem !important;
 }
 /* Bench Game column (2nd) */
 .team-scores-table-bench th:nth-child(2),
 .team-scores-table-bench td:nth-child(2) {
-  width: 16em !important;
-  min-width: 12em !important;
+  width: 9.5em !important;
+  min-width: 8.5em !important;
+  max-width: 9.5em !important;
   text-align: left !important;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
 }
-/* Bench table spacing between Player (1st) and Game (2nd) columns */
-.team-scores-table-bench td:first-child { padding-right: 0.6rem !important; }
-.team-scores-table-bench td:nth-child(2) { padding-left: 0.6rem !important; }
 
 /* Mobile: push the Game column significantly further right */
 @media (max-width: 50em) {
@@ -1306,9 +1479,12 @@
 }
 .team-scores-table-bench th:last-child,
 .team-scores-table-bench td:last-child {
-  width: 4.5em !important;
-  min-width: 3em !important;
+  width: 3.5em !important;
+  min-width: 3.5em !important;
+  max-width: 3.5em !important;
   text-align: right !important;
+  padding-left: 0.15em !important;
+  padding-right: 0.35em !important;
 } 
 
 .mobile-team-header-margin {
@@ -4554,9 +4730,11 @@ body.modal-open {
 
 .team-scores-game-cell {
   color: #9fb4de;
-  font-size: 0.85em;
+  font-size: 0.78em;
   white-space: nowrap;
   text-align: left !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .team-scores-game-link {
   color: inherit;
@@ -4567,7 +4745,13 @@ body.modal-open {
   text-decoration: none;
   border-bottom-color: rgba(159, 180, 222, 0.7);
 }
-.team-scores-game-text { display: block; width: 100%; }
+.team-scores-game-text { 
+  display: block; 
+  width: 100%; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .team-scores-game-live {
   background: rgba(255, 215, 0, 0.12);
   color: #ffe08a;

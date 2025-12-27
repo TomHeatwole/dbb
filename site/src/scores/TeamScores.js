@@ -9,6 +9,11 @@ import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from '../utils
 import WeekSelector from './WeekSelector';
 import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
+import { fetchNflScoreboard } from '../lookups/GamesLookup';
+import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from './GamesParser';
+import TeamScoresTables from './TeamScoresTables';
+import useIsMobile from '../hooks/useIsMobile';
+import { createLiveScoresPoller } from '../utils/livePolling';
 
 // Lazy import to avoid circular deps at module init
 async function readPlayersSnapshotFromDb(season, week) {
@@ -19,6 +24,20 @@ async function readPlayersSnapshotFromDb(season, week) {
     }
   } catch (_) {}
   return null;
+}
+
+function formatKickoffShort(iso) {
+  if (!iso) {
+    return '';
+  }
+  try {
+    const d = new Date(iso);
+    const dow = d.toLocaleDateString(undefined, { weekday: 'short' });
+    const tm = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return `${dow} ${tm}`;
+  } catch (_) {
+    return '';
+  }
 }
 
 const NUM_WEEKS = 17;
@@ -32,11 +51,18 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const dropdownRef = useRef(null);
   const { id } = useParams();
   const rosterId = Number(id);
+  const isMobile = useIsMobile();
 
   const season = searchParams.get('year') ? String(searchParams.get('year')) : String(CURRENT_YEAR);
   const currentWeek = getCurrentNFLWeek(CURRENT_YEAR);
   const showCurrentInjury = String(season) === String(CURRENT_YEAR) && week >= currentWeek;
   const [injuriesMap, setInjuriesMap] = useState({});
+  const [playerGameLabels, setPlayerGameLabels] = useState({});
+  const [playersTeamMap, setPlayersTeamMap] = useState({});
+  const [liveWeeksParsedData, setLiveWeeksParsedData] = useState(null);
+
+  // Use live data if available, otherwise use prop data
+  const effectiveWeeksParsedData = liveWeeksParsedData || weeksParsedData;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -55,7 +81,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   useEffect(() => {
     setDropdownOpen(false);
   }, [week]);
-;
+
   // Update query param when week changes
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
@@ -155,13 +181,153 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     return () => { cancelled = true; };
   }, [season, week, playerIdMap]);
 
+  // Load per-player team mapping from weekly players snapshot (current season only)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+        if (!isCurrentSeason || !week || Number(week) < 1) {
+          if (!cancelled) {
+            setPlayersTeamMap({});
+          }
+          return;
+        }
+        const snap = await readPlayersSnapshotFromDb(String(season), Number(week));
+        const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
+        if (cancelled) {
+          return;
+        }
+        if (!data) {
+          setPlayersTeamMap({});
+          return;
+        }
+        const next = {};
+        for (const [pid, pinfo] of Object.entries(data)) {
+          const abbr = pinfo && (pinfo.team || pinfo.team_abbr || pinfo.team_abbreviation);
+          if (abbr) {
+            next[String(pid)] = String(abbr);
+          }
+        }
+        setPlayersTeamMap(next);
+      } catch (_) {
+        if (!cancelled) {
+          setPlayersTeamMap({});
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [season, week]);
+
+  // Compute player->game labels for the selected week
+  useEffect(() => {
+    if (!playersDataForWeek || !playerIdMap || !effectiveWeeksParsedData) {
+      setPlayerGameLabels({});
+      return;
+    }
+
+    const playerIdSet = new Set();
+    // Collect player IDs from the raw week data for this roster
+    const weekArr = Array.isArray(effectiveWeeksParsedData) ? effectiveWeeksParsedData[week - 1] : null;
+    if (Array.isArray(weekArr)) {
+      const entry = weekArr.find(e => e && Number(e.roster_id) === Number(rosterId));
+      if (entry && Array.isArray(entry.players)) {
+        entry.players.forEach(pid => {
+          if (pid && String(pid) !== '0') {
+            playerIdSet.add(pid);
+          }
+        });
+      }
+    }
+
+    const playerIds = Array.from(playerIdSet);
+    if (playerIds.length === 0) {
+      setPlayerGameLabels({});
+      return;
+    }
+
+    const seasonYear = Number(season);
+    let cancelled = false;
+    fetchNflScoreboard(seasonYear, week)
+      .then(async (json) => {
+        if (cancelled) {
+          return;
+        }
+        const mapping = await mapPlayersToGames(
+          playerIds,
+          playersDataForWeek,
+          playerIdMap,
+          json,
+          String(season) === String(CURRENT_YEAR) ? playersTeamMap : null
+        );
+        const labels = {};
+        for (const pid of playerIds) {
+          const item = mapping[pid];
+          const ev = item && item.event;
+          const teamForWeek = item && item.team;
+          const d = ev ? getGameDisplayForTeam(ev, teamForWeek) : { text: 'BYE', live: false, completed: false, eventId: null };
+
+          // TeamScores wants a more compact pre-game label so the "matchup" column can be narrow.
+          let text = d.text;
+          if (ev && !d.live && !d.completed) {
+            const perspective = getEventLabelForTeam(ev, teamForWeek) || '';
+            const kickoff = formatKickoffShort(ev.date || (ev.competitions && ev.competitions[0] && ev.competitions[0].date));
+            text = `${kickoff} ${perspective}`.trim();
+          }
+
+          labels[pid] = { ...d, text, team: teamForWeek || null };
+        }
+        if (!cancelled) {
+          setPlayerGameLabels(labels);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPlayerGameLabels({});
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [season, week, rosterId, playersDataForWeek, playerIdMap, effectiveWeeksParsedData, playersTeamMap]);
+
+  // Live polling: when viewing current week of current season, auto-refresh scores
+  useEffect(() => {
+    const isCurrentSeason = String(season) === String(CURRENT_YEAR);
+    const currentWeekNum = getCurrentNFLWeek();
+    if (!isCurrentSeason || Number(week) !== Number(currentWeekNum)) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const poller = createLiveScoresPoller({
+      season,
+      week,
+      forceOnStartAndFocus: true,
+      onData: ({ newWeeks }) => {
+        if (cancelled || !Array.isArray(newWeeks)) {
+          return;
+        }
+        setLiveWeeksParsedData(newWeeks);
+      },
+    });
+
+    poller.start();
+
+    return () => {
+      cancelled = true;
+      poller.stop();
+    };
+  }, [season, week]);
+
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
 
   // Get week breakdown for this roster
-  const rawWeekBreakdown = weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week)[rosterId] : null;
-  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap, null, injuriesMap, playerSeasonTotalsMap) : null;
+  const rawWeekBreakdown = effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week)[rosterId] : null;
+  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap) : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
   useEffect(() => {
@@ -184,106 +350,59 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     } catch (_) {}
   }, [season, week, rosterId, weekBreakdown, playerIdMap, playersDataForWeek]);
 
-  const InjuryBadge = ({ playerId, info }) => {
-    let status = null;
-    // Previous weeks: use injuriesMap by Sleeper player id
-    if (!showCurrentInjury && injuriesMap && playerId && injuriesMap[String(playerId)]) {
-      status = injuriesMap[String(playerId)];
-    } else if (showCurrentInjury && info) {
-      status = info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null);
-    }
-    const ab = status ? getInjuryAbbreviation(status) : null;
-    if (!ab) { return null; }
-    const isRetired = ab === 'NA';
-    const label = isRetired ? 'Retired 😂' : ab;
-    const cls = isRetired ? 'injury-badge injury-badge--retired' : 'injury-badge';
-    return <span className={cls} title={status}>{label}</span>;
-  };
+  // Calculate activity counts for current week
+  const isActiveWeek = String(season) === String(CURRENT_YEAR) && Number(week) === Number(getCurrentNFLWeek());
+  let activeCount = 0;
+  let yetToPlayCount = 0;
 
-  const benchRows = weekBreakdown ? [...weekBreakdown.bench].map((p) => {
-    const info = getPlayerInfo(p.id, playersDataForWeek, playerIdMap);
-    const status = showCurrentInjury && info ? (info.injury_status || info.injury_notes || (info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(info.status) ? info.status : null)) : null;
-    const ab = status ? getInjuryAbbreviation(status) : null;
-    const isDeprioritized = ab === 'O' || ab === 'P' || ab === 'PUP' || ab === 'IR';
-    return { p, info, isDeprioritized };
-  }).sort((a, b) => {
-    if (b.p.pts !== a.p.pts) { return b.p.pts - a.p.pts; }
-    if (a.isDeprioritized !== b.isDeprioritized) {
-      return a.isDeprioritized ? 1 : -1; // push OUT/PUP/IR below on ties
+  if (isActiveWeek && weekBreakdown && playerGameLabels) {
+    const rosterPlayerIds = [...(weekBreakdown.starters || []), ...(weekBreakdown.bench || [])]
+      .map(p => p && p.id)
+      .filter(pid => pid && pid !== '0');
+    
+    for (const pid of rosterPlayerIds) {
+      const label = playerGameLabels[pid];
+      if (!label) {
+        continue;
+      }
+      const isLive = !!label.live;
+      const isCompleted = !!label.completed;
+      const isBye = label && label.text === 'BYE';
+      if (isLive) {
+        activeCount++;
+      } else if (!isCompleted && !isBye) {
+        yetToPlayCount++;
+      }
     }
-    return 0;
-  }) : [];
+  }
 
   return (
-    <div className="team-scores-container">
+    <div className="team-scores-container team-scores-container--team-page">
       <WeekSelector week={week} onChange={handleSelect} />
-      {/* Week content */}
-      {weekBreakdown ? (
-        <div className="team-scores-tables-flex">
-          <div className="team-scores-tables-col">
-            <div className="team-scores-starters-bench-title">Starters</div>
-            <table className="team-scores-table team-scores-table-starters-simple">
-              <tbody>
-                {weekBreakdown.starters.map((p, i) => {
-                  const info = getPlayerInfo(p.id, playersDataForWeek, playerIdMap);
-                  const posLabel = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
-                  return (
-                    <tr key={p.id}>
-                      <td className="team-scores-pos-cell">{posLabel}</td>
-                      <td className="team-scores-player-cell">
-                        {info && info.espn_photo_url && (
-                          <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
-                        )}
-                        <span className="player-name">
-                          {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
-                          {info && info.position ? ` (${info.position})` : ''}
-                          <InjuryBadge playerId={p.id} info={info} />
-                        </span>
-                      </td>
-                      <td className="team-scores-pts-cell">{Number(p.pts || 0).toFixed(1)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={3} className="team-scores-total-row">
-                    <div className="team-scores-total-inner">Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}</div>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <div className="team-scores-tables-col">
-            <div className="team-scores-starters-bench-title">Bench</div>
-            <table className="team-scores-table team-scores-table-bench">
-              <tbody>
-                {benchRows.map(({ p, info }) => (
-                  <tr key={p.id}>
-                    <td className="team-scores-player-cell">
-                      {info && info.espn_photo_url && (
-                        <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
-                      )}
-                      <span className="player-name">
-                        {info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id)}
-                        {info && info.position ? ` (${info.position})` : ''}
-                        <InjuryBadge playerId={p.id} info={info} />
-                      </span>
-                    </td>
-                    <td className="team-scores-pts-cell">{Number(p.pts || 0).toFixed(1)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={2} className="team-scores-total-row">
-                    <div className="team-scores-total-inner">Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}</div>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+      
+      {isActiveWeek && (
+        <div className="team-scores-activity-banner">
+          <span className="standings-activity-item">
+            {isMobile ? `YTP ${yetToPlayCount}` : `Yet to Play: ${yetToPlayCount}`}
+          </span>
+          <span className="standings-activity-item">
+            {isMobile ? `Live ${activeCount}` : `In-Play: ${activeCount}`}
+          </span>
         </div>
+      )}
+
+      {weekBreakdown ? (
+        <TeamScoresTables
+          weekBreakdown={weekBreakdown}
+          playersData={playersDataForWeek}
+          playerIdMap={playerIdMap}
+          playerGameLabels={playerGameLabels}
+          isActiveWeek={isActiveWeek}
+          injuriesMap={injuriesMap}
+          showCurrentInjury={showCurrentInjury}
+          playerHighlightMap={{}}
+          playersTeamMap={playersTeamMap}
+        />
       ) : (
         <div>No data for this week/team.</div>
       )}

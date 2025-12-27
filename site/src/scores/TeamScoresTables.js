@@ -53,7 +53,12 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
 
   const renderStarters = () => (
     <div className="team-scores-tables-col" style={{ width: '100%' }}>
-      <div className="team-scores-starters-bench-title">Starters</div>
+      <div className="team-scores-starters-bench-title">
+        <span>Starters</span>
+        <span className="team-scores-total-top">
+          Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}
+        </span>
+      </div>
       <table className="team-scores-table team-scores-table-fixed-width" style={{ width: '100%' }}>
         <tbody>
           {weekBreakdown.starters.map((p, i) => {
@@ -93,13 +98,6 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
             );
           })}
         </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={4} className="team-scores-total-row">
-              <div className="team-scores-total-inner">Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}</div>
-            </td>
-          </tr>
-        </tfoot>
       </table>
     </div>
   );
@@ -121,7 +119,12 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
 
     return (
       <div className="team-scores-tables-col" style={{ width: '100%' }}>
-        <div className="team-scores-starters-bench-title">Bench</div>
+        <div className="team-scores-starters-bench-title">
+          <span>Bench</span>
+          <span className="team-scores-total-top">
+            Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}
+          </span>
+        </div>
         <table className="team-scores-table team-scores-table-bench" style={{ width: '100%' }}>
           <tbody>
             {benchRows.map(({ p, info }) => {
@@ -158,13 +161,6 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               );
             })}
           </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={3} className="team-scores-total-row">
-                <div className="team-scores-total-inner">Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}</div>
-              </td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     );
