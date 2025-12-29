@@ -4,11 +4,12 @@ import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import useIsMobile from '../hooks/useIsMobile';
 
-export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
+export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, totalsPlacement = 'bottom', playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
   const isMobileView = useIsMobile();
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
+  const showTopTotals = totalsPlacement === 'top';
 
   function formatPlayerNameForDisplay(nameOrId) {
     const raw = nameOrId;
@@ -53,11 +54,18 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
 
   const renderStarters = () => (
     <div className="team-scores-tables-col" style={{ width: '100%' }}>
-      <div className="team-scores-starters-bench-title">
+      <div
+        className={
+          'team-scores-starters-bench-title' +
+          (showTopTotals ? ' team-scores-starters-bench-title--with-total' : '')
+        }
+      >
         <span>Starters</span>
-        <span className="team-scores-total-top">
-          Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}
-        </span>
+        {showTopTotals ? (
+          <span className="team-scores-total-top">
+            Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}
+          </span>
+        ) : null}
       </div>
       <table className="team-scores-table team-scores-table-fixed-width" style={{ width: '100%' }}>
         <tbody>
@@ -68,10 +76,19 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
             const snapshotTeam = playersTeamMap && playersTeamMap[String(p.id)];
             const teamAbbr = snapshotTeam || gameObj.team || (info && (info.team || info.team_abbr)) || null;
             const gameCellClasses = ['team-scores-game-cell'];
-            if (isActiveWeek && gameObj.live) {
-              gameCellClasses.push('team-scores-game-live');
-            } else if (isActiveWeek && gameObj.completed) {
-              gameCellClasses.push('team-scores-game-completed');
+            const gamePillClasses = ['team-scores-game-pill'];
+            if (isMobileView) {
+              if (isActiveWeek && gameObj.live) {
+                gameCellClasses.push('team-scores-game-live');
+              } else if (isActiveWeek && gameObj.completed) {
+                gameCellClasses.push('team-scores-game-completed');
+              }
+            } else {
+              if (isActiveWeek && gameObj.live) {
+                gamePillClasses.push('team-scores-game-pill--live');
+              } else if (isActiveWeek && gameObj.completed) {
+                gamePillClasses.push('team-scores-game-pill--completed');
+              }
             }
             const pHighlight = playerHighlightMap && playerHighlightMap[String(p.id)];
             return (
@@ -89,15 +106,34 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                   </span>
                 </td>
                 <td className={gameCellClasses.join(' ')}>
-                  <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
-                    <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
-                  ) : gameObj.text}</div>
+                  {isMobileView ? (
+                    <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
+                      <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
+                    ) : gameObj.text}</div>
+                  ) : (
+                    <div className={gamePillClasses.join(' ')}>
+                      <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
+                        <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
+                      ) : gameObj.text}</div>
+                    </div>
+                  )}
                 </td>
                 <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : Number(p.pts || 0).toFixed(1)}</td>
               </tr>
             );
           })}
         </tbody>
+        {!showTopTotals ? (
+          <tfoot>
+            <tr>
+              <td colSpan={4} className="team-scores-total-row">
+                <div className="team-scores-total-inner">
+                  Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        ) : null}
       </table>
     </div>
   );
@@ -119,11 +155,18 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
 
     return (
       <div className="team-scores-tables-col" style={{ width: '100%' }}>
-        <div className="team-scores-starters-bench-title">
+        <div
+          className={
+            'team-scores-starters-bench-title' +
+            (showTopTotals ? ' team-scores-starters-bench-title--with-total' : '')
+          }
+        >
           <span>Bench</span>
-          <span className="team-scores-total-top">
-            Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}
-          </span>
+          {showTopTotals ? (
+            <span className="team-scores-total-top">
+              Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}
+            </span>
+          ) : null}
         </div>
         <table className="team-scores-table team-scores-table-bench" style={{ width: '100%' }}>
           <tbody>
@@ -132,10 +175,19 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               const snapshotTeam = playersTeamMap && playersTeamMap[String(p.id)];
               const teamAbbr = snapshotTeam || gameObj.team || (info && (info.team || info.team_abbr)) || null;
               const gameCellClasses = ['team-scores-game-cell'];
-              if (isActiveWeek && gameObj.live) {
-                gameCellClasses.push('team-scores-game-live');
-              } else if (isActiveWeek && gameObj.completed) {
-                gameCellClasses.push('team-scores-game-completed');
+              const gamePillClasses = ['team-scores-game-pill'];
+              if (isMobileView) {
+                if (isActiveWeek && gameObj.live) {
+                  gameCellClasses.push('team-scores-game-live');
+                } else if (isActiveWeek && gameObj.completed) {
+                  gameCellClasses.push('team-scores-game-completed');
+                }
+              } else {
+                if (isActiveWeek && gameObj.live) {
+                  gamePillClasses.push('team-scores-game-pill--live');
+                } else if (isActiveWeek && gameObj.completed) {
+                  gamePillClasses.push('team-scores-game-pill--completed');
+                }
               }
               const pHighlight = playerHighlightMap && playerHighlightMap[String(p.id)];
               return (
@@ -152,15 +204,34 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     </span>
                   </td>
                   <td className={gameCellClasses.join(' ')}>
-                    <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
-                      <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
-                    ) : gameObj.text}</div>
+                    {isMobileView ? (
+                      <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
+                        <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
+                      ) : gameObj.text}</div>
+                    ) : (
+                      <div className={gamePillClasses.join(' ')}>
+                        <div className="team-scores-game-text">{gameObj && gameObj.eventId ? (
+                          <a href={`https://www.espn.com/nfl/game/_/gameId/${gameObj.eventId}`} target="_blank" rel="noopener noreferrer" className="team-scores-game-link">{gameObj.text}</a>
+                        ) : gameObj.text}</div>
+                      </div>
+                    )}
                   </td>
                   <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : Number(p.pts || 0).toFixed(1)}</td>
                 </tr>
               );
             })}
           </tbody>
+          {!showTopTotals ? (
+            <tfoot>
+              <tr>
+                <td colSpan={3} className="team-scores-total-row">
+                  <div className="team-scores-total-inner">
+                    Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+          ) : null}
         </table>
       </div>
     );

@@ -394,6 +394,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
       {weekBreakdown ? (
         <TeamScoresTables
           weekBreakdown={weekBreakdown}
+          totalsPlacement="top"
           playersData={playersDataForWeek}
           playerIdMap={playerIdMap}
           playerGameLabels={playerGameLabels}
