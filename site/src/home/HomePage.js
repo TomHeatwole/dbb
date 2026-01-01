@@ -9,6 +9,7 @@ import TopPFRaceCard from './TopPFRaceCard';
 import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
+import Week1CountdownCard from './Week1CountdownCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import { getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
@@ -71,6 +72,10 @@ function HomePage() {
     ? ALT_HOME_WEEK_OVERRIDE 
     : homePageCurrentWeek;
   const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
+  const showWeek1CountdownCard =
+    ALT_HOME_WEEK_OVERRIDE == null &&
+    Number.isFinite(Number(homePageCurrentWeek)) &&
+    Number(homePageCurrentWeek) > 17;
 
   // Determine which playoff card to show
   let showPlayoffMatchupsCard = false;
@@ -112,6 +117,7 @@ function HomePage() {
     return (
       <main className="home-main">
         <div className="home-cards-grid home-cards-grid--single">
+          {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
           {playoffCard}
           <HotTeamCard currentWeekOverride={safeWeekForCards} />
           {bubbleCard}
@@ -141,18 +147,21 @@ function HomePage() {
 
   return (
     <main className="home-main">
-      <div className="home-cards-grid home-cards-grid--split">
-        <div className="home-cards-column home-cards-column--left">
-          {playoffCard}
-          <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
-          <TankRaceCard currentWeekOverride={safeWeekForCards} />
-          <PodcastCard />
-        </div>
-        <div className="home-cards-column home-cards-column--right">
-          <HotTeamCard currentWeekOverride={safeWeekForCards} />
-          {bubbleCard}
-          <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
-          <CommissionerNoteCard />
+      <div className="home-cards-grid">
+        {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
+        <div className="home-cards-grid--split">
+          <div className="home-cards-column home-cards-column--left">
+            {playoffCard}
+            <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
+            <TankRaceCard currentWeekOverride={safeWeekForCards} />
+            <PodcastCard />
+          </div>
+          <div className="home-cards-column home-cards-column--right">
+            <HotTeamCard currentWeekOverride={safeWeekForCards} />
+            {bubbleCard}
+            <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
+            <CommissionerNoteCard />
+          </div>
         </div>
       </div>
     </main>

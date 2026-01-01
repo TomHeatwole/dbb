@@ -2121,6 +2121,63 @@
   font-size: var(--home-card-body-font-size);
 }
 
+/* Week 1 countdown card */
+.week1-countdown-card {
+  background: linear-gradient(135deg, rgba(26, 54, 93, 1) 0%, rgba(45, 55, 72, 1) 100%);
+  border-color: rgba(236, 201, 75, 0.65);
+}
+
+.week1-countdown-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.week1-countdown-timer {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.week1-countdown-seg {
+  flex: 1 1 7rem;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.week1-countdown-val {
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.1;
+}
+
+.week1-countdown-label {
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.week1-countdown-kickoff {
+  color: rgba(226, 232, 240, 0.9);
+  font-weight: 700;
+}
+
+.week1-countdown-complete {
+  color: rgba(236, 201, 75, 0.95);
+  font-weight: 800;
+}
+
 /* Commissioner Note card */
 .commissioner-note-content {
   white-space: pre-wrap;
