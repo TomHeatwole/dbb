@@ -34,6 +34,9 @@ function HomePage() {
         const weekCompleted = await isCurrentWeekCompleted();
         
         // If the current week is completed, advance to the next week for home page display
+        // NOTE: We intentionally allow "18" here after Week 17 completes so that
+        // "last week" cards can still reference Week 17 (currentWeek - 1).
+        // We clamp weeks passed to data-fetching cards separately.
         const effectiveWeek = weekCompleted ? baseWeek + 1 : baseWeek;
         
         if (!cancelled) {
@@ -67,6 +70,7 @@ function HomePage() {
   const effectiveWeekOverride = ALT_HOME_WEEK_OVERRIDE != null 
     ? ALT_HOME_WEEK_OVERRIDE 
     : homePageCurrentWeek;
+  const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
 
   // Determine which playoff card to show
   let showPlayoffMatchupsCard = false;
@@ -84,15 +88,15 @@ function HomePage() {
   }
 
   const playoffCard = showChampionshipCard ? (
-    <ChampionshipCard currentWeekOverride={effectiveWeekOverride} />
+    <ChampionshipCard currentWeekOverride={safeWeekForCards} />
   ) : showPlayoffMatchupsCard ? (
-    <ActivePlayoffsCard currentWeekOverride={effectiveWeekOverride} />
+    <ActivePlayoffsCard currentWeekOverride={safeWeekForCards} />
   ) : (
-    <CurrentPlayoffPictureCard currentWeekOverride={effectiveWeekOverride} />
+    <CurrentPlayoffPictureCard currentWeekOverride={safeWeekForCards} />
   );
 
   const bubbleCard = !showPlayoffMatchupsCard && !showChampionshipCard ? (
-    <BubbleCard currentWeekOverride={effectiveWeekOverride} />
+    <BubbleCard currentWeekOverride={safeWeekForCards} />
   ) : null;
 
   if (isMobile) {
@@ -109,11 +113,11 @@ function HomePage() {
       <main className="home-main">
         <div className="home-cards-grid home-cards-grid--single">
           {playoffCard}
-          <HotTeamCard currentWeekOverride={effectiveWeekOverride} />
+          <HotTeamCard currentWeekOverride={safeWeekForCards} />
           {bubbleCard}
-          <TopPFRaceCard currentWeekOverride={effectiveWeekOverride} />
+          <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
-          <TankRaceCard currentWeekOverride={effectiveWeekOverride} />
+          <TankRaceCard currentWeekOverride={safeWeekForCards} />
           <CommissionerNoteCard />
           <PodcastCard />
         </div>
@@ -140,12 +144,12 @@ function HomePage() {
       <div className="home-cards-grid home-cards-grid--split">
         <div className="home-cards-column home-cards-column--left">
           {playoffCard}
-          <TopPFRaceCard currentWeekOverride={effectiveWeekOverride} />
-          <TankRaceCard currentWeekOverride={effectiveWeekOverride} />
+          <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
+          <TankRaceCard currentWeekOverride={safeWeekForCards} />
           <PodcastCard />
         </div>
         <div className="home-cards-column home-cards-column--right">
-          <HotTeamCard currentWeekOverride={effectiveWeekOverride} />
+          <HotTeamCard currentWeekOverride={safeWeekForCards} />
           {bubbleCard}
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
           <CommissionerNoteCard />

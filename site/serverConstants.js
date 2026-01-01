@@ -18,8 +18,28 @@ try {
 const LEAGUE_ID = parsedSettings.LEAGUE_ID || null;
 const PREVIOUS_YEARS = parsedSettings.PREVIOUS_YEARS || {};
 
-// Compute CURRENT_YEAR based on system time; this matches DateHelper.getCurrentYear.
-const CURRENT_YEAR = String(new Date().getFullYear());
+function getClockYear() {
+  return String(new Date().getFullYear());
+}
+
+function getEffectiveCurrentSeasonYear() {
+  try {
+    const keys = Object.keys(PREVIOUS_YEARS || {});
+    const years = keys
+      .map((k) => Number(k))
+      .filter((n) => Number.isFinite(n) && n > 1900 && n < 3000);
+    if (!years.length) {
+      return getClockYear();
+    }
+    const maxPrev = Math.max(...years);
+    return String(maxPrev + 1);
+  } catch (_) {
+    return getClockYear();
+  }
+}
+
+// "Current season year" is settings-driven, not calendar-driven.
+const CURRENT_YEAR = getEffectiveCurrentSeasonYear();
 
 module.exports = {
   CURRENT_YEAR,

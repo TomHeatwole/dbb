@@ -1,11 +1,33 @@
 // DateHelper.js
 // Utility to get the current year as a string
 
-import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE } from './global_constants';
+import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE, PREVIOUS_YEARS } from './global_constants';
 import { readAdminBlob } from './database';
 
-export function getCurrentYear() {
+function getClockYear() {
   return String(new Date().getFullYear());
+}
+
+export function getEffectiveCurrentSeasonYear() {
+  try {
+    const keys = Object.keys(PREVIOUS_YEARS || {});
+    const years = keys
+      .map((k) => Number(k))
+      .filter((n) => Number.isFinite(n) && n > 1900 && n < 3000);
+    if (!years.length) {
+      return getClockYear();
+    }
+    const maxPrev = Math.max(...years);
+    return String(maxPrev + 1);
+  } catch (_) {
+    return getClockYear();
+  }
+}
+
+export function getCurrentYear() {
+  // "Current season year" is settings-driven, not calendar-driven:
+  // it is always max(PREVIOUS_YEARS) + 1.
+  return getEffectiveCurrentSeasonYear();
 }
 
 export const CURRENT_YEAR = getCurrentYear();
@@ -13,13 +35,13 @@ export const CURRENT_YEAR = getCurrentYear();
 export function getCurrentNFLWeek(season = null) {
   // SEASON_START_DAY is MM/DD
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const targetYear = season ? Number(season) : currentYear;
+  const effectiveCurrentSeasonYear = Number(getCurrentYear());
+  const targetYear = season ? Number(season) : effectiveCurrentSeasonYear;
   const [month, day] = SEASON_START_DAY.split('/').map(Number);
   const seasonStart = new Date(targetYear, month - 1, day);
 
   // If we're looking at a previous season and an override is set, use it
-  const isPreviousSeason = season && String(season) !== String(currentYear);
+  const isPreviousSeason = season && String(season) !== String(getCurrentYear());
   if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
     return Math.max(1, Math.min(17, Number(PREVIOUS_CURRENT_WEEK_OVERRIDE)));
   }
@@ -37,12 +59,12 @@ export function getCurrentNFLWeek(season = null) {
 // Number of weeks for which Tuesday has passed relative to each week start (Thu)
 export function getCompletedWeeksCount(season = null) {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const targetYear = season ? Number(season) : currentYear;
+  const effectiveCurrentSeasonYear = Number(getCurrentYear());
+  const targetYear = season ? Number(season) : effectiveCurrentSeasonYear;
   const [month, day] = SEASON_START_DAY.split('/').map(Number);
   const seasonStart = new Date(targetYear, month - 1, day);
 
-  const isPreviousSeason = season && String(season) !== String(currentYear);
+  const isPreviousSeason = season && String(season) !== String(getCurrentYear());
   if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
     // completed weeks equals override (cap at 17)
     return Math.max(0, Math.min(17, Number(PREVIOUS_CURRENT_WEEK_OVERRIDE)));
@@ -64,12 +86,12 @@ export function getCompletedWeeksCount(season = null) {
 // Whether the current week (per getCurrentNFLWeek) has completed (i.e., Tuesday has passed)
 export function isCurrentWeekCompletedByDate(season = null) {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const targetYear = season ? Number(season) : currentYear;
+  const effectiveCurrentSeasonYear = Number(getCurrentYear());
+  const targetYear = season ? Number(season) : effectiveCurrentSeasonYear;
   const [month, day] = SEASON_START_DAY.split('/').map(Number);
   const seasonStart = new Date(targetYear, month - 1, day);
 
-  const isPreviousSeason = season && String(season) !== String(currentYear);
+  const isPreviousSeason = season && String(season) !== String(getCurrentYear());
   if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
     // completed weeks equals override; current week considered completed if override advanced beyond start+5 of that week
     return true; // previous seasons are static with override, treat as completed snapshot
@@ -88,7 +110,7 @@ export function isCurrentWeekCompletedByDate(season = null) {
 // Default DB-aware version: checks admin overrides first, then falls back to date-based logic
 export async function isCurrentWeekCompleted(season = null) {
   try {
-    const yearStr = String(season || new Date().getFullYear());
+    const yearStr = String(season || getCurrentYear());
     const weekNum = getCurrentNFLWeek(season);
     const admin = await readAdminBlob();
     // New schema: admin holds arrays like "2025_completed_weeks": [1,2,...]

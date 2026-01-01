@@ -4,7 +4,7 @@ import { writeApiCacheWithKey, readApiCacheLatestByKey, recordRateLimitHit } fro
 
 export async function fetchScoresData(season, options = {}) {
   // Determine leagueId based on season
-  const currentYear = new Date().getFullYear().toString();
+  const currentYear = String(CURRENT_YEAR);
   const isCurrentSeason = season === undefined || season === null || season === '' || season === currentYear;
   const leagueId = isCurrentSeason ? LEAGUE_ID : PREVIOUS_YEARS[season];
 

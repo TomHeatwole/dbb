@@ -7,7 +7,6 @@
 - Redo a lot of the /team pages
     - Consider team overview doing something more like the home page with lots of separate info.
     - Consider full redesign for showing roster and picks
-- Make pages more calendar aware. I.e. when we get to 2026 there's gonna be 2029 picks instantly rendered, and 2025 picks gone. Ideally we'll default to a 2026 tab, but then we need all of the previous pages gone. To accomplish this, we may want to add a good testing feature to simulate it being any time of year.
 - Basic ios app wrapper
 - More advanced analytics
   - HVOB or something (Hwang Value Over Bench) - How much the player's scores increased the team's total score over the bench replacement
