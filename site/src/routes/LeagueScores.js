@@ -14,7 +14,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import MobileTeamScoreSummary from '../scores/MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
-import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
+import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { readApiCacheLatestByKey, readPlayersSnapshot } from '../utils/database';
 import PageMeta from '../PageMeta';
@@ -85,6 +85,7 @@ function LeagueScores() {
 	const [benchOpen, setBenchOpen] = useState({});
 	const isMobile = useIsMobile();
 	const [playerGameLabels, setPlayerGameLabels] = useState({});
+	const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
 	const [injuriesMap, setInjuriesMap] = useState({});
 	const [apiDelayMinutes, setApiDelayMinutes] = useState(null); // null -> hide banner, number -> minutes delayed
 	const lastDbEntryTsRef = useRef(null);
@@ -321,9 +322,15 @@ function LeagueScores() {
 
 	// Compute player->game labels for the selected week (web tables)
 	useEffect(() => {
-		if (!playersData || !playerIdMap || !weeksParsedData) { return; }
+		if (!playersData || !playerIdMap || !weeksParsedData) {
+			setIsWeekCompleteByGames(false);
+			return;
+		}
 		const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[week - 1] : null;
-		if (!Array.isArray(weekArr)) { return; }
+		if (!Array.isArray(weekArr)) {
+			setIsWeekCompleteByGames(false);
+			return;
+		}
 		const playerIdSet = new Set();
 		for (const entry of weekArr) {
 			if (entry) {
@@ -341,13 +348,22 @@ function LeagueScores() {
 			}
 		}
 		const playerIds = Array.from(playerIdSet);
-		if (playerIds.length === 0) { setPlayerGameLabels({}); return; }
+		if (playerIds.length === 0) {
+			setPlayerGameLabels({});
+			setIsWeekCompleteByGames(false);
+			return;
+		}
 
 				const seasonYear = Number(season);
 		let cancelled = false;
 		fetchNflScoreboard(seasonYear, week)
 					.then(async (json) => {
 				if (cancelled) { return; }
+				try {
+					setIsWeekCompleteByGames(isScoreboardWeekComplete(json));
+				} catch (_) {
+					setIsWeekCompleteByGames(false);
+				}
 						let mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json, (String(season) === String(CURRENT_YEAR) ? playersTeamMap : null));
 				const labels = {};
 				for (const pid of playerIds) {
@@ -360,7 +376,12 @@ function LeagueScores() {
 				}
 				if (!cancelled) { setPlayerGameLabels(labels); }
 			})
-			.catch(() => { if (!cancelled) { setPlayerGameLabels({}); } });
+			.catch(() => {
+				if (!cancelled) {
+					setPlayerGameLabels({});
+					setIsWeekCompleteByGames(false);
+				}
+			});
 		return () => { cancelled = true; };
 	}, [season, week, playersData, playerIdMap, weeksParsedData, playersTeamMap]);
 
@@ -663,7 +684,10 @@ function LeagueScores() {
 							const isExpanded = !!expanded[rosterId];
 								const weekBreakdown = breakdown;
 							const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
-							const isActiveWeek = (season === CURRENT_YEAR) && (week === getCurrentNFLWeek());
+							const isActiveWeek =
+								(String(season) === String(CURRENT_YEAR)) &&
+								(Number(week) === Number(getCurrentNFLWeek())) &&
+								!isWeekCompleteByGames;
 							const showCurrentInjury = (String(season) === String(CURRENT_YEAR)) && (week >= getCurrentNFLWeek());
 
 							let activeCount = 0;

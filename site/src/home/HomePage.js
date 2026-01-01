@@ -19,6 +19,12 @@ import { getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
 // - Leave as null to use the real current week from the underlying helpers.
 const ALT_HOME_WEEK_OVERRIDE = null;
 
+// Optional manual override for the off-season state.
+// - null: derive automatically (Week 17 completed => off-season)
+// - true: force off-season layout
+// - false: force normal in-season layout
+const ALT_HOME_OFFSEASON_OVERRIDE = false;
+
 function HomePage() {
   const isMobile = useIsMobile();
   const WEEK_14 = 14;
@@ -72,10 +78,27 @@ function HomePage() {
     ? ALT_HOME_WEEK_OVERRIDE 
     : homePageCurrentWeek;
   const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
-  const showWeek1CountdownCard =
-    ALT_HOME_WEEK_OVERRIDE == null &&
-    Number.isFinite(Number(homePageCurrentWeek)) &&
-    Number(homePageCurrentWeek) > 17;
+  const autoOffSeason =
+    Number.isFinite(Number(effectiveWeekOverride)) &&
+    Number(effectiveWeekOverride) > 17;
+  const isOffSeasonHome =
+    ALT_HOME_OFFSEASON_OVERRIDE == null
+      ? autoOffSeason
+      : !!ALT_HOME_OFFSEASON_OVERRIDE;
+  const showWeek1CountdownCard = isOffSeasonHome;
+
+  // Off-season layout: separate "home cards set" once Week 17 is completed.
+  if (isOffSeasonHome) {
+    return (
+      <main className="home-main">
+        <div className="home-cards-grid home-cards-grid--single">
+          <Week1CountdownCard />
+          <CommissionerNoteCard />
+          <PodcastCard />
+        </div>
+      </main>
+    );
+  }
 
   // Determine which playoff card to show
   let showPlayoffMatchupsCard = false;

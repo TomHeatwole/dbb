@@ -8,7 +8,7 @@ import { CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted } from '../util
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
-import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
+import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import YoffsScoresView from './YoffsScoresView';
 import HeadToHeadView from '../matchups/HeadToHeadView';
 import LoadingState from '../LoadingState';
@@ -404,6 +404,13 @@ function Yoffs2024Format({
     (async () => {
       try {
         const json = await fetchNflScoreboard(Number(season), Number(currentWeekNum));
+        try {
+          if (isScoreboardWeekComplete(json)) {
+            setIsCurrentWeekDone(true);
+          }
+        } catch (_) {
+          // ignore
+        }
         const mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json);
         const labels = {};
         for (const pid of playerIds) {

@@ -10,7 +10,7 @@ import WeekSelector from './WeekSelector';
 import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
-import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam } from './GamesParser';
+import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam, isScoreboardWeekComplete } from './GamesParser';
 import TeamScoresTables from './TeamScoresTables';
 import useIsMobile from '../hooks/useIsMobile';
 import { createLiveScoresPoller } from '../utils/livePolling';
@@ -58,6 +58,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const showCurrentInjury = String(season) === String(CURRENT_YEAR) && week >= currentWeek;
   const [injuriesMap, setInjuriesMap] = useState({});
   const [playerGameLabels, setPlayerGameLabels] = useState({});
+  const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
   const [playersTeamMap, setPlayersTeamMap] = useState({});
   const [liveWeeksParsedData, setLiveWeeksParsedData] = useState(null);
 
@@ -223,6 +224,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   useEffect(() => {
     if (!playersDataForWeek || !playerIdMap || !effectiveWeeksParsedData) {
       setPlayerGameLabels({});
+      setIsWeekCompleteByGames(false);
       return;
     }
 
@@ -243,6 +245,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     const playerIds = Array.from(playerIdSet);
     if (playerIds.length === 0) {
       setPlayerGameLabels({});
+      setIsWeekCompleteByGames(false);
       return;
     }
 
@@ -252,6 +255,11 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
       .then(async (json) => {
         if (cancelled) {
           return;
+        }
+        try {
+          setIsWeekCompleteByGames(isScoreboardWeekComplete(json));
+        } catch (_) {
+          setIsWeekCompleteByGames(false);
         }
         const mapping = await mapPlayersToGames(
           playerIds,
@@ -284,6 +292,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
       .catch(() => {
         if (!cancelled) {
           setPlayerGameLabels({});
+          setIsWeekCompleteByGames(false);
         }
       });
     return () => {
@@ -351,7 +360,10 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   }, [season, week, rosterId, weekBreakdown, playerIdMap, playersDataForWeek]);
 
   // Calculate activity counts for current week
-  const isActiveWeek = String(season) === String(CURRENT_YEAR) && Number(week) === Number(getCurrentNFLWeek());
+  const isActiveWeek =
+    String(season) === String(CURRENT_YEAR) &&
+    Number(week) === Number(getCurrentNFLWeek()) &&
+    !isWeekCompleteByGames;
   let activeCount = 0;
   let yetToPlayCount = 0;
 

@@ -13,7 +13,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import PlayoffRaceGraph from '../standings/PlayoffRaceGraph';
 import YoffsLink from '../yoffs/YoffsLink';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
-import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
+import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import StandingsRowHeader from '../standings/StandingsRowHeader';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
@@ -41,6 +41,7 @@ function LeagueStandings() {
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [currentWeekLabels, setCurrentWeekLabels] = useState({}); // pid -> { live, completed, text }
+  const [isCurrentWeekDoneByGames, setIsCurrentWeekDoneByGames] = useState(false);
 
   // Season/week context and DB-aware completed weeks
   const isCurrentSeason = season === CURRENT_YEAR;
@@ -127,7 +128,11 @@ function LeagueStandings() {
   // Build current week player game labels (live/completed) matching LeagueScores logic
   useEffect(() => {
     const isCurrentSeason = season === CURRENT_YEAR;
-    if (!isCurrentSeason || !weeksParsedData || !playersData || !playerIdMap) { setCurrentWeekLabels({}); return; }
+    if (!isCurrentSeason || !weeksParsedData || !playersData || !playerIdMap) {
+      setCurrentWeekLabels({});
+      setIsCurrentWeekDoneByGames(false);
+      return;
+    }
     const currentWeekNum = getCurrentNFLWeek();
     const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[currentWeekNum - 1] : null;
     if (!Array.isArray(weekArr)) { setCurrentWeekLabels({}); return; }
@@ -153,6 +158,11 @@ function LeagueStandings() {
     (async () => {
       try {
         const json = await fetchNflScoreboard(Number(season), Number(currentWeekNum));
+        try {
+          setIsCurrentWeekDoneByGames(isScoreboardWeekComplete(json));
+        } catch (_) {
+          setIsCurrentWeekDoneByGames(false);
+        }
         const mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json);
         const labels = {};
         for (const pid of playerIds) {
@@ -164,7 +174,10 @@ function LeagueStandings() {
         }
         if (!cancelled) setCurrentWeekLabels(labels);
       } catch (_) {
-        if (!cancelled) setCurrentWeekLabels({});
+        if (!cancelled) {
+          setCurrentWeekLabels({});
+          setIsCurrentWeekDoneByGames(false);
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -497,7 +510,9 @@ function LeagueStandings() {
     // Compute new live/weekly summary fields
     const isCurrentSeason = season === CURRENT_YEAR;
     const currentWeekNum = isCurrentSeason ? getCurrentNFLWeek() : getCurrentNFLWeek(season);
-    const isCurrentWeekDone = isCurrentSeason ? (completedWeeksNumber >= currentWeekNum) : true;
+    const isCurrentWeekDone = isCurrentSeason
+      ? ((completedWeeksNumber >= currentWeekNum) || isCurrentWeekDoneByGames)
+      : true;
     const showLiveSummary = isCurrentSeason && !isCurrentWeekDone;
     const wbAll = getWeekScoreBreakdown(weeksParsedData, currentWeekNum) || {};
     const rosterIdForCalc = rosterIdForLink;

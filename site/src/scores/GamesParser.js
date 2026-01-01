@@ -30,6 +30,41 @@ function extractEvents(scoreboardJson) {
   return [];
 }
 
+export function isScoreboardWeekComplete(scoreboardJson) {
+  const events = extractEvents(scoreboardJson);
+  if (!events.length) {
+    return false;
+  }
+
+  for (const ev of events) {
+    const comps = ev && ev.competitions;
+    const comp = Array.isArray(comps) && comps.length ? comps[0] : null;
+    const stType = (comp && comp.status && comp.status.type) || (ev && ev.status && ev.status.type) || {};
+    let state = stType && stType.state ? stType.state : null;
+    if (!state && stType && stType.completed === true) {
+      state = 'post';
+    }
+    if (!state && typeof stType.name === 'string' && /FINAL|STATUS_FINAL|END|FULL/i.test(stType.name)) {
+      state = 'post';
+    }
+    const s = String(state || '').toLowerCase();
+    const isFinal =
+      s === 'final' ||
+      s === 'post' ||
+      s === 'postgame' ||
+      s === 'status_final' ||
+      s === 'complete' ||
+      s === 'end' ||
+      s === 'canceled' ||
+      s === 'cancelled';
+
+    if (!isFinal) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function isWeekFuture(scoreboardJson) {
   const events = extractEvents(scoreboardJson);
   if (!events.length) { return false; }

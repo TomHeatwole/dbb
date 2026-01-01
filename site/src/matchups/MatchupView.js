@@ -5,7 +5,7 @@ import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/Pl
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
-import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
+import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import useIsMobile from '../hooks/useIsMobile';
@@ -96,6 +96,7 @@ function MatchupView({
   const [playersData, setPlayersData] = useState(preloadedPlayersData || null);
   const [playerIdMap, setPlayerIdMap] = useState(preloadedPlayerIdMap || null);
   const [playerGameLabelsByWeek, setPlayerGameLabelsByWeek] = useState({});
+  const [weekCompleteByGames, setWeekCompleteByGames] = useState({});
   const [injuriesByWeek, setInjuriesByWeek] = useState({});
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [loadingScores, setLoadingScores] = useState(true);
@@ -267,12 +268,14 @@ function MatchupView({
   useEffect(() => {
     if (!weeksParsedData || !playersData || !playerIdMap || !hasAnyWeeks) {
       setPlayerGameLabelsByWeek({});
+      setWeekCompleteByGames({});
       return;
     }
     let cancelled = false;
     const seasonYear = Number(season);
     async function loadLabels() {
       const nextLabelsByWeek = {};
+      const nextWeekCompleteByGames = {};
 
       for (let i = 0; i < effectiveWeeks.length; i += 1) {
         const w = effectiveWeeks[i];
@@ -324,6 +327,11 @@ function MatchupView({
           if (cancelled) {
             return;
           }
+          try {
+            nextWeekCompleteByGames[w] = isScoreboardWeekComplete(json);
+          } catch (_) {
+            nextWeekCompleteByGames[w] = false;
+          }
           // eslint-disable-next-line no-await-in-loop
           const mapping = await mapPlayersToGames(
             playerIds,
@@ -346,11 +354,13 @@ function MatchupView({
           nextLabelsByWeek[w] = labels;
         } catch (e) {
           nextLabelsByWeek[w] = {};
+          nextWeekCompleteByGames[w] = false;
         }
       }
 
       if (!cancelled) {
         setPlayerGameLabelsByWeek(nextLabelsByWeek);
+        setWeekCompleteByGames(nextWeekCompleteByGames);
       }
     }
 
@@ -592,7 +602,9 @@ function MatchupView({
     const labelsForWeek =
       (playerGameLabelsByWeek && playerGameLabelsByWeek[weekNumber]) || {};
     const isActiveWeekForDisplay =
-      isCurrentSeason && Number(weekNumber) === Number(currentWeekNum);
+      isCurrentSeason &&
+      Number(weekNumber) === Number(currentWeekNum) &&
+      !(weekCompleteByGames && weekCompleteByGames[weekNumber]);
     const injuriesForWeek =
       (injuriesByWeek && injuriesByWeek[weekNumber]) || {};
     const showCurrentInjuryForWeek =
@@ -833,7 +845,8 @@ function MatchupView({
     if (
       isCurrentSeason &&
       Number(w) === Number(currentWeekNum) &&
-      playerGameLabelsByWeek
+      playerGameLabelsByWeek &&
+      !(weekCompleteByGames && weekCompleteByGames[w])
     ) {
       const labelsForActivity =
         playerGameLabelsByWeek[w] || {};
