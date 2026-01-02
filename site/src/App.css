@@ -2359,6 +2359,27 @@
   display: inline-block;
 }
 
+.rookie-draft-avatar-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.rookie-draft-avatar-letter-overlay {
+  position: absolute;
+  inset: -0.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(15, 23, 42, 0.28);
+  border-radius: 999px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  pointer-events: none;
+}
+
 .rookie-draft-traded-dot {
   font-size: 0.78rem;
   font-weight: 900;
@@ -2381,6 +2402,10 @@
   .rookie-draft-avatar {
     width: 1.2rem;
     height: 1.2rem;
+  }
+
+  .rookie-draft-avatar-letter-overlay {
+    font-size: 0.78rem;
   }
 }
 

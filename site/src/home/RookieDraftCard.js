@@ -10,6 +10,7 @@ import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '.
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
+import { LOGO_LETTER_OVERLAY } from '../utils/global_constants';
 
 function RookieDraftCard() {
   const isMobile = useIsMobile();
@@ -484,15 +485,32 @@ function RookieDraftCard() {
                                 }
                               }}
                             >
-                              {cell.ownerAvatarUrl ? (
-                                <img
-                                  className="rookie-draft-avatar"
-                                  src={cell.ownerAvatarUrl}
-                                  alt=""
-                                />
-                              ) : (
-                                <div className="rookie-draft-avatar rookie-draft-avatar--placeholder" />
-                              )}
+                              <span className="rookie-draft-avatar-wrap" aria-hidden="true">
+                                {cell.ownerAvatarUrl ? (
+                                  <img
+                                    className="rookie-draft-avatar"
+                                    src={cell.ownerAvatarUrl}
+                                    alt=""
+                                  />
+                                ) : (
+                                  <div className="rookie-draft-avatar rookie-draft-avatar--placeholder" />
+                                )}
+                                {(() => {
+                                  const letter =
+                                    LOGO_LETTER_OVERLAY &&
+                                    Object.prototype.hasOwnProperty.call(LOGO_LETTER_OVERLAY, String(cell.ownerRosterId))
+                                      ? String(LOGO_LETTER_OVERLAY[String(cell.ownerRosterId)] || '').trim()
+                                      : '';
+                                  if (!letter) {
+                                    return null;
+                                  }
+                                  return (
+                                    <span className="rookie-draft-avatar-letter-overlay">
+                                      {letter}
+                                    </span>
+                                  );
+                                })()}
+                              </span>
                             </Link>
                             {cell.isTraded ? (
                               <span className="rookie-draft-traded-dot" aria-hidden="true">

@@ -14,6 +14,7 @@ if (!LEAGUE_ID || !STARTER_POSITION_NAMES) {
 }
 export const PREVIOUS_YEARS = parsedSettings.PREVIOUS_YEARS || {};
 export const PREVIOUS_ROSTER_OVERRIDES = parsedSettings.PREVIOUS_ROSTER_OVERRIDES || {};
+export const LOGO_LETTER_OVERLAY = parsedSettings.LOGO_LETTER_OVERLAY || {};
 export const PLAYER_ESPN_MAP_OVERRIDES = parsedSettings.PLAYER_ESPN_MAP_OVERRIDES || {};
 export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/04";
 
