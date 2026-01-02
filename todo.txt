@@ -7,8 +7,6 @@
 - Redo a lot of the /team pages
     - Consider team overview doing something more like the home page with lots of separate info.
     - Consider full redesign for showing roster and picks
-- Basic ios app wrapper
-    - Turns out we'd need to add real ios functionality so this likely isn't a good idea unless there's good auth/login related features later
 - More advanced analytics
   - HVOB or something (Hwang Value Over Bench) - How much the player's scores increased the team's total score over the bench replacement
   - Perhaps a "Team Analytics" and "Player Analytics" where the player analytics has a page for reach player you can toggle through 
