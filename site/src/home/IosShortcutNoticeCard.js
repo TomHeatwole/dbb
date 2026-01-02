@@ -144,7 +144,7 @@ function IosShortcutNoticeCard() {
                 <li>Open this page in Safari.</li>
               ) : null}
               <li>
-                <div>Go to Share.</div>
+                <div>Hit the Share button at the bottom of the browser.</div>
                 <img
                   className="ios-shortcut-step-image"
                   src="/share_step.jpeg"
