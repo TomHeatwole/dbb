@@ -12,9 +12,10 @@ import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
 import Week1CountdownCard from './Week1CountdownCard';
 import PreviousYearRecapCard from './PreviousYearRecapCard';
 import RookieDraftCard from './RookieDraftCard';
-import HelloWorldPWACard from './HelloWorldPWACard';
+import IosShortcutNoticeCard from './IosShortcutNoticeCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
+import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
 import { getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
 
@@ -31,6 +32,7 @@ const ALT_HOME_OFFSEASON_OVERRIDE = null;
 
 function HomePage() {
   const isMobile = useIsMobile();
+  const isIos = useIsIos();
   const isPwa = useIsPwa();
   const WEEK_14 = 14;
 
@@ -98,7 +100,7 @@ function HomePage() {
       return (
         <main className="home-main">
           <div className="home-cards-grid home-cards-grid--single">
-            {isPwa ? <HelloWorldPWACard /> : null}
+            {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
             <Week1CountdownCard />
             <PreviousYearRecapCard />
             <RookieDraftCard />
@@ -114,7 +116,6 @@ function HomePage() {
     return (
       <main className="home-main">
         <div className="home-cards-grid">
-          {isPwa ? <HelloWorldPWACard /> : null}
           <Week1CountdownCard />
           <div className="home-cards-grid--split">
             <div className="home-cards-column home-cards-column--left">
@@ -172,7 +173,7 @@ function HomePage() {
       <main className="home-main">
         <div className="home-cards-grid home-cards-grid--single">
           {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
-          {isPwa ? <HelloWorldPWACard /> : null}
+          {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
           {playoffCard}
           <HotTeamCard currentWeekOverride={safeWeekForCards} />
           {bubbleCard}
@@ -206,7 +207,6 @@ function HomePage() {
         {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
         <div className="home-cards-grid--split">
           <div className="home-cards-column home-cards-column--left">
-            {isPwa ? <HelloWorldPWACard /> : null}
             {playoffCard}
             <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
             <TankRaceCard currentWeekOverride={safeWeekForCards} />

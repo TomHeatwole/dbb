@@ -2116,9 +2116,132 @@
   letter-spacing: 0.03em;
 }
 
+.home-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.home-card-title-row .home-card-title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.home-card-dismiss {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.95);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.home-card-dismiss:hover {
+  color: rgba(226, 232, 240, 1);
+}
+
+.home-card-dismiss:focus-visible {
+  outline: 2px solid rgba(236, 201, 75, 0.95);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
 .home-card-body {
   margin: 0;
   font-size: var(--home-card-body-font-size);
+}
+
+.home-inline-link-button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0.2rem 0;
+  margin: 0;
+  cursor: pointer;
+  color: rgba(226, 232, 240, 0.95);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font: inherit;
+  text-align: left;
+}
+
+.home-inline-link-button:hover {
+  color: rgba(226, 232, 240, 1);
+}
+
+.home-inline-link-button:focus-visible {
+  outline: 2px solid rgba(236, 201, 75, 0.95);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+.home-inline-link-button--centered {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 22rem;
+  margin: 0.35rem auto 0 auto;
+  padding: 0.6rem 0.85rem;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 180, 255, 0.55);
+  background: rgba(0, 0, 0, 0.12);
+  text-decoration: none;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+}
+
+.home-inline-link-button--centered::after {
+  content: "→";
+  font-weight: 900;
+}
+
+.home-inline-link-button--centered:hover {
+  background: rgba(0, 0, 0, 0.18);
+  border-color: rgba(148, 180, 255, 0.75);
+}
+
+.ios-shortcut-modal {
+  max-width: 28rem;
+}
+
+.ios-shortcut-modal-steps {
+  margin: 0.75rem 0 0 1.25rem;
+  padding: 0;
+  color: rgba(226, 232, 240, 0.92);
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+.ios-shortcut-step-image {
+  width: 100%;
+  max-width: 18rem;
+  height: auto;
+  display: block;
+  margin: 0.5rem 0 0.15rem 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 180, 255, 0.35);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.ios-shortcut-preview-image {
+  width: 100%;
+  max-width: 17rem;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 180, 255, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
 /* Week 1 countdown card */
