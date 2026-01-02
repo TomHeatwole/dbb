@@ -8,14 +8,19 @@
     - Consider team overview doing something more like the home page with lots of separate info.
     - Consider full redesign for showing roster and picks
 - Basic ios app wrapper
+    - Turns out we'd need to add real ios functionality so this likely isn't a good idea unless there's good auth/login related features later
 - More advanced analytics
   - HVOB or something (Hwang Value Over Bench) - How much the player's scores increased the team's total score over the bench replacement
   - Perhaps a "Team Analytics" and "Player Analytics" where the player analytics has a page for reach player you can toggle through 
   - And then player popups everywhere could link to player analytics
 
 - Home cards:
-  - Standings (reg season) w/ up/down arrows
-    - Or maybe just incorporate up or down arrows into the existing 3 races tabs?
-  - Recent trades (for off season)
-  - Scenario or "what if" clickbait
-  - FantasyDisaster link?
+  - In-season
+      - Standings (reg season) w/ up/down arrows
+        - Or maybe just incorporate up or down arrows into the existing 3 races tabs?
+      - FantasyDisaster link?
+  - Off Season
+      - Recent trades 
+      - Scenario or "what if" clickbait
+      - League history could get its own teaser once there's a page for it.
+      - 2025 MVPs could be a good teaser once we have advanced player analytics

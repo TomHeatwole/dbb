@@ -10,7 +10,14 @@ const app = express();
 const buildDir = path.join(__dirname, 'build');
 
 // Serve static assets from the CRA build folder, but do NOT auto-serve index.html.
-app.use(express.static(buildDir, { index: false }));
+app.use(express.static(buildDir, {
+  index: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.webmanifest')) {
+      res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+    }
+  },
+}));
 
 // Delegate all other GET requests (SPA routes) to the shared renderer.
 app.get('*', (req, res) => {
