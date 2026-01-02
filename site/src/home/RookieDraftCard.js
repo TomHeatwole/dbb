@@ -422,11 +422,11 @@ function RookieDraftCard() {
         <table className="rookie-draft-table">
           <thead>
             <tr>
-              <th className="rookie-draft-pick-col" scope="col">Round:</th>
-              <th scope="col">1</th>
-              <th scope="col">2</th>
-              <th scope="col">3</th>
-              <th scope="col">4</th>
+              <th className="rookie-draft-pick-col" scope="col">Pick</th>
+              <th scope="col">Rd 1</th>
+              <th scope="col">Rd 2</th>
+              <th scope="col">Rd 3</th>
+              <th scope="col">Rd 4</th>
             </tr>
           </thead>
           <tbody>
