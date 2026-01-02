@@ -2178,6 +2178,307 @@
   font-weight: 800;
 }
 
+/* Rookie draft board card */
+.rookie-draft-status {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.rookie-draft-status--error {
+  color: rgba(254, 178, 178, 0.95);
+  font-weight: 800;
+}
+
+.rookie-draft-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.rookie-draft-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 18.5rem;
+}
+
+.rookie-draft-table th,
+.rookie-draft-table td {
+  padding: 0.25rem 0.35rem;
+  vertical-align: middle;
+}
+
+.rookie-draft-table thead th {
+  position: sticky;
+  top: 0;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  font-weight: 900;
+  text-align: left;
+  z-index: 1;
+}
+
+.rookie-draft-pick-col {
+  width: 3.1rem;
+  color: rgba(226, 232, 240, 0.9);
+  font-weight: 900;
+}
+
+.rookie-draft-cell {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rookie-draft-cell-inner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  position: relative;
+}
+
+.rookie-draft-pick-button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.rookie-draft-tooltip {
+  position: fixed;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.55);
+  z-index: 5000;
+  min-width: 10rem;
+  max-width: 14rem;
+  pointer-events: none;
+}
+
+.rookie-draft-tooltip-title {
+  font-weight: 900;
+  color: rgba(226, 232, 240, 0.98);
+  font-size: 0.85rem;
+  line-height: 1.15;
+}
+
+.rookie-draft-tooltip-sub {
+  margin-top: 0.25rem;
+  color: rgba(226, 232, 240, 0.85);
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+.rookie-draft-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.rookie-draft-modal {
+  width: 100%;
+  max-width: 22rem;
+  background: rgba(26, 54, 93, 1);
+  border: 1px solid rgba(148, 180, 255, 0.65);
+  border-radius: 1rem;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.6);
+  padding: 1rem 1rem 0.9rem 1rem;
+  position: relative;
+}
+
+.rookie-draft-modal-close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.95);
+  font-size: 1.6rem;
+  line-height: 1;
+  position: absolute;
+  right: 0.65rem;
+  top: 0.55rem;
+  cursor: pointer;
+}
+
+.rookie-draft-modal-title {
+  font-weight: 900;
+  color: rgba(226, 232, 240, 0.98);
+  font-size: 1rem;
+  padding-right: 2rem;
+}
+
+.rookie-draft-modal-sub {
+  margin-top: 0.4rem;
+  color: rgba(226, 232, 240, 0.88);
+  font-weight: 800;
+}
+
+.rookie-draft-modal-actions {
+  margin-top: 0.75rem;
+}
+
+.rookie-draft-team {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.rookie-draft-team:hover {
+  text-decoration: underline;
+}
+
+.rookie-draft-team--icon:hover {
+  text-decoration: none;
+}
+
+.rookie-draft-avatar {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  flex: 0 0 auto;
+}
+
+.rookie-draft-avatar--placeholder {
+  display: inline-block;
+}
+
+.rookie-draft-traded-dot {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: rgba(236, 201, 75, 0.92);
+  line-height: 1;
+}
+
+.rookie-draft-traded-dot--inline {
+  margin-right: 0.35rem;
+}
+
+@media (max-width: 50em) {
+  .rookie-draft-table {
+    min-width: 16.5rem;
+  }
+  .rookie-draft-table th,
+  .rookie-draft-table td {
+    padding: 0.22rem 0.3rem;
+  }
+  .rookie-draft-avatar {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+}
+
+/* Previous year recap card */
+.previous-year-recap-card {
+  border-color: rgba(148, 180, 255, 0.75);
+}
+
+.previous-year-recap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.previous-year-recap-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.15rem 0;
+}
+
+.previous-year-recap-link:hover {
+  text-decoration: underline;
+}
+
+.previous-year-recap-rank {
+  width: 7.5rem;
+  flex: 0 0 7.5rem;
+  font-weight: 900;
+  font-size: 0.98rem;
+  text-align: left;
+}
+
+.previous-year-recap-team {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.previous-year-recap-avatar {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.previous-year-recap-avatar--placeholder {
+  display: inline-block;
+}
+
+.previous-year-recap-name {
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 50em) {
+  .previous-year-recap-list {
+    gap: 0.25rem;
+  }
+
+  .previous-year-recap-link {
+    gap: 0.4rem;
+    padding: 0.07rem 0;
+  }
+
+  .previous-year-recap-rank {
+    width: 5.6rem;
+    flex: 0 0 5.6rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
+  }
+
+  .previous-year-recap-avatar {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .previous-year-recap-name {
+    font-size: 0.65rem;
+  }
+}
+
+.previous-year-recap-status {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.previous-year-recap-status--error {
+  color: rgba(254, 178, 178, 0.95);
+  font-weight: 800;
+}
+
 /* Commissioner Note card */
 .commissioner-note-content {
   white-space: pre-wrap;
@@ -3448,6 +3749,7 @@
 .standings-row-expand-inner { color: #dfe6f0; }
 /* Standings expand layout split for web */
 .standings-expand-split { display: block; }
+.standings-expand-solo { display: block; }
 .standings-expand-right { margin-top: 0.6rem; }
 /* Yoffs 2024 expanded styling */
 .yoffs-total-block {
@@ -4405,9 +4707,23 @@ html {
     margin-top: -2.15rem;
   }
 }
-@media (min-width: 50.0625em) {
-  .standings-expand-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+/* Expanded standings layout:
+   - Default/mobile: stacked (single column)
+   - Mid-width screens: keep stacked so the stats grid doesn't get squeezed and clipped
+   - Wide screens: use a 2-column split (stats left, live summary right) */
+@media (min-width: 1000px) {
+  .standings-expand-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
   .standings-expand-right { margin-top: 0; }
+}
+
+@media (min-width: 800px) and (max-width: 999px) {
+  .standings-expand-split { display: block; }
+  .standings-expand-right { margin-top: 0.6rem; }
 }
 .standings-extra-block { background: #111829; border: 1px solid #2a3350; border-radius: 0.5rem; padding: 0.6rem 0.8rem; }
 .standings-extra-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.35rem; }
@@ -4453,16 +4769,42 @@ html {
 /* Standings expanded stats grid */
 .standings-stats-grid {
   display: grid;
-  grid-template-columns: 9rem 7rem 7rem 5rem; /* label, pts, ppg, place */
+  /* Default: responsive columns so the last (place) column never gets clipped on narrow screens.
+     (label | value | ppg/week | place) */
+  grid-template-columns: 8.5rem minmax(0, 1fr) minmax(0, 0.9fr) max-content;
   row-gap: 0.35rem;
   column-gap: 0.6rem;
   align-items: center;
 }
+@media (min-width: 62em) {
+  /* Wide desktop: lock to consistent widths */
+  .standings-stats-grid {
+    grid-template-columns: 9rem 7rem 7rem 5rem; /* label, pts, ppg, place */
+  }
+}
 @media (max-width: 50em) {
   .standings-stats-grid {
-    grid-template-columns: 7.5rem 6rem 6rem 3.5rem;
+    /* Mobile: the expanded stats rows render (label, value, place) and include an empty
+       4th placeholder cell. Hide that placeholder and use a 3-column grid so values
+       never get shoved off-screen and clipped. */
+    grid-template-columns: 7.6rem minmax(0, 1fr) auto;
     row-gap: 0.3rem;
-    column-gap: 0.5rem;
+    column-gap: 0.6rem;
+  }
+  .standings-stats-grid .stat-label,
+  .standings-stats-grid .stat-v1,
+  .standings-stats-grid .stat-v2,
+  .standings-stats-grid .stat-v3 {
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .standings-stats-grid .stat-v1,
+  .standings-stats-grid .stat-v2 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .standings-stats-grid .stat-v3 {
+    display: none;
   }
 }
 .stat-label { font-weight: 800; color: #e2e8f5; }
@@ -4475,9 +4817,7 @@ html {
 .standings-inline-link { color: #4fb7ff; font-weight: 800; text-decoration: none; }
 .standings-inline-link:hover { text-decoration: underline; }
 
-@media (max-width: 50em) {
-  .standings-stats-grid { grid-template-columns: 8.5rem 6.5rem 6.5rem 4rem; }
-}
+/* (Removed conflicting duplicate mobile grid sizing for standings expanded stats.) */
 
 /* Standings totals hover tooltip */
 .standings-metric {

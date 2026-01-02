@@ -10,6 +10,8 @@ import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
 import Week1CountdownCard from './Week1CountdownCard';
+import PreviousYearRecapCard from './PreviousYearRecapCard';
+import RookieDraftCard from './RookieDraftCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import { getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
@@ -23,7 +25,7 @@ const ALT_HOME_WEEK_OVERRIDE = null;
 // - null: derive automatically (Week 17 completed => off-season)
 // - true: force off-season layout
 // - false: force normal in-season layout
-const ALT_HOME_OFFSEASON_OVERRIDE = false;
+const ALT_HOME_OFFSEASON_OVERRIDE = null;
 
 function HomePage() {
   const isMobile = useIsMobile();
@@ -89,12 +91,36 @@ function HomePage() {
 
   // Off-season layout: separate "home cards set" once Week 17 is completed.
   if (isOffSeasonHome) {
+    if (isMobile) {
+      return (
+        <main className="home-main">
+          <div className="home-cards-grid home-cards-grid--single">
+            <Week1CountdownCard />
+            <PreviousYearRecapCard />
+            <RookieDraftCard />
+            <CommissionerNoteCard />
+            <PodcastCard />
+          </div>
+        </main>
+      );
+    }
+
+    // Desktop: keep the split-column layout. Put the countdown full-width on top,
+    // then render the remaining cards side-by-side.
     return (
       <main className="home-main">
-        <div className="home-cards-grid home-cards-grid--single">
+        <div className="home-cards-grid">
           <Week1CountdownCard />
-          <CommissionerNoteCard />
-          <PodcastCard />
+          <div className="home-cards-grid--split">
+            <div className="home-cards-column home-cards-column--left">
+              <PreviousYearRecapCard />
+              <PodcastCard />
+            </div>
+            <div className="home-cards-column home-cards-column--right">
+              <RookieDraftCard />
+              <CommissionerNoteCard />
+            </div>
+          </div>
         </div>
       </main>
     );

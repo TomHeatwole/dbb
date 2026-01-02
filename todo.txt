@@ -14,10 +14,8 @@
   - And then player popups everywhere could link to player analytics
 
 - Home cards:
-  - League History
   - Standings (reg season) w/ up/down arrows
     - Or maybe just incorporate up or down arrows into the existing 3 races tabs?
   - Recent trades (for off season)
   - Scenario or "what if" clickbait
-  - Countdown to next season starting
   - FantasyDisaster link?
