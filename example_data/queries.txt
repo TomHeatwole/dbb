@@ -11,3 +11,4 @@ ESPN Scores: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scorebo
 ESPN Scores by day (preseason): "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20250816&seasontype=1"
 ESPN Scores by week: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=5&year=2025&seasontype=2"
 Trending Add (Sleeper): "https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=100"
+Transactions: "https://api.sleeper.app/v1/league/<league_id>/transactions/<round>"

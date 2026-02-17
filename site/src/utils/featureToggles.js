@@ -14,7 +14,7 @@ export const SANDBOX_FEATURES = {
 
 // Main page features (production-ready)
 export const MAIN_FEATURES = {
-  SCENARIOS_ENABLED: false,
+  SCENARIOS_ENABLED: true,
   PLAYOFFS_ENABLED: true,
   HEAD_TO_HEAD_ENABLED: true,
 };

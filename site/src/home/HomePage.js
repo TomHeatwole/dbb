@@ -11,6 +11,7 @@ import CommissionerNoteCard from './CommissionerNoteCard';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
 import Week1CountdownCard from './Week1CountdownCard';
 import PreviousYearRecapCard from './PreviousYearRecapCard';
+import RecentTradesCard from './RecentTradesCard';
 import RookieDraftCard from './RookieDraftCard';
 import IosShortcutNoticeCard from './IosShortcutNoticeCard';
 import TrendingFreeAgentsCard from './TrendingFreeAgentsCard';
@@ -107,6 +108,7 @@ function HomePage() {
             {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
             <Week1CountdownCard />
             <PreviousYearRecapCard />
+            <RecentTradesCard />
             <TrendingFreeAgentsCard />
             <RookieDraftCard />
             <CommissionerNoteCard />
@@ -124,11 +126,12 @@ function HomePage() {
           <Week1CountdownCard />
           <div className="home-cards-grid--split">
             <div className="home-cards-column home-cards-column--left">
-              <PreviousYearRecapCard />
+              <RecentTradesCard />
               <TrendingFreeAgentsCard />
               <PodcastCard />
             </div>
             <div className="home-cards-column home-cards-column--right">
+              <PreviousYearRecapCard />
               <RookieDraftCard />
               <CommissionerNoteCard />
             </div>
