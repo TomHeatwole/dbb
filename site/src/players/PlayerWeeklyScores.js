@@ -11,6 +11,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const [weeklyScores, setWeeklyScores] = useState([]);
   const [seasonStats, setSeasonStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(false);
   const [error, setError] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -76,6 +77,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   useEffect(() => {
     if (!weeksParsedData || !playerId || loading) return;
 
+    setLoadingStats(true);
     const fetchWeeklyStats = async () => {
       const scores = [];
       const yearNum = parseInt(season);
@@ -129,6 +131,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
       }
       
       setWeeklyScores(scores);
+      setLoadingStats(false);
     };
 
     fetchWeeklyStats();
@@ -271,7 +274,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
         )}
       </div>
 
-      {loading ? (
+      {loading || loadingStats ? (
         <div style={{ padding: '20px' }}>
           <LoadingState label="Loading scores…" />
         </div>
