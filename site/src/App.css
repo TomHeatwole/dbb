@@ -5930,6 +5930,36 @@ body.modal-open {
   color: rgba(255, 255, 255, 0.3);
 }
 
+.player-weekly-table tfoot {
+  position: sticky;
+  bottom: 0;
+  background: #1a1d23;
+  z-index: 5;
+}
+
+.player-weekly-totals-row {
+  border-top: 2px solid rgba(29, 185, 84, 0.3);
+  font-weight: 700;
+  background: rgba(29, 185, 84, 0.05);
+}
+
+.player-weekly-totals-row:hover {
+  background: rgba(29, 185, 84, 0.08);
+}
+
+.player-weekly-totals-label {
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #1db954;
+}
+
+.player-weekly-total {
+  font-weight: 700;
+  color: #1db954;
+}
+
 /* Mobile-specific styles for player weekly table */
 @media (max-width: 50em) {
   .player-weekly-table th {
@@ -5947,6 +5977,15 @@ body.modal-open {
   }
   
   .player-weekly-points {
+    font-size: 0.55rem;
+  }
+  
+  .player-weekly-totals-label {
+    padding: 0.5rem;
+    font-size: 0.5rem;
+  }
+  
+  .player-weekly-total {
     font-size: 0.55rem;
   }
 }

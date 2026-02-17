@@ -356,6 +356,24 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="player-weekly-totals-row">
+                  <td className="player-weekly-totals-label">Total</td>
+                  {statsColumns.map(col => {
+                    const total = weeklyScores.reduce((sum, { stats }) => {
+                      return sum + (stats ? (stats[col.key] || 0) : 0);
+                    }, 0);
+                    return (
+                      <td key={col.key} className="player-weekly-stat player-weekly-total">
+                        {col.format(total)}
+                      </td>
+                    );
+                  })}
+                  <td className="player-weekly-points player-weekly-total">
+                    {totalPoints.toFixed(1)}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </>
