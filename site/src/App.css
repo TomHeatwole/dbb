@@ -5691,6 +5691,18 @@ body.modal-open {
   min-width: 0;
 }
 
+.player-card-position-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-nfl-team-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
 .player-card-details-inline {
   display: flex;
   flex-wrap: wrap;
@@ -5718,6 +5730,34 @@ body.modal-open {
   padding: 0.75rem 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.player-ownership-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.player-ownership-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.player-ownership-team {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.player-ownership-free-agent {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
 }
 
 .player-season-dropdown {
@@ -5869,9 +5909,16 @@ body.modal-open {
   font-size: 0.95rem;
 }
 
+.player-weekly-stat {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
 .player-weekly-points {
   font-weight: 600;
   color: #fff;
+  text-align: right;
 }
 
 .player-weekly-zero td {

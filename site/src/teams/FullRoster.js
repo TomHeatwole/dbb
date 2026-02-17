@@ -87,7 +87,7 @@ function getPickNumberForSort(pick, draftOrder, nextDraftYear) {
   return 9999;
 }
 
-function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = [], draftOrder = null, nextDraftYear = null }) {
+function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = [], draftOrder = null, nextDraftYear = null, rosters = null, users = null }) {
   // Sort picks by year, round, and then pick number (for draft order)
   const sortedPicks = [...picks].sort((a, b) => {
     const aSeason = Number(a.season || 0);
@@ -167,7 +167,12 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
         aria-modal="true"
         onClick={(e) => { e.stopPropagation(); }}
       >
-        <PlayerWeeklyScores player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+        <PlayerWeeklyScores 
+          player={selectedPlayer} 
+          onClose={() => setSelectedPlayer(null)}
+          rosters={rosters}
+          users={users}
+        />
       </div>
     </div>
   ) : null;

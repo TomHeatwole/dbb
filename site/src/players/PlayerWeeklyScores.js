@@ -2,14 +2,18 @@ import React, { useEffect, useState, useRef } from 'react';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
+import useIsMobile from '../hooks/useIsMobile';
+import PlayerInfoRow from './PlayerInfoRow';
 
-function PlayerWeeklyScores({ player, onClose }) {
+function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const [season, setSeason] = useState(CURRENT_YEAR);
   const [weeksParsedData, setWeeksParsedData] = useState(null);
+  const [weeklyScores, setWeeklyScores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const isMobile = useIsMobile();
 
   const availableYears = ['2025', '2024'];
   const hasPhoto = Boolean(player && player.espn_photo_url);
@@ -24,6 +28,9 @@ function PlayerWeeklyScores({ player, onClose }) {
   const rookieYear = player && player.metadata && player.metadata.rookie_year ? player.metadata.rookie_year : null;
   const college = player && player.college ? player.college : null;
   const highSchool = player && player.high_school ? player.high_school : null;
+
+  // NFL team logo URL
+  const nflTeamLogo = team ? `https://a.espncdn.com/i/teamlogos/nfl/500/${team.toLowerCase()}.png` : null;
 
   useEffect(() => {
     setLoading(true);
@@ -50,35 +57,129 @@ function PlayerWeeklyScores({ player, onClose }) {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [dropdownOpen]);
 
-  // Extract weekly points for this player
-  const weeklyScores = [];
+  // Extract weekly points and stats for this player
   const currentWeek = getCurrentNFLWeek(season);
   const totalWeeks = season === CURRENT_YEAR ? Math.min(17, currentWeek) : 17;
 
-  if (weeksParsedData && playerId) {
-    for (let week = 1; week <= totalWeeks; week++) {
-      const weekData = weeksParsedData[week - 1];
-      let points = 0;
+  useEffect(() => {
+    if (!weeksParsedData || !playerId || loading) return;
+
+    const fetchWeeklyStats = async () => {
+      const scores = [];
       
-      if (weekData && Array.isArray(weekData)) {
-        for (const entry of weekData) {
-          if (entry && entry.players_points && entry.players_points[playerId] != null) {
-            points = entry.players_points[playerId];
-            break;
+      for (let week = 1; week <= totalWeeks; week++) {
+        const weekData = weeksParsedData[week - 1];
+        let points = 0;
+        let stats = null;
+        
+        if (weekData && Array.isArray(weekData)) {
+          for (const entry of weekData) {
+            if (entry && entry.players_points && entry.players_points[playerId] != null) {
+              points = entry.players_points[playerId];
+              break;
+            }
           }
         }
+        
+        // Fetch detailed stats from Sleeper API
+        try {
+          const response = await fetch(`https://api.sleeper.app/v1/stats/nfl/regular/${season}/${week}`);
+          if (response.ok) {
+            const sleeperStats = await response.json();
+            if (sleeperStats[playerId]) {
+              stats = sleeperStats[playerId];
+            }
+          }
+        } catch (err) {
+          // Continue without stats
+        }
+        
+        scores.push({
+          week,
+          points: Math.round(points * 10) / 10,
+          stats
+        });
       }
       
-      weeklyScores.push({
-        week,
-        points: Math.round(points * 10) / 10
-      });
-    }
-  }
+      setWeeklyScores(scores);
+    };
+
+    fetchWeeklyStats();
+  }, [weeksParsedData, playerId, season, totalWeeks, loading]);
 
   const totalPoints = weeklyScores.reduce((sum, w) => sum + w.points, 0);
   const gamesPlayed = weeklyScores.filter(w => w.points > 0).length;
   const avgPoints = gamesPlayed > 0 ? Math.round((totalPoints / gamesPlayed) * 10) / 10 : 0;
+
+  // Determine which stats columns to show based on position
+  const getStatsColumns = () => {
+    const pos = position ? position.toUpperCase() : '';
+    
+    if (pos === 'QB') {
+      return [
+        { key: 'pass_yd', label: 'Pass Yds', format: (v) => v || 0 },
+        { key: 'pass_td', label: 'Pass TD', format: (v) => v || 0 },
+        { key: 'pass_int', label: 'INT', format: (v) => v || 0 },
+        { key: 'rush_yd', label: 'Rush Yds', format: (v) => v || 0 },
+        { key: 'rush_td', label: 'Rush TD', format: (v) => v || 0 }
+      ];
+    } else if (pos === 'RB') {
+      return [
+        { key: 'rush_yd', label: 'Rush Yds', format: (v) => v || 0 },
+        { key: 'rush_td', label: 'Rush TD', format: (v) => v || 0 },
+        { key: 'rec', label: 'Rec', format: (v) => v || 0 },
+        { key: 'rec_yd', label: 'Rec Yds', format: (v) => v || 0 },
+        { key: 'rec_td', label: 'Rec TD', format: (v) => v || 0 }
+      ];
+    } else if (pos === 'WR' || pos === 'TE') {
+      return [
+        { key: 'rec', label: 'Rec', format: (v) => v || 0 },
+        { key: 'rec_yd', label: 'Rec Yds', format: (v) => v || 0 },
+        { key: 'rec_td', label: 'Rec TD', format: (v) => v || 0 },
+        { key: 'rush_yd', label: 'Rush Yds', format: (v) => v || 0 },
+        { key: 'rush_td', label: 'Rush TD', format: (v) => v || 0 }
+      ];
+    } else if (pos === 'K') {
+      return [
+        { key: 'fgm', label: 'FGM', format: (v) => v || 0 },
+        { key: 'fga', label: 'FGA', format: (v) => v || 0 },
+        { key: 'xpm', label: 'XPM', format: (v) => v || 0 },
+        { key: 'xpa', label: 'XPA', format: (v) => v || 0 }
+      ];
+    } else if (pos === 'DEF') {
+      return [
+        { key: 'def_td', label: 'TD', format: (v) => v || 0 },
+        { key: 'def_int', label: 'INT', format: (v) => v || 0 },
+        { key: 'def_sack', label: 'Sacks', format: (v) => v || 0 },
+        { key: 'def_fr', label: 'FR', format: (v) => v || 0 }
+      ];
+    }
+    
+    return [];
+  };
+
+  const statsColumns = getStatsColumns();
+
+  // Find ownership info
+  let ownershipInfo = null;
+  if (playerId && rosters && users) {
+    const owningRoster = rosters.find(r => 
+      r && Array.isArray(r.players) && r.players.includes(playerId)
+    );
+    
+    if (owningRoster) {
+      const owningUser = users.find(u => 
+        u && String(u.user_id) === String(owningRoster.owner_id)
+      );
+      
+      if (owningUser) {
+        ownershipInfo = {
+          teamName: (owningUser.metadata && owningUser.metadata.team_name) || owningUser.display_name || `Team ${owningRoster.roster_id}`,
+          avatar: owningUser.team_avatar_url || owningUser.user_avatar_url || owningUser.avatar_url || null
+        };
+      }
+    }
+  }
 
   return (
     <div className="player-card player-weekly-card">
@@ -100,9 +201,14 @@ function PlayerWeeklyScores({ player, onClose }) {
         <div className="player-card-info-wrapper">
           <div className="player-card-text">
             <div className="player-card-name">{name}</div>
-            <div className="player-card-position">
-              {position}
-              {team && ` • ${team}`}
+            <div className="player-card-position-row">
+              {nflTeamLogo && (
+                <img src={nflTeamLogo} alt={team} className="player-nfl-team-logo" />
+              )}
+              <span>
+                {position}
+                {team && ` • ${team}`}
+              </span>
             </div>
           </div>
           
@@ -143,6 +249,23 @@ function PlayerWeeklyScores({ player, onClose }) {
             </div>
           )}
         </div>
+        
+        <div className="player-ownership-info">
+          {ownershipInfo ? (
+            <>
+              {ownershipInfo.avatar && (
+                <img 
+                  src={ownershipInfo.avatar} 
+                  alt={ownershipInfo.teamName}
+                  className="player-ownership-avatar"
+                />
+              )}
+              <span className="player-ownership-team">{ownershipInfo.teamName}</span>
+            </>
+          ) : (
+            <span className="player-ownership-free-agent">Free Agent</span>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -173,13 +296,21 @@ function PlayerWeeklyScores({ player, onClose }) {
               <thead>
                 <tr>
                   <th>Week</th>
+                  {statsColumns.map(col => (
+                    <th key={col.key}>{col.label}</th>
+                  ))}
                   <th>Points</th>
                 </tr>
               </thead>
               <tbody>
-                {weeklyScores.map(({ week, points }) => (
+                {weeklyScores.map(({ week, points, stats }) => (
                   <tr key={week} className={points > 0 ? '' : 'player-weekly-zero'}>
                     <td>Week {week}</td>
+                    {statsColumns.map(col => (
+                      <td key={col.key} className="player-weekly-stat">
+                        {stats ? col.format(stats[col.key]) : '-'}
+                      </td>
+                    ))}
                     <td className="player-weekly-points">
                       {points > 0 ? points.toFixed(1) : '-'}
                     </td>

@@ -280,9 +280,16 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
               picks={tradedPicks}
               draftOrder={draftOrder}
               nextDraftYear={String(Number(CURRENT_YEAR) + 1)}
+              rosters={rosters}
+              users={users}
             />
           ) : (
-            <FullRoster playerList={playerList} positions={['QB', 'WR', 'RB', 'TE']} />
+            <FullRoster 
+              playerList={playerList} 
+              positions={['QB', 'WR', 'RB', 'TE']}
+              rosters={rosters}
+              users={users}
+            />
           )}
         </>
       ) : (
