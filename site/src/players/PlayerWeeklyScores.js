@@ -54,16 +54,6 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const highSchool = player && player.high_school ? player.high_school : null;
   const nflTeamLogo = team ? `https://a.espncdn.com/i/teamlogos/nfl/500/${team.toLowerCase()}.png` : null;
 
-  const [scoringConfig, setScoringConfig] = useState(null);
-
-  useEffect(() => {
-    // Load scoring config
-    fetch('/data/score_format.json')
-      .then(res => res.json())
-      .then(config => setScoringConfig(config))
-      .catch(() => {});
-  }, []);
-
   useEffect(() => {
     setLoading(true);
     setError(null);

@@ -267,13 +267,9 @@ export async function updatePlayers(caredPlayerIds) {
   const caredSet = new Set(caredPlayerIds.map(String));
   const filtered = {};
   
-  let skippedInactive = 0;
-  let skippedNotFound = 0;
-  
   for (const pid of caredSet) {
     const p = allPlayers && allPlayers[pid];
     if (!p) {
-      skippedNotFound++;
       continue;
     }
     
@@ -282,7 +278,6 @@ export async function updatePlayers(caredPlayerIds) {
     if (!isPreSeason) {
       const isActive = (p && p.active === true) || (p && typeof p.status === 'string' && p.status.toLowerCase() === 'active');
       if (!isActive) {
-        skippedInactive++;
         continue;
       }
     }

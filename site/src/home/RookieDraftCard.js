@@ -62,13 +62,20 @@ function RookieDraftCard() {
           throw new Error('Invalid season/draft year');
         }
 
-        const [weeksData, teamData, tradedPicks, players, idMap] = await Promise.all([
+        // Also fetch traded picks from the draft-year league (e.g. the new 2026 league),
+        // since trades made after the new league is created only appear there.
+        const draftYearStr = String(draftYear);
+        const needsDraftYearFetch = draftYearStr !== String(season);
+        const [weeksData, teamData, tradedPicksSeason, tradedPicksDraftYear, players, idMap] = await Promise.all([
           fetchScoresData(season),
           fetchTeamData(season),
           fetchTradedPicks(season),
+          needsDraftYearFetch ? fetchTradedPicks(draftYearStr).catch(() => []) : Promise.resolve([]),
           fetchPlayersData(),
           fetchPlayerIdMap(),
         ]);
+        // Merge: draft-year league picks take precedence (latest trade wins per pick slot).
+        const tradedPicks = [...(Array.isArray(tradedPicksSeason) ? tradedPicksSeason : []), ...(Array.isArray(tradedPicksDraftYear) ? tradedPicksDraftYear : [])];
 
         if (cancelled) {
           return;

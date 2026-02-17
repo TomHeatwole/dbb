@@ -16,8 +16,6 @@ function TrendingFreeAgentsCard() {
   const [error, setError] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [teamData, setTeamData] = useState(null);
-  const [playersData, setPlayersData] = useState(null);
-  const [idMap, setIdMap] = useState(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -36,8 +34,6 @@ function TrendingFreeAgentsCard() {
 
         // Store data for modal
         setTeamData(teamDataResult);
-        setPlayersData(players);
-        setIdMap(idMapResult);
 
         if (!trending || trending.length === 0) {
           setTrendingFreeAgents([]);
