@@ -9,9 +9,7 @@ const serializedSettings =
 let parsedSettings = {};
 try {
   parsedSettings = serializedSettings ? JSON.parse(serializedSettings) : {};
-} catch (e) {
-  // eslint-disable-next-line no-console
-  console.error('SERVER SITE_SETTINGS is not valid JSON. Falling back to empty config.');
+} catch (_) {
   parsedSettings = {};
 }
 

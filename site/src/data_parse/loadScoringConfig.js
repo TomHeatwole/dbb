@@ -26,7 +26,6 @@ export async function loadScoringConfig(configPath = '/data/score_format.json') 
     
     return config;
   } catch (error) {
-    console.error('Error loading scoring config:', error);
     throw error;
   }
 }

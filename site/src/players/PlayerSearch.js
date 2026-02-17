@@ -5,6 +5,7 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from './PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 function PlayerSearch() {
   const [trendingData, setTrendingData] = useState(null);
@@ -32,8 +33,7 @@ function PlayerSearch() {
         setRosters(teamData.rosters);
         setUsers(teamData.users);
       })
-      .catch((err) => {
-        console.error('Error loading data:', err);
+      .catch(() => {
         setError('Failed to load player data');
       })
       .finally(() => setLoading(false));
@@ -173,19 +173,16 @@ function PlayerSearch() {
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                {player.espn_photo_url && (
-                  <img 
-                    src={player.espn_photo_url} 
-                    alt={player.name}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                    }}
-                    onError={(e) => e.target.style.display = 'none'}
-                  />
-                )}
+                <img 
+                  src={getPlayerLogoUrl(player.espn_photo_url)} 
+                  alt={player.name}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }}
+                />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '500' }}>{player.name}</div>
                   <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)' }}>

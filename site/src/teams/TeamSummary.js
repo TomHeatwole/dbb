@@ -23,11 +23,6 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
   const rosterIdToTeamInfo = useMemo(() => {
     return buildRosterIdToTeamInfoMap(rosters, users);
   }, [rosters, users]);
-  
-  console.log('=== TeamSummary rendered ===');
-  console.log('playerList length:', playerList.length);
-  console.log('playerList sample:', playerList.slice(0, 3));
-  console.log('isPreSeason:', isPreSeason);
 
   // Load traded picks for this team in the summary (Overview) tab and log them for now
   useEffect(() => {
@@ -140,16 +135,11 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
         });
         if (!cancelled) {
           setTradedPicks(combined);
-          // Temporary debug output until we render this in a column
-          // eslint-disable-next-line no-console
-          console.log('Picks (summary) for roster', rosterId, 'season window', `${minSeason}-${maxSeason}`, combined);
         }
-      } catch (e) {
+      } catch (_) {
         if (!cancelled) {
           setTradedPicks([]);
         }
-        // eslint-disable-next-line no-console
-        console.error('Failed to fetch traded picks in TeamSummary', e);
       }
     })();
     return () => {
@@ -194,12 +184,10 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
         if (!cancelled) {
           setDraftOrder(rosterIdToPickNum);
         }
-      } catch (e) {
+      } catch (_) {
         if (!cancelled) {
           setDraftOrder(null);
         }
-        // eslint-disable-next-line no-console
-        console.error('Failed to fetch draft order in TeamSummary', e);
       }
     })();
 

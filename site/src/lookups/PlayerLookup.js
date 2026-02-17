@@ -25,28 +25,14 @@ export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
   const effectiveSeason = maybeSeason || CURRENT_YEAR;
   const requestedWeek = Number(opts.week);
   
-  // For 2024 and earlier, use static files
-  if (String(effectiveSeason) === '2024') {
+  // For any completed (past) season, use the static players.txt file.
+  // Sleeper's player list is cumulative so it covers all seasons.
+  if (String(effectiveSeason) !== String(CURRENT_YEAR)) {
     const res = await fetch('/data/players.txt');
     if (!res.ok) throw new Error('Failed to fetch player data');
     const data = await res.json();
     cachedPlayersDataByKey[cacheKey] = data;
     return cachedPlayersDataByKey[cacheKey];
-  }
-  
-  // For 2025, try to load from static file if available
-  if (String(effectiveSeason) === '2025') {
-    try {
-      const res = await fetch('/data/players_2025.txt');
-      if (res.ok) {
-        const data = await res.json();
-        cachedPlayersDataByKey[cacheKey] = data;
-        return cachedPlayersDataByKey[cacheKey];
-      }
-    } catch (err) {
-      // Fall through to dynamic loading
-      console.log('No static 2025 player data file, using dynamic loading');
-    }
   }
   // Try to read snapshot based on requested week (for historical view) or current week
   const currentWeek = getCurrentNFLWeek();
@@ -80,8 +66,6 @@ export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
       } catch (_) {
         // ignore and fall through
       }
-    } else {
-      console.log('fetchPlayersData: Skipping matchup data fallback in pre-season');
     }
   }
   if (!weekCompleted && !shouldUsePrevWeek && rosters && Array.isArray(rosters)) {
@@ -98,13 +82,8 @@ export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
       }
     }
     const caredPlayerIds = Array.from(caredSet);
-    console.log('Fetching player data for', caredPlayerIds.length, 'player IDs');
     const res = await updatePlayers(caredPlayerIds);
     const data = (res && res.snapshot && res.snapshot.data) ? res.snapshot.data : {};
-    console.log('Received player data with', Object.keys(data).length, 'players');
-    
-    // If data is empty or has very few players and we're in pre-season, this might be an API issue
-    // In this case, return the snapshot we have (even if empty) rather than trying to force a fetch
     cachedPlayersDataByKey[cacheKey] = data;
     return cachedPlayersDataByKey[cacheKey];
   }
@@ -135,16 +114,9 @@ export async function fetchPlayerIdMap() {
 }
 
 export function getPlayerInfo(playerId, playersData, playerIdMap) {
-  if (!playersData) {
-    console.log('getPlayerInfo: playersData is null for player', playerId);
-    return null;
-  }
+  if (!playersData) { return null; }
   const player = playersData[playerId];
-  if (!player) {
-    console.log('getPlayerInfo: No player found in playersData for ID', playerId);
-    console.log('  Available IDs sample:', Object.keys(playersData).slice(0, 5));
-    return null;
-  }
+  if (!player) { return null; }
   let espn_id = player.espn_id;
   if (!espn_id && playerIdMap) {
     espn_id = playerIdMap[playerId];

@@ -232,7 +232,6 @@ export async function updatePlayers(caredPlayerIds) {
   // v2: includes inactive players in pre-season
   const basePath = isPreSeason ? `players_${season}_week_${week}_preseason_v2` : `players_${season}_week_${week}`;
 
-  console.log('updatePlayers: isPreSeason:', isPreSeason, 'basePath:', basePath, 'requesting', caredPlayerIds.length, 'player IDs');
 
   // Check latest entry under the week folder with 1-hour TTL
   try {
@@ -243,24 +242,17 @@ export async function updatePlayers(caredPlayerIds) {
       const fetchedAtMs = value && value.fetchedAt ? Date.parse(value.fetchedAt) : NaN;
       const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
       const cachedPlayerCount = value && value.data ? Object.keys(value.data).length : 0;
-      console.log('updatePlayers: Found cached data, age:', Math.round(ageMs/1000), 'seconds, players:', cachedPlayerCount);
       
       // Smart cache invalidation: if cache has 0 players but we're requesting many,
       // the cache is likely from old buggy code - refetch
       const requestedCount = caredPlayerIds.length;
       if (cachedPlayerCount === 0 && requestedCount > 10) {
-        console.log('updatePlayers: Cache has 0 players but requesting', requestedCount, '- invalidating cache and refetching');
+        // Cache invalid - refetch
       } else if (ageMs <= 60 * 60 * 1000) {
-        console.log('updatePlayers: Using cached data from', basePath);
         return { path: basePath, snapshot: value, skipped: true };
-      } else {
-        console.log('updatePlayers: Cache expired, will refetch');
       }
-    } else {
-      console.log('updatePlayers: No cached data found, will fetch fresh');
     }
-  } catch (e) {
-    console.log('updatePlayers: Cache read error:', e.message);
+  } catch (_) {
     // ignore cache read errors
   }
   const url = 'https://api.sleeper.app/v1/players/nfl';
@@ -275,10 +267,6 @@ export async function updatePlayers(caredPlayerIds) {
   const caredSet = new Set(caredPlayerIds.map(String));
   const filtered = {};
   
-  console.log('updatePlayers: Fetched', Object.keys(allPlayers || {}).length, 'total players from Sleeper API');
-  console.log('updatePlayers: Looking for', caredSet.size, 'specific player IDs');
-  console.log('updatePlayers: isPreSeason =', isPreSeason, '(will', isPreSeason ? 'NOT' : '', 'filter by active status)');
-  
   let skippedInactive = 0;
   let skippedNotFound = 0;
   
@@ -286,9 +274,6 @@ export async function updatePlayers(caredPlayerIds) {
     const p = allPlayers && allPlayers[pid];
     if (!p) {
       skippedNotFound++;
-      if (skippedNotFound <= 5) {
-        console.log('  Player ID', pid, 'not found in Sleeper API response');
-      }
       continue;
     }
     
@@ -305,9 +290,6 @@ export async function updatePlayers(caredPlayerIds) {
     filtered[pid] = p;
   }
   
-  console.log('updatePlayers: Result:', Object.keys(filtered).length, 'players included');
-  if (skippedNotFound > 0) console.log('updatePlayers:', skippedNotFound, 'player IDs not found in API');
-  if (skippedInactive > 0) console.log('updatePlayers:', skippedInactive, 'players filtered out (inactive)');
   const entry = {
     season,
     week,

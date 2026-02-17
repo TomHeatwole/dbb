@@ -2,6 +2,7 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 
 const pieColors = [
@@ -139,7 +140,7 @@ export default function PositionAnalytics({
                       }
                       return (
                         <div className="position-analytics-tooltip" style={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff', borderRadius: '8px', padding: '8px 10px' }}>
-                          {d.img && <img src={d.img} alt={d.name} className="position-analytics-tooltip-img" />}
+                          <img src={getPlayerLogoUrl(d.img)} alt={d.name} className="position-analytics-tooltip-img" />
                           <div><b>{d.name} ({d.position})</b></div>
                           <div><b>{posLabel} starts:</b> {playerStarts}</div>
                           <div><b>{posLabel} start percentage:</b> {startPct}%</div>

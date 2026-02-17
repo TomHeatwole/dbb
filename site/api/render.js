@@ -13,8 +13,7 @@ function loadRouteMeta() {
   try {
     const raw = fs.readFileSync(metaPath, "utf8");
     routeMetaCache = JSON.parse(raw);
-  } catch (err) {
-    console.error("Failed to load routeMeta.json from", metaPath, err);
+  } catch (_) {
     routeMetaCache = {};
   }
   return routeMetaCache;
@@ -83,8 +82,7 @@ export default async function handler(req, res) {
   let html;
   try {
     html = fs.readFileSync(filePath, "utf8");
-  } catch (err) {
-    console.error("Failed to read index.html at", filePath, err);
+  } catch (_) {
     return res.status(500).send("Template not found");
   }
 
@@ -132,9 +130,8 @@ export default async function handler(req, res) {
         ogTitle = `${ownerA} vs ${ownerB}`;
       }
     }
-  } catch (err) {
+  } catch (_) {
     // If anything fails (network, parsing, etc.), silently fall back to default OG title.
-    console.error("Failed to build H2H OG title override", err);
   }
 
   const canonicalPath =

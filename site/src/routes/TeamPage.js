@@ -126,15 +126,11 @@ function TeamPage() {
       return;
     }
     
-    // Pass rosters when available so fetchPlayersData can extract player IDs and fetch
-    const param = rosters;
-    
-    console.log('Fetching player data with param:', param, '(season:', season, ')');
-    
+    // For past seasons, pass season string so fetchPlayersData loads static file (e.g. players_2025.txt).
+    // For current season, pass rosters so it can extract player IDs for dynamic loading.
+    const param = season === CURRENT_YEAR ? rosters : String(season);
     fetchPlayersData(param)
       .then(data => {
-        console.log('Player data loaded, count:', data ? Object.keys(data).length : 0);
-        console.log('Player data sample keys:', data ? Object.keys(data).slice(0, 10) : 'null');
         setPlayersData(data);
       })
       .catch(() => setPlayersData(null));
@@ -209,22 +205,12 @@ function TeamPage() {
   const userAvatarUrl = user.avatar_url;
 
   // Get player info for each player on the roster
-  console.log('=== TeamPage: Building playerList ===');
-  console.log('roster.players:', roster.players);
-  console.log('playersData exists:', !!playersData);
-  console.log('playersData keys sample:', playersData ? Object.keys(playersData).slice(0, 10) : 'null');
-  console.log('playerIdMap exists:', !!playerIdMap);
-  
   const playerList = (roster.players || []).map(pid => {
     const info = getPlayerInfo(pid, playersData, playerIdMap);
     if (!info) {
-      console.log('❌ No player info found for ID:', pid);
     }
     return info ? info : { name: pid, position: '', espn_photo_url: null };
   });
-  
-  console.log('playerList built with', playerList.length, 'players');
-  console.log('First 3 players:', playerList.slice(0, 3));
 
   const leftHeader = (
     <div
@@ -287,11 +273,7 @@ function TeamPage() {
           </button>
         ))}
       </div>
-      {selectedTab === 'Overview' && (() => {
-        console.log('=== TeamPage: Rendering TeamSummary ===');
-        console.log('Passing playerList with', playerList.length, 'players');
-        return <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} playerList={playerList} rosters={rosters} users={users} />;
-      })()}
+      {selectedTab === 'Overview' && <TeamSummary weeksParsedData={weeksParsedData} loading={scoresLoading} playersData={playersData} playerIdMap={playerIdMap} playerList={playerList} rosters={rosters} users={users} />}
       {selectedTab === 'Scores' && <TeamScores ref={teamScoresRef} weeksParsedData={weeksParsedData} playersData={playersData} playerIdMap={playerIdMap} updateQueryParams={updateQueryParams} />}
       {selectedTab === 'Analytics' && <TeamAnalytics ref={teamAnalyticsRef} weeksParsedData={weeksParsedData} teamName={teamName} rosters={rosters} users={users} updateQueryParams={updateQueryParams} />}
     </InfoPageWrapper>

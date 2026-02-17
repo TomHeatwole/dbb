@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { getTeamPlayerBreakdown } from '../scores/ScoresParser';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 
 function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, playersData, playerIdMap, STARTER_POSITION_NAMES, rosterPlayers = [] }) {
@@ -103,14 +104,14 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
                 >
                   <td>
                     <div className="player-breakdown-name">
-                      {!isMobile && row.img && (
-                        <img src={row.img} alt={row.name} className="player-breakdown-avatar" />
+                      {!isMobile && (
+                        <img src={getPlayerLogoUrl(row.img)} alt={row.name} className="player-breakdown-avatar" />
                       )}
                       <span>{row.name}{row.position ? ` (${row.position})` : ''}</span>
                       <div className="player-breakdown-card-wrapper" style={cardStyle}>
                         <div className="player-start-card">
                           <div className="player-start-card-header">
-                            {row.img && <img src={row.img} alt={row.name} className="player-start-card-photo" />}
+                            <img src={getPlayerLogoUrl(row.img)} alt={row.name} className="player-start-card-photo" />
                             <div className="player-start-card-title">{row.name}</div>
                           </div>
                           <div className="player-start-card-count">{row.starts} Starts</div>

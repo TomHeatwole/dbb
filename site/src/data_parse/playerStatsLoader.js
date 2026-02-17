@@ -71,7 +71,6 @@ export async function loadPlayerStatsFromCSV(filePath) {
     const text = await response.text();
     return parseCSV(text);
   } catch (error) {
-    console.error('Error loading player stats:', error);
     throw error;
   }
 }
@@ -89,7 +88,6 @@ export async function loadPlayersData(filePath) {
     }
     return await response.json();
   } catch (error) {
-    console.error('Error loading players data:', error);
     throw error;
   }
 }

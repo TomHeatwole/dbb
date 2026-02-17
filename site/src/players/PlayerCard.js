@@ -1,7 +1,7 @@
 import React from 'react';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 function PlayerCard({ player, onClose }) {
-  const hasPhoto = Boolean(player && player.espn_photo_url);
   const name = player && player.name ? player.name : '';
   const position = player && player.position ? player.position : '';
 
@@ -27,9 +27,7 @@ function PlayerCard({ player, onClose }) {
         </button>
       )}
       <div className="player-card-content">
-        {hasPhoto && (
-          <img src={player.espn_photo_url} alt={name} className="player-card-photo" />
-        )}
+        <img src={getPlayerLogoUrl(player && player.espn_photo_url)} alt={name} className="player-card-photo" />
         <div className="player-card-text">
           <div className="player-card-name">{name}</div>
           <div className="player-card-position">{position}</div>

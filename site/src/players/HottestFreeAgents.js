@@ -5,6 +5,7 @@ import { batchConvertSleeperToGsis } from '../lookups/GsisLookup';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from './PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 
 // Parse CSV line handling quoted fields
@@ -141,7 +142,6 @@ function HottestFreeAgents() {
         setPlayersData(players);
         setPlayerIdMap(idMap);
       } catch (err) {
-        console.error('Error loading free agents data:', err);
         setError(err.message || 'Failed to load data');
       } finally {
         setLoading(false);
@@ -285,14 +285,11 @@ function HottestFreeAgents() {
                   <td className="rank-col">{index + 1}</td>
                   <td className="player-col">
                     <div className="player-cell">
-                      {agent.headshotUrl && (
-                        <img 
-                          src={agent.headshotUrl} 
-                          alt={agent.playerName}
-                          className="player-headshot"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      )}
+                      <img 
+                        src={getPlayerLogoUrl(agent.headshotUrl)} 
+                        alt={agent.playerName}
+                        className="player-headshot"
+                      />
                       <div className="player-info">
                         <div className="player-name">{agent.playerName}</div>
                         {isMobile && (

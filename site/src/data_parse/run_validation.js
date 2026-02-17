@@ -36,7 +36,7 @@ for (let i = 0; i < args.length; i++) {
   } else if (arg === '--delay' && i + 1 < args.length) {
     delayMs = Number(args[++i]);
   } else if (arg === '--help' || arg === '-h') {
-    console.log(`
+    process.stdout.write(`
 Fantasy Score Validation Tool
 
 Usage:
@@ -69,28 +69,15 @@ if (seasons.length === 0) {
 }
 
 // Run validation
-console.log('Starting validation...');
-console.log(`Seasons: ${seasons.join(', ')}`);
-console.log(`Weeks: ${weeks.join(', ')}`);
-console.log(`Delay: ${delayMs}ms`);
-console.log('');
-
 validateScores(seasons, {
   weeks,
   delayMs,
   verbose: true,
   stopOnFirstDifference
 }).then(results => {
-  console.log('');
-  console.log('Validation complete!');
-  
-  // Exit with error code if differences found
   if (results.summary.totalDifferences > 0) {
     process.exit(1);
   }
-}).catch(error => {
-  console.error('');
-  console.error('Validation failed with error:');
-  console.error(error);
+}).catch(() => {
   process.exit(1);
 });

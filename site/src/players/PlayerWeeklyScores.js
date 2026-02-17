@@ -4,6 +4,7 @@ import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../util
 import LoadingState from '../LoadingState';
 import { loadSeasonStatsFromCSV, mapCSVStatsToSleeperFormat } from './WeeklyStatsLoader';
 import useIsMobile from '../hooks/useIsMobile';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   // Default to previous year if current season hasn't started yet
@@ -42,7 +43,6 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
     }
   }
   
-  const hasPhoto = Boolean(player && player.espn_photo_url);
   const name = player && player.name ? player.name : '';
   const position = player && player.position ? player.position : '';
   const team = player && (player.team || player.team_abbr) ? (player.team || player.team_abbr) : null;
@@ -53,6 +53,16 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const college = player && player.college ? player.college : null;
   const highSchool = player && player.high_school ? player.high_school : null;
   const nflTeamLogo = team ? `https://a.espncdn.com/i/teamlogos/nfl/500/${team.toLowerCase()}.png` : null;
+
+  const [scoringConfig, setScoringConfig] = useState(null);
+
+  useEffect(() => {
+    // Load scoring config
+    fetch('/data/score_format.json')
+      .then(res => res.json())
+      .then(config => setScoringConfig(config))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -133,6 +143,14 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
               const sleeperStats = await response.json();
               if (sleeperStats[playerId]) {
                 stats = sleeperStats[playerId];
+                // If points weren't found in matchup data, check if Sleeper stats has them
+                if (points === 0) {
+                  // Sleeper stats API includes pts_ppr, pts_std, pts_half_ppr
+                  const ptsFromStats = stats.pts_ppr || stats.pts_half_ppr || stats.pts_std || 0;
+                  if (ptsFromStats > 0) {
+                    points = ptsFromStats;
+                  }
+                }
               }
             }
           } catch (err) {
@@ -231,7 +249,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
       )}
       
       <div className="player-card-content player-card-content-expanded">
-        {hasPhoto && <img src={player.espn_photo_url} alt={name} className="player-card-photo" />}
+        <img src={getPlayerLogoUrl(player && player.espn_photo_url)} alt={name} className="player-card-photo" />
         <div className="player-card-info-wrapper">
           <div className="player-card-text">
             <div className="player-card-name">{name}</div>

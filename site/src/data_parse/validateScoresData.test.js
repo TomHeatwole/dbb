@@ -160,11 +160,5 @@ describe('Integration', () => {
     });
 
     expect(results.summary.totalValidations).toBeGreaterThan(0);
-    
-    // Log any differences found for manual review
-    if (results.summary.totalDifferences > 0) {
-      console.log('\n⚠️  Differences found in integration test:');
-      console.log(JSON.stringify(results.seasons['2024'].weeks[1].differences, null, 2));
-    }
   }, 30000); // 30 second timeout for API calls
 });

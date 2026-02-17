@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useIsMobile from '../hooks/useIsMobile';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 function toOrdinal(n) {
   const num = Number(n);
@@ -88,11 +89,6 @@ function getPickNumberForSort(pick, draftOrder, nextDraftYear) {
 }
 
 function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = [], draftOrder = null, nextDraftYear = null, rosters = null, users = null }) {
-  console.log('=== FullRoster rendered ===');
-  console.log('playerList:', playerList);
-  console.log('positions:', positions);
-  console.log('picks:', picks);
-  
   // Sort picks by year, round, and then pick number (for draft order)
   const sortedPicks = [...picks].sort((a, b) => {
     const aSeason = Number(a.season || 0);
@@ -125,7 +121,6 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
   positions.forEach(pos => { playersByPosition[pos] = []; });
   playerList.forEach(player => {
     const pos = positions.includes(player.position) ? player.position : null;
-    console.log('Player:', player.name, 'Position:', player.position, 'Matched:', pos);
     if (pos) {
       playersByPosition[pos].push(player);
     }
@@ -138,10 +133,6 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
       return rankA - rankB;
     });
   });
-  
-  console.log('Players by position:', Object.entries(playersByPosition).map(([pos, players]) => 
-    `${pos}: ${players.length} players`
-  ).join(', '));
 
   const isMobile = useIsMobile();
 
@@ -209,9 +200,7 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
                       className="player-list-item player-list-item-flex player-clickable"
                       onClick={() => setSelectedPlayer(p)}
                     >
-                      {p.espn_photo_url && (
-                        <img src={p.espn_photo_url} alt={p.name} className="player-avatar player-avatar-style" />
-                      )}
+                      <img src={getPlayerLogoUrl(p.espn_photo_url)} alt={p.name} className="player-avatar player-avatar-style" />
                       <span className="player-name">{p.name}</span>
                     </li>
                   ))}

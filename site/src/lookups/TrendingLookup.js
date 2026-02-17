@@ -26,8 +26,7 @@ export async function fetchTrendingPlayers() {
     cacheTimestamp = now;
     
     return data;
-  } catch (error) {
-    console.error('Error fetching trending players:', error);
+  } catch (_) {
     // Return cached data even if stale, or empty array if no cache
     return cachedTrendingData || [];
   }

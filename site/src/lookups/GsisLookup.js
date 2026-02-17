@@ -93,7 +93,6 @@ export async function loadPlayerIdsMapping() {
     cachedPlayerIdsMapping = { sleeperToEspn };
     return cachedPlayerIdsMapping;
   } catch (error) {
-    console.error('Error loading player_ids mapping:', error);
     throw error;
   }
 }
@@ -179,7 +178,6 @@ export async function loadGsisMappingCSV() {
     
     return cachedGsisMapping;
   } catch (error) {
-    console.error('Error loading GSIS mapping:', error);
     throw error;
   }
 }

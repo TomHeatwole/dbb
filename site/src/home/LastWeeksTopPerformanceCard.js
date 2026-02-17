@@ -8,6 +8,7 @@ import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
   const [loading, setLoading] = useState(true);
@@ -236,13 +237,11 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
                     {Number(item.points || 0).toFixed(1)}
                     <span className="week-stars-points-units"> pts</span>
                   </span>
-                  {item.playerPhotoUrl && (
-                    <img
-                      className="week-stars-player-avatar"
-                      src={item.playerPhotoUrl}
-                      alt={item.playerName}
-                    />
-                  )}
+                  <img
+                    className="week-stars-player-avatar"
+                    src={getPlayerLogoUrl(item.playerPhotoUrl)}
+                    alt={item.playerName}
+                  />
                   <span className="week-stars-player-name">
                     {item.playerName}
                   </span>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchTrendingPlayers } from '../lookups/TrendingLookup';
 import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -24,8 +25,7 @@ function TrendingPlayers() {
         setPlayersData(players);
         setPlayerIdMap(idMap);
       })
-      .catch((err) => {
-        console.error('Error loading data:', err);
+      .catch(() => {
         setError('Failed to load trending players');
       })
       .finally(() => setLoading(false));
@@ -61,7 +61,7 @@ function TrendingPlayers() {
                 const playerName = playerInfo ? playerInfo.name : `Player ${item.player_id}`;
                 const position = playerInfo ? playerInfo.position : '';
                 const team = playerInfo ? (playerInfo.team || playerInfo.team_abbr) : '';
-                const img = playerInfo ? playerInfo.espn_photo_url : null;
+                const img = getPlayerLogoUrl(playerInfo ? playerInfo.espn_photo_url : null);
                 
                 return (
                   <tr key={item.player_id} className="player-breakdown-row">
@@ -74,7 +74,7 @@ function TrendingPlayers() {
                     </td>
                     <td>
                       <div className="player-breakdown-name">
-                        {!isMobile && img && (
+                        {!isMobile && (
                           <img src={img} alt={playerName} className="player-breakdown-avatar" />
                         )}
                         <span>

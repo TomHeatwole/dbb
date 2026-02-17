@@ -13,6 +13,7 @@ import MatchupWeekView from './MatchupWeekView';
 import { fetchInjuriesForWeek, getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { readPlayersSnapshot } from '../utils/database';
 import { createLiveScoresPoller } from '../utils/livePolling';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 import LoadingState from '../LoadingState';
 
 function resolveTeamMeta(teamData, rosterId) {
@@ -704,13 +705,13 @@ function MatchupView({
       const snapshotTeam = playersTeamMapForWeek[String(slot.id)];
       const teamAbbr = snapshotTeam || gameObj.team || (info && (info.team || info.team_abbr)) || null;
 
-      const avatarNode = info && info.espn_photo_url ? (
+      const avatarNode = (
         <img
           className="player-avatar player-avatar-style team-scores-player-img-margin"
-          src={info.espn_photo_url}
-          alt={info.name}
+          src={getPlayerLogoUrl(info && info.espn_photo_url)}
+          alt={info && info.name ? info.name : ''}
         />
-      ) : null;
+      );
 
       const nameNode = (
         <span className="player-name">

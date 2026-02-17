@@ -2,6 +2,7 @@ import React from 'react';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
+import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 
 export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, totalsPlacement = 'bottom', playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
@@ -95,9 +96,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               <tr key={p.id}>
                 <td className="team-scores-pos-cell">{posLabel}</td>
                 <td className="team-scores-player-cell">
-                  {info && info.espn_photo_url && (
-                    <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
-                  )}
+                  <img src={getPlayerLogoUrl(info && info.espn_photo_url)} alt={info && info.name ? info.name : ''} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                   <span className="player-name">
                     {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
                     {info && info.position ? ` (${info.position})` : ''}
@@ -193,9 +192,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               return (
                 <tr key={p.id}>
                   <td className="team-scores-player-cell">
-                    {info && info.espn_photo_url && (
-                      <img src={info.espn_photo_url} alt={info.name} className="player-avatar player-avatar-style team-scores-player-img-margin" />
-                    )}
+                    <img src={getPlayerLogoUrl(info && info.espn_photo_url)} alt={info && info.name ? info.name : ''} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                     <span className="player-name">
                       {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
                       {info && info.position ? ` (${info.position})` : ''}

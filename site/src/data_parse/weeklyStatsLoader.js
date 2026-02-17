@@ -28,7 +28,6 @@ export async function fetchWeeklyStats(season, week) {
     const response = await fetch(`https://api.sleeper.app/v1/stats/nfl/regular/${season}/${week}`);
     
     if (!response.ok) {
-      console.warn(`Failed to fetch stats for ${season} week ${week}: ${response.status}`);
       return {};
     }
 
@@ -38,8 +37,7 @@ export async function fetchWeeklyStats(season, week) {
     weeklyStatsCache[cacheKey] = stats || {};
     
     return weeklyStatsCache[cacheKey];
-  } catch (error) {
-    console.error(`Error fetching stats for ${season} week ${week}:`, error.message);
+  } catch (_) {
     return {};
   }
 }

@@ -71,8 +71,7 @@ export async function loadSeasonStatsFromCSV(season, player) {
     }
     
     return null;
-  } catch (err) {
-    console.error(`Error loading season stats for ${season}:`, err);
+  } catch (_) {
     return null;
   }
 }
