@@ -5668,3 +5668,216 @@ body.modal-open {
   font-size: 0.75rem;
   color: #a0aec0;
 } 
+/* Player Weekly Scores Component */
+.player-weekly-card {
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.player-card-content-expanded {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.player-card-info-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.player-card-details-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.player-detail-inline {
+  white-space: nowrap;
+}
+
+.player-detail-inline:not(:last-child)::after {
+  content: "•";
+  margin-left: 0.75rem;
+  opacity: 0.5;
+}
+
+.player-injury-status {
+  color: #ff6b6b !important;
+  font-weight: 600;
+}
+
+.player-weekly-header {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-season-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.player-season-dropdown:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.player-season-dropdown-arrow {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.player-season-dropdown-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 120px;
+  background: #1a1d23;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.player-season-dropdown-option {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.player-season-dropdown-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.player-season-dropdown-option-active {
+  background: rgba(29, 185, 84, 0.15);
+  color: #1db954;
+  font-weight: 600;
+}
+
+.player-weekly-summary {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-weekly-stat {
+  flex: 1;
+  text-align: center;
+}
+
+.player-weekly-stat-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.player-weekly-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1db954;
+}
+
+.player-weekly-table-container {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.player-weekly-table-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.player-weekly-table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.player-weekly-table-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.player-weekly-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.player-weekly-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.player-weekly-table thead {
+  position: sticky;
+  top: 0;
+  background: #1a1d23;
+  z-index: 10;
+}
+
+.player-weekly-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.8);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.player-weekly-table th:last-child,
+.player-weekly-table td:last-child {
+  text-align: right;
+}
+
+.player-weekly-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s;
+}
+
+.player-weekly-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.player-weekly-table td {
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+}
+
+.player-weekly-points {
+  font-weight: 600;
+  color: #fff;
+}
+
+.player-weekly-zero td {
+  opacity: 0.4;
+}
+
+.player-weekly-zero .player-weekly-points {
+  color: rgba(255, 255, 255, 0.3);
+}

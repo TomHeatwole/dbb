@@ -17,6 +17,13 @@ function PlayerWeeklyScores({ player, onClose }) {
   const position = player && player.position ? player.position : '';
   const team = player && (player.team || player.team_abbr) ? (player.team || player.team_abbr) : null;
   const playerId = player && player.player_id ? player.player_id : null;
+  const age = player && player.age ? player.age : null;
+  const birthday = player && player.birth_date ? player.birth_date : null;
+  const injury = player && player.injury_status ? player.injury_status : null;
+  const yearsExp = player && player.years_exp ? player.years_exp : null;
+  const rookieYear = player && player.metadata && player.metadata.rookie_year ? player.metadata.rookie_year : null;
+  const college = player && player.college ? player.college : null;
+  const highSchool = player && player.high_school ? player.high_school : null;
 
   useEffect(() => {
     setLoading(true);
@@ -86,15 +93,27 @@ function PlayerWeeklyScores({ player, onClose }) {
         </button>
       )}
       
-      <div className="player-card-content">
+      <div className="player-card-content player-card-content-expanded">
         {hasPhoto && (
           <img src={player.espn_photo_url} alt={name} className="player-card-photo" />
         )}
-        <div className="player-card-text">
-          <div className="player-card-name">{name}</div>
-          <div className="player-card-position">
-            {position}
-            {team && ` • ${team}`}
+        <div className="player-card-info-wrapper">
+          <div className="player-card-text">
+            <div className="player-card-name">{name}</div>
+            <div className="player-card-position">
+              {position}
+              {team && ` • ${team}`}
+            </div>
+          </div>
+          
+          <div className="player-card-details-inline">
+            {age && <span className="player-detail-inline">Age {age}</span>}
+            {birthday && <span className="player-detail-inline">{birthday}</span>}
+            {yearsExp && <span className="player-detail-inline">{yearsExp} yr{yearsExp !== 1 ? 's' : ''} exp</span>}
+            {rookieYear && <span className="player-detail-inline">Rookie {rookieYear}</span>}
+            {college && <span className="player-detail-inline">{college}</span>}
+            {highSchool && <span className="player-detail-inline">{highSchool}</span>}
+            {injury && <span className="player-detail-inline player-injury-status">{injury}</span>}
           </div>
         </div>
       </div>
