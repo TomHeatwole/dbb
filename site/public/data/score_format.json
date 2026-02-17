@@ -13,7 +13,7 @@
     "rushing_2pt_conversions": 2,
     "receiving_yards": 0.1,
     "receiving_tds": 6,
-    "receptions": 1,
+    "receptions": 0,
     "receiving_fumbles_lost": -2,
     "receiving_2pt_conversions": 2,
     "sack_fumbles_lost": -2,
@@ -30,6 +30,14 @@
     "def_safeties": 2,
     "special_teams_tds": 6
   },
+  "position_specific_scoring": {
+    "receptions": {
+      "TE": 0.5,
+      "WR": 0,
+      "RB": 0,
+      "QB": 0
+    }
+  },
   "bonuses": {
     "passing_300_bonus": 0,
     "passing_400_bonus": 0,
@@ -37,7 +45,7 @@
     "receiving_100_bonus": 0
   },
   "notes": [
-    "PPR scoring (1 point per reception)",
+    "TE Premium scoring (1.5 points per reception for TEs, 1.0 for WR/RB)",
     "4pt passing TDs",
     "Bonuses for 300+ passing yards, 100+ rushing/receiving yards",
     "Standard fumble penalties (-2 per fumble lost)",

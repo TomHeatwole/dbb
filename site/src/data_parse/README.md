@@ -170,6 +170,12 @@ const result = await fs.calculateForPlayer('6462', 2024, customTEPremium);
 - PPR scoring with 6 pts per passing TD instead of 4
 - Includes yardage bonuses (300+, 400+, 100+ rushing/receiving)
 
+### TE Premium
+- PPR scoring with position-specific reception points
+- TEs get 1.5 points per reception
+- WRs and RBs get 1.0 point per reception
+- Perfect for leagues that value tight ends more highly
+
 ### Kicker
 - 3 pts per FG, 1 pt per PAT
 - Bonus points for 50+ yard FGs
