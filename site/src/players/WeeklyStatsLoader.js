@@ -1,6 +1,29 @@
 // Helper to load season stats from CSV files
 // Note: These files contain season aggregates, not week-by-week data
 
+// Parse CSV line handling quoted fields
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current);
+  return result;
+}
+
 export async function loadSeasonStatsFromCSV(season, player) {
   try {
     // Use gsis_id to match CSV records (trim leading space)
@@ -24,7 +47,7 @@ export async function loadSeasonStatsFromCSV(season, player) {
     }
     
     // Parse header
-    const headers = lines[0].split(',');
+    const headers = parseCSVLine(lines[0]);
     const playerIdIdx = headers.indexOf('player_id');
     
     if (playerIdIdx === -1) {
@@ -33,7 +56,7 @@ export async function loadSeasonStatsFromCSV(season, player) {
     
     // Find the player's row using gsis_id
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',');
+      const values = parseCSVLine(lines[i]);
       
       if (values[playerIdIdx] === gsis_id) {
         const row = {};

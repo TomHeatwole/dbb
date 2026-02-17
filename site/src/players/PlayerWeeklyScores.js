@@ -3,6 +3,7 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
 import { loadSeasonStatsFromCSV, mapCSVStatsToSleeperFormat } from './WeeklyStatsLoader';
+import useIsMobile from '../hooks/useIsMobile';
 
 function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const [season, setSeason] = useState(CURRENT_YEAR);
@@ -13,6 +14,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const [error, setError] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const isMobile = useIsMobile();
 
   const playerId = player && player.player_id ? player.player_id : null;
   const rookieYear = player && player.metadata && player.metadata.rookie_year ? player.metadata.rookie_year : null;
@@ -130,7 +132,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
     };
 
     fetchWeeklyStats();
-  }, [weeksParsedData, playerId, season, totalWeeks, loading]);
+  }, [weeksParsedData, playerId, season, totalWeeks, loading, player]);
 
   const totalPoints = weeklyScores.reduce((sum, w) => sum + w.points, 0);
   const gamesPlayed = weeklyScores.filter(w => w.points > 0).length;
@@ -255,16 +257,18 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
           )}
         </div>
         
-        <div className="player-ownership-info">
-          {ownershipInfo ? (
-            <>
-              {ownershipInfo.avatar && <img src={ownershipInfo.avatar} alt={ownershipInfo.teamName} className="player-ownership-avatar" />}
-              <span className="player-ownership-team">{ownershipInfo.teamName}</span>
-            </>
-          ) : (
-            <span className="player-ownership-free-agent">Free Agent</span>
-          )}
-        </div>
+        {!isMobile && (
+          <div className="player-ownership-info">
+            {ownershipInfo ? (
+              <>
+                {ownershipInfo.avatar && <img src={ownershipInfo.avatar} alt={ownershipInfo.teamName} className="player-ownership-avatar" />}
+                <span className="player-ownership-team">{ownershipInfo.teamName}</span>
+              </>
+            ) : (
+              <span className="player-ownership-free-agent">Free Agent</span>
+            )}
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -281,30 +285,22 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
           
           {seasonStats ? (
             <div className="player-season-aggregate">
-              <div className="player-season-stats-summary">
-                <div className="player-season-stat-card">
-                  <div className="player-season-stat-label">Season Total</div>
-                  <div className="player-season-stat-value">{seasonStats.totalPoints.toFixed(1)} pts</div>
+              <div className="player-season-stats-grid">
+                <div className="player-season-detail player-season-detail-total">
+                  <span className="player-season-detail-label">Season Total</span>
+                  <span className="player-season-detail-value">{seasonStats.totalPoints.toFixed(1)} pts</span>
                 </div>
+                {seasonStats.stats && statsColumns.map(col => {
+                  const value = seasonStats.stats[col.key];
+                  if (!value || value === 0) return null;
+                  return (
+                    <div key={col.key} className="player-season-detail">
+                      <span className="player-season-detail-label">{col.label}</span>
+                      <span className="player-season-detail-value">{col.format(value)}</span>
+                    </div>
+                  );
+                })}
               </div>
-              
-              {seasonStats.stats && (
-                <>
-                  <div className="player-season-divider"></div>
-                  <div className="player-season-stats-grid">
-                    {statsColumns.map(col => {
-                      const value = seasonStats.stats[col.key];
-                      if (!value || value === 0) return null;
-                      return (
-                        <div key={col.key} className="player-season-detail">
-                          <span className="player-season-detail-label">{col.label}</span>
-                          <span className="player-season-detail-value">{col.format(value)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
             </div>
           ) : (
             <div style={{ padding: '20px', color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center' }}>
@@ -343,7 +339,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
               <tbody>
                 {weeklyScores.map(({ week, points, stats }) => (
                   <tr key={week} className={points > 0 ? '' : 'player-weekly-zero'}>
-                    <td>Week {week}</td>
+                    <td>{isMobile ? week : `Week ${week}`}</td>
                     {statsColumns.map(col => (
                       <td key={col.key} className="player-weekly-stat">
                         {stats ? col.format(stats[col.key]) : '-'}

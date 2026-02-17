@@ -5930,48 +5930,30 @@ body.modal-open {
   color: rgba(255, 255, 255, 0.3);
 }
 
+/* Mobile-specific styles for player weekly table */
+@media (max-width: 50em) {
+  .player-weekly-table th {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.5rem;
+  }
+  
+  .player-weekly-table td {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.55rem;
+  }
+  
+  .player-weekly-stat {
+    font-size: 0.55rem;
+  }
+  
+  .player-weekly-points {
+    font-size: 0.55rem;
+  }
+}
+
 /* Player Season Aggregate View (for pre-2024 years) */
 .player-season-aggregate {
   padding: 1.5rem;
-}
-
-.player-season-stats-summary {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-}
-
-.player-season-stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.5rem 3rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  text-align: center;
-  min-width: 200px;
-}
-
-.player-season-stat-label {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.player-season-stat-value {
-  font-size: 1.75rem;
-  color: #1db954;
-  font-weight: 700;
-}
-
-.player-season-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0.5rem 0 1.5rem 0;
 }
 
 .player-season-stats-grid {
@@ -5990,6 +5972,11 @@ body.modal-open {
   text-align: center;
 }
 
+.player-season-detail-total {
+  background: rgba(29, 185, 84, 0.1);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+}
+
 .player-season-detail-label {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.5);
@@ -6005,16 +5992,12 @@ body.modal-open {
   font-weight: 700;
 }
 
+.player-season-detail-total .player-season-detail-value {
+  color: #1db954;
+  font-size: 1.5rem;
+}
+
 @media (max-width: 50em) {
-  .player-season-stats-summary {
-    margin-bottom: 1rem;
-  }
-  
-  .player-season-stat-card {
-    padding: 1.25rem 2rem;
-    min-width: 150px;
-  }
-  
   .player-season-stats-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }

@@ -383,7 +383,7 @@ function LeagueScores() {
 				}
 			});
 		return () => { cancelled = true; };
-	}, [season, week, playersData, playerIdMap, weeksParsedData, playersTeamMap]);
+	}, [season, week, playersData, playerIdMap, weeksParsedData, rosters, playersTeamMap]);
 
 	// Align prevData baseline with first-loaded playerGameLabels for this season/week
 	useEffect(() => {
