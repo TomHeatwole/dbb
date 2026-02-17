@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
-import { CURRENT_YEAR, getCurrentNFLWeek, isPostSeasonPreDraft } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, isPostSeasonPreDraft, getCompletedWeeksCount } from '../utils/DateHelper';
 import { LEAGUE_ID } from '../utils/global_constants';
 import { StartSitSort } from '../players/StartSitDecider';
 import FullRoster from './FullRoster';
@@ -18,9 +18,16 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
   const [tradedPicks, setTradedPicks] = useState([]);
   const [draftOrder, setDraftOrder] = useState(null); // Map of rosterId -> pick number (1-10)
   const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
+  const completedWeeks = getCompletedWeeksCount(urlYear || CURRENT_YEAR);
+  const isPreSeason = isCurrentSeason && completedWeeks === 0;
   const rosterIdToTeamInfo = useMemo(() => {
     return buildRosterIdToTeamInfoMap(rosters, users);
   }, [rosters, users]);
+  
+  console.log('=== TeamSummary rendered ===');
+  console.log('playerList length:', playerList.length);
+  console.log('playerList sample:', playerList.slice(0, 3));
+  console.log('isPreSeason:', isPreSeason);
 
   // Load traded picks for this team in the summary (Overview) tab and log them for now
   useEffect(() => {
@@ -256,11 +263,11 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
       <LoadingState label="Loading summary…" />
     );
   }
-  if (!weeksParsedData) return <div>No summary data found.</div>;
 
   return (
     <div className="team-summary-root">
-      {myStanding ? (
+      {/* Only show standings if we have matchup data AND we're not in pre-season */}
+      {myStanding && !isPreSeason ? (
         <>
           <div className="team-summary-place">
             Place: #{myStanding.place}
@@ -273,27 +280,31 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           <div className="team-summary-points">
             {myStanding.points_scored} Fantasy Points
           </div>
-          {isCurrentSeason ? (
-            <FullRoster 
-              playerList={playerList} 
-              positions={['QB', 'WR', 'RB', 'TE', 'Picks']} 
-              picks={tradedPicks}
-              draftOrder={draftOrder}
-              nextDraftYear={String(Number(CURRENT_YEAR) + 1)}
-              rosters={rosters}
-              users={users}
-            />
-          ) : (
-            <FullRoster 
-              playerList={playerList} 
-              positions={['QB', 'WR', 'RB', 'TE']}
-              rosters={rosters}
-              users={users}
-            />
-          )}
         </>
+      ) : isPreSeason ? (
+        <div className="team-summary-preseason">
+          Season hasn't started yet
+        </div>
+      ) : null}
+      
+      {/* Always render roster if we have player data */}
+      {isCurrentSeason ? (
+        <FullRoster 
+          playerList={playerList} 
+          positions={['QB', 'WR', 'RB', 'TE', 'Picks']} 
+          picks={tradedPicks}
+          draftOrder={draftOrder}
+          nextDraftYear={String(Number(CURRENT_YEAR) + 1)}
+          rosters={rosters}
+          users={users}
+        />
       ) : (
-        <div>No data for this team.</div>
+        <FullRoster 
+          playerList={playerList} 
+          positions={['QB', 'WR', 'RB', 'TE']}
+          rosters={rosters}
+          users={users}
+        />
       )}
     </div>
   );

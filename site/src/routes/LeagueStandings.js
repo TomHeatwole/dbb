@@ -23,10 +23,19 @@ const OG_DESCRIPTION = '';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
+function getAvailableYearsAndDefault() {
+  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
+  const prevYears = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
+  const availableYears = isPreSeason ? prevYears : allYears;
+  const defaultSeason = isPreSeason && prevYears.length > 0 ? prevYears[0] : CURRENT_YEAR;
+  return { availableYears, defaultSeason, isPreSeason };
+}
+
 function LeagueStandings() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { availableYears, defaultSeason, isPreSeason } = getAvailableYearsAndDefault();
   const urlYear = searchParams.get('year');
-  const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
+  const initialSeason = urlYear && availableYears.includes(urlYear) ? urlYear : defaultSeason;
   const [season, setSeason] = useState(initialSeason);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -76,13 +85,16 @@ function LeagueStandings() {
   }, [dropdownOpen]);
 
   useEffect(() => {
-    if (urlYear && allYears.includes(urlYear) && season !== urlYear) {
+    if (urlYear && availableYears.includes(urlYear) && season !== urlYear) {
       setSeason(urlYear);
       setDropdownOpen(false);
     }
-    if (!urlYear && season !== CURRENT_YEAR) {
-      setSeason(CURRENT_YEAR);
-      setDropdownOpen(false);
+    if (!urlYear) {
+      const target = isPreSeason ? defaultSeason : CURRENT_YEAR;
+      if (season !== target) {
+        setSeason(target);
+        setDropdownOpen(false);
+      }
     }
     // eslint-disable-next-line
   }, [urlYear]);
@@ -91,7 +103,7 @@ function LeagueStandings() {
     if (season === CURRENT_YEAR) {
       searchParams.delete('year');
       setSearchParams(searchParams, { replace: true });
-    } else if (allYears.includes(season)) {
+    } else if (availableYears.includes(season)) {
       searchParams.set('year', season);
       setSearchParams(searchParams, { replace: true });
     }
@@ -482,7 +494,7 @@ function LeagueStandings() {
       <span className="team-season-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
       {dropdownOpen && (
         <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-          {allYears.map(opt => (
+          {availableYears.map(opt => (
             <div
               key={opt}
               className={'team-season-dropdown-option' + (opt === season ? ' team-season-dropdown-option-active' : '')}

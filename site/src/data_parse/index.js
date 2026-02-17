@@ -80,7 +80,7 @@ export class FantasyScoring {
     await this.init();
     const stats = await this.loadSeasonStats(season);
     
-    const playerStats = getPlayerStatsByPlayerId(stats, this.playersData, playerId);
+    const playerStats = await getPlayerStatsByPlayerId(stats, this.playersData, playerId);
     if (!playerStats) {
       return {
         success: false,

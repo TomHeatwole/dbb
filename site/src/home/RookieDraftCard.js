@@ -13,12 +13,19 @@ import { LOGO_LETTER_OVERLAY } from '../utils/global_constants';
 
 function RookieDraftCard() {
   const isMobile = useIsMobile();
-  const draftYear = useMemo(() => {
+  // When pre-season (current season hasn't started): show upcoming draft (CURRENT_YEAR) based on previous year.
+  // When in-season/off-season: show next year's draft (CURRENT_YEAR + 1) based on current year.
+  const { seasonForOrder, draftYear } = useMemo(() => {
     const n = Number(CURRENT_YEAR);
     if (!Number.isFinite(n)) {
-      return CURRENT_YEAR;
+      return { seasonForOrder: CURRENT_YEAR, draftYear: CURRENT_YEAR };
     }
-    return String(n + 1);
+    const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
+    const isPreSeason = completedWeeks === 0;
+    if (isPreSeason) {
+      return { seasonForOrder: String(n - 1), draftYear: String(n) };
+    }
+    return { seasonForOrder: String(n), draftYear: String(n + 1) };
   }, []);
 
   const [loading, setLoading] = useState(true);
@@ -48,7 +55,7 @@ function RookieDraftCard() {
       setLoading(true);
       setError(null);
       try {
-        const season = CURRENT_YEAR;
+        const season = seasonForOrder;
         const seasonNum = Number(season);
         const draftYearNum = Number(draftYear);
         if (!Number.isFinite(seasonNum) || !Number.isFinite(draftYearNum)) {
@@ -172,7 +179,7 @@ function RookieDraftCard() {
     return () => {
       cancelled = true;
     };
-  }, [draftYear]);
+  }, [seasonForOrder, draftYear]);
 
   const title = `👨🏿‍🎓 ${draftYear} Rookie Draft`;
 

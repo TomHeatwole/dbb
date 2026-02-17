@@ -26,8 +26,11 @@ function parseCSVLine(line) {
 
 export async function loadSeasonStatsFromCSV(season, player) {
   try {
-    // Use gsis_id to match CSV records (trim leading space)
-    const gsis_id = player?.gsis_id?.trim();
+    // Import the GSIS lookup service
+    const { getGsisIdFromSleeperPlayer } = await import('../lookups/GsisLookup');
+    
+    // Get GSIS ID from Sleeper player (with fallback to name matching)
+    const gsis_id = await getGsisIdFromSleeperPlayer(player);
     if (!gsis_id) {
       return null;
     }

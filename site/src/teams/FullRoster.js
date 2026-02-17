@@ -88,6 +88,11 @@ function getPickNumberForSort(pick, draftOrder, nextDraftYear) {
 }
 
 function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = [], draftOrder = null, nextDraftYear = null, rosters = null, users = null }) {
+  console.log('=== FullRoster rendered ===');
+  console.log('playerList:', playerList);
+  console.log('positions:', positions);
+  console.log('picks:', picks);
+  
   // Sort picks by year, round, and then pick number (for draft order)
   const sortedPicks = [...picks].sort((a, b) => {
     const aSeason = Number(a.season || 0);
@@ -120,6 +125,7 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
   positions.forEach(pos => { playersByPosition[pos] = []; });
   playerList.forEach(player => {
     const pos = positions.includes(player.position) ? player.position : null;
+    console.log('Player:', player.name, 'Position:', player.position, 'Matched:', pos);
     if (pos) {
       playersByPosition[pos].push(player);
     }
@@ -132,6 +138,10 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
       return rankA - rankB;
     });
   });
+  
+  console.log('Players by position:', Object.entries(playersByPosition).map(([pos, players]) => 
+    `${pos}: ${players.length} players`
+  ).join(', '));
 
   const isMobile = useIsMobile();
 

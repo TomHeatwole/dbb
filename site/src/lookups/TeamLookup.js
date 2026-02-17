@@ -10,9 +10,14 @@ function getAvatarUrl(avatarVal) {
 }
 
 export async function fetchTeamData(season = getCurrentYear()) {
-  const currentYear = getCurrentYear();
+  const currentYear = String(getCurrentYear());
   const normalizedSeason = String(season);
-  const leagueId = String(currentYear) === normalizedSeason ? LEAGUE_ID : PREVIOUS_YEARS[normalizedSeason];
+  // Prefer PREVIOUS_YEARS when that season exists (handles pre-season when LEAGUE_ID
+  // is already the new year but we want last year's data).
+  const leagueId = PREVIOUS_YEARS[normalizedSeason] ?? (normalizedSeason === currentYear ? LEAGUE_ID : null);
+  if (!leagueId) {
+    throw new Error(`No league ID found for season ${normalizedSeason}`);
+  }
 
   // Fetch rosters
   const rosterRes = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
@@ -108,9 +113,10 @@ export function buildRosterIdToTeamInfoMap(rosters, users) {
 // Fetch traded draft picks for a given season, normalized into a simple structure
 // Example item: { round: 2, season: '2025', roster_id: 1, owner_id: 4, previous_owner_id: 1 }
 export async function fetchTradedPicks(season = getCurrentYear()) {
-  const currentYear = getCurrentYear();
+  const currentYear = String(getCurrentYear());
   const normalizedSeason = String(season);
-  const leagueId = String(currentYear) === normalizedSeason ? LEAGUE_ID : PREVIOUS_YEARS[normalizedSeason];
+  // Prefer PREVIOUS_YEARS when that season exists (handles pre-season when LEAGUE_ID is new year)
+  const leagueId = PREVIOUS_YEARS[normalizedSeason] ?? (normalizedSeason === currentYear ? LEAGUE_ID : null);
 
   if (!leagueId) {
     throw new Error(`No league id found for season ${normalizedSeason}`);

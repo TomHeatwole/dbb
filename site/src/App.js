@@ -25,6 +25,8 @@ import YoffsPage from './routes/YoffsPage';
 import H2hPage from './routes/h2h';
 import NotesPage from './routes/NotesPage';
 import ScenariosPage from './routes/ScenariosPage';
+import SandboxPage from './routes/SandboxPage';
+import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 function MobileTopNav() {
   return (
@@ -80,10 +82,22 @@ function AppInner() {
       <Route path="/standings" element={<LeagueStandings />} />
       <Route path="/Scores/Week" element={<LeagueScores />} />
       <Route path="/admincontrols" element={<AdminControls />} />
-      <Route path="/yoffs" element={<YoffsPage />} />
-      <Route path="/h2h" element={<H2hPage />} />
       <Route path="/notes" element={<NotesPage />} />
-      <Route path="/scenarios" element={<ScenariosPage />} />
+      
+      {/* Conditionally rendered routes based on feature toggles */}
+      {isFeatureEnabled('SCENARIOS_ENABLED', MAIN_FEATURES) && (
+        <Route path="/scenarios" element={<ScenariosPage />} />
+      )}
+      {isFeatureEnabled('PLAYOFFS_ENABLED', MAIN_FEATURES) && (
+        <Route path="/yoffs" element={<YoffsPage />} />
+      )}
+      {isFeatureEnabled('HEAD_TO_HEAD_ENABLED', MAIN_FEATURES) && (
+        <Route path="/h2h" element={<H2hPage />} />
+      )}
+      
+      {/* Sandbox is always available for development */}
+      <Route path="/sandbox" element={<SandboxPage />} />
+      
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
   );

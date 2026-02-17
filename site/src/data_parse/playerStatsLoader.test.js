@@ -106,35 +106,35 @@ describe('Player Stats Loader', () => {
   });
 
   describe('getPlayerStatsByPlayerId', () => {
-    it('should find player stats by player ID from players.txt', () => {
-      const stats = getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '6462');
+    it('should find player stats by player ID from players.txt', async () => {
+      const stats = await getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '6462');
       
       expect(stats).not.toBeNull();
       expect(stats.player_display_name).toBe('Aaron Rodgers');
       expect(stats.position).toBe('QB');
     });
 
-    it('should handle GSIS ID with leading space in players data', () => {
-      const stats = getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '7890');
+    it('should handle GSIS ID with leading space in players data', async () => {
+      const stats = await getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '7890');
       
       expect(stats).not.toBeNull();
       expect(stats.player_display_name).toBe('Matthew Stafford');
     });
 
-    it('should return null for player not in stats array', () => {
-      const stats = getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '9999');
+    it('should return null for player not in stats array', async () => {
+      const stats = await getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '9999');
       
       expect(stats).toBeNull();
     });
 
-    it('should return null for player without GSIS ID', () => {
-      const stats = getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '1111');
+    it('should return null for player without GSIS ID', async () => {
+      const stats = await getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, '1111');
       
       expect(stats).toBeNull();
     });
 
-    it('should return null for non-existent player ID', () => {
-      const stats = getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, 'invalid');
+    it('should return null for non-existent player ID', async () => {
+      const stats = await getPlayerStatsByPlayerId(mockStatsArray, mockPlayersData, 'invalid');
       
       expect(stats).toBeNull();
     });

@@ -25,15 +25,26 @@ function PreviousYearRecapCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [resultsRows, setResultsRows] = useState(null); // [{ key, label, rosterId, teamName, avatarUrl }]
+  const loadIdRef = React.useRef(0);
+
+  // Season we're displaying: when pre-season, the completed previous year; otherwise current year
+  const displaySeason =
+    getCompletedWeeksCount(CURRENT_YEAR) === 0
+      ? String(Number(CURRENT_YEAR) - 1)
+      : CURRENT_YEAR;
 
   useEffect(() => {
+    loadIdRef.current += 1;
+    const currentLoadId = loadIdRef.current;
     let cancelled = false;
 
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const season = CURRENT_YEAR;
+        // When pre-season (current season hasn't started), recap the previous year
+        const completedWeeksCurrent = getCompletedWeeksCount(CURRENT_YEAR);
+        const season = completedWeeksCurrent === 0 ? String(Number(CURRENT_YEAR) - 1) : CURRENT_YEAR;
 
         const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),
@@ -57,7 +68,9 @@ function PreviousYearRecapCard() {
         const completedWeeks = getCompletedWeeksCount(season);
         const playoffsCompleted = Number.isFinite(completedWeeks) && completedWeeks >= PLAYOFF_END_WEEK;
         if (!playoffsCompleted) {
-          setResultsRows(null);
+          if (currentLoadId === loadIdRef.current && !cancelled) {
+            setResultsRows((prev) => (prev && prev.length >= 3 ? prev : null));
+          }
           setLoading(false);
           return;
         }
@@ -73,7 +86,9 @@ function PreviousYearRecapCard() {
           .sort((a, b) => (a.place || 999) - (b.place || 999))
           .slice(0, 4);
         if (top4Regular.length < 4) {
-          setResultsRows(null);
+          if (currentLoadId === loadIdRef.current && !cancelled) {
+            setResultsRows((prev) => (prev && prev.length >= 3 ? prev : null));
+          }
           setLoading(false);
           return;
         }
@@ -229,12 +244,14 @@ function PreviousYearRecapCard() {
           });
         }
 
-        setResultsRows(rows);
+        if (currentLoadId === loadIdRef.current && !cancelled) {
+          setResultsRows(rows);
+        }
         setLoading(false);
       } catch (_) {
-        if (!cancelled) {
+        if (!cancelled && currentLoadId === loadIdRef.current) {
           setError('Unable to load season recap right now.');
-          setResultsRows(null);
+          setResultsRows((prev) => (prev && prev.length >= 3 ? prev : null));
           setLoading(false);
         }
       }
@@ -247,7 +264,7 @@ function PreviousYearRecapCard() {
     };
   }, []);
 
-  const title = `🏁 ${CURRENT_YEAR} Results`;
+  const title = `🏁 ${displaySeason} Results`;
 
   let body = null;
   if (loading) {
@@ -296,7 +313,7 @@ function PreviousYearRecapCard() {
         <h2 className="home-card-title">{title}</h2>
         <div className="home-card-body">{body}</div>
         <div className="active-playoffs-link-row">
-          <Link className="active-playoffs-link" to={`/yoffs?year=${CURRENT_YEAR}&format=bracket&tab=Bracket`}>
+          <Link className="active-playoffs-link" to={`/yoffs?year=${displaySeason}&format=bracket&tab=Bracket`}>
             View Playoffs →
           </Link>
         </div>

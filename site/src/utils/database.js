@@ -5,7 +5,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getDatabase, ref, set, get, remove } from 'firebase/database';
 import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL, FIREBASE_LOGIN_EMAIL, FIREBASE_LOGIN_PASSWORD, FIREBASE_API_KEY } from './global_constants';
-import { CURRENT_YEAR, getCurrentNFLWeek } from './DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from './DateHelper';
 
 // Use settings-provided API key first, fallback to env
 const firebaseConfig = {
@@ -225,7 +225,14 @@ export async function updatePlayers(caredPlayerIds) {
   }
   const season = String(CURRENT_YEAR);
   const week = getCurrentNFLWeek(season);
-  const basePath = `players_${season}_week_${week}`;
+  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
+  const isPreSeason = completedWeeks === 0;
+  
+  // Include preseason flag AND version in cache path to bust old cache
+  // v2: includes inactive players in pre-season
+  const basePath = isPreSeason ? `players_${season}_week_${week}_preseason_v2` : `players_${season}_week_${week}`;
+
+  console.log('updatePlayers: isPreSeason:', isPreSeason, 'basePath:', basePath, 'requesting', caredPlayerIds.length, 'player IDs');
 
   // Check latest entry under the week folder with 1-hour TTL
   try {
@@ -235,11 +242,25 @@ export async function updatePlayers(caredPlayerIds) {
       const value = weekSnap.val() || {};
       const fetchedAtMs = value && value.fetchedAt ? Date.parse(value.fetchedAt) : NaN;
       const ageMs = isNaN(fetchedAtMs) ? Infinity : (Date.now() - fetchedAtMs);
-      if (ageMs <= 60 * 60 * 1000) {
+      const cachedPlayerCount = value && value.data ? Object.keys(value.data).length : 0;
+      console.log('updatePlayers: Found cached data, age:', Math.round(ageMs/1000), 'seconds, players:', cachedPlayerCount);
+      
+      // Smart cache invalidation: if cache has 0 players but we're requesting many,
+      // the cache is likely from old buggy code - refetch
+      const requestedCount = caredPlayerIds.length;
+      if (cachedPlayerCount === 0 && requestedCount > 10) {
+        console.log('updatePlayers: Cache has 0 players but requesting', requestedCount, '- invalidating cache and refetching');
+      } else if (ageMs <= 60 * 60 * 1000) {
+        console.log('updatePlayers: Using cached data from', basePath);
         return { path: basePath, snapshot: value, skipped: true };
+      } else {
+        console.log('updatePlayers: Cache expired, will refetch');
       }
+    } else {
+      console.log('updatePlayers: No cached data found, will fetch fresh');
     }
-  } catch (_) {
+  } catch (e) {
+    console.log('updatePlayers: Cache read error:', e.message);
     // ignore cache read errors
   }
   const url = 'https://api.sleeper.app/v1/players/nfl';
@@ -253,13 +274,40 @@ export async function updatePlayers(caredPlayerIds) {
   const allPlayers = await res.json();
   const caredSet = new Set(caredPlayerIds.map(String));
   const filtered = {};
+  
+  console.log('updatePlayers: Fetched', Object.keys(allPlayers || {}).length, 'total players from Sleeper API');
+  console.log('updatePlayers: Looking for', caredSet.size, 'specific player IDs');
+  console.log('updatePlayers: isPreSeason =', isPreSeason, '(will', isPreSeason ? 'NOT' : '', 'filter by active status)');
+  
+  let skippedInactive = 0;
+  let skippedNotFound = 0;
+  
   for (const pid of caredSet) {
     const p = allPlayers && allPlayers[pid];
-    if (!p) { continue; }
-    const isActive = (p && p.active === true) || (p && typeof p.status === 'string' && p.status.toLowerCase() === 'active');
-    if (!isActive) { continue; }
+    if (!p) {
+      skippedNotFound++;
+      if (skippedNotFound <= 5) {
+        console.log('  Player ID', pid, 'not found in Sleeper API response');
+      }
+      continue;
+    }
+    
+    // During the season, filter to active players only
+    // In pre-season, include all players to show rookies and newly traded players
+    if (!isPreSeason) {
+      const isActive = (p && p.active === true) || (p && typeof p.status === 'string' && p.status.toLowerCase() === 'active');
+      if (!isActive) {
+        skippedInactive++;
+        continue;
+      }
+    }
+    
     filtered[pid] = p;
   }
+  
+  console.log('updatePlayers: Result:', Object.keys(filtered).length, 'players included');
+  if (skippedNotFound > 0) console.log('updatePlayers:', skippedNotFound, 'player IDs not found in API');
+  if (skippedInactive > 0) console.log('updatePlayers:', skippedInactive, 'players filtered out (inactive)');
   const entry = {
     season,
     week,

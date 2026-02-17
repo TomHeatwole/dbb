@@ -1,12 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { fetchScoresData } from '../lookups/ScoresLookup';
-import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
 import { loadSeasonStatsFromCSV, mapCSVStatsToSleeperFormat } from './WeeklyStatsLoader';
 import useIsMobile from '../hooks/useIsMobile';
 
 function PlayerWeeklyScores({ player, onClose, rosters, users }) {
-  const [season, setSeason] = useState(CURRENT_YEAR);
+  // Default to previous year if current season hasn't started yet
+  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
+  const isPreSeason = completedWeeks === 0;
+  const defaultSeason = isPreSeason ? String(Number(CURRENT_YEAR) - 1) : CURRENT_YEAR;
+  const [season, setSeason] = useState(defaultSeason);
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [weeklyScores, setWeeklyScores] = useState([]);
   const [seasonStats, setSeasonStats] = useState(null);
@@ -20,16 +24,22 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const playerId = player && player.player_id ? player.player_id : null;
   const rookieYear = player && player.metadata && player.metadata.rookie_year ? player.metadata.rookie_year : null;
   
-  // Build available years list from rookie year to current
+  // Build available years list from rookie year to current (or previous year if pre-season)
   const availableYears = [];
   if (rookieYear) {
     const startYear = parseInt(rookieYear);
-    const endYear = parseInt(CURRENT_YEAR);
+    // Don't include current year if season hasn't started yet
+    const endYear = isPreSeason ? parseInt(CURRENT_YEAR) - 1 : parseInt(CURRENT_YEAR);
     for (let year = endYear; year >= startYear; year--) {
       availableYears.push(String(year));
     }
   } else {
-    availableYears.push('2025', '2024');
+    // Fallback list when no rookie year available
+    if (isPreSeason) {
+      availableYears.push('2025', '2024', '2023');
+    } else {
+      availableYears.push('2026', '2025', '2024');
+    }
   }
   
   const hasPhoto = Boolean(player && player.espn_photo_url);

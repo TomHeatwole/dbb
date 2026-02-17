@@ -3,10 +3,14 @@ import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { writeApiCacheWithKey, readApiCacheLatestByKey, recordRateLimitHit } from '../utils/database';
 
 export async function fetchScoresData(season, options = {}) {
-  // Determine leagueId based on season
+  // Determine leagueId based on season. Prefer PREVIOUS_YEARS when that season exists
+  // (handles pre-season when LEAGUE_ID is already the new year but we want last year's data).
   const currentYear = String(CURRENT_YEAR);
-  const isCurrentSeason = season === undefined || season === null || season === '' || season === currentYear;
-  const leagueId = isCurrentSeason ? LEAGUE_ID : PREVIOUS_YEARS[season];
+  const normalizedSeason = season === undefined || season === null || season === '' ? currentYear : String(season);
+  const leagueId = PREVIOUS_YEARS[normalizedSeason] ?? (normalizedSeason === currentYear ? LEAGUE_ID : null);
+  if (!leagueId) {
+    return Array(17).fill(null);
+  }
 
   let weeksParsedData = null;
 

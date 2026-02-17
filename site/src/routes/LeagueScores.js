@@ -3,7 +3,7 @@ import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from '../utils/global_constants';
-import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from '../utils/DateHelper';
+import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
 import WeekSelector from '../scores/WeekSelector';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
@@ -29,6 +29,14 @@ const OG_DESCRIPTION = '';
 const show_sleeper_api_banner = false;
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
+
+function getAvailableYearsAndDefault() {
+	const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
+	const prevYears = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
+	const availableYears = isPreSeason ? prevYears : allYears;
+	const defaultSeason = isPreSeason && prevYears.length > 0 ? prevYears[0] : CURRENT_YEAR;
+	return { availableYears, defaultSeason, isPreSeason };
+}
 
 function MobileScaled({ children, className = 'mobile-standings-scale-70' }) {
 	const innerRef = useRef(null);
@@ -65,8 +73,9 @@ function LeagueScores() {
 	// Toggle: when true, keep the current mobile summary behavior; when false, render the full web breakdown on mobile
 	const showFullScoreBreakdownOnMobile = false;
 	const [searchParams, setSearchParams] = useSearchParams();
+	const { availableYears, defaultSeason, isPreSeason } = getAvailableYearsAndDefault();
 	const urlYear = searchParams.get('year');
-	const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
+	const initialSeason = urlYear && availableYears.includes(urlYear) ? urlYear : defaultSeason;
 	const [season, setSeason] = useState(initialSeason);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const dropdownRef = useRef(null);
@@ -197,13 +206,16 @@ function LeagueScores() {
 	}, [dropdownOpen]);
 
 	useEffect(() => {
-		if (urlYear && allYears.includes(urlYear) && season !== urlYear) {
+		if (urlYear && availableYears.includes(urlYear) && season !== urlYear) {
 			setSeason(urlYear);
 			setDropdownOpen(false);
 		}
-		if (!urlYear && season !== CURRENT_YEAR) {
-			setSeason(CURRENT_YEAR);
-			setDropdownOpen(false);
+		if (!urlYear) {
+			const target = isPreSeason ? defaultSeason : CURRENT_YEAR;
+			if (season !== target) {
+				setSeason(target);
+				setDropdownOpen(false);
+			}
 		}
 		// eslint-disable-next-line
 	}, [urlYear]);
@@ -215,7 +227,7 @@ function LeagueScores() {
 		if (season === CURRENT_YEAR) {
 			searchParams.delete('year');
 			setSearchParams(searchParams, { replace: true });
-		} else if (allYears.includes(season)) {
+		} else if (availableYears.includes(season)) {
 			searchParams.set('year', season);
 			setSearchParams(searchParams, { replace: true });
 		}
@@ -567,7 +579,7 @@ function LeagueScores() {
 			<span className="team-season-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
 			{dropdownOpen && (
 				<div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-					{allYears.map(opt => (
+					{availableYears.map(opt => (
 						<div
 							key={opt}
 							className={'team-scores-week-dropdown-option' + (opt === season ? ' team-scores-week-dropdown-option-active' : '')}

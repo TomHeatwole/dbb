@@ -1116,6 +1116,13 @@
   margin-bottom: 2em;
   text-align: center;
 }
+.team-summary-preseason {
+  font-weight: 400;
+  font-size: 1.0em;
+  color: #aaa;
+  margin-bottom: 2em;
+  text-align: center;
+}
 .team-summary-root {
   font-size: 0.9em; /* Slightly smaller overall text on team summary page */
 }
@@ -6039,5 +6046,291 @@ body.modal-open {
 @media (max-width: 50em) {
   .player-season-stats-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
+
+/* Hottest Free Agents Styles */
+.hottest-free-agents-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hottest-free-agents-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+
+.free-agents-controls {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.control-select {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-select:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: #1db954;
+  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
+}
+
+.free-agents-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.free-agents-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.free-agents-table thead {
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.free-agents-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+.free-agents-table th.rank-col {
+  width: 50px;
+  text-align: center;
+}
+
+.free-agents-table th.player-col {
+  min-width: 200px;
+}
+
+.free-agents-table th.position-col {
+  width: 70px;
+}
+
+.free-agents-table th.team-col {
+  width: 80px;
+}
+
+.free-agents-table th.games-col {
+  width: 60px;
+  text-align: center;
+}
+
+.free-agents-table th.points-col {
+  width: 100px;
+  text-align: right;
+}
+
+.free-agents-table th.ppg-col {
+  width: 80px;
+  text-align: right;
+}
+
+.free-agents-table th.status-col {
+  width: 120px;
+  text-align: center;
+}
+
+.free-agent-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background-color 0.15s ease;
+}
+
+.free-agent-row:hover {
+  background: rgba(29, 185, 84, 0.08);
+}
+
+.free-agents-table td {
+  padding: 0.875rem 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.free-agents-table td.rank-col {
+  text-align: center;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+}
+
+.free-agents-table td.games-col {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.free-agents-table td.points-col {
+  text-align: right;
+  font-weight: 700;
+  color: #1db954;
+}
+
+.free-agents-table td.ppg-col {
+  text-align: right;
+  font-weight: 700;
+  color: #1db954;
+}
+
+.free-agents-table td.position-col {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.free-agents-table td.team-col {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+.free-agents-table td.status-col {
+  text-align: center;
+}
+
+.player-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.player-headshot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.player-name {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.95rem;
+}
+
+.player-meta-mobile {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-free-agent {
+  background: rgba(29, 185, 84, 0.15);
+  color: #1db954;
+  border: 1px solid rgba(29, 185, 84, 0.3);
+}
+
+/* Mobile responsive styles */
+@media (max-width: 50em) {
+  .hottest-free-agents-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .free-agents-controls {
+    gap: 1rem;
+    padding: 0.75rem;
+  }
+
+  .control-group {
+    flex: 1 1 45%;
+    min-width: 140px;
+  }
+
+  .control-group label {
+    font-size: 0.8rem;
+  }
+
+  .control-select {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .free-agents-table {
+    font-size: 0.8rem;
+  }
+
+  .free-agents-table th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .free-agents-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .player-headshot {
+    width: 32px;
+    height: 32px;
+  }
+
+  .player-name {
+    font-size: 0.85rem;
+  }
+
+  .player-meta-mobile {
+    font-size: 0.7rem;
+  }
+
+  .player-cell {
+    gap: 0.5rem;
+  }
+
+  .free-agents-table td.rank-col {
+    font-size: 0.75rem;
   }
 }

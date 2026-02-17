@@ -13,11 +13,12 @@ import Week1CountdownCard from './Week1CountdownCard';
 import PreviousYearRecapCard from './PreviousYearRecapCard';
 import RookieDraftCard from './RookieDraftCard';
 import IosShortcutNoticeCard from './IosShortcutNoticeCard';
+import TrendingFreeAgentsCard from './TrendingFreeAgentsCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
-import { getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
+import { getCurrentNFLWeek, isCurrentWeekCompleted, getCompletedWeeksCount } from '../utils/DateHelper';
 
 // Optional manual override for the "current week" used by home cards.
 // - Set this to a positive integer (e.g. 10) to pretend the current week is 10.
@@ -85,9 +86,12 @@ function HomePage() {
     ? ALT_HOME_WEEK_OVERRIDE 
     : homePageCurrentWeek;
   const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
+  // Off-season when: (1) Week 17 of current season is complete, OR (2) current season hasn't started yet
+  const isPreSeason = getCompletedWeeksCount() === 0;
   const autoOffSeason =
-    Number.isFinite(Number(effectiveWeekOverride)) &&
-    Number(effectiveWeekOverride) > 17;
+    isPreSeason ||
+    (Number.isFinite(Number(effectiveWeekOverride)) &&
+    Number(effectiveWeekOverride) > 17);
   const isOffSeasonHome =
     ALT_HOME_OFFSEASON_OVERRIDE == null
       ? autoOffSeason
@@ -103,6 +107,7 @@ function HomePage() {
             {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
             <Week1CountdownCard />
             <PreviousYearRecapCard />
+            <TrendingFreeAgentsCard />
             <RookieDraftCard />
             <CommissionerNoteCard />
             <PodcastCard />
@@ -120,6 +125,7 @@ function HomePage() {
           <div className="home-cards-grid--split">
             <div className="home-cards-column home-cards-column--left">
               <PreviousYearRecapCard />
+              <TrendingFreeAgentsCard />
               <PodcastCard />
             </div>
             <div className="home-cards-column home-cards-column--right">
@@ -198,6 +204,7 @@ function HomePage() {
   // Right column:
   //  - Hot Team Alert
   //  - On the Bubble (if before week 14)
+  //  - Trending Free Agents
   //  - Week 14 Top Scores
   //  - Commissioner Note
 
@@ -215,6 +222,7 @@ function HomePage() {
           <div className="home-cards-column home-cards-column--right">
             <HotTeamCard currentWeekOverride={safeWeekForCards} />
             {bubbleCard}
+            <TrendingFreeAgentsCard />
             <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
             <CommissionerNoteCard />
           </div>

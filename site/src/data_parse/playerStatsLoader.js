@@ -110,15 +110,23 @@ export function getPlayerStatsByGsisId(statsArray, gsisId) {
  * @param {Array} statsArray - Array of player stats from CSV
  * @param {Object} playersData - Players data object from players.txt
  * @param {string} playerId - Player ID from players.txt
- * @returns {Object|null} Player stats object or null if not found
+ * @returns {Promise<Object|null>} Player stats object or null if not found
  */
-export function getPlayerStatsByPlayerId(statsArray, playersData, playerId) {
+export async function getPlayerStatsByPlayerId(statsArray, playersData, playerId) {
   const player = playersData[playerId];
-  if (!player || !player.gsis_id) {
+  if (!player) {
     return null;
   }
 
-  const gsisId = player.gsis_id.trim();
+  // Import the GSIS lookup service
+  const { getGsisIdFromSleeperPlayer } = await import('../lookups/GsisLookup');
+  
+  // Get GSIS ID using the centralized service (with fallback to name matching)
+  const gsisId = await getGsisIdFromSleeperPlayer(player);
+  if (!gsisId) {
+    return null;
+  }
+
   return getPlayerStatsByGsisId(statsArray, gsisId);
 }
 
