@@ -78,8 +78,9 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
     if (!weeksParsedData || !playerId || loading) return;
 
     setLoadingStats(true);
-    const fetchWeeklyStats = async () => {
-      const scores = [];
+    
+    // Use setTimeout to force React to render the loading state first
+    setTimeout(async () => {
       const yearNum = parseInt(season);
       
       // For pre-2024, load season aggregate stats
@@ -99,7 +100,9 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
         setSeasonStats(null);
       }
       
-      for (let week = 1; week <= totalWeeks; week++) {
+      // Parallelize all week fetches using Promise.all
+      const weekPromises = Array.from({ length: totalWeeks }, async (_, idx) => {
+        const week = idx + 1;
         const weekData = weeksParsedData[week - 1];
         let points = 0;
         let stats = null;
@@ -127,14 +130,13 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
           }
         }
         
-        scores.push({ week, points: Math.round(points * 10) / 10, stats });
-      }
+        return { week, points: Math.round(points * 10) / 10, stats };
+      });
       
+      const scores = await Promise.all(weekPromises);
       setWeeklyScores(scores);
       setLoadingStats(false);
-    };
-
-    fetchWeeklyStats();
+    }, 0);
   }, [weeksParsedData, playerId, season, totalWeeks, loading, player]);
 
   const totalPoints = weeklyScores.reduce((sum, w) => sum + w.points, 0);
