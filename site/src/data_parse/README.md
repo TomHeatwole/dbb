@@ -28,8 +28,11 @@ import { FantasyScoring } from './data_parse/index.js';
 // Create a new instance
 const fs = new FantasyScoring('/data/');
 
-// Calculate fantasy points for a player
-const result = await fs.calculateForPlayer('6462', 2024, 'ppr');
+// Calculate fantasy points using the site's default config (from score_format.json)
+const result = await fs.calculateForPlayer('6462', 2024);
+
+// Or use a predefined config
+const result2 = await fs.calculateForPlayer('6462', 2024, 'ppr');
 
 console.log(result);
 // {
@@ -115,6 +118,40 @@ const myConfig = createCustomConfig(
 const result = await fs.calculateForPlayer('6462', 2024, myConfig);
 ```
 
+### Position-Specific Scoring (TE Premium)
+
+```javascript
+// Use the built-in TE Premium config
+const result = await fs.calculateForPlayer('tePlayerId', 2024, 'tePremium');
+
+// Or create a custom position-specific config
+const customTEPremium = {
+  name: 'Custom TE Premium',
+  scoring: {
+    passing_yards: 0.04,
+    passing_tds: 4,
+    rushing_yards: 0.1,
+    rushing_tds: 6,
+    receiving_yards: 0.1,
+    receiving_tds: 6,
+    receptions: 0.5  // Default for positions not specified below
+  },
+  position_specific_scoring: {
+    receptions: {
+      TE: 2.0,   // 2 PPR for TEs
+      WR: 1.0,   // 1 PPR for WRs
+      RB: 0.5    // 0.5 PPR for RBs
+    },
+    receiving_yards: {
+      TE: 0.15   // Bonus for TE receiving yards
+    }
+  },
+  bonuses: {}
+};
+
+const result = await fs.calculateForPlayer('6462', 2024, customTEPremium);
+```
+
 ## Available Scoring Configs
 
 ### Standard
@@ -189,6 +226,40 @@ Get detailed breakdown of points by category.
 
 ## Data Structure
 
+### Scoring Config Schema
+
+The scoring configuration supports:
+
+1. **Basic Scoring** - Map stat names to point values
+2. **Position-Specific Scoring** - Override points for specific positions
+3. **Bonuses** - Milestone-based bonus points
+
+```json
+{
+  "name": "League Name",
+  "scoring": {
+    "passing_yards": 0.04,
+    "receptions": 1
+  },
+  "position_specific_scoring": {
+    "receptions": {
+      "TE": 1.5,
+      "WR": 1.0,
+      "RB": 1.0
+    }
+  },
+  "bonuses": {
+    "passing_300_bonus": 3
+  }
+}
+```
+
+**Position-specific scoring rules:**
+- If a player's position has an override, use that value
+- Otherwise, fall back to the default value in `scoring`
+- If no position is provided, use the default value
+- Any stat can have position-specific overrides
+
 ### CSV Files
 Located at: `public/data/stats_player_reg_{YEAR}.csv`
 
@@ -200,6 +271,8 @@ Contains columns like:
 - Receiving: `receptions`, `receiving_yards`, `receiving_tds`, etc.
 - Defense: `def_sacks`, `def_interceptions`, `def_tds`, etc.
 - Kicking: `fg_made`, `fg_att`, `pat_made`, etc.
+
+**Important:** The `position` field is used for position-specific scoring.
 
 ### players.txt
 Located at: `public/data/players.txt`
@@ -231,3 +304,6 @@ See the test files for more examples:
 - All point calculations are rounded to 2 decimal places
 - GSIS IDs may have leading/trailing spaces (handled automatically)
 - Season stats are cached for performance
+- **Position-specific scoring** allows any stat to have different values per position
+- Position is determined from the `position` field in player stats
+- If position is missing or not in the override map, the default scoring value is used

@@ -10,3 +10,4 @@ Traded Picks: "https://api.sleeper.app/v1/league/1194868087212167168/traded_pick
 ESPN Scores: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 ESPN Scores by day (preseason): "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20250816&seasontype=1"
 ESPN Scores by week: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=5&year=2025&seasontype=2"
+Trending Add (Sleeper): "https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=100"

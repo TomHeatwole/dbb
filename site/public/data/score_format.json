@@ -1,0 +1,46 @@
+{
+  "name": "DBB League Scoring",
+  "version": "2024",
+  "description": "Dynasty Baseball Basketball league fantasy scoring configuration",
+  "scoring": {
+    "passing_yards": 0.04,
+    "passing_tds": 4,
+    "passing_interceptions": -2,
+    "passing_2pt_conversions": 2,
+    "rushing_yards": 0.1,
+    "rushing_tds": 6,
+    "rushing_fumbles_lost": -2,
+    "rushing_2pt_conversions": 2,
+    "receiving_yards": 0.1,
+    "receiving_tds": 6,
+    "receptions": 1,
+    "receiving_fumbles_lost": -2,
+    "receiving_2pt_conversions": 2,
+    "sack_fumbles_lost": -2,
+    "fg_made": 3,
+    "fg_missed": -1,
+    "fg_made_50_59": 2,
+    "fg_made_60_": 3,
+    "pat_made": 1,
+    "pat_missed": -1,
+    "def_sacks": 1,
+    "def_interceptions": 2,
+    "def_fumbles": 2,
+    "def_tds": 6,
+    "def_safeties": 2,
+    "special_teams_tds": 6
+  },
+  "bonuses": {
+    "passing_300_bonus": 0,
+    "passing_400_bonus": 0,
+    "rushing_100_bonus": 0,
+    "receiving_100_bonus": 0
+  },
+  "notes": [
+    "PPR scoring (1 point per reception)",
+    "4pt passing TDs",
+    "Bonuses for 300+ passing yards, 100+ rushing/receiving yards",
+    "Standard fumble penalties (-2 per fumble lost)",
+    "Field goal bonuses for 50+ yard attempts"
+  ]
+}

@@ -299,6 +299,120 @@ describe('Fantasy Calculator', () => {
     });
   });
 
+  describe('Position-specific scoring', () => {
+    it('should apply TE premium scoring for tight ends', () => {
+      const teStats = {
+        position: 'TE',
+        receptions: 10,
+        receiving_yards: 100,
+        receiving_tds: 1,
+        games: 1
+      };
+
+      const points = calculateFantasyPoints(teStats, SCORING_CONFIGS.tePremium);
+      
+      // 10 * 1.5 = 15 (TE premium receptions)
+      // 100 * 0.1 = 10 (receiving yards)
+      // 1 * 6 = 6 (receiving TD)
+      // Total = 31
+      expect(points).toBe(31);
+    });
+
+    it('should use standard PPR for WR in TE premium format', () => {
+      const wrStats = {
+        position: 'WR',
+        receptions: 10,
+        receiving_yards: 100,
+        receiving_tds: 1,
+        games: 1
+      };
+
+      const points = calculateFantasyPoints(wrStats, SCORING_CONFIGS.tePremium);
+      
+      // 10 * 1 = 10 (standard PPR for WR)
+      // 100 * 0.1 = 10 (receiving yards)
+      // 1 * 6 = 6 (receiving TD)
+      // Total = 26
+      expect(points).toBe(26);
+    });
+
+    it('should use standard PPR for RB in TE premium format', () => {
+      const rbStats = {
+        position: 'RB',
+        receptions: 8,
+        receiving_yards: 50,
+        rushing_yards: 100,
+        rushing_tds: 1,
+        games: 1
+      };
+
+      const points = calculateFantasyPoints(rbStats, SCORING_CONFIGS.tePremium);
+      
+      // 8 * 1 = 8 (standard PPR for RB)
+      // 50 * 0.1 = 5 (receiving yards)
+      // 100 * 0.1 = 10 (rushing yards)
+      // 1 * 6 = 6 (rushing TD)
+      // Total = 29
+      expect(points).toBe(29);
+    });
+
+    it('should fall back to default scoring if position not specified', () => {
+      const statsNoPosition = {
+        // No position field
+        receptions: 10,
+        receiving_yards: 100,
+        receiving_tds: 1,
+        games: 1
+      };
+
+      const points = calculateFantasyPoints(statsNoPosition, SCORING_CONFIGS.tePremium);
+      
+      // Should use default receptions value (1)
+      // 10 * 1 = 10
+      // 100 * 0.1 = 10
+      // 1 * 6 = 6
+      // Total = 26
+      expect(points).toBe(26);
+    });
+
+    it('should fall back to default scoring if position not in override map', () => {
+      const qbStats = {
+        position: 'QB',
+        receptions: 1,
+        receiving_yards: 10,
+        passing_yards: 300,
+        passing_tds: 3,
+        games: 1
+      };
+
+      const points = calculateFantasyPoints(qbStats, SCORING_CONFIGS.tePremium);
+      
+      // Receptions should use default value since QB not in override map
+      // 1 * 1 = 1
+      // 10 * 0.1 = 1
+      // 300 * 0.04 = 12
+      // 3 * 4 = 12
+      // Total = 26
+      expect(points).toBe(26);
+    });
+
+    it('should include position-specific scoring in breakdown', () => {
+      const teStats = {
+        position: 'TE',
+        receptions: 10,
+        receiving_yards: 100,
+        receiving_tds: 1,
+        games: 1
+      };
+
+      const breakdown = getFantasyPointsBreakdown(teStats, SCORING_CONFIGS.tePremium);
+      
+      // Receiving should be: 10 * 1.5 + 100 * 0.1 + 1 * 6 = 31
+      expect(breakdown.receiving).toBe(31);
+      expect(breakdown.total).toBe(31);
+    });
+  });
+
   describe('Edge cases and bonuses', () => {
     it('should apply multiple bonuses when applicable', () => {
       const qbStats = {

@@ -16,12 +16,25 @@ export function calculateFantasyPoints(playerStats, config) {
   }
 
   let points = 0;
+  const playerPosition = playerStats.position;
 
   // Calculate base scoring
   if (config.scoring) {
     for (const [statKey, pointsPerUnit] of Object.entries(config.scoring)) {
       const statValue = parseFloat(playerStats[statKey] || 0);
-      points += statValue * pointsPerUnit;
+      
+      // Check if there's a position-specific override for this stat
+      let finalPointsPerUnit = pointsPerUnit;
+      if (config.position_specific_scoring && 
+          config.position_specific_scoring[statKey] && 
+          playerPosition) {
+        const positionOverride = config.position_specific_scoring[statKey][playerPosition];
+        if (positionOverride !== undefined) {
+          finalPointsPerUnit = positionOverride;
+        }
+      }
+      
+      points += statValue * finalPointsPerUnit;
     }
   }
 
@@ -116,10 +129,24 @@ export function getFantasyPointsBreakdown(playerStats, config) {
 
   if (!config.scoring) return breakdown;
 
+  const playerPosition = playerStats.position;
+
   // Categorize each stat
   for (const [statKey, pointsPerUnit] of Object.entries(config.scoring)) {
     const statValue = parseFloat(playerStats[statKey] || 0);
-    const points = statValue * pointsPerUnit;
+    
+    // Check for position-specific override
+    let finalPointsPerUnit = pointsPerUnit;
+    if (config.position_specific_scoring && 
+        config.position_specific_scoring[statKey] && 
+        playerPosition) {
+      const positionOverride = config.position_specific_scoring[statKey][playerPosition];
+      if (positionOverride !== undefined) {
+        finalPointsPerUnit = positionOverride;
+      }
+    }
+    
+    const points = statValue * finalPointsPerUnit;
 
     if (statKey.startsWith('passing_')) {
       breakdown.passing += points;

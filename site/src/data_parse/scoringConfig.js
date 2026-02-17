@@ -123,6 +123,34 @@ export const SCORING_CONFIGS = {
     }
   },
 
+  tePremium: {
+    name: 'TE Premium',
+    scoring: {
+      passing_yards: 0.04,
+      passing_tds: 4,
+      passing_interceptions: -2,
+      passing_2pt_conversions: 2,
+      rushing_yards: 0.1,
+      rushing_tds: 6,
+      rushing_fumbles_lost: -2,
+      rushing_2pt_conversions: 2,
+      receiving_yards: 0.1,
+      receiving_tds: 6,
+      receptions: 1,               // Default for non-TE positions
+      receiving_fumbles_lost: -2,
+      receiving_2pt_conversions: 2,
+      sack_fumbles_lost: -2,
+    },
+    position_specific_scoring: {
+      receptions: {
+        TE: 1.5,                   // 1.5 PPR for TEs
+        WR: 1,                     // 1.0 PPR for WRs
+        RB: 1                      // 1.0 PPR for RBs
+      }
+    },
+    bonuses: {}
+  },
+
   kicker: {
     name: 'Kicker Scoring',
     scoring: {

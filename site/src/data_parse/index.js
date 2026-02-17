@@ -19,6 +19,11 @@ import {
   getPlayerStatsByPlayerId,
   getMultiplePlayerStats
 } from './playerStatsLoader.js';
+import {
+  loadScoringConfig,
+  getDefaultScoringConfig,
+  validateScoringConfig
+} from './loadScoringConfig.js';
 
 /**
  * Main class for fantasy scoring operations
@@ -28,15 +33,28 @@ export class FantasyScoring {
     this.basePath = basePath;
     this.statsCache = {}; // Cache loaded stats by season
     this.playersData = null;
+    this.defaultConfig = null; // Cache the loaded config
   }
 
   /**
-   * Initialize by loading players data
+   * Initialize by loading players data and default scoring config
    */
   async init() {
     if (!this.playersData) {
       this.playersData = await loadPlayersData(`${this.basePath}players.txt`);
     }
+    if (!this.defaultConfig) {
+      this.defaultConfig = await getDefaultScoringConfig();
+    }
+  }
+
+  /**
+   * Get the site's default scoring configuration
+   * @returns {Promise<Object>} The loaded scoring config
+   */
+  async getDefaultConfig() {
+    await this.init();
+    return this.defaultConfig;
   }
 
   /**
@@ -55,10 +73,10 @@ export class FantasyScoring {
    * Calculate fantasy points for a player by their player ID
    * @param {string} playerId - Player ID from players.txt
    * @param {number} season - Season year
-   * @param {string|Object} config - Scoring config name or custom config object
+   * @param {string|Object|null} config - Scoring config name, custom config object, or null for default
    * @returns {Promise<Object>} Fantasy points result
    */
-  async calculateForPlayer(playerId, season, config = 'ppr') {
+  async calculateForPlayer(playerId, season, config = null) {
     await this.init();
     const stats = await this.loadSeasonStats(season);
     
@@ -71,9 +89,15 @@ export class FantasyScoring {
       };
     }
 
-    const scoringConfig = typeof config === 'string' 
-      ? getScoringConfig(config) 
-      : config;
+    // Use default config if none specified
+    let scoringConfig;
+    if (config === null) {
+      scoringConfig = this.defaultConfig;
+    } else if (typeof config === 'string') {
+      scoringConfig = getScoringConfig(config);
+    } else {
+      scoringConfig = config;
+    }
 
     return {
       success: true,
@@ -94,10 +118,11 @@ export class FantasyScoring {
    * Calculate fantasy points for a player by their GSIS ID
    * @param {string} gsisId - GSIS ID (e.g., "00-0023459")
    * @param {number} season - Season year
-   * @param {string|Object} config - Scoring config name or custom config object
+   * @param {string|Object|null} config - Scoring config name, custom config object, or null for default
    * @returns {Promise<Object>} Fantasy points result
    */
-  async calculateForGsisId(gsisId, season, config = 'ppr') {
+  async calculateForGsisId(gsisId, season, config = null) {
+    await this.init();
     const stats = await this.loadSeasonStats(season);
     const playerStats = getPlayerStatsByGsisId(stats, gsisId);
     
@@ -109,9 +134,15 @@ export class FantasyScoring {
       };
     }
 
-    const scoringConfig = typeof config === 'string' 
-      ? getScoringConfig(config) 
-      : config;
+    // Use default config if none specified
+    let scoringConfig;
+    if (config === null) {
+      scoringConfig = this.defaultConfig;
+    } else if (typeof config === 'string') {
+      scoringConfig = getScoringConfig(config);
+    } else {
+      scoringConfig = config;
+    }
 
     return {
       success: true,
@@ -131,15 +162,23 @@ export class FantasyScoring {
   /**
    * Get top players by fantasy points for a season
    * @param {number} season - Season year
-   * @param {string|Object} config - Scoring config name or custom config object
+   * @param {string|Object|null} config - Scoring config name, custom config object, or null for default
    * @param {Object} options - Options (limit, position filter)
    * @returns {Promise<Array>} Sorted array of players with fantasy points
    */
-  async getTopPlayers(season, config = 'ppr', options = {}) {
+  async getTopPlayers(season, config = null, options = {}) {
+    await this.init();
     const stats = await this.loadSeasonStats(season);
-    const scoringConfig = typeof config === 'string' 
-      ? getScoringConfig(config) 
-      : config;
+    
+    // Use default config if none specified
+    let scoringConfig;
+    if (config === null) {
+      scoringConfig = this.defaultConfig;
+    } else if (typeof config === 'string') {
+      scoringConfig = getScoringConfig(config);
+    } else {
+      scoringConfig = config;
+    }
 
     let players = calculateFantasyPointsForMultiplePlayers(stats, scoringConfig);
 
@@ -174,5 +213,8 @@ export {
   loadSeasonStats,
   getPlayerStatsByGsisId,
   getPlayerStatsByPlayerId,
-  getMultiplePlayerStats
+  getMultiplePlayerStats,
+  loadScoringConfig,
+  getDefaultScoringConfig,
+  validateScoringConfig
 };
