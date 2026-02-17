@@ -1,0 +1,25 @@
+{
+  "name": "fantasy-scoring",
+  "version": "1.0.0",
+  "description": "Flexible fantasy football scoring system",
+  "type": "module",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "moduleFileExtensions": ["js"],
+    "testMatch": ["**/*.test.js"]
+  },
+  "keywords": [
+    "fantasy",
+    "football",
+    "nfl",
+    "scoring"
+  ],
+  "author": "",
+  "license": "MIT"
+}
