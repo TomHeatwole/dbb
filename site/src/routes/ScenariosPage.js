@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchTrendingPlayers } from '../lookups/TrendingLookup';
-import { getPlayerInfo } from '../lookups/PlayerLookup';
+import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
@@ -8,6 +8,7 @@ import useIsMobile from '../hooks/useIsMobile';
 function ScenariosPage() {
   const [trendingData, setTrendingData] = useState(null);
   const [playersData, setPlayersData] = useState(null);
+  const [playerIdMap, setPlayerIdMap] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isMobile = useIsMobile();
@@ -16,11 +17,13 @@ function ScenariosPage() {
     Promise.all([
       fetchTrendingPlayers(),
       // Fetch players.txt directly for 2024 data
-      fetch('/data/players.txt').then(res => res.json())
+      fetch('/data/players.txt').then(res => res.json()),
+      fetchPlayerIdMap()
     ])
-      .then(([trending, players]) => {
+      .then(([trending, players, idMap]) => {
         setTrendingData(trending);
         setPlayersData(players);
+        setPlayerIdMap(idMap);
       })
       .catch((err) => {
         console.error('Error loading data:', err);
@@ -60,7 +63,7 @@ function ScenariosPage() {
               </thead>
               <tbody>
                 {trendingData.map((item, index) => {
-                  const playerInfo = playersData ? getPlayerInfo(item.player_id, playersData, null) : null;
+                  const playerInfo = playersData ? getPlayerInfo(item.player_id, playersData, playerIdMap) : null;
                   const playerName = playerInfo ? playerInfo.name : `Player ${item.player_id}`;
                   const position = playerInfo ? playerInfo.position : '';
                   const team = playerInfo ? (playerInfo.team || playerInfo.team_abbr) : '';

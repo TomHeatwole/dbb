@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useIsMobile from '../hooks/useIsMobile';
-import PlayerCard from '../players/PlayerCard';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 
 function toOrdinal(n) {
   const num = Number(n);
@@ -167,7 +167,7 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
         aria-modal="true"
         onClick={(e) => { e.stopPropagation(); }}
       >
-        <PlayerCard player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+        <PlayerWeeklyScores player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
       </div>
     </div>
   ) : null;
