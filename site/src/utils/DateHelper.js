@@ -133,6 +133,26 @@ export const getDefaultDisplayWeek = function(season) {
   return isCurrentSeason ? getCurrentNFLWeek() : 17;
 };
 
+// Check if we're in the post-season, pre-draft state for a given season.
+// This is the window after Week 17 completes but before the NFL rookie draft happens.
+// During this time, we can show exact draft pick numbers (e.g., "2026 1.03") instead of generic rounds.
+export function isPostSeasonPreDraft(season = null) {
+  const targetSeason = season || CURRENT_YEAR;
+  const isCurrentSeason = String(targetSeason) === String(CURRENT_YEAR);
+  
+  if (!isCurrentSeason) {
+    // For past seasons, never show specific pick numbers
+    return false;
+  }
+  
+  const completedWeeks = getCompletedWeeksCount(targetSeason);
+  
+  // Post-season state: Week 17 is complete
+  // TODO: In the future, we may want to add an explicit flag to indicate when the NFL draft has occurred
+  // For now, we assume if Week 17 is done in the current season, we're in this state
+  return Number.isFinite(completedWeeks) && completedWeeks >= 17;
+}
+
 // Decide if we should poll current week's data based on ESPN scoreboard json
 // Conditions:
 // 1) Any game shows an in-progress status

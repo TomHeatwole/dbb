@@ -1,10 +1,13 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
-import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, isPostSeasonPreDraft } from '../utils/DateHelper';
+import { LEAGUE_ID } from '../utils/global_constants';
 import { StartSitSort } from '../players/StartSitDecider';
 import FullRoster from './FullRoster';
 import { fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
+import { fetchScoresData } from '../lookups/ScoresLookup';
+import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import LoadingState from '../LoadingState';
 
 function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playerList, rosters, users }) {
@@ -13,6 +16,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
   const [searchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
   const [tradedPicks, setTradedPicks] = useState([]);
+  const [draftOrder, setDraftOrder] = useState(null); // Map of rosterId -> pick number (1-10)
   const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
   const rosterIdToTeamInfo = useMemo(() => {
     return buildRosterIdToTeamInfoMap(rosters, users);
@@ -74,6 +78,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
                 season: String(yr),
                 round,
                 owner_id: Number(rosterId),
+                roster_id: Number(rosterId), // Add roster_id so we can look up draft position
               });
             }
           }
@@ -144,6 +149,58 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
       cancelled = true;
     };
   }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason]);
+
+  // Load draft order if we're in post-season, pre-draft state
+  useEffect(() => {
+    let cancelled = false;
+    
+    // Only fetch draft order for current season in post-season state
+    if (!isCurrentSeason || !isPostSeasonPreDraft(CURRENT_YEAR)) {
+      setDraftOrder(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        // Fetch all data needed to calculate draft order
+        const [weeksData, teamDataRaw] = await Promise.all([
+          fetchScoresData(CURRENT_YEAR),
+          (async () => {
+            const rosterRes = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`);
+            if (!rosterRes.ok) throw new Error('Failed to fetch rosters for draft order');
+            const rosters = await rosterRes.json();
+            return { rosters };
+          })(),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        // For draft order calculation, we need players data, but we can pass null
+        // and it will fall back to API points (acceptable for draft order)
+        const placeToRosterId = calculateDraftOrder(CURRENT_YEAR, weeksData, teamDataRaw, null, null);
+        const rosterIdToPickNum = convertPlacementToPickNumbers(placeToRosterId);
+        
+        if (!cancelled) {
+          setDraftOrder(rosterIdToPickNum);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setDraftOrder(null);
+        }
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch draft order in TeamSummary', e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isCurrentSeason]);
+
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
@@ -217,7 +274,13 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
             {myStanding.points_scored} Fantasy Points
           </div>
           {isCurrentSeason ? (
-            <FullRoster playerList={playerList} positions={['QB', 'WR', 'RB', 'TE', 'Picks']} picks={tradedPicks} />
+            <FullRoster 
+              playerList={playerList} 
+              positions={['QB', 'WR', 'RB', 'TE', 'Picks']} 
+              picks={tradedPicks}
+              draftOrder={draftOrder}
+              nextDraftYear={String(Number(CURRENT_YEAR) + 1)}
+            />
           ) : (
             <FullRoster playerList={playerList} positions={['QB', 'WR', 'RB', 'TE']} />
           )}
