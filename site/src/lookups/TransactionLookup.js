@@ -2,8 +2,10 @@ import { LEAGUE_ID } from '../utils/global_constants';
 import { recordRateLimitHit } from '../utils/database';
 
 /**
- * Fetch transactions for a given round from the Sleeper API using the current
- * LEAGUE_ID from settings. The off-season trades live in round 1.
+ * Fetch transactions for a given round from the Sleeper API.
+ *
+ * @param {number} round   - The NFL week / leg number (1 for off-season trades).
+ * @param {string} leagueId - League to query; defaults to the current LEAGUE_ID.
  *
  * Each transaction object has the shape:
  *   {
@@ -14,9 +16,9 @@ import { recordRateLimitHit } from '../utils/database';
  *     waiver_budget: [{ amount, receiver, sender }]
  *   }
  */
-export async function fetchTransactions(round = 1) {
+export async function fetchTransactions(round = 1, leagueId = LEAGUE_ID) {
   const res = await fetch(
-    `https://api.sleeper.app/v1/league/${LEAGUE_ID}/transactions/${round}`
+    `https://api.sleeper.app/v1/league/${leagueId}/transactions/${round}`
   );
   if (res.status === 429) {
     try { await recordRateLimitHit('sleeper'); } catch (_) {}

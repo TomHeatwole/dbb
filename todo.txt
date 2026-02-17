@@ -15,6 +15,12 @@
 - Do more with player stats
   - In Scores and team scores actually show the stats that led to the fantasy points
 
+- **Understanding of what # a player was at their position (i.e. RB12)
+  - We can put this directly in when viewing player stats
+  - But it'll be really nice to reference when doing things like scenarios.
+  - Probably build once for 2025 and 2024, then have a working understanding of
+    it weekly in live seasons.
+
 - Home cards:
   - In-season
       - Standings (reg season) w/ up/down arrows

@@ -18,14 +18,23 @@ const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b
 const OG_TITLE = 'Head to Head';
 const OG_DESCRIPTION = '';
 
+function getAvailableYearsAndDefault() {
+  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
+  const prevYears = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
+  const availableYears = isPreSeason ? prevYears : allYears;
+  const defaultSeason = isPreSeason && prevYears.length > 0 ? prevYears[0] : CURRENT_YEAR;
+  return { availableYears, defaultSeason };
+}
+
 function H2hPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { availableYears, defaultSeason } = getAvailableYearsAndDefault();
   const urlYear = searchParams.get('year');
   const urlFormat = searchParams.get('format');
   const urlTeamA = searchParams.get('a');
   const urlTeamB = searchParams.get('b');
   const urlWeek = searchParams.get('week');
-  const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
+  const initialSeason = urlYear && availableYears.includes(urlYear) ? urlYear : defaultSeason;
 
   const [season, setSeason] = useState(initialSeason);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -55,23 +64,23 @@ function H2hPage() {
   }, []);
 
   useEffect(() => {
-    if (urlYear && allYears.includes(urlYear) && season !== urlYear) {
+    if (urlYear && availableYears.includes(urlYear) && season !== urlYear) {
       setSeason(urlYear);
       setDropdownOpen(false);
     }
-    if (!urlYear && season !== CURRENT_YEAR) {
-      setSeason(CURRENT_YEAR);
+    if (!urlYear && season !== defaultSeason) {
+      setSeason(defaultSeason);
       setDropdownOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlYear]);
 
   useEffect(() => {
-    if (season === CURRENT_YEAR) {
+    if (season === defaultSeason) {
       searchParams.delete('year');
       searchParams.delete('week');
       setSearchParams(searchParams, { replace: true });
-    } else if (allYears.includes(season)) {
+    } else if (availableYears.includes(season)) {
       searchParams.set('year', season);
       searchParams.delete('week');
       setSearchParams(searchParams, { replace: true });
@@ -283,7 +292,7 @@ function H2hPage() {
             e.stopPropagation();
           }}
         >
-          {allYears.map((opt) => (
+          {availableYears.map((opt) => (
             <div
               key={opt}
               className={

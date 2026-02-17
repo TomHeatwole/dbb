@@ -5,185 +5,23 @@ import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
-import { fetchTransactions, buildTradeSides } from '../lookups/TransactionLookup';
+import { fetchTransactions } from '../lookups/TransactionLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
-import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
-import { getPlayerLogoUrl } from '../utils/playerLogo';
+import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
+import { PREVIOUS_YEARS } from '../utils/global_constants';
+import { filterAndSortTrades, TradeItem } from '../trades/TradeComponents';
 
-const MAX_TRADES_SHOWN = 3;
+const PREVIEW_SIZE = 3;
 
-// Previous season provides the standing order for the upcoming draft (2025 → 2026 draft).
-// Also used to force fetchPlayersData onto the static players.txt path (safe during pre-season).
+// Previous season drives both the static players.txt lookup and the draft pick order.
 const PREV_SEASON = String(Number(CURRENT_YEAR) - 1);
-
-function formatTradeDate(ts) {
-  if (!ts) return '';
-  return new Date(Number(ts)).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-// Format a pick as "2026 1.05" when pick-number data is available,
-// or fall back to "2026 R1" style for future / unknown picks.
-function formatPickLabel(pick, rosterIdToPickNum) {
-  const season = pick.season ? String(pick.season) : '?';
-  const round = pick.round != null ? Number(pick.round) : null;
-
-  if (season === CURRENT_YEAR && round != null && pick.roster_id != null) {
-    const pickNum = rosterIdToPickNum[String(pick.roster_id)];
-    if (Number.isFinite(pickNum)) {
-      return `${season} ${round}.${String(pickNum).padStart(2, '0')}`;
-    }
-  }
-
-  if (round != null) return `${season} R${round}`;
-  return `${season} Pick`;
-}
-
-// One side (team) of a trade — shows what they received.
-function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players, idMap, onPlayerClick }) {
-  const name = teamInfo?.teamName || `Team ${rosterId}`;
-  const avatarUrl =
-    teamInfo?.user?.team_avatar_url ||
-    teamInfo?.user?.user_avatar_url ||
-    teamInfo?.user?.avatar_url ||
-    null;
-
-  // Build ordered list of received assets
-  const assets = [];
-
-  for (const playerId of (side?.playerIds || [])) {
-    const info = getPlayerInfo(playerId, players, idMap);
-    const playerName = info?.name || `Player ${playerId}`;
-    const photo = info?.espn_photo_url || null;
-    const pos = info?.position || '';
-    const team = info?.team || info?.team_abbr || '';
-    const meta = [pos, team].filter(Boolean).join(' · ');
-    assets.push({ type: 'player', key: `p-${playerId}`, label: playerName, meta, photo, fullInfo: info });
-  }
-
-  for (let i = 0; i < (side?.picks || []).length; i++) {
-    const label = formatPickLabel(side.picks[i], rosterIdToPickNum);
-    assets.push({ type: 'pick', key: `pick-${i}`, label });
-  }
-
-  if (side?.faab > 0) {
-    assets.push({ type: 'faab', key: 'faab', label: `+$${side.faab} FAAB` });
-  }
-
-  return (
-    <div className="recent-trades-side">
-      {/* Team name links to their team page in a new tab */}
-      <Link
-        className="recent-trades-team-header"
-        to={`/team/${rosterId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {avatarUrl ? (
-          <img className="recent-trades-team-avatar" src={avatarUrl} alt="" />
-        ) : (
-          <div className="recent-trades-team-avatar recent-trades-team-avatar--placeholder" />
-        )}
-        <span className="recent-trades-team-name">{name}</span>
-      </Link>
-
-      {assets.length > 0 && (
-        <>
-          <div className="recent-trades-receives-label">Receives:</div>
-          <div className="recent-trades-assets">
-            {assets.map((asset) => {
-              if (asset.type === 'player') {
-                return (
-                  <button
-                    key={asset.key}
-                    type="button"
-                    className="recent-trades-asset recent-trades-asset--player"
-                    onClick={() => onPlayerClick(asset.fullInfo)}
-                  >
-                    <img
-                      className="recent-trades-player-photo"
-                      src={getPlayerLogoUrl(asset.photo)}
-                      alt=""
-                    />
-                    <div className="recent-trades-asset-text">
-                      <span className="recent-trades-asset-name">{asset.label}</span>
-                      {asset.meta && (
-                        <span className="recent-trades-asset-meta">{asset.meta}</span>
-                      )}
-                    </div>
-                  </button>
-                );
-              }
-              // Picks and FAAB — not clickable
-              return (
-                <div key={asset.key} className="recent-trades-asset">
-                  <div className="recent-trades-asset-text">
-                    <span className="recent-trades-asset-name">{asset.label}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {assets.length === 0 && (
-        <div className="recent-trades-assets">
-          <div className="recent-trades-asset">
-            <span className="recent-trades-none">—</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TradeItem({ trade, rosterMap, rosterIdToPickNum, players, idMap, onPlayerClick }) {
-  const sides = buildTradeSides(trade);
-  const rosterIds = Object.keys(sides).map(Number).sort((a, b) => a - b);
-  if (rosterIds.length < 2) return null;
-
-  const [leftId, rightId] = rosterIds;
-  const leftInfo = rosterMap[leftId] || rosterMap[String(leftId)] || null;
-  const rightInfo = rosterMap[rightId] || rosterMap[String(rightId)] || null;
-
-  return (
-    <div className="recent-trades-item">
-      <div className="recent-trades-date">{formatTradeDate(trade.created)}</div>
-      <div className="recent-trades-body">
-        <TeamSide
-          rosterId={leftId}
-          teamInfo={leftInfo}
-          side={sides[leftId]}
-          rosterIdToPickNum={rosterIdToPickNum}
-          players={players}
-          idMap={idMap}
-          onPlayerClick={onPlayerClick}
-        />
-        <div className="recent-trades-divider" aria-hidden="true">⇄</div>
-        <TeamSide
-          rosterId={rightId}
-          teamInfo={rightInfo}
-          side={sides[rightId]}
-          rosterIdToPickNum={rosterIdToPickNum}
-          players={players}
-          idMap={idMap}
-          onPlayerClick={onPlayerClick}
-        />
-      </div>
-    </div>
-  );
-}
 
 function RecentTradesCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [trades, setTrades] = useState(null);
+  const [trades, setTrades] = useState([]);
   const [rosterMap, setRosterMap] = useState({});
   const [rosterIdToPickNum, setRosterIdToPickNum] = useState({});
   const [players, setPlayers] = useState(null);
@@ -192,7 +30,7 @@ function RecentTradesCard() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const loadIdRef = useRef(0);
 
-  // Lock body scroll when player modal is open
+  // Body scroll lock when player modal is open
   useEffect(() => {
     if (selectedPlayer) {
       document.body.classList.add('modal-open');
@@ -230,8 +68,7 @@ function RecentTradesCard() {
         ] = await Promise.all([
           fetchTransactions(1),
           fetchTeamData(CURRENT_YEAR),
-          // Pass PREV_SEASON so fetchPlayersData always uses the static players.txt
-          // file rather than an empty pre-season snapshot.
+          // PREV_SEASON forces the static players.txt path (safe during pre-season)
           fetchPlayersData(PREV_SEASON),
           fetchPlayerIdMap(),
           fetchScoresData(PREV_SEASON),
@@ -240,14 +77,12 @@ function RecentTradesCard() {
 
         if (cancelled) return;
 
-        // Team names / avatars from the current (2026) league
         const map =
           currentTeamData?.rosters && currentTeamData?.users
             ? buildRosterIdToTeamInfoMap(currentTeamData.rosters, currentTeamData.users)
             : {};
 
-        // Pick-number map: rosterId → draft slot (1-10) for the upcoming draft.
-        // Enables "2026 1.05" formatting instead of generic "2026 R1".
+        // Pick-number map for "2026 1.05" formatting
         let pickNumMap = {};
         try {
           const placeToRosterId = calculateDraftOrder(
@@ -262,20 +97,13 @@ function RecentTradesCard() {
           // Non-fatal: generic round format used as fallback
         }
 
-        const tradeList = Array.isArray(allTransactions)
-          ? allTransactions
-              .filter((t) => t && t.type === 'trade' && t.status === 'complete')
-              .sort((a, b) => (b.created || 0) - (a.created || 0))
-              .slice(0, MAX_TRADES_SHOWN)
-          : [];
-
         if (currentLoadId === loadIdRef.current && !cancelled) {
           setRosterMap(map);
           setRosterIdToPickNum(pickNumMap);
           setPlayers(playersData);
           setIdMap(playerIdMap);
           setTeamData(currentTeamData);
-          setTrades(tradeList);
+          setTrades(filterAndSortTrades(allTransactions));
         }
       } catch (_) {
         if (!cancelled && currentLoadId === loadIdRef.current) {
@@ -289,10 +117,7 @@ function RecentTradesCard() {
     }
 
     load();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const modal = selectedPlayer ? (
@@ -318,12 +143,13 @@ function RecentTradesCard() {
     body = <LoadingState label="Loading trades…" ariaLabel="Loading recent trades" />;
   } else if (error) {
     body = <div className="recent-trades-status recent-trades-status--error">{error}</div>;
-  } else if (!trades || trades.length === 0) {
+  } else if (trades.length === 0) {
     body = <div className="recent-trades-status">No trades yet this off-season.</div>;
   } else {
+    const preview = trades.slice(0, PREVIEW_SIZE);
     body = (
       <div className="recent-trades-list">
-        {trades.map((trade) => (
+        {preview.map((trade) => (
           <TradeItem
             key={trade.transaction_id}
             trade={trade}
@@ -338,12 +164,24 @@ function RecentTradesCard() {
     );
   }
 
+  // Determine whether the "See all trades" link makes sense to show
+  const showLink = !loading && !error;
+  const prevLeagueExists = !!PREVIOUS_YEARS[PREV_SEASON];
+  const hasMore = trades.length > PREVIEW_SIZE || prevLeagueExists;
+
   return (
     <>
       <HomeCard className="recent-trades-card">
         <div className="home-card-inner">
           <h2 className="home-card-title">🤝 Recent Trades</h2>
           <div className="home-card-body">{body}</div>
+          {showLink && (
+            <div className="active-playoffs-link-row">
+              <Link className="active-playoffs-link" to="/trades">
+                {hasMore ? 'See all trades →' : 'Trade history →'}
+              </Link>
+            </div>
+          )}
         </div>
       </HomeCard>
       {modal && createPortal(modal, document.body)}

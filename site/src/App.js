@@ -25,6 +25,7 @@ import YoffsPage from './routes/YoffsPage';
 import H2hPage from './routes/h2h';
 import NotesPage from './routes/NotesPage';
 import ScenariosPage from './routes/ScenariosPage';
+import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
@@ -83,7 +84,8 @@ function AppInner() {
       <Route path="/Scores/Week" element={<LeagueScores />} />
       <Route path="/admincontrols" element={<AdminControls />} />
       <Route path="/notes" element={<NotesPage />} />
-      
+      <Route path="/trades" element={<TradesPage />} />
+
       {/* Conditionally rendered routes based on feature toggles */}
       {isFeatureEnabled('SCENARIOS_ENABLED', MAIN_FEATURES) && (
         <Route path="/scenarios" element={<ScenariosPage />} />

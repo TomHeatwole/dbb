@@ -22,7 +22,11 @@ function YoffsPage() {
   const urlTeamA = searchParams.get('a');
   const urlTeamB = searchParams.get('b');
 
-  const initialSeason = urlYear && String(urlYear) !== 'null' ? urlYear : CURRENT_YEAR;
+  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
+  const prevYearsForDefault = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
+  const availableYears = isPreSeason ? prevYearsForDefault : [CURRENT_YEAR, ...prevYearsForDefault];
+  const defaultSeason = isPreSeason && prevYearsForDefault.length > 0 ? prevYearsForDefault[0] : CURRENT_YEAR;
+  const initialSeason = urlYear && String(urlYear) !== 'null' ? urlYear : defaultSeason;
   const initialModeFromUrl =
     urlFormat === 'bracket' || urlFormat === 'cumulative' ? urlFormat : null;
   const initialMode = initialModeFromUrl || (initialSeason === '2024' ? 'cumulative' : 'bracket');
@@ -57,7 +61,7 @@ function YoffsPage() {
   const modeDropdownRef = useRef(null);
   const [selectedTab, setSelectedTab] = useState(initialTab);
 
-  const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
+  // availableYears and defaultSeason already computed above
 
   useEffect(() => {
     trackPageLoad();
@@ -161,8 +165,8 @@ function YoffsPage() {
   useEffect(() => {
     if (urlYear && urlYear !== season) {
       setSeason(urlYear);
-    } else if (!urlYear && season !== CURRENT_YEAR) {
-      setSeason(CURRENT_YEAR);
+    } else if (!urlYear && season !== defaultSeason) {
+      setSeason(defaultSeason);
     }
     if (urlFormat && urlFormat !== mode && (urlFormat === 'bracket' || urlFormat === 'cumulative')) {
       setMode(urlFormat);
@@ -196,7 +200,7 @@ function YoffsPage() {
         <span className="team-season-dropdown-arrow">{yearDropdownOpen ? '▲' : '▼'}</span>
         {yearDropdownOpen && (
           <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-            {allYears.map(opt => (
+            {availableYears.map(opt => (
               <div
                 key={opt}
                 className={'team-season-dropdown-option' + (opt === season ? ' team-season-dropdown-option-active' : '')}
@@ -218,7 +222,7 @@ function YoffsPage() {
                   setYearDropdownOpen(false);
 
                   updateQueryParams({
-                    year: String(nextSeason) === String(CURRENT_YEAR) ? null : nextSeason,
+                    year: String(nextSeason) === String(defaultSeason) ? null : nextSeason,
                     format: nextMode,
                     tab: nextTab,
                     matchup: null,

@@ -37,9 +37,6 @@ function ScenarioTeamGrid({ teams, selectedRosterId, onSelectTeam }) {
                 <span className="yoffs-bracket-name h2h-web-name">
                   {team.teamName}
                 </span>
-                {isSelected && (
-                  <span className="scenario-team-grid-editing-badge">Editing</span>
-                )}
               </button>
             );
           })}
