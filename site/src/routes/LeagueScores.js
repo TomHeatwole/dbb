@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
-import { PREVIOUS_YEARS, LEAGUE_ID } from '../utils/global_constants';
+import { PREVIOUS_YEARS } from '../utils/global_constants';
 import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from '../scores/WeekSelector';
 import { fetchScoresData } from '../lookups/ScoresLookup';
@@ -16,7 +16,7 @@ import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
-import { readApiCacheLatestByKey, readPlayersSnapshot } from '../utils/database';
+import { readPlayersSnapshot } from '../utils/database';
 import PageMeta from '../PageMeta';
 import YoffsLink from '../yoffs/YoffsLink';
 import { createLiveScoresPoller } from '../utils/livePolling';
@@ -526,6 +526,7 @@ function LeagueScores() {
 			cancelled = true;
 			poller.stop();
 		};
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [season, week, playerGameLabels, buildExpandedData, prevData]);
 
 

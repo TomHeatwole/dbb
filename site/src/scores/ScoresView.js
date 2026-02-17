@@ -306,6 +306,7 @@ function ScoresView({
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [season, week, playersData, playerIdMap, weeksParsedData, playersTeamMap]);
 
   // Load per-player team mapping from weekly players snapshot (current season only)

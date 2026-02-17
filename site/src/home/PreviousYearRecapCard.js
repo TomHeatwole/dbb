@@ -131,14 +131,12 @@ function PreviousYearRecapCard() {
           (semiTotals[seed1] === semiTotals[seed4] && 1 < 4)
             ? seed1
             : seed4;
-        const topLoser = topWinner === seed1 ? seed4 : seed1;
 
         const bottomWinner =
           semiTotals[seed2] > semiTotals[seed3] ||
           (semiTotals[seed2] === semiTotals[seed3] && 2 < 3)
             ? seed2
             : seed3;
-        const bottomLoser = bottomWinner === seed2 ? seed3 : seed2;
 
         // Finals totals (Week 17) using StartSit-based starters total.
         const finalsWeek = PLAYOFF_END_WEEK;

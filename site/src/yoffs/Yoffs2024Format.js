@@ -432,6 +432,7 @@ function Yoffs2024Format({
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [season, weeksParsedData, playersData, playerIdMap, playoffStartWeek, playoffEndWeek]);
 
   function getTeamName(rosterId) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -25,7 +25,6 @@ import YoffsPage from './routes/YoffsPage';
 import H2hPage from './routes/h2h';
 import NotesPage from './routes/NotesPage';
 import ScenariosPage from './routes/ScenariosPage';
-import { fetchTeamData } from './lookups/TeamLookup';
 
 function MobileTopNav() {
   return (

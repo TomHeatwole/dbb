@@ -11,6 +11,7 @@ A flexible, schema-driven fantasy football scoring system that calculates fantas
 - **Points Breakdown**: Detailed breakdown by category (passing, rushing, receiving, etc.)
 - **Per-Game Averages**: Calculate fantasy points per game
 - **Top Players**: Get ranked lists by position and fantasy points
+- **Score Validation**: Validate calculated scores against Sleeper API scores
 
 ## Installation
 
@@ -285,6 +286,24 @@ Located at: `public/data/players.txt`
 
 JSON file with player data including `gsis_id` field for joining with CSV stats.
 
+## Score Validation
+
+The validation tool compares fantasy scores from two sources:
+1. **Sleeper API** - Pre-calculated scores (source of truth)
+2. **Local Calculation** - Scores calculated using `score_format.json`
+
+### Quick Start
+
+```bash
+# Validate all rostered players for 2024 & 2025
+node site/src/data_parse/run_validation.js
+
+# Validate specific season and weeks
+node site/src/data_parse/run_validation.js 2024 --weeks 1-4
+```
+
+For detailed documentation, see [VALIDATION_README.md](./VALIDATION_README.md)
+
 ## Testing
 
 Run unit tests:
@@ -295,6 +314,11 @@ npm test
 Run specific test file:
 ```bash
 npm test fantasyCalculator.test.js
+```
+
+Run validation tests:
+```bash
+npm test validateScoresData.test.js
 ```
 
 ## Examples

@@ -181,6 +181,7 @@ function LeagueStandings() {
       }
     })();
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [season, weeksParsedData, playersData, playerIdMap]);
 
   const playerSeasonTotalsMap = useMemo(() => {

@@ -5756,8 +5756,9 @@ body.modal-open {
 }
 
 .player-ownership-free-agent {
-  color: rgba(255, 255, 255, 0.5);
+  color: #4dd0e1;
   font-style: italic;
+  font-weight: 500;
 }
 
 .player-season-dropdown {
@@ -5927,4 +5928,94 @@ body.modal-open {
 
 .player-weekly-zero .player-weekly-points {
   color: rgba(255, 255, 255, 0.3);
+}
+
+/* Player Season Aggregate View (for pre-2024 years) */
+.player-season-aggregate {
+  padding: 1.5rem;
+}
+
+.player-season-stats-summary {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.player-season-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 3rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  text-align: center;
+  min-width: 200px;
+}
+
+.player-season-stat-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.player-season-stat-value {
+  font-size: 1.75rem;
+  color: #1db954;
+  font-weight: 700;
+}
+
+.player-season-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0.5rem 0 1.5rem 0;
+}
+
+.player-season-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.player-season-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.player-season-detail-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.player-season-detail-value {
+  font-size: 1.3rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+}
+
+@media (max-width: 50em) {
+  .player-season-stats-summary {
+    margin-bottom: 1rem;
+  }
+  
+  .player-season-stat-card {
+    padding: 1.25rem 2rem;
+    min-width: 150px;
+  }
+  
+  .player-season-stats-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
 }

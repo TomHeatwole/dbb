@@ -12,7 +12,7 @@ import {
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
-import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
