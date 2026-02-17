@@ -24,6 +24,7 @@ import AdminControls from './routes/AdminControls';
 import YoffsPage from './routes/YoffsPage';
 import H2hPage from './routes/h2h';
 import NotesPage from './routes/NotesPage';
+import ScenariosPage from './routes/ScenariosPage';
 import { fetchTeamData } from './lookups/TeamLookup';
 
 function MobileTopNav() {
@@ -83,6 +84,7 @@ function AppInner() {
       <Route path="/yoffs" element={<YoffsPage />} />
       <Route path="/h2h" element={<H2hPage />} />
       <Route path="/notes" element={<NotesPage />} />
+      <Route path="/scenarios" element={<ScenariosPage />} />
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
   );
