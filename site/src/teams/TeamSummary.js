@@ -148,7 +148,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     return () => {
       cancelled = true;
     };
-  }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason]);
+  }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason, isPreSeason]);
 
   // Load draft order if we're in post-season, pre-draft state (or preseason of the new year)
   useEffect(() => {

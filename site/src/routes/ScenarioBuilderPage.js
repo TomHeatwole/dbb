@@ -234,7 +234,7 @@ function ScenarioBuilderPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [season]);
+  }, [season, setSearchParams]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
