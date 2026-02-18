@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { buildTradeSides } from '../lookups/TransactionLookup';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import { CURRENT_YEAR } from '../utils/DateHelper';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -36,14 +37,18 @@ export function formatPickLabel(pick, rosterIdToPickNum = {}) {
   const season = pick.season ? String(pick.season) : '?';
   const round = pick.round != null ? Number(pick.round) : null;
 
-  if (round != null && pick.roster_id != null && rosterIdToPickNum) {
+  // Only use exact slot numbers for the current draft year (standings are finalized)
+  if (round != null && season === String(CURRENT_YEAR) && pick.roster_id != null && rosterIdToPickNum) {
     const pickNum = rosterIdToPickNum[String(pick.roster_id)];
     if (Number.isFinite(pickNum)) {
       return `${season} ${round}.${String(pickNum).padStart(2, '0')}`;
     }
   }
 
-  if (round != null) return `${season} R${round}`;
+  if (round != null) {
+    const ordinal = round === 1 ? '1st' : round === 2 ? '2nd' : round === 3 ? '3rd' : `${round}th`;
+    return `${season} ${ordinal}`;
+  }
   return `${season} Pick`;
 }
 

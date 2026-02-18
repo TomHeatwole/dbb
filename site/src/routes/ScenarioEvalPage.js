@@ -27,6 +27,8 @@ import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import ScenarioBuilderTooltip from '../scenarios/ScenarioBuilderTooltip';
 import { decodeScenario, applyScenarioChanges } from '../scenarios/scenarioEncoding';
 import { validateScenarioRosters } from '../scenarios/scenarioValidation';
+import { computeScenarioEval } from '../scenarios/computeScenarioEval';
+import ScenarioStandingsPanel from '../scenarios/ScenarioStandingsPanel';
 
 const OG_TITLE = 'Scenario Builder — Evaluate';
 const OG_DESCRIPTION = 'Evaluate what-if scenario results for a customised team roster.';
@@ -89,7 +91,7 @@ async function loadSeasonData(year) {
     if (rid != null) originalRosters[rid] = Array.isArray(roster.players) ? [...roster.players] : [];
   }
 
-  return { teams, originalRosters, idMap, players };
+  return { teams, originalRosters, idMap, players, weeksData };
 }
 
 // ── Invalid scenario badge ────────────────────────────────────────────────────
@@ -137,11 +139,19 @@ function ScenarioEvalPage() {
   const [teamsForGrid, setTeamsForGrid]           = useState([]);
   const [playersData, setPlayersData]             = useState(null);
   const [playerIdMap, setPlayerIdMap]             = useState(null);
+  const [weeksParsedData, setWeeksParsedData]     = useState(null);
 
   const rosterViolations = useMemo(
     () => validateScenarioRosters(scenarioRosters, teamsForGrid, playersData),
     [scenarioRosters, teamsForGrid, playersData],
   );
+
+  const evalResult = useMemo(() => {
+    if (!weeksParsedData || !playersData || !playerIdMap ||
+        !originalRosters || !scenarioRosters ||
+        Object.keys(originalRosters).length === 0) return null;
+    return computeScenarioEval(weeksParsedData, originalRosters, scenarioRosters, playersData, playerIdMap);
+  }, [weeksParsedData, originalRosters, scenarioRosters, playersData, playerIdMap]);
 
   useEffect(() => {
     const decoded = decodeScenario(scenarioParam);
@@ -156,7 +166,7 @@ function ScenarioEvalPage() {
 
     async function load() {
       try {
-        const { teams, originalRosters: orig, idMap, players } =
+        const { teams, originalRosters: orig, idMap, players, weeksData } =
           await loadSeasonData(decoded.y);
 
         if (cancelled) return;
@@ -168,6 +178,7 @@ function ScenarioEvalPage() {
         setTeamsForGrid(teams);
         setPlayersData(players);
         setPlayerIdMap(idMap);
+        setWeeksParsedData(weeksData);
       } catch (e) {
         if (!cancelled) setError('Failed to load scenario data.');
       } finally {
@@ -237,14 +248,21 @@ function ScenarioEvalPage() {
                * playersData, playerIdMap, season.
                */}
               <div className="scenario-page-editor-col">
-                <div className="scenario-eval-placeholder">
-                  <div className="scenario-eval-placeholder-icon">📊</div>
-                  <div className="scenario-eval-placeholder-title">Evaluation coming soon</div>
-                  <div className="scenario-eval-placeholder-body">
-                    Results will show projected standings, scoring impact, and head-to-head
-                    outcomes based on your modified rosters.
+                {evalResult ? (
+                  <ScenarioStandingsPanel
+                    scenarioStandings={evalResult.scenarioStandings}
+                    teamDeltas={evalResult.teamDeltas}
+                    teamsForGrid={teamsForGrid}
+                  />
+                ) : (
+                  <div className="scenario-eval-placeholder">
+                    <div className="scenario-eval-placeholder-icon">📊</div>
+                    <div className="scenario-eval-placeholder-title">Computing…</div>
+                    <div className="scenario-eval-placeholder-body">
+                      Building optimal lineups for all 17 weeks.
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
