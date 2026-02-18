@@ -53,13 +53,16 @@ function WeeklyTooltip({ active, payload, label }) {
 function PtsDelta({ delta, tooltip }) {
   if (delta == null || Math.abs(delta) < 0.05) return null;
   const pos = delta > 0;
-  return (
-    <span
-      className={`scenario-week-delta ${pos ? 'scenario-week-delta--pos' : 'scenario-week-delta--neg'}`}
-      title={tooltip || undefined}
-      style={tooltip ? { cursor: 'help' } : undefined}
-    >
+  const badge = (
+    <span className={`scenario-week-delta ${pos ? 'scenario-week-delta--pos' : 'scenario-week-delta--neg'}`}>
       {pos ? '+' : ''}{delta.toFixed(1)}
+    </span>
+  );
+  if (!tooltip) return badge;
+  return (
+    <span className="scenario-delta-tooltip-wrap">
+      {badge}
+      <span className="scenario-delta-tooltip-bubble">{tooltip}</span>
     </span>
   );
 }
@@ -186,7 +189,7 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
       {/* ── Bench ── */}
       <div
         className="scenario-week-section scenario-week-section--bench"
-        style={startersHeight ? { maxHeight: `${startersHeight}px` } : {}}
+        style={startersHeight ? { height: `${startersHeight}px`, overflow: 'hidden' } : {}}
       >
         {/* Totals row uses same flex structure as bench items — guarantees column alignment */}
         <div className="scenario-week-bench-item scenario-week-bench-totals">
