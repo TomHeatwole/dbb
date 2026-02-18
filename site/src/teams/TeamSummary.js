@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { CURRENT_YEAR, getCurrentNFLWeek, isPostSeasonPreDraft, getCompletedWeeksCount } from '../utils/DateHelper';
-import { LEAGUE_ID } from '../utils/global_constants';
+import { LEAGUE_ID, PREVIOUS_YEARS } from '../utils/global_constants';
 import { StartSitSort } from '../players/StartSitDecider';
 import FullRoster from './FullRoster';
 import { fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
@@ -41,8 +41,11 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           return;
         }
         const currentYearNum = Number(CURRENT_YEAR);
-        const minSeason = currentYearNum + 1;
-        const maxSeason = currentYearNum + 3;
+        // In preseason the current year's draft hasn't happened yet, so include
+        // current year picks. During the season they've been used, so start at +1.
+        const yearOffset = isPreSeason ? 0 : 1;
+        const minSeason = currentYearNum + yearOffset;
+        const maxSeason = currentYearNum + yearOffset + 2;
 
         // Determine which of this team's own natural picks (by season/round) have been traded away.
         // We treat a pick as traded away if its original roster_id is this team but the current owner_id is different.
@@ -147,23 +150,30 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     };
   }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason]);
 
-  // Load draft order if we're in post-season, pre-draft state
+  // Load draft order if we're in post-season, pre-draft state (or preseason of the new year)
   useEffect(() => {
     let cancelled = false;
     
-    // Only fetch draft order for current season in post-season state
-    if (!isCurrentSeason || !isPostSeasonPreDraft(CURRENT_YEAR)) {
+    // Fire for current season when: post-season pre-draft (week 17 done) OR preseason (not started yet)
+    if (!isCurrentSeason || (!isPostSeasonPreDraft(CURRENT_YEAR) && !isPreSeason)) {
       setDraftOrder(null);
       return () => {
         cancelled = true;
       };
     }
 
+    // In preseason (CURRENT_YEAR hasn't played yet), the draft order is based on the
+    // previous year's final standings. Use the max year from PREVIOUS_YEARS.
+    const prevYearNums = Object.keys(PREVIOUS_YEARS).map(Number).filter(n => Number.isFinite(n));
+    const scoresSeasonForOrder = isPreSeason && prevYearNums.length > 0
+      ? String(Math.max(...prevYearNums))
+      : CURRENT_YEAR;
+
     (async () => {
       try {
         // Fetch all data needed to calculate draft order
         const [weeksData, teamDataRaw] = await Promise.all([
-          fetchScoresData(CURRENT_YEAR),
+          fetchScoresData(scoresSeasonForOrder),
           (async () => {
             const rosterRes = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`);
             if (!rosterRes.ok) throw new Error('Failed to fetch rosters for draft order');
@@ -176,9 +186,9 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           return;
         }
 
-        // For draft order calculation, we need players data, but we can pass null
-        // and it will fall back to API points (acceptable for draft order)
-        const placeToRosterId = calculateDraftOrder(CURRENT_YEAR, weeksData, teamDataRaw, null, null);
+        // For draft order calculation, we can pass null for player data and it will
+        // fall back to API points (acceptable for draft order)
+        const placeToRosterId = calculateDraftOrder(scoresSeasonForOrder, weeksData, teamDataRaw, null, null);
         const rosterIdToPickNum = convertPlacementToPickNumbers(placeToRosterId);
         
         if (!cancelled) {
@@ -194,7 +204,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     return () => {
       cancelled = true;
     };
-  }, [isCurrentSeason]);
+  }, [isCurrentSeason, isPreSeason]);
 
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
@@ -282,7 +292,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           positions={['QB', 'WR', 'RB', 'TE', 'Picks']} 
           picks={tradedPicks}
           draftOrder={draftOrder}
-          nextDraftYear={String(Number(CURRENT_YEAR) + 1)}
+          nextDraftYear={isPreSeason ? String(CURRENT_YEAR) : String(Number(CURRENT_YEAR) + 1)}
           rosters={rosters}
           users={users}
         />

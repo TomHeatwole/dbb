@@ -18,28 +18,47 @@
 
 import { StartSitSort } from '../players/StartSitDecider';
 import { getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
+import { buildSleeperBasePoints } from './sleeperScoring';
 
 const NUM_WEEKS       = 17;
 const REG_SEASON_END  = 14; // last regular season week (inclusive, 1-indexed → slice 0..14)
 const PLAYOFF_START   = 15; // first playoff week (1-indexed → index 14)
 
 /**
- * Invert all per-team players_points into a single flat lookup.
+ * Build a flat playerWeeklyPoints lookup:
+ *   playerWeeklyPoints[weekIndex][playerId] = points
  *
- * playerWeeklyPoints[weekIndex][playerId] = points
+ * Strategy (in priority order):
+ *   1. Sleeper base points calculated from raw weekly stats for ALL players —
+ *      this covers free agents who were never on any roster.
+ *   2. Authoritative matchup-sourced players_points for rostered players —
+ *      Sleeper already applied the exact league scoring rules here, so we
+ *      trust this over our own recalculation.
  *
- * Players on any roster in any given week will be present. Players
- * who were never on any roster that week resolve to 0.
+ * Result: every player who played (rostered or not) has accurate fantasy points.
+ *
+ * @param {Array}       weeksParsedData      17-week matchup array from fetchScoresData.
+ * @param {Array|null}  sleeperWeeklyStats   0-indexed array of { [pid]: rawStatsObj }.
+ * @param {Object|null} scoringConfig        League scoring config (score_format.json).
+ * @param {Object|null} playersData          Sleeper player metadata (for positions).
  */
-function buildPlayerWeeklyPoints(weeksParsedData) {
-  return (weeksParsedData || []).map((weekEntries) =>
-    (weekEntries || []).reduce((acc, entry) => {
+function buildPlayerWeeklyPoints(weeksParsedData, sleeperWeeklyStats, scoringConfig, playersData) {
+  // Layer 1: compute base points for all players from raw Sleeper weekly stats.
+  // This initialises free-agent scores that the matchup data won't contain.
+  const base = (sleeperWeeklyStats && scoringConfig)
+    ? buildSleeperBasePoints(sleeperWeeklyStats, scoringConfig, playersData)
+    : Array.from({ length: 17 }, () => ({}));
+
+  // Layer 2: overlay the authoritative matchup-sourced points for rostered players.
+  return (weeksParsedData || []).map((weekEntries, weekIdx) => {
+    const weekPts = { ...base[weekIdx] };
+    (weekEntries || []).forEach((entry) => {
       for (const [pid, pts] of Object.entries(entry?.players_points || {})) {
-        acc[pid] = pts;
+        weekPts[pid] = pts;
       }
-      return acc;
-    }, {}),
-  );
+    });
+    return weekPts;
+  });
 }
 
 /**
@@ -133,11 +152,17 @@ function buildFinalStandings(regSeasonTotals, playoffTotals) {
 /**
  * Main entry point.
  *
- * @param {Array}       weeksParsedData   17-week array from fetchScoresData
- * @param {Object}      originalRosters   { [rosterId]: string[] }
- * @param {Object}      scenarioRosters   { [rosterId]: string[] }
- * @param {Object|null} playersData       Sleeper player metadata keyed by player ID
- * @param {Object|null} playerIdMap       Sleeper → ESPN ID map
+ * @param {Array}       weeksParsedData     17-week array from fetchScoresData
+ * @param {Object}      originalRosters     { [rosterId]: string[] }
+ * @param {Object}      scenarioRosters     { [rosterId]: string[] }
+ * @param {Object|null} playersData         Sleeper player metadata keyed by player ID
+ * @param {Object|null} playerIdMap         Sleeper → ESPN ID map
+ * @param {Array|null}  sleeperWeeklyStats  0-indexed array of raw Sleeper weekly stats
+ *                                          (from weeklyStatsLoader.fetchMultipleWeeksStats).
+ *                                          When provided, free-agent scores are computed
+ *                                          from these raw stats via sleeperScoring.js.
+ * @param {Object|null} scoringConfig       League scoring config (score_format.json).
+ *                                          Required alongside sleeperWeeklyStats.
  *
  * @returns {{
  *   originalWeeklyScores:  Object,
@@ -148,8 +173,8 @@ function buildFinalStandings(regSeasonTotals, playoffTotals) {
  *   playerWeeklyPoints:    Array,
  * }}
  */
-export function computeScenarioEval(weeksParsedData, originalRosters, scenarioRosters, playersData, playerIdMap) {
-  const playerWeeklyPoints    = buildPlayerWeeklyPoints(weeksParsedData);
+export function computeScenarioEval(weeksParsedData, originalRosters, scenarioRosters, playersData, playerIdMap, sleeperWeeklyStats = null, scoringConfig = null) {
+  const playerWeeklyPoints    = buildPlayerWeeklyPoints(weeksParsedData, sleeperWeeklyStats, scoringConfig, playersData);
   const playerSeasonTotalsMap = getPlayerSeasonTotalsMap(weeksParsedData);
 
   const originalWeeklyScores = computeAllWeeklyScores(originalRosters, playerWeeklyPoints, playersData, playerIdMap, playerSeasonTotalsMap);

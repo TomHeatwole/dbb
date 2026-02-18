@@ -154,9 +154,33 @@ function TeamPage() {
       setError(null);
       try {
         const teamData = await fetchTeamData(season);
-        setRosters(teamData.rosters);
+        let effectiveRosters = teamData.rosters;
+
+        // Preseason fallback: if the current year's Sleeper league hasn't had rosters
+        // rolled over yet, all roster.players will be null. Fall back to the previous
+        // year's player IDs so the team page can still display the roster.
+        if (season === CURRENT_YEAR) {
+          const hasAnyPlayers = teamData.rosters.some(r => r.players && r.players.length > 0);
+          if (!hasAnyPlayers) {
+            const prevYears = Object.keys(PREVIOUS_YEARS).map(Number).filter(n => Number.isFinite(n));
+            if (prevYears.length > 0) {
+              const prevYear = String(Math.max(...prevYears));
+              try {
+                const prevData = await fetchTeamData(prevYear);
+                effectiveRosters = teamData.rosters.map(r => {
+                  const prevRoster = prevData.rosters.find(pr => String(pr.roster_id) === String(r.roster_id));
+                  return (prevRoster && Array.isArray(prevRoster.players) && prevRoster.players.length > 0)
+                    ? { ...r, players: prevRoster.players }
+                    : r;
+                });
+              } catch (_) {}
+            }
+          }
+        }
+
+        setRosters(effectiveRosters);
         setUsers(teamData.users);
-        const foundRoster = teamData.rosters.find(r => String(r.roster_id) === String(id));
+        const foundRoster = effectiveRosters.find(r => String(r.roster_id) === String(id));
         setRoster(foundRoster);
         if (!foundRoster) {
           setUser(null);

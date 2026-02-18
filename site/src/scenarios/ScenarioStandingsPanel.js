@@ -20,7 +20,7 @@ function fmtDelta(delta) {
  *   teamDeltas         – [{ rosterId, originalPlace, regSeasonDelta, playoffDelta, isPlayoff }]
  *   teamsForGrid       – [{ rosterId, teamName, avatarUrl }]
  */
-function ScenarioStandingsPanel({ scenarioStandings, teamDeltas, teamsForGrid }) {
+function ScenarioStandingsPanel({ scenarioStandings, teamDeltas, teamsForGrid, selectedRosterId, onSelectTeam }) {
   const teamInfoById = {};
   for (const t of (teamsForGrid || [])) teamInfoById[t.rosterId] = t;
 
@@ -40,7 +40,16 @@ function ScenarioStandingsPanel({ scenarioStandings, teamDeltas, teamsForGrid })
 
     return (
       <React.Fragment key={row.rosterId}>
-        <div className={`scenario-standings-row${row.isPlayoff ? ' scenario-standings-row--playoff' : ''}${isLastPlayoff ? ' scenario-standings-row--playoff-last' : ''}`}>
+        <div
+          className={
+            `scenario-standings-row` +
+            (row.isPlayoff ? ' scenario-standings-row--playoff' : '') +
+            (isLastPlayoff ? ' scenario-standings-row--playoff-last' : '') +
+            (selectedRosterId === row.rosterId ? ' scenario-standings-row--selected' : '')
+          }
+          onClick={() => onSelectTeam && onSelectTeam(row.rosterId === selectedRosterId ? null : row.rosterId)}
+          style={{ cursor: 'pointer' }}
+        >
 
           {/* Movement */}
           <span

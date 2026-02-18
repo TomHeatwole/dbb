@@ -7214,6 +7214,435 @@ body.modal-open {
   font-style: italic;
 }
 
+/* ── Scenario Team Detail ── */
+.scenario-team-detail {
+  background: rgba(26, 22, 40, 0.95);
+  border: 1px solid rgba(100, 100, 140, 0.35);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.scenario-team-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(100, 100, 140, 0.22);
+  background: rgba(40, 35, 60, 0.6);
+}
+
+.scenario-team-detail-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(130, 130, 180, 0.6);
+  margin-right: 0.1rem;
+}
+
+.scenario-team-detail-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.scenario-team-detail-avatar--placeholder {
+  display: inline-block;
+  background: rgba(70, 70, 110, 0.35);
+  border: 1px solid rgba(100, 100, 140, 0.3);
+}
+
+.scenario-team-detail-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: rgba(220, 225, 255, 0.95);
+}
+
+/* Section block (chart, table, etc.) */
+.scenario-team-detail-section {
+  padding: 1rem 1.1rem 0.75rem;
+  border-bottom: 1px solid rgba(100, 100, 140, 0.15);
+}
+
+.scenario-team-detail-section:last-child {
+  border-bottom: none;
+}
+
+.scenario-team-detail-section-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(190, 200, 240, 0.8);
+  margin-bottom: 0.15rem;
+}
+
+.scenario-team-detail-section-subtitle {
+  font-size: 0.71rem;
+  color: rgba(130, 130, 180, 0.55);
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.scenario-team-detail-chart {
+  /* Slight negative margin so recharts ResponsiveContainer bleeds to edges */
+  margin: 0 -0.25rem;
+}
+
+/* ── Chart tooltip ── */
+.scenario-chart-tooltip {
+  background: rgba(15, 12, 30, 0.96);
+  border: 1px solid rgba(80, 80, 130, 0.5);
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
+  min-width: 9rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.scenario-chart-tooltip-week {
+  font-weight: 800;
+  color: rgba(200, 205, 245, 0.9);
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+
+.scenario-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.15rem 0;
+}
+
+.scenario-chart-tooltip-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scenario-chart-tooltip-dot--original { background: rgba(140, 160, 220, 0.75); }
+.scenario-chart-tooltip-dot--scenario { background: #7c9cff; }
+
+.scenario-chart-tooltip-label {
+  flex: 1;
+  color: rgba(170, 175, 220, 0.7);
+}
+
+.scenario-chart-tooltip-val {
+  font-weight: 700;
+  color: rgba(210, 215, 250, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+.scenario-chart-tooltip-delta {
+  margin-top: 0.35rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid rgba(100, 100, 140, 0.3);
+  font-weight: 800;
+  font-size: 0.82rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.scenario-chart-tooltip-delta--pos { color: #1db954; }
+.scenario-chart-tooltip-delta--neg { color: #ff6b6b; }
+
+/* ── Weekly lineup table (ScenarioWeekTable) ── */
+
+.scenario-week-selector-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+}
+
+.scenario-week-table {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 50em) {
+  .scenario-week-table {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+.scenario-week-section {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Bench single column — flex column so grid fills remaining space below totals row */
+.scenario-week-section--bench {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Base header: label on left, total on right */
+.scenario-week-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding: 0.2em 0.4em 0.35em;
+  border-bottom: 1px solid rgba(100, 100, 150, 0.2);
+  margin-bottom: 0.1em;
+}
+
+/* Totals row in the starters <table> — sits as <thead>, shares exact column widths */
+.scenario-week-totals-row td {
+  padding: 0.28em 0.4em 0.38em;
+  border-bottom: 1px solid rgba(100, 100, 150, 0.25) !important;
+  vertical-align: middle;
+}
+.scenario-week-totals-label {
+  vertical-align: middle;
+}
+
+/* Totals score: larger + heavier than individual row scores (applies in both table + bench flex) */
+.scenario-week-totals-pts {
+  font-size: 1.2em !important;
+  font-weight: 800 !important;
+  color: #f0f2ff !important;
+}
+
+/* Bench totals row: same flex structure as bench items, always visible above the collapsible grid */
+.scenario-week-bench-totals {
+  border-bottom: 1px solid rgba(100, 100, 150, 0.25);
+  padding-bottom: 0.38em;
+}
+
+.scenario-week-section-label {
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(170, 175, 220, 0.6);
+}
+
+
+/* ── Starters table ── */
+.scenario-week-tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.scenario-week-row td {
+  padding: 0.22em 0.4em;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(80, 80, 120, 0.1);
+  font-size: 0.8em;
+}
+
+.scenario-week-row:last-child td {
+  border-bottom: none;
+}
+
+.scenario-week-pos {
+  font-size: 0.68em;
+  font-weight: 700;
+  color: rgba(160, 160, 210, 0.65);
+  white-space: nowrap;
+  width: 3em;
+  min-width: 3em;
+}
+
+.scenario-week-player {
+  min-width: 0;
+}
+
+.scenario-week-player-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  min-width: 0;
+}
+
+.scenario-week-avatar {
+  width: 1.65em;
+  height: 1.65em;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.scenario-week-name {
+  font-weight: 500;
+  color: rgba(220, 222, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.scenario-week-meta {
+  font-size: 0.72em;
+  color: rgba(140, 145, 195, 0.6);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.scenario-week-team {
+  font-weight: 600;
+  color: rgba(150, 160, 220, 0.7);
+}
+
+/* pts column: fixed width, right-aligned number only */
+.scenario-week-pts {
+  text-align: right;
+  font-weight: 700;
+  color: #e0e4ff;
+  white-space: nowrap;
+  width: 3.5em;
+  min-width: 3.5em;
+  vertical-align: middle;
+}
+
+/* delta column: fixed width, left-aligned badge */
+.scenario-week-delta-col {
+  text-align: left;
+  white-space: nowrap;
+  width: 3.8em;
+  min-width: 3.8em;
+  padding-left: 0.3em !important;
+  vertical-align: middle;
+}
+
+/* ── Bench single-column grid ── */
+.scenario-week-bench-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.scenario-week-bench-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.22em 0.4em;
+  border-bottom: 1px solid rgba(80, 80, 120, 0.1);
+  font-size: 0.8em;
+  min-width: 0;
+}
+
+.scenario-week-bench-item:last-child {
+  border-bottom: none;
+}
+
+.scenario-week-bench-player {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.scenario-week-bench-pts {
+  width: 3em;
+  min-width: 3em;
+  text-align: right;
+  font-weight: 700;
+  color: #e0e4ff;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.scenario-week-bench-delta-col {
+  width: 3.5em;
+  min-width: 3.5em;
+  text-align: left;
+  padding-left: 0.25em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Delta badge */
+.scenario-week-delta {
+  font-size: 0.7em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.scenario-week-delta--pos { color: #5dd97c; }
+.scenario-week-delta--neg { color: #ff7070; }
+
+.scenario-week-table-empty {
+  color: rgba(150, 150, 200, 0.5);
+  font-size: 0.82em;
+  padding: 0.75em 0;
+}
+
+/* Toggle button: hidden on desktop, shown on mobile */
+.scenario-week-bench-toggle {
+  display: none;
+  margin-left: auto;
+}
+
+@media (max-width: 50em) {
+  /* Scale the entire weekly lineup table on mobile.
+     Using rem (absolute) so parent chain font sizes don't double-stack. */
+  .scenario-week-table {
+    font-size: 0.72rem;
+  }
+
+  /* On mobile the bench section has no JS-set maxHeight (stacks vertically),
+     so the grid should just be full-height, not scrollable */
+  .scenario-week-section--bench {
+    overflow: visible;
+    max-height: none !important;
+  }
+  .scenario-week-bench-grid {
+    overflow-y: visible;
+  }
+
+  /* Show the toggle button on mobile */
+  .scenario-week-bench-toggle {
+    display: inline-block;
+    background: none;
+    border: 1px solid rgba(120, 130, 200, 0.35);
+    border-radius: 0.25em;
+    color: rgba(160, 170, 230, 0.75);
+    font-size: 0.65em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.1em 0.5em;
+    cursor: pointer;
+    line-height: 1.6;
+  }
+  .scenario-week-bench-toggle:hover {
+    border-color: rgba(140, 155, 220, 0.6);
+    color: rgba(190, 200, 255, 0.9);
+  }
+
+  /* Collapsed state: hide the bench grid on mobile */
+  .scenario-week-bench-grid--collapsed {
+    display: none;
+  }
+}
+
+/* Selected row highlight in standings */
+.scenario-standings-row--selected {
+  background: rgba(100, 120, 200, 0.14) !important;
+  outline: 1px solid rgba(100, 130, 220, 0.35);
+  outline-offset: -1px;
+}
+
 .scenario-eval-error {
   padding: 2rem;
   color: #ff6b6b;
@@ -7281,7 +7710,9 @@ body.modal-open {
 }
 
 .scenario-standings-row:hover {
-  background: rgba(100, 100, 160, 0.07);
+  background: rgba(100, 120, 210, 0.15);
+  outline: 1px solid rgba(100, 130, 220, 0.25);
+  outline-offset: -1px;
 }
 
 /* Gold tint for playoff rows */
@@ -7650,7 +8081,31 @@ body.modal-open {
 
 .scenario-editor-dropdown-item--on-roster {
   cursor: default;
-  opacity: 0.45;
+  opacity: 0.5;
+}
+
+.scenario-editor-dropdown-item--on-roster .scenario-editor-dropdown-drop-btn {
+  opacity: 1;
+}
+
+.scenario-editor-dropdown-drop-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(255, 100, 100, 0.45);
+  background: rgba(255, 80, 80, 0.1);
+  color: rgba(255, 130, 130, 0.9);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.scenario-editor-dropdown-drop-btn:hover {
+  background: rgba(255, 80, 80, 0.25);
+  border-color: rgba(255, 100, 100, 0.75);
+  color: #ff9999;
 }
 
 .scenario-editor-on-roster-label {

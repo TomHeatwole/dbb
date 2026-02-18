@@ -142,6 +142,13 @@ function ScenarioRosterEditor({
     setShowDropdown(false);
   };
 
+  const handleDropFromDropdown = (e, player) => {
+    e.stopPropagation();
+    onRemovePlayer(player.player_id);
+    setSearchQuery('');
+    setShowDropdown(false);
+  };
+
   // Format final-standings badge for the header
   const placeStr = team.place
     ? `${team.place}${team.place === 1 ? 'st' : team.place === 2 ? 'nd' : team.place === 3 ? 'rd' : 'th'}`
@@ -199,13 +206,6 @@ function ScenarioRosterEditor({
                   (player.alreadyOnRoster ? ' scenario-editor-dropdown-item--on-roster' : '')
                 }
                 onClick={() => handleAddPlayer(player)}
-                onMouseEnter={(e) => {
-                  if (!player.alreadyOnRoster)
-                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
               >
                 <img
                   src={getPlayerLogoUrl(player.espn_photo_url)}
@@ -221,7 +221,13 @@ function ScenarioRosterEditor({
                   </span>
                 </div>
                 {player.alreadyOnRoster ? (
-                  <span className="scenario-editor-on-roster-label">On roster</span>
+                  <button
+                    type="button"
+                    className="scenario-editor-dropdown-drop-btn"
+                    onClick={(e) => handleDropFromDropdown(e, player)}
+                  >
+                    Drop
+                  </button>
                 ) : null}
               </div>
             ))}

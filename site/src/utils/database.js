@@ -304,7 +304,10 @@ export async function updatePlayers(caredPlayerIds) {
 export async function readCurrentWeekPlayersSnapshot() {
   const season = String(CURRENT_YEAR);
   const week = getCurrentNFLWeek(season);
-  const basePath = `players_${season}_week_${week}`;
+  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
+  const basePath = isPreSeason
+    ? `players_${season}_week_${week}_preseason_v2`
+    : `players_${season}_week_${week}`;
   try {
     await ensureSignedIn();
     const weekSnap = await get(ref(getDb(), basePath));

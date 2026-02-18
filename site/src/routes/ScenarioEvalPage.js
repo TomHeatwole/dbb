@@ -23,12 +23,14 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { getStandings } from '../scores/ScoresParser';
+import { fetchMultipleWeeksStats } from '../data_parse/weeklyStatsLoader';
 import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import ScenarioBuilderTooltip from '../scenarios/ScenarioBuilderTooltip';
 import { decodeScenario, applyScenarioChanges } from '../scenarios/scenarioEncoding';
 import { validateScenarioRosters } from '../scenarios/scenarioValidation';
 import { computeScenarioEval } from '../scenarios/computeScenarioEval';
 import ScenarioStandingsPanel from '../scenarios/ScenarioStandingsPanel';
+import ScenarioTeamDetail from '../scenarios/ScenarioTeamDetail';
 
 const OG_TITLE = 'Scenario Builder — Evaluate';
 const OG_DESCRIPTION = 'Evaluate what-if scenario results for a customised team roster.';
@@ -36,11 +38,15 @@ const OG_DESCRIPTION = 'Evaluate what-if scenario results for a customised team 
 // ── Team data helper (mirrors the builder's loading logic) ───────────────────
 
 async function loadSeasonData(year) {
-  const [teamData, idMap, weeksData, players] = await Promise.all([
+  const allWeeks = Array.from({ length: 17 }, (_, i) => i + 1);
+
+  const [teamData, idMap, weeksData, players, scoringConfig, sleeperWeeklyStats] = await Promise.all([
     fetchTeamData(year),
     fetchPlayerIdMap(),
     fetchScoresData(year),
     fetch('/data/players.txt').then((r) => r.json()).catch(() => null),
+    fetch('/data/score_format.json').then((r) => r.json()).catch(() => null),
+    fetchMultipleWeeksStats(year, allWeeks, 0).catch(() => null),
   ]);
 
   if (!teamData || !Array.isArray(teamData.rosters)) {
@@ -91,7 +97,12 @@ async function loadSeasonData(year) {
     if (rid != null) originalRosters[rid] = Array.isArray(roster.players) ? [...roster.players] : [];
   }
 
-  return { teams, originalRosters, idMap, players, weeksData };
+  // Convert the week-keyed object { 1: stats, 2: stats, ... } to a 0-indexed array
+  const sleeperWeeklyStatsArray = sleeperWeeklyStats
+    ? Array.from({ length: 17 }, (_, i) => sleeperWeeklyStats[i + 1] || null)
+    : null;
+
+  return { teams, originalRosters, idMap, players, weeksData, scoringConfig, sleeperWeeklyStats: sleeperWeeklyStatsArray };
 }
 
 // ── Invalid scenario badge ────────────────────────────────────────────────────
@@ -140,6 +151,9 @@ function ScenarioEvalPage() {
   const [playersData, setPlayersData]             = useState(null);
   const [playerIdMap, setPlayerIdMap]             = useState(null);
   const [weeksParsedData, setWeeksParsedData]     = useState(null);
+  const [scoringConfig, setScoringConfig]         = useState(null);
+  const [sleeperWeeklyStats, setSleeperWeeklyStats] = useState(null);
+  const [selectedRosterId, setSelectedRosterId]   = useState(null);
 
   const rosterViolations = useMemo(
     () => validateScenarioRosters(scenarioRosters, teamsForGrid, playersData),
@@ -150,8 +164,12 @@ function ScenarioEvalPage() {
     if (!weeksParsedData || !playersData || !playerIdMap ||
         !originalRosters || !scenarioRosters ||
         Object.keys(originalRosters).length === 0) return null;
-    return computeScenarioEval(weeksParsedData, originalRosters, scenarioRosters, playersData, playerIdMap);
-  }, [weeksParsedData, originalRosters, scenarioRosters, playersData, playerIdMap]);
+    return computeScenarioEval(
+      weeksParsedData, originalRosters, scenarioRosters,
+      playersData, playerIdMap,
+      sleeperWeeklyStats, scoringConfig,
+    );
+  }, [weeksParsedData, originalRosters, scenarioRosters, playersData, playerIdMap, sleeperWeeklyStats, scoringConfig]);
 
   useEffect(() => {
     const decoded = decodeScenario(scenarioParam);
@@ -166,8 +184,10 @@ function ScenarioEvalPage() {
 
     async function load() {
       try {
-        const { teams, originalRosters: orig, idMap, players, weeksData } =
-          await loadSeasonData(decoded.y);
+        const {
+          teams, originalRosters: orig, idMap, players, weeksData,
+          scoringConfig: cfg, sleeperWeeklyStats: sleeperStats,
+        } = await loadSeasonData(decoded.y);
 
         if (cancelled) return;
 
@@ -179,6 +199,8 @@ function ScenarioEvalPage() {
         setPlayersData(players);
         setPlayerIdMap(idMap);
         setWeeksParsedData(weeksData);
+        setScoringConfig(cfg);
+        setSleeperWeeklyStats(sleeperStats);
       } catch (e) {
         if (!cancelled) setError('Failed to load scenario data.');
       } finally {
@@ -256,6 +278,8 @@ function ScenarioEvalPage() {
                     scenarioStandings={evalResult.scenarioStandings}
                     teamDeltas={evalResult.teamDeltas}
                     teamsForGrid={teamsForGrid}
+                    selectedRosterId={selectedRosterId}
+                    onSelectTeam={setSelectedRosterId}
                   />
                 ) : (
                   <div className="scenario-eval-placeholder">
@@ -270,9 +294,20 @@ function ScenarioEvalPage() {
             </div>
 
             {evalResult && (
-              <div className="scenario-eval-team-stats-placeholder">
-                Click on a team above to see their updated advanced stats
-              </div>
+              selectedRosterId != null ? (
+                <ScenarioTeamDetail
+                  rosterId={selectedRosterId}
+                  teamsForGrid={teamsForGrid}
+                  originalWeeklyScores={evalResult.originalWeeklyScores}
+                  scenarioWeeklyScores={evalResult.scenarioWeeklyScores}
+                  playersData={playersData}
+                  playerIdMap={playerIdMap}
+                />
+              ) : (
+                <div className="scenario-eval-team-stats-placeholder">
+                  Click on a team above to see their updated advanced stats
+                </div>
+              )
             )}
           </div>
         )}
