@@ -193,7 +193,10 @@ function ScenarioEvalPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const backLink = (
-    <Link to="/scenarios" className="scenario-eval-back-link">
+    <Link
+      to={`/scenarios?state=builder${scenarioParam ? `&scenario=${scenarioParam}` : ''}`}
+      className="scenario-eval-back-link"
+    >
       ← Edit Scenario
     </Link>
   );
@@ -265,6 +268,12 @@ function ScenarioEvalPage() {
                 )}
               </div>
             </div>
+
+            {evalResult && (
+              <div className="scenario-eval-team-stats-placeholder">
+                Click on a team above to see their updated advanced stats
+              </div>
+            )}
           </div>
         )}
       </InfoPageWrapper>

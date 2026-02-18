@@ -7,8 +7,8 @@
  * Entry point: rendered by ScenariosPage when ?state=builder (or no state param).
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
@@ -21,7 +21,7 @@ import ScenarioTeamGrid from '../scenarios/ScenarioTeamGrid';
 import ScenarioRosterEditor from '../scenarios/ScenarioRosterEditor';
 import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import ScenarioBuilderTooltip from '../scenarios/ScenarioBuilderTooltip';
-import { encodeScenario } from '../scenarios/scenarioEncoding';
+import { encodeScenario, decodeScenario, applyScenarioChanges } from '../scenarios/scenarioEncoding';
 
 const OG_TITLE = 'Scenario Builder';
 const OG_DESCRIPTION = 'Build what-if scenarios by editing team rosters.';
@@ -96,8 +96,24 @@ function buildTopPlayersByStats(csvText, playersData, playerIdMap, n = 25) {
 
 function ScenarioBuilderPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [season, setSeason]                     = useState(SCENARIO_YEARS[0] || '2025');
+  // Decode any pre-loaded scenario from the URL (coming back from eval page).
+  // Stored in a ref so the load effect can consume it exactly once.
+  const pendingScenarioRef = useRef(() => {
+    const param = searchParams.get('scenario');
+    return param ? decodeScenario(param) : null;
+  });
+  // Evaluate the factory ref immediately so we hold the decoded value.
+  if (typeof pendingScenarioRef.current === 'function') {
+    pendingScenarioRef.current = pendingScenarioRef.current();
+  }
+
+  const [season, setSeason] = useState(() => {
+    const pre = pendingScenarioRef.current;
+    if (pre && SCENARIO_YEARS.includes(pre.y)) return pre.y;
+    return SCENARIO_YEARS[0] || '2025';
+  });
   const [dropdownOpen, setDropdownOpen]         = useState(false);
   const [playersData, setPlayersData]           = useState(null);
   const [playerIdMap, setPlayerIdMap]           = useState(null);
@@ -192,7 +208,20 @@ function ScenarioBuilderPage() {
           const rid = roster && roster.roster_id != null ? Number(roster.roster_id) : null;
           if (rid != null) initial[rid] = Array.isArray(roster.players) ? [...roster.players] : [];
         }
-        setScenarioRosters(initial);
+        // If returning from the eval page with a pre-existing scenario, apply it once.
+        const pending = pendingScenarioRef.current;
+        if (pending && String(pending.y) === String(season) && Array.isArray(pending.c) && pending.c.length > 0) {
+          setScenarioRosters(applyScenarioChanges(initial, pending.c));
+          pendingScenarioRef.current = null;
+          // Strip the scenario param from the URL so season changes don't re-apply it.
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete('scenario');
+            return next;
+          }, { replace: true });
+        } else {
+          setScenarioRosters(initial);
+        }
         const snapshot = {};
         for (const rid in initial) snapshot[rid] = [...initial[rid]];
         setOriginalRosters(snapshot);

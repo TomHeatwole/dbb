@@ -7199,6 +7199,21 @@ body.modal-open {
   color: rgba(160, 160, 200, 0.65);
 }
 
+.scenario-eval-team-stats-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  border: 1px dashed rgba(160, 160, 200, 0.45);
+  border-radius: 0.75rem;
+  text-align: center;
+  font-size: 0.88rem;
+  color: rgba(200, 200, 230, 0.55);
+  font-weight: 500;
+  font-style: italic;
+}
+
 .scenario-eval-error {
   padding: 2rem;
   color: #ff6b6b;
@@ -7652,11 +7667,11 @@ body.modal-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(200, 200, 230, 0.55);
   font-size: 0.95rem;
   font-style: italic;
   background: rgba(26, 22, 40, 0.5);
-  border: 1px dashed rgba(100, 100, 140, 0.3);
+  border: 1px dashed rgba(160, 160, 200, 0.45);
   border-radius: 0.75rem;
 }
 
