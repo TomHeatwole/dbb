@@ -8,11 +8,6 @@ const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 const COL1_POSITIONS = ['QB', 'WR'];
 const COL2_POSITIONS = ['RB', 'TE', 'K', 'DEF']; // eslint-disable-line no-unused-vars
 
-function positionSortKey(pos) {
-  const idx = POSITION_ORDER.indexOf(pos);
-  return idx === -1 ? POSITION_ORDER.length : idx;
-}
-
 /** Renders a single position group (label + player rows) */
 function PositionGroup({ pos, players, onRemovePlayer }) {
   return (
