@@ -7585,35 +7585,27 @@ body.modal-open {
 .scenario-week-delta--pos { color: #5dd97c; }
 .scenario-week-delta--neg { color: #ff7070; }
 
-/* Custom tooltip wrapper for delta badges */
+/* Tooltip wrapper — cursor only, no relative positioning needed */
 .scenario-delta-tooltip-wrap {
-  position: relative;
   display: inline-flex;
   align-items: center;
   cursor: help;
 }
 
-.scenario-delta-tooltip-bubble {
-  display: none;
-  position: absolute;
-  bottom: calc(100% + 5px);
-  left: 50%;
-  transform: translateX(-50%);
+/* Fixed-position tooltip — escapes any overflow:hidden ancestor */
+.scenario-delta-tooltip-fixed {
+  position: fixed;
+  z-index: 9999;
   background: rgba(15, 15, 35, 0.97);
   color: #d0d5ff;
-  font-size: 0.75em;
+  font-size: 0.75rem;
   font-weight: 500;
   padding: 0.35em 0.65em;
   border-radius: 0.3em;
   white-space: nowrap;
   pointer-events: none;
-  z-index: 100;
   border: 1px solid rgba(100, 110, 180, 0.35);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-
-.scenario-delta-tooltip-wrap:hover .scenario-delta-tooltip-bubble {
-  display: block;
 }
 
 .scenario-week-table-empty {

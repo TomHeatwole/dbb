@@ -51,19 +51,38 @@ function WeeklyTooltip({ active, payload, label }) {
 // ── Inline delta badge ────────────────────────────────────────────────────────
 
 function PtsDelta({ delta, tooltip }) {
+  const [tipPos, setTipPos] = useState(null);
+
   if (delta == null || Math.abs(delta) < 0.05) return null;
-  const pos = delta > 0;
+  const isPos = delta > 0;
+
   const badge = (
-    <span className={`scenario-week-delta ${pos ? 'scenario-week-delta--pos' : 'scenario-week-delta--neg'}`}>
-      {pos ? '+' : ''}{delta.toFixed(1)}
+    <span className={`scenario-week-delta ${isPos ? 'scenario-week-delta--pos' : 'scenario-week-delta--neg'}`}>
+      {isPos ? '+' : ''}{delta.toFixed(1)}
     </span>
   );
+
   if (!tooltip) return badge;
+
   return (
-    <span className="scenario-delta-tooltip-wrap">
-      {badge}
-      <span className="scenario-delta-tooltip-bubble">{tooltip}</span>
-    </span>
+    <>
+      <span
+        className="scenario-delta-tooltip-wrap"
+        onMouseEnter={(e) => setTipPos({ x: e.clientX, y: e.clientY })}
+        onMouseMove={(e)  => setTipPos({ x: e.clientX, y: e.clientY })}
+        onMouseLeave={() => setTipPos(null)}
+      >
+        {badge}
+      </span>
+      {tipPos && (
+        <span
+          className="scenario-delta-tooltip-fixed"
+          style={{ left: tipPos.x + 12, top: tipPos.y - 36 }}
+        >
+          {tooltip}
+        </span>
+      )}
+    </>
   );
 }
 
@@ -87,8 +106,8 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
   const origStarterMap = {};
   (originalWeek?.starters || []).forEach((p, i) => { origStarterMap[i] = p.pts || 0; });
 
-  const origBenchById = {};
-  (originalWeek?.bench || []).forEach((p) => { origBenchById[p.id] = p.pts || 0; });
+  // Bench is slot-agnostic (Bench1, Bench2…) — sort both by pts desc and compare by position
+  const sortedOrigBench = (originalWeek?.bench || []).slice().sort((a, b) => (b.pts || 0) - (a.pts || 0));
 
   const scenTotal    = scenarioWeek.starterTotal || 0;
   const origTotal    = originalWeek?.starterTotal || 0;
@@ -140,15 +159,26 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
   };
 
   // ── Bench grid item ──────────────────────────────────────────────────────────
-  const renderBenchItem = (p) => {
+  // slotIdx: position in sorted-desc bench list (Bench1, Bench2…)
+  const renderBenchItem = (p, slotIdx) => {
     const info  = getPlayerInfo(p.id, playersData, playerIdMap);
     const name  = info?.name || (p.id === '0' ? '' : p.id);
     const pos   = info?.position || '';
     const logo  = getPlayerLogoUrl(info?.espn_photo_url);
     const pts   = p.pts || 0;
-    const wasOnRoster = p.id in origBenchById;
-    const delta = pts - (origBenchById[p.id] ?? 0);
-    const deltaTooltip = !wasOnRoster ? 'Not on original roster' : null;
+
+    // Compare this bench slot against the same slot in the original bench
+    const origAtSlot = sortedOrigBench[slotIdx];
+    const delta      = pts - (origAtSlot?.pts || 0);
+
+    let deltaTooltip = null;
+    if (origAtSlot && origAtSlot.id !== p.id) {
+      const origInfo = getPlayerInfo(origAtSlot.id, playersData, playerIdMap);
+      const origName = origInfo?.name || origAtSlot.id;
+      deltaTooltip = `Was: ${origName}`;
+    } else if (!origAtSlot) {
+      deltaTooltip = 'New bench slot';
+    }
 
     return (
       <div key={p.id} className="scenario-week-bench-item">
@@ -207,7 +237,7 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
           </button>
         </div>
         <div className={`scenario-week-bench-grid${benchExpanded ? '' : ' scenario-week-bench-grid--collapsed'}`}>
-          {sortedBench.map((p) => renderBenchItem(p))}
+          {sortedBench.map((p, i) => renderBenchItem(p, i))}
         </div>
       </div>
     </div>
