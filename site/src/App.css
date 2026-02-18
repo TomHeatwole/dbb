@@ -769,6 +769,9 @@
   background: none;
   padding: 0;
   vertical-align: middle;
+  /* Fixed small size regardless of parent context */
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .scenario-builder-tooltip-body {
@@ -4098,14 +4101,20 @@
   left: 0;
   top: calc(100% + 6px);
   background: #0f1430;
-  color: #fff;
+  color: #cdd3f0;
   border: 1px solid #3a4466;
   border-radius: 0.5rem;
   padding: 0.75rem 0.85rem;
-  font-size: 0.9rem;
-  line-height: 1.45;
+  /* Explicitly reset any inherited h1/heading styles */
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  line-height: 1.5;
   white-space: normal;
-  text-align: left; /* override text-align: center when inside an <h1> */
   width: 22rem;
   max-width: 85vw;
   box-shadow: 0 8px 22px rgba(0,0,0,0.22);
@@ -6808,6 +6817,44 @@ body.modal-open {
   box-shadow: 0 2px 10px rgba(80, 100, 255, 0.3);
 }
 
+/* Wrapper that intercepts hover on the disabled button */
+.scenario-evaluate-hint {
+  position: relative;
+  display: block;
+  width: 100%;
+  cursor: not-allowed;
+}
+
+/* Tooltip that appears above the disabled button on hover */
+.scenario-evaluate-hint-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #0f1430;
+  color: #cdd3f0;
+  border: 1px solid #3a4466;
+  border-radius: 0.45rem;
+  padding: 0.5rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-align: center;
+  line-height: 1.4;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 100;
+}
+
+.scenario-evaluate-hint:hover .scenario-evaluate-hint-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .scenario-evaluate-btn--disabled,
 .scenario-evaluate-btn:disabled {
   background: rgba(80, 80, 100, 0.35);
@@ -6823,6 +6870,31 @@ body.modal-open {
   background: rgba(80, 80, 100, 0.35);
   box-shadow: none;
   transform: none;
+}
+
+/* ── Custom thin scrollbars for all scenario scroll areas ──
+   Suppresses the default macOS overlay scrollbar across roster columns,
+   the deltas panel, and the mobile player list. */
+.scenario-editor-roster-col::-webkit-scrollbar,
+.scenario-deltas-root::-webkit-scrollbar,
+.scenario-editor-player-list::-webkit-scrollbar {
+  width: 4px;
+}
+.scenario-editor-roster-col::-webkit-scrollbar-track,
+.scenario-deltas-root::-webkit-scrollbar-track,
+.scenario-editor-player-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scenario-editor-roster-col::-webkit-scrollbar-thumb,
+.scenario-deltas-root::-webkit-scrollbar-thumb,
+.scenario-editor-player-list::-webkit-scrollbar-thumb {
+  background: rgba(120, 140, 180, 0.35);
+  border-radius: 2px;
+}
+.scenario-editor-roster-col::-webkit-scrollbar-thumb:hover,
+.scenario-deltas-root::-webkit-scrollbar-thumb:hover,
+.scenario-editor-player-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 170, 220, 0.6);
 }
 
 /* ── Scenario Delta Summary ── */
@@ -6941,16 +7013,26 @@ body.modal-open {
 }
 
 .scenario-eval-back-link {
-  color: rgba(160, 180, 240, 0.85);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.9rem;
+  background: rgba(80, 100, 180, 0.18);
+  border: 1px solid rgba(100, 130, 220, 0.4);
+  border-radius: 0.5rem;
+  color: rgba(160, 185, 255, 0.9);
   text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   letter-spacing: 0.01em;
-  transition: color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .scenario-eval-back-link:hover {
+  background: rgba(80, 110, 200, 0.3);
+  border-color: rgba(130, 160, 255, 0.65);
   color: #fff;
+  box-shadow: 0 2px 10px rgba(80, 100, 220, 0.25);
 }
 
 .scenario-eval-season-label {
@@ -6959,6 +7041,110 @@ body.modal-open {
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* ── Invalid scenario badge (topbar) ── */
+.scenario-invalid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  border-radius: 0.4rem;
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: default;
+  position: relative;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.scenario-invalid-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  background: rgba(96, 165, 250, 0.2);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.scenario-invalid-badge-tooltip {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  background: #0f1430;
+  color: #cdd3f0;
+  border: 1px solid #3a4466;
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  line-height: 1.5;
+  white-space: normal;
+  width: 22rem;
+  max-width: 85vw;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scenario-invalid-badge:hover .scenario-invalid-badge-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scenario-invalid-badge-tooltip-intro {
+  color: rgba(200, 200, 240, 0.8);
+  line-height: 1.5;
+}
+
+.scenario-invalid-badge-tooltip-reasons-label {
+  font-weight: 700;
+  color: #a0b4f0;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+}
+
+.scenario-invalid-badge-tooltip-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+.scenario-invalid-badge-tooltip-list li {
+  color: rgba(210, 210, 250, 0.85);
+  margin: 0.15rem 0;
+}
+
+@media (max-width: 50em) {
+  .scenario-invalid-badge-tooltip {
+    left: 50%;
+    transform: translate(-50%, 4px);
+    max-width: 88vw;
+    width: auto;
+  }
+  .scenario-invalid-badge:hover .scenario-invalid-badge-tooltip {
+    transform: translate(-50%, 0);
+  }
 }
 
 /* Right-side placeholder while evaluation isn't built yet */
@@ -7036,16 +7222,35 @@ body.modal-open {
   flex-shrink: 0;
 }
 
+/* Name + standings stacked vertically, fills available header space */
+.scenario-editor-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
 .scenario-editor-team-name {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #fff;
-  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-editor-standings-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(170, 190, 230, 0.72);
+  letter-spacing: 0.01em;
 }
 
 .scenario-editor-player-count {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
 }
 
 .scenario-editor-empty {

@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Renders the 10 teams in a grid similar to the h2h selector.
+ * Renders the league teams in a grid similar to the h2h selector.
  * Single-selection: clicking a team opens its roster editor.
  * Clicking the selected team again deselects it.
  */

@@ -1,4 +1,4 @@
-Scenario Builder lets you answer "what if?" roster questions for any completed season.
+Scenario Builder let's you answer "what if?" roster questions from previous seasons. What if Alex had acquired one more star RB? What if Jack hadn't picked up George Kittle?
 
 Pick a year, select any team, then add or remove players to reshape their roster. All changes are tracked in the "Your Scenario" panel.
 

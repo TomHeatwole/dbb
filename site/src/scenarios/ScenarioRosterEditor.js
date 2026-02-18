@@ -147,9 +147,16 @@ function ScenarioRosterEditor({
     setShowDropdown(false);
   };
 
+  // Format final-standings badge for the header
+  const placeStr = team.place
+    ? `${team.place}${team.place === 1 ? 'st' : team.place === 2 ? 'nd' : team.place === 3 ? 'rd' : 'th'}`
+    : null;
+  const ptsStr = team.totalPoints != null ? `${team.totalPoints.toFixed(1)} pts` : null;
+  const standingsBadge = [placeStr, ptsStr].filter(Boolean).join(' · ');
+
   return (
     <div className="scenario-editor-root">
-      {/* Header */}
+      {/* Header: avatar · team name · season place + points · player count */}
       <div className="scenario-editor-header">
         {team.avatarUrl && (
           <img
@@ -158,7 +165,12 @@ function ScenarioRosterEditor({
             alt={team.teamName}
           />
         )}
-        <span className="scenario-editor-team-name">{team.teamName}</span>
+        <div className="scenario-editor-header-meta">
+          <span className="scenario-editor-team-name">{team.teamName}</span>
+          {standingsBadge && (
+            <span className="scenario-editor-standings-badge">{standingsBadge}</span>
+          )}
+        </div>
         <span className="scenario-editor-player-count">{(playerIds || []).length} players</span>
       </div>
 
