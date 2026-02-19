@@ -10,6 +10,7 @@ export const SANDBOX_FEATURES = {
   HOTTEST_FREE_AGENTS: true,
   PLAYOFFS: false,
   HEAD_TO_HEAD: false,
+  DYNASTY_ROSTER: true,
 };
 
 // Main page features (production-ready)

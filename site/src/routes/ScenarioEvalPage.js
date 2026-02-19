@@ -216,8 +216,13 @@ function ScenarioEvalPage() {
 
   const backLink = (
     <Link
-      to={`/scenarios?state=builder${scenarioParam ? `&scenario=${scenarioParam}` : ''}`}
+      to="/scenarios?state=builder"
       className="scenario-eval-back-link"
+      onClick={() => {
+        if (scenarioParam) {
+          sessionStorage.setItem('pendingBuilderScenario', scenarioParam);
+        }
+      }}
     >
       ← Edit Scenario
     </Link>

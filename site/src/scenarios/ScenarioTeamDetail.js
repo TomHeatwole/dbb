@@ -77,7 +77,7 @@ function PtsDelta({ delta, tooltip }) {
       {tipPos && (
         <span
           className="scenario-delta-tooltip-fixed"
-          style={{ left: tipPos.x + 12, top: tipPos.y - 36 }}
+          style={{ right: window.innerWidth - tipPos.x + 8, top: tipPos.y - 36 }}
         >
           {tooltip}
         </span>

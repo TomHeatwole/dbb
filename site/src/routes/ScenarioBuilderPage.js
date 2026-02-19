@@ -208,12 +208,20 @@ function ScenarioBuilderPage() {
           const rid = roster && roster.roster_id != null ? Number(roster.roster_id) : null;
           if (rid != null) initial[rid] = Array.isArray(roster.players) ? [...roster.players] : [];
         }
-        // If returning from the eval page with a pre-existing scenario, apply it once.
-        const pending = pendingScenarioRef.current;
+        // If returning from the eval page, restore the active scenario.
+        // sessionStorage is read HERE (after the cancelled check) so that React
+        // StrictMode's double-invocation doesn't wipe it: run-1 is cancelled and
+        // never reaches this line; run-2 survives and is the one that reads & applies.
+        const storedEncoded = sessionStorage.getItem('pendingBuilderScenario');
+        const pending = storedEncoded
+          ? decodeScenario(storedEncoded)
+          : pendingScenarioRef.current; // fallback: direct URL ?scenario= param
+        if (storedEncoded) sessionStorage.removeItem('pendingBuilderScenario');
+        pendingScenarioRef.current = null;
+
         if (pending && String(pending.y) === String(season) && Array.isArray(pending.c) && pending.c.length > 0) {
           setScenarioRosters(applyScenarioChanges(initial, pending.c));
-          pendingScenarioRef.current = null;
-          // Strip the scenario param from the URL so season changes don't re-apply it.
+          // Strip any leftover ?scenario= from the URL.
           setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
             next.delete('scenario');
@@ -271,7 +279,7 @@ function ScenarioBuilderPage() {
 
   const handleEvaluate = () => {
     const encoded = encodeScenario(season, originalRosters, scenarioRosters);
-    navigate(`?state=eval&scenario=${encoded}`);
+    navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`);
   };
 
   // ── Derived state ──────────────────────────────────────────────────────────

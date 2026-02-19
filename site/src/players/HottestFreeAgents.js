@@ -2,11 +2,14 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { batchConvertSleeperToGsis } from '../lookups/GsisLookup';
+import { fetchKtcData, getKtcEntryByName, formatKtcValue, KTC_FORMAT_LABELS } from '../lookups/KtcLookup';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from './PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
+
+const KTC_FORMATS = ['sf', 'sf_tep'];
 
 // Parse CSV line handling quoted fields
 function parseCSVLine(line) {
@@ -39,10 +42,12 @@ function HottestFreeAgents() {
   const [users, setUsers] = useState(null);
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [ktcMap, setKtcMap] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [sortBy, setSortBy] = useState('total'); // 'total' or 'perGame'
+  const [sortBy, setSortBy] = useState('total'); // 'total' | 'perGame' | 'ktc'
   const [positionFilter, setPositionFilter] = useState('ALL');
   const [limit, setLimit] = useState(25);
+  const [ktcFormat, setKtcFormat] = useState('sf_tep');
   
   const isMobile = useIsMobile();
 
@@ -53,11 +58,12 @@ function HottestFreeAgents() {
         setError(null);
 
         // Load all required data in parallel
-        const [teamData, csvResponse, players, idMap] = await Promise.all([
+        const [teamData, csvResponse, players, idMap, ktcResult] = await Promise.all([
           fetchTeamData(CURRENT_YEAR),
           fetch('/data/stats_player_reg_2025.csv'),
           fetch('/data/players.txt').then(res => res.json()),
-          fetchPlayerIdMap()
+          fetchPlayerIdMap(),
+          fetchKtcData().catch(() => null),
         ]);
 
         if (!csvResponse.ok) {
@@ -141,6 +147,7 @@ function HottestFreeAgents() {
         setUsers(teamData.users);
         setPlayersData(players);
         setPlayerIdMap(idMap);
+        setKtcMap(ktcResult ? ktcResult.map : null);
       } catch (err) {
         setError(err.message || 'Failed to load data');
       } finally {
@@ -151,26 +158,34 @@ function HottestFreeAgents() {
     loadData();
   }, []);
 
+  // Attach KTC values to each agent
+  const agentsWithKtc = useMemo(() => {
+    return freeAgents.map((agent) => {
+      const entry = ktcMap ? getKtcEntryByName(agent.playerName, ktcMap, ktcFormat) : null;
+      return { ...agent, ktcValue: entry ? entry.ktcValue : null };
+    });
+  }, [freeAgents, ktcMap, ktcFormat]);
+
   // Filter and sort free agents
   const displayedAgents = useMemo(() => {
-    let filtered = freeAgents;
+    let filtered = agentsWithKtc;
 
-    // Apply position filter
     if (positionFilter !== 'ALL') {
       filtered = filtered.filter(agent => agent.position === positionFilter);
     }
 
-    // Sort by selected metric
     const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'perGame') {
-        return b.fantasyPointsPerGame - a.fantasyPointsPerGame;
+      if (sortBy === 'perGame') return b.fantasyPointsPerGame - a.fantasyPointsPerGame;
+      if (sortBy === 'ktc') {
+        const av = a.ktcValue ?? -1;
+        const bv = b.ktcValue ?? -1;
+        return bv !== av ? bv - av : b.fantasyPoints - a.fantasyPoints;
       }
       return b.fantasyPoints - a.fantasyPoints;
     });
 
-    // Apply limit
     return sorted.slice(0, limit);
-  }, [freeAgents, positionFilter, sortBy, limit]);
+  }, [agentsWithKtc, positionFilter, sortBy, limit]);
 
   const handlePlayerClick = (agent) => {
     // Get full player info for the modal
@@ -212,6 +227,22 @@ function HottestFreeAgents() {
           Top scoring players in 2025 who are currently available
         </p>
 
+        {/* KTC format toggle */}
+        {ktcMap && (
+          <div className="dynasty-format-toggle" style={{ marginBottom: '1rem' }}>
+            {KTC_FORMATS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={'dynasty-format-btn' + (ktcFormat === f ? ' dynasty-format-btn--active' : '')}
+                onClick={() => setKtcFormat(f)}
+              >
+                {KTC_FORMAT_LABELS[f]}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Controls */}
         <div className="free-agents-controls">
           <div className="control-group">
@@ -223,6 +254,7 @@ function HottestFreeAgents() {
             >
               <option value="total">Total Points</option>
               <option value="perGame">Points Per Game</option>
+              {ktcMap && <option value="ktc">KTC Value</option>}
             </select>
           </div>
 
@@ -271,6 +303,7 @@ function HottestFreeAgents() {
                 <th className="games-col">GP</th>
                 <th className="points-col">Total Pts</th>
                 <th className="ppg-col">PPG</th>
+                {ktcMap && <th className="fa-ktc-col">KTC</th>}
                 {!isMobile && <th className="status-col">Status</th>}
               </tr>
             </thead>
@@ -305,6 +338,13 @@ function HottestFreeAgents() {
                   <td className="games-col">{agent.games}</td>
                   <td className="points-col">{agent.fantasyPoints.toFixed(2)}</td>
                   <td className="ppg-col">{agent.fantasyPointsPerGame.toFixed(2)}</td>
+                  {ktcMap && (
+                    <td className="fa-ktc-col">
+                      <span className={agent.ktcValue ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
+                        {formatKtcValue(agent.ktcValue)}
+                      </span>
+                    </td>
+                  )}
                   {!isMobile && (
                     <td className="status-col">
                       <span className="status-badge status-free-agent">Free Agent</span>

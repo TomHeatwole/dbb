@@ -5,6 +5,7 @@ import TrendingPlayers from '../players/TrendingPlayers';
 import HottestFreeAgents from '../players/HottestFreeAgents';
 import YoffsPage from './YoffsPage';
 import H2hPage from './h2h';
+import DynastyRosterView from '../teams/DynastyRosterView';
 import { SANDBOX_FEATURES, isFeatureEnabled, hasAnyFeaturesEnabled } from '../utils/featureToggles';
 
 function SandboxPage() {
@@ -40,7 +41,13 @@ function SandboxPage() {
             <H2hPage inSandbox={true} />
           </div>
         )}
-        
+
+        {isFeatureEnabled('DYNASTY_ROSTER', SANDBOX_FEATURES) && (
+          <div style={{ marginBottom: '2rem' }}>
+            <DynastyRosterView />
+          </div>
+        )}
+
         {!hasAnyFeaturesEnabled(SANDBOX_FEATURES) && (
           <p style={{ textAlign: 'center', color: '#999' }}>
             No features enabled. Update SANDBOX_FEATURES in utils/featureToggles.js to show content.

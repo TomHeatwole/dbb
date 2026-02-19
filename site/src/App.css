@@ -8108,11 +8108,12 @@ body.modal-open {
 
 .scenario-editor-dropdown-item--on-roster {
   cursor: default;
-  opacity: 0.5;
 }
 
-.scenario-editor-dropdown-item--on-roster .scenario-editor-dropdown-drop-btn {
-  opacity: 1;
+/* Dim text/avatar children but leave the Drop button at full opacity */
+.scenario-editor-dropdown-item--on-roster .scenario-editor-player-avatar,
+.scenario-editor-dropdown-item--on-roster .scenario-editor-player-info {
+  opacity: 0.45;
 }
 
 .scenario-editor-dropdown-drop-btn {
@@ -8190,5 +8191,405 @@ body.modal-open {
     flex: none;
     width: 100%;
     overflow-y: visible;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dynasty Roster View
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dynasty-root {
+  width: 100%;
+}
+
+.dynasty-error {
+  color: #ff6b6b;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+/* ── Section header ── */
+
+.dynasty-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.dynasty-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dynasty-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e8eaff;
+  margin-right: 0.5rem;
+}
+
+.dynasty-section-sub {
+  font-size: 0.82rem;
+  color: rgba(170, 175, 220, 0.65);
+}
+
+.dynasty-as-of {
+  font-size: 0.75rem;
+  color: rgba(140, 150, 200, 0.5);
+}
+
+/* ── Format toggle (SF / SF TE+) ── */
+
+.dynasty-format-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid rgba(100, 110, 180, 0.4);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dynasty-format-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(170, 175, 220, 0.7);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.dynasty-format-btn + .dynasty-format-btn {
+  border-left: 1px solid rgba(100, 110, 180, 0.4);
+}
+
+.dynasty-format-btn:hover {
+  background: rgba(80, 100, 200, 0.15);
+  color: rgba(200, 210, 255, 0.9);
+}
+
+.dynasty-format-btn--active {
+  background: rgba(80, 120, 255, 0.22);
+  color: #b8ccff;
+}
+
+/* ── Team selector list overrides ── */
+
+.dynasty-team-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+}
+
+.dynasty-team-card {
+  justify-content: flex-start;
+  padding: 0.75rem 1rem;
+}
+
+.dynasty-card-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dynasty-card-total {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(170, 210, 255, 0.9);
+  background: rgba(80, 140, 255, 0.12);
+  border: 1px solid rgba(80, 140, 255, 0.25);
+  border-radius: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Roster panel ── */
+
+.dynasty-roster-panel {
+  margin-top: 1.5rem;
+  background: rgba(20, 18, 35, 0.85);
+  border: 1px solid rgba(100, 100, 160, 0.3);
+  border-radius: 0.85rem;
+  overflow: hidden;
+}
+
+.dynasty-roster-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  background: rgba(30, 26, 52, 0.9);
+  border-bottom: 1px solid rgba(100, 100, 160, 0.25);
+}
+
+.dynasty-roster-avatar {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+}
+
+.dynasty-roster-team-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8eaff;
+  flex: 1 1 auto;
+}
+
+.dynasty-roster-total-label {
+  font-size: 0.78rem;
+  color: rgba(170, 175, 220, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dynasty-roster-total-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: rgba(140, 200, 255, 1);
+  min-width: 4rem;
+  text-align: right;
+}
+
+/* ── Table ── */
+
+.dynasty-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.dynasty-th {
+  padding: 0.55rem 0.9rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(170, 175, 220, 0.55);
+  background: rgba(25, 22, 42, 0.7);
+  border-bottom: 1px solid rgba(100, 100, 160, 0.2);
+}
+
+.dynasty-th-ktc {
+  text-align: right;
+  padding-right: 1.25rem;
+}
+
+.dynasty-player-row {
+  border-bottom: 1px solid rgba(80, 80, 120, 0.15);
+  transition: background 0.14s ease;
+}
+
+.dynasty-player-row:last-child {
+  border-bottom: none;
+}
+
+.dynasty-player-row:hover {
+  background: rgba(60, 60, 110, 0.18);
+}
+
+.dynasty-td {
+  padding: 0.55rem 0.9rem;
+  vertical-align: middle;
+}
+
+.dynasty-td-player {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.dynasty-player-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(60, 60, 100, 0.4);
+}
+
+.dynasty-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.dynasty-player-name {
+  font-weight: 600;
+  color: #dde0ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+
+/* ── Position badge ── */
+
+.dynasty-pos-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.38rem;
+  border-radius: 0.28rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+
+.dynasty-pos-qb    { background: rgba(255, 130, 100, 0.18); color: #ff9a80; border: 1px solid rgba(255,130,100,0.3); }
+.dynasty-pos-rb    { background: rgba(100, 220, 140, 0.15); color: #7de8a0; border: 1px solid rgba(100,220,140,0.25); }
+.dynasty-pos-wr    { background: rgba(100, 160, 255, 0.15); color: #88b8ff; border: 1px solid rgba(100,160,255,0.25); }
+.dynasty-pos-te    { background: rgba(255, 190, 80, 0.15);  color: #ffd080; border: 1px solid rgba(255,190,80,0.25); }
+.dynasty-pos-k     { background: rgba(180, 140, 240, 0.15); color: #c8aaff; border: 1px solid rgba(180,140,240,0.25); }
+.dynasty-pos-def   { background: rgba(160, 200, 240, 0.15); color: #b0d8f0; border: 1px solid rgba(160,200,240,0.25); }
+.dynasty-pos-other { background: rgba(120, 120, 140, 0.15); color: rgba(200,200,220,0.7); border: 1px solid rgba(120,120,140,0.25); }
+
+/* ── Rank column ── */
+
+.dynasty-th-ranks {
+  white-space: nowrap;
+}
+
+.dynasty-td-ranks {
+  white-space: nowrap;
+  padding-right: 0.5rem;
+}
+
+.dynasty-rank-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.dynasty-rank-overall {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(200, 205, 240, 0.75);
+  white-space: nowrap;
+}
+
+.dynasty-rank-approx {
+  color: rgba(160, 165, 200, 0.4);
+  font-size: 0.72rem;
+}
+
+.dynasty-rank-pos {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(140, 185, 255, 0.7);
+  white-space: nowrap;
+}
+
+/* ── Team card rank number ── */
+
+.dynasty-card-rank {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(170, 175, 220, 0.55);
+  min-width: 1.4rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── NFL team column ── */
+
+.dynasty-td-team {
+  font-size: 0.78rem;
+  color: rgba(170, 175, 220, 0.65);
+  white-space: nowrap;
+}
+
+/* ── KTC value ── */
+
+.dynasty-td-ktc {
+  text-align: right;
+  padding-right: 1.25rem;
+}
+
+.dynasty-ktc-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: rgba(140, 200, 255, 0.95);
+}
+
+.dynasty-ktc-approx {
+  opacity: 0.7;
+}
+
+.dynasty-ktc-none {
+  font-size: 0.88rem;
+  color: rgba(140, 145, 180, 0.45);
+}
+
+/* ── Picks section ── */
+
+.dynasty-picks-divider-row {
+  background: rgba(30, 28, 52, 0.6);
+}
+
+.dynasty-picks-divider-cell {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(150, 160, 210, 0.6);
+  border-top: 1px solid rgba(100, 100, 160, 0.25);
+  border-bottom: 1px solid rgba(100, 100, 160, 0.15);
+}
+
+.dynasty-pick-row {
+  opacity: 0.9;
+}
+
+.dynasty-pick-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(80, 90, 140, 0.35);
+  border: 1px solid rgba(100, 110, 170, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dynasty-pick-icon-inner {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(180, 190, 240, 0.85);
+}
+
+.dynasty-pick-label {
+  color: rgba(200, 205, 235, 0.8);
+  font-weight: 500;
+}
+
+/* ── Free agents KTC column ── */
+
+.fa-ktc-col {
+  text-align: right;
+  padding-right: 0.75rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Responsive: stack team grid to 1 column on narrow screens ── */
+
+@media (max-width: 520px) {
+  .dynasty-team-list {
+    grid-template-columns: 1fr;
   }
 }
