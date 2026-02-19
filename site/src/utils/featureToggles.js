@@ -11,6 +11,7 @@ export const SANDBOX_FEATURES = {
   PLAYOFFS: false,
   HEAD_TO_HEAD: false,
   DYNASTY_ROSTER: true,
+  DYNASTY_DRAFT_PICKS: false, // draft pick KTC values are approximate — disable until real data is available
 };
 
 // Main page features (production-ready)

@@ -24,11 +24,13 @@ import {
   KTC_FORMAT_LABELS,
 } from '../lookups/KtcLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
-import { getStandings } from '../scores/ScoresParser';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
+import { SANDBOX_FEATURES, isFeatureEnabled } from '../utils/featureToggles';
 import LoadingState from '../LoadingState';
+
+const PICKS_ENABLED = isFeatureEnabled('DYNASTY_DRAFT_PICKS', SANDBOX_FEATURES);
 
 const RANKED_POSITIONS = ['QB', 'RB', 'WR', 'TE'];
 const DISPLAY_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
@@ -167,9 +169,8 @@ function DynastyRosterView() {
             fetchScoresData(CURRENT_YEAR),
             fetchPlayerIdMap(),
             fetchKtcData(),
-            fetchTradedPicks(CURRENT_YEAR).catch(() => []),
-            // Need previous year scores to compute 2026 draft order (preseason only)
-            isPreSeason
+            PICKS_ENABLED ? fetchTradedPicks(CURRENT_YEAR).catch(() => []) : Promise.resolve([]),
+            PICKS_ENABLED && isPreSeason
               ? fetchScoresData(prevYearStr).catch(() => null)
               : Promise.resolve(null),
           ]);
@@ -182,17 +183,19 @@ function DynastyRosterView() {
 
         // Draft order: maps rosterId → pick slot (1-10) for the upcoming draft
         let orderMap = {};
-        try {
-          const scoresForOrder = isPreSeason ? prevWeeksData : weeksData;
-          const scoresYear     = isPreSeason ? prevYearStr   : String(CURRENT_YEAR);
-          if (scoresForOrder && Array.isArray(scoresForOrder)) {
-            const placeToRid = calculateDraftOrder(scoresYear, scoresForOrder, teamData, null, null);
-            orderMap = convertPlacementToPickNumbers(placeToRid);
-          }
-        } catch (_) { /* keep orderMap empty */ }
+        if (PICKS_ENABLED) {
+          try {
+            const scoresForOrder = isPreSeason ? prevWeeksData : weeksData;
+            const scoresYear     = isPreSeason ? prevYearStr   : String(CURRENT_YEAR);
+            if (scoresForOrder && Array.isArray(scoresForOrder)) {
+              const placeToRid = calculateDraftOrder(scoresYear, scoresForOrder, teamData, null, null);
+              orderMap = convertPlacementToPickNumbers(placeToRid);
+            }
+          } catch (_) { /* keep orderMap empty */ }
+        }
 
-        const infoMap   = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
-        const picksMap  = buildPicksByRoster(teamData, allTradedPicks);
+        const infoMap  = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
+        const picksMap = PICKS_ENABLED ? buildPicksByRoster(teamData, allTradedPicks) : {};
         const ktcM      = ktcResult.map;
 
         // Roster map
@@ -253,11 +256,13 @@ function DynastyRosterView() {
         const entry = getKtcEntryByName(info.full_name || info.name, ktcMap, format);
         if (entry && entry.ktcValue > 0) total += entry.ktcValue;
       }
-      // Picks
-      for (const pick of (picksByRoster[team.rosterId] || [])) {
-        const origRid  = pick.roster_id != null ? String(pick.roster_id) : null;
-        const pickNum  = origRid ? draftOrderMap[origRid] : null;
-        total += getPickKtcValue(pick.season, pick.round, CURRENT_YEAR, pickNum ?? null);
+      // Picks (only when feature is enabled)
+      if (PICKS_ENABLED) {
+        for (const pick of (picksByRoster[team.rosterId] || [])) {
+          const origRid = pick.roster_id != null ? String(pick.roster_id) : null;
+          const pickNum = origRid ? draftOrderMap[origRid] : null;
+          total += getPickKtcValue(pick.season, pick.round, CURRENT_YEAR, pickNum ?? null);
+        }
       }
       totals[team.rosterId] = total;
     }
@@ -449,14 +454,14 @@ function DynastyRosterView() {
               })}
 
               {/* ── Picks divider ── */}
-              {selectedPicks.length > 0 && (
+              {PICKS_ENABLED && selectedPicks.length > 0 && (
                 <tr className="dynasty-picks-divider-row">
                   <td colSpan={4} className="dynasty-picks-divider-cell">Draft Picks</td>
                 </tr>
               )}
 
               {/* ── Picks ── */}
-              {selectedPicks.map((pick, i) => (
+              {PICKS_ENABLED && selectedPicks.map((pick, i) => (
                 <tr key={`pick-${i}`} className="dynasty-player-row dynasty-pick-row">
                   <td className="dynasty-td dynasty-td-player">
                     <div className="dynasty-pick-icon">
