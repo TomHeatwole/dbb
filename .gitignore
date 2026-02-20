@@ -2,3 +2,4 @@ settings/settings.json
 lol.*
 .vercel
 .env*.local
+example_data/ffb.csv

@@ -13,19 +13,10 @@
  * tiered by pick position (early 1–3 / mid 4–7 / late 8–10).
  */
 
+import { normalisePlayerName as normaliseName } from '../utils/playerNameMatcher';
+
 let cachedKtcMap = null;
 let cachedAsOf   = null;
-
-// ── Name normalisation ────────────────────────────────────────────────────────
-
-function normaliseName(name) {
-  return (name || '')
-    .toLowerCase()
-    .replace(/\s+(jr\.?|sr\.?|ii|iii|iv|v)$/i, '')
-    .replace(/[^a-z0-9 ]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 // ── Pick value table ──────────────────────────────────────────────────────────
 // Keys: yearOffset (season − currentYear), round (1–4), tier ('early'|'mid'|'late')
