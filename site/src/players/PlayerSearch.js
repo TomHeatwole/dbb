@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchTrendingPlayers } from '../lookups/TrendingLookup';
 import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
@@ -91,6 +92,25 @@ function PlayerSearch() {
     setShowDropdown(false);
   };
 
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setSelectedPlayer(null);
+    }
+    if (selectedPlayer) {
+      document.addEventListener('keydown', onKeyDown);
+    }
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedPlayer]);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [selectedPlayer]);
+
   if (loading) {
     return <LoadingState label="Loading players…" />;
   }
@@ -100,6 +120,24 @@ function PlayerSearch() {
   }
 
   const filteredPlayers = getFilteredPlayers();
+
+  const playerModal = selectedPlayer ? (
+    <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+      <div
+        className="player-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <PlayerWeeklyScores
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          rosters={rosters}
+          users={users}
+        />
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
@@ -206,15 +244,7 @@ function PlayerSearch() {
         )}
       </div>
 
-      {/* Selected Player Display */}
-      {selectedPlayer && (
-        <PlayerWeeklyScores 
-          player={selectedPlayer}
-          onClose={() => setSelectedPlayer(null)}
-          rosters={rosters}
-          users={users}
-        />
-      )}
+      {playerModal && createPortal(playerModal, document.body)}
     </div>
   );
 }

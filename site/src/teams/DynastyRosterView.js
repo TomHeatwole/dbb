@@ -14,6 +14,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchTeamData, fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import {
@@ -28,6 +29,7 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import { SANDBOX_FEATURES, isFeatureEnabled } from '../utils/featureToggles';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
 
 const PICKS_ENABLED = isFeatureEnabled('DYNASTY_DRAFT_PICKS', SANDBOX_FEATURES);
@@ -137,6 +139,8 @@ function DynastyRosterView() {
   const [error, setError]                 = useState(null);
   const [teams, setTeams]                 = useState([]);
   const [rosters, setRosters]             = useState({});
+  const [rawRosters, setRawRosters]       = useState(null);
+  const [rawUsers, setRawUsers]           = useState(null);
   const [picksByRoster, setPicksByRoster] = useState({});
   const [rosterInfoMap, setRosterInfoMap] = useState({});
   const [draftOrderMap, setDraftOrderMap] = useState({});   // rosterId → pick# (1-10)
@@ -147,6 +151,7 @@ function DynastyRosterView() {
   const [ktcAsOf, setKtcAsOf]             = useState(null);
   const [selectedId, setSelectedId]       = useState(null);
   const [format, setFormat]               = useState('sf_tep');
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // ── Data loading ────────────────────────────────────────────────────────────
 
@@ -223,6 +228,8 @@ function DynastyRosterView() {
 
         setTeams(teamList);
         setRosters(rosterMap);
+        setRawRosters(teamData.rosters);
+        setRawUsers(teamData.users);
         setPicksByRoster(picksMap);
         setRosterInfoMap(infoMap);
         setDraftOrderMap(orderMap);
@@ -315,6 +322,45 @@ function DynastyRosterView() {
 
   const selectedTeam  = useMemo(() => sortedTeams.find((t) => t.rosterId === selectedId) || null, [sortedTeams, selectedId]);
   const selectedTotal = selectedId != null ? (teamKtcTotals[selectedId] ?? 0) : 0;
+
+  // ── Player modal ────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setSelectedPlayer(null);
+    }
+    if (selectedPlayer) {
+      document.addEventListener('keydown', onKeyDown);
+    }
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedPlayer]);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [selectedPlayer]);
+
+  const playerModal = selectedPlayer ? (
+    <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+      <div
+        className="player-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <PlayerWeeklyScores
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          rosters={rawRosters}
+          users={rawUsers}
+        />
+      </div>
+    </div>
+  ) : null;
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -418,8 +464,13 @@ function DynastyRosterView() {
                 const pRankLabel = RANKED_POSITIONS.includes(position) && posRank
                   ? `${position}${posRank}`
                   : null;
+                const playerInfo = playersData ? getPlayerInfo(pid, playersData, playerIdMap) : null;
                 return (
-                  <tr key={pid} className="dynasty-player-row">
+                  <tr
+                    key={pid}
+                    className="dynasty-player-row player-clickable"
+                    onClick={() => playerInfo && setSelectedPlayer(playerInfo)}
+                  >
                     <td className="dynasty-td dynasty-td-player">
                       <img
                         src={getPlayerLogoUrl(espnPhotoUrl)}
@@ -490,6 +541,8 @@ function DynastyRosterView() {
           </table>
         </div>
       )}
+
+      {playerModal && createPortal(playerModal, document.body)}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { batchConvertSleeperToGsis } from '../lookups/GsisLookup';
@@ -188,16 +189,71 @@ function HottestFreeAgents() {
   }, [agentsWithKtc, positionFilter, sortBy, limit]);
 
   const handlePlayerClick = (agent) => {
-    // Get full player info for the modal
-    const playerInfo = getPlayerInfo(agent.playerId, playersData, playerIdMap);
-    if (playerInfo) {
-      setSelectedPlayer(playerInfo);
+    // Try direct lookup first (works when agent.playerId is a Sleeper ID)
+    if (agent.playerId && playersData) {
+      const playerInfo = getPlayerInfo(agent.playerId, playersData, playerIdMap);
+      if (playerInfo) {
+        setSelectedPlayer(playerInfo);
+        return;
+      }
+    }
+
+    // Fallback: free agents have a GSIS ID as playerId, so search by name
+    if (playersData && agent.playerName) {
+      const nameLower = agent.playerName.toLowerCase();
+      const sleeperId = Object.keys(playersData).find((id) => {
+        const p = playersData[id];
+        return (p.full_name || '').toLowerCase() === nameLower;
+      });
+      if (sleeperId) {
+        const playerInfo = getPlayerInfo(sleeperId, playersData, playerIdMap);
+        if (playerInfo) {
+          setSelectedPlayer(playerInfo);
+        }
+      }
     }
   };
 
   const handleCloseModal = () => {
     setSelectedPlayer(null);
   };
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setSelectedPlayer(null);
+    }
+    if (selectedPlayer) {
+      document.addEventListener('keydown', onKeyDown);
+    }
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedPlayer]);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [selectedPlayer]);
+
+  const playerModal = selectedPlayer ? (
+    <div className="player-modal-overlay" onClick={handleCloseModal}>
+      <div
+        className="player-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <PlayerWeeklyScores
+          player={selectedPlayer}
+          onClose={handleCloseModal}
+          rosters={rosters}
+          users={users}
+        />
+      </div>
+    </div>
+  ) : null;
 
   if (loading) {
     return (
@@ -357,14 +413,7 @@ function HottestFreeAgents() {
         </div>
       )}
 
-      {selectedPlayer && (
-        <PlayerWeeklyScores
-          player={selectedPlayer}
-          onClose={handleCloseModal}
-          rosters={rosters}
-          users={users}
-        />
-      )}
+      {playerModal && createPortal(playerModal, document.body)}
     </div>
   );
 }
