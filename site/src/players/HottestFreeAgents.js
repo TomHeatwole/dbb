@@ -4,6 +4,7 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { batchConvertSleeperToGsis } from '../lookups/GsisLookup';
 import { fetchKtcData, getKtcEntryByName, formatKtcValue, KTC_FORMAT_LABELS } from '../lookups/KtcLookup';
+import { normalisePlayerName } from '../utils/playerNameMatcher';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from './PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
@@ -140,6 +141,39 @@ function HottestFreeAgents() {
               fantasyPointsPerGame: Math.round((fantasyPoints / games) * 100) / 100,
               headshotUrl: values[headshotIndex]?.trim() || null
             });
+          }
+        }
+
+        // Step 5: Inject KTC-only players (prospects/rookies not yet in stats DB)
+        // Build a set of normalised names already covered by the stats list
+        const statsNormNames = new Set(allPlayers.map(p => normalisePlayerName(p.playerName)));
+
+        // Build a set of normalised names for all rostered players (by Sleeper name)
+        const rosteredNormNames = new Set();
+        teamData.rosters.forEach(roster => {
+          if (Array.isArray(roster.players)) {
+            roster.players.forEach(pid => {
+              const p = players[pid];
+              if (p && p.full_name) rosteredNormNames.add(normalisePlayerName(p.full_name));
+            });
+          }
+        });
+
+        if (ktcResult && ktcResult.map) {
+          for (const [normName, entry] of ktcResult.map) {
+            if (!statsNormNames.has(normName) && !rosteredNormNames.has(normName)) {
+              allPlayers.push({
+                playerId: null,
+                playerName: entry.name,
+                position: entry.position,
+                team: entry.nflTeam || '',
+                games: 0,
+                fantasyPoints: 0,
+                fantasyPointsPerGame: 0,
+                headshotUrl: null,
+                ktcOnly: true,
+              });
+            }
           }
         }
 
@@ -338,6 +372,8 @@ function HottestFreeAgents() {
               <option value="25">Top 25</option>
               <option value="50">Top 50</option>
               <option value="100">Top 100</option>
+              <option value="200">Top 200</option>
+              <option value="500">Top 500</option>
             </select>
           </div>
         </div>

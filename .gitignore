@@ -3,3 +3,4 @@ lol.*
 .vercel
 .env*.local
 example_data/ffb.csv
+scripts/audit_ffpodcast_name_matches.js

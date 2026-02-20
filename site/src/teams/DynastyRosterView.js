@@ -260,7 +260,11 @@ function DynastyRosterView() {
       for (const pid of (rosters[team.rosterId] || [])) {
         const info  = getPlayerInfo(pid, playersData, playerIdMap);
         if (!info) continue;
-        const entry = getKtcEntryByName(info.full_name || info.name, ktcMap, format);
+        const entry = getKtcEntryByName(info.full_name || info.name, ktcMap, format, {
+          position: info.position,
+          team:     info.team || info.team_abbr,
+          age:      info.age,
+        });
         if (entry && entry.ktcValue > 0) total += entry.ktcValue;
       }
       // Picks (only when feature is enabled)
@@ -292,7 +296,11 @@ function DynastyRosterView() {
     return (rosters[selectedId] || []).map((pid) => {
       const info  = getPlayerInfo(pid, playersData, playerIdMap);
       const name  = info?.full_name || info?.name || pid;
-      const entry = getKtcEntryByName(name, ktcMap, format);
+      const entry = getKtcEntryByName(name, ktcMap, format, {
+        position: info?.position,
+        team:     info?.team || info?.team_abbr,
+        age:      info?.age,
+      });
       return {
         pid,
         name,

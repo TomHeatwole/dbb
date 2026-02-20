@@ -13,7 +13,7 @@
  * tiered by pick position (early 1–3 / mid 4–7 / late 8–10).
  */
 
-import { normalisePlayerName as normaliseName } from '../utils/playerNameMatcher';
+import { normalisePlayerName as normaliseName, findBestPlayerMatch } from '../utils/playerNameMatcher';
 
 let cachedKtcMap = null;
 let cachedAsOf   = null;
@@ -169,21 +169,45 @@ export async function fetchKtcData() {
 
 /**
  * Look up a player's KTC entry, returning values for the requested format.
+ *
  * format: 'sf' | 'sf_tep'  (default 'sf_tep')
+ * hints:  { position?, team?, age? } from the caller's data source (e.g. Sleeper).
+ *         Used to disambiguate duplicate normalised names and as filters for the
+ *         last-name fallback when no normalised match is found.
+ *
  * Returns { ktcValue, overallRank, posRank, position, nflTeam, name } or null.
  */
-export function getKtcEntryByName(playerName, ktcMap, format = 'sf_tep') {
+export function getKtcEntryByName(playerName, ktcMap, format = 'sf_tep', hints = {}) {
   if (!ktcMap || !playerName) return null;
+
+  // Fast path: O(1) normalised-name map lookup covers the vast majority of cases.
   const raw = ktcMap.get(normaliseName(playerName));
-  if (!raw) return null;
+
+  let entry = raw;
+
+  if (!entry) {
+    // Fallback: smart search over all KTC entries.
+    // Handles nicknames, punctuation mismatches the normaliser doesn't bridge,
+    // and last-name-only matches when position/team hints are available.
+    const { candidate } = findBestPlayerMatch(
+      playerName,
+      Array.from(ktcMap.values()),
+      hints,
+      { team: 'nflTeam' },   // KTC entries use nflTeam, not team
+    );
+    entry = candidate;
+  }
+
+  if (!entry) return null;
+
   const isTep = format === 'sf_tep';
   return {
-    ktcValue:    isTep ? raw.ktcValue_tep   : raw.ktcValue_sf,
-    overallRank: isTep ? raw.overallRank_tep : raw.overallRank_sf,
-    posRank:     isTep ? raw.posRank_tep     : raw.posRank_sf,
-    position:    raw.position,
-    nflTeam:     raw.nflTeam,
-    name:        raw.name,
+    ktcValue:    isTep ? entry.ktcValue_tep   : entry.ktcValue_sf,
+    overallRank: isTep ? entry.overallRank_tep : entry.overallRank_sf,
+    posRank:     isTep ? entry.posRank_tep     : entry.posRank_sf,
+    position:    entry.position,
+    nflTeam:     entry.nflTeam,
+    name:        entry.name,
   };
 }
 
