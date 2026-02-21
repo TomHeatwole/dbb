@@ -23,3 +23,6 @@
       - Scenario or "what if" clickbait
       - League history could get its own teaser once there's a page for it.
       - 2025 MVPs could be a good teaser once we have advanced player analytics
+
+Random bugs:
+  - Trade view should Show exact pick for 2026 and earlier? I guess depending on the time of the trade

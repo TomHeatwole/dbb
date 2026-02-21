@@ -228,7 +228,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
       setPositionRankPerGame(newRankPerGame);
       setLoadingStats(false);
     }, 0);
-  }, [weeksParsedData, playerId, season, totalWeeks, loading, player]);
+  }, [weeksParsedData, playerId, season, totalWeeks, loading, player, position]);
 
   const totalPoints = weeklyScores.reduce((sum, w) => sum + w.points, 0);
   const gamesPlayed = weeklyScores.filter(w => w.points > 0).length;
