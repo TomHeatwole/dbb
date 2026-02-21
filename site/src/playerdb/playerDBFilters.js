@@ -55,16 +55,20 @@ export const PLAYER_DB_FILTERS = [
       const teams = [
         ...new Set(players.map(p => p.fantasyTeamName).filter(Boolean)),
       ].sort();
-      return ['ALL', ...teams];
+      return ['ALL', 'Free Agents', ...teams];
     },
-    filterFn: (player, value) => value === 'ALL' || player.fantasyTeamName === value,
+    filterFn: (player, value) => {
+      if (value === 'ALL') return true;
+      if (value === 'Free Agents') return player.isFreeAgent;
+      return player.fantasyTeamName === value;
+    },
   },
   {
-    key: 'freeAgentOnly',
+    key: 'includeNflFreeAgents',
     type: 'toggle',
-    label: 'Free Agents Only',
-    defaultValue: false,
-    filterFn: (player, value) => !value || player.isFreeAgent,
+    label: 'Include NFL Free Agents',
+    defaultValue: true,
+    filterFn: (player, value) => value || !!player.nflTeam,
   },
 ];
 
