@@ -16,11 +16,22 @@ function TypingDots() {
   );
 }
 
+const LOGO = '/data/hwangai.png';
+
+function AiSender() {
+  return (
+    <div className="hwang-ai-sender">
+      <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
+      HwangAI
+    </div>
+  );
+}
+
 function ChatMessage({ message }) {
   const isUser = message.role === 'user';
   return (
     <div className={`hwang-ai-message ${isUser ? 'hwang-ai-message--user' : 'hwang-ai-message--ai'}`}>
-      {!isUser && <div className="hwang-ai-sender">HwangAI</div>}
+      {!isUser && <AiSender />}
       <div className={`hwang-ai-bubble ${isUser ? 'hwang-ai-bubble--user' : 'hwang-ai-bubble--ai'}`}>
         {isUser ? message.content : <ReactMarkdown>{message.content}</ReactMarkdown>}
       </div>
@@ -97,12 +108,17 @@ function HwangAIPage() {
   return (
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title="HwangAI" >
+      <InfoPageWrapper title={
+        <span className="info-title-inline">
+          <img src={LOGO} alt="" className="hwang-ai-title-logo" aria-hidden="true" />
+          HwangAI
+        </span>
+      }>
         <div className="hwang-ai-root">
           <div className="hwang-ai-messages">
             {messages.length === 0 && !loading && (
               <div className="hwang-ai-empty">
-                <div className="hwang-ai-empty-icon">🤖</div>
+                <img src={LOGO} alt="HwangAI" className="hwang-ai-empty-logo" />
                 <div className="hwang-ai-empty-text">
                   Ask me anything — trade values, start/sit, waiver pickups, dynasty strategy.
                 </div>
@@ -113,7 +129,7 @@ function HwangAIPage() {
             ))}
             {loading && (
               <div className="hwang-ai-message hwang-ai-message--ai">
-                <div className="hwang-ai-sender">HwangAI</div>
+                <AiSender />
                 <TypingDots />
               </div>
             )}
