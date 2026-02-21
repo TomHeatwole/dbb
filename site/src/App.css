@@ -9354,6 +9354,52 @@ body.modal-open {
   cursor: not-allowed;
 }
 
+/* Markdown rendering inside AI bubbles */
+.hwang-ai-bubble--ai p {
+  margin: 0 0 0.6em 0;
+}
+.hwang-ai-bubble--ai p:last-child {
+  margin-bottom: 0;
+}
+.hwang-ai-bubble--ai strong {
+  color: #fff;
+  font-weight: 600;
+}
+.hwang-ai-bubble--ai ul,
+.hwang-ai-bubble--ai ol {
+  margin: 0.4em 0 0.6em 0;
+  padding-left: 1.4em;
+}
+.hwang-ai-bubble--ai li {
+  margin-bottom: 0.25em;
+}
+.hwang-ai-bubble--ai h1,
+.hwang-ai-bubble--ai h2,
+.hwang-ai-bubble--ai h3 {
+  margin: 0.6em 0 0.3em 0;
+  color: #fff;
+  font-size: 1em;
+  font-weight: 700;
+}
+.hwang-ai-bubble--ai code {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  font-size: 0.875em;
+  font-family: monospace;
+}
+.hwang-ai-bubble--ai pre {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.4rem;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.hwang-ai-bubble--ai pre code {
+  background: none;
+  padding: 0;
+}
+
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .hwang-ai-root {

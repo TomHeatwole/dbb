@@ -101,34 +101,17 @@ export function fmtDate(ts) {
   });
 }
 
-// Find a team in teamMap by fuzzy name/owner/id match.
-// Optionally pass ownerNamesMap (from loadOwnerNames()) to also resolve
-// first names and nicknames like "mike" → roster #5.
-export function findTeam(teamMap, query, ownerNamesMap = null) {
-  const q = String(query).trim().toLowerCase();
-
-  // 1. Check owner nickname/first-name map first (exact match)
-  if (ownerNamesMap) {
-    const rid = ownerNamesMap.get(q);
-    if (rid != null && teamMap[rid]) {
-      return { rid, ...teamMap[rid] };
-    }
-  }
-
-  // 2. Exact roster ID
-  for (const [rid, info] of Object.entries(teamMap)) {
-    if (String(rid) === String(query)) return { rid: Number(rid), ...info };
-  }
-
-  // 3. Substring match against team name or Sleeper username
+// Find a team in teamMap by fuzzy name/owner/id match
+export function findTeam(teamMap, query) {
+  const q = String(query).toLowerCase();
   for (const [rid, info] of Object.entries(teamMap)) {
     if (
+      String(rid) === String(query) ||
       info.teamName.toLowerCase().includes(q) ||
       info.ownerName.toLowerCase().includes(q)
     ) {
       return { rid: Number(rid), ...info };
     }
   }
-
   return null;
 }

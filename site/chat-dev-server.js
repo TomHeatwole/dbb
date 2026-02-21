@@ -1,7 +1,6 @@
 // Standalone dev API server for local development.
-// Handles POST /api/chat and proxies to Gemini.
-// Run alongside `npm start` (CRA dev server) using: npm run api --prefix site
-// CRA forwards unknown requests here via the "proxy" field in package.json.
+// Delegates POST /api/chat to api/chat.js (the same handler used by Vercel).
+// Run alongside `npm start` using: npm run api --prefix site
 
 const fs = require('fs');
 const path = require('path');
@@ -22,71 +21,43 @@ try {
 
 const PORT = 3001;
 
+// Shim Express-style res methods onto Node's ServerResponse so api/chat.js works unchanged
+function shimResponse(res) {
+  res.status = function(code) { this.statusCode = code; return this; };
+  res.json   = function(data) {
+    this.setHeader('Content-Type', 'application/json');
+    this.end(JSON.stringify(data));
+  };
+  return res;
+}
+
 const server = http.createServer(async (req, res) => {
+  shimResponse(res);
+
   if (req.method === 'POST' && req.url === '/api/chat') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
-      res.setHeader('Content-Type', 'application/json');
-
-      let parsed;
       try {
-        parsed = JSON.parse(body);
+        req.body = JSON.parse(body);
       } catch {
-        res.writeHead(400);
-        return res.end(JSON.stringify({ error: 'Invalid JSON' }));
-      }
-
-      const { messages, systemPrompt } = parsed || {};
-      if (!messages || !Array.isArray(messages) || messages.length === 0) {
-        res.writeHead(400);
-        return res.end(JSON.stringify({ error: 'Invalid messages' }));
-      }
-
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        res.writeHead(500);
-        return res.end(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }));
-      }
-
-      const contents = messages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }));
-
-      const requestBody = { contents };
-      if (systemPrompt) {
-        requestBody.systemInstruction = { parts: [{ text: systemPrompt }] };
+        res.status(400).json({ error: 'Invalid JSON' });
+        return;
       }
 
       try {
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody),
-          }
-        );
-
-        if (!geminiRes.ok) {
-          const err = await geminiRes.json().catch(() => ({}));
-          res.writeHead(geminiRes.status);
-          return res.end(JSON.stringify({ error: 'Gemini API error', details: err }));
-        }
-
-        const data = await geminiRes.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        res.writeHead(200);
-        return res.end(JSON.stringify({ message: text }));
-      } catch (e) {
-        res.writeHead(500);
-        return res.end(JSON.stringify({ error: e.message }));
+        // Dynamic import so ESM api/chat.js works from this CommonJS file.
+        // Cache-bust with timestamp so server restart isn't needed during dev.
+        const { default: handler } = await import(`./api/chat.js?v=${Date.now()}`);
+        await handler(req, res);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Handler error:', err);
+        res.status(500).json({ error: err.message });
       }
     });
   } else {
-    res.writeHead(404);
-    res.end(JSON.stringify({ error: 'Not found' }));
+    res.status(404).json({ error: 'Not found' });
   }
 });
 

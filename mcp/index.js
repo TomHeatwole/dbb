@@ -22,6 +22,10 @@ import {
   getRecentTrades,
   getFreeAgents,
   getSiteLink,
+  getLeagueInfo,
+  resolveTeam,
+  simulateTradeReversal,
+  simulateRosterChange,
 } from './src/tools.js';
 
 // ── Server setup ──────────────────────────────────────────────────────────────
@@ -194,6 +198,68 @@ server.tool(
       .describe('Filter by position (optional)'),
   },
   wrapTool(({ position }) => getFreeAgents(position))
+);
+
+server.tool(
+  'simulate_trade_reversal',
+  'Simulate reversing a trade: shows what the final standings would have looked like if two teams had never made a specific trade. Uses optimal lineups for all 17 weeks.',
+  {
+    season: z
+      .string()
+      .describe('Season year to simulate (e.g. "2025", "2024"). Must be a completed past season.'),
+    team_a: z
+      .string()
+      .describe('Name or owner of the first team in the trade'),
+    players_team_a_gave: z
+      .array(z.string())
+      .min(1)
+      .describe('Player names that team_a traded away (and would get back in the reversal)'),
+    team_b: z
+      .string()
+      .describe('Name or owner of the second team in the trade'),
+    players_team_b_gave: z
+      .array(z.string())
+      .min(1)
+      .describe('Player names that team_b traded away (and would get back in the reversal)'),
+  },
+  wrapTool(({ season, team_a, players_team_a_gave, team_b, players_team_b_gave }) =>
+    simulateTradeReversal(season, team_a, players_team_a_gave, team_b, players_team_b_gave)
+  )
+);
+
+server.tool(
+  'simulate_roster_change',
+  'Simulate arbitrary roster changes for a past season and see how the final standings would have changed. Use this for "what if" questions like: what if a team had picked up a certain free agent, or never dropped a player.',
+  {
+    season: z
+      .string()
+      .describe('Season year to simulate (e.g. "2025", "2024"). Must be a completed past season.'),
+    changes: z
+      .array(
+        z.object({
+          team:   z.string().describe('Team name or owner name'),
+          add:    z.array(z.string()).optional().describe('Player names to add to this roster'),
+          remove: z.array(z.string()).optional().describe('Player names to remove from this roster'),
+        })
+      )
+      .min(1)
+      .describe('List of roster changes to apply'),
+  },
+  wrapTool(({ season, changes }) => simulateRosterChange(season, changes))
+);
+
+server.tool(
+  'resolve_team',
+  "Resolve a person's first name or nickname to their Hwang Dynasty team. Use this when a user refers to a team owner by name and you're not sure which team they mean.",
+  { name: z.string().describe('First name, nickname, or any identifier to look up') },
+  wrapTool(({ name }) => resolveTeam(name))
+);
+
+server.tool(
+  'get_league_info',
+  'Get general information about the Hwang Dynasty league — scoring rules, team list, playoff format, history, and lore. Call this first when answering general questions about the league.',
+  {},
+  wrapTool(() => getLeagueInfo())
 );
 
 server.tool(

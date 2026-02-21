@@ -1,6 +1,3 @@
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { CURRENT_YEAR, SITE_BASE_URL } from './config.js';
 import {
   fetchRosters, fetchUsers, fetchMatchups, fetchTransactions,
@@ -8,27 +5,26 @@ import {
 } from './sleeperApi.js';
 import {
   loadPlayersData, loadKtcData, loadFantasyCalcData, loadFfbData,
-  findPlayerByName, loadOwnerNames,
+  findPlayerByName,
 } from './dataLoader.js';
 import {
   getCurrentNFLWeek, getCompletedWeeksCount, normalisePlayerName,
   buildTeamMap, getPlayerDisplayName, lookupKtc, fmt, fmtDate, findTeam,
 } from './helpers.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
 // ─── Standings ────────────────────────────────────────────────────────────────
 
-export async function getStandings() {
-  const completedWeeks = getCompletedWeeksCount();
+export async function getStandings(season) {
+  const yr = season ? String(season) : CURRENT_YEAR;
+  const completedWeeks = getCompletedWeeksCount(yr);
   if (completedWeeks === 0) {
-    return `The ${CURRENT_YEAR} season hasn't started yet — no completed weeks.`;
+    return `The ${yr} season hasn't started yet — no completed weeks.`;
   }
 
   const [rosters, users, weeksData] = await Promise.all([
-    fetchRosters(),
-    fetchUsers(),
-    fetchAllWeekScores(completedWeeks),
+    fetchRosters(yr),
+    fetchUsers(yr),
+    fetchAllWeekScores(completedWeeks, yr),
   ]);
   const teamMap = buildTeamMap(rosters, users);
 
@@ -56,7 +52,7 @@ export async function getStandings() {
     .map((s, i) => ({ ...s, place: i + 1 }));
 
   const lines = [
-    `**Hwang Dynasty Standings — ${CURRENT_YEAR} Season (through Week ${completedWeeks})**\n`,
+    `**Hwang Dynasty Standings — ${yr} Season (through Week ${completedWeeks})**\n`,
   ];
   for (const s of standings) {
     lines.push(`${s.place}. ${s.teamName} (${s.ownerName}) — ${s.points} pts`);
@@ -67,11 +63,12 @@ export async function getStandings() {
 
 // ─── Weekly Scores ────────────────────────────────────────────────────────────
 
-export async function getWeeklyScores(week) {
+export async function getWeeklyScores(week, season) {
+  const yr = season ? String(season) : CURRENT_YEAR;
   const [rosters, users, weekData] = await Promise.all([
-    fetchRosters(),
-    fetchUsers(),
-    fetchMatchups(week).catch(() => null),
+    fetchRosters(yr),
+    fetchUsers(yr),
+    fetchMatchups(week, yr).catch(() => null),
   ]);
   const teamMap = buildTeamMap(rosters, users);
 
@@ -88,7 +85,7 @@ export async function getWeeklyScores(week) {
     matchups[mid].push(entry);
   }
 
-  const lines = [`**Hwang Dynasty — Week ${week} Scores**\n`];
+  const lines = [`**Hwang Dynasty — Week ${week} Scores (${yr} Season)**\n`];
   for (const [, teams] of Object.entries(matchups).sort()) {
     if (teams.length < 2) continue;
     const [a, b] = teams.sort((x, y) => (y.points || 0) - (x.points || 0));
@@ -99,17 +96,18 @@ export async function getWeeklyScores(week) {
     lines.push(`🏆 ${aName}: **${a.points ?? '—'}**  vs  ${bName}: ${b.points ?? '—'}`);
   }
 
-  lines.push(`\n🔗 ${SITE_BASE_URL}/Scores/Week?week=${week}`);
+  lines.push(`\n🔗 ${SITE_BASE_URL}/Scores/Week?week=${week}&year=${yr}`);
   return lines.join('\n');
 }
 
 // ─── Team Roster ──────────────────────────────────────────────────────────────
 
-export async function getRoster(teamQuery) {
-  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
+export async function getRoster(teamQuery, season) {
+  const yr = season ? String(season) : CURRENT_YEAR;
+  const [rosters, users] = await Promise.all([fetchRosters(yr), fetchUsers(yr)]);
   const teamMap = buildTeamMap(rosters, users);
 
-  const teamInfo = findTeam(teamMap, teamQuery, loadOwnerNames());
+  const teamInfo = findTeam(teamMap, teamQuery);
   if (!teamInfo) {
     const allTeams = Object.values(teamMap)
       .map((t) => `"${t.teamName}" (${t.ownerName})`)
@@ -181,11 +179,12 @@ export async function getRoster(teamQuery) {
 
 // ─── All Teams ────────────────────────────────────────────────────────────────
 
-export async function getAllTeams() {
-  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
+export async function getAllTeams(season) {
+  const yr = season ? String(season) : CURRENT_YEAR;
+  const [rosters, users] = await Promise.all([fetchRosters(yr), fetchUsers(yr)]);
   const teamMap = buildTeamMap(rosters, users);
 
-  const lines = [`**Hwang Dynasty ${CURRENT_YEAR} — All Teams**\n`];
+  const lines = [`**Hwang Dynasty ${yr} — All Teams**\n`];
   for (const [rid, info] of Object.entries(teamMap).sort((a, b) => Number(a[0]) - Number(b[0]))) {
     const playerCount = info.roster.players?.length || 0;
     lines.push(`Roster #${rid}: **${info.teamName}** (${info.ownerName}) — ${playerCount} players`);
@@ -459,24 +458,30 @@ export async function getTrendingPlayers() {
 
 // ─── Recent Trades ────────────────────────────────────────────────────────────
 
-export async function getRecentTrades(weeksBack) {
+export async function getRecentTrades(weeksBack, season) {
+  const yr = season ? String(season) : CURRENT_YEAR;
   const lookback    = Math.min(Math.max(weeksBack || 4, 1), 17);
-  const currentWeek = getCurrentNFLWeek();
-  const completedWeeks = getCompletedWeeksCount();
+  const completedWeeks = getCompletedWeeksCount(yr);
 
   if (completedWeeks === 0) {
-    return `The ${CURRENT_YEAR} season hasn't started yet — no trades to show.`;
+    return `The ${yr} season hasn't started yet — no trades to show.`;
   }
 
-  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
+  // For past seasons use all completed weeks; for current season use lookback window
+  const currentWeek = getCurrentNFLWeek(yr);
+  const startWeek = yr !== CURRENT_YEAR
+    ? 1
+    : Math.max(1, currentWeek - lookback + 1);
+  const endWeek = yr !== CURRENT_YEAR ? completedWeeks : currentWeek;
+
+  const [rosters, users] = await Promise.all([fetchRosters(yr), fetchUsers(yr)]);
   const teamMap           = buildTeamMap(rosters, users);
   const playersData       = loadPlayersData();
 
-  const startWeek = Math.max(1, currentWeek - lookback + 1);
-  const weekNums  = Array.from({ length: currentWeek - startWeek + 1 }, (_, i) => startWeek + i);
+  const weekNums  = Array.from({ length: endWeek - startWeek + 1 }, (_, i) => startWeek + i);
 
   const allTransactions = (
-    await Promise.all(weekNums.map((w) => fetchTransactions(w).catch(() => [])))
+    await Promise.all(weekNums.map((w) => fetchTransactions(w, yr).catch(() => [])))
   ).flat();
 
   const trades = allTransactions
@@ -487,7 +492,8 @@ export async function getRecentTrades(weeksBack) {
     return `No completed trades found in the last ${lookback} week(s).`;
   }
 
-  const lines = [`**Recent Trades — Hwang Dynasty ${CURRENT_YEAR} (last ${lookback} week(s))**\n`];
+  const seasonLabel = yr !== CURRENT_YEAR ? yr : `${yr} (last ${lookback} week(s))`;
+  const lines = [`**Recent Trades — Hwang Dynasty ${seasonLabel}**\n`];
 
   for (const trade of trades.slice(0, 12)) {
     // Build per-team sides
@@ -540,22 +546,23 @@ export async function getRecentTrades(weeksBack) {
 
 // ─── Team Season Scores ───────────────────────────────────────────────────────
 
-export async function getTeamScores(teamQuery) {
-  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
+export async function getTeamScores(teamQuery, season) {
+  const yr = season ? String(season) : CURRENT_YEAR;
+  const [rosters, users] = await Promise.all([fetchRosters(yr), fetchUsers(yr)]);
   const teamMap           = buildTeamMap(rosters, users);
-  const teamInfo          = findTeam(teamMap, teamQuery, loadOwnerNames());
+  const teamInfo          = findTeam(teamMap, teamQuery);
 
   if (!teamInfo) {
     const all = Object.values(teamMap).map((t) => `"${t.teamName}"`).join(', ');
-    return `Team not found for "${teamQuery}". Available: ${all}`;
+    return `Team not found for "${teamQuery}" in ${yr}. Available: ${all}`;
   }
 
-  const completedWeeks = getCompletedWeeksCount();
+  const completedWeeks = getCompletedWeeksCount(yr);
   if (completedWeeks === 0) {
-    return `The ${CURRENT_YEAR} season hasn't started yet.`;
+    return `The ${yr} season hasn't started yet.`;
   }
 
-  const weeksData = await fetchAllWeekScores(completedWeeks);
+  const weeksData = await fetchAllWeekScores(completedWeeks, yr);
   const rid       = teamInfo.roster.roster_id;
 
   const rows = [];
@@ -597,7 +604,7 @@ export async function getTeamScores(teamQuery) {
   const minWk = rows.reduce((low,  r) => (!low  || r.pts < low.pts  ? r : low),  null);
 
   const lines = [
-    `**${teamInfo.teamName}** (${teamInfo.ownerName}) — ${CURRENT_YEAR} Season Scores\n`,
+    `**${teamInfo.teamName}** (${teamInfo.ownerName}) — ${yr} Season Scores\n`,
     `Record: **${wins}-${losses}** | Total: **${Math.round(totalPts * 10) / 10} pts** | Avg: **${avg} pts/wk**`,
     maxWk ? `High:  Week ${maxWk.week} vs ${maxWk.oppName} — **${maxWk.pts}** pts` : '',
     minWk ? `Low:   Week ${minWk.week} vs ${minWk.oppName} — **${minWk.pts}** pts` : '',
@@ -713,7 +720,7 @@ export async function getSiteLink(page, params = {}) {
       return lines.join('\n');
     }
 
-    const found = findTeam(teamMap, params.team, loadOwnerNames());
+    const found = findTeam(teamMap, params.team);
     if (!found) return `Team "${params.team}" not found.`;
     return `${found.teamName} (${found.ownerName}): 🔗 ${SITE_BASE_URL}/team/${found.roster.roster_id}`;
   }
@@ -725,274 +732,4 @@ export async function getSiteLink(page, params = {}) {
   }
 
   return `🔗 ${SITE_BASE_URL}${path}`;
-}
-
-// ─── Scenario helpers ─────────────────────────────────────────────────────────
-
-import { runScenario } from './scenarioEngine.js';
-
-/**
- * Resolve a list of player name strings to Sleeper player IDs.
- * Returns { resolved: [{name, playerId}], unresolved: string[] }
- */
-function resolvePlayerNames(names) {
-  const resolved = [];
-  const unresolved = [];
-  for (const name of names) {
-    const result = findPlayerByName(name);
-    if (result) {
-      resolved.push({ name: getPlayerDisplayName(result.player), playerId: result.playerId });
-    } else {
-      unresolved.push(name);
-    }
-  }
-  return { resolved, unresolved };
-}
-
-/**
- * Fetch all data needed to run a scenario for a given season.
- * Returns { rosters, teamMap, weeksData, playersData } or throws.
- */
-async function fetchScenarioData(season) {
-  const [rosters, users, weeksData] = await Promise.all([
-    fetchRosters(season),
-    fetchUsers(season),
-    fetchAllWeekScores(17, season),
-  ]);
-  const teamMap    = buildTeamMap(rosters, users);
-  const playersData = loadPlayersData();
-
-  // Build originalRosters map: { rosterId: string[] }
-  const originalRosters = {};
-  for (const r of rosters) {
-    if (r && r.roster_id != null) {
-      originalRosters[String(r.roster_id)] = Array.isArray(r.players) ? [...r.players] : [];
-    }
-  }
-
-  return { rosters, teamMap, weeksData, playersData, originalRosters };
-}
-
-/** Format the standings comparison table for display. */
-function formatScenarioResult(
-  { originalStandings, scenarioStandings, origRegTotals, scenRegTotals },
-  teamMap,
-  season
-) {
-  const scenPlaceByRid = {};
-  for (const r of scenarioStandings) scenPlaceByRid[r.rosterId] = r;
-
-  const rows = originalStandings
-    .slice()
-    .sort((a, b) => a.place - b.place)
-    .map((orig) => {
-      const scen     = scenPlaceByRid[orig.rosterId] || {};
-      const info     = teamMap[orig.rosterId] || {};
-      const placeDiff = orig.place - (scen.place ?? orig.place);
-      const ptsDiff   = Math.round(((scenRegTotals[orig.rosterId] || 0) - (origRegTotals[orig.rosterId] || 0)) * 10) / 10;
-      return {
-        origPlace:  orig.place,
-        scenPlace:  scen.place ?? orig.place,
-        teamName:   info.teamName  || `Team ${orig.rosterId}`,
-        origPts:    origRegTotals[orig.rosterId] || 0,
-        scenPts:    scenRegTotals[orig.rosterId] || 0,
-        ptsDiff,
-        placeDiff,
-        isPlayoff:  orig.isPlayoff,
-      };
-    });
-
-  const lines = [
-    `**Scenario Standings — ${season} Season (Optimal Lineups)**\n`,
-    `${'Place'.padEnd(6)} ${'Team'.padEnd(28)} ${'Orig Pts'.padEnd(10)} ${'Scen Pts'.padEnd(10)} ${'Δ Pts'.padEnd(8)} Δ Place`,
-    '─'.repeat(72),
-  ];
-
-  for (const r of rows) {
-    const arrow = r.placeDiff > 0 ? `▲${r.placeDiff}` : r.placeDiff < 0 ? `▼${Math.abs(r.placeDiff)}` : '—';
-    const ptStr = r.ptsDiff === 0 ? '—' : `${r.ptsDiff > 0 ? '+' : ''}${r.ptsDiff}`;
-    const playoff = r.origPlace <= 4 ? '🏆' : '  ';
-    lines.push(
-      `${playoff}${String(r.origPlace).padEnd(4)}  ${r.teamName.padEnd(28)} ` +
-      `${String(r.origPts).padEnd(10)} ${String(r.scenPts).padEnd(10)} ${ptStr.padEnd(8)} ${arrow}`
-    );
-  }
-
-  lines.push('');
-  lines.push('*Pts = reg-season total (Wks 1–14), optimal starts. Playoff seeding reflects Wks 15–17.*');
-  lines.push('*Free agents who were never rostered score 0 pts regardless of actual performance.*');
-  lines.push(`\n🔗 ${SITE_BASE_URL}/scenarios`);
-  return lines.join('\n');
-}
-
-// ─── Simulate trade reversal ──────────────────────────────────────────────────
-
-export async function simulateTradeReversal(season, teamAQuery, playersAGave, teamBQuery, playersBGave) {
-  const { rosters: _r, teamMap, weeksData, playersData, originalRosters } =
-    await fetchScenarioData(season);
-
-  const ownerNames = loadOwnerNames();
-  const teamA = findTeam(teamMap, teamAQuery, ownerNames);
-  const teamB = findTeam(teamMap, teamBQuery, ownerNames);
-
-  if (!teamA) return `Team not found: "${teamAQuery}". Use get_all_teams to list teams.`;
-  if (!teamB) return `Team not found: "${teamBQuery}". Use get_all_teams to list teams.`;
-
-  const ridA = String(teamA.roster.roster_id);
-  const ridB = String(teamB.roster.roster_id);
-
-  // Resolve player names
-  const { resolved: resolvedA, unresolved: unresolvedA } = resolvePlayerNames(playersAGave);
-  const { resolved: resolvedB, unresolved: unresolvedB } = resolvePlayerNames(playersBGave);
-
-  const warnings = [];
-  if (unresolvedA.length) warnings.push(`Could not find: ${unresolvedA.join(', ')} (skipped)`);
-  if (unresolvedB.length) warnings.push(`Could not find: ${unresolvedB.join(', ')} (skipped)`);
-
-  // Build scenario rosters: deep-copy originals then swap players
-  const scenarioRosters = {};
-  for (const rid in originalRosters) scenarioRosters[rid] = [...originalRosters[rid]];
-
-  // Reversal: team A gets back what they gave, team B gets back what they gave
-  for (const { playerId } of resolvedA) {
-    // Remove from team B (or wherever they currently are), add to team A
-    for (const rid in scenarioRosters) {
-      const idx = scenarioRosters[rid].indexOf(playerId);
-      if (idx !== -1) { scenarioRosters[rid].splice(idx, 1); break; }
-    }
-    if (!scenarioRosters[ridA].includes(playerId)) scenarioRosters[ridA].push(playerId);
-  }
-  for (const { playerId } of resolvedB) {
-    // Remove from team A (or wherever they currently are), add to team B
-    for (const rid in scenarioRosters) {
-      const idx = scenarioRosters[rid].indexOf(playerId);
-      if (idx !== -1) { scenarioRosters[rid].splice(idx, 1); break; }
-    }
-    if (!scenarioRosters[ridB].includes(playerId)) scenarioRosters[ridB].push(playerId);
-  }
-
-  const result = runScenario(weeksData, originalRosters, scenarioRosters, playersData);
-
-  const aGaveNames = resolvedA.map((p) => p.name).join(', ') || '—';
-  const bGaveNames = resolvedB.map((p) => p.name).join(', ') || '—';
-
-  const lines = [
-    `**Trade Reversal Scenario — ${season} Season**\n`,
-    `If this trade had never happened:`,
-    `  ${teamA.teamName} keeps: **${aGaveNames}** (never traded away)`,
-    `  ${teamB.teamName} keeps: **${bGaveNames}** (never traded away)`,
-    '',
-  ];
-
-  if (warnings.length) {
-    for (const w of warnings) lines.push(`⚠️  ${w}`);
-    lines.push('');
-  }
-
-  lines.push(formatScenarioResult(result, teamMap, season));
-  return lines.join('\n');
-}
-
-// ─── Simulate roster change ───────────────────────────────────────────────────
-
-export async function simulateRosterChange(season, changes) {
-  const { rosters: _r, teamMap, weeksData, playersData, originalRosters } =
-    await fetchScenarioData(season);
-
-  const ownerNames    = loadOwnerNames();
-  const scenarioRosters = {};
-  for (const rid in originalRosters) scenarioRosters[rid] = [...originalRosters[rid]];
-
-  const appliedChanges = [];
-  const warnings       = [];
-
-  for (const change of changes) {
-    const teamInfo = findTeam(teamMap, change.team, ownerNames);
-    if (!teamInfo) {
-      warnings.push(`Team not found: "${change.team}" — skipped`);
-      continue;
-    }
-    const rid = String(teamInfo.roster.roster_id);
-
-    const adds    = change.add    ? resolvePlayerNames(change.add)    : { resolved: [], unresolved: [] };
-    const removes = change.remove ? resolvePlayerNames(change.remove) : { resolved: [], unresolved: [] };
-
-    for (const { name, playerId } of adds.resolved) {
-      // Remove from current team first
-      for (const r in scenarioRosters) {
-        const idx = scenarioRosters[r].indexOf(playerId);
-        if (idx !== -1) { scenarioRosters[r].splice(idx, 1); break; }
-      }
-      if (!scenarioRosters[rid].includes(playerId)) scenarioRosters[rid].push(playerId);
-      appliedChanges.push(`${teamInfo.teamName}: + ${name}`);
-    }
-
-    for (const { name, playerId } of removes.resolved) {
-      const idx = scenarioRosters[rid].indexOf(playerId);
-      if (idx !== -1) {
-        scenarioRosters[rid].splice(idx, 1);
-        appliedChanges.push(`${teamInfo.teamName}: − ${name}`);
-      } else {
-        warnings.push(`${name} not found on ${teamInfo.teamName}'s roster — skipped`);
-      }
-    }
-
-    for (const n of [...adds.unresolved, ...removes.unresolved]) {
-      warnings.push(`Player not found: "${n}" — skipped`);
-    }
-  }
-
-  if (appliedChanges.length === 0) {
-    return 'No valid changes could be applied. Check team names and player names.';
-  }
-
-  const result = runScenario(weeksData, originalRosters, scenarioRosters, playersData);
-
-  const lines = [`**Custom Roster Scenario — ${season} Season**\n`, 'Changes applied:'];
-  for (const c of appliedChanges) lines.push(`  ${c}`);
-  if (warnings.length) {
-    lines.push('');
-    for (const w of warnings) lines.push(`⚠️  ${w}`);
-  }
-  lines.push('');
-  lines.push(formatScenarioResult(result, teamMap, season));
-  return lines.join('\n');
-}
-
-// ─── Resolve Team Name ────────────────────────────────────────────────────────
-
-export async function resolveTeam(query) {
-  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
-  const teamMap           = buildTeamMap(rosters, users);
-  const ownerNames        = loadOwnerNames();
-  const teamInfo          = findTeam(teamMap, query, ownerNames);
-
-  if (!teamInfo) {
-    // Show what names are registered so the clanker can help the user
-    const registered = [];
-    for (const [name, rid] of ownerNames) {
-      const info = teamMap[rid] || {};
-      registered.push(`"${name}" → ${info.teamName || `Roster #${rid}`} (${info.ownerName || rid})`);
-    }
-    const hint = registered.length
-      ? `\nRegistered nicknames:\n${registered.map((r) => `  ${r}`).join('\n')}`
-      : '\nNo nicknames registered yet — edit mcp/owner_names.txt to add them.';
-    return `Could not resolve "${query}" to a team.${hint}`;
-  }
-
-  return (
-    `"${query}" → **${teamInfo.teamName}** (${teamInfo.ownerName}), Roster #${teamInfo.roster.roster_id}\n` +
-    `🔗 ${SITE_BASE_URL}/team/${teamInfo.roster.roster_id}`
-  );
-}
-
-// ─── League Info ──────────────────────────────────────────────────────────────
-
-export function getLeagueInfo() {
-  const infoPath = join(__dirname, '..', 'league_info.md');
-  try {
-    return readFileSync(infoPath, 'utf8');
-  } catch {
-    return 'league_info.md not found. Create mcp/league_info.md to add league context.';
-  }
 }

@@ -1,15 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
 
 const OG_TITLE = 'HwangAI';
 const OG_DESCRIPTION = 'Your dynasty fantasy football AI assistant';
-
-const SYSTEM_PROMPT =
-  'You are HwangAI, the official AI assistant for The Hwang Dynasty fantasy football league. ' +
-  'You are an expert in dynasty fantasy football, player analysis, trade values, start/sit decisions, ' +
-  'waiver wire strategy, and long-term roster building. Be helpful, direct, and enthusiastic about dynasty football. ' +
-  'Keep responses concise unless a detailed breakdown is clearly needed.';
 
 function TypingDots() {
   return (
@@ -27,7 +22,7 @@ function ChatMessage({ message }) {
     <div className={`hwang-ai-message ${isUser ? 'hwang-ai-message--user' : 'hwang-ai-message--ai'}`}>
       {!isUser && <div className="hwang-ai-sender">HwangAI</div>}
       <div className={`hwang-ai-bubble ${isUser ? 'hwang-ai-bubble--user' : 'hwang-ai-bubble--ai'}`}>
-        {message.content}
+        {isUser ? message.content : <ReactMarkdown>{message.content}</ReactMarkdown>}
       </div>
       {isUser && <div className="hwang-ai-sender hwang-ai-sender--user">You</div>}
     </div>
@@ -39,8 +34,16 @@ function HwangAIPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [systemPrompt, setSystemPrompt] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    fetch('/data/hwangai_system_prompt.txt')
+      .then(r => r.text())
+      .then(text => setSystemPrompt(text.trim()))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,7 +63,7 @@ function HwangAIPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, systemPrompt: SYSTEM_PROMPT }),
+        body: JSON.stringify({ messages: newMessages, systemPrompt }),
       });
 
       if (!res.ok) {
@@ -94,7 +97,7 @@ function HwangAIPage() {
   return (
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title="HwangAI" subtitle="Dynasty Football Assistant">
+      <InfoPageWrapper title="HwangAI" >
         <div className="hwang-ai-root">
           <div className="hwang-ai-messages">
             {messages.length === 0 && !loading && (

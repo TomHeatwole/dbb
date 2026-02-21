@@ -1,10 +1,7 @@
 import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { join } from 'path';
 import { DATA_DIR } from './config.js';
 import { normalisePlayerName } from './helpers.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // All data is loaded once from disk and held in memory.
 
@@ -191,48 +188,4 @@ export function findPlayerByName(searchName) {
 
   if (!bestPlayer || bestScore === 0) return null;
   return { playerId: bestId, player: bestPlayer };
-}
-
-// ─── owner_names.txt ──────────────────────────────────────────────────────────
-// Returns Map<normalisedName, rosterIdNumber>
-// File lives at mcp/owner_names.txt (one level above src/).
-
-let ownerNamesCache = null;
-
-export function loadOwnerNames() {
-  if (ownerNamesCache) return ownerNamesCache;
-
-  const filePath = join(__dirname, '..', 'owner_names.txt');
-  let text = '';
-  try {
-    text = readFileSync(filePath, 'utf8');
-  } catch {
-    ownerNamesCache = new Map();
-    return ownerNamesCache;
-  }
-
-  const map = new Map();
-  for (const raw of text.split('\n')) {
-    const line = raw.replace(/\r$/, '').trim();
-    if (!line || line.startsWith('#')) continue;
-
-    const pipeIdx = line.indexOf('|');
-    if (pipeIdx === -1) continue;
-
-    const rosterId = parseInt(line.slice(0, pipeIdx).trim(), 10);
-    if (!Number.isFinite(rosterId)) continue;
-
-    const names = line
-      .slice(pipeIdx + 1)
-      .split(',')
-      .map((n) => n.trim().toLowerCase())
-      .filter(Boolean);
-
-    for (const name of names) {
-      map.set(name, rosterId);
-    }
-  }
-
-  ownerNamesCache = map;
-  return ownerNamesCache;
 }

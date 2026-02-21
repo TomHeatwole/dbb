@@ -2,6 +2,9 @@
   "functions": {
     "api/render.js": {
       "includeFiles": "build/index.html"
+    },
+    "api/chat.js": {
+      "includeFiles": "public/data/players.txt|public/data/ktc_values.csv|public/data/fantasycalc.csv|public/data/ffb.csv"
     }
   },
   "rewrites": [
