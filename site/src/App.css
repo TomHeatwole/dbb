@@ -9501,4 +9501,8 @@ body.modal-open {
   .hwang-ai-message {
     max-width: 90%;
   }
+
+  .hwang-ai-bubble {
+    font-size: 0.57rem;
+  }
 }

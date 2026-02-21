@@ -1,7 +1,11 @@
 
 import fs from "fs";
 import path from "path";
-import { fetchTeamData, buildRosterIdToTeamInfoMap } from "../src/lookups/TeamLookup.js";
+import { fileURLToPath } from "url";
+
+// ESM equivalent of __dirname (not available natively in ES modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Cache route metadata so we don't hit the filesystem on every request
 let routeMetaCache = null;
@@ -118,6 +122,8 @@ export default async function handler(req, res) {
     const isH2hPath = requestPath === "/h2h" || requestPath.startsWith("/h2h?");
 
     if (isH2hPath && aParam && bParam) {
+      const { fetchTeamData, buildRosterIdToTeamInfoMap } =
+        await import("../src/lookups/TeamLookup.js");
       const teamData = await fetchTeamData();
       if (teamData && Array.isArray(teamData.rosters) && Array.isArray(teamData.users)) {
         const map = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
