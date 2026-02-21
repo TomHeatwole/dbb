@@ -11,6 +11,34 @@ import {
   getCurrentNFLWeek, getCompletedWeeksCount, normalisePlayerName,
   buildTeamMap, getPlayerDisplayName, lookupKtc, fmt, fmtDate, findTeam,
 } from './helpers.js';
+import { runScenarioEval } from './scenarioEngine.js';
+
+// ── Link helpers ─────────────────────────────────────────────────────────────
+
+/** Markdown link to a team's page. */
+function teamLink(teamName, rosterId) {
+  return `[${teamName}](${SITE_BASE_URL}/team/${rosterId})`;
+}
+
+/**
+ * Encode a scenario into a shareable site URL.
+ * Mirrors scenarioEncoding.js (using Buffer instead of btoa for Node.js).
+ */
+function buildScenarioUrl(season, originalRosters, scenarioRosters) {
+  const changes = [];
+  for (const rid in originalRosters) {
+    const orig    = new Set(originalRosters[rid] || []);
+    const curr    = scenarioRosters[rid] || [];
+    const currSet = new Set(curr);
+    const added   = curr.filter(pid => !orig.has(pid));
+    const removed = [...orig].filter(pid => !currSet.has(pid));
+    if (added.length || removed.length) {
+      changes.push({ r: Number(rid), a: added, d: removed });
+    }
+  }
+  const encoded = Buffer.from(JSON.stringify({ y: String(season), c: changes })).toString('base64');
+  return `${SITE_BASE_URL}/scenarios?state=eval&scenario=${encoded}`;
+}
 
 // ─── Standings ────────────────────────────────────────────────────────────────
 
@@ -55,9 +83,9 @@ export async function getStandings(season) {
     `**Hwang Dynasty Standings — ${yr} Season (through Week ${completedWeeks})**\n`,
   ];
   for (const s of standings) {
-    lines.push(`${s.place}. ${s.teamName} (${s.ownerName}) — ${s.points} pts`);
+    lines.push(`${s.place}. ${teamLink(s.teamName, s.roster_id)} (${s.ownerName}) — ${s.points} pts`);
   }
-  lines.push(`\n🔗 ${SITE_BASE_URL}/standings`);
+  lines.push(`\n[View full standings](${SITE_BASE_URL}/standings)`);
   return lines.join('\n');
 }
 
@@ -91,12 +119,12 @@ export async function getWeeklyScores(week, season) {
     const [a, b] = teams.sort((x, y) => (y.points || 0) - (x.points || 0));
     const aInfo  = teamMap[Number(a.roster_id)] || {};
     const bInfo  = teamMap[Number(b.roster_id)] || {};
-    const aName  = aInfo.teamName || `Team ${a.roster_id}`;
-    const bName  = bInfo.teamName || `Team ${b.roster_id}`;
-    lines.push(`🏆 ${aName}: **${a.points ?? '—'}**  vs  ${bName}: ${b.points ?? '—'}`);
+    const aLink  = teamLink(aInfo.teamName || `Team ${a.roster_id}`, a.roster_id);
+    const bLink  = teamLink(bInfo.teamName || `Team ${b.roster_id}`, b.roster_id);
+    lines.push(`🏆 ${aLink}: **${a.points ?? '—'}**  vs  ${bLink}: ${b.points ?? '—'}`);
   }
 
-  lines.push(`\n🔗 ${SITE_BASE_URL}/Scores/Week?week=${week}&year=${yr}`);
+  lines.push(`\n[View Week ${week} scores](${SITE_BASE_URL}/Scores/Week?week=${week}&year=${yr})`);
   return lines.join('\n');
 }
 
@@ -156,7 +184,8 @@ export async function getRoster(teamQuery, season) {
       return (b.ktcValue || 0) - (a.ktcValue || 0);
     });
 
-  const lines = [`**${teamInfo.teamName}** (${teamInfo.ownerName}) — Roster\n`];
+  const rid = teamInfo.roster.roster_id;
+  const lines = [`**${teamLink(teamInfo.teamName, rid)}** (${teamInfo.ownerName}) — Roster\n`];
   let lastSection = null;
 
   for (const p of playerRows) {
@@ -173,7 +202,6 @@ export async function getRoster(teamQuery, season) {
     lines.push(`  ${p.position.padEnd(3)} ${p.name} (${p.nflTeam})${p.age ? ` age ${p.age}` : ''}${valStr}`);
   }
 
-  lines.push(`\n🔗 ${SITE_BASE_URL}/team/${teamInfo.roster.roster_id}`);
   return lines.join('\n');
 }
 
@@ -187,8 +215,7 @@ export async function getAllTeams(season) {
   const lines = [`**Hwang Dynasty ${yr} — All Teams**\n`];
   for (const [rid, info] of Object.entries(teamMap).sort((a, b) => Number(a[0]) - Number(b[0]))) {
     const playerCount = info.roster.players?.length || 0;
-    lines.push(`Roster #${rid}: **${info.teamName}** (${info.ownerName}) — ${playerCount} players`);
-    lines.push(`  🔗 ${SITE_BASE_URL}/team/${rid}`);
+    lines.push(`Roster #${rid}: **${teamLink(info.teamName, rid)}** (${info.ownerName}) — ${playerCount} players`);
   }
   return lines.join('\n');
 }
@@ -529,18 +556,18 @@ export async function getRecentTrades(weeksBack, season) {
     lines.push(`📅 ${fmtDate(trade.created)}`);
     for (const [rid, side] of Object.entries(sides)) {
       const info     = teamMap[Number(rid)] || {};
-      const teamName = info.teamName || `Team ${rid}`;
+      const tName    = info.teamName || `Team ${rid}`;
       const received = [
         ...side.players,
         ...side.picks,
         side.faab ? `$${side.faab} FAAB` : null,
       ].filter(Boolean);
-      lines.push(`  **${teamName}** receives: ${received.length ? received.join(', ') : '—'}`);
+      lines.push(`  **${teamLink(tName, rid)}** receives: ${received.length ? received.join(', ') : '—'}`);
     }
     lines.push('');
   }
 
-  lines.push(`🔗 ${SITE_BASE_URL}/trades`);
+  lines.push(`[View all trades](${SITE_BASE_URL}/trades)`);
   return lines.join('\n');
 }
 
@@ -604,7 +631,7 @@ export async function getTeamScores(teamQuery, season) {
   const minWk = rows.reduce((low,  r) => (!low  || r.pts < low.pts  ? r : low),  null);
 
   const lines = [
-    `**${teamInfo.teamName}** (${teamInfo.ownerName}) — ${yr} Season Scores\n`,
+    `**${teamLink(teamInfo.teamName, rid)}** (${teamInfo.ownerName}) — ${yr} Season Scores\n`,
     `Record: **${wins}-${losses}** | Total: **${Math.round(totalPts * 10) / 10} pts** | Avg: **${avg} pts/wk**`,
     maxWk ? `High:  Week ${maxWk.week} vs ${maxWk.oppName} — **${maxWk.pts}** pts` : '',
     minWk ? `Low:   Week ${minWk.week} vs ${minWk.oppName} — **${minWk.pts}** pts` : '',
@@ -616,7 +643,6 @@ export async function getTeamScores(teamQuery, season) {
     lines.push(`  Wk ${String(r.week).padStart(2)}: ${result} ${String(r.pts).padStart(6)} pts  vs  ${r.oppName} (${r.oppPts})`);
   }
 
-  lines.push(`\n🔗 ${SITE_BASE_URL}/team/${rid}`);
   return lines.join('\n');
 }
 
@@ -688,6 +714,173 @@ export async function getFreeAgents(position) {
   return lines.join('\n');
 }
 
+// ─── Scenario Simulator ───────────────────────────────────────────────────────
+
+/**
+ * Simulate "what if" roster changes for a completed season.
+ *
+ * @param {object} params
+ * @param {number|string} params.season   Season year (e.g. 2024 or 2025)
+ * @param {Array}  params.changes         Array of { team, add, drop }
+ *   team  — team or owner name
+ *   add   — array of player names to add to that team
+ *   drop  — array of player names to drop from that team
+ */
+export async function runScenario({ season, changes = [] }) {
+  const yr = season ? String(season) : CURRENT_YEAR;
+  const completedWeeks = getCompletedWeeksCount(yr);
+
+  if (completedWeeks === 0) {
+    return `The ${yr} season hasn't started yet — no data to run a scenario against.`;
+  }
+
+  const [rosters, users, weeksData] = await Promise.all([
+    fetchRosters(yr),
+    fetchUsers(yr),
+    fetchAllWeekScores(Math.min(completedWeeks, 17), yr),
+  ]);
+
+  const teamMap   = buildTeamMap(rosters, users);
+  const playersData = loadPlayersData();
+
+  // Build original rosters map { rosterId: [playerIds] }
+  const originalRosters = {};
+  for (const r of rosters) {
+    originalRosters[r.roster_id] = r.players || [];
+  }
+
+  // Parse and validate each change
+  const appliedChanges = [];
+  const warnings = [];
+
+  const scenarioRosters = {};
+  for (const [rid, playerIds] of Object.entries(originalRosters)) {
+    scenarioRosters[rid] = [...playerIds];
+  }
+
+  for (const change of changes) {
+    const teamInfo = findTeam(teamMap, change.team || '');
+    if (!teamInfo) {
+      const available = Object.values(teamMap).map(t => `"${t.teamName}"`).join(', ');
+      warnings.push(`⚠️  Team not found: "${change.team}". Available: ${available}`);
+      continue;
+    }
+
+    const rid = teamInfo.roster.roster_id;
+    const teamLabel = `${teamInfo.teamName} (${teamInfo.ownerName})`;
+
+    const addedNames = [];
+    const droppedNames = [];
+
+    // Process adds
+    for (const playerName of (change.add || [])) {
+      const found = findPlayerByName(playerName);
+      if (!found) {
+        warnings.push(`⚠️  Player not found: "${playerName}" — skipped.`);
+        continue;
+      }
+      const pid = found.playerId;
+      if (!scenarioRosters[rid].includes(pid)) {
+        scenarioRosters[rid] = [...scenarioRosters[rid], pid];
+      }
+      addedNames.push(getPlayerDisplayName(found.player));
+    }
+
+    // Process drops
+    for (const playerName of (change.drop || [])) {
+      const found = findPlayerByName(playerName);
+      if (!found) {
+        warnings.push(`⚠️  Player not found: "${playerName}" — skipped.`);
+        continue;
+      }
+      const pid = found.playerId;
+      scenarioRosters[rid] = scenarioRosters[rid].filter(id => id !== pid);
+      droppedNames.push(getPlayerDisplayName(found.player));
+    }
+
+    if (addedNames.length > 0 || droppedNames.length > 0) {
+      const parts = [];
+      if (addedNames.length)   parts.push(`+${addedNames.join(', +')}`);
+      if (droppedNames.length) parts.push(`−${droppedNames.join(', −')}`);
+      appliedChanges.push(`  ${teamLabel}: ${parts.join('  ')}`);
+    }
+  }
+
+  // Run the engine
+  const { originalStandings, scenarioStandings, teamDeltas } =
+    runScenarioEval(weeksData, originalRosters, scenarioRosters, playersData);
+
+  // Build a lookup from rosterId → scenario standings row for easy reference
+  const scenRowById = {};
+  for (const r of scenarioStandings) scenRowById[r.rosterId] = r;
+
+  // Generate a shareable scenario URL
+  const scenarioUrl = buildScenarioUrl(yr, originalRosters, scenarioRosters);
+
+  // Track which roster IDs were modified
+  const modifiedRids = new Set();
+  for (const change of changes) {
+    const teamInfo = findTeam(teamMap, change.team || '');
+    if (teamInfo) modifiedRids.add(teamInfo.roster.roster_id);
+  }
+
+  // Format output as markdown
+  const lines = [
+    `**Hwang Dynasty Scenario Simulator — ${yr} Season**`,
+    `*(Optimal lineups — best possible roster each week for all 17 weeks)*\n`,
+  ];
+
+  if (appliedChanges.length > 0) {
+    lines.push('**Roster Changes Applied:**');
+    lines.push(...appliedChanges);
+    lines.push('');
+  }
+
+  if (warnings.length > 0) {
+    lines.push(...warnings);
+    lines.push('');
+  }
+
+  lines.push('**Standings Comparison** (Original → Scenario)\n');
+
+  const sortedOrig = [...originalStandings].sort((a, b) => a.place - b.place);
+  for (const origRow of sortedOrig) {
+    const rid     = origRow.rosterId;
+    const info    = teamMap[rid] || {};
+    const tName   = info.teamName || `Team ${rid}`;
+    const owner   = info.ownerName || '?';
+    const delta   = teamDeltas.find(d => d.rosterId === rid) || {};
+    const scenRow = scenRowById[rid] || {};
+
+    const dPts    = delta.regSeasonDelta ?? 0;
+    const dPlace  = delta.placeDelta ?? 0;
+
+    const dPtsStr   = dPts === 0 ? '' : ` **(${dPts > 0 ? '+' : ''}${dPts} pts)**`;
+    const dPlaceStr = dPlace === 0 ? '' : ` **(${dPlace > 0 ? `↑${dPlace}` : `↓${Math.abs(dPlace)}`})**`;
+
+    const origPlay = origRow.isPlayoff ? '✅' : '❌';
+    const scenPlay = scenRow.isPlayoff ? '✅' : '❌';
+    const playStr  = origPlay === scenPlay ? origPlay : `${origPlay}→${scenPlay}`;
+
+    const isModified = modifiedRids.has(rid);
+    const modMarker  = isModified ? ' ✱' : '';
+
+    const origPts = origRow.regSeasonTotal;
+    const scenPts = scenRow.regSeasonTotal ?? '—';
+    const ptStr   = origPts === scenPts ? `${origPts} pts` : `${origPts} → ${scenPts} pts`;
+
+    lines.push(
+      `${origRow.place}. **${teamLink(tName, rid)}**${modMarker} (${owner}) — ${ptStr}${dPtsStr}${dPlaceStr} ${playStr}`
+    );
+  }
+
+  lines.push('');
+  lines.push('*(✱ = modified team. Scores based on optimal lineups, not actual manager decisions.)*');
+  lines.push(`\n[View this scenario interactively](${scenarioUrl})`);
+
+  return lines.join('\n');
+}
+
 // ─── Site Links ───────────────────────────────────────────────────────────────
 
 export async function getSiteLink(page, params = {}) {
@@ -715,14 +908,14 @@ export async function getSiteLink(page, params = {}) {
     if (!params.team) {
       const lines = ['**Team Pages:**'];
       for (const [rid, info] of Object.entries(teamMap).sort((a, b) => Number(a[0]) - Number(b[0]))) {
-        lines.push(`${info.teamName} (${info.ownerName}): 🔗 ${SITE_BASE_URL}/team/${rid}`);
+        lines.push(`${teamLink(info.teamName, rid)} (${info.ownerName})`);
       }
       return lines.join('\n');
     }
 
     const found = findTeam(teamMap, params.team);
     if (!found) return `Team "${params.team}" not found.`;
-    return `${found.teamName} (${found.ownerName}): 🔗 ${SITE_BASE_URL}/team/${found.roster.roster_id}`;
+    return `${teamLink(found.teamName, found.roster.roster_id)} (${found.ownerName})`;
   }
 
   const path = staticRoutes[p];

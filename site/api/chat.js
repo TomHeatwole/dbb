@@ -3,6 +3,7 @@ import {
   searchPlayer, comparePlayers, evaluateTrade,
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
+  runScenario,
 } from './mcp/tools.js';
 
 const GEMINI_URL =
@@ -156,6 +157,30 @@ const TOOL_DECLARATIONS = [
       required: ['page'],
     },
   },
+  {
+    name: 'run_scenario',
+    description: 'Simulate "what if" roster changes for a completed season (2024 or 2025). Given hypothetical adds/drops on any team(s), recomputes all 17 weeks using optimal lineups and shows how standings would have changed. Use this whenever someone asks "what if [team] had [player]", "what would standings look like if [trade] happened", or any hypothetical about roster composition affecting season results.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        season: { type: 'INTEGER', description: 'Season year: 2024 or 2025' },
+        changes: {
+          type: 'ARRAY',
+          description: 'List of roster changes to simulate',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              team:  { type: 'STRING', description: 'Team or owner name whose roster to modify' },
+              add:   { type: 'ARRAY', items: { type: 'STRING' }, description: 'Player names to add to this team' },
+              drop:  { type: 'ARRAY', items: { type: 'STRING' }, description: 'Player names to drop from this team' },
+            },
+            required: ['team'],
+          },
+        },
+      },
+      required: ['season', 'changes'],
+    },
+  },
 ];
 
 // ── Tool executor ─────────────────────────────────────────────────────────────
@@ -177,6 +202,7 @@ async function executeTool(name, args) {
       case 'get_recent_trades':      return await getRecentTrades(args.weeks_back, args.season);
       case 'get_free_agents':        return await getFreeAgents(args.position);
       case 'get_site_link':          return await getSiteLink(args.page, { team: args.team, week: args.week });
+      case 'run_scenario':           return await runScenario({ season: args.season, changes: args.changes });
       default: return `Unknown tool: ${name}`;
     }
   } catch (err) {
