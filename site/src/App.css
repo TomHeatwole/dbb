@@ -9482,6 +9482,14 @@ body.modal-open {
   background: none;
   padding: 0;
 }
+.hwang-ai-bubble--ai a {
+  color: #7dd3fc;
+  text-decoration: none;
+}
+.hwang-ai-bubble--ai a:hover {
+  color: #bae6fd;
+  text-decoration: underline;
+}
 
 /* Mobile adjustments */
 @media (max-width: 768px) {

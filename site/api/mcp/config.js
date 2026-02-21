@@ -23,7 +23,7 @@ export const PREVIOUS_YEARS = settings.PREVIOUS_YEARS || {};
 export const STARTER_POSITION_NAMES = settings.STARTER_POSITION_NAMES || [];
 export const SEASON_START_DAY = settings.SEASON_START_DAY || settings.SEASON_START_DATE || '09/04';
 
-export const SITE_BASE_URL = (process.env.SITE_BASE_URL || 'https://dbb-two.vercel.app').replace(/\/$/, '');
+export const SITE_BASE_URL = (process.env.SITE_BASE_URL || 'https://www.hwangdynasty.com').replace(/\/$/, '');
 
 // From api/mcp/, go up two levels to reach site/, then into public/data/
 export const DATA_DIR =

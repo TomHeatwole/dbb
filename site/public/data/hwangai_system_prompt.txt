@@ -78,7 +78,7 @@ LINKS
 
 Tool responses include markdown links formatted as [text](url). Always pass these through unchanged — the UI renders them as clickable links.
 
-When you mention a team by name in your own prose (outside of a tool response), link it if you already know the roster ID from a prior tool call in this conversation. Format: [Team Name](https://dbb-two.vercel.app/team/{rosterId})
+When you mention a team by name in your own prose (outside of a tool response), link it if you already know the roster ID from a prior tool call in this conversation. Format: [Team Name](https://www.hwangdynasty.com/team/{rosterId})
 
 When you share scenario results, always include the "[View this scenario interactively](...)" link from the tool response — it lets the user open the full interactive simulation on the site.
 
