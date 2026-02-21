@@ -2,53 +2,150 @@
 /**
  * process_ffb_rankings.js
  *
- * Reads the most recent (or a specified) Fantasy Footballers Podcast dynasty
- * startup rankings CSV from ~/Downloads, matches each player to a Sleeper ID,
- * and writes site/public/data/ffb.csv.
+ * Fetches the Fantasy Footballers Podcast dynasty startup rankings page using
+ * a saved curl command (scripts/ffbcurl.txt), extracts the embedded JSON data,
+ * matches each player to a Sleeper ID, and writes site/public/data/ffb.csv.
  *
  * Output columns:  rank, name, sleeper_id
  * Players that cannot be matched are included with an empty sleeper_id and
  * a warning is printed to stderr so the operator knows to add a manual fix.
  *
- * Expected input CSV columns (quoted):
- *   Rank, Name, Team, Pos, Age, Andy, Jason, Mike
+ * If the curl fails, the cookie has expired, or the page returns the paywall,
+ * the script will exit with a clear message explaining how to fix it.
  *
  * Usage (run from project root):
  *   node scripts/process_ffb_rankings.js
- *   node scripts/process_ffb_rankings.js path/to/rankings.csv
+ *
+ * To refresh the cookie:
+ *   1. Log into thefantasyfootballers.com in Chrome
+ *   2. Navigate to the Dynasty Startup Rankings page
+ *   3. Open DevTools → Network tab, find the page request, right-click →
+ *      Copy → Copy as cURL, and replace the contents of scripts/ffbcurl.txt
  */
 
-const fs   = require('fs');
-const path = require('path');
-const os   = require('os');
+const fs            = require('fs');
+const path          = require('path');
+const { execSync }  = require('child_process');
 
-const PLAYERS_FILE   = path.join(__dirname, '../site/public/data/players.txt');
-const OUT_CSV        = path.join(__dirname, '../site/public/data/ffb.csv');
-const DOWNLOADS_DIR  = path.join(os.homedir(), 'Downloads');
-const FILE_PREFIX    = 'Dynasty Startup Rankings';
+const PLAYERS_FILE = path.join(__dirname, '../site/public/data/players.txt');
+const OUT_CSV      = path.join(__dirname, '../site/public/data/ffb.csv');
+const CURL_FILE    = path.join(__dirname, 'ffbcurl.txt');
 
 const RELEVANT_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
 
-// ── Find most-recent matching file in ~/Downloads ─────────────────────────────
+// ── Fetch HTML via the saved curl command ─────────────────────────────────────
 
-function findLatestDownload() {
-  let entries;
-  try {
-    entries = fs.readdirSync(DOWNLOADS_DIR);
-  } catch {
-    return null;
+function fetchHtml() {
+  if (!fs.existsSync(CURL_FILE)) {
+    console.error(`ERROR: curl command file not found: ${CURL_FILE}`);
+    console.error('Create it by copying a "Copy as cURL" request from Chrome DevTools on the FFB rankings page.');
+    process.exit(1);
   }
 
-  const matches = entries
-    .filter((f) => f.startsWith(FILE_PREFIX) && f.endsWith('.csv'))
-    .map((f) => {
-      const full = path.join(DOWNLOADS_DIR, f);
-      const { mtimeMs } = fs.statSync(full);
-      return { full, mtimeMs };
-    })
-    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  const raw = fs.readFileSync(CURL_FILE, 'utf8');
 
-  return matches.length > 0 ? matches[0].full : null;
+  // Join continuation lines into a single command and add -s (silent) flag
+  const curlCmd = raw
+    .split('\n')
+    .map((line) => line.replace(/\\\s*$/, ' '))
+    .join('')
+    .replace(/^curl /, 'curl -s --max-time 30 ');
+
+  let html;
+  try {
+    html = execSync(curlCmd, {
+      maxBuffer: 25 * 1024 * 1024,
+      encoding:  'utf8',
+    });
+  } catch (err) {
+    console.error('ERROR: curl command failed.');
+    console.error(err.message);
+    console.error(`\nUpdate ${CURL_FILE} with a fresh "Copy as cURL" from Chrome DevTools.`);
+    process.exit(1);
+  }
+
+  return html;
+}
+
+// ── Detect paywall / session expiry ──────────────────────────────────────────
+
+function checkForPaywall(html) {
+  if (html.includes('footclan--locked') || html.includes('footclan--locked--content')) {
+    console.error('ERROR: The page returned a locked/paywall view.');
+    console.error('Your session cookie has most likely expired.');
+    console.error(`\nTo fix:\n  1. Log into thefantasyfootballers.com in Chrome`);
+    console.error(`  2. Navigate to the Dynasty Startup Rankings page`);
+    console.error(`  3. DevTools → Network tab → find the page request → right-click → Copy → Copy as cURL`);
+    console.error(`  4. Replace the contents of ${CURL_FILE} with the copied command`);
+    process.exit(1);
+  }
+}
+
+// ── Extract rankings JSON embedded in the page script ────────────────────────
+
+function extractJsonFromHtml(html, startMarker) {
+  const markerIdx = html.indexOf(startMarker);
+  if (markerIdx === -1) return null;
+
+  let i = markerIdx + startMarker.length;
+  while (i < html.length && html[i] !== '{') i++;
+  if (i >= html.length) return null;
+
+  const jsonStart = i;
+  let depth    = 0;
+  let inString = false;
+  let escape   = false;
+
+  for (; i < html.length; i++) {
+    const ch = html[i];
+    if (escape)              { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true;  continue; }
+    if (ch === '"')          { inString = !inString; continue; }
+    if (inString)            { continue; }
+    if (ch === '{')          { depth++; }
+    else if (ch === '}')     { depth--; if (depth === 0) return html.slice(jsonStart, i + 1); }
+  }
+
+  return null;
+}
+
+function loadRankings(html) {
+  checkForPaywall(html);
+
+  const jsonStr = extractJsonFromHtml(html, 'const data = {"ALL":');
+  if (!jsonStr) {
+    console.error('ERROR: Could not find the rankings data block in the page HTML.');
+    console.error('The page structure may have changed, or the session cookie may have expired.');
+    console.error(`\nUpdate ${CURL_FILE} with a fresh "Copy as cURL" from Chrome DevTools.`);
+    process.exit(1);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(jsonStr);
+  } catch (err) {
+    console.error(`ERROR: Failed to parse rankings JSON: ${err.message}`);
+    process.exit(1);
+  }
+
+  if (!data.ALL || !Array.isArray(data.ALL)) {
+    console.error('ERROR: Rankings JSON is missing the expected "ALL" array.');
+    console.error('The page structure may have changed.');
+    process.exit(1);
+  }
+
+  return data.ALL
+    .map((p) => {
+      const age = parseFloat(p.age);
+      return {
+        rank:    parseInt(p.rank, 10),
+        rawName: (p.name || '').trim(),
+        team:    (p.team || '').trim().toUpperCase(),
+        pos:     (p.fantasy_position || '').trim().toUpperCase(),
+        age:     Number.isFinite(age) ? Math.floor(age) : null,
+      };
+    })
+    .filter((p) => p.rawName && RELEVANT_POSITIONS.has(p.pos));
 }
 
 // ── Name normalisation (mirrors playerNameMatcher.js) ─────────────────────────
@@ -134,57 +231,6 @@ function findBestPlayerMatch(searchName, candidates, hints) {
   return { candidate: null, strategy: null, ambiguous: [] };
 }
 
-// ── CSV parser (handles double-quoted fields) ─────────────────────────────────
-
-function parseCsvLine(line) {
-  const result = [];
-  let current  = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-  result.push(current);
-  return result;
-}
-
-// ── Load Fantasy Footballers rankings CSV ─────────────────────────────────────
-
-function loadRankings(csvPath) {
-  const lines   = fs.readFileSync(csvPath, 'utf8').trim().split('\n');
-  const headers = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
-
-  const nameIdx = headers.indexOf('name');
-  const teamIdx = headers.indexOf('team');
-  const posIdx  = headers.indexOf('pos');
-  const ageIdx  = headers.indexOf('age');
-  const rankIdx = headers.indexOf('rank');
-
-  if (nameIdx < 0) throw new Error(`CSV missing "Name" column (found: ${headers.join(', ')})`);
-
-  return lines.slice(1)
-    .map((line) => {
-      const cols = parseCsvLine(line);
-      const pos  = (cols[posIdx] || '').trim().toUpperCase();
-      const age  = ageIdx >= 0 ? parseFloat(cols[ageIdx]) : null;
-      return {
-        rank:    rankIdx >= 0 ? parseInt(cols[rankIdx], 10) : null,
-        rawName: (cols[nameIdx] || '').trim(),
-        team:    (cols[teamIdx] || '').trim().toUpperCase(),
-        pos,
-        age:     Number.isFinite(age) ? Math.floor(age) : null,
-      };
-    })
-    .filter((p) => p.rawName && RELEVANT_POSITIONS.has(p.pos));
-}
-
 // ── Load Sleeper players into a flat array ────────────────────────────────────
 
 function loadSleeperCandidates() {
@@ -224,28 +270,13 @@ function writeCsv(rows) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 function run() {
-  const csvArg = process.argv[2];
-  let csvPath;
+  console.log(`Fetching rankings via curl (${CURL_FILE})…`);
+  const html = fetchHtml();
 
-  if (csvArg) {
-    csvPath = path.resolve(csvArg);
-  } else {
-    csvPath = findLatestDownload();
-    if (!csvPath) {
-      console.error(`ERROR: No file matching "${FILE_PREFIX}*.csv" found in ${DOWNLOADS_DIR}`);
-      process.exit(1);
-    }
-  }
-
-  if (!fs.existsSync(csvPath)) {
-    console.error(`ERROR: File not found: ${csvPath}`);
-    process.exit(1);
-  }
-
-  console.log(`Input : ${csvPath}`);
-
-  const players     = loadRankings(csvPath);
+  const players     = loadRankings(html);
   const sleeperPool = loadSleeperCandidates();
+
+  console.log(`Loaded ${players.length} ranked players from FFB.`);
 
   const outputRows = [];
   const unmatched  = [];
