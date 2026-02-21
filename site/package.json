@@ -12,8 +12,10 @@
     "recharts": "^3.1.2",
     "web-vitals": "^5.1.0"
   },
+  "proxy": "http://localhost:3001",
   "scripts": {
     "start": "react-scripts start",
+    "api": "node chat-dev-server.js",
     "build": "react-scripts build",
     "serve": "node server.js",
     "start:prod": "npm run build && npm run serve",

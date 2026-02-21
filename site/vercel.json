@@ -13,6 +13,7 @@
     { "source": "/yoffs", "destination": "/api/render" },
     { "source": "/notes", "destination": "/api/render" },
     { "source": "/admincontrols", "destination": "/api/render" },
+    { "source": "/hwangai", "destination": "/api/render" },
     { "source": "/team/:id", "destination": "/api/render" }
   ]
 }

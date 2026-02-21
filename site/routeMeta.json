@@ -29,6 +29,11 @@
     "ogDescription": "All commissioner notes for the league",
     "ogImage": "/logo.png"
   },
+  "/hwangai": {
+    "ogTitle": "HwangAI – The Hwang Dynasty",
+    "ogDescription": "Your dynasty fantasy football AI assistant",
+    "ogImage": "/logo.png"
+  },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",
     "ogDescription": "",

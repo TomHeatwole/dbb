@@ -27,6 +27,7 @@ import NotesPage from './routes/NotesPage';
 import ScenariosPage from './routes/ScenariosPage';
 import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
+import HwangAIPage from './routes/HwangAIPage';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 function MobileTopNav() {
@@ -99,6 +100,7 @@ function AppInner() {
       
       {/* Sandbox is always available for development */}
       <Route path="/sandbox" element={<SandboxPage />} />
+      <Route path="/hwangai" element={<HwangAIPage />} />
       
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>

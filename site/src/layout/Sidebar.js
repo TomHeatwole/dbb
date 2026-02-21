@@ -74,6 +74,7 @@ function Sidebar() {
               <li><Link to="/h2h">Head to Head</Link></li>
               <li><Link to="/yoffs">Playoffs</Link></li>
               <li><Link to="/trades">Trades</Link></li>
+              <li><Link to="/hwangai">HwangAI</Link></li>
               <li><a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a></li>
               <li>
                 <div
