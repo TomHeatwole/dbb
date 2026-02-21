@@ -122,8 +122,10 @@ export default async function handler(req, res) {
     const isH2hPath = requestPath === "/h2h" || requestPath.startsWith("/h2h?");
 
     if (isH2hPath && aParam && bParam) {
+      // Use indirect eval so esbuild cannot statically analyze the path and inline the module.
+      // TeamLookup imports React-source files with CJS patterns that break ESM bundles.
       const { fetchTeamData, buildRosterIdToTeamInfoMap } =
-        await import("../src/lookups/TeamLookup.js");
+        await (0, eval)('import("../src/lookups/TeamLookup.js")');
       const teamData = await fetchTeamData();
       if (teamData && Array.isArray(teamData.rosters) && Array.isArray(teamData.users)) {
         const map = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
