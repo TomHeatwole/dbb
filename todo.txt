@@ -12,6 +12,10 @@
   - Perhaps a "Team Analytics" and "Player Analytics" where the player analytics has a page for reach player you can toggle through 
   - And then player popups everywhere could link to player analytics
 
+Scenarios:
+- More advanced stats around how each position improved
+- Possibly use Redraft ADP to do a better predictive mode. I.e. if a player is RB12, give them the RB12 season of the previous few years. 
+
 - Do more with player stats
   - In Scores and team scores actually show the stats that led to the fantasy points
 
