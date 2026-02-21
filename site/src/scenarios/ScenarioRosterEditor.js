@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
@@ -9,12 +11,16 @@ const COL1_POSITIONS = ['QB', 'WR'];
 const COL2_POSITIONS = ['RB', 'TE', 'K', 'DEF']; // eslint-disable-line no-unused-vars
 
 /** Renders a single position group (label + player rows) */
-function PositionGroup({ pos, players, onRemovePlayer }) {
+function PositionGroup({ pos, players, onRemovePlayer, onPlayerClick }) {
   return (
     <div className="scenario-editor-position-group">
       <div className="scenario-editor-position-label">{pos}</div>
       {players.map((player) => (
-        <div key={player.player_id} className="scenario-editor-player-row">
+        <div
+          key={player.player_id}
+          className="scenario-editor-player-row player-clickable"
+          onClick={() => onPlayerClick && onPlayerClick(player)}
+        >
           <img
             src={getPlayerLogoUrl(player.espn_photo_url)}
             alt={player.name}
@@ -31,7 +37,7 @@ function PositionGroup({ pos, players, onRemovePlayer }) {
           <button
             type="button"
             className="scenario-editor-remove-btn"
-            onClick={() => onRemovePlayer(player.player_id)}
+            onClick={(e) => { e.stopPropagation(); onRemovePlayer(player.player_id); }}
             title={`Remove ${player.name}`}
           >
             ×
@@ -59,6 +65,7 @@ function ScenarioRosterEditor({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const searchWrapperRef = useRef(null);
 
   // Close dropdown on outside click
@@ -250,6 +257,7 @@ function ScenarioRosterEditor({
                   pos={pos}
                   players={players}
                   onRemovePlayer={onRemovePlayer}
+                  onPlayerClick={setSelectedPlayer}
                 />
               ))}
             </div>
@@ -261,12 +269,24 @@ function ScenarioRosterEditor({
                   pos={pos}
                   players={players}
                   onRemovePlayer={onRemovePlayer}
+                  onPlayerClick={setSelectedPlayer}
                 />
               ))}
             </div>
           </>
         )}
       </div>
+      {selectedPlayer && createPortal(
+        <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+          <div className="player-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <PlayerWeeklyScores
+              player={selectedPlayer}
+              onClose={() => setSelectedPlayer(null)}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

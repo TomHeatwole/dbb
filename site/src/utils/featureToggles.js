@@ -3,17 +3,6 @@
  * Central place to enable/disable features across the app
  */
 
-// Sandbox page features (experimental)
-export const SANDBOX_FEATURES = {
-  PLAYER_SEARCH: false,
-  TRENDING_PLAYERS: false,
-  HOTTEST_FREE_AGENTS: true,
-  PLAYOFFS: false,
-  HEAD_TO_HEAD: false,
-  DYNASTY_ROSTER: true,
-  DYNASTY_DRAFT_PICKS: false, // draft pick KTC values are approximate — disable until real data is available
-};
-
 // Main page features (production-ready)
 export const MAIN_FEATURES = {
   SCENARIOS_ENABLED: true,

@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 
 export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, totalsPlacement = 'bottom', playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
   const isMobileView = useIsMobile();
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
@@ -93,7 +96,11 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
             }
             const pHighlight = playerHighlightMap && playerHighlightMap[String(p.id)];
             return (
-              <tr key={p.id}>
+              <tr
+                key={p.id}
+                className={info ? 'player-clickable' : undefined}
+                onClick={() => info && setSelectedPlayer(info)}
+              >
                 <td className="team-scores-pos-cell">{posLabel}</td>
                 <td className="team-scores-player-cell">
                   <img src={getPlayerLogoUrl(info && info.espn_photo_url)} alt={info && info.name ? info.name : ''} className="player-avatar player-avatar-style team-scores-player-img-margin" />
@@ -190,7 +197,11 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               }
               const pHighlight = playerHighlightMap && playerHighlightMap[String(p.id)];
               return (
-                <tr key={p.id}>
+                <tr
+                  key={p.id}
+                  className={info ? 'player-clickable' : undefined}
+                  onClick={() => info && setSelectedPlayer(info)}
+                >
                   <td className="team-scores-player-cell">
                     <img src={getPlayerLogoUrl(info && info.espn_photo_url)} alt={info && info.name ? info.name : ''} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                     <span className="player-name">
@@ -234,17 +245,30 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
     );
   };
 
+  const playerModal = selectedPlayer ? createPortal(
+    <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+      <div className="player-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <PlayerWeeklyScores
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   if (renderOnly === 'starters') {
-    return renderStarters();
+    return <>{renderStarters()}{playerModal}</>;
   }
   if (renderOnly === 'bench') {
-    return renderBench();
+    return <>{renderBench()}{playerModal}</>;
   }
 
   return (
     <div className="team-scores-tables-flex">
       {renderStarters()}
       {renderBench()}
+      {playerModal}
     </div>
   );
 } 

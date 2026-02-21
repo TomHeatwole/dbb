@@ -4,6 +4,8 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { batchConvertSleeperToGsis } from '../lookups/GsisLookup';
 import { fetchKtcData, getKtcEntryByName, formatKtcValue, KTC_FORMAT_LABELS } from '../lookups/KtcLookup';
+import { fetchFantasyCalcData, getFantasyCalcEntry, formatFcValue } from '../lookups/FantasyCalcLookup';
+import { fetchFfbData, getFfbEntry, formatFfbRank } from '../lookups/FfbLookup';
 import { normalisePlayerName } from '../utils/playerNameMatcher';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from './PlayerWeeklyScores';
@@ -12,6 +14,13 @@ import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 
 const KTC_FORMATS = ['sf', 'sf_tep'];
+
+// Dynasty value sort options
+const DYNASTY_SORT_OPTIONS = [
+  { value: 'ktc',          label: 'KTC Value'       },
+  { value: 'fantasycalc',  label: 'FantasyCalc'     },
+  { value: 'ffb',          label: 'FFB Rank'        },
+];
 
 // Parse CSV line handling quoted fields
 function parseCSVLine(line) {
@@ -45,8 +54,10 @@ function HottestFreeAgents() {
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [ktcMap, setKtcMap] = useState(null);
+  const [fcData, setFcData] = useState(null);   // { bySleeperId, byName }
+  const [ffbData, setFfbData] = useState(null); // { bySleeperId, byName }
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [sortBy, setSortBy] = useState('total'); // 'total' | 'perGame' | 'ktc'
+  const [sortBy, setSortBy] = useState('total'); // 'total' | 'perGame' | 'ktc' | 'fantasycalc' | 'ffb'
   const [positionFilter, setPositionFilter] = useState('ALL');
   const [limit, setLimit] = useState(25);
   const [ktcFormat, setKtcFormat] = useState('sf_tep');
@@ -60,12 +71,14 @@ function HottestFreeAgents() {
         setError(null);
 
         // Load all required data in parallel
-        const [teamData, csvResponse, players, idMap, ktcResult] = await Promise.all([
+        const [teamData, csvResponse, players, idMap, ktcResult, fcResult, ffbResult] = await Promise.all([
           fetchTeamData(CURRENT_YEAR),
           fetch('/data/stats_player_reg_2025.csv'),
           fetch('/data/players.txt').then(res => res.json()),
           fetchPlayerIdMap(),
           fetchKtcData().catch(() => null),
+          fetchFantasyCalcData().catch(() => null),
+          fetchFfbData().catch(() => null),
         ]);
 
         if (!csvResponse.ok) {
@@ -132,7 +145,8 @@ function HottestFreeAgents() {
             );
 
             allPlayers.push({
-              playerId: sleeperPlayerId || gsisId, // Use Sleeper ID if available, fallback to GSIS ID
+              playerId: sleeperPlayerId || gsisId,
+              sleeperId: sleeperPlayerId || null,
               playerName: playerName,
               position: values[positionIndex]?.trim() || '',
               team: values[teamIndex]?.trim() || '',
@@ -164,6 +178,7 @@ function HottestFreeAgents() {
             if (!statsNormNames.has(normName) && !rosteredNormNames.has(normName)) {
               allPlayers.push({
                 playerId: null,
+                sleeperId: null,
                 playerName: entry.name,
                 position: entry.position,
                 team: entry.nflTeam || '',
@@ -183,6 +198,8 @@ function HottestFreeAgents() {
         setPlayersData(players);
         setPlayerIdMap(idMap);
         setKtcMap(ktcResult ? ktcResult.map : null);
+        setFcData(fcResult || null);
+        setFfbData(ffbResult || null);
       } catch (err) {
         setError(err.message || 'Failed to load data');
       } finally {
@@ -193,17 +210,35 @@ function HottestFreeAgents() {
     loadData();
   }, []);
 
-  // Attach KTC values to each agent
-  const agentsWithKtc = useMemo(() => {
+  // Attach KTC, FantasyCalc, and FFB values to each agent
+  const agentsWithValues = useMemo(() => {
     return freeAgents.map((agent) => {
-      const entry = ktcMap ? getKtcEntryByName(agent.playerName, ktcMap, ktcFormat) : null;
-      return { ...agent, ktcValue: entry ? entry.ktcValue : null };
+      const hints = { position: agent.position, team: agent.team };
+
+      const ktcEntry = ktcMap
+        ? getKtcEntryByName(agent.playerName, ktcMap, ktcFormat, hints)
+        : null;
+
+      const fcEntry = fcData
+        ? getFantasyCalcEntry(agent.sleeperId, agent.playerName, fcData.bySleeperId, fcData.byName, hints)
+        : null;
+
+      const ffbEntry = ffbData
+        ? getFfbEntry(agent.sleeperId, agent.playerName, ffbData.bySleeperId, ffbData.byName)
+        : null;
+
+      return {
+        ...agent,
+        ktcValue:  ktcEntry ? ktcEntry.ktcValue : null,
+        fcValue:   fcEntry  ? fcEntry.value     : null,
+        ffbRank:   ffbEntry ? ffbEntry.rank      : null,
+      };
     });
-  }, [freeAgents, ktcMap, ktcFormat]);
+  }, [freeAgents, ktcMap, ktcFormat, fcData, ffbData]);
 
   // Filter and sort free agents
   const displayedAgents = useMemo(() => {
-    let filtered = agentsWithKtc;
+    let filtered = agentsWithValues;
 
     if (positionFilter !== 'ALL') {
       filtered = filtered.filter(agent => agent.position === positionFilter);
@@ -216,11 +251,22 @@ function HottestFreeAgents() {
         const bv = b.ktcValue ?? -1;
         return bv !== av ? bv - av : b.fantasyPoints - a.fantasyPoints;
       }
+      if (sortBy === 'fantasycalc') {
+        const av = a.fcValue ?? -1;
+        const bv = b.fcValue ?? -1;
+        return bv !== av ? bv - av : b.fantasyPoints - a.fantasyPoints;
+      }
+      if (sortBy === 'ffb') {
+        // Lower rank = better; unranked players go to bottom
+        const av = a.ffbRank ?? 99999;
+        const bv = b.ffbRank ?? 99999;
+        return av !== bv ? av - bv : b.fantasyPoints - a.fantasyPoints;
+      }
       return b.fantasyPoints - a.fantasyPoints;
     });
 
     return sorted.slice(0, limit);
-  }, [agentsWithKtc, positionFilter, sortBy, limit]);
+  }, [agentsWithValues, positionFilter, sortBy, limit]);
 
   const handlePlayerClick = (agent) => {
     // Try direct lookup first (works when agent.playerId is a Sleeper ID)
@@ -317,8 +363,8 @@ function HottestFreeAgents() {
           Top scoring players in 2025 who are currently available
         </p>
 
-        {/* KTC format toggle */}
-        {ktcMap && (
+        {/* KTC SF / SF TE+ sub-toggle – only shown when sorting by KTC */}
+        {ktcMap && sortBy === 'ktc' && (
           <div className="dynasty-format-toggle" style={{ marginBottom: '1rem' }}>
             {KTC_FORMATS.map((f) => (
               <button
@@ -344,7 +390,11 @@ function HottestFreeAgents() {
             >
               <option value="total">Total Points</option>
               <option value="perGame">Points Per Game</option>
-              {ktcMap && <option value="ktc">KTC Value</option>}
+              {DYNASTY_SORT_OPTIONS.map(({ value, label }) => (
+                (value === 'ktc' ? ktcMap : value === 'fantasycalc' ? fcData : ffbData)
+                  ? <option key={value} value={value}>{label}</option>
+                  : null
+              ))}
             </select>
           </div>
 
@@ -396,6 +446,8 @@ function HottestFreeAgents() {
                 <th className="points-col">Total Pts</th>
                 <th className="ppg-col">PPG</th>
                 {ktcMap && <th className="fa-ktc-col">KTC</th>}
+                {!isMobile && fcData && <th className="fa-ktc-col">FC</th>}
+                {!isMobile && ffbData && <th className="fa-ktc-col">FFB</th>}
                 {!isMobile && <th className="status-col">Status</th>}
               </tr>
             </thead>
@@ -434,6 +486,20 @@ function HottestFreeAgents() {
                     <td className="fa-ktc-col">
                       <span className={agent.ktcValue ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
                         {formatKtcValue(agent.ktcValue)}
+                      </span>
+                    </td>
+                  )}
+                  {!isMobile && fcData && (
+                    <td className="fa-ktc-col">
+                      <span className={agent.fcValue ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
+                        {formatFcValue(agent.fcValue)}
+                      </span>
+                    </td>
+                  )}
+                  {!isMobile && ffbData && (
+                    <td className="fa-ktc-col">
+                      <span className={agent.ffbRank ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
+                        {formatFfbRank(agent.ffbRank)}
                       </span>
                     </td>
                   )}

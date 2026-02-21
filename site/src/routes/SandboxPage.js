@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PlayerSearch from '../players/PlayerSearch';
 import TrendingPlayers from '../players/TrendingPlayers';
@@ -6,53 +6,87 @@ import HottestFreeAgents from '../players/HottestFreeAgents';
 import YoffsPage from './YoffsPage';
 import H2hPage from './h2h';
 import DynastyRosterView from '../teams/DynastyRosterView';
-import { SANDBOX_FEATURES, isFeatureEnabled, hasAnyFeaturesEnabled } from '../utils/featureToggles';
+import PlayerDBPage from '../playerdb/PlayerDBPage';
+
+const FEATURES = [
+  {
+    id: 'PLAYER_SEARCH',
+    label: 'Player Search',
+    description: 'Search and explore player stats and dynasty values.',
+    component: <PlayerSearch />,
+  },
+  {
+    id: 'TRENDING_PLAYERS',
+    label: 'Trending Players',
+    description: 'See which players are trending up or down in dynasty value.',
+    component: <TrendingPlayers />,
+  },
+  {
+    id: 'HOTTEST_FREE_AGENTS',
+    label: 'Hottest Free Agents',
+    description: 'Top available free agents ranked by dynasty value.',
+    component: <HottestFreeAgents />,
+  },
+  {
+    id: 'PLAYOFFS',
+    label: 'Playoffs',
+    description: 'Playoff bracket and matchup viewer.',
+    component: <YoffsPage inSandbox={true} />,
+  },
+  {
+    id: 'HEAD_TO_HEAD',
+    label: 'Head to Head',
+    description: 'Compare two teams head to head.',
+    component: <H2hPage inSandbox={true} />,
+  },
+  {
+    id: 'DYNASTY_ROSTER',
+    label: 'Dynasty Roster View',
+    description: 'Full league roster rankings by dynasty value.',
+    component: <DynastyRosterView />,
+  },
+  {
+    id: 'ULTIMATE_PLAYER_DB',
+    label: 'Player Database',
+    description: 'Browse and filter the full player database.',
+    component: <PlayerDBPage />,
+  },
+];
 
 function SandboxPage() {
+  const [activeFeatureId, setActiveFeatureId] = useState(null);
+
+  const activeFeature = FEATURES.find(f => f.id === activeFeatureId);
+
+  if (activeFeature) {
+    return (
+      <InfoPageWrapper
+        title={activeFeature.label}
+        subtitle="Sandbox"
+        leftHeader={
+          <button className="sandbox-back-btn" onClick={() => setActiveFeatureId(null)}>
+            ← Back
+          </button>
+        }
+      >
+        {activeFeature.component}
+      </InfoPageWrapper>
+    );
+  }
+
   return (
     <InfoPageWrapper title="Sandbox" subtitle="Experimental Features">
-      <div style={{ padding: '20px' }}>
-        {isFeatureEnabled('PLAYER_SEARCH', SANDBOX_FEATURES) && (
-          <div style={{ marginBottom: '2rem' }}>
-            <PlayerSearch />
-          </div>
-        )}
-        
-        {isFeatureEnabled('TRENDING_PLAYERS', SANDBOX_FEATURES) && (
-          <div style={{ marginBottom: '2rem' }}>
-            <TrendingPlayers />
-          </div>
-        )}
-        
-        {isFeatureEnabled('HOTTEST_FREE_AGENTS', SANDBOX_FEATURES) && (
-          <div style={{ marginBottom: '2rem' }}>
-            <HottestFreeAgents />
-          </div>
-        )}
-        
-        {isFeatureEnabled('PLAYOFFS', SANDBOX_FEATURES) && (
-          <div style={{ marginBottom: '2rem' }}>
-            <YoffsPage inSandbox={true} />
-          </div>
-        )}
-        
-        {isFeatureEnabled('HEAD_TO_HEAD', SANDBOX_FEATURES) && (
-          <div style={{ marginBottom: '2rem' }}>
-            <H2hPage inSandbox={true} />
-          </div>
-        )}
-
-        {isFeatureEnabled('DYNASTY_ROSTER', SANDBOX_FEATURES) && (
-          <div style={{ marginBottom: '2rem' }}>
-            <DynastyRosterView />
-          </div>
-        )}
-
-        {!hasAnyFeaturesEnabled(SANDBOX_FEATURES) && (
-          <p style={{ textAlign: 'center', color: '#999' }}>
-            No features enabled. Update SANDBOX_FEATURES in utils/featureToggles.js to show content.
-          </p>
-        )}
+      <div className="sandbox-menu">
+        {FEATURES.map(feature => (
+          <button
+            key={feature.id}
+            className="sandbox-feature-card"
+            onClick={() => setActiveFeatureId(feature.id)}
+          >
+            <span className="sandbox-feature-label">{feature.label}</span>
+            <span className="sandbox-feature-desc">{feature.description}</span>
+          </button>
+        ))}
       </div>
     </InfoPageWrapper>
   );

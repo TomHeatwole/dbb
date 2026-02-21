@@ -22,21 +22,42 @@ import {
   getKtcEntryByName,
   getPickKtcValue,
   formatKtcValue,
-  KTC_FORMAT_LABELS,
 } from '../lookups/KtcLookup';
+import { fetchFantasyCalcData, getFantasyCalcEntry, formatFcValue } from '../lookups/FantasyCalcLookup';
+import { fetchFfbData, getFfbEntry, formatFfbRank } from '../lookups/FfbLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
-import { SANDBOX_FEATURES, isFeatureEnabled } from '../utils/featureToggles';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
 
-const PICKS_ENABLED = isFeatureEnabled('DYNASTY_DRAFT_PICKS', SANDBOX_FEATURES);
+// Draft pick KTC values are approximate — enable when real data is available
+const PICKS_ENABLED = false;
 
-const RANKED_POSITIONS = ['QB', 'RB', 'WR', 'TE'];
+const RANKED_POSITIONS  = ['QB', 'RB', 'WR', 'TE'];
 const DISPLAY_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
-const KTC_FORMATS = ['sf', 'sf_tep'];
+
+// Value source options: KTC SF, KTC SF TE+, FantasyCalc, FFB
+const VALUE_SOURCES = ['ktc_sf', 'ktc_sf_tep', 'fantasycalc', 'ffb'];
+const VALUE_SOURCE_LABELS = {
+  ktc_sf:       'KTC SF',
+  ktc_sf_tep:   'KTC SF TE+',
+  fantasycalc:  'FantasyCalc',
+  ffb:          'FFB',
+};
+const VALUE_SOURCE_COL_HEADER = {
+  ktc_sf:       'KTC',
+  ktc_sf_tep:   'KTC',
+  fantasycalc:  'FC',
+  ffb:          'FFB Rank',
+};
+const VALUE_SOURCE_TOTAL_LABEL = {
+  ktc_sf:       'Total KTC',
+  ktc_sf_tep:   'Total KTC',
+  fantasycalc:  'Total FC',
+  ffb:          'FFB Score',
+};
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -149,8 +170,10 @@ function DynastyRosterView() {
   const [playerIdMap, setPlayerIdMap]     = useState(null);
   const [ktcMap, setKtcMap]               = useState(null);
   const [ktcAsOf, setKtcAsOf]             = useState(null);
+  const [fcData, setFcData]               = useState(null); // { bySleeperId, byName }
+  const [ffbData, setFfbData]             = useState(null); // { bySleeperId, byName }
   const [selectedId, setSelectedId]       = useState(null);
-  const [format, setFormat]               = useState('sf_tep');
+  const [valueSource, setValueSource]     = useState('ktc_sf_tep');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // ── Data loading ────────────────────────────────────────────────────────────
@@ -168,12 +191,14 @@ function DynastyRosterView() {
         // nextDraftYear: during preseason it's CURRENT_YEAR; after draft it's CURRENT_YEAR+1
         const nextDraft      = isPreSeason ? String(CURRENT_YEAR) : String(Number(CURRENT_YEAR) + 1);
 
-        const [teamData, weeksData, idMap, ktcResult, allTradedPicks, prevWeeksData] =
+        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, allTradedPicks, prevWeeksData] =
           await Promise.all([
             fetchTeamData(CURRENT_YEAR),
             fetchScoresData(CURRENT_YEAR),
             fetchPlayerIdMap(),
             fetchKtcData(),
+            fetchFantasyCalcData().catch(() => null),
+            fetchFfbData().catch(() => null),
             PICKS_ENABLED ? fetchTradedPicks(CURRENT_YEAR).catch(() => []) : Promise.resolve([]),
             PICKS_ENABLED && isPreSeason
               ? fetchScoresData(prevYearStr).catch(() => null)
@@ -238,6 +263,8 @@ function DynastyRosterView() {
         setPlayerIdMap(idMap);
         setKtcMap(ktcM);
         setKtcAsOf(ktcResult.asOf);
+        setFcData(fcResult || null);
+        setFfbData(ffbResult || null);
       } catch (e) {
         if (!cancelled) setError('Failed to load dynasty roster data.');
       } finally {
@@ -249,26 +276,46 @@ function DynastyRosterView() {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Per-team KTC totals (recomputes when format changes) ─────────────────────
+  // ── Helper: get a numeric "sort value" for a player given the current source ──
+
+  const getPlayerSortValue = React.useCallback((pid, info) => {
+    const name  = info?.full_name || info?.name || '';
+    const hints = { position: info?.position, team: info?.team || info?.team_abbr, age: info?.age };
+
+    if (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') {
+      if (!ktcMap) return 0;
+      const ktcFmt = valueSource === 'ktc_sf_tep' ? 'sf_tep' : 'sf';
+      const entry  = getKtcEntryByName(name, ktcMap, ktcFmt, hints);
+      return entry?.ktcValue ?? 0;
+    }
+    if (valueSource === 'fantasycalc') {
+      if (!fcData) return 0;
+      const entry = getFantasyCalcEntry(pid, name, fcData.bySleeperId, fcData.byName, hints);
+      return entry?.value ?? 0;
+    }
+    if (valueSource === 'ffb') {
+      if (!ffbData) return 0;
+      const entry = getFfbEntry(pid, name, ffbData.bySleeperId, ffbData.byName);
+      // Synthetic score: higher = better (top-ranked player scores ~389)
+      return entry ? Math.max(0, 390 - entry.rank) : 0;
+    }
+    return 0;
+  }, [valueSource, ktcMap, fcData, ffbData]);
+
+  // ── Per-team value totals (recomputes when source changes) ───────────────────
 
   const teamKtcTotals = useMemo(() => {
-    if (!ktcMap || !playersData || !playerIdMap) return {};
+    if (!playersData || !playerIdMap) return {};
     const totals = {};
     for (const team of teams) {
       let total = 0;
-      // Players
       for (const pid of (rosters[team.rosterId] || [])) {
-        const info  = getPlayerInfo(pid, playersData, playerIdMap);
+        const info = getPlayerInfo(pid, playersData, playerIdMap);
         if (!info) continue;
-        const entry = getKtcEntryByName(info.full_name || info.name, ktcMap, format, {
-          position: info.position,
-          team:     info.team || info.team_abbr,
-          age:      info.age,
-        });
-        if (entry && entry.ktcValue > 0) total += entry.ktcValue;
+        total += getPlayerSortValue(pid, info);
       }
-      // Picks (only when feature is enabled)
-      if (PICKS_ENABLED) {
+      // Picks only apply to KTC sources
+      if (PICKS_ENABLED && (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep')) {
         for (const pick of (picksByRoster[team.rosterId] || [])) {
           const origRid = pick.roster_id != null ? String(pick.roster_id) : null;
           const pickNum = origRid ? draftOrderMap[origRid] : null;
@@ -278,7 +325,7 @@ function DynastyRosterView() {
       totals[team.rosterId] = total;
     }
     return totals;
-  }, [ktcMap, playersData, playerIdMap, teams, rosters, picksByRoster, draftOrderMap, format]);
+  }, [playersData, playerIdMap, teams, rosters, picksByRoster, draftOrderMap, getPlayerSortValue, valueSource]);
 
   // Teams sorted by total KTC descending
   const sortedTeams = useMemo(() => {
@@ -292,27 +339,64 @@ function DynastyRosterView() {
   // ── Selected team detail ─────────────────────────────────────────────────────
 
   const selectedPlayers = useMemo(() => {
-    if (!selectedId || !playersData || !playerIdMap || !ktcMap) return [];
+    if (!selectedId || !playersData || !playerIdMap) return [];
+
+    const ktcFmt = valueSource === 'ktc_sf_tep' ? 'sf_tep' : 'sf';
+
     return (rosters[selectedId] || []).map((pid) => {
       const info  = getPlayerInfo(pid, playersData, playerIdMap);
       const name  = info?.full_name || info?.name || pid;
-      const entry = getKtcEntryByName(name, ktcMap, format, {
-        position: info?.position,
-        team:     info?.team || info?.team_abbr,
-        age:      info?.age,
-      });
+      const hints = { position: info?.position, team: info?.team || info?.team_abbr, age: info?.age };
+
+      // KTC
+      const ktcEntry = ktcMap
+        ? getKtcEntryByName(name, ktcMap, ktcFmt, hints)
+        : null;
+
+      // FantasyCalc
+      const fcEntry = fcData
+        ? getFantasyCalcEntry(pid, name, fcData.bySleeperId, fcData.byName, hints)
+        : null;
+
+      // FFB
+      const ffbEntry = ffbData
+        ? getFfbEntry(pid, name, ffbData.bySleeperId, ffbData.byName)
+        : null;
+
+      // Active source fields for display
+      let displayValue, overallRank, posRank, sortValue;
+      if (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') {
+        displayValue = formatKtcValue(ktcEntry?.ktcValue);
+        overallRank  = ktcEntry?.overallRank ?? null;
+        posRank      = ktcEntry?.posRank     ?? null;
+        sortValue    = ktcEntry?.ktcValue    ?? 0;
+      } else if (valueSource === 'fantasycalc') {
+        displayValue = formatFcValue(fcEntry?.value);
+        overallRank  = fcEntry?.overallRank ?? null;
+        posRank      = fcEntry?.posRank     ?? null;
+        sortValue    = fcEntry?.value       ?? 0;
+      } else {
+        // ffb
+        displayValue = formatFfbRank(ffbEntry?.rank);
+        overallRank  = null; // rank IS the display value
+        posRank      = null;
+        sortValue    = ffbEntry ? Math.max(0, 390 - ffbEntry.rank) : 0;
+      }
+
       return {
         pid,
         name,
-        position:    info?.position || '',
-        nflTeam:     info?.team || info?.team_abbr || '',
+        position:     info?.position || '',
+        nflTeam:      info?.team || info?.team_abbr || '',
         espnPhotoUrl: info?.espn_photo_url || null,
-        ktcValue:    entry?.ktcValue    ?? 0,
-        overallRank: entry?.overallRank ?? null,
-        posRank:     entry?.posRank     ?? null,
+        displayValue,
+        overallRank,
+        posRank,
+        sortValue,
+        hasValue: sortValue > 0,
       };
-    }).sort((a, b) => b.ktcValue - a.ktcValue);
-  }, [selectedId, playersData, playerIdMap, ktcMap, rosters, format]);
+    }).sort((a, b) => b.sortValue - a.sortValue);
+  }, [selectedId, playersData, playerIdMap, ktcMap, fcData, ffbData, rosters, valueSource]);
 
   const selectedPicks = useMemo(() => {
     if (!selectedId) return [];
@@ -378,27 +462,29 @@ function DynastyRosterView() {
   return (
     <div className="dynasty-root">
 
-      {/* ── Header + format selector ── */}
+      {/* ── Header + value source selector ── */}
       <div className="dynasty-section-header">
         <div className="dynasty-header-row">
           <div>
             <span className="dynasty-section-title">Dynasty Roster Values</span>
-            <span className="dynasty-section-sub">KTC · sorted by total value</span>
+            <span className="dynasty-section-sub">sorted by total value</span>
           </div>
           <div className="dynasty-format-toggle">
-            {KTC_FORMATS.map((f) => (
+            {VALUE_SOURCES.map((src) => (
               <button
-                key={f}
+                key={src}
                 type="button"
-                className={'dynasty-format-btn' + (format === f ? ' dynasty-format-btn--active' : '')}
-                onClick={() => setFormat(f)}
+                className={'dynasty-format-btn' + (valueSource === src ? ' dynasty-format-btn--active' : '')}
+                onClick={() => setValueSource(src)}
               >
-                {KTC_FORMAT_LABELS[f]}
+                {VALUE_SOURCE_LABELS[src]}
               </button>
             ))}
           </div>
         </div>
-        {ktcAsOf && <span className="dynasty-as-of">as of {ktcAsOf}</span>}
+        {(valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') && ktcAsOf && (
+          <span className="dynasty-as-of">as of {ktcAsOf}</span>
+        )}
       </div>
 
       {/* ── Team selector ── */}
@@ -429,7 +515,7 @@ function DynastyRosterView() {
                 <span className="yoffs-bracket-name h2h-web-name dynasty-card-name">
                   {team.teamName}
                 </span>
-                {total != null && ktcMap && (
+                {total != null && total > 0 && (
                   <span className="dynasty-card-total">{total.toLocaleString()}</span>
                 )}
               </button>
@@ -450,7 +536,7 @@ function DynastyRosterView() {
               />
             )}
             <span className="dynasty-roster-team-name">{selectedTeam.teamName}</span>
-            <span className="dynasty-roster-total-label">Total KTC</span>
+            <span className="dynasty-roster-total-label">{VALUE_SOURCE_TOTAL_LABEL[valueSource]}</span>
             <span className="dynasty-roster-total-value">{selectedTotal.toLocaleString()}</span>
           </div>
 
@@ -460,12 +546,12 @@ function DynastyRosterView() {
                 <th className="dynasty-th dynasty-th-player">Player</th>
                 <th className="dynasty-th dynasty-th-ranks">Rank</th>
                 <th className="dynasty-th dynasty-th-team">NFL</th>
-                <th className="dynasty-th dynasty-th-ktc">KTC</th>
+                <th className="dynasty-th dynasty-th-ktc">{VALUE_SOURCE_COL_HEADER[valueSource]}</th>
               </tr>
             </thead>
             <tbody>
               {/* ── Players ── */}
-              {selectedPlayers.map(({ pid, name, position, nflTeam, espnPhotoUrl, ktcValue, overallRank, posRank }) => {
+              {selectedPlayers.map(({ pid, name, position, nflTeam, espnPhotoUrl, displayValue, overallRank, posRank, hasValue }) => {
                 const posClass   = DISPLAY_POSITIONS.includes(position)
                   ? `dynasty-pos-badge dynasty-pos-${position.toLowerCase()}`
                   : 'dynasty-pos-badge dynasty-pos-other';
@@ -504,8 +590,8 @@ function DynastyRosterView() {
                     </td>
                     <td className="dynasty-td dynasty-td-team">{nflTeam}</td>
                     <td className="dynasty-td dynasty-td-ktc">
-                      <span className={ktcValue > 0 ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
-                        {formatKtcValue(ktcValue)}
+                      <span className={hasValue ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
+                        {displayValue}
                       </span>
                     </td>
                   </tr>
@@ -513,14 +599,14 @@ function DynastyRosterView() {
               })}
 
               {/* ── Picks divider ── */}
-              {PICKS_ENABLED && selectedPicks.length > 0 && (
+              {PICKS_ENABLED && (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') && selectedPicks.length > 0 && (
                 <tr className="dynasty-picks-divider-row">
                   <td colSpan={4} className="dynasty-picks-divider-cell">Draft Picks</td>
                 </tr>
               )}
 
               {/* ── Picks ── */}
-              {PICKS_ENABLED && selectedPicks.map((pick, i) => (
+              {PICKS_ENABLED && (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') && selectedPicks.map((pick, i) => (
                 <tr key={`pick-${i}`} className="dynasty-player-row dynasty-pick-row">
                   <td className="dynasty-td dynasty-td-player">
                     <div className="dynasty-pick-icon">

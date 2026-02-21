@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
@@ -15,6 +16,7 @@ import { readPlayersSnapshot } from '../utils/database';
 import { createLiveScoresPoller } from '../utils/livePolling';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import LoadingState from '../LoadingState';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -105,6 +107,7 @@ function MatchupView({
   const [scoresError, setScoresError] = useState(null);
   const [gridExpandedByWeek, setGridExpandedByWeek] = useState({});
   const [playersTeamMapByWeek, setPlayersTeamMapByWeek] = useState({});
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   const isMobileView = useIsMobile();
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
@@ -729,7 +732,10 @@ function MatchupView({
       const isRight = align === 'right';
 
       return (
-        <div className={`yoffs-matchup-player yoffs-matchup-player--${align}`}>
+        <div
+          className={`yoffs-matchup-player yoffs-matchup-player--${align} player-clickable`}
+          onClick={() => info && setSelectedPlayer(info)}
+        >
           <div className="yoffs-matchup-player-main">
             {isRight ? (
               <>
@@ -753,6 +759,7 @@ function MatchupView({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="team-scores-game-link"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {gameObj.text}
                 </a>
@@ -1226,6 +1233,19 @@ function MatchupView({
           }
         />
       ))}
+      {selectedPlayer && createPortal(
+        <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+          <div className="player-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <PlayerWeeklyScores
+              player={selectedPlayer}
+              onClose={() => setSelectedPlayer(null)}
+              rosters={teamData && teamData.rosters ? teamData.rosters : null}
+              users={teamData && teamData.users ? teamData.users : null}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

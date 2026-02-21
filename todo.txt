@@ -1,8 +1,4 @@
-- Hover on player for popup of information
-  - Update player card with stats for previous games
-  - May need pulling from another API
-- "Scenarios" page where you can see what would happen if a team did or didn't have another player
-- Consider removing or adjusting the grpahs for cumulative score and relative cumulative score in team page
+- Consider removing or adjusting the graphs for cumulative score and relative cumulative score in team page
 
 - Redo a lot of the /team pages
     - Consider team overview doing something more like the home page with lots of separate info.
@@ -15,19 +11,11 @@
 - Do more with player stats
   - In Scores and team scores actually show the stats that led to the fantasy points
 
-- **Understanding of what # a player was at their position (i.e. RB12)
-  - We can put this directly in when viewing player stats
-  - But it'll be really nice to reference when doing things like scenarios.
-  - Probably build once for 2025 and 2024, then have a working understanding of
-    it weekly in live seasons.
-
 - Home cards:
   - In-season
       - Standings (reg season) w/ up/down arrows
         - Or maybe just incorporate up or down arrows into the existing 3 races tabs?
-      - FantasyDisaster link?
   - Off Season
-      - Recent trades 
       - Scenario or "what if" clickbait
       - League history could get its own teaser once there's a page for it.
       - 2025 MVPs could be a good teaser once we have advanced player analytics

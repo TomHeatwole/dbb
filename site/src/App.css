@@ -6158,7 +6158,7 @@ body.modal-open {
 
 .player-weekly-summary {
   display: flex;
-  gap: 1.5rem;
+  gap: 0.75rem;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -6314,6 +6314,22 @@ body.modal-open {
   
   .player-weekly-stat {
     font-size: 0.55rem;
+  }
+
+  .player-weekly-summary {
+    gap: 0.25rem;
+    padding: 0.75rem 0.5rem;
+    align-items: flex-start;
+  }
+
+  .player-weekly-stat-label {
+    font-size: 0.42rem;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .player-weekly-stat-value {
+    font-size: 0.75rem;
   }
   
   .player-weekly-points {
@@ -8592,4 +8608,526 @@ body.modal-open {
   .dynasty-team-list {
     grid-template-columns: 1fr;
   }
+}
+
+/* ─── Ultimate Player DB ─────────────────────────────────────────────────── */
+
+.pdb-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pdb-header {
+  margin-bottom: 1.5rem;
+}
+
+.pdb-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 0.4rem;
+}
+
+.pdb-subtitle {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* ── Controls ── */
+
+.pdb-controls {
+  margin-bottom: 1.25rem;
+}
+
+.pdb-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.875rem;
+}
+
+.pdb-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  font-size: 0.9rem;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.pdb-search-input {
+  width: 100%;
+  padding: 0.65rem 2.5rem 0.65rem 2.25rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.pdb-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.pdb-search-input:focus {
+  outline: none;
+  border-color: #1db954;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.15);
+}
+
+.pdb-search-clear {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.pdb-search-clear:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.pdb-filter-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.pdb-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pdb-toggle-checkbox {
+  accent-color: #1db954;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.pdb-result-count {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.4);
+  padding-left: 0.25rem;
+}
+
+.pdb-result-count strong {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ── Table ── */
+
+.pdb-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pdb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.pdb-th {
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.68rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.pdb-th-rank {
+  width: 36px;
+  text-align: center;
+}
+
+.pdb-th-sortable {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.pdb-th-sortable:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.pdb-th-active {
+  color: #1db954 !important;
+}
+
+.pdb-th-left   { text-align: left; }
+.pdb-th-center { text-align: center; }
+.pdb-th-right  { text-align: right; }
+
+.pdb-sort-arrow {
+  font-size: 0.65rem;
+  vertical-align: middle;
+}
+
+.pdb-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.pdb-row:hover {
+  background: rgba(29, 185, 84, 0.07);
+}
+
+.pdb-td {
+  padding: 0.35rem 0.6rem;
+  color: rgba(255, 255, 255, 0.85);
+  vertical-align: middle;
+}
+
+.pdb-td-rank {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Compact name cell (no headshot) ── */
+
+.pdb-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.pdb-player-name {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+}
+
+.pdb-td-left   { text-align: left; }
+.pdb-td-center { text-align: center; }
+.pdb-td-right  { text-align: right; }
+
+/* ── Cell-specific styles ── */
+
+.pdb-pts-value {
+  font-weight: 700;
+  color: #1db954;
+}
+
+.pdb-pts-none {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.pdb-fantasy-team {
+  font-size: 0.82rem;
+  color: rgba(180, 200, 255, 0.8);
+}
+
+.pdb-trend-up {
+  font-weight: 700;
+  color: #1db954;
+  font-size: 0.82rem;
+}
+
+.pdb-trend-down {
+  font-weight: 700;
+  color: #ff6b6b;
+  font-size: 0.82rem;
+}
+
+.pdb-trend-neutral {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.82rem;
+}
+
+/* ── Positional rank cell ── */
+
+.pdb-pos-rank {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(140, 185, 255, 0.85);
+}
+
+/* ── Column visibility button + panel ── */
+
+.pdb-col-btn-wrap {
+  position: relative;
+}
+
+.pdb-col-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.pdb-col-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.pdb-col-btn--active {
+  background: rgba(29, 185, 84, 0.12);
+  border-color: rgba(29, 185, 84, 0.4);
+  color: #1db954;
+}
+
+.pdb-col-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #1db954;
+  color: #000;
+  border-radius: 9px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pdb-col-panel-anchor {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 200;
+}
+
+.pdb-col-panel {
+  width: 220px;
+  background: #1e1c34;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.pdb-col-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pdb-col-panel-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pdb-col-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pdb-col-panel-reset {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.pdb-col-panel-reset:hover {
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.pdb-col-panel-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.1rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.pdb-col-panel-close:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pdb-col-panel-body {
+  padding: 0.5rem 0;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.pdb-col-group {
+  padding: 0.35rem 0;
+}
+
+.pdb-col-group + .pdb-col-group {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pdb-col-group-label {
+  padding: 0.3rem 0.85rem 0.1rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.pdb-col-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: background 0.1s;
+  user-select: none;
+}
+
+.pdb-col-toggle-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pdb-col-toggle-locked {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* ── Empty state ── */
+
+.pdb-empty {
+  padding: 3rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.95rem;
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 50em) {
+  .pdb-title {
+    font-size: 1.5rem;
+  }
+
+  .pdb-filter-row {
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .pdb-th {
+    padding: 0.45rem 0.4rem;
+  }
+
+  .pdb-td {
+    padding: 0.3rem 0.4rem;
+  }
+
+  .pdb-search-input {
+    font-size: 0.9rem;
+  }
+}
+
+/* ─── Sandbox ─────────────────────────────────────────────────────────────── */
+
+.sandbox-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #ccc;
+  font-size: 0.875rem;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sandbox-back-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.sandbox-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem 1rem;
+}
+
+.sandbox-feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sandbox-feature-card:hover {
+  background: #242424;
+  border-color: #555;
+}
+
+.sandbox-feature-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e8e8e8;
+}
+
+.sandbox-feature-desc {
+  font-size: 0.8rem;
+  color: #888;
+  line-height: 1.4;
 }

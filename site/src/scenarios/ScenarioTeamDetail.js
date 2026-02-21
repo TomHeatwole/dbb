@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,6 +13,7 @@ import {
 } from 'recharts';
 import WeekSelector from '../scores/WeekSelector';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 
@@ -88,7 +90,7 @@ function PtsDelta({ delta, tooltip }) {
 
 // ── Per-week starters / bench table ──────────────────────────────────────────
 
-function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMap }) {
+function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMap, onPlayerClick }) {
   const [benchExpanded, setBenchExpanded] = useState(false);
   const startersSectionRef = useRef(null);
   const [startersHeight, setStartersHeight] = useState(null);
@@ -142,7 +144,11 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
     }
 
     return (
-      <tr key={`s-${p.id}-${i}`} className="scenario-week-row">
+      <tr
+        key={`s-${p.id}-${i}`}
+        className={`scenario-week-row${info ? ' player-clickable' : ''}`}
+        onClick={() => info && onPlayerClick && onPlayerClick(info)}
+      >
         <td className="scenario-week-pos">{posLabel}</td>
         <td className="scenario-week-player">
           <div className="scenario-week-player-inner">
@@ -181,7 +187,11 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
     }
 
     return (
-      <div key={p.id} className="scenario-week-bench-item">
+      <div
+        key={p.id}
+        className={`scenario-week-bench-item${info ? ' player-clickable' : ''}`}
+        onClick={() => info && onPlayerClick && onPlayerClick(info)}
+      >
         <div className="scenario-week-bench-player">
           <img src={logo} alt="" className="scenario-week-avatar" />
           <span className="scenario-week-name">{name}</span>
@@ -266,6 +276,7 @@ function ScenarioTeamDetail({ rosterId, teamsForGrid, originalWeeklyScores, scen
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
 
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // Reset week to 1 whenever the selected team changes
   useEffect(() => { setSelectedWeek(1); }, [rosterId]);
@@ -376,8 +387,20 @@ function ScenarioTeamDetail({ rosterId, teamsForGrid, originalWeeklyScores, scen
           originalWeek={(originalWeeklyScores[rosterId] || [])[selectedWeek - 1] || null}
           playersData={playersData}
           playerIdMap={playerIdMap}
+          onPlayerClick={setSelectedPlayer}
         />
       </div>
+      {selectedPlayer && createPortal(
+        <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+          <div className="player-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <PlayerWeeklyScores
+              player={selectedPlayer}
+              onClose={() => setSelectedPlayer(null)}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
