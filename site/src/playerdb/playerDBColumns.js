@@ -199,7 +199,7 @@ export const PLAYER_DB_COLUMNS = [
     align: 'left',
     mobileVisible: false,
     defaultVisible: true,
-    minWidth: '120px',
+    width: '130px',
   },
 ];
 

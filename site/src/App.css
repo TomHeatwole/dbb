@@ -8848,6 +8848,11 @@ body.modal-open {
 .pdb-fantasy-team {
   font-size: 0.82rem;
   color: rgba(180, 200, 255, 0.8);
+  display: block;
+  max-width: 120px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .pdb-trend-up {
