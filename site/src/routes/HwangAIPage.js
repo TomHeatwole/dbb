@@ -18,24 +18,16 @@ function TypingDots() {
 
 const LOGO = '/data/hwangai.png';
 
-function AiSender() {
-  return (
-    <div className="hwang-ai-sender">
-      <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
-      HwangAI
-    </div>
-  );
-}
-
 function ChatMessage({ message }) {
   const isUser = message.role === 'user';
   return (
     <div className={`hwang-ai-message ${isUser ? 'hwang-ai-message--user' : 'hwang-ai-message--ai'}`}>
-      {!isUser && <AiSender />}
+      {!isUser && (
+        <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
+      )}
       <div className={`hwang-ai-bubble ${isUser ? 'hwang-ai-bubble--user' : 'hwang-ai-bubble--ai'}`}>
         {isUser ? message.content : <ReactMarkdown>{message.content}</ReactMarkdown>}
       </div>
-      {isUser && <div className="hwang-ai-sender hwang-ai-sender--user">You</div>}
     </div>
   );
 }
@@ -129,7 +121,7 @@ function HwangAIPage() {
             ))}
             {loading && (
               <div className="hwang-ai-message hwang-ai-message--ai">
-                <AiSender />
+                <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
                 <TypingDots />
               </div>
             )}

@@ -9192,19 +9192,19 @@ body.modal-open {
 
 .hwang-ai-message {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  max-width: 75%;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 0.6rem;
+  max-width: 78%;
 }
 
 .hwang-ai-message--user {
   align-self: flex-end;
-  align-items: flex-end;
+  flex-direction: row-reverse;
 }
 
 .hwang-ai-message--ai {
   align-self: flex-start;
-  align-items: flex-start;
 }
 
 .hwang-ai-title-logo {
@@ -9223,27 +9223,13 @@ body.modal-open {
 }
 
 .hwang-ai-avatar {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
   object-fit: contain;
   border-radius: 50%;
   flex-shrink: 0;
-}
-
-.hwang-ai-sender {
-  font-size: 0.7rem;
-  color: #666;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.hwang-ai-sender--user {
-  color: rgba(97, 218, 251, 0.6);
+  align-self: flex-end;
+  margin-bottom: 0.15rem;
 }
 
 .hwang-ai-bubble {
@@ -9253,13 +9239,38 @@ body.modal-open {
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
+  position: relative;
 }
 
 .hwang-ai-bubble--ai {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #e2e8f0;
   border-bottom-left-radius: 0.25rem;
+}
+
+/* Speech bubble tail pointing left toward the avatar */
+.hwang-ai-bubble--ai::before {
+  content: '';
+  position: absolute;
+  bottom: 0.35rem;
+  left: -0.55rem;
+  width: 0;
+  height: 0;
+  border-top: 0.45rem solid transparent;
+  border-right: 0.55rem solid rgba(255, 255, 255, 0.12);
+  border-bottom: 0rem solid transparent;
+}
+.hwang-ai-bubble--ai::after {
+  content: '';
+  position: absolute;
+  bottom: 0.42rem;
+  left: -0.4rem;
+  width: 0;
+  height: 0;
+  border-top: 0.38rem solid transparent;
+  border-right: 0.45rem solid rgb(22, 18, 48);
+  border-bottom: 0rem solid transparent;
 }
 
 .hwang-ai-bubble--user {
@@ -9269,15 +9280,61 @@ body.modal-open {
   border-bottom-right-radius: 0.25rem;
 }
 
+/* Speech bubble tail pointing right (user side) */
+.hwang-ai-bubble--user::before {
+  content: '';
+  position: absolute;
+  bottom: 0rem;
+  right: -0.55rem;
+  width: 0;
+  height: 0;
+  border-top: 0.45rem solid transparent;
+  border-left: 0.55rem solid rgba(97, 218, 251, 0.25);
+  border-bottom: 0rem solid transparent;
+}
+.hwang-ai-bubble--user::after {
+  content: '';
+  position: absolute;
+  bottom: 0.07rem;
+  right: -0.38rem;
+  width: 0;
+  height: 0;
+  border-top: 0.38rem solid transparent;
+  border-left: 0.42rem solid rgb(14, 10, 36);
+  border-bottom: 0rem solid transparent;
+}
+
 /* Typing indicator */
 .hwang-ai-bubble--typing {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   gap: 0.35rem;
   padding: 0.9rem 1.1rem;
   border-bottom-left-radius: 0.25rem;
+}
+.hwang-ai-bubble--typing::before {
+  content: '';
+  position: absolute;
+  bottom: 0.35rem;
+  left: -0.55rem;
+  width: 0;
+  height: 0;
+  border-top: 0.45rem solid transparent;
+  border-right: 0.55rem solid rgba(255, 255, 255, 0.12);
+  border-bottom: 0rem solid transparent;
+}
+.hwang-ai-bubble--typing::after {
+  content: '';
+  position: absolute;
+  bottom: 0.42rem;
+  left: -0.4rem;
+  width: 0;
+  height: 0;
+  border-top: 0.38rem solid transparent;
+  border-right: 0.45rem solid rgb(22, 18, 48);
+  border-bottom: 0rem solid transparent;
 }
 
 .hwang-ai-dot {
