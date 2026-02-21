@@ -84,7 +84,9 @@ function checkForPaywall(html) {
 // ── Extract rankings JSON embedded in the page script ────────────────────────
 
 function extractJsonFromHtml(html, startMarker) {
-  const markerIdx = html.indexOf(startMarker);
+  // Use lastIndexOf so we skip the early `const data = await response.json()` occurrence
+  // and land on the actual rankings data block
+  const markerIdx = html.lastIndexOf(startMarker);
   if (markerIdx === -1) return null;
 
   let i = markerIdx + startMarker.length;
@@ -112,7 +114,7 @@ function extractJsonFromHtml(html, startMarker) {
 function loadRankings(html) {
   checkForPaywall(html);
 
-  const jsonStr = extractJsonFromHtml(html, 'const data = {"ALL":');
+  const jsonStr = extractJsonFromHtml(html, 'const data = ');
   if (!jsonStr) {
     console.error('ERROR: Could not find the rankings data block in the page HTML.');
     console.error('The page structure may have changed, or the session cookie may have expired.');
@@ -128,17 +130,24 @@ function loadRankings(html) {
     process.exit(1);
   }
 
-  if (!data.ALL || !Array.isArray(data.ALL)) {
-    console.error('ERROR: Rankings JSON is missing the expected "ALL" array.');
+  const rankingsList = data['2QB'] || data['ALL'];
+  if (!rankingsList || !Array.isArray(rankingsList)) {
+    console.error('ERROR: Rankings JSON is missing expected "2QB" or "ALL" array.');
     console.error('The page structure may have changed.');
     process.exit(1);
   }
 
-  return data.ALL
-    .map((p) => {
+  console.log(`Using ranking set: ${data['2QB'] ? '2QB' : 'ALL'}`);
+
+  // Sort by avg (arithmetic mean of each ranker's individual rank) — this is exactly
+  // what the browser does to produce the displayed overall order.
+  const sorted = [...rankingsList].sort((a, b) => parseFloat(a.avg) - parseFloat(b.avg));
+
+  return sorted
+    .map((p, idx) => {
       const age = parseFloat(p.age);
       return {
-        rank:    parseInt(p.rank, 10),
+        rank:    idx + 1,          // overall rank = position in avg-sorted array
         rawName: (p.name || '').trim(),
         team:    (p.team || '').trim().toUpperCase(),
         pos:     (p.fantasy_position || '').trim().toUpperCase(),

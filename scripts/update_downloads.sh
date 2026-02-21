@@ -1,11 +1,11 @@
 #!/bin/bash
-# Updates dynasty rankings data from ~/Downloads:
+# Updates dynasty rankings data:
 #
-#   1. Copies the most recent fantasycalc_dynasty_rankings* file
+#   1. Fetches player values from the FantasyCalc public API and writes
 #      → site/public/data/fantasycalc.csv
 #
-#   2. Processes the most recent "Dynasty Startup Rankings - Fantasy Footballers
-#      Podcast*.csv", matches players to Sleeper IDs, and writes
+#   2. Fetches the Fantasy Footballers Podcast dynasty startup rankings page,
+#      matches players to Sleeper IDs, and writes
 #      → site/public/data/ffb.csv
 #
 # Usage (run from project root):
@@ -14,21 +14,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-DOWNLOADS_DIR="$HOME/Downloads"
 
 # ── 1. FantasyCalc ─────────────────────────────────────────────────────────────
 
-FC_OUT="$PROJECT_ROOT/site/public/data/fantasycalc.csv"
-FC_LATEST=$(ls -t "$DOWNLOADS_DIR"/fantasycalc_dynasty_rankings* 2>/dev/null | head -1)
-
-if [[ -z "$FC_LATEST" ]]; then
-  echo "WARNING: No file matching 'fantasycalc_dynasty_rankings*' found in $DOWNLOADS_DIR — skipping FantasyCalc update"
-else
-  echo "FantasyCalc: found $FC_LATEST"
-  cp "$FC_LATEST" "$FC_OUT"
-  echo "FantasyCalc: copied → $FC_OUT"
-fi
+echo "FantasyCalc: fetching dynasty values from API..."
+node "$SCRIPT_DIR/process_fantasycalc_rankings.js"
 
 echo ""
 
