@@ -1,3 +1,4 @@
+console.log("CANARY render.js 2026-02-22 A");
 
 import fs from "fs";
 import path from "path";
