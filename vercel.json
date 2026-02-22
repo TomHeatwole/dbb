@@ -1,0 +1,25 @@
+{
+  "buildCommand": "npm install --prefix site && npm run build --prefix site",
+  "outputDirectory": "site/build",
+  "functions": {
+    "site/api/render.js": {
+      "includeFiles": "site/build/index.html|site/routeMeta.json"
+    },
+    "site/api/chat.js": {
+      "includeFiles": "site/public/data/players.txt|site/public/data/ktc_values.csv|site/public/data/fantasycalc.csv|site/public/data/ffb.csv|site/public/data/score_format.json"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/chat", "destination": "/site/api/chat" },
+    { "source": "/", "destination": "/site/api/render" },
+    { "source": "/home/", "destination": "/site/api/render" },
+    { "source": "/standings", "destination": "/site/api/render" },
+    { "source": "/Scores/Week", "destination": "/site/api/render" },
+    { "source": "/h2h", "destination": "/site/api/render" },
+    { "source": "/yoffs", "destination": "/site/api/render" },
+    { "source": "/notes", "destination": "/site/api/render" },
+    { "source": "/admincontrols", "destination": "/site/api/render" },
+    { "source": "/hwangai", "destination": "/site/api/render" },
+    { "source": "/team/:id", "destination": "/site/api/render" }
+  ]
+}
