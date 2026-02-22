@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/render.js": {
-      "includeFiles": "build/index.html"
+      "includeFiles": "build/index.html|routeMeta.json"
     },
     "api/chat.js": {
       "includeFiles": "public/data/players.txt|public/data/ktc_values.csv|public/data/fantasycalc.csv|public/data/ffb.csv|public/data/score_format.json"

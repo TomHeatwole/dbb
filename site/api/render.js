@@ -108,40 +108,6 @@ export default async function handler(req, res) {
       : defaultDescription);
   const ogImagePath = metaConfig.ogImage || defaultImage;
 
-  // Special-case override: Head-to-Head page with both a/b query params set.
-  // Build OG title as "<ownerA> vs <ownerB>" using the Sleeper team lookup.
-  try {
-    const rawUrl =
-      (req.originalUrl && typeof req.originalUrl === "string"
-        ? req.originalUrl
-        : null) || (typeof req.url === "string" ? req.url : "/");
-    const queryStr = rawUrl.includes("?") ? rawUrl.split("?")[1] : "";
-    const params = new URLSearchParams(queryStr);
-    const aParam = params.get("a");
-    const bParam = params.get("b");
-    const isH2hPath = requestPath === "/h2h" || requestPath.startsWith("/h2h?");
-
-    if (isH2hPath && aParam && bParam) {
-      // Use indirect eval so esbuild cannot statically analyze the path and inline the module.
-      // TeamLookup imports React-source files with CJS patterns that break ESM bundles.
-      const { fetchTeamData, buildRosterIdToTeamInfoMap } =
-        await (0, eval)('import("../src/lookups/TeamLookup.js")');
-      const teamData = await fetchTeamData();
-      if (teamData && Array.isArray(teamData.rosters) && Array.isArray(teamData.users)) {
-        const map = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
-        const aKey = Number.isFinite(Number(aParam)) ? Number(aParam) : aParam;
-        const bKey = Number.isFinite(Number(bParam)) ? Number(bParam) : bParam;
-        const infoA = map[aKey] || map[String(aKey)];
-        const infoB = map[bKey] || map[String(bKey)];
-        const ownerA = infoA && infoA.ownerName ? infoA.ownerName : `Team ${aParam}`;
-        const ownerB = infoB && infoB.ownerName ? infoB.ownerName : `Team ${bParam}`;
-        ogTitle = `${ownerA} vs ${ownerB}`;
-      }
-    }
-  } catch (_) {
-    // If anything fails (network, parsing, etc.), silently fall back to default OG title.
-  }
-
   const canonicalPath =
     requestPath && requestPath.startsWith("/")
       ? requestPath
