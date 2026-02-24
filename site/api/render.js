@@ -1,6 +1,3 @@
-console.log("CANARY render.js 2026-02-22 A");
-throw new Error("CANARY BREAK: render.js from repo (2026-02-22)");
-
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
