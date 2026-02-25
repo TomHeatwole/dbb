@@ -216,28 +216,40 @@ async function executeTool(name, args) {
 
 // ── Side query (Chinese characters) ──────────────────────────────────────────
 
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const CHINESE_PROMPT_PATH = join(__dirname, '..', 'public', 'data', 'chinese_characters_prompt.txt');
+const CHINESE_PROMPT_PATH = (() => {
+  const candidates = [
+    join(process.cwd(), 'public', 'data', 'chinese_characters_prompt.txt'),
+    join(process.cwd(), 'site', 'public', 'data', 'chinese_characters_prompt.txt'),
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) return p;
+  }
+  return candidates[0];
+})();
 
-let _chinesePromptCache = null;
+let _chinesePromptCache = undefined;
 function loadChinesePrompt() {
-  if (!_chinesePromptCache) {
+  if (_chinesePromptCache !== undefined) return _chinesePromptCache;
+  try {
     _chinesePromptCache = readFileSync(CHINESE_PROMPT_PATH, 'utf8');
+  } catch {
+    _chinesePromptCache = null;
   }
   return _chinesePromptCache;
 }
 
 async function fetchChineseCharacters(userMessage, apiKey) {
   try {
+    const prompt = loadChinesePrompt();
+    if (!prompt) return null;
     const res = await fetch(`${GEMINI_FLASH_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: loadChinesePrompt() }] },
+        systemInstruction: { parts: [{ text: prompt }] },
         contents: [{ role: 'user', parts: [{ text: userMessage }] }],
       }),
     });

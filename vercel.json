@@ -6,7 +6,7 @@
       "includeFiles": "build/index.html|routeMeta.json"
     },
     "api/chat.js": {
-      "includeFiles": "public/data/players.txt|public/data/ktc_values.csv|public/data/fantasycalc.csv|public/data/ffb.csv|public/data/score_format.json"
+      "includeFiles": "public/data/players.txt|public/data/ktc_values.csv|public/data/fantasycalc.csv|public/data/ffb.csv|public/data/score_format.json|public/data/chinese_characters_prompt.txt"
     }
   },
   "rewrites": [
