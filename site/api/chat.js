@@ -11,7 +11,7 @@ const GEMINI_URL =
 const GEMINI_FLASH_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
-const SIDE_QUERY_PROBABILITY = 0.2; // 1 in 5
+const SIDE_QUERY_PROBABILITY = 0.25; // 1 in 4
 
 // ── Gemini tool declarations ──────────────────────────────────────────────────
 
@@ -219,38 +219,36 @@ async function executeTool(name, args) {
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-const CHINESE_PROMPT_PATH = (() => {
+function resolvePath(filename) {
   const candidates = [
-    join(process.cwd(), 'public', 'data', 'chinese_characters_prompt.txt'),
-    join(process.cwd(), 'site', 'public', 'data', 'chinese_characters_prompt.txt'),
+    join(process.cwd(), 'public', 'data', filename),
+    join(process.cwd(), 'site', 'public', 'data', filename),
   ];
   for (const p of candidates) {
     if (existsSync(p)) return p;
   }
   return candidates[0];
-})();
-
-let _chinesePromptCache = undefined;
-function loadChinesePrompt() {
-  if (_chinesePromptCache !== undefined) return _chinesePromptCache;
-  try {
-    _chinesePromptCache = readFileSync(CHINESE_PROMPT_PATH, 'utf8');
-  } catch {
-    _chinesePromptCache = null;
-  }
-  return _chinesePromptCache;
 }
 
-async function fetchChineseCharacters(userMessage, apiKey) {
+function loadFile(filename) {
   try {
-    const prompt = loadChinesePrompt();
-    if (!prompt) return null;
+    return readFileSync(resolvePath(filename), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+async function fetchChineseCharacters(apiKey) {
+  try {
+    const systemPrompt = loadFile('chinese_characters_prompt.txt');
+    const inputPrompt = loadFile('chinese_characters_input.txt');
+    if (!systemPrompt || !inputPrompt) return null;
     const res = await fetch(`${GEMINI_FLASH_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: prompt }] },
-        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: inputPrompt }] }],
       }),
     });
     if (!res.ok) return null;
@@ -287,9 +285,8 @@ export default async function handler(req, res) {
 
   // Decide whether to fire the side query this turn
   const doSideQuery = Math.random() < SIDE_QUERY_PROBABILITY;
-  const lastUserMessage = messages[messages.length - 1]?.content || '';
   const sideQueryPromise = doSideQuery
-    ? fetchChineseCharacters(lastUserMessage, apiKey)
+    ? fetchChineseCharacters(apiKey)
     : Promise.resolve(null);
 
   // Build the conversation history for Gemini
