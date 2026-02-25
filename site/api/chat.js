@@ -8,6 +8,10 @@ import {
 
 const GEMINI_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`;
+const GEMINI_FLASH_URL =
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+
+const SIDE_QUERY_PROBABILITY = 0.2; // 1 in 5
 
 // ── Gemini tool declarations ──────────────────────────────────────────────────
 
@@ -210,6 +214,41 @@ async function executeTool(name, args) {
   }
 }
 
+// ── Side query (Chinese characters) ──────────────────────────────────────────
+
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CHINESE_PROMPT_PATH = join(__dirname, '..', 'public', 'data', 'chinese_characters_prompt.txt');
+
+let _chinesePromptCache = null;
+function loadChinesePrompt() {
+  if (!_chinesePromptCache) {
+    _chinesePromptCache = readFileSync(CHINESE_PROMPT_PATH, 'utf8');
+  }
+  return _chinesePromptCache;
+}
+
+async function fetchChineseCharacters(userMessage, apiKey) {
+  try {
+    const res = await fetch(`${GEMINI_FLASH_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: loadChinesePrompt() }] },
+        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -233,6 +272,13 @@ export default async function handler(req, res) {
   if (!apiKey) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
   }
+
+  // Decide whether to fire the side query this turn
+  const doSideQuery = Math.random() < SIDE_QUERY_PROBABILITY;
+  const lastUserMessage = messages[messages.length - 1]?.content || '';
+  const sideQueryPromise = doSideQuery
+    ? fetchChineseCharacters(lastUserMessage, apiKey)
+    : Promise.resolve(null);
 
   // Build the conversation history for Gemini
   let contents = messages.map(m => ({
@@ -266,8 +312,12 @@ export default async function handler(req, res) {
     const functionCalls = parts.filter(p => p.functionCall);
 
     if (functionCalls.length === 0) {
-      // No tool calls — extract the text response and return
-      const text = parts.find(p => p.text)?.text || '';
+      // No tool calls — extract the text response and stitch side query if present
+      let text = parts.find(p => p.text)?.text || '';
+      const sideResult = await sideQueryPromise;
+      if (sideResult) {
+        text += `\n\n---\n\n${sideResult}`;
+      }
       return res.status(200).json({ message: text });
     }
 
@@ -293,5 +343,10 @@ export default async function handler(req, res) {
   }
 
   // Fallback if we hit the loop limit without a text response
-  return res.status(200).json({ message: 'Sorry, I ran into an issue generating a response. Please try again.' });
+  const sideResult = await sideQueryPromise;
+  let fallback = 'Sorry, I ran into an issue generating a response. Please try again.';
+  if (sideResult) {
+    fallback += `\n\n---\n\n${sideResult}`;
+  }
+  return res.status(200).json({ message: fallback });
 }

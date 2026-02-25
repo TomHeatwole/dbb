@@ -76,9 +76,8 @@ Top 4 teams qualify. Winner determined by cumulative score over **Weeks 15–17*
 
 ## League History & Champions
 
-<!-- Add past champions and notable moments here -->
-- **2024:** TBD
-- **2023:** TBD
+- **2025:** Lord Pittsy Flacco Joedy (dwol11) — Bracket format champion
+- **2024:** Let James Cook (Jack Mehr) — Cumulative Weeks 15–17 champion
 
 ---
 

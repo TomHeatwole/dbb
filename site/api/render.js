@@ -1,10 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
-
-// ESM equivalent of __dirname (not available natively in ES modules)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Cache route metadata so we don't hit the filesystem on every request
 let routeMetaCache = null;
@@ -12,7 +7,7 @@ function loadRouteMeta() {
   if (routeMetaCache) {
     return routeMetaCache;
   }
-  const metaPath = path.join(__dirname, "..", "routeMeta.json");
+  const metaPath = path.join(process.cwd(), "routeMeta.json");
   try {
     const raw = fs.readFileSync(metaPath, "utf8");
     routeMetaCache = JSON.parse(raw);
@@ -80,7 +75,7 @@ function getOrigin(req) {
 }
 
 export default async function handler(req, res) {
-  const filePath = path.join(__dirname, "..", "build", "index.html");
+  const filePath = path.join(process.cwd(), "build", "index.html");
 
   let html;
   try {

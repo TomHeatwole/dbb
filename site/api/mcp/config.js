@@ -1,8 +1,4 @@
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { join } from 'path';
 
 let settings = {};
 const raw = process.env.REACT_APP_SITE_SETTINGS || process.env.SITE_SETTINGS;
@@ -25,9 +21,8 @@ export const SEASON_START_DAY = settings.SEASON_START_DAY || settings.SEASON_STA
 
 export const SITE_BASE_URL = (process.env.SITE_BASE_URL || 'https://www.hwangdynasty.com').replace(/\/$/, '');
 
-// From api/mcp/, go up two levels to reach site/, then into public/data/
 export const DATA_DIR =
-  process.env.DATA_DIR || join(__dirname, '..', '..', 'public', 'data');
+  process.env.DATA_DIR || join(process.cwd(), 'public', 'data');
 
 function deriveCurrentYear() {
   const prevYears = Object.keys(PREVIOUS_YEARS)
