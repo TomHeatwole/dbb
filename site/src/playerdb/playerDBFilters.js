@@ -64,11 +64,11 @@ export const PLAYER_DB_FILTERS = [
     },
   },
   {
-    key: 'includeNflFreeAgents',
+    key: 'excludeRookies',
     type: 'toggle',
-    label: 'Include NFL Free Agents',
-    defaultValue: true,
-    filterFn: (player, value) => value || !!player.nflTeam,
+    label: 'Exclude Rookies',
+    defaultValue: false,
+    filterFn: (player, value) => !value || player.yearsExp !== 0,
   },
 ];
 

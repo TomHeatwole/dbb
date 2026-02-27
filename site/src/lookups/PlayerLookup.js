@@ -113,6 +113,11 @@ export async function fetchPlayerIdMap() {
   return map;
 }
 
+export function isRookie(player) {
+  if (!player) return false;
+  return player.years_exp === 0;
+}
+
 export function getPlayerInfo(playerId, playersData, playerIdMap) {
   if (!playersData) { return null; }
   const player = playersData[playerId];

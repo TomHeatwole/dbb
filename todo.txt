@@ -3,6 +3,7 @@
 - Ultimate player search
   - Add relative downgrade from PPR to Half to Non by using redraft rankings within the position group and apply it per player
   - Add my belief on relative value of players compared to normal (i.e. 0.85x for WRs) and create a THS (total hwang score) that incorporates all data sources in order of how much I trust them.
+  - Rookies aren't really treated as rookies
 
 - Redo a lot of the /team pages
     - Consider team overview doing something more like the home page with lots of separate info.

@@ -328,6 +328,8 @@ export function usePlayerDBData() {
               ? `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${espnId}.png`
               : null);
 
+          const sleeperPlayer = sleeperId ? (sleeperPlayers[sleeperId] || null) : null;
+
           return {
             sleeperId,
             name:      displayName,
@@ -335,6 +337,7 @@ export function usePlayerDBData() {
             position:  position  || ktcEntry?.position  || fcEntry?.position  || '',
             nflTeam:   nflTeam   || ktcEntry?.nflTeam   || fcEntry?.nflTeam   || '',
             age:       fcEntry?.age ?? null,
+            yearsExp:  sleeperPlayer?.years_exp ?? null,
             headshotUrl,
             // Ownership
             fantasyTeamName: ownership?.fantasyTeamName || null,

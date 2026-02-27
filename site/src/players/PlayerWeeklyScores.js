@@ -52,7 +52,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
   const age = player && player.age ? player.age : null;
   const birthday = player && player.birth_date ? player.birth_date : null;
   const injury = player && player.injury_status ? player.injury_status : null;
-  const yearsExp = player && player.years_exp ? player.years_exp : null;
+  const yearsExp = (player && player.years_exp != null) ? player.years_exp : null;
   const college = player && player.college ? player.college : null;
   const highSchool = player && player.high_school ? player.high_school : null;
   const nflTeamLogo = team ? `https://a.espncdn.com/i/teamlogos/nfl/500/${team.toLowerCase()}.png` : null;
@@ -301,6 +301,8 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
     }
   }
 
+  const isUpcomingRookie = isPreSeason && yearsExp === 0;
+
   const yearNum = parseInt(season);
   const isPre2024 = yearNum < 2024;
   const showSeasonAggregateOnly = isPre2024;
@@ -334,40 +336,46 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
         </div>
       </div>
 
-      <div className="player-weekly-header">
-        <div ref={dropdownRef} className="player-season-dropdown" onClick={() => setDropdownOpen(open => !open)}>
-          {season} Season
-          <span className="player-season-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
-          {dropdownOpen && (
-            <div className="player-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-              {availableYears.map(year => (
-                <div
-                  key={year}
-                  className={'player-season-dropdown-option' + (year === season ? ' player-season-dropdown-option-active' : '')}
-                  onClick={() => { setSeason(year); setDropdownOpen(false); }}
-                >
-                  {year}
-                </div>
-              ))}
+      {!isUpcomingRookie && (
+        <div className="player-weekly-header">
+          <div ref={dropdownRef} className="player-season-dropdown" onClick={() => setDropdownOpen(open => !open)}>
+            {season} Season
+            <span className="player-season-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
+            {dropdownOpen && (
+              <div className="player-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
+                {availableYears.map(year => (
+                  <div
+                    key={year}
+                    className={'player-season-dropdown-option' + (year === season ? ' player-season-dropdown-option-active' : '')}
+                    onClick={() => { setSeason(year); setDropdownOpen(false); }}
+                  >
+                    {year}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {!isMobile && (
+            <div className="player-ownership-info">
+              {ownershipInfo ? (
+                <>
+                  {ownershipInfo.avatar && <img src={ownershipInfo.avatar} alt={ownershipInfo.teamName} className="player-ownership-avatar" />}
+                  <span className="player-ownership-team">{ownershipInfo.teamName}</span>
+                </>
+              ) : (
+                <span className="player-ownership-free-agent">Free Agent</span>
+              )}
             </div>
           )}
         </div>
-        
-        {!isMobile && (
-          <div className="player-ownership-info">
-            {ownershipInfo ? (
-              <>
-                {ownershipInfo.avatar && <img src={ownershipInfo.avatar} alt={ownershipInfo.teamName} className="player-ownership-avatar" />}
-                <span className="player-ownership-team">{ownershipInfo.teamName}</span>
-              </>
-            ) : (
-              <span className="player-ownership-free-agent">Free Agent</span>
-            )}
-          </div>
-        )}
-      </div>
+      )}
 
-      {loading || loadingStats ? (
+      {isUpcomingRookie ? (
+        <div className="info-banner">
+          <span>{name} is an incoming {CURRENT_YEAR} rookie and hasn't played an NFL game yet.</span>
+        </div>
+      ) : loading || loadingStats ? (
         <div style={{ padding: '20px' }}>
           <LoadingState label="Loading scores…" />
         </div>

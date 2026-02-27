@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchTrendingPlayers } from '../lookups/TrendingLookup';
-import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { getPlayerInfo, fetchPlayerIdMap, isRookie } from '../lookups/PlayerLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from './PlayerWeeklyScores';
@@ -19,6 +19,7 @@ function PlayerSearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [rookiesOnly, setRookiesOnly] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -51,38 +52,55 @@ function PlayerSearch() {
 
   const getFilteredPlayers = () => {
     if (!trendingData || !playersData) return [];
-    
-    // If no search query, show top trending players
+
+    // Rookies-only mode with no search query: show all rookies sorted by search_rank
+    if (rookiesOnly && !searchQuery.trim()) {
+      const rookieMatches = [];
+      for (const playerId in playersData) {
+        const player = playersData[playerId];
+        if (isRookie(player)) {
+          const playerInfo = getPlayerInfo(playerId, playersData, playerIdMap);
+          if (playerInfo) rookieMatches.push(playerInfo);
+        }
+      }
+      rookieMatches.sort((a, b) => {
+        const ra = a.search_rank === 9999999 ? Infinity : (a.search_rank ?? Infinity);
+        const rb = b.search_rank === 9999999 ? Infinity : (b.search_rank ?? Infinity);
+        return ra - rb;
+      });
+      return rookieMatches.slice(0, 20);
+    }
+
+    // If no search query, show top trending players (optionally filtered to rookies)
     if (!searchQuery.trim()) {
       return trendingData.slice(0, 10).map(item => {
         const playerInfo = getPlayerInfo(item.player_id, playersData, playerIdMap);
-        // Don't override player_id - it's already correct from getPlayerInfo
         return playerInfo ? { ...playerInfo, count: item.count } : null;
       }).filter(Boolean);
     }
-    
-    // Filter all players by search query
+
+    // Filter all players by search query (and optionally by rookie status)
     const query = searchQuery.toLowerCase();
     const allPlayerMatches = [];
-    
+
     for (const playerId in playersData) {
       const player = playersData[playerId];
+      if (rookiesOnly && !isRookie(player)) continue;
+
       const firstName = (player.first_name || '').toLowerCase();
       const lastName = (player.last_name || '').toLowerCase();
       const fullName = (player.full_name || '').toLowerCase();
-      
+
       if (firstName.includes(query) || lastName.includes(query) || fullName.includes(query)) {
         const playerInfo = getPlayerInfo(playerId, playersData, playerIdMap);
         if (playerInfo) {
-          // Don't override player_id - it's already correct from getPlayerInfo
           allPlayerMatches.push(playerInfo);
         }
       }
-      
-      // Limit results
+
       if (allPlayerMatches.length >= 20) break;
     }
-    
+
     return allPlayerMatches;
   };
 
@@ -142,7 +160,7 @@ function PlayerSearch() {
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       {/* Search Bar */}
-      <div style={{ position: 'relative', marginBottom: '30px' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ position: 'relative', marginBottom: '12px' }} onClick={(e) => e.stopPropagation()}>
         <input
           type="text"
           value={searchQuery}
@@ -167,6 +185,30 @@ function PlayerSearch() {
           onMouseLeave={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
         />
         
+        {/* Rookies toggle */}
+        <div style={{ marginTop: '10px', marginBottom: '6px' }}>
+          <button
+            onClick={() => setRookiesOnly(v => !v)}
+            style={{
+              padding: '5px 14px',
+              fontSize: '13px',
+              fontWeight: '500',
+              borderRadius: '20px',
+              border: rookiesOnly
+                ? '1px solid #f5a623'
+                : '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: rookiesOnly
+                ? 'rgba(245, 166, 35, 0.15)'
+                : 'transparent',
+              color: rookiesOnly ? '#f5a623' : 'rgba(255, 255, 255, 0.5)',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            Rookies only
+          </button>
+        </div>
+
         {/* Dropdown */}
         {showDropdown && filteredPlayers.length > 0 && (
           <div style={{
@@ -192,7 +234,7 @@ function PlayerSearch() {
                 letterSpacing: '0.5px',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
               }}>
-                Trending Players
+                {rookiesOnly ? 'Rookies' : 'Trending Players'}
               </div>
             )}
             {filteredPlayers.map((player) => (
@@ -229,6 +271,20 @@ function PlayerSearch() {
                     {(player.team || player.team_abbr) && (player.team || player.team_abbr)}
                   </div>
                 </div>
+                {isRookie(player) && (
+                  <div style={{
+                    padding: '2px 7px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(245, 166, 35, 0.15)',
+                    color: '#f5a623',
+                    border: '1px solid rgba(245, 166, 35, 0.3)',
+                    letterSpacing: '0.3px',
+                  }}>
+                    R
+                  </div>
+                )}
                 {player.count && (
                   <div style={{ 
                     color: '#1db954', 

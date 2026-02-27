@@ -204,7 +204,7 @@ export const PLAYER_DB_COLUMNS = [
 ];
 
 export const DEFAULT_SORT_KEY = 'ktcValue';
-export const DEFAULT_SORT_DIR = 'desc';
+export const DEFAULT_SORT_DIR = 'asc';
 
 /** Returns initial column visibility state based on defaultVisible flags. */
 export function getDefaultColumnVisibility() {

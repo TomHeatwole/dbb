@@ -69,11 +69,10 @@ function PlayerDBPage() {
 
   const handleSort = useCallback((key) => {
     if (key === sortKey) {
-      setSortDir(d => (d === 'desc' ? 'asc' : 'desc'));
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
     } else {
-      const isAlpha = key === 'name' || key === 'position' || key === 'nflTeam' || key === 'fantasyTeamName';
       setSortKey(key);
-      setSortDir(isAlpha ? 'asc' : 'desc');
+      setSortDir('asc');
     }
   }, [sortKey]);
 

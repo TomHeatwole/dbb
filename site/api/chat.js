@@ -210,6 +210,7 @@ async function executeTool(name, args) {
       default: return `Unknown tool: ${name}`;
     }
   } catch (err) {
+    console.error(`[executeTool] ${name} failed:`, err);
     return `Tool error (${name}): ${err.message}`;
   }
 }
