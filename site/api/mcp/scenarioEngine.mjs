@@ -16,7 +16,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { STARTER_POSITION_NAMES, DATA_DIR } from './config.js';
+import { STARTER_POSITION_NAMES, DATA_DIR } from './config.mjs';
 
 const NUM_WEEKS      = 17;
 const REG_SEASON_END = 14; // last regular season week (1-indexed, inclusive)

@@ -1,17 +1,17 @@
-import { CURRENT_YEAR, SITE_BASE_URL } from './config.js';
+import { CURRENT_YEAR, SITE_BASE_URL } from './config.mjs';
 import {
   fetchRosters, fetchUsers, fetchMatchups, fetchTransactions,
   fetchTrendingPlayers, fetchAllWeekScores,
-} from './sleeperApi.js';
+} from './sleeperApi.mjs';
 import {
   loadPlayersData, loadKtcData, loadFantasyCalcData, loadFfbData,
   findPlayerByName,
-} from './dataLoader.js';
+} from './dataLoader.mjs';
 import {
   getCurrentNFLWeek, getCompletedWeeksCount, normalisePlayerName,
   buildTeamMap, getPlayerDisplayName, lookupKtc, fmt, fmtDate, findTeam,
-} from './helpers.js';
-import { runScenarioEval } from './scenarioEngine.js';
+} from './helpers.mjs';
+import { runScenarioEval } from './scenarioEngine.mjs';
 
 // ── Link helpers ─────────────────────────────────────────────────────────────
 
@@ -654,44 +654,46 @@ export async function getFreeAgents(position) {
     Promise.resolve(loadPlayersData()),
   ]);
 
-  // Build set of all rostered player IDs
+  // Build set of all rostered player IDs — checked by ID only, no name matching
   const rostered = new Set();
   for (const r of rosters) {
     for (const pid of r.players || []) rostered.add(pid);
   }
 
-  const { map: ktcMap }       = loadKtcData();
-  const { bySleeperId: fcById } = loadFantasyCalcData();
+  const { map: ktcMap }                      = loadKtcData();
+  const { bySleeperId: fcById, byName: fcByName } = loadFantasyCalcData();
 
-  // Collect all players with meaningful KTC values who are not rostered
+  // Iterate from Sleeper's player universe so roster membership is a pure ID check.
+  // Name matching is only used for value enrichment (KTC/FC lookup), where a miss
+  // is a benign false negative — never a false positive rostered player slipping through.
   const freeAgents = [];
-  const { map: ktcFull } = loadKtcData();
 
-  for (const [normName, ktcEntry] of ktcFull) {
-    if ((ktcEntry.ktcValue_tep || 0) < 1000) continue; // skip low-value players
-    if (position && ktcEntry.position?.toUpperCase() !== position.toUpperCase()) continue;
+  for (const [pid, player] of Object.entries(playersData)) {
+    const pos = (player.position || '').toUpperCase();
+    if (!['QB', 'RB', 'WR', 'TE', 'K'].includes(pos)) continue;
+    if (position && pos !== position.toUpperCase()) continue;
 
-    // Find the sleeper ID for this player
-    let sleeperId = null;
-    for (const [pid, p] of Object.entries(playersData)) {
-      if (normalisePlayerName(getPlayerDisplayName(p)) === normName) {
-        sleeperId = pid;
-        break;
-      }
-    }
+    // Pure ID-based roster check — completely independent of name normalisation
+    if (rostered.has(pid)) continue;
 
-    if (sleeperId && !rostered.has(sleeperId)) {
-      const fc = fcById.get(sleeperId);
-      freeAgents.push({
-        name:     ktcEntry.name,
-        position: ktcEntry.position,
-        nflTeam:  ktcEntry.nflTeam,
-        ktcValue: ktcEntry.ktcValue_tep,
-        ktcRank:  ktcEntry.rank_tep,
-        fcValue:  fc?.value || null,
-        age:      fc?.age   || null,
-      });
-    }
+    // Enrich with KTC value via name lookup
+    const displayName = getPlayerDisplayName(player);
+    const normName    = normalisePlayerName(displayName);
+    const ktc         = ktcMap.get(normName);
+    if (!ktc || (ktc.ktcValue_tep || 0) < 1000) continue;
+
+    // Prefer Sleeper ID for FC lookup, fall back to name
+    const fc = fcById.get(pid) || fcByName.get(normName);
+
+    freeAgents.push({
+      name:     ktc.name,
+      position: ktc.position || pos,
+      nflTeam:  ktc.nflTeam  || player.team || 'FA',
+      ktcValue: ktc.ktcValue_tep,
+      ktcRank:  ktc.rank_tep,
+      fcValue:  fc?.value || null,
+      age:      fc?.age   || null,
+    });
   }
 
   freeAgents.sort((a, b) => (b.ktcValue || 0) - (a.ktcValue || 0));

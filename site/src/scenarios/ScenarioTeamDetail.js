@@ -254,6 +254,90 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
   );
 }
 
+// ── Position impact summary table ─────────────────────────────────────────────
+
+function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, rosterId }) {
+  const rows = useMemo(() => {
+    const origWeeks = (originalWeeklyScores || {})[rosterId] || [];
+    const scenWeeks = (scenarioWeeklyScores || {})[rosterId] || [];
+    const impactMap = {};
+
+    for (let wi = 0; wi < 17; wi++) {
+      const origStarters = origWeeks[wi]?.starters || [];
+      const scenStarters = scenWeeks[wi]?.starters || [];
+      scenStarters.forEach((p, i) => {
+        const slot = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
+        if (!impactMap[slot]) impactMap[slot] = { scen: 0, orig: 0, idx: i };
+        impactMap[slot].scen += p.pts || 0;
+        impactMap[slot].orig += origStarters[i]?.pts || 0;
+      });
+    }
+
+    return Object.entries(impactMap)
+      .sort(([, a], [, b]) => a.idx - b.idx)
+      .map(([pos, { scen, orig }]) => ({
+        pos,
+        scenTotal: scen,
+        origTotal: orig,
+        delta: scen - orig,
+      }));
+  }, [rosterId, originalWeeklyScores, scenarioWeeklyScores]);
+
+  const anyDelta = rows.some((r) => Math.abs(r.delta) >= 0.05);
+  if (!anyDelta && rows.length === 0) return null;
+
+  const totalScen = rows.reduce((s, r) => s + r.scenTotal, 0);
+  const totalOrig = rows.reduce((s, r) => s + r.origTotal, 0);
+  const totalDelta = totalScen - totalOrig;
+
+  return (
+    <div className="scenario-pos-impact">
+      <table className="scenario-pos-impact-tbl">
+        <thead>
+          <tr>
+            <th className="scenario-pos-impact-th scenario-pos-impact-th--pos">Pos</th>
+            <th className="scenario-pos-impact-th scenario-pos-impact-th--num">Original</th>
+            <th className="scenario-pos-impact-th scenario-pos-impact-th--num">Scenario</th>
+            <th className="scenario-pos-impact-th scenario-pos-impact-th--num">Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ pos, scenTotal, origTotal, delta }) => (
+            <tr key={pos} className="scenario-pos-impact-row">
+              <td className="scenario-pos-impact-pos">{pos}</td>
+              <td className="scenario-pos-impact-num scenario-pos-impact-num--muted">{origTotal.toFixed(1)}</td>
+              <td className="scenario-pos-impact-num">{scenTotal.toFixed(1)}</td>
+              <td className="scenario-pos-impact-num">
+                {Math.abs(delta) < 0.05
+                  ? <span className="scenario-pos-impact-neutral">—</span>
+                  : <span className={delta > 0 ? 'scenario-pos-impact-delta--pos' : 'scenario-pos-impact-delta--neg'}>
+                      {delta > 0 ? '+' : ''}{delta.toFixed(1)}
+                    </span>
+                }
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="scenario-pos-impact-total-row">
+            <td className="scenario-pos-impact-pos scenario-pos-impact-pos--total">Total</td>
+            <td className="scenario-pos-impact-num scenario-pos-impact-num--muted">{totalOrig.toFixed(1)}</td>
+            <td className="scenario-pos-impact-num">{totalScen.toFixed(1)}</td>
+            <td className="scenario-pos-impact-num">
+              {Math.abs(totalDelta) < 0.05
+                ? <span className="scenario-pos-impact-neutral">—</span>
+                : <span className={totalDelta > 0 ? 'scenario-pos-impact-delta--pos' : 'scenario-pos-impact-delta--neg'}>
+                    {totalDelta > 0 ? '+' : ''}{totalDelta.toFixed(1)}
+                  </span>
+              }
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 /**
@@ -388,6 +472,19 @@ function ScenarioTeamDetail({ rosterId, teamsForGrid, originalWeeklyScores, scen
           playersData={playersData}
           playerIdMap={playerIdMap}
           onPlayerClick={setSelectedPlayer}
+        />
+      </div>
+
+      {/* ── Delta by position ── */}
+      <div className="scenario-team-detail-section">
+        <div className="scenario-team-detail-section-title">Delta by Position</div>
+        <div className="scenario-team-detail-section-subtitle">
+          Season-long point totals per lineup slot — original vs scenario
+        </div>
+        <PositionImpactTable
+          originalWeeklyScores={originalWeeklyScores}
+          scenarioWeeklyScores={scenarioWeeklyScores}
+          rosterId={rosterId}
         />
       </div>
       {selectedPlayer && createPortal(

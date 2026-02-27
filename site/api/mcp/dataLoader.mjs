@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { DATA_DIR } from './config.js';
-import { normalisePlayerName } from './helpers.js';
+import { DATA_DIR } from './config.mjs';
+import { normalisePlayerName } from './helpers.mjs';
 
 // All data is loaded once from disk and held in memory.
 

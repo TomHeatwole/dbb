@@ -1,4 +1,4 @@
-import { CURRENT_YEAR, SEASON_START_DAY } from './config.js';
+import { CURRENT_YEAR, SEASON_START_DAY } from './config.mjs';
 
 // ─── Date / Week helpers ──────────────────────────────────────────────────────
 

@@ -25,8 +25,15 @@ function ChatMessage({ message }) {
       {!isUser && (
         <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
       )}
-      <div className={`hwang-ai-bubble ${isUser ? 'hwang-ai-bubble--user' : 'hwang-ai-bubble--ai'}`}>
-        {isUser ? message.content : <ReactMarkdown>{message.content}</ReactMarkdown>}
+      <div className="hwang-ai-message-body">
+        <div className={`hwang-ai-bubble ${isUser ? 'hwang-ai-bubble--user' : 'hwang-ai-bubble--ai'}`}>
+          {isUser ? message.content : <ReactMarkdown>{message.content}</ReactMarkdown>}
+        </div>
+        {message.grounded && (
+          <div className="hwang-ai-web-badge">
+            🌐 Searched the web
+          </div>
+        )}
       </div>
     </div>
   );
@@ -74,7 +81,12 @@ function HwangAIPage() {
       }
 
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.message,
+        grounded: data.grounded || false,
+        searchQueries: data.searchQueries || [],
+      }]);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {

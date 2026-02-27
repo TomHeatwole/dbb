@@ -4,7 +4,7 @@ import {
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
   runScenario,
-} from './mcp/tools.js';
+} from './mcp/tools.mjs';
 
 const GEMINI_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`;
@@ -140,7 +140,7 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'get_free_agents',
-    description: "Get notable free agents not on any roster, sorted by KTC dynasty value.",
+    description: "Get players not on any roster in the Hwang Dynasty league, sorted by KTC dynasty value. MUST be called before making ANY claim about whether a player is a free agent — never infer free agent status from training data or rankings.",
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -297,7 +297,9 @@ export default async function handler(req, res) {
   }));
 
   const requestBase = {
-    tools: [{ functionDeclarations: TOOL_DECLARATIONS }],
+    tools: [
+      { functionDeclarations: TOOL_DECLARATIONS },
+    ],
     ...(systemPrompt ? { systemInstruction: { parts: [{ text: systemPrompt }] } } : {}),
   };
 
@@ -328,7 +330,9 @@ export default async function handler(req, res) {
       if (sideResult) {
         text += `\n\n---\n\n${sideResult}`;
       }
-      return res.status(200).json({ message: text });
+      const groundingMetadata = candidate?.groundingMetadata;
+      const searchQueries = groundingMetadata?.webSearchQueries || [];
+      return res.status(200).json({ message: text, grounded: searchQueries.length > 0, searchQueries });
     }
 
     // Execute all requested tools (potentially in parallel)
@@ -358,5 +362,5 @@ export default async function handler(req, res) {
   if (sideResult) {
     fallback += `\n\n---\n\n${sideResult}`;
   }
-  return res.status(200).json({ message: fallback });
+  return res.status(200).json({ message: fallback, grounded: false, searchQueries: [] });
 }

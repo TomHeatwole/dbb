@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/chat.js": {
+    "api/chat.mjs": {
       "includeFiles": "public/data/**",
       "maxDuration": 60
     }

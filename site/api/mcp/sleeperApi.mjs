@@ -1,5 +1,5 @@
-import { CURRENT_YEAR, getLeagueIdForSeason } from './config.js';
-import { getCurrentNFLWeek } from './helpers.js';
+import { CURRENT_YEAR, getLeagueIdForSeason } from './config.mjs';
+import { getCurrentNFLWeek } from './helpers.mjs';
 
 const BASE = 'https://api.sleeper.app/v1';
 

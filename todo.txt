@@ -38,6 +38,7 @@ Scenarios:
 - HwangAI
   - Improve understanding of how league works.
   - expose a lot more data
+  - Home card!
 
 - Trades
   - Trade view should Show exact pick for 2026 and earlier? I guess depending on the time of the trade

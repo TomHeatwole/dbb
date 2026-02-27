@@ -48,7 +48,7 @@ const server = http.createServer(async (req, res) => {
       try {
         // Dynamic import so ESM api/chat.js works from this CommonJS file.
         // Cache-bust with timestamp so server restart isn't needed during dev.
-        const { default: handler } = await import(`./api/chat.js?v=${Date.now()}`);
+        const { default: handler } = await import(`./api/chat.mjs?v=${Date.now()}`);
         await handler(req, res);
       } catch (err) {
         // eslint-disable-next-line no-console

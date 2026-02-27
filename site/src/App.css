@@ -7369,6 +7369,84 @@ body.modal-open {
 .scenario-chart-tooltip-delta--pos { color: #1db954; }
 .scenario-chart-tooltip-delta--neg { color: #ff6b6b; }
 
+/* ── Position impact summary table ── */
+
+.scenario-pos-impact {
+  margin-bottom: 1rem;
+  border-radius: 0.45rem;
+  overflow: hidden;
+  border: 1px solid rgba(90, 90, 140, 0.2);
+}
+
+.scenario-pos-impact-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.scenario-pos-impact-th {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(130, 135, 180, 0.6);
+  background: rgba(20, 18, 45, 0.6);
+  border-bottom: 1px solid rgba(90, 90, 140, 0.2);
+}
+
+.scenario-pos-impact-th--pos { text-align: left; }
+.scenario-pos-impact-th--num { text-align: right; }
+
+.scenario-pos-impact-row {
+  border-bottom: 1px solid rgba(80, 80, 120, 0.1);
+}
+
+.scenario-pos-impact-row:last-child {
+  border-bottom: none;
+}
+
+.scenario-pos-impact-pos {
+  padding: 0.3rem 0.6rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: rgba(180, 185, 230, 0.75);
+  letter-spacing: 0.03em;
+  text-align: left;
+}
+
+.scenario-pos-impact-pos--total {
+  color: rgba(200, 205, 245, 0.9);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.scenario-pos-impact-num {
+  padding: 0.3rem 0.6rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: rgba(200, 205, 245, 0.88);
+}
+
+.scenario-pos-impact-num--muted {
+  color: rgba(140, 145, 190, 0.5);
+}
+
+.scenario-pos-impact-pos--total,
+.scenario-pos-impact-total-row .scenario-pos-impact-num {
+  font-weight: 700;
+}
+
+.scenario-pos-impact-total-row {
+  border-top: 1px solid rgba(100, 100, 150, 0.25);
+  background: rgba(20, 18, 45, 0.4);
+}
+
+.scenario-pos-impact-delta--pos  { color: #5dd97c; }
+.scenario-pos-impact-delta--neg  { color: #ff7070; }
+.scenario-pos-impact-neutral { color: rgba(130, 135, 180, 0.45); }
+
 /* ── Weekly lineup table (ScenarioWeekTable) ── */
 
 .scenario-week-selector-wrap {
@@ -9200,6 +9278,22 @@ body.modal-open {
   align-items: flex-end;
   gap: 0.6rem;
   max-width: 78%;
+}
+
+.hwang-ai-message-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.hwang-ai-web-badge {
+  font-size: 0.72rem;
+  color: rgba(97, 218, 251, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.25rem;
+  letter-spacing: 0.01em;
 }
 
 .hwang-ai-message--user {
