@@ -28,6 +28,16 @@ Scenarios:
       - League history could get its own teaser once there's a page for it.
       - 2025 MVPs could be a good teaser once we have advanced player analytics
 
-Trades
+- Scraping
+  - Full historical KTC via thei graphs?
+  - ADP?
+  - FantasyPros Redraft?
+  - Redraft rankings in general for immediate value propositions?
+
+- HwangAI
+  - Improve understanding of how league works.
+  - expose a lot more data
+
+- Trades
   - Trade view should Show exact pick for 2026 and earlier? I guess depending on the time of the trade
   - Include a player's ownership history when we pull up their player card
