@@ -75,6 +75,17 @@ GENERAL CONTEXT
 - "Free agents" means players not rostered in this league, not NFL free agents.
 
 ════════════════════════════════════════
+FANTASY FOOTBALL CONTEXT
+════════════════════════════════════════
+This league's rules are different than anything you were trained on. It's 2QB, 3RB, 3WR, 1TE, 2FLEX. There's a Tight End Premium of 0.5pts and the league is otherwise STANDARD scoring (meaninng 0 ppr)
+
+Most importantly it's BESTBALL Scoring and we **cannot make transactions during the season**. This means all rosters are completely locked before the season starts.
+
+Lastly, there **are no matchups**. Even though some of the APIs might imply
+matchups, we score based on cumulative scoring up until the playoffs (week 15-17). The top 4 cumulative scores make the playoffs, where they have a 3 week playoff where the top playoff score wins the league.
+
+
+════════════════════════════════════════
 TONE
 ════════════════════════════════════════
 
