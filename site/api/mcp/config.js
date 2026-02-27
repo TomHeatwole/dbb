@@ -1,4 +1,5 @@
 import { join } from 'path';
+import { existsSync } from 'fs';
 
 let settings = {};
 const raw = process.env.REACT_APP_SITE_SETTINGS || process.env.SITE_SETTINGS;
@@ -21,8 +22,15 @@ export const SEASON_START_DAY = settings.SEASON_START_DAY || settings.SEASON_STA
 
 export const SITE_BASE_URL = (process.env.SITE_BASE_URL || 'https://www.hwangdynasty.com').replace(/\/$/, '');
 
-export const DATA_DIR =
-  process.env.DATA_DIR || join(process.cwd(), 'public', 'data');
+function resolveDataDir() {
+  if (process.env.DATA_DIR) return process.env.DATA_DIR;
+  const candidates = [
+    join(process.cwd(), 'public', 'data'),
+    join(process.cwd(), 'site', 'public', 'data'),
+  ];
+  return candidates.find(existsSync) ?? candidates[0];
+}
+export const DATA_DIR = resolveDataDir();
 
 function deriveCurrentYear() {
   const prevYears = Object.keys(PREVIOUS_YEARS)
