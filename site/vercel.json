@@ -3,6 +3,9 @@
     "api/chat.mjs": {
       "includeFiles": "public/data/**",
       "maxDuration": 60
+    },
+    "api/search.mjs": {
+      "maxDuration": 30
     }
   }
 }

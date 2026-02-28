@@ -7342,7 +7342,7 @@ body.modal-open {
   flex-shrink: 0;
 }
 
-.scenario-chart-tooltip-dot--original { background: rgba(140, 160, 220, 0.75); }
+.scenario-chart-tooltip-dot--original { background: transparent; border: 1.5px solid rgba(140, 160, 220, 0.75); }
 .scenario-chart-tooltip-dot--scenario { background: #7c9cff; }
 
 .scenario-chart-tooltip-label {
@@ -7369,6 +7369,17 @@ body.modal-open {
 .scenario-chart-tooltip-delta--pos { color: #1db954; }
 .scenario-chart-tooltip-delta--neg { color: #ff6b6b; }
 
+.scenario-chart-tooltip-player-change {
+  font-size: 0.68rem;
+  color: rgba(180, 150, 80, 0.8);
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(100, 100, 140, 0.2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
 /* ── Position impact summary table ── */
 
 .scenario-pos-impact {
@@ -7378,15 +7389,47 @@ body.modal-open {
   border: 1px solid rgba(90, 90, 140, 0.2);
 }
 
+.scenario-pos-impact-range-toggle {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 0.6rem 0.4rem;
+  border-bottom: 1px solid rgba(90, 90, 140, 0.2);
+}
+
+.scenario-pos-impact-range-btn {
+  flex: 1;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(90, 90, 140, 0.25);
+  background: transparent;
+  color: rgba(150, 155, 210, 0.6);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.scenario-pos-impact-range-btn:hover {
+  background: rgba(100, 110, 180, 0.1);
+  color: rgba(180, 185, 230, 0.85);
+}
+
+.scenario-pos-impact-range-btn--active {
+  background: rgba(100, 110, 200, 0.18);
+  color: rgba(200, 210, 255, 0.95);
+  border-color: rgba(120, 130, 210, 0.45);
+}
+
 .scenario-pos-impact-tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.9rem;
 }
 
 .scenario-pos-impact-th {
   padding: 0.35rem 0.6rem;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -7407,9 +7450,8 @@ body.modal-open {
 }
 
 .scenario-pos-impact-pos {
-  padding: 0.3rem 0.6rem;
+  padding: 0.45rem 0.6rem;
   font-weight: 700;
-  font-size: 0.75rem;
   color: rgba(180, 185, 230, 0.75);
   letter-spacing: 0.03em;
   text-align: left;
@@ -7417,13 +7459,12 @@ body.modal-open {
 
 .scenario-pos-impact-pos--total {
   color: rgba(200, 205, 245, 0.9);
-  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .scenario-pos-impact-num {
-  padding: 0.3rem 0.6rem;
+  padding: 0.45rem 0.6rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: rgba(200, 205, 245, 0.88);
@@ -7446,6 +7487,48 @@ body.modal-open {
 .scenario-pos-impact-delta--pos  { color: #5dd97c; }
 .scenario-pos-impact-delta--neg  { color: #ff7070; }
 .scenario-pos-impact-neutral { color: rgba(130, 135, 180, 0.45); }
+
+.scenario-pos-impact-row--clickable {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.scenario-pos-impact-row--clickable:hover {
+  background: rgba(100, 110, 180, 0.08);
+}
+
+.scenario-pos-impact-row--expanded {
+  background: rgba(80, 90, 160, 0.1);
+}
+
+.scenario-pos-impact-chevron {
+  display: inline-block;
+  font-size: 0.55em;
+  color: rgba(130, 135, 190, 0.45);
+  margin-right: 0.45em;
+  transition: transform 0.15s ease;
+  transform: rotate(0deg);
+  vertical-align: middle;
+}
+
+.scenario-pos-impact-chevron--open {
+  transform: rotate(90deg);
+  color: rgba(160, 170, 230, 0.7);
+}
+
+.scenario-pos-impact-chart-row td {
+  padding: 0;
+}
+
+.scenario-pos-impact-chart-cell {
+  padding: 0.25rem 0.4rem 0.6rem !important;
+  background: rgba(12, 10, 28, 0.5);
+  border-bottom: 1px solid rgba(80, 80, 120, 0.15);
+}
+
+.scenario-pos-impact-chart {
+  padding-top: 0.25rem;
+}
 
 /* ── Weekly lineup table (ScenarioWeekTable) ── */
 
@@ -9294,6 +9377,32 @@ body.modal-open {
   gap: 0.25rem;
   padding: 0 0.25rem;
   letter-spacing: 0.01em;
+}
+
+.hwang-ai-bubble--searching {
+  background: rgba(97, 218, 251, 0.06);
+  border: 1px solid rgba(97, 218, 251, 0.18);
+  color: rgba(97, 218, 251, 0.65);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  border-bottom-left-radius: 0.25rem;
+}
+
+.hwang-ai-searching-globe {
+  display: inline-block;
+  animation: hwang-ai-globe-pulse 1.6s ease-in-out infinite;
+}
+
+.hwang-ai-searching-text {
+  opacity: 0.85;
+}
+
+@keyframes hwang-ai-globe-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
 }
 
 .hwang-ai-message--user {

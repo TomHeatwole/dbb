@@ -34,7 +34,13 @@ function shimResponse(res) {
 const server = http.createServer(async (req, res) => {
   shimResponse(res);
 
-  if (req.method === 'POST' && req.url === '/api/chat') {
+  const apiHandlers = {
+    '/api/chat':   'chat',
+    '/api/search': 'search',
+  };
+  const handlerName = apiHandlers[req.url];
+
+  if (req.method === 'POST' && handlerName) {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
@@ -46,9 +52,9 @@ const server = http.createServer(async (req, res) => {
       }
 
       try {
-        // Dynamic import so ESM api/chat.js works from this CommonJS file.
+        // Dynamic import so ESM handlers work from this CommonJS file.
         // Cache-bust with timestamp so server restart isn't needed during dev.
-        const { default: handler } = await import(`./api/chat.mjs?v=${Date.now()}`);
+        const { default: handler } = await import(`./api/${handlerName}.mjs?v=${Date.now()}`);
         await handler(req, res);
       } catch (err) {
         // eslint-disable-next-line no-console

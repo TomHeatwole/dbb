@@ -9,6 +9,29 @@ let playersCache = null;
 let ktcCache = null;
 let fcCache = null;
 let ffbCache = null;
+const statsCache = {}; // keyed by season year string
+
+// ─── CSV helpers ──────────────────────────────────────────────────────────────
+// Handles quoted fields (e.g. headshot URLs containing commas).
+
+function parseCSVRow(line) {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      values.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  values.push(current);
+  return values;
+}
 
 // ─── players.txt ─────────────────────────────────────────────────────────────
 // Large JSON mapping sleeperId -> player object from the Sleeper API snapshot.
@@ -150,6 +173,39 @@ export function loadFfbData() {
 
   ffbCache = { bySleeperId, byName };
   return ffbCache;
+}
+
+// ─── stats_player_reg_{season}.csv ───────────────────────────────────────────
+// Season totals from nflreadr/nflfastR. One row per player per season.
+// Returns Map<normalizedDisplayName, statsRow> or null if file not found.
+
+export function loadSeasonStats(season) {
+  const yr = String(season);
+  if (statsCache[yr]) return statsCache[yr];
+
+  let text;
+  try {
+    text = readFileSync(join(DATA_DIR, `stats_player_reg_${yr}.csv`), 'utf8');
+  } catch {
+    return null; // season data not available
+  }
+
+  const lines = text.trim().split('\n').map((l) => l.replace(/\r$/, ''));
+  if (lines.length < 2) return null;
+
+  const headers = parseCSVRow(lines[0]);
+  const byNorm = new Map();
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVRow(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cols[idx] ?? ''; });
+    const norm = normalisePlayerName(row.player_display_name || '');
+    if (norm) byNorm.set(norm, row);
+  }
+
+  statsCache[yr] = byNorm;
+  return byNorm;
 }
 
 // ─── Player search helper ─────────────────────────────────────────────────────

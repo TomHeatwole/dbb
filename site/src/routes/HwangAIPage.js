@@ -18,8 +18,25 @@ function TypingDots() {
 
 const LOGO = '/data/hwangai.png';
 
+function SearchingBubble() {
+  return (
+    <div className="hwang-ai-message hwang-ai-message--ai">
+      <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
+      <div className="hwang-ai-bubble hwang-ai-bubble--searching">
+        <span className="hwang-ai-searching-globe">🌐</span>
+        <span className="hwang-ai-searching-text">Searching the web…</span>
+      </div>
+    </div>
+  );
+}
+
 function ChatMessage({ message }) {
   const isUser = message.role === 'user';
+
+  if (message.searching) {
+    return <SearchingBubble />;
+  }
+
   return (
     <div className={`hwang-ai-message ${isUser ? 'hwang-ai-message--user' : 'hwang-ai-message--ai'}`}>
       {!isUser && (
@@ -43,6 +60,7 @@ function HwangAIPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
   const [systemPrompt, setSystemPrompt] = useState('');
   const messagesEndRef = useRef(null);
@@ -61,7 +79,7 @@ function HwangAIPage() {
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || searching) return;
 
     const newMessages = [...messages, { role: 'user', content: text }];
     setMessages(newMessages);
@@ -69,28 +87,66 @@ function HwangAIPage() {
     setLoading(true);
     setError(null);
 
+    // Phase 1: main chat with league tools
+    let phase1Data = null;
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages, systemPrompt }),
       });
-
-      if (!res.ok) {
-        throw new Error(`Request failed: ${res.status}`);
-      }
-
-      const data = await res.json();
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      phase1Data = await res.json();
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.message,
-        grounded: data.grounded || false,
-        searchQueries: data.searchQueries || [],
+        content: phase1Data.message,
       }]);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
+      inputRef.current?.focus();
+    }
+
+    if (!phase1Data?.needsSearch) return;
+
+    // Phase 2: web search — input stays blocked via `searching` state
+    setSearching(true);
+    setMessages(prev => [...prev, { role: 'assistant', searching: true }]);
+
+    try {
+      const searchRes = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastIdx = updated.length - 1;
+          if (updated[lastIdx]?.searching) {
+            updated[lastIdx] = {
+              role: 'assistant',
+              content: searchData.message,
+              grounded: true,
+              searchQueries: searchData.searchQueries || [],
+            };
+          }
+          return updated;
+        });
+      } else {
+        // Search failed — silently drop the searching bubble
+        setMessages(prev =>
+          prev[prev.length - 1]?.searching ? prev.slice(0, -1) : prev
+        );
+      }
+    } catch {
+      setMessages(prev =>
+        prev[prev.length - 1]?.searching ? prev.slice(0, -1) : prev
+      );
+    } finally {
+      setSearching(false);
       inputRef.current?.focus();
     }
   }
@@ -152,12 +208,12 @@ function HwangAIPage() {
               onKeyDown={handleKeyDown}
               placeholder="Ask HwangAI…"
               rows={1}
-              disabled={loading}
+              disabled={loading || searching}
             />
             <button
               className="hwang-ai-send-btn"
               onClick={sendMessage}
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || searching}
               aria-label="Send message"
             >
               ↑

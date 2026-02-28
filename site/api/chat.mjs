@@ -3,7 +3,7 @@ import {
   searchPlayer, comparePlayers, evaluateTrade,
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
-  runScenario,
+  runScenario, getPlayerStats,
 } from './mcp/tools.mjs';
 
 const GEMINI_URL =
@@ -12,6 +12,46 @@ const GEMINI_FLASH_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
 const SIDE_QUERY_PROBABILITY = 0.25; // 1 in 4
+
+// ── Web-search intent detection ───────────────────────────────────────────────
+
+// Patterns on the USER'S QUESTION that signal a need for live web data.
+// This is the primary detection layer — independent of model phrasing.
+const QUESTION_SEARCH_PATTERNS = [
+  /\binjur(y|ied|ies)\b/i,
+  /\bhurt\b/i,
+  /\bsuspend(ed|sion)\b/i,
+  /\blatest (news|update|info|buzz|scoop)\b/i,
+  /\brecent (news|update|report)\b/i,
+  /\b(news|updates?) (about|on|for|regarding)\b/i,
+  /\bany news\b/i,
+  /\bwhat'?s (going on|happening|new) with\b/i,
+  /\bwhat happened to\b/i,
+  /\bdepth chart\b/i,
+  /\bcurrent status\b/i,
+  /\bnfl (news|transaction|move)\b/i,
+  /\bwaiv(ed|er release)\b/i,
+  /\b(cut|released) (by|from)\b/i,
+];
+
+function questionNeedsSearch(messages) {
+  const lastUser = [...messages].reverse().find(m => m.role === 'user');
+  const q = lastUser?.content || '';
+  return QUESTION_SEARCH_PATTERNS.some(re => re.test(q));
+}
+
+// Fallback patterns on the MODEL'S RESPONSE — catches cases the model
+// verbally signals search intent instead of using <!--search-->.
+const RESPONSE_SEARCH_PHRASES = [
+  /\blet me (check|search|look( that)? up|see|find|grab|pull up)\b/i,
+  /\bI'?ll (check|search|look|find|see|pull up)\b/i,
+  /\bhere'?s what'?s current\b/i,
+  /\bas for the (absolute )?(latest|current)\b/i,
+  /\bthe absolute latest\b/i,
+  /\bwhat'?s (out there|current)\b/i,
+  /\b(checking|searching|looking up) the (latest|current|most recent)\b/i,
+  /\blet me see what\b/i,
+];
 
 // ── Gemini tool declarations ──────────────────────────────────────────────────
 
@@ -74,6 +114,18 @@ const TOOL_DECLARATIONS = [
     parameters: {
       type: 'OBJECT',
       properties: { name: { type: 'STRING', description: 'Player name e.g. "Justin Jefferson"' } },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'get_player_stats',
+    description: "Get a player's NFL regular season stats (passing, rushing, receiving) and fantasy points for a given season. Data is available from 2005 through 2025. Fantasy points shown are standard 0-PPR scoring; TE stats also show TEP-adjusted totals. Use this whenever a user asks about a player's stats, production, or fantasy output in any past season.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        name:   { type: 'STRING',  description: 'Player full name e.g. "Justin Jefferson"' },
+        season: { type: 'INTEGER', description: 'NFL season year e.g. 2024, 2025. Omit to default to the most recent complete season.' },
+      },
       required: ['name'],
     },
   },
@@ -198,6 +250,7 @@ async function executeTool(name, args) {
       case 'get_roster':             return await getRoster(args.team, args.season);
       case 'get_team_scores':        return await getTeamScores(args.team, args.season);
       case 'search_player':          return await searchPlayer(args.name);
+      case 'get_player_stats':       return getPlayerStats(args.name, args.season);
       case 'compare_players':        return await comparePlayers(args.names);
       case 'evaluate_trade':         return await evaluateTrade(args.giving, args.receiving);
       case 'get_ktc_rankings':       return getKtcRankings(args.position, args.top_n);
@@ -326,13 +379,16 @@ export default async function handler(req, res) {
     if (functionCalls.length === 0) {
       // No tool calls — extract the text response and stitch side query if present
       let text = parts.find(p => p.text)?.text || '';
+      const needsSearch =
+        text.includes('<!--search-->') ||
+        RESPONSE_SEARCH_PHRASES.some(re => re.test(text)) ||
+        questionNeedsSearch(messages);
+      text = text.replace(/<!--search-->/g, '').trim();
       const sideResult = await sideQueryPromise;
       if (sideResult) {
         text += `\n\n---\n\n${sideResult}`;
       }
-      const groundingMetadata = candidate?.groundingMetadata;
-      const searchQueries = groundingMetadata?.webSearchQueries || [];
-      return res.status(200).json({ message: text, grounded: searchQueries.length > 0, searchQueries });
+      return res.status(200).json({ message: text, needsSearch });
     }
 
     // Execute all requested tools (potentially in parallel)
@@ -362,5 +418,5 @@ export default async function handler(req, res) {
   if (sideResult) {
     fallback += `\n\n---\n\n${sideResult}`;
   }
-  return res.status(200).json({ message: fallback, grounded: false, searchQueries: [] });
+  return res.status(200).json({ message: fallback, needsSearch: false });
 }

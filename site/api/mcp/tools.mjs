@@ -5,7 +5,7 @@ import {
 } from './sleeperApi.mjs';
 import {
   loadPlayersData, loadKtcData, loadFantasyCalcData, loadFfbData,
-  findPlayerByName,
+  findPlayerByName, loadSeasonStats,
 } from './dataLoader.mjs';
 import {
   getCurrentNFLWeek, getCompletedWeeksCount, normalisePlayerName,
@@ -641,6 +641,103 @@ export async function getTeamScores(teamQuery, season) {
   for (const r of rows) {
     const result = r.won ? '✅ W' : '❌ L';
     lines.push(`  Wk ${String(r.week).padStart(2)}: ${result} ${String(r.pts).padStart(6)} pts  vs  ${r.oppName} (${r.oppPts})`);
+  }
+
+  return lines.join('\n');
+}
+
+// ─── Player Season Stats ──────────────────────────────────────────────────────
+
+export function getPlayerStats(name, season) {
+  const result = findPlayerByName(name);
+  if (!result) {
+    return `Player "${name}" not found. Try a full name like "Justin Jefferson".`;
+  }
+
+  const { player } = result;
+  const displayName = getPlayerDisplayName(player);
+  const pos = (player.position || '').toUpperCase();
+
+  // Default to most recent complete season when none is specified
+  const yr = season ? String(season) : String(parseInt(CURRENT_YEAR) - 1);
+
+  const statsMap = loadSeasonStats(yr);
+  if (!statsMap) {
+    return `No stats data available for the ${yr} season.`;
+  }
+
+  // Try exact normalized match, then fall back to partial
+  const normDisplay = normalisePlayerName(displayName);
+  let statsRow = statsMap.get(normDisplay);
+
+  if (!statsRow) {
+    for (const [key, row] of statsMap) {
+      if (key.includes(normDisplay) || normDisplay.includes(key)) {
+        statsRow = row;
+        break;
+      }
+    }
+  }
+
+  if (!statsRow) {
+    return `No ${yr} regular season stats found for ${displayName}. They may not have played or recorded stats that season.`;
+  }
+
+  const gi = (col) => parseInt(statsRow[col])  || 0;
+  const gf = (col) => parseFloat(statsRow[col]) || 0;
+
+  const games   = gi('games');
+  const nflTeam = statsRow.recent_team || '?';
+  const fp      = gf('fantasy_points'); // standard 0-PPR scoring
+
+  const lines = [
+    `**${displayName}** — ${yr} NFL Regular Season Stats`,
+    `Position: ${pos} | Team: ${nflTeam} | Games Played: ${games}`,
+    '',
+  ];
+
+  if (pos === 'QB') {
+    const cmp  = gi('completions');
+    const att  = gi('attempts');
+    const pyds = gi('passing_yards');
+    const ptds = gi('passing_tds');
+    const ints = gi('passing_interceptions');
+    const cars = gi('carries');
+    const ryds = gi('rushing_yards');
+    const rtds = gi('rushing_tds');
+    const pct  = att > 0 ? ((cmp / att) * 100).toFixed(1) : '—';
+    lines.push(`**Passing:** ${cmp}/${att} (${pct}%), ${pyds.toLocaleString()} yds, ${ptds} TD, ${ints} INT`);
+    lines.push(`**Rushing:** ${cars} car, ${ryds} yds, ${rtds} TD`);
+  } else if (pos === 'RB') {
+    const cars   = gi('carries');
+    const ryds   = gi('rushing_yards');
+    const rtds   = gi('rushing_tds');
+    const rec    = gi('receptions');
+    const tgts   = gi('targets');
+    const rcvyds = gi('receiving_yards');
+    const rcvtds = gi('receiving_tds');
+    const ypc    = cars > 0 ? (ryds / cars).toFixed(1) : '—';
+    lines.push(`**Rushing:** ${cars} car, ${ryds} yds, ${rtds} TD (${ypc} YPC)`);
+    lines.push(`**Receiving:** ${rec} rec / ${tgts} tgt, ${rcvyds} yds, ${rcvtds} TD`);
+  } else if (pos === 'WR' || pos === 'TE') {
+    const rec    = gi('receptions');
+    const tgts   = gi('targets');
+    const rcvyds = gi('receiving_yards');
+    const rcvtds = gi('receiving_tds');
+    const tshare = gf('target_share');
+    lines.push(`**Receiving:** ${rec} rec / ${tgts} tgt, ${rcvyds} yds, ${rcvtds} TD`);
+    if (tshare > 0) lines.push(`Target share: ${(tshare * 100).toFixed(1)}%`);
+  }
+
+  lines.push('');
+
+  if (pos === 'TE') {
+    const tepPts = fp + gi('receptions') * 0.5;
+    lines.push(`**Fantasy Pts (0 PPR standard):** ${fp.toFixed(1)}  |  **With TEP (+0.5/rec):** ${tepPts.toFixed(1)}`);
+    if (games > 0) lines.push(`Per game (with TEP): ${(tepPts / games).toFixed(1)} pts/game`);
+  } else {
+    lines.push(`**Fantasy Pts (0 PPR standard):** ${fp.toFixed(1)}`);
+    if (games > 0) lines.push(`Per game: ${(fp / games).toFixed(1)} pts/game`);
   }
 
   return lines.join('\n');

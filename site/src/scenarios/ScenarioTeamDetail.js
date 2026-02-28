@@ -256,8 +256,118 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
 
 // ── Position impact summary table ─────────────────────────────────────────────
 
-function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, rosterId }) {
-  const rows = useMemo(() => {
+function SlotWeekTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+  const d = payload[0]?.payload || {};
+  const origVal = d.original || 0;
+  const scenVal = d.scenario || 0;
+  const delta = scenVal - origVal;
+  const playerChanged = d.originalPlayer && d.scenarioPlayer && d.originalPlayer !== d.scenarioPlayer;
+
+  return (
+    <div className="scenario-chart-tooltip">
+      <div className="scenario-chart-tooltip-week">{label}</div>
+      <div className="scenario-chart-tooltip-row">
+        <span className="scenario-chart-tooltip-dot scenario-chart-tooltip-dot--original" />
+        <span className="scenario-chart-tooltip-label">{d.originalPlayer || 'Original'}</span>
+        <span className="scenario-chart-tooltip-val">{origVal.toFixed(1)}</span>
+      </div>
+      <div className="scenario-chart-tooltip-row">
+        <span className="scenario-chart-tooltip-dot scenario-chart-tooltip-dot--scenario" />
+        <span className="scenario-chart-tooltip-label">{d.scenarioPlayer || 'Scenario'}</span>
+        <span className="scenario-chart-tooltip-val">{scenVal.toFixed(1)}</span>
+      </div>
+      {playerChanged && (
+        <div className="scenario-chart-tooltip-player-change">
+          swap
+        </div>
+      )}
+      {Math.abs(delta) >= 0.05 && (
+        <div className={`scenario-chart-tooltip-delta ${delta > 0 ? 'scenario-chart-tooltip-delta--pos' : 'scenario-chart-tooltip-delta--neg'}`}>
+          {delta > 0 ? '+' : ''}{delta.toFixed(1)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PositionSlotChart({ weekly, showPlayoffLine = true }) {
+  const { yMin, yMax } = useMemo(() => {
+    const vals = weekly.flatMap((d) => [d.original, d.scenario]).filter((v) => v > 0);
+    if (vals.length === 0) return { yMin: 0, yMax: 50 };
+    const rawMin = Math.min(...vals);
+    const rawMax = Math.max(...vals);
+    return {
+      yMin: Math.max(0, Math.floor((rawMin - 5) / 5) * 5),
+      yMax: Math.ceil((rawMax + 5) / 5) * 5,
+    };
+  }, [weekly]);
+
+  return (
+    <div className="scenario-pos-impact-chart">
+      <ResponsiveContainer width="100%" height={160}>
+        <LineChart data={weekly} margin={{ top: 6, right: 12, bottom: 0, left: -16 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(120,120,160,0.12)" />
+          <XAxis
+            dataKey="week"
+            tick={{ fill: 'rgba(170,175,220,0.5)', fontSize: 10 }}
+            axisLine={{ stroke: 'rgba(120,120,160,0.15)' }}
+            tickLine={false}
+          />
+          <YAxis
+            domain={[yMin, yMax]}
+            tick={{ fill: 'rgba(170,175,220,0.5)', fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            width={36}
+          />
+          {showPlayoffLine && (
+            <ReferenceLine
+              x="W15"
+              stroke="rgba(180,140,40,0.35)"
+              strokeDasharray="4 3"
+              label={{ value: 'Playoffs', position: 'insideTopRight', fill: 'rgba(180,140,40,0.5)', fontSize: 9 }}
+            />
+          )}
+          <Tooltip content={<SlotWeekTooltip />} />
+          <Line
+            type="monotone"
+            dataKey="original"
+            stroke="rgba(140,160,220,0.55)"
+            strokeWidth={1.5}
+            dot={{ r: 2.5, fill: 'rgba(140,160,220,0.55)', strokeWidth: 0 }}
+            activeDot={{ r: 4 }}
+            strokeDasharray="5 3"
+          />
+          <Line
+            type="monotone"
+            dataKey="scenario"
+            stroke="#7c9cff"
+            strokeWidth={2}
+            dot={{ r: 2.5, fill: '#7c9cff', strokeWidth: 0 }}
+            activeDot={{ r: 4, fill: '#a0b8ff' }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+const RANGE_OPTIONS = [
+  { key: 'reg',     label: 'Reg Season', start: 0,  end: 14 },
+  { key: 'full',    label: 'Full Season', start: 0,  end: 17 },
+  { key: 'playoff', label: 'Playoffs',   start: 14, end: 17 },
+];
+
+function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, rosterId, playersData, playerIdMap }) {
+  const [expandedPos, setExpandedPos] = useState(null);
+  const [weekRange, setWeekRange] = useState('reg');
+
+  useEffect(() => { setExpandedPos(null); }, [rosterId]);
+  useEffect(() => { setExpandedPos(null); }, [weekRange]);
+
+  // Build all 17 weeks per slot (expensive — player lookups). Only re-runs on roster/player data change.
+  const baseRows = useMemo(() => {
     const origWeeks = (originalWeeklyScores || {})[rosterId] || [];
     const scenWeeks = (scenarioWeeklyScores || {})[rosterId] || [];
     const impactMap = {};
@@ -267,31 +377,65 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
       const scenStarters = scenWeeks[wi]?.starters || [];
       scenStarters.forEach((p, i) => {
         const slot = STARTER_POSITION_NAMES[i] || `S${i + 1}`;
-        if (!impactMap[slot]) impactMap[slot] = { scen: 0, orig: 0, idx: i };
-        impactMap[slot].scen += p.pts || 0;
-        impactMap[slot].orig += origStarters[i]?.pts || 0;
+        if (!impactMap[slot]) impactMap[slot] = { idx: i, weekly: [] };
+        const scenPts = p.pts || 0;
+        const origPts = origStarters[i]?.pts || 0;
+        const origId = origStarters[i]?.id;
+        const scenId = p.id;
+        const origInfo = origId && origId !== '0' ? getPlayerInfo(origId, playersData, playerIdMap) : null;
+        const scenInfo = scenId && scenId !== '0' ? getPlayerInfo(scenId, playersData, playerIdMap) : null;
+        impactMap[slot].weekly.push({
+          week: `W${wi + 1}`,
+          original: Number(origPts.toFixed(2)),
+          scenario: Number(scenPts.toFixed(2)),
+          originalPlayer: origInfo?.name || '—',
+          scenarioPlayer: scenInfo?.name || '—',
+        });
       });
     }
 
     return Object.entries(impactMap)
       .sort(([, a], [, b]) => a.idx - b.idx)
-      .map(([pos, { scen, orig }]) => ({
-        pos,
-        scenTotal: scen,
-        origTotal: orig,
-        delta: scen - orig,
-      }));
-  }, [rosterId, originalWeeklyScores, scenarioWeeklyScores]);
+      .map(([pos, { idx, weekly }]) => ({ pos, idx, weekly }));
+  }, [rosterId, originalWeeklyScores, scenarioWeeklyScores, playersData, playerIdMap]);
 
-  const anyDelta = rows.some((r) => Math.abs(r.delta) >= 0.05);
-  if (!anyDelta && rows.length === 0) return null;
+  // Derive per-range totals from the base rows (cheap).
+  const rows = useMemo(() => {
+    const { start, end } = RANGE_OPTIONS.find((r) => r.key === weekRange);
+    return baseRows.map(({ pos, idx, weekly }) => {
+      const slice = weekly.slice(start, end);
+      const scenTotal  = slice.reduce((s, w) => s + w.scenario, 0);
+      const origTotal  = slice.reduce((s, w) => s + w.original, 0);
+      const weeksUp    = slice.filter((w) => w.scenario - w.original > 0.05).length;
+      const weeksDown  = slice.filter((w) => w.original - w.scenario > 0.05).length;
+      return { pos, idx, weekly: slice, scenTotal, origTotal, delta: scenTotal - origTotal, weeksUp, weeksDown };
+    });
+  }, [baseRows, weekRange]);
 
-  const totalScen = rows.reduce((s, r) => s + r.scenTotal, 0);
-  const totalOrig = rows.reduce((s, r) => s + r.origTotal, 0);
-  const totalDelta = totalScen - totalOrig;
+  if (rows.length === 0) return null;
+
+  const totalScen      = rows.reduce((s, r) => s + r.scenTotal, 0);
+  const totalOrig      = rows.reduce((s, r) => s + r.origTotal, 0);
+  const totalDelta     = totalScen - totalOrig;
+  const totalWeeksUp   = rows.reduce((s, r) => s + r.weeksUp, 0);
+  const totalWeeksDown = rows.reduce((s, r) => s + r.weeksDown, 0);
+
+  const countCell = (n, cls) =>
+    n > 0
+      ? <span className={cls}>{n}</span>
+      : <span className="scenario-pos-impact-neutral">—</span>;
 
   return (
     <div className="scenario-pos-impact">
+      <div className="scenario-pos-impact-range-toggle">
+        {RANGE_OPTIONS.map(({ key, label }) => (
+          <button
+            key={key}
+            className={`scenario-pos-impact-range-btn${weekRange === key ? ' scenario-pos-impact-range-btn--active' : ''}`}
+            onClick={() => setWeekRange(key)}
+          >{label}</button>
+        ))}
+      </div>
       <table className="scenario-pos-impact-tbl">
         <thead>
           <tr>
@@ -299,24 +443,52 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
             <th className="scenario-pos-impact-th scenario-pos-impact-th--num">Original</th>
             <th className="scenario-pos-impact-th scenario-pos-impact-th--num">Scenario</th>
             <th className="scenario-pos-impact-th scenario-pos-impact-th--num">Impact</th>
+            <th
+              className="scenario-pos-impact-th scenario-pos-impact-th--num"
+              title="Weeks where the scenario lineup scored higher at this position"
+            >Wks ↑</th>
+            <th
+              className="scenario-pos-impact-th scenario-pos-impact-th--num"
+              title="Weeks where the scenario lineup scored lower at this position"
+            >Wks ↓</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ pos, scenTotal, origTotal, delta }) => (
-            <tr key={pos} className="scenario-pos-impact-row">
-              <td className="scenario-pos-impact-pos">{pos}</td>
-              <td className="scenario-pos-impact-num scenario-pos-impact-num--muted">{origTotal.toFixed(1)}</td>
-              <td className="scenario-pos-impact-num">{scenTotal.toFixed(1)}</td>
-              <td className="scenario-pos-impact-num">
-                {Math.abs(delta) < 0.05
-                  ? <span className="scenario-pos-impact-neutral">—</span>
-                  : <span className={delta > 0 ? 'scenario-pos-impact-delta--pos' : 'scenario-pos-impact-delta--neg'}>
-                      {delta > 0 ? '+' : ''}{delta.toFixed(1)}
-                    </span>
-                }
-              </td>
-            </tr>
-          ))}
+          {rows.map(({ pos, scenTotal, origTotal, delta, weeksUp, weeksDown, weekly }) => {
+            const isExpanded = expandedPos === pos;
+            return (
+              <React.Fragment key={pos}>
+                <tr
+                  className={`scenario-pos-impact-row scenario-pos-impact-row--clickable${isExpanded ? ' scenario-pos-impact-row--expanded' : ''}`}
+                  onClick={() => setExpandedPos(isExpanded ? null : pos)}
+                >
+                  <td className="scenario-pos-impact-pos">
+                    <span className={`scenario-pos-impact-chevron${isExpanded ? ' scenario-pos-impact-chevron--open' : ''}`}>▶</span>
+                    {pos}
+                  </td>
+                  <td className="scenario-pos-impact-num scenario-pos-impact-num--muted">{origTotal.toFixed(1)}</td>
+                  <td className="scenario-pos-impact-num">{scenTotal.toFixed(1)}</td>
+                  <td className="scenario-pos-impact-num">
+                    {Math.abs(delta) < 0.05
+                      ? <span className="scenario-pos-impact-neutral">—</span>
+                      : <span className={delta > 0 ? 'scenario-pos-impact-delta--pos' : 'scenario-pos-impact-delta--neg'}>
+                          {delta > 0 ? '+' : ''}{delta.toFixed(1)}
+                        </span>
+                    }
+                  </td>
+                  <td className="scenario-pos-impact-num">{countCell(weeksUp, 'scenario-pos-impact-delta--pos')}</td>
+                  <td className="scenario-pos-impact-num">{countCell(weeksDown, 'scenario-pos-impact-delta--neg')}</td>
+                </tr>
+                {isExpanded && (
+                  <tr className="scenario-pos-impact-chart-row">
+                    <td colSpan={6} className="scenario-pos-impact-chart-cell">
+                      <PositionSlotChart weekly={weekly} showPlayoffLine={weekRange !== 'playoff'} />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
         </tbody>
         <tfoot>
           <tr className="scenario-pos-impact-total-row">
@@ -331,6 +503,8 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
                   </span>
               }
             </td>
+            <td className="scenario-pos-impact-num">{countCell(totalWeeksUp, 'scenario-pos-impact-delta--pos')}</td>
+            <td className="scenario-pos-impact-num">{countCell(totalWeeksDown, 'scenario-pos-impact-delta--neg')}</td>
           </tr>
         </tfoot>
       </table>
@@ -485,6 +659,8 @@ function ScenarioTeamDetail({ rosterId, teamsForGrid, originalWeeklyScores, scen
           originalWeeklyScores={originalWeeklyScores}
           scenarioWeeklyScores={scenarioWeeklyScores}
           rosterId={rosterId}
+          playersData={playersData}
+          playerIdMap={playerIdMap}
         />
       </div>
       {selectedPlayer && createPortal(

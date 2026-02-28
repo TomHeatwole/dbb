@@ -27,7 +27,7 @@
 import { useState, useEffect } from 'react';
 import { fetchKtcData } from '../lookups/KtcLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
-import { normalisePlayerName } from '../utils/playerNameMatcher';
+import { normalisePlayerName, findBestPlayerMatch } from '../utils/playerNameMatcher';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 
 const SKILL_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
@@ -304,22 +304,53 @@ export function usePlayerDBData() {
           }
         }
 
+        // ── Candidate arrays for fallback name matching ──
+        const ktcCandidates = ktcResult?.map ? Array.from(ktcResult.map.values()) : [];
+        const fcCandidates  = Object.values(fcByNormName);
+
         // ── Helper: build a unified player record ──
         function buildPlayer(normName, displayName, position, nflTeam) {
-          const ktcEntry   = ktcResult?.map?.get(normName) || null;
-          const fcEntry    = fcByNormName[normName] || null;
+          const ktcEntry = ktcResult?.map?.get(normName) || null;
+
+          // FC lookup: direct normName first, then last-name fallback with
+          // position+team hints to handle nickname mismatches (e.g. "Chig" vs "Chigoziem")
+          let fcEntry = fcByNormName[normName] || null;
+          if (!fcEntry) {
+            const pos  = position || ktcEntry?.position;
+            const team = nflTeam  || ktcEntry?.nflTeam;
+            const { candidate } = findBestPlayerMatch(
+              displayName,
+              fcCandidates,
+              { position: pos, team },
+              { name: 'name', position: 'position', team: 'nflTeam' },
+            );
+            fcEntry = candidate || null;
+          }
+          // When fcEntry was found via nickname fallback (e.g. "Chig" matched to
+          // a KTC entry under "Chigoziem"), its own normName differs from the
+          // primary normName. Use it as a secondary key so stats, sleeper name
+          // map, and FFB name lookups — which are keyed by the FC/stats name —
+          // are also resolved correctly.
+          const fcNorm = fcEntry ? normalisePlayerName(fcEntry.name) : null;
+          const altNorm = (fcNorm && fcNorm !== normName) ? fcNorm : null;
+
           // Prefer FC's sleeperId (exact match), then Sleeper name map
-          const sleeperId  = fcEntry?.sleeperId || sleeperNameMap[normName] || null;
-          const statsEntry = statsByNormName[normName] || null;
+          const sleeperId = fcEntry?.sleeperId
+            || sleeperNameMap[normName]
+            || (altNorm ? sleeperNameMap[altNorm] : null)
+            || null;
+          const statsEntry = statsByNormName[normName]
+            || (altNorm ? statsByNormName[altNorm] : null)
+            || null;
           const ownership  = sleeperId ? rosterMap[sleeperId] : null;
 
           // FFB overall + pos rank
           const ffbRank = (sleeperId && ffbBySleeperID[sleeperId])
             ? ffbBySleeperID[sleeperId]
-            : (ffbByNormName[normName] || null);
+            : (ffbByNormName[normName] || (altNorm ? ffbByNormName[altNorm] : null) || null);
           const ffbPosRank = (sleeperId && ffbPosRankBySleeperId[sleeperId])
             ? ffbPosRankBySleeperId[sleeperId]
-            : (ffbPosRankByNormName[normName] || null);
+            : (ffbPosRankByNormName[normName] || (altNorm ? ffbPosRankByNormName[altNorm] : null) || null);
 
           // Headshot: prefer NFL CDN from stats CSV, then ESPN CDN via espnId
           const espnId = sleeperId ? sleeperIdToEspnId[sleeperId] : null;
@@ -383,6 +414,15 @@ export function usePlayerDBData() {
         // Pass 2: FC players not already covered by KTC
         for (const [normName, fcEntry] of Object.entries(fcByNormName)) {
           if (seen.has(normName) || !SKILL_POSITIONS.has(fcEntry.position)) continue;
+          // Skip if this FC player was already merged into a KTC entry via fallback
+          // (e.g. "Chig Okonkwo" in FC was already pulled into "Chigoziem Okonkwo" from KTC)
+          const { candidate: ktcMatch } = findBestPlayerMatch(
+            fcEntry.name,
+            ktcCandidates,
+            { position: fcEntry.position, team: fcEntry.nflTeam },
+            { name: 'name', position: 'position', team: 'nflTeam' },
+          );
+          if (ktcMatch) continue;
           seen.add(normName);
           unified.push(
             buildPlayer(normName, fcEntry.name, fcEntry.position, fcEntry.nflTeam)
