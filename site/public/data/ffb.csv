@@ -31,9 +31,9 @@ rank,name,sleeper_id
 30,Brock Purdy,8183
 31,George Pickens,8137
 32,Bo Nix,11563
-33,Rashee Rice,10229
-34,James Cook,8138
-35,Garrett Wilson,8146
+33,James Cook,8138
+34,Garrett Wilson,8146
+35,Rashee Rice,10229
 36,Chris Olave,8144
 37,Jordan Love,6804
 38,Emeka Egbuka,12514
@@ -44,10 +44,10 @@ rank,name,sleeper_id
 43,Ladd McConkey,11635
 44,Bucky Irving,11584
 45,Breece Hall,8155
-46,Rome Odunze,11620
-47,Chase Brown,9224
-48,Sam Darnold,4943
-49,Marvin Harrison Jr.,11628
+46,Marvin Harrison Jr.,11628
+47,Rome Odunze,11620
+48,Chase Brown,9224
+49,Sam Darnold,4943
 50,A.J. Brown,5859
 51,Luther Burden III,12519
 52,Baker Mayfield,4892
@@ -57,9 +57,9 @@ rank,name,sleeper_id
 56,Jaylen Waddle,7526
 57,Zay Flowers,9997
 58,Quinshon Judkins,12512
-59,DeVonta Smith,7525
-60,Josh Jacobs,5850
-61,Christian Watson,8167
+59,Josh Jacobs,5850
+60,Christian Watson,8167
+61,DeVonta Smith,7525
 62,Tyler Shough,12545
 63,Saquon Barkley,4866
 64,Tyler Warren,12518
@@ -101,33 +101,33 @@ rank,name,sleeper_id
 100,Jauan Jennings,7049
 101,Oronde Gadsden,12493
 102,Bryce Young,9228
-103,Jayden Higgins,12484
-104,Kyle Monangai,12534
-105,DJ Moore,4983
-106,Khalil Shakir,8134
-107,Jake Ferguson,8110
-108,Mike Evans,2216
-109,Parker Washington,9487
-110,Woody Marks,12474
+103,Kyle Monangai,12534
+104,Jayden Higgins,12484
+105,Xavier Worthy,11624
+106,DJ Moore,4983
+107,Khalil Shakir,8134
+108,Jake Ferguson,8110
+109,Mike Evans,2216
+110,Parker Washington,9487
 111,Brenton Strange,9480
-112,Xavier Worthy,11624
-113,Trey Benson,11589
-114,Blake Corum,11586
-115,George Kittle,4217
-116,Matthew Golden,12501
-117,Bhayshul Tuten,12490
+112,Trey Benson,11589
+113,Blake Corum,11586
+114,George Kittle,4217
+115,Matthew Golden,12501
+116,Bhayshul Tuten,12490
+117,Woody Marks,12474
 118,Rhamondre Stevenson,7611
 119,Jayden Reed,10222
 120,Theo Johnson,11597
-121,Rico Dowdle,7021
+121,David Montgomery,5892
 122,Zach Charbonnet,9753
-123,Stefon Diggs,2449
-124,Chris Godwin Jr.,4037
-125,Chuba Hubbard,7594
-126,Josh Downs,9500
-127,Pat Bryant,12492
-128,Tua Tagovailoa,6768
-129,David Montgomery,5892
+123,Chuba Hubbard,7594
+124,Stefon Diggs,2449
+125,Chris Godwin Jr.,4037
+126,Rico Dowdle,7021
+127,Josh Downs,9500
+128,Pat Bryant,12492
+129,Tua Tagovailoa,6768
 130,Jalen Coker,11646
 131,J.K. Dobbins,6806
 132,Troy Franklin,11627
@@ -146,19 +146,19 @@ rank,name,sleeper_id
 145,Jalen McMillan,11618
 146,Isaac TeSlaa,12535
 147,Malik Willis,8161
-148,Tony Pollard,5967
-149,Anthony Richardson Sr.,9229
-150,Tyler Allgeier,8132
-151,Dallas Goedert,5022
-152,Chimere Dike,12540
-153,Shedeur Sanders,12524
-154,Rashid Shaheed,8676
-155,T.J. Hockenson,5844
-156,Jacory Croskey-Merritt,12533
-157,Alvin Kamara,4035
-158,Hunter Henry,3214
-159,Elic Ayomanor,12499
-160,Jordan Mason,8408
+148,Anthony Richardson Sr.,9229
+149,Tony Pollard,5967
+150,Dallas Goedert,5022
+151,Chimere Dike,12540
+152,Tyler Allgeier,8132
+153,Jordan Mason,8408
+154,Shedeur Sanders,12524
+155,Rashid Shaheed,8676
+156,T.J. Hockenson,5844
+157,Jacory Croskey-Merritt,12533
+158,Alvin Kamara,4035
+159,Hunter Henry,3214
+160,Elic Ayomanor,12499
 161,James Conner,4137
 162,Kimani Vidal,11647
 163,Tyjae Spears,9508
@@ -170,15 +170,15 @@ rank,name,sleeper_id
 169,Tory Horton,12497
 170,David Njoku,4033
 171,Jonathon Brooks,11583
-172,Braelon Allen,11576
-173,Aaron Jones Sr.,4199
+172,Aaron Jones Sr.,4199
+173,Braelon Allen,11576
 174,AJ Barner,11603
 175,Gunnar Helm,12502
 176,Dalton Schultz,5001
 177,Kaleb Johnson,12504
-178,Adonai Mitchell,11625
-179,Travis Kelce,1466
-180,Tank Bigsby,9225
+178,Tank Bigsby,9225
+179,Adonai Mitchell,11625
+180,Travis Kelce,1466
 181,Dylan Sampson,12469
 182,Tank Dell,9502
 183,Brian Robinson Jr.,8154
@@ -235,15 +235,15 @@ rank,name,sleeper_id
 234,Ja'Tavion Sanders,11600
 235,Aaron Rodgers,96
 236,Kirk Cousins,1166
-237,Bam Knight,8122
-238,Andrei Iosivas,10226
-239,Dont'e Thornton Jr.,12541
-240,Mac Jones,7527
-241,Darnell Washington,9479
+237,Andrei Iosivas,10226
+238,Dont'e Thornton Jr.,12541
+239,Mac Jones,7527
+240,Darnell Washington,9479
+241,Bam Knight,8122
 242,John Metchie III,8147
 243,Mike Gesicki,4993
-244,Isaac Guerendo,11651
-245,Audric Estimé,11579
+244,Audric Estimé,11579
+245,Isaac Guerendo,11651
 246,Najee Harris,7528
 247,Calvin Austin III,8125
 248,Joe Flacco,19
@@ -262,11 +262,11 @@ rank,name,sleeper_id
 261,Jalen Nailor,8180
 262,LeQuint Allen Jr.,12544
 263,Phil Mafah,12738
-264,Mack Hollins,4177
-265,DJ Giddens,12471
+264,DJ Giddens,12471
+265,Mack Hollins,4177
 266,Keandre Lambert-Smith,12670
-267,Marcus Mariota,2307
-268,Davis Mills,7585
+267,Davis Mills,7585
+268,Marcus Mariota,2307
 269,Savion Williams,12482
 270,Jimmy Horn Jr.,12523
 271,Jalen Royals,12505
@@ -284,8 +284,8 @@ rank,name,sleeper_id
 283,Tanner McKee,9230
 284,Nick Chubb,4988
 285,Spencer Rattler,11562
-286,Jordan James,12467
-287,Malik Davis,8800
+286,Malik Davis,8800
+287,Jordan James,12467
 288,Tahj Brooks,12543
 289,Jordan Whittington,11623
 290,Tyler Higbee,3271
@@ -310,8 +310,8 @@ rank,name,sleeper_id
 309,Jalen Tolbert,8117
 310,Mason Rudolph,4972
 311,Russell Wilson,1234
-312,Jawhar Jordan,11588
-313,Roschon Johnson,10235
+312,Roschon Johnson,10235
+313,Jawhar Jordan,11588
 314,Trey Lance,7610
 315,Erick All Jr.,11592
 316,Olamide Zaccheaus,6271
