@@ -197,7 +197,7 @@ function HwangAIPage() {
               <div className="hwang-ai-empty">
                 <img src={LOGO} alt="HwangAI" className="hwang-ai-empty-logo" />
                 <div className="hwang-ai-empty-text">
-                  Ask me anything — trade values, start/sit, waiver pickups, dynasty strategy.
+                  Ask me anything — trade values, league history, waiver pickups, dynasty strategy.
                 </div>
               </div>
             )}
