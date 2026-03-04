@@ -26,6 +26,7 @@ import {
   resolveTeam,
   simulateTradeReversal,
   simulateRosterChange,
+  getHistoricalResults,
 } from './src/tools.js';
 
 // ── Server setup ──────────────────────────────────────────────────────────────
@@ -175,7 +176,7 @@ server.tool(
 
 server.tool(
   'get_recent_trades',
-  'Get recent trade history for the league.',
+  'Get trade history for the league. Supports historical seasons — for past seasons returns all trades for the full year. During the offseason, defaults to the most recent completed season.',
   {
     weeks_back: z
       .number()
@@ -183,9 +184,14 @@ server.tool(
       .min(1)
       .max(17)
       .optional()
-      .describe('How many weeks back to look (default 4)'),
+      .describe('How many weeks back to look for current season (default 4, max 17). Ignored for historical seasons.'),
+    season: z
+      .number()
+      .int()
+      .optional()
+      .describe('Season year e.g. 2024, 2025. Omit for current/most recent season.'),
   },
-  wrapTool(({ weeks_back }) => getRecentTrades(weeks_back))
+  wrapTool(({ weeks_back, season }) => getRecentTrades(weeks_back, season))
 );
 
 server.tool(
@@ -260,6 +266,17 @@ server.tool(
   'Get general information about the Hwang Dynasty league — scoring rules, team list, playoff format, history, and lore. Call this first when answering general questions about the league.',
   {},
   wrapTool(() => getLeagueInfo())
+);
+
+server.tool(
+  'get_historical_results',
+  'Get the final standings and playoff results for a completed past season. Returns regular-season totals (weeks 1–14) used for seeding, full playoff bracket matchups with exact scores, and final placement for all teams. The top 4 teams are ordered by their PLAYOFF performance (not regular season) — 1st place is the actual champion who won the playoff bracket, not just the highest regular-season scorer.',
+  {
+    season: z
+      .string()
+      .describe('The season year to look up (e.g. "2024" or "2025"). Must be a completed past season.'),
+  },
+  wrapTool(({ season }) => getHistoricalResults(season))
 );
 
 server.tool(

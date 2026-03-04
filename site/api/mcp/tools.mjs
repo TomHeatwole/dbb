@@ -1,4 +1,4 @@
-import { CURRENT_YEAR, SITE_BASE_URL } from './config.mjs';
+import { CURRENT_YEAR, SITE_BASE_URL, PREVIOUS_YEARS, getLeagueIdForSeason } from './config.mjs';
 import {
   fetchRosters, fetchUsers, fetchMatchups, fetchTransactions,
   fetchTrendingPlayers, fetchAllWeekScores,
@@ -486,40 +486,54 @@ export async function getTrendingPlayers() {
 // ─── Recent Trades ────────────────────────────────────────────────────────────
 
 export async function getRecentTrades(weeksBack, season) {
+  const lookback = Math.min(Math.max(weeksBack || 4, 1), 17);
   const yr = season ? String(season) : CURRENT_YEAR;
-  const lookback    = Math.min(Math.max(weeksBack || 4, 1), 17);
   const completedWeeks = getCompletedWeeksCount(yr);
 
-  if (completedWeeks === 0) {
-    return `The ${yr} season hasn't started yet — no trades to show.`;
-  }
-
-  // For past seasons use all completed weeks; for current season use lookback window
-  const currentWeek = getCurrentNFLWeek(yr);
-  const startWeek = yr !== CURRENT_YEAR
-    ? 1
-    : Math.max(1, currentWeek - lookback + 1);
-  const endWeek = yr !== CURRENT_YEAR ? completedWeeks : currentWeek;
+  // Offseason: the current year's league exists but no weeks have completed yet.
+  // Sleeper stores offseason trades under legs 0 and 1 of the upcoming season's league.
+  const isOffseason = !season && completedWeeks === 0;
 
   const [rosters, users] = await Promise.all([fetchRosters(yr), fetchUsers(yr)]);
   const teamMap           = buildTeamMap(rosters, users);
   const playersData       = loadPlayersData();
 
-  const weekNums  = Array.from({ length: endWeek - startWeek + 1 }, (_, i) => startWeek + i);
+  let weekNums;
+  if (isOffseason) {
+    weekNums = [0, 1];
+  } else {
+    const isPastSeason = yr !== CURRENT_YEAR;
+    const currentWeek  = getCurrentNFLWeek(yr);
+    const startWeek    = isPastSeason ? 1 : Math.max(1, currentWeek - lookback + 1);
+    const endWeek      = isPastSeason ? completedWeeks : currentWeek;
+    weekNums = Array.from({ length: endWeek - startWeek + 1 }, (_, i) => startWeek + i);
+  }
 
+  const seen = new Set();
   const allTransactions = (
     await Promise.all(weekNums.map((w) => fetchTransactions(w, yr).catch(() => [])))
-  ).flat();
+  ).flat().filter((t) => {
+    if (!t?.transaction_id || seen.has(t.transaction_id)) return false;
+    seen.add(t.transaction_id);
+    return true;
+  });
 
   const trades = allTransactions
     .filter((t) => t?.type === 'trade' && t?.status === 'complete')
     .sort((a, b) => (b.created || 0) - (a.created || 0));
 
+  const isPastSeason = yr !== CURRENT_YEAR;
   if (trades.length === 0) {
-    return `No completed trades found in the last ${lookback} week(s).`;
+    if (isOffseason) return `No offseason trades yet for ${yr}.`;
+    return isPastSeason
+      ? `No completed trades found for the ${yr} season.`
+      : `No completed trades found in the last ${lookback} week(s).`;
   }
 
-  const seasonLabel = yr !== CURRENT_YEAR ? yr : `${yr} (last ${lookback} week(s))`;
+  let seasonLabel;
+  if (isOffseason)       seasonLabel = `${yr} Offseason`;
+  else if (isPastSeason) seasonLabel = yr;
+  else                   seasonLabel = `${yr} (last ${lookback} week(s))`;
   const lines = [`**Recent Trades — Hwang Dynasty ${seasonLabel}**\n`];
 
   for (const trade of trades.slice(0, 12)) {
@@ -977,6 +991,178 @@ export async function runScenario({ season, changes = [] }) {
   lines.push('*(✱ = modified team. Scores based on optimal lineups, not actual manager decisions.)*');
   lines.push(`\n[View this scenario interactively](${scenarioUrl})`);
 
+  return lines.join('\n');
+}
+
+// ─── Historical Season Results ────────────────────────────────────────────────
+
+export async function getHistoricalResults(season) {
+  const seasonStr = String(season);
+
+  if (!getLeagueIdForSeason(seasonStr)) {
+    const available = Object.keys(PREVIOUS_YEARS).sort().join(', ');
+    return `No data available for season ${season}. Available historical seasons: ${available || 'none configured'}.`;
+  }
+
+  const [rosters, users, weeksData] = await Promise.all([
+    fetchRosters(seasonStr),
+    fetchUsers(seasonStr),
+    fetchAllWeekScores(17, seasonStr),
+  ]);
+  const teamMap  = buildTeamMap(rosters, users);
+  const rosterIds = Object.keys(teamMap).map(Number);
+
+  function sumWeeks(rosterId, from1, to1) {
+    let total = 0;
+    for (let w = from1; w <= to1; w++) {
+      const weekArr = weeksData[w - 1];
+      if (!weekArr) continue;
+      const entry = weekArr.find((e) => e && Number(e.roster_id) === Number(rosterId));
+      if (entry) total += entry.points || 0;
+    }
+    return Math.round(total * 10) / 10;
+  }
+
+  // Regular season totals (weeks 1–14) used for playoff seeding
+  const regTotals = {};
+  for (const rid of rosterIds) regTotals[rid] = sumWeeks(rid, 1, 14);
+
+  const seedOrder = rosterIds.slice().sort((a, b) => regTotals[b] - regTotals[a]);
+  const seedMap   = {};
+  seedOrder.forEach((rid, i) => { seedMap[rid] = i + 1; });
+
+  const top4   = seedOrder.slice(0, 4);
+  const others = seedOrder.slice(4);
+
+  // Full season totals (all 17 weeks)
+  const fullTotals = {};
+  for (const rid of rosterIds) fullTotals[rid] = sumWeeks(rid, 1, 17);
+
+  const finalPlacement = {};
+  const playoffLines   = [];
+  const tName = (rid) => (teamMap[rid] || {}).teamName || `Team ${rid}`;
+  const tLink = (rid) => teamLink(tName(rid), rid);
+
+  const is2024Format = seasonStr === '2024';
+
+  if (is2024Format) {
+    // 2024: cumulative weeks 15–17 determines placement
+    const playoffTotals = {};
+    for (const rid of top4) playoffTotals[rid] = sumWeeks(rid, 15, 17);
+
+    const playoffSorted = top4.slice().sort((a, b) => playoffTotals[b] - playoffTotals[a]);
+    playoffSorted.forEach((rid, i) => { finalPlacement[rid] = i + 1; });
+    others.forEach((rid, i)        => { finalPlacement[rid] = i + 5; });
+
+    playoffLines.push('\n**Playoff Results (2024 — Cumulative Weeks 15–17)**\n');
+    for (const rid of playoffSorted) {
+      const info  = teamMap[rid] || {};
+      const place = finalPlacement[rid];
+      const medal = place === 1 ? '🏆 ' : place === 2 ? '🥈 ' : place === 3 ? '🥉 ' : '   ';
+      playoffLines.push(`${medal}${place}. ${teamLink(info.teamName || `Team ${rid}`, rid)} (${info.ownerName || `Owner ${rid}`}) — ${playoffTotals[rid]} playoff pts`);
+    }
+  } else {
+    // 2025+ bracket format: semis weeks 15–16, finals week 17 + buffer
+    const [rid1, rid2, rid3, rid4] = top4;
+
+    const semiTotals = {};
+    for (const rid of top4) semiTotals[rid] = sumWeeks(rid, 15, 16);
+
+    // Seed 1 vs 4, seed 2 vs 3 — lower seed wins ties
+    const topWinner    = semiTotals[rid1] >= semiTotals[rid4] ? rid1 : rid4;
+    const topLoser     = topWinner === rid1 ? rid4 : rid1;
+    const bottomWinner = semiTotals[rid2] >= semiTotals[rid3] ? rid2 : rid3;
+    const bottomLoser  = bottomWinner === rid2 ? rid3 : rid2;
+
+    // Semis buffer: half the gap between the two finalists' semis totals
+    const highSemi = Math.max(semiTotals[topWinner], semiTotals[bottomWinner]);
+    const lowSemi  = Math.min(semiTotals[topWinner], semiTotals[bottomWinner]);
+    const buffer   = highSemi > lowSemi ? Math.round(((highSemi - lowSemi) / 2) * 10) / 10 : 0;
+
+    const finalsRaw = {};
+    finalsRaw[topWinner]    = sumWeeks(topWinner,    17, 17);
+    finalsRaw[bottomWinner] = sumWeeks(bottomWinner, 17, 17);
+
+    const finalsEffective = { ...finalsRaw };
+    if (buffer > 0) {
+      const bufRec = semiTotals[topWinner] > semiTotals[bottomWinner] ? topWinner : bottomWinner;
+      finalsEffective[bufRec] = Math.round((finalsEffective[bufRec] + buffer) * 10) / 10;
+    }
+
+    const champion = finalsEffective[topWinner] >= finalsEffective[bottomWinner] ? topWinner : bottomWinner;
+    const runnerUp = champion === topWinner ? bottomWinner : topWinner;
+    const third    = semiTotals[topLoser] >= semiTotals[bottomLoser] ? topLoser : bottomLoser;
+    const fourth   = third === topLoser ? bottomLoser : topLoser;
+
+    finalPlacement[champion] = 1;
+    finalPlacement[runnerUp] = 2;
+    finalPlacement[third]    = 3;
+    finalPlacement[fourth]   = 4;
+    others.forEach((rid, i) => { finalPlacement[rid] = i + 5; });
+
+    playoffLines.push('\n**Playoff Results (Bracket Format)**\n');
+    playoffLines.push('*Semifinals (Weeks 15–16 cumulative):*');
+    playoffLines.push(`  Seed 1 vs 4: ${tLink(rid1)} (${semiTotals[rid1]}) vs ${tLink(rid4)} (${semiTotals[rid4]}) → ${tName(topWinner)} advances`);
+    playoffLines.push(`  Seed 2 vs 3: ${tLink(rid2)} (${semiTotals[rid2]}) vs ${tLink(rid3)} (${semiTotals[rid3]}) → ${tName(bottomWinner)} advances`);
+    if (buffer > 0) {
+      const bufRec = semiTotals[topWinner] > semiTotals[bottomWinner] ? topWinner : bottomWinner;
+      playoffLines.push(`\n*Semis Buffer:* ${tName(bufRec)} enters finals with +${buffer} pts advantage`);
+    }
+    playoffLines.push(`\n*Finals (Week 17${buffer > 0 ? ' + buffer' : ''}):*`);
+    playoffLines.push(
+      `  ${tLink(champion)}: ${finalsEffective[champion]} pts (raw: ${finalsRaw[champion]}) vs ` +
+      `${tLink(runnerUp)}: ${finalsEffective[runnerUp]} pts (raw: ${finalsRaw[runnerUp]})` +
+      ` → 🏆 ${tName(champion)} wins`
+    );
+    playoffLines.push(`\n*3rd/4th Place (by semis total):*`);
+    playoffLines.push(`  3rd: ${tLink(third)} (${semiTotals[third]} semis pts)`);
+    playoffLines.push(`  4th: ${tLink(fourth)} (${semiTotals[fourth]} semis pts)`);
+  }
+
+  // Assemble output
+  const allRids = [...rosterIds].sort((a, b) => (finalPlacement[a] || 99) - (finalPlacement[b] || 99));
+
+  const lines = [
+    `**Hwang Dynasty — ${season} Season Final Results**\n`,
+    '**Regular Season Standings (Weeks 1–14):**',
+  ];
+
+  for (const rid of seedOrder) {
+    const info   = teamMap[rid] || {};
+    const seed   = seedMap[rid];
+    const label  = seed <= 4 ? ` [Playoff Seed ${seed}]` : '';
+    lines.push(`  ${seed}. ${teamLink(info.teamName || `Team ${rid}`, rid)} (${info.ownerName || `Owner ${rid}`})${label} — ${regTotals[rid]} reg-season pts`);
+  }
+
+  lines.push(...playoffLines);
+
+  lines.push('\n**Final Standings:**');
+  for (const rid of allRids) {
+    const info   = teamMap[rid] || {};
+    const place  = finalPlacement[rid];
+    const medal  = place === 1 ? '🏆 ' : place === 2 ? '🥈 ' : place === 3 ? '🥉 ' : '   ';
+    const seed   = seedMap[rid];
+    const ptsSuffix = seed <= 4
+      ? `reg: ${regTotals[rid]}, full 17-wk: ${fullTotals[rid]} pts`
+      : `${regTotals[rid]} pts`;
+    lines.push(`${medal}${place}. ${teamLink(info.teamName || `Team ${rid}`, rid)} (${info.ownerName || `Owner ${rid}`}) — ${ptsSuffix}`);
+  }
+
+  // Warn the AI if any team name looks like a Sleeper fallback placeholder
+  const placeholderPattern = /^(Team (Owner \d+|\d+)|Owner \d+)$/;
+  const hasPlaceholders = rosterIds.some((rid) => {
+    const info = teamMap[rid] || {};
+    return placeholderPattern.test(info.teamName) || placeholderPattern.test(info.ownerName);
+  });
+  if (hasPlaceholders) {
+    lines.push(
+      '\n⚠️  **Note:** One or more teams above have generic placeholder names (e.g. "Team Owner 2"). ' +
+      'This means their real team name could not be resolved from the Sleeper API for this season. ' +
+      'Call get_league_info to cross-reference the official champion history and resolve the correct team name before responding.'
+    );
+  }
+
+  lines.push(`\n[View standings](${SITE_BASE_URL}/standings?year=${season})`);
   return lines.join('\n');
 }
 

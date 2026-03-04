@@ -9310,17 +9310,20 @@ body.modal-open {
   min-height: 400px;
   padding: 0 2rem 1.5rem 2rem;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .hwang-ai-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 1rem 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(97, 218, 251, 0.3) transparent;
+  min-width: 0;
 }
 
 .hwang-ai-messages::-webkit-scrollbar {

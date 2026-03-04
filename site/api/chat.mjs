@@ -3,7 +3,7 @@ import {
   searchPlayer, comparePlayers, evaluateTrade,
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
-  runScenario, getPlayerStats,
+  runScenario, getPlayerStats, getHistoricalResults,
 } from './mcp/tools.mjs';
 
 const GEMINI_URL =
@@ -214,6 +214,17 @@ const TOOL_DECLARATIONS = [
     },
   },
   {
+    name: 'get_historical_results',
+    description: 'Get the final standings and complete playoff results for a completed past season. Returns regular-season totals (weeks 1–14) used for seeding, full playoff bracket matchups with exact scores, and final placement (1st–10th) for all teams. The top 4 teams are ordered by their PLAYOFF performance — 1st place is the actual champion who won the playoff bracket, not just the highest regular-season scorer. Use this for any question about past season results, who won, playoff scores, or final standings.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        season: { type: 'STRING', description: 'The season year to look up, e.g. "2024" or "2025". Must be a completed past season.' },
+      },
+      required: ['season'],
+    },
+  },
+  {
     name: 'run_scenario',
     description: 'Simulate "what if" roster changes for a completed season (2024 or 2025). Given hypothetical adds/drops on any team(s), recomputes all 17 weeks using optimal lineups and shows how standings would have changed. Use this whenever someone asks "what if [team] had [player]", "what would standings look like if [trade] happened", or any hypothetical about roster composition affecting season results.',
     parameters: {
@@ -260,6 +271,7 @@ async function executeTool(name, args) {
       case 'get_free_agents':        return await getFreeAgents(args.position);
       case 'get_site_link':          return await getSiteLink(args.page, { team: args.team, week: args.week });
       case 'run_scenario':           return await runScenario({ season: args.season, changes: args.changes });
+      case 'get_historical_results':  return await getHistoricalResults(args.season);
       default: return `Unknown tool: ${name}`;
     }
   } catch (err) {
