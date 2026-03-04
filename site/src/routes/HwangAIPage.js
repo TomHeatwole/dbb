@@ -43,7 +43,7 @@ function ChatMessage({ message }) {
         <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
       )}
       <div className="hwang-ai-message-body">
-        <div className={`hwang-ai-bubble ${isUser ? 'hwang-ai-bubble--user' : 'hwang-ai-bubble--ai'}`}>
+        <div className={`hwang-ai-bubble ${isUser ? 'hwang-ai-bubble--user' : message.searchFailed ? 'hwang-ai-bubble--search-failed' : 'hwang-ai-bubble--ai'}`}>
           {isUser ? message.content : <ReactMarkdown>{message.content}</ReactMarkdown>}
         </div>
         {message.grounded && (
@@ -136,15 +136,32 @@ function HwangAIPage() {
           return updated;
         });
       } else {
-        // Search failed — silently drop the searching bubble
-        setMessages(prev =>
-          prev[prev.length - 1]?.searching ? prev.slice(0, -1) : prev
-        );
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastIdx = updated.length - 1;
+          if (updated[lastIdx]?.searching) {
+            updated[lastIdx] = {
+              role: 'assistant',
+              content: "Web search came back empty. The clanker's internet privileges got revoked for a sec — try again.",
+              searchFailed: true,
+            };
+          }
+          return updated;
+        });
       }
     } catch {
-      setMessages(prev =>
-        prev[prev.length - 1]?.searching ? prev.slice(0, -1) : prev
-      );
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastIdx = updated.length - 1;
+        if (updated[lastIdx]?.searching) {
+          updated[lastIdx] = {
+            role: 'assistant',
+            content: "Web search came back empty. The clanker's internet privileges got revoked for a sec — try again.",
+            searchFailed: true,
+          };
+        }
+        return updated;
+      });
     } finally {
       setSearching(false);
       inputRef.current?.focus();
