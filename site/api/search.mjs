@@ -1,6 +1,16 @@
 const GEMINI_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`;
 
+function logConversation(messages, response = null) {
+  const entry = {
+    ts: new Date().toISOString(),
+    source: 'search',
+    turns: messages.map(m => ({ role: m.role, content: m.content })),
+    ...(response !== null ? { response } : {}),
+  };
+  console.log('[HwangAI]', JSON.stringify(entry));
+}
+
 const SYSTEM_INSTRUCTION = `You are a web search assistant for HwangAI, a dynasty fantasy football AI. \
 The user asked a question and the main AI has already given an answer from its training data. \
 Your job is to search the web for current, up-to-date information that enriches or corrects that answer — \
@@ -56,6 +66,7 @@ export default async function handler(req, res) {
     const text = parts.find(p => p.text)?.text || '';
     const searchQueries = candidate?.groundingMetadata?.webSearchQueries || [];
 
+    logConversation(messages, text);
     return res.status(200).json({ message: text, searchQueries });
   } catch (err) {
     return res.status(500).json({ error: err.message });

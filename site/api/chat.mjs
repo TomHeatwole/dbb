@@ -325,6 +325,17 @@ async function fetchChineseCharacters(apiKey) {
   }
 }
 
+// ── Logging ───────────────────────────────────────────────────────────────────
+
+function logConversation(messages, response = null) {
+  const entry = {
+    ts: new Date().toISOString(),
+    turns: messages.map(m => ({ role: m.role, content: m.content })),
+    ...(response !== null ? { response } : {}),
+  };
+  console.log('[HwangAI]', JSON.stringify(entry));
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -400,6 +411,7 @@ export default async function handler(req, res) {
       if (sideResult) {
         text += `\n\n---\n\n${sideResult}`;
       }
+      logConversation(messages, text);
       return res.status(200).json({ message: text, needsSearch });
     }
 
@@ -430,5 +442,6 @@ export default async function handler(req, res) {
   if (sideResult) {
     fallback += `\n\n---\n\n${sideResult}`;
   }
+  logConversation(messages, fallback);
   return res.status(200).json({ message: fallback, needsSearch: false });
 }
