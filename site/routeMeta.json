@@ -30,9 +30,9 @@
     "ogImage": "/logo.png"
   },
   "/hwangai": {
-    "ogTitle": "HwangAI – The Hwang Dynasty",
+    "ogTitle": "HwangAI",
     "ogDescription": "Your dynasty fantasy football AI assistant",
-    "ogImage": "/logo.png"
+    "ogImage": "/data/hwangai.png"
   },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",
