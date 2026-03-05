@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -30,7 +30,11 @@ import SandboxPage from './routes/SandboxPage';
 import HwangAIPage from './routes/HwangAIPage';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
+const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
+
 function MobileTopNav() {
+  const [moreOpen, setMoreOpen] = useState(false);
+
   return (
     <div className="mobile-top-home-card-wrapper">
       <nav className="mobile-top-home-card" aria-label="Main navigation">
@@ -41,16 +45,28 @@ function MobileTopNav() {
           <Link to="/standings" className="mobile-top-home-card-link">
             Standings
           </Link>
-          <Link to="/h2h" className="mobile-top-home-card-link">
-            Head&nbsp;to&nbsp;Head
-          </Link>
           <Link to="/yoffs" className="mobile-top-home-card-link">
             Playoffs
           </Link>
           <Link to="/oldhome/?view=teams" className="mobile-top-home-card-link">
             Teams
           </Link>
+          <button
+            className="mobile-top-home-card-more-toggle mobile-top-home-card-link"
+            onClick={() => setMoreOpen(o => !o)}
+            aria-expanded={moreOpen}
+          >
+            More
+            <span className="mobile-top-home-card-teams-arrow">{moreOpen ? ' ▼' : ' ▶'}</span>
+          </button>
         </div>
+        {moreOpen && (
+          <div className="mobile-top-home-card-more">
+            <Link to="/hwangai" className="mobile-top-home-card-link">HwangAI</Link>
+            <a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer" className="mobile-top-home-card-link">Podcast</a>
+            <Link to="/h2h" className="mobile-top-home-card-link">Head&nbsp;to&nbsp;Head</Link>
+          </div>
+        )}
       </nav>
     </div>
   );

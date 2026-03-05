@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
@@ -65,6 +65,16 @@ function HwangAIPage() {
   const [systemPrompt, setSystemPrompt] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const pendingQueryRef = useRef(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q) {
+      pendingQueryRef.current = q.trim();
+      window.history.replaceState({}, '', '/hwangai');
+    }
+  }, []);
 
   useEffect(() => {
     fetch('/data/hwangai_system_prompt.txt')
@@ -77,8 +87,8 @@ function HwangAIPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  async function sendMessage() {
-    const text = input.trim();
+  const sendMessage = useCallback(async (overrideText) => {
+    const text = (overrideText ?? input).trim();
     if (!text || loading || searching) return;
 
     const newMessages = [...messages, { role: 'user', content: text }];
@@ -166,7 +176,14 @@ function HwangAIPage() {
       setSearching(false);
       inputRef.current?.focus();
     }
-  }
+  }, [input, loading, searching, messages, systemPrompt]);
+
+  useEffect(() => {
+    if (!systemPrompt || !pendingQueryRef.current) return;
+    const text = pendingQueryRef.current;
+    pendingQueryRef.current = null;
+    sendMessage(text);
+  }, [systemPrompt, sendMessage]);
 
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {

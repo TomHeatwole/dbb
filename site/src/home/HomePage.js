@@ -15,6 +15,7 @@ import RecentTradesCard from './RecentTradesCard';
 import RookieDraftCard from './RookieDraftCard';
 import IosShortcutNoticeCard from './IosShortcutNoticeCard';
 import TrendingFreeAgentsCard from './TrendingFreeAgentsCard';
+import HwangAICard from './HwangAICard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
@@ -111,6 +112,7 @@ function HomePage() {
             <RecentTradesCard />
             <TrendingFreeAgentsCard />
             <RookieDraftCard />
+            <HwangAICard />
             <CommissionerNoteCard />
             <PodcastCard />
           </div>
@@ -133,6 +135,7 @@ function HomePage() {
             <div className="home-cards-column home-cards-column--right">
               <PreviousYearRecapCard />
               <RookieDraftCard />
+              <HwangAICard />
               <CommissionerNoteCard />
             </div>
           </div>
@@ -189,6 +192,7 @@ function HomePage() {
           <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
           <TankRaceCard currentWeekOverride={safeWeekForCards} />
+          <HwangAICard />
           <CommissionerNoteCard />
           <PodcastCard />
         </div>
@@ -227,6 +231,7 @@ function HomePage() {
             {bubbleCard}
             <TrendingFreeAgentsCard />
             <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
+            <HwangAICard />
             <CommissionerNoteCard />
           </div>
         </div>

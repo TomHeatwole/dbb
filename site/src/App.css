@@ -1900,6 +1900,24 @@
   .mobile-top-home-card-link:focus-visible {
     text-decoration: underline;
   }
+
+  .mobile-top-home-card-more-toggle {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15em;
+  }
+
+  .mobile-top-home-card-more {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.2rem;
+    padding-bottom: 0.1rem;
+  }
 }
 
 /* Sidebar unroll animation for Home page */
@@ -9724,4 +9742,85 @@ body.modal-open {
   .hwang-ai-bubble {
     font-size: 0.57rem;
   }
+}
+
+/* HwangAI Home Card */
+.hwang-ai-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.hwang-ai-card-title-logo {
+  width: 1.25em;
+  height: 1.25em;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.hwang-ai-card-prompt {
+  font-size: 0.88rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.hwang-ai-card-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.hwang-ai-card-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  font-family: inherit;
+  line-height: 1.4;
+  padding: 0.5rem 0.75rem;
+  resize: none;
+  overflow: hidden;
+  min-height: 2.25rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.hwang-ai-card-input:focus {
+  outline: none;
+  border-color: rgba(97, 218, 251, 0.5);
+}
+
+.hwang-ai-card-input::placeholder {
+  color: #555;
+}
+
+.hwang-ai-card-send-btn {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(97, 218, 251, 0.85);
+  color: #0a0a0a;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+  line-height: 1;
+}
+
+.hwang-ai-card-send-btn:hover:not(:disabled) {
+  background: #88eaff;
+  transform: scale(1.05);
+}
+
+.hwang-ai-card-send-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
