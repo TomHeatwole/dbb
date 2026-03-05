@@ -1,6 +1,6 @@
 import {
   getStandings, getWeeklyScores, getAllTeams, getRoster, getTeamScores,
-  searchPlayer, comparePlayers, evaluateTrade,
+  searchPlayer, comparePlayers, evaluateTrade, lookupDraftPick,
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
   runScenario, getPlayerStats, getHistoricalResults,
@@ -153,6 +153,20 @@ const TOOL_DECLARATIONS = [
     },
   },
   {
+    name: 'lookup_draft_pick',
+    description: 'Look up the KTC dynasty value of a draft pick by year and round. Use this when a user asks what a pick is worth, or before evaluate_trade when a pick\'s tier (Early/Mid/Late) is ambiguous. Returns all three tiers (Early/Mid/Late) when no tier is specified, along with how many years until the draft.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        name: {
+          type: 'STRING',
+          description: 'Pick description e.g. "2027 1st", "2027 early first", "2028 2nd round". Include tier (Early/Mid/Late) if known.',
+        },
+      },
+      required: ['name'],
+    },
+  },
+  {
     name: 'get_ktc_rankings',
     description: 'Get KTC dynasty rankings (SF TE+ format), optionally filtered by position.',
     parameters: {
@@ -264,6 +278,7 @@ async function executeTool(name, args) {
       case 'get_player_stats':       return getPlayerStats(args.name, args.season);
       case 'compare_players':        return await comparePlayers(args.names);
       case 'evaluate_trade':         return await evaluateTrade(args.giving, args.receiving);
+      case 'lookup_draft_pick':      return lookupDraftPick(args.name);
       case 'get_ktc_rankings':       return getKtcRankings(args.position, args.top_n);
       case 'get_fantasycalc_rankings': return getFantasyCalcRankings(args.position, args.top_n);
       case 'get_trending_players':   return await getTrendingPlayers();

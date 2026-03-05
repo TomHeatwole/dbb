@@ -287,6 +287,41 @@ export async function searchPlayer(name) {
   return lines.join('\n');
 }
 
+// ─── Draft pick resolution ────────────────────────────────────────────────────
+
+const PICK_ROUND_MAP = {
+  '1st': '1st', 'first':  '1st',
+  '2nd': '2nd', 'second': '2nd',
+  '3rd': '3rd', 'third':  '3rd',
+  '4th': '4th', 'fourth': '4th',
+};
+
+const PICK_TIER_MAP = {
+  early:  'Early',
+  mid:    'Mid',
+  middle: 'Mid',
+  late:   'Late',
+};
+
+function resolvePick(name, ktcMap) {
+  const n = (name || '').toLowerCase().trim();
+
+  const yearMatch  = n.match(/\b(202[6-9]|203\d)\b/);
+  const roundMatch = n.match(/\b(1st|2nd|3rd|4th|first|second|third|fourth)\b/);
+  if (!yearMatch || !roundMatch) return null;
+
+  const year  = yearMatch[1];
+  const round = PICK_ROUND_MAP[roundMatch[1]];
+
+  const tierKey = Object.keys(PICK_TIER_MAP).find((t) => n.includes(t));
+  const tier    = tierKey ? PICK_TIER_MAP[tierKey] : 'Mid';
+
+  const ktcName = `${year} ${tier} ${round}`;
+  const entry   = ktcMap.get(normalisePlayerName(ktcName));
+  if (!entry) return null;
+  return { label: entry.name, value: entry.ktcValue_tep || 0, found: true };
+}
+
 // ─── Compare Players ──────────────────────────────────────────────────────────
 
 export async function comparePlayers(names) {
@@ -295,6 +330,23 @@ export async function comparePlayers(names) {
   const { bySleeperId: ffbById, byName: ffbByName } = loadFfbData();
 
   const rows = names.map((name) => {
+    const pick = resolvePick(name, ktcMap);
+    if (pick) {
+      return {
+        name:     pick.label,
+        position: 'PICK',
+        nflTeam:  'N/A',
+        found:    true,
+        age:      null,
+        ktcValue: pick.value || null,
+        ktcRank:  ktcMap.get(normalisePlayerName(pick.label))?.rank_tep || null,
+        fcValue:  null,
+        fcRank:   null,
+        fcTrend:  null,
+        ffbRank:  null,
+      };
+    }
+
     const result = findPlayerByName(name);
     if (!result) return { name, found: false };
 
@@ -362,6 +414,9 @@ export async function evaluateTrade(giving, receiving) {
   const { map: ktcMap } = loadKtcData();
 
   function resolvePlayer(name) {
+    const pick = resolvePick(name, ktcMap);
+    if (pick) return pick;
+
     const result = findPlayerByName(name);
     if (!result) return { label: name, value: 0, found: false };
     const displayName = getPlayerDisplayName(result.player);
@@ -408,6 +463,58 @@ export async function evaluateTrade(giving, receiving) {
     lines.push(`  Value difference: ${diff > 0 ? '+' : '−'}${absDiff} KTC points`);
   }
 
+  return lines.join('\n');
+}
+
+// ─── Draft Pick Lookup ────────────────────────────────────────────────────────
+
+export function lookupDraftPick(name) {
+  const { map: ktcMap, asOf } = loadKtcData();
+
+  const n = (name || '').toLowerCase().trim();
+  const yearMatch  = n.match(/\b(202[6-9]|203\d)\b/);
+  const roundMatch = n.match(/\b(1st|2nd|3rd|4th|first|second|third|fourth)\b/);
+
+  if (!yearMatch || !roundMatch) {
+    return `Couldn't parse "${name}" as a draft pick. Try something like "2027 1st", "2027 early first", or "2028 2nd".`;
+  }
+
+  const year  = yearMatch[1];
+  const round = PICK_ROUND_MAP[roundMatch[1]];
+
+  const tierKey = Object.keys(PICK_TIER_MAP).find((t) => n.includes(t));
+
+  const currentYear = new Date().getFullYear();
+  const yearsAway   = Number(year) - currentYear;
+  const proximity   =
+    yearsAway <= 0  ? 'current year\'s draft (imminent)'
+    : yearsAway === 1 ? 'next year\'s draft (~1 year away)'
+    : `${yearsAway} years away`;
+
+  const lines = [
+    `**${year} ${round} Draft Pick — KTC SF TE+ Values** *(as of ${asOf || 'recent'})*`,
+    `*${year} draft = ${proximity}*`,
+    '',
+  ];
+
+  if (tierKey) {
+    const tier  = PICK_TIER_MAP[tierKey];
+    const entry = ktcMap.get(normalisePlayerName(`${year} ${tier} ${round}`));
+    if (!entry) {
+      return `No KTC data found for "${year} ${tier} ${round}". The pick may be beyond available data.`;
+    }
+    lines.push(`  **${entry.name}** — KTC: ${fmt(entry.ktcValue_tep)} (Overall #${entry.rank_tep || '?'})`);
+  } else {
+    for (const tier of ['Early', 'Mid', 'Late']) {
+      const entry = ktcMap.get(normalisePlayerName(`${year} ${tier} ${round}`));
+      if (entry) {
+        lines.push(`  **${entry.name}** — KTC: ${fmt(entry.ktcValue_tep)} (Overall #${entry.rank_tep || '?'})`);
+      }
+    }
+  }
+
+  lines.push('');
+  lines.push('*Tier (Early/Mid/Late) reflects projected draft slot. Use the appropriate tier based on the originating team\'s expected finish.*');
   return lines.join('\n');
 }
 
