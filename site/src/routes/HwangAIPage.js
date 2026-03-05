@@ -201,7 +201,7 @@ function HwangAIPage() {
 
   return (
     <>
-      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} image={`${process.env.PUBLIC_URL || ''}/data/hwangai.png`} />
       <InfoPageWrapper title={
         <span className="info-title-inline">
           <img src={LOGO} alt="" className="hwang-ai-title-logo" aria-hidden="true" />
