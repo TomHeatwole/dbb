@@ -246,7 +246,7 @@ function HwangAIPage() {
             />
             <button
               className="hwang-ai-send-btn"
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!input.trim() || loading || searching}
               aria-label="Send message"
             >
