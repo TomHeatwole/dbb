@@ -32,6 +32,13 @@ const QUESTION_SEARCH_PATTERNS = [
   /\bnfl (news|transaction|move)\b/i,
   /\bwaiv(ed|er release)\b/i,
   /\b(cut|released) (by|from)\b/i,
+  // Recent draft class / rookie status questions
+  /\b(2022|2023|2024|2025)\s+(draft|class|rookie|pick)\b/i,
+  /\brookie (season|year|campaign|contract|deal)\b/i,
+  /\b(how|what).*(rookie|first year|first season)\b/i,
+  /\b(has|have|did)\s+\w+(\s+\w+)?\s+(played|been drafted|entered|made the (team|roster|league))\b/i,
+  /\bis\s+\w+(\s+\w+)?\s+(in the nfl|on a (team|roster)|still (playing|active))\b/i,
+  /\b(snap|snaps|snap count|snap share)\b/i,
 ];
 
 function questionNeedsSearch(messages) {
@@ -110,7 +117,7 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'search_player',
-    description: 'Search for a player by name. Returns dynasty values (KTC, FantasyCalc, FFB) and current owner.',
+    description: 'Search for a player by name. Returns their CURRENT NFL team from the live Sleeper database (overrides training data), current age, dynasty values (KTC, FantasyCalc, FFB), and current league owner. Call this any time you are about to make any claim about a player\'s current team, NFL status, or whether they are active in the league — especially for players you associate with the 2022–2025 draft classes.',
     parameters: {
       type: 'OBJECT',
       properties: { name: { type: 'STRING', description: 'Player name e.g. "Justin Jefferson"' } },
@@ -119,7 +126,7 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'get_player_stats',
-    description: "Get a player's NFL regular season stats (passing, rushing, receiving) and fantasy points for a given season. Data is available from 2005 through 2025. Fantasy points shown are standard 0-PPR scoring; TE stats also show TEP-adjusted totals. Use this whenever a user asks about a player's stats, production, or fantasy output in any past season.",
+    description: "Get a player's NFL regular season stats (passing, rushing, receiving) and fantasy points for a given season. Data is available from 2005 through 2025. Fantasy points shown are standard 0-PPR scoring; TE stats also show TEP-adjusted totals. Use this whenever a user asks about a player's stats, production, or fantasy output in any past season. Also use this to VERIFY whether a player has NFL production — if they appear in the database with stats for a given year, they have played. This is the definitive check for 'has this player played in the NFL.'",
     parameters: {
       type: 'OBJECT',
       properties: {
