@@ -57,22 +57,26 @@ function AdminControls() {
           title={OG_TITLE}
           description={OG_DESCRIPTION}
         />
-      <div className="info-container info-shared info-rel">
-        <h1 className="info-title">Admin Controls</h1>
-        <form onSubmit={submit} className="admin-controls-form">
-          <label htmlFor="admin-pass">Password</label>
-          <input
-            id="admin-pass"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="admin-input"
-            autoComplete="current-password"
-          />
-          <button type="submit" className="admin-button">Submit</button>
-          {error ? <div className="admin-error">{error}</div> : null}
-        </form>
-      </div>
+        <div className="admin-login-page">
+          <div className="admin-login-card">
+            <img src="/logo.png" alt="Hwang Dynasty" className="admin-login-logo" />
+            <h1 className="admin-login-title">Admin Controls</h1>
+            <form onSubmit={submit} className="admin-login-form">
+              <label className="admin-login-label" htmlFor="admin-pass">Password</label>
+              <input
+                id="admin-pass"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="admin-login-input"
+                autoComplete="current-password"
+                placeholder="Enter password"
+              />
+              <button type="submit" className="admin-login-btn">Enter</button>
+              {error ? <div className="admin-login-error">{error}</div> : null}
+            </form>
+          </div>
+        </div>
       </>
     );
   }
