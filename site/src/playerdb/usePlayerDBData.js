@@ -429,12 +429,22 @@ export function usePlayerDBData() {
           );
         }
 
-        // Only keep players with at least one meaningful data point
-        const result = unified.filter(p =>
-          (p.ktcValue_tep && p.ktcValue_tep > 0) ||
-          p.fantasyPoints > 0 ||
-          (p.fcValue && p.fcValue > 0)
-        );
+        // Deduplicate by sleeperId: if the KTC and FC passes both resolved the
+        // same person (via different display-name variants), they'll share a
+        // sleeperId and produce a duplicate row. Keep the first occurrence
+        // (KTC pass), which is the more authoritative source.
+        const seenById = new Set();
+        const result = unified.filter(p => {
+          if (p.sleeperId) {
+            if (seenById.has(p.sleeperId)) return false;
+            seenById.add(p.sleeperId);
+          }
+          return (
+            (p.ktcValue_tep && p.ktcValue_tep > 0) ||
+            p.fantasyPoints > 0 ||
+            (p.fcValue && p.fcValue > 0)
+          );
+        });
 
         if (!cancelled) {
           setPlayers(result);

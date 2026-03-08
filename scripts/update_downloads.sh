@@ -4,7 +4,7 @@
 #   1. Fetches player values from the FantasyCalc public API and writes
 #      → site/public/data/fantasycalc.csv
 #
-#   2. Fetches the Fantasy Footballers Podcast dynasty startup rankings page,
+#   2. Fetches the ffb dynasty startup rankings page,
 #      matches players to Sleeper IDs, and writes
 #      → site/public/data/ffb.csv
 #
@@ -22,7 +22,7 @@ node "$SCRIPT_DIR/process_fantasycalc_rankings.js"
 
 echo ""
 
-# ── 2. Fantasy Footballers Podcast rankings → ffb.csv ─────────────────────────
+# ── 2. ffb rankings → ffb.csv ─────────────────────────
 
 echo "FFB rankings: matching players to Sleeper IDs..."
 node "$SCRIPT_DIR/process_ffb_rankings.js"
