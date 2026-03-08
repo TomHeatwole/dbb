@@ -26,3 +26,9 @@ echo ""
 
 echo "FFB rankings: matching players to Sleeper IDs..."
 node "$SCRIPT_DIR/process_ffb_rankings.js"
+
+echo ""
+
+# ── 3. FantasyPros rankings → fantasypros_<name>.csv ──────────────────────────
+
+bash "$SCRIPT_DIR/download_fantasypros.sh"

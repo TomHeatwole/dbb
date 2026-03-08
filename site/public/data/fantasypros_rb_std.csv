@@ -1,0 +1,110 @@
+rank,name,team,position,tier,sleeper_id
+1,Bijan Robinson,ATL,RB,1,9509
+2,Jahmyr Gibbs,DET,RB,1,9221
+3,Jonathan Taylor,IND,RB,1,6813
+4,Christian McCaffrey,SF,RB,1,4034
+5,James Cook III,BUF,RB,2,8138
+6,De'Von Achane,MIA,RB,2,9226
+7,Ashton Jeanty,LV,RB,2,12527
+8,Jeremiyah Love,FA,RB,2,13287
+9,Omarion Hampton,LAC,RB,3,12507
+10,Derrick Henry,BAL,RB,3,3198
+11,Saquon Barkley,PHI,RB,3,4866
+12,Josh Jacobs,GB,RB,3,5850
+13,Chase Brown,CIN,RB,3,9224
+14,Bucky Irving,TB,RB,3,11584
+15,Breece Hall,NYJ,RB,3,8155
+16,Kyren Williams,LAR,RB,3,8150
+17,Kenneth Walker III,FA,RB,3,8151
+18,Javonte Williams,DAL,RB,4,7588
+19,Travis Etienne Jr.,FA,RB,4,7543
+20,TreVeyon Henderson,NE,RB,4,12529
+21,RJ Harvey,DEN,RB,4,12489
+22,Cam Skattebo,NYG,RB,4,12481
+23,Quinshon Judkins,CLE,RB,4,12512
+24,D'Andre Swift,CHI,RB,4,6790
+25,Jaylen Warren,PIT,RB,4,8228
+26,Kyle Monangai,CHI,RB,4,12534
+27,Blake Corum,LAR,RB,5,11586
+28,David Montgomery,HOU,RB,5,5892
+29,Bhayshul Tuten,JAC,RB,5,12490
+30,Rhamondre Stevenson,NE,RB,5,7611
+31,Rico Dowdle,FA,RB,5,7021
+32,Tony Pollard,TEN,RB,5,5967
+33,Jacory Croskey-Merritt,WAS,RB,5,12533
+34,Jadarian Price,FA,RB,5,13286
+35,Zach Charbonnet,SEA,RB,5,9753
+36,Chuba Hubbard,CAR,RB,5,7594
+37,Woody Marks,HOU,RB,5,12474
+38,Tyler Allgeier,FA,RB,5,8132
+39,James Conner,ARI,RB,5,4137
+40,Emmett Johnson,FA,RB,5,13337
+41,Aaron Jones Sr.,FA,RB,5,4199
+42,Jordan Mason,MIN,RB,6,8408
+43,Braelon Allen,NYJ,RB,6,11576
+44,J.K. Dobbins,FA,RB,6,6806
+45,Alvin Kamara,NO,RB,6,4035
+46,Tyrone Tracy Jr.,NYG,RB,6,11655
+47,Trey Benson,ARI,RB,6,11589
+48,Kenneth Gainwell,FA,RB,6,7567
+49,Jonah Coleman,FA,RB,6,13345
+50,Tank Bigsby,PHI,RB,6,9225
+51,Dylan Sampson,CLE,RB,6,12469
+52,Mike Washington Jr.,FA,RB,6,13305
+53,Rachaad White,FA,RB,6,8136
+54,Kaleb Johnson,PIT,RB,6,12504
+55,Kimani Vidal,LAC,RB,6,11647
+56,Tyjae Spears,TEN,RB,7,9508
+57,Isiah Pacheco,KC,RB,7,8205
+58,Jonathon Brooks,CAR,RB,7,11583
+59,Keaton Mitchell,BAL,RB,7,9511
+60,Joe Mixon,FA,RB,7,4018
+61,Brian Robinson Jr.,FA,RB,7,8154
+62,Chris Rodriguez Jr.,WAS,RB,7,10219
+63,Kendre Miller,NO,RB,7,9757
+64,Jaylen Wright,MIA,RB,7,11643
+65,Devin Neal,NO,RB,7,12476
+66,Sean Tucker,FA,RB,7,9506
+67,Kaytron Allen,FA,RB,7,13405
+68,Nicholas Singleton,FA,RB,7,13288
+69,Emanuel Wilson,FA,RB,7,11435
+70,Ray Davis,BUF,RB,7,11575
+71,Najee Harris,LAC,RB,7,7528
+72,Ollie Gordon II,MIA,RB,7,12495
+73,Isaiah Davis,NYJ,RB,7,11571
+74,Demond Claiborne,FA,RB,7,13347
+75,Jaleel McLaughlin,DEN,RB,7,11439
+76,Ty Johnson,BUF,RB,8,6039
+77,Brashard Smith,KC,RB,8,12455
+78,Isaac Guerendo,SF,RB,8,11651
+79,Jaydon Blue,DAL,RB,8,12457
+80,DJ Giddens,IND,RB,8,12471
+81,Malik Davis,DAL,RB,8,8800
+82,George Holani,SEA,RB,8,12048
+83,MarShawn Lloyd,GB,RB,8,11581
+84,Jarquez Hunter,LAR,RB,8,11569
+85,Devin Singletary,NYG,RB,8,6130
+86,Audric Estime,NO,RB,8,11579
+87,Bam Knight,ARI,RB,8,8122
+88,Samaje Perine,CIN,RB,8,4147
+89,Trevor Etienne,CAR,RB,8,12531
+90,Kareem Hunt,FA,RB,8,4098
+91,Justice Hill,BAL,RB,8,5995
+92,Jerome Ford,FA,RB,8,8143
+93,Jordan James,SF,RB,8,12467
+94,LeQuint Allen Jr.,JAC,RB,8,12544
+95,Emari Demercado,FA,RB,8,11199
+96,Tahj Brooks,CIN,RB,8,12543
+97,Nick Chubb,FA,RB,8,4988
+98,Chris Brooks,GB,RB,9,11370
+99,Michael Carter,FA,RB,9,7607
+100,Austin Ekeler,FA,RB,9,4663
+101,Adam Randall,FA,RB,9,13302
+102,Le'Veon Moss,FA,RB,9,13300
+103,Will Shipley,PHI,RB,9,11577
+104,J'Mari Taylor,FA,RB,9,13348
+105,Dameon Pierce,FA,RB,9,8129
+106,Terrell Jennings,NE,RB,9,12412
+107,Antonio Gibson,FA,RB,9,6945
+108,Jawhar Jordan,HOU,RB,9,11588
+109,Raheim Sanders,CLE,RB,9,12472
