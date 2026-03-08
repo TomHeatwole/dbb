@@ -60,6 +60,62 @@ export function decodeScenario(encoded) {
   }
 }
 
+// ── Future Scenario encoding ──────────────────────────────────────────────────
+//
+// Schema extends the base with a `py` (projection year) field and uses
+// a fixed sentinel `y: "future"` so decoders can distinguish the two types.
+//
+// { y: "future", py: "2024", c: [{ r, a, d }] }
+
+/**
+ * Encode a future scenario (current rosters + projection year) into a URL-safe
+ * base64 string.
+ *
+ * @param {string} projectionYear  The historical season used for stat mapping.
+ * @param {Object} originalRosters – { rosterId: string[] }
+ * @param {Object} scenarioRosters – { rosterId: string[] }
+ * @returns {string} base64-encoded future scenario param
+ */
+export function encodeFutureScenario(projectionYear, originalRosters, scenarioRosters) {
+  const changes = [];
+
+  for (const rid in originalRosters) {
+    const orig = new Set(originalRosters[rid] || []);
+    const curr = scenarioRosters[rid] || [];
+    const currSet = new Set(curr);
+
+    const added   = curr.filter((pid) => !orig.has(pid));
+    const removed = [...orig].filter((pid) => !currSet.has(pid));
+
+    if (added.length > 0 || removed.length > 0) {
+      changes.push({ r: Number(rid), a: added, d: removed });
+    }
+  }
+
+  const schema = { y: 'future', py: String(projectionYear), c: changes };
+  return btoa(JSON.stringify(schema));
+}
+
+/**
+ * Decode a base64 future scenario param.
+ * Returns null if the param is missing, malformed, or not a future scenario.
+ *
+ * @param {string|null} encoded
+ * @returns {{ py: string, c: Array } | null}
+ */
+export function decodeFutureScenario(encoded) {
+  if (!encoded) return null;
+  try {
+    const obj = JSON.parse(atob(encoded));
+    if (!obj || obj.y !== 'future' || typeof obj.py !== 'string' || !Array.isArray(obj.c)) return null;
+    return obj;
+  } catch {
+    return null;
+  }
+}
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
 /**
  * Given originalRosters fetched from the API and the encoded changes,
  * reconstruct the modified scenarioRosters.

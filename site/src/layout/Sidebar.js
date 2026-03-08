@@ -75,6 +75,7 @@ function Sidebar() {
               <li><Link to="/yoffs">Playoffs</Link></li>
               <li><a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a></li>
               <li><Link to="/hwangai">HwangAI</Link></li>
+              <li><Link to="/future-scenarios">Future Scenarios</Link></li>
               <li>
                 <div
                   className="dropdown-toggle"

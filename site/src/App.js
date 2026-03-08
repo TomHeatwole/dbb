@@ -25,6 +25,7 @@ import YoffsPage from './routes/YoffsPage';
 import H2hPage from './routes/h2h';
 import NotesPage from './routes/NotesPage';
 import ScenariosPage from './routes/ScenariosPage';
+import FutureScenariosPage from './routes/FutureScenariosPage';
 import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
 import HwangAIPage from './routes/HwangAIPage';
@@ -65,6 +66,7 @@ function MobileTopNav() {
             <Link to="/hwangai" className="mobile-top-home-card-link">HwangAI</Link>
             <a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer" className="mobile-top-home-card-link">Podcast</a>
             <Link to="/h2h" className="mobile-top-home-card-link">Head&nbsp;to&nbsp;Head</Link>
+            <Link to="/future-scenarios" className="mobile-top-home-card-link">Future&nbsp;Scenarios</Link>
           </div>
         )}
       </nav>
@@ -106,6 +108,9 @@ function AppInner() {
       {/* Conditionally rendered routes based on feature toggles */}
       {isFeatureEnabled('SCENARIOS_ENABLED', MAIN_FEATURES) && (
         <Route path="/scenarios" element={<ScenariosPage />} />
+      )}
+      {isFeatureEnabled('FUTURE_SCENARIOS_ENABLED', MAIN_FEATURES) && (
+        <Route path="/future-scenarios" element={<FutureScenariosPage />} />
       )}
       {isFeatureEnabled('PLAYOFFS_ENABLED', MAIN_FEATURES) && (
         <Route path="/yoffs" element={<YoffsPage />} />

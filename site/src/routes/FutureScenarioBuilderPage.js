@@ -1,10 +1,15 @@
 /**
- * ScenarioBuilderPage — the "builder" state of the Scenario Builder feature.
+ * FutureScenarioBuilderPage — the "builder" state of the Future Scenarios feature.
  *
- * Completely self-contained: owns all data loading, roster-editing state,
- * and navigation to the eval view. No coupling to ScenarioEvalPage.
+ * Like the Scenario Builder, but uses current live rosters and projects them
+ * forward using FantasyPros rankings mapped onto a chosen historical season.
  *
- * Entry point: rendered by ScenariosPage when ?state=builder (or no state param).
+ * Key differences from ScenarioBuilderPage:
+ *   • Rosters always come from the current live league (not a selectable season).
+ *   • The season dropdown selects the *projection year* (historical season whose
+ *     stats are used for stat mapping), not the roster source.
+ *   • The search pool for adding players is drawn from FantasyPros rankings
+ *     rather than a historical stats CSV.
  */
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
@@ -17,103 +22,76 @@ import { fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { getStandings } from '../scores/ScoresParser';
 import { PREVIOUS_YEARS } from '../utils/global_constants';
+import { getCurrentYear } from '../utils/DateHelper';
 import ScenarioTeamGrid from '../scenarios/ScenarioTeamGrid';
 import ScenarioRosterEditor from '../scenarios/ScenarioRosterEditor';
 import ScenarioDeltas from '../scenarios/ScenarioDeltas';
-import ScenarioBuilderTooltip from '../scenarios/ScenarioBuilderTooltip';
-import { encodeScenario, decodeScenario, applyScenarioChanges } from '../scenarios/scenarioEncoding';
+import { buildTopPlayersFromFpCsvs } from '../scenarios/fpRankingsLoader';
+import { encodeFutureScenario, decodeFutureScenario, applyScenarioChanges } from '../scenarios/scenarioEncoding';
 
-const OG_TITLE = 'Scenario Builder';
-const OG_DESCRIPTION = 'Build what-if scenarios by editing team rosters.';
+const OG_TITLE = 'Future Scenarios';
+const OG_DESCRIPTION = 'Project your current rosters through a full season using FantasyPros rankings.';
 
-// Only completed seasons (PREVIOUS_YEARS keys), newest-first
-const SCENARIO_YEARS = Object.keys(PREVIOUS_YEARS).sort((a, b) => Number(b) - Number(a));
+// FP CSV paths (no position changes needed — just need the raw text for search pool)
+const FP_CSV_PATHS = [
+  '/data/fantasypros_qb.csv',
+  '/data/fantasypros_rb_std.csv',
+  '/data/fantasypros_wr_std.csv',
+  '/data/fantasypros_te_half.csv',
+];
 
-// ── CSV helpers ──────────────────────────────────────────────────────────────
+// Only completed seasons (PREVIOUS_YEARS keys), newest-first — used as projection options
+const PROJECTION_YEARS = Object.keys(PREVIOUS_YEARS).sort((a, b) => Number(b) - Number(a));
 
-function parseStatsCsvLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { inQuotes = !inQuotes; }
-    else if (c === ',' && !inQuotes) { result.push(current); current = ''; }
-    else { current += c; }
-  }
-  result.push(current);
-  return result;
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+
+function FutureScenariosTooltip() {
+  return (
+    <span className="info-icon scenario-builder-tooltip" aria-label="About Future Scenarios">
+      ℹ️
+      <span className="info-icon-tooltip">
+        <div className="scenario-builder-tooltip-inner">
+          <div className="scenario-builder-tooltip-body">
+            <p style={{ margin: '0 0 0.6em 0' }}>
+              Project your current rosters through a full 17-week season using
+              FantasyPros rankings as a guide.
+            </p>
+            <p style={{ margin: '0 0 0.6em 0' }}>
+              Each player's FP positional rank is mapped to the player who
+              achieved that same rank in the chosen projection season. That
+              historical player's week-by-week stats become the projection.
+            </p>
+            <p style={{ margin: 0 }}>
+              Use the <strong>projection year</strong> dropdown to choose which
+              historical season's stats to use. Edit any roster to model a trade
+              or waiver move, then hit <strong>Evaluate →</strong> to see projected standings.
+            </p>
+          </div>
+        </div>
+      </span>
+    </span>
+  );
 }
 
-/**
- * Parse the season stats CSV and return the top N players by PPR fantasy
- * points, resolved to the player-info shape used elsewhere in the app.
- */
-function buildTopPlayersByStats(csvText, playersData, playerIdMap, n = 25) {
-  if (!csvText || !playersData) return [];
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) return [];
+// ── Component ─────────────────────────────────────────────────────────────────
 
-  const headers = lines[0].split(',');
-  const idIdx   = headers.indexOf('player_id');
-  const nameIdx = headers.indexOf('player_display_name');
-  const ptsIdx  = headers.indexOf('fantasy_points_ppr');
-  if (idIdx === -1 || ptsIdx === -1) return [];
-
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const vals  = parseStatsCsvLine(lines[i]);
-    const gsisId = vals[idIdx]?.trim();
-    const pts    = parseFloat(vals[ptsIdx]) || 0;
-    if (!gsisId || pts <= 0) continue;
-    rows.push({ gsisId, name: (vals[nameIdx] || '').trim(), fantasyPoints: pts });
-  }
-
-  rows.sort((a, b) => b.fantasyPoints - a.fantasyPoints);
-  const topRows = rows.slice(0, n);
-
-  // Build reverse-lookup maps in a single pass over playersData
-  const gsisSet      = new Set(topRows.map((r) => r.gsisId));
-  const gsisToSleeper = {};
-  const nameToSleeper = {};
-  for (const sid in playersData) {
-    const p = playersData[sid];
-    const gsis = p.gsis_id && p.gsis_id.trim();
-    if (gsis && gsisSet.has(gsis)) gsisToSleeper[gsis] = sid;
-    if (p.full_name) nameToSleeper[p.full_name.toLowerCase()] = sid;
-  }
-
-  const result = [];
-  for (const row of topRows) {
-    const sleeperId = gsisToSleeper[row.gsisId] || nameToSleeper[row.name.toLowerCase()];
-    if (!sleeperId) continue;
-    const info = getPlayerInfo(sleeperId, playersData, playerIdMap);
-    if (info) result.push({ ...info, player_id: sleeperId });
-  }
-  return result;
-}
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-function ScenarioBuilderPage() {
+function FutureScenarioBuilderPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Decode any pre-loaded scenario from the URL (coming back from eval page).
-  // Stored in a ref so the load effect can consume it exactly once.
+  // Decode any pre-loaded future scenario from sessionStorage / URL on mount.
   const pendingScenarioRef = useRef(() => {
     const param = searchParams.get('scenario');
-    return param ? decodeScenario(param) : null;
+    return param ? decodeFutureScenario(param) : null;
   });
-  // Evaluate the factory ref immediately so we hold the decoded value.
   if (typeof pendingScenarioRef.current === 'function') {
     pendingScenarioRef.current = pendingScenarioRef.current();
   }
 
-  const [season, setSeason] = useState(() => {
+  const [projectionYear, setProjectionYear] = useState(() => {
     const pre = pendingScenarioRef.current;
-    if (pre && SCENARIO_YEARS.includes(pre.y)) return pre.y;
-    return SCENARIO_YEARS[0] || '2025';
+    if (pre && PROJECTION_YEARS.includes(pre.py)) return pre.py;
+    return PROJECTION_YEARS[0] || '2024';
   });
   const [dropdownOpen, setDropdownOpen]         = useState(false);
   const [playersData, setPlayersData]           = useState(null);
@@ -122,13 +100,13 @@ function ScenarioBuilderPage() {
   const [teamsForGrid, setTeamsForGrid]         = useState([]);
   const [loading, setLoading]                   = useState(true);
   const [error, setError]                       = useState(null);
-  // scenarioRosters — mutable copy the user edits
   const [scenarioRosters, setScenarioRosters]   = useState({});
-  // originalRosters — immutable snapshot used for delta calculation
   const [originalRosters, setOriginalRosters]   = useState({});
   const [selectedRosterId, setSelectedRosterId] = useState(null);
 
   // ── Data loading ───────────────────────────────────────────────────────────
+  // Rosters are always current-year — only loaded once on mount.
+  // Changing the projection year does NOT reload rosters.
 
   useEffect(() => {
     let cancelled = false;
@@ -142,12 +120,14 @@ function ScenarioBuilderPage() {
       setLoading(true);
       setError(null);
       try {
-        const [teamData, idMap, weeksData, players, statsCsvResp] = await Promise.all([
-          fetchTeamData(season),
+        const currentYear = getCurrentYear();
+
+        const [teamData, idMap, weeksData, players, ...fpResponses] = await Promise.all([
+          fetchTeamData(currentYear),
           fetchPlayerIdMap(),
-          fetchScoresData(season),
+          fetchScoresData(currentYear).catch(() => null),
           fetch('/data/players.txt').then((r) => r.json()).catch(() => null),
-          fetch(`/data/stats_player_reg_${season}.csv`).catch(() => null),
+          ...FP_CSV_PATHS.map((p) => fetch(p).catch(() => null)),
         ]);
 
         if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
@@ -155,16 +135,19 @@ function ScenarioBuilderPage() {
         }
         if (cancelled) return;
 
-        let topPlayers = [];
-        if (statsCsvResp && statsCsvResp.ok && players) {
-          const csvText = await statsCsvResp.text();
-          topPlayers = buildTopPlayersByStats(csvText, players, idMap);
-        }
+        // Build FP search pool
+        const fpTexts = await Promise.all(
+          fpResponses.map((r) => (r && r.ok ? r.text().catch(() => null) : null)),
+        );
+        const topPlayers = players && idMap
+          ? buildTopPlayersFromFpCsvs(fpTexts, players, idMap, getPlayerInfo)
+          : [];
 
         setPlayersData(players);
         setPlayerIdMap(idMap);
         setTopPlayersBySeason(topPlayers);
 
+        // Build teams, optionally including current standings if available
         const standings         = getStandings(weeksData) || [];
         const placeByRosterId  = {};
         const pointsByRosterId = {};
@@ -179,20 +162,20 @@ function ScenarioBuilderPage() {
           const rid = roster && roster.roster_id != null ? Number(roster.roster_id) : null;
           if (rid == null) return null;
           const user = (teamData.users || []).find(
-            (u) => roster && String(u.user_id) === String(roster.owner_id)
+            (u) => roster && String(u.user_id) === String(roster.owner_id),
           );
           let teamName = `Team ${rid}`;
-          if (user?.metadata?.team_name)        teamName = user.metadata.team_name;
-          else if (user?.display_name)          teamName = `Team ${user.display_name}`;
+          if (user?.metadata?.team_name)   teamName = user.metadata.team_name;
+          else if (user?.display_name)     teamName = `Team ${user.display_name}`;
           const avatarUrl =
             (user && (user.team_avatar_url || user.user_avatar_url || user.avatar_url)) || null;
           const place       = placeByRosterId[String(rid)];
           const totalPoints = pointsByRosterId[String(rid)];
           return {
-            rosterId: rid,
+            rosterId:    rid,
             teamName,
             avatarUrl,
-            place:       place !== 999 ? place : null,
+            place:       place && place !== 999 ? place : null,
             totalPoints: totalPoints ?? null,
           };
         }).filter(Boolean);
@@ -209,20 +192,20 @@ function ScenarioBuilderPage() {
           const rid = roster && roster.roster_id != null ? Number(roster.roster_id) : null;
           if (rid != null) initial[rid] = Array.isArray(roster.players) ? [...roster.players] : [];
         }
-        // If returning from the eval page, restore the active scenario.
-        // sessionStorage is read HERE (after the cancelled check) so that React
-        // StrictMode's double-invocation doesn't wipe it: run-1 is cancelled and
-        // never reaches this line; run-2 survives and is the one that reads & applies.
-        const storedEncoded = sessionStorage.getItem('pendingBuilderScenario');
+
+        // Restore scenario from sessionStorage (returning from eval) or URL param
+        const storedEncoded = sessionStorage.getItem('pendingFutureBuilderScenario');
         const pending = storedEncoded
-          ? decodeScenario(storedEncoded)
-          : pendingScenarioRef.current; // fallback: direct URL ?scenario= param
-        if (storedEncoded) sessionStorage.removeItem('pendingBuilderScenario');
+          ? decodeFutureScenario(storedEncoded)
+          : pendingScenarioRef.current;
+        if (storedEncoded) sessionStorage.removeItem('pendingFutureBuilderScenario');
         pendingScenarioRef.current = null;
 
-        if (pending && String(pending.y) === String(season) && Array.isArray(pending.c) && pending.c.length > 0) {
+        if (pending && Array.isArray(pending.c) && pending.c.length > 0) {
           setScenarioRosters(applyScenarioChanges(initial, pending.c));
-          // Strip any leftover ?scenario= from the URL.
+          if (pending.py && PROJECTION_YEARS.includes(pending.py)) {
+            setProjectionYear(pending.py);
+          }
           setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
             next.delete('scenario');
@@ -231,11 +214,12 @@ function ScenarioBuilderPage() {
         } else {
           setScenarioRosters(initial);
         }
+
         const snapshot = {};
         for (const rid in initial) snapshot[rid] = [...initial[rid]];
         setOriginalRosters(snapshot);
       } catch (e) {
-        if (!cancelled) setError('Failed to load scenario data.');
+        if (!cancelled) setError('Failed to load roster data.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -243,13 +227,13 @@ function ScenarioBuilderPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [season, setSearchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Rosters only load once — projection year changes don't reload
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleSelectTeam = (rosterId) => setSelectedRosterId(rosterId);
 
-  /** Revert a single delta: 'add' → remove the added player; 'remove' → restore it. */
   const handleRevert = (rosterId, playerId, type) => {
     setScenarioRosters((prev) => {
       const current = prev[rosterId] || [];
@@ -279,7 +263,7 @@ function ScenarioBuilderPage() {
   };
 
   const handleEvaluate = () => {
-    const encoded = encodeScenario(season, originalRosters, scenarioRosters);
+    const encoded = encodeFutureScenario(projectionYear, originalRosters, scenarioRosters);
     navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`);
   };
 
@@ -290,33 +274,23 @@ function ScenarioBuilderPage() {
     [teamsForGrid, selectedRosterId],
   );
 
-  const hasChanges = useMemo(() => {
-    for (const rid in originalRosters) {
-      const orig    = new Set(originalRosters[rid] || []);
-      const curr    = scenarioRosters[rid] || [];
-      const currSet = new Set(curr);
-      for (const pid of currSet) { if (!orig.has(pid)) return true; }
-      for (const pid of orig)    { if (!currSet.has(pid)) return true; }
-    }
-    return false;
-  }, [originalRosters, scenarioRosters]);
-
-  // ── Year selector (left header slot) ──────────────────────────────────────
+  // ── Projection year selector (left header slot) ───────────────────────────
 
   const leftHeader = (
     <div className="team-season-dropdown" onClick={() => setDropdownOpen((o) => !o)}>
-      {season}
+      <span className="future-scenario-proj-label">Proj: </span>
+      {projectionYear}
       <span className="team-season-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
       {dropdownOpen && (
         <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-          {SCENARIO_YEARS.map((yr) => (
+          {PROJECTION_YEARS.map((yr) => (
             <div
               key={yr}
               className={
                 'team-season-dropdown-option' +
-                (yr === season ? ' team-season-dropdown-option-active' : '')
+                (yr === projectionYear ? ' team-season-dropdown-option-active' : '')
               }
-              onClick={() => { setSeason(yr); setDropdownOpen(false); }}
+              onClick={() => { setProjectionYear(yr); setDropdownOpen(false); }}
             >
               {yr}
             </div>
@@ -332,11 +306,11 @@ function ScenarioBuilderPage() {
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper
-        title={<>Scenario Builder <ScenarioBuilderTooltip /></>}
+        title={<>Future Scenarios <FutureScenariosTooltip /></>}
         subtitle={null}
         leftHeader={leftHeader}
       >
-        {loading && <LoadingState label="Loading scenario data…" />}
+        {loading && <LoadingState label="Loading current rosters…" />}
 
         {!loading && error && (
           <div style={{ color: '#ff6b6b', padding: '20px' }}>{error}</div>
@@ -344,7 +318,6 @@ function ScenarioBuilderPage() {
 
         {!loading && !error && (
           <div className="scenario-page-layout">
-            {/* Team selector — full width across the top */}
             <div className="scenario-page-top">
               <ScenarioTeamGrid
                 teams={teamsForGrid}
@@ -353,7 +326,6 @@ function ScenarioBuilderPage() {
               />
             </div>
 
-            {/* Middle: deltas + evaluate (left) | roster editor (right) */}
             <div className="scenario-page-middle">
               <div className="scenario-page-deltas-col">
                 {playersData && playerIdMap && (
@@ -367,32 +339,20 @@ function ScenarioBuilderPage() {
                   />
                 )}
                 <div className="scenario-evaluate-wrapper">
-                  {/* Outer span intercepts hover even when button is disabled */}
-                  <span className={!hasChanges ? 'scenario-evaluate-hint' : undefined}>
-                    <button
-                      type="button"
-                      className={
-                        'scenario-evaluate-btn' +
-                        (!hasChanges ? ' scenario-evaluate-btn--disabled' : '')
-                      }
-                      disabled={!hasChanges}
-                      onClick={handleEvaluate}
-                    >
-                      Evaluate Scenario →
-                    </button>
-                    {!hasChanges && (
-                      <span className="scenario-evaluate-hint-tooltip">
-                        Make at least one roster change to evaluate
-                      </span>
-                    )}
-                  </span>
+                  <button
+                    type="button"
+                    className="scenario-evaluate-btn"
+                    onClick={handleEvaluate}
+                  >
+                    Evaluate Scenario →
+                  </button>
                 </div>
               </div>
 
               <div className="scenario-page-editor-col">
                 {selectedTeam && playersData && playerIdMap ? (
                   <ScenarioRosterEditor
-                    key={`${season}-${selectedRosterId}`}
+                    key={`future-${selectedRosterId}`}
                     team={selectedTeam}
                     playerIds={scenarioRosters[selectedRosterId] || []}
                     playersData={playersData}
@@ -415,4 +375,4 @@ function ScenarioBuilderPage() {
   );
 }
 
-export default ScenarioBuilderPage;
+export default FutureScenarioBuilderPage;

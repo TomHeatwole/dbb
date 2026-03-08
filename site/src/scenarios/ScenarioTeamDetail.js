@@ -17,6 +17,152 @@ import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 
+// ── FP rank badge (Future Scenarios only) ─────────────────────────────────────
+
+/**
+ * Shows a small badge next to a player indicating:
+ *  - Green "TE12" if the player is ranked in FantasyPros (with hover tooltip naming
+ *    the historical player whose stats are being slotted in)
+ *  - Red "not ranked" if the player has no FP rank (will project to 0 pts)
+ *
+ * All props are optional — when fpRankings is null/undefined the component
+ * renders nothing, so it's safe to include in non-future-scenario views.
+ */
+function playerName(p) {
+  if (!p) return null;
+  return p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || null;
+}
+
+// ── Position rank list modal ───────────────────────────────────────────────────
+
+function FpRankListModal({ position, rank, posRanks, projectionYear, playersData, onClose }) {
+  const scoringNote = position === 'TE' ? 'half-PPR' : 'standard';
+
+  return createPortal(
+    <div className="player-modal-overlay" onClick={onClose}>
+      <div
+        className="player-modal fp-rank-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="player-card-close" aria-label="Close" onClick={onClose}>×</button>
+
+        <div className="fp-rank-modal-header">
+          <span className="fp-rank-modal-title">{position} Rankings</span>
+          {projectionYear && (
+            <span className="fp-rank-modal-subtitle">{projectionYear} season · {scoringNote}</span>
+          )}
+        </div>
+
+        <div className="fp-rank-modal-scroll">
+          <table className="fp-rank-modal-table">
+            <thead>
+              <tr>
+                <th className="fp-rank-modal-th fp-rank-modal-th--rank">#</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--name">Player</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--pts">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(posRanks || []).map((entry, i) => {
+                const name = playerName(playersData && playersData[entry.sleeperId]);
+                const isActive = i + 1 === rank;
+                return (
+                  <tr
+                    key={entry.sleeperId}
+                    className={`fp-rank-modal-row${isActive ? ' fp-rank-modal-row--active' : ''}`}
+                  >
+                    <td className="fp-rank-modal-td fp-rank-modal-td--rank">{i + 1}</td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--name">
+                      {name || <span className="fp-rank-modal-unknown">{entry.sleeperId}</span>}
+                    </td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--pts">
+                      {entry.scoringPts.toFixed(1)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ── Badge component ────────────────────────────────────────────────────────────
+
+function FpRankBadge({ playerId, fpRankings, historicalPositionRanks, projectionYear, playersData }) {
+  const [tipPos, setTipPos]     = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  if (!fpRankings) return null;
+
+  const fpInfo = fpRankings[playerId];
+
+  if (!fpInfo) {
+    return (
+      <span
+        className="fp-rank-badge fp-rank-badge--not-found"
+        title="Player not found in FantasyPros rankings — will project as 0 pts"
+      >
+        not ranked
+      </span>
+    );
+  }
+
+  const { rank, position } = fpInfo;
+
+  // Each posRanks entry is { sleeperId, scoringPts } (see historicalRankingsBuilder)
+  const posRanks            = historicalPositionRanks && historicalPositionRanks[position];
+  const historicalEntry     = posRanks && posRanks[rank - 1];
+  const historicalPlayer    = historicalEntry && playersData && playersData[historicalEntry.sleeperId];
+  const historicalPlayerName = playerName(historicalPlayer);
+
+  const label   = `${position}${rank}`;
+  const tooltip = historicalPlayerName && projectionYear
+    ? `${historicalPlayerName}, ${projectionYear} season`
+    : projectionYear
+      ? `${position} rank ${rank} (${projectionYear} season)`
+      : `${position} rank ${rank}`;
+
+  return (
+    <>
+      <span
+        className="fp-rank-tooltip-wrap"
+        onMouseEnter={(e) => setTipPos({ x: e.clientX, y: e.clientY })}
+        onMouseMove={(e)  => setTipPos({ x: e.clientX, y: e.clientY })}
+        onMouseLeave={() => setTipPos(null)}
+        onClick={(e) => { e.stopPropagation(); setTipPos(null); setModalOpen(true); }}
+      >
+        <span className="fp-rank-badge fp-rank-badge--found fp-rank-badge--clickable">{label}</span>
+      </span>
+
+      {tipPos && !modalOpen && (
+        <span
+          className="fp-rank-tooltip-fixed"
+          style={{ right: window.innerWidth - tipPos.x + 8, top: tipPos.y - 36 }}
+        >
+          {tooltip}
+        </span>
+      )}
+
+      {modalOpen && posRanks && (
+        <FpRankListModal
+          position={position}
+          rank={rank}
+          posRanks={posRanks}
+          projectionYear={projectionYear}
+          playersData={playersData}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
 // ── Custom tooltip ────────────────────────────────────────────────────────────
 
 function WeeklyTooltip({ active, payload, label }) {
@@ -90,7 +236,10 @@ function PtsDelta({ delta, tooltip }) {
 
 // ── Per-week starters / bench table ──────────────────────────────────────────
 
-function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMap, onPlayerClick }) {
+function ScenarioWeekTable({
+  scenarioWeek, originalWeek, playersData, playerIdMap, onPlayerClick,
+  fpRankings, historicalPositionRanks, projectionYear,
+}) {
   const [benchExpanded, setBenchExpanded] = useState(false);
   const startersSectionRef = useRef(null);
   const [startersHeight, setStartersHeight] = useState(null);
@@ -156,6 +305,13 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
             <span className="scenario-week-name">{name}</span>
             {pos  && <span className="scenario-week-meta">{pos}</span>}
             {team && <span className="scenario-week-meta scenario-week-team">{team}</span>}
+            <FpRankBadge
+              playerId={p.id}
+              fpRankings={fpRankings}
+              historicalPositionRanks={historicalPositionRanks}
+              projectionYear={projectionYear}
+              playersData={playersData}
+            />
           </div>
         </td>
         <td className="scenario-week-pts">{pts.toFixed(1)}</td>
@@ -196,6 +352,13 @@ function ScenarioWeekTable({ scenarioWeek, originalWeek, playersData, playerIdMa
           <img src={logo} alt="" className="scenario-week-avatar" />
           <span className="scenario-week-name">{name}</span>
           {pos && <span className="scenario-week-meta">{pos}</span>}
+          <FpRankBadge
+            playerId={p.id}
+            fpRankings={fpRankings}
+            historicalPositionRanks={historicalPositionRanks}
+            projectionYear={projectionYear}
+            playersData={playersData}
+          />
         </div>
         <span className="scenario-week-bench-pts">{pts.toFixed(1)}</span>
         <span className="scenario-week-bench-delta-col"><PtsDelta delta={delta} tooltip={deltaTooltip} /></span>
@@ -530,7 +693,10 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
  *   playersData          – player metadata lookup
  *   playerIdMap          – ESPN <-> Sleeper ID map
  */
-function ScenarioTeamDetail({ rosterId, teamsForGrid, originalWeeklyScores, scenarioWeeklyScores, playersData, playerIdMap }) {
+function ScenarioTeamDetail({
+  rosterId, teamsForGrid, originalWeeklyScores, scenarioWeeklyScores, playersData, playerIdMap,
+  fpRankings, historicalPositionRanks, projectionYear,
+}) {
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
 
   const [selectedWeek, setSelectedWeek] = useState(1);
@@ -646,6 +812,9 @@ function ScenarioTeamDetail({ rosterId, teamsForGrid, originalWeeklyScores, scen
           playersData={playersData}
           playerIdMap={playerIdMap}
           onPlayerClick={setSelectedPlayer}
+          fpRankings={fpRankings}
+          historicalPositionRanks={historicalPositionRanks}
+          projectionYear={projectionYear}
         />
       </div>
 

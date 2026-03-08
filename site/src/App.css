@@ -7697,6 +7697,135 @@ body.modal-open {
   color: rgba(150, 160, 220, 0.7);
 }
 
+/* FP rank badge — Future Scenarios eval view */
+.fp-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.67em;
+  font-weight: 700;
+  padding: 0.1em 0.42em;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+  cursor: default;
+}
+.fp-rank-badge--found {
+  background: rgba(93, 217, 124, 0.11);
+  color: #5dd97c;
+  border: 1px solid rgba(93, 217, 124, 0.28);
+}
+.fp-rank-badge--not-found {
+  background: rgba(255, 112, 112, 0.09);
+  color: #ff7575;
+  border: 1px solid rgba(255, 112, 112, 0.22);
+}
+.fp-rank-badge--clickable {
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.fp-rank-badge--clickable:hover {
+  background: rgba(93, 217, 124, 0.22);
+  border-color: rgba(93, 217, 124, 0.5);
+}
+.fp-rank-tooltip-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+.fp-rank-tooltip-fixed {
+  position: fixed;
+  z-index: 9999;
+  background: #1a1c2e;
+  border: 1px solid rgba(120, 130, 200, 0.3);
+  border-radius: 5px;
+  padding: 0.32em 0.65em;
+  font-size: 0.76rem;
+  color: rgba(200, 205, 240, 0.92);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* ── FP rank list modal ─────────────────────────────────────────────────── */
+.fp-rank-modal {
+  width: min(420px, 92vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: #14162a;
+}
+.fp-rank-modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  padding: 1.1rem 1.3rem 0.75rem;
+  border-bottom: 1px solid rgba(120, 130, 200, 0.15);
+  flex-shrink: 0;
+}
+.fp-rank-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #d8dcff;
+}
+.fp-rank-modal-subtitle {
+  font-size: 0.76rem;
+  color: rgba(150, 158, 220, 0.6);
+}
+.fp-rank-modal-scroll {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.4rem 0 0.6rem;
+}
+.fp-rank-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.fp-rank-modal-th {
+  padding: 0.3em 0.9em;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(140, 148, 210, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(120, 130, 200, 0.1);
+  position: sticky;
+  top: 0;
+  background: #14162a;
+}
+.fp-rank-modal-th--rank,
+.fp-rank-modal-td--rank  { text-align: center; width: 2.5em; }
+.fp-rank-modal-th--pts,
+.fp-rank-modal-td--pts   { text-align: right; width: 4em; padding-right: 1.1em; }
+.fp-rank-modal-td {
+  padding: 0.38em 0.9em;
+  color: rgba(210, 215, 250, 0.78);
+  border-bottom: 1px solid rgba(120, 130, 200, 0.06);
+}
+.fp-rank-modal-row:last-child .fp-rank-modal-td {
+  border-bottom: none;
+}
+.fp-rank-modal-row--active .fp-rank-modal-td {
+  background: rgba(93, 217, 124, 0.08);
+  color: #d8ffdf;
+}
+.fp-rank-modal-row--active .fp-rank-modal-td--rank {
+  color: #5dd97c;
+  font-weight: 700;
+}
+.fp-rank-modal-row--active .fp-rank-modal-td--pts {
+  color: #5dd97c;
+  font-weight: 600;
+}
+.fp-rank-modal-unknown {
+  color: rgba(140, 148, 210, 0.4);
+  font-style: italic;
+  font-size: 0.85em;
+}
+
 /* pts column: fixed width, right-aligned number only */
 .scenario-week-pts {
   text-align: right;

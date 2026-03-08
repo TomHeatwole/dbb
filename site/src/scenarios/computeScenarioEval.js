@@ -79,7 +79,7 @@ function computeOptimalWeek(playerList, weekPts, playersData, playerIdMap, playe
  * @returns {{ [rosterId]: Array<{ starterTotal, benchTotal, starters, bench }> }}
  *   Index 0 = week 1, index 16 = week 17.
  */
-function computeAllWeeklyScores(rosters, playerWeeklyPoints, playersData, playerIdMap, playerSeasonTotalsMap) {
+export function computeAllWeeklyScores(rosters, playerWeeklyPoints, playersData, playerIdMap, playerSeasonTotalsMap) {
   const result = {};
   for (const rid in rosters) {
     const playerList = rosters[rid] || [];
@@ -98,7 +98,7 @@ function computeAllWeeklyScores(rosters, playerWeeklyPoints, playersData, player
 }
 
 /** Sum starterTotal over weeks 1-14 (regular season) for each roster. */
-function computeRegSeasonTotals(weeklyScores) {
+export function computeRegSeasonTotals(weeklyScores) {
   const totals = {};
   for (const rid in weeklyScores) {
     totals[rid] = Math.round(
@@ -109,7 +109,7 @@ function computeRegSeasonTotals(weeklyScores) {
 }
 
 /** Sum starterTotal over weeks 15-17 (playoffs) for each roster. */
-function computePlayoffTotals(weeklyScores) {
+export function computePlayoffTotals(weeklyScores) {
   const totals = {};
   for (const rid in weeklyScores) {
     totals[rid] = Math.round(
@@ -121,13 +121,14 @@ function computePlayoffTotals(weeklyScores) {
 
 /**
  * Build final standings matching the real standings page logic:
+ * @public Exported for reuse in computeFutureScenarioEval.
  *   - Seed top 4 by 14-week total
  *   - Rank top 4 by playoff total (weeks 15-17)
  *   - Rank bottom 6 by 14-week total
  *
  * @returns {Array<{ rosterId, place, isPlayoff, regSeasonTotal, playoffTotal }>}
  */
-function buildFinalStandings(regSeasonTotals, playoffTotals) {
+export function buildFinalStandings(regSeasonTotals, playoffTotals) {
   const all = Object.keys(regSeasonTotals).map((rid) => ({
     rosterId:      Number(rid),
     regSeasonTotal: regSeasonTotals[rid] || 0,
