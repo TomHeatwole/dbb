@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ResponsiveContainer,
@@ -522,9 +522,45 @@ const RANGE_OPTIONS = [
   { key: 'playoff', label: 'Playoffs',   start: 14, end: 17 },
 ];
 
-function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, rosterId, playersData, playerIdMap }) {
+// Returns the CSS class for a rank value (green at top, red at bottom).
+function rankClass(rank, total) {
+  if (!rank || !total) return 'scenario-pos-impact-neutral';
+  const pct = rank / total;
+  if (pct <= 0.3) return 'scenario-pos-impact-rank--top';
+  if (pct >= 0.7) return 'scenario-pos-impact-rank--bot';
+  return 'scenario-pos-impact-rank--mid';
+}
+
+function RankTooltipContent({ rankings, currentRid, teamsForGrid }) {
+  return (
+    <table className="pos-rank-tooltip-tbl">
+      <tbody>
+        {rankings.map((item, i) => {
+          const t = (teamsForGrid || []).find((x) => x.rosterId === item.rid);
+          const isCurrent = item.rid === currentRid;
+          return (
+            <tr key={item.rid} className={`pos-rank-tooltip-row${isCurrent ? ' pos-rank-tooltip-row--current' : ''}`}>
+              <td className="pos-rank-tooltip-rank">#{i + 1}</td>
+              <td className="pos-rank-tooltip-name">{t?.teamName || `Team ${item.rid}`}</td>
+              <td className="pos-rank-tooltip-pts">{item.total.toFixed(1)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, rosterId, playersData, playerIdMap, teamsForGrid }) {
   const [expandedPos, setExpandedPos] = useState(null);
   const [weekRange, setWeekRange] = useState('reg');
+  const [rankTip, setRankTip] = useState(null); // { x, y, rankings }
+
+  const showRankTip = useCallback((e, rankings) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setRankTip({ x: rect.left + rect.width / 2, y: rect.top - 6, rankings });
+  }, []);
+  const hideRankTip = useCallback(() => setRankTip(null), []);
 
   useEffect(() => { setExpandedPos(null); }, [rosterId]);
   useEffect(() => { setExpandedPos(null); }, [weekRange]);
@@ -562,18 +598,50 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
       .map(([pos, { idx, weekly }]) => ({ pos, idx, weekly }));
   }, [rosterId, originalWeeklyScores, scenarioWeeklyScores, playersData, playerIdMap]);
 
-  // Derive per-range totals from the base rows (cheap).
+  // Derive per-range totals + league rank at each slot.
   const rows = useMemo(() => {
     const { start, end } = RANGE_OPTIONS.find((r) => r.key === weekRange);
+    const allRids = Object.keys(scenarioWeeklyScores || {});
+
     return baseRows.map(({ pos, idx, weekly }) => {
       const slice = weekly.slice(start, end);
       const scenTotal  = slice.reduce((s, w) => s + w.scenario, 0);
       const origTotal  = slice.reduce((s, w) => s + w.original, 0);
       const weeksUp    = slice.filter((w) => w.scenario - w.original > 0.05).length;
       const weeksDown  = slice.filter((w) => w.original - w.scenario > 0.05).length;
-      return { pos, idx, weekly: slice, scenTotal, origTotal, delta: scenTotal - origTotal, weeksUp, weeksDown };
+
+      // Rank this team vs every other team at this exact lineup slot over the range.
+      const slotRankings = allRids.map((rid) => {
+        const weeks = (scenarioWeeklyScores[rid] || []);
+        let total = 0;
+        for (let wi = start; wi < end; wi++) total += (weeks[wi]?.starters?.[idx]?.pts || 0);
+        return { rid: Number(rid), total };
+      });
+      slotRankings.sort((a, b) => b.total - a.total);
+      const scenRank   = slotRankings.findIndex((t) => t.rid === rosterId) + 1;
+      const totalTeams = slotRankings.length;
+
+      return { pos, idx, weekly: slice, scenTotal, origTotal, delta: scenTotal - origTotal, weeksUp, weeksDown, scenRank, totalTeams, slotRankings };
     });
-  }, [baseRows, weekRange]);
+  }, [baseRows, weekRange, scenarioWeeklyScores, rosterId]);
+
+  // Overall rank by total starter points across all slots.
+  const totalRank = useMemo(() => {
+    const { start, end } = RANGE_OPTIONS.find((r) => r.key === weekRange);
+    const allRids = Object.keys(scenarioWeeklyScores || {});
+    const rankings = allRids.map((rid) => {
+      const weeks = (scenarioWeeklyScores[rid] || []);
+      let total = 0;
+      for (let wi = start; wi < end; wi++) total += (weeks[wi]?.starterTotal || 0);
+      return { rid: Number(rid), total };
+    });
+    rankings.sort((a, b) => b.total - a.total);
+    return {
+      rank: rankings.findIndex((t) => t.rid === rosterId) + 1,
+      totalTeams: rankings.length,
+      rankings,
+    };
+  }, [scenarioWeeklyScores, rosterId, weekRange]);
 
   if (rows.length === 0) return null;
 
@@ -586,6 +654,11 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
   const countCell = (n, cls) =>
     n > 0
       ? <span className={cls}>{n}</span>
+      : <span className="scenario-pos-impact-neutral">—</span>;
+
+  const rankCell = (rank, total) =>
+    rank > 0
+      ? <span className={rankClass(rank, total)}>#{rank}</span>
       : <span className="scenario-pos-impact-neutral">—</span>;
 
   return (
@@ -608,6 +681,10 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
             <th className="scenario-pos-impact-th scenario-pos-impact-th--num">Impact</th>
             <th
               className="scenario-pos-impact-th scenario-pos-impact-th--num"
+              title="League rank at this position slot (scenario lineup, among all teams)"
+            >Rank</th>
+            <th
+              className="scenario-pos-impact-th scenario-pos-impact-th--num"
               title="Weeks where the scenario lineup scored higher at this position"
             >Wks ↑</th>
             <th
@@ -617,7 +694,7 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ pos, scenTotal, origTotal, delta, weeksUp, weeksDown, weekly }) => {
+          {rows.map(({ pos, scenTotal, origTotal, delta, weeksUp, weeksDown, weekly, scenRank, totalTeams, slotRankings }) => {
             const isExpanded = expandedPos === pos;
             return (
               <React.Fragment key={pos}>
@@ -639,12 +716,17 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
                         </span>
                     }
                   </td>
+                  <td
+                    className="scenario-pos-impact-num scenario-pos-impact-num--rank"
+                    onMouseEnter={(e) => slotRankings?.length && showRankTip(e, slotRankings)}
+                    onMouseLeave={hideRankTip}
+                  >{rankCell(scenRank, totalTeams)}</td>
                   <td className="scenario-pos-impact-num">{countCell(weeksUp, 'scenario-pos-impact-delta--pos')}</td>
                   <td className="scenario-pos-impact-num">{countCell(weeksDown, 'scenario-pos-impact-delta--neg')}</td>
                 </tr>
                 {isExpanded && (
                   <tr className="scenario-pos-impact-chart-row">
-                    <td colSpan={6} className="scenario-pos-impact-chart-cell">
+                    <td colSpan={7} className="scenario-pos-impact-chart-cell">
                       <PositionSlotChart weekly={weekly} showPlayoffLine={weekRange !== 'playoff'} />
                     </td>
                   </tr>
@@ -666,11 +748,25 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
                   </span>
               }
             </td>
+            <td
+              className="scenario-pos-impact-num scenario-pos-impact-num--rank"
+              onMouseEnter={(e) => totalRank.rankings?.length && showRankTip(e, totalRank.rankings)}
+              onMouseLeave={hideRankTip}
+            >{rankCell(totalRank.rank, totalRank.totalTeams)}</td>
             <td className="scenario-pos-impact-num">{countCell(totalWeeksUp, 'scenario-pos-impact-delta--pos')}</td>
             <td className="scenario-pos-impact-num">{countCell(totalWeeksDown, 'scenario-pos-impact-delta--neg')}</td>
           </tr>
         </tfoot>
       </table>
+      {rankTip && createPortal(
+        <div
+          className="pos-rank-tooltip"
+          style={{ position: 'fixed', left: rankTip.x, top: rankTip.y, transform: 'translate(-50%, -100%)', zIndex: 9999, pointerEvents: 'none' }}
+        >
+          <RankTooltipContent rankings={rankTip.rankings} currentRid={rosterId} teamsForGrid={teamsForGrid} />
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -830,6 +926,7 @@ function ScenarioTeamDetail({
           rosterId={rosterId}
           playersData={playersData}
           playerIdMap={playerIdMap}
+          teamsForGrid={teamsForGrid}
         />
       </div>
       {selectedPlayer && createPortal(
@@ -838,6 +935,7 @@ function ScenarioTeamDetail({
             <PlayerWeeklyScores
               player={selectedPlayer}
               onClose={() => setSelectedPlayer(null)}
+              ownershipOverride={team.teamName ? { teamName: team.teamName, avatar: team.avatarUrl || null } : null}
             />
           </div>
         </div>,

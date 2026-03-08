@@ -282,6 +282,7 @@ function ScenarioRosterEditor({
             <PlayerWeeklyScores
               player={selectedPlayer}
               onClose={() => setSelectedPlayer(null)}
+              ownershipOverride={team && team.teamName ? { teamName: team.teamName, avatar: team.avatarUrl || null } : null}
             />
           </div>
         </div>,

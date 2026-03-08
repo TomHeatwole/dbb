@@ -7505,6 +7505,53 @@ body.modal-open {
 .scenario-pos-impact-delta--pos  { color: #5dd97c; }
 .scenario-pos-impact-delta--neg  { color: #ff7070; }
 .scenario-pos-impact-neutral { color: rgba(130, 135, 180, 0.45); }
+.scenario-pos-impact-rank--top   { color: #5dd97c; font-weight: 600; }
+.scenario-pos-impact-rank--mid   { color: rgba(170, 175, 220, 0.7); }
+.scenario-pos-impact-rank--bot   { color: #ff7070; font-weight: 600; }
+
+/* Rank cell with hover tooltip */
+.scenario-pos-impact-num--rank { cursor: default; }
+.pos-rank-tooltip {
+  background: #12142b;
+  border: 1px solid rgba(100, 110, 190, 0.35);
+  border-radius: 0.45em;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+  min-width: 190px;
+  padding: 0.35em 0;
+}
+.pos-rank-tooltip-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.pos-rank-tooltip-row td {
+  padding: 0.28em 0.75em;
+  color: rgba(200, 205, 245, 0.7);
+  border-bottom: 1px solid rgba(100, 110, 180, 0.08);
+}
+.pos-rank-tooltip-row:last-child td { border-bottom: none; }
+.pos-rank-tooltip-row--current td {
+  color: #d8dcff;
+  background: rgba(100, 120, 255, 0.1);
+  font-weight: 600;
+}
+.pos-rank-tooltip-rank {
+  width: 2.2em;
+  text-align: right;
+  color: rgba(150, 158, 220, 0.55);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding-right: 0.4em !important;
+}
+.pos-rank-tooltip-row--current .pos-rank-tooltip-rank { color: rgba(180, 190, 255, 0.8); }
+.pos-rank-tooltip-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.pos-rank-tooltip-pts {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-left: 0.5em !important;
+  color: rgba(170, 178, 230, 0.6);
+}
+.pos-rank-tooltip-row--current .pos-rank-tooltip-pts { color: #a0b8ff; }
 
 .scenario-pos-impact-row--clickable {
   cursor: pointer;
@@ -7777,6 +7824,21 @@ body.modal-open {
   overflow-y: auto;
   flex: 1;
   padding: 0.4rem 0 0.6rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 130, 200, 0.3) transparent;
+}
+.fp-rank-modal-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.fp-rank-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fp-rank-modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(120, 130, 200, 0.3);
+  border-radius: 2px;
+}
+.fp-rank-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 150, 220, 0.55);
 }
 .fp-rank-modal-table {
   width: 100%;
@@ -7855,6 +7917,21 @@ body.modal-open {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 130, 200, 0.3) transparent;
+}
+.scenario-week-bench-grid::-webkit-scrollbar {
+  width: 4px;
+}
+.scenario-week-bench-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scenario-week-bench-grid::-webkit-scrollbar-thumb {
+  background: rgba(120, 130, 200, 0.3);
+  border-radius: 2px;
+}
+.scenario-week-bench-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 150, 220, 0.55);
 }
 
 .scenario-week-bench-item {
@@ -8290,7 +8367,13 @@ body.modal-open {
   flex-direction: column;
   gap: 0.15rem;
   padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 130, 200, 0.3) transparent;
 }
+.scenario-editor-roster-col::-webkit-scrollbar { width: 4px; }
+.scenario-editor-roster-col::-webkit-scrollbar-track { background: transparent; }
+.scenario-editor-roster-col::-webkit-scrollbar-thumb { background: rgba(120, 130, 200, 0.3); border-radius: 2px; }
+.scenario-editor-roster-col::-webkit-scrollbar-thumb:hover { background: rgba(140, 150, 220, 0.55); }
 
 .scenario-editor-player-row {
   display: flex;
@@ -8403,7 +8486,13 @@ body.modal-open {
   overflow-y: auto;
   z-index: 200;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 130, 200, 0.3) transparent;
 }
+.scenario-editor-dropdown::-webkit-scrollbar { width: 4px; }
+.scenario-editor-dropdown::-webkit-scrollbar-track { background: transparent; }
+.scenario-editor-dropdown::-webkit-scrollbar-thumb { background: rgba(120, 130, 200, 0.3); border-radius: 2px; }
+.scenario-editor-dropdown::-webkit-scrollbar-thumb:hover { background: rgba(140, 150, 220, 0.55); }
 
 .scenario-editor-dropdown-section-label {
   padding: 0.5rem 0.75rem 0.3rem;

@@ -21,7 +21,6 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { getStandings } from '../scores/ScoresParser';
-import { PREVIOUS_YEARS } from '../utils/global_constants';
 import { getCurrentYear } from '../utils/DateHelper';
 import ScenarioTeamGrid from '../scenarios/ScenarioTeamGrid';
 import ScenarioRosterEditor from '../scenarios/ScenarioRosterEditor';
@@ -40,8 +39,15 @@ const FP_CSV_PATHS = [
   '/data/fantasypros_te_half.csv',
 ];
 
-// Only completed seasons (PREVIOUS_YEARS keys), newest-first — used as projection options
-const PROJECTION_YEARS = Object.keys(PREVIOUS_YEARS).sort((a, b) => Number(b) - Number(a));
+// All years for which stats_player_reg_{year}.csv exists, newest-first.
+// Sleeper weekly stats API is reliable from ~2018 onward; older years will
+// still produce correct positional rankings but projected points may be sparse.
+const PROJECTION_YEARS = [
+  '2025','2024','2023','2022','2021','2020',
+  '2019','2018','2017','2016','2015','2014',
+  '2013','2012','2011','2010','2009','2008',
+  '2007','2006','2005',
+];
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 

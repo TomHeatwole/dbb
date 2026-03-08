@@ -7,7 +7,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchPlayersData } from '../lookups/PlayerLookup';
 
-function PlayerWeeklyScores({ player, onClose, rosters, users }) {
+function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride }) {
   // Default to previous year if current season hasn't started yet
   const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
   const isPreSeason = completedWeeks === 0;
@@ -281,8 +281,8 @@ function PlayerWeeklyScores({ player, onClose, rosters, users }) {
 
   const statsColumns = getStatsColumns();
 
-  let ownershipInfo = null;
-  if (playerId && rosters && users) {
+  let ownershipInfo = ownershipOverride || null;
+  if (!ownershipInfo && playerId && rosters && users) {
     const owningRoster = rosters.find(r => 
       r && Array.isArray(r.players) && r.players.includes(playerId)
     );
