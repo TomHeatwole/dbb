@@ -7,7 +7,7 @@ import {
 } from './mcp/tools.mjs';
 
 const GEMINI_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`;
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 const GEMINI_FLASH_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
@@ -388,11 +388,21 @@ export default async function handler(req, res) {
     ? fetchChineseCharacters(apiKey)
     : Promise.resolve(null);
 
-  // Build the conversation history for Gemini
-  let contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }));
+  // Build the conversation history for Gemini, merging consecutive same-role turns
+  // (Phase 2 search responses create back-to-back assistant messages that violate
+  // Gemini's strict alternating-role requirement)
+  let contents = [];
+  for (const m of messages) {
+    const role = m.role === 'assistant' ? 'model' : 'user';
+    const text = m.content || '';
+    if (!text) continue;
+    const prev = contents[contents.length - 1];
+    if (prev && prev.role === role) {
+      prev.parts.push({ text });
+    } else {
+      contents.push({ role, parts: [{ text }] });
+    }
+  }
 
   const requestBase = {
     tools: [

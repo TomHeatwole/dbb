@@ -1,13 +1,13 @@
 rank,name,team,position,tier,sleeper_id
 1,Josh Allen,BUF,QB,1,4984
-2,Drake Maye,NE,QB,1,11564
-3,Lamar Jackson,BAL,QB,1,4881
-4,Joe Burrow,CIN,QB,1,6770
+2,Lamar Jackson,BAL,QB,1,4881
+3,Drake Maye,NE,QB,1,11564
+4,Joe Burrow,CIN,QB,2,6770
 5,Jayden Daniels,WAS,QB,2,11566
 6,Jalen Hurts,PHI,QB,2,6904
-7,Jaxson Dart,NYG,QB,2,12508
-8,Justin Herbert,LAC,QB,2,6797
-9,Caleb Williams,CHI,QB,3,11560
+7,Justin Herbert,LAC,QB,2,6797
+8,Jaxson Dart,NYG,QB,2,12508
+9,Caleb Williams,CHI,QB,2,11560
 10,Trevor Lawrence,JAC,QB,3,7523
 11,Dak Prescott,DAL,QB,3,3294
 12,Brock Purdy,SF,QB,3,8183
@@ -15,48 +15,56 @@ rank,name,team,position,tier,sleeper_id
 14,Matthew Stafford,LAR,QB,3,421
 15,Bo Nix,DEN,QB,3,11563
 16,Jared Goff,DET,QB,4,3163
-17,Jordan Love,GB,QB,4,6804
-18,Baker Mayfield,TB,QB,4,4892
+17,Kyler Murray,MIN,QB,4,5849
+18,Jordan Love,GB,QB,4,6804
 19,Malik Willis,MIA,QB,4,8161
 20,Tyler Shough,NO,QB,4,12545
-21,Kyler Murray,MIN,QB,4,5849
+21,Baker Mayfield,TB,QB,4,4892
 22,C.J. Stroud,HOU,QB,4,9758
 23,Sam Darnold,SEA,QB,4,4943
-24,Cam Ward,TEN,QB,4,12522
-25,Bryce Young,CAR,QB,4,9228
+24,Bryce Young,CAR,QB,4,9228
+25,Cam Ward,TEN,QB,4,12522
 26,Daniel Jones,IND,QB,5,5870
-27,Fernando Mendoza,FA,QB,5,13269
-28,Jacoby Brissett,ARI,QB,5,3257
-29,Michael Penix Jr.,ATL,QB,5,11559
-30,J.J. McCarthy,MIN,QB,5,11565
+27,Jacoby Brissett,ARI,QB,5,3257
+28,Fernando Mendoza,LV,QB,5,13269
+29,Geno Smith,NYJ,QB,5,1373
+30,Michael Penix Jr.,ATL,QB,5,11559
 31,Shedeur Sanders,CLE,QB,5,12524
 32,Tua Tagovailoa,ATL,QB,5,6768
-33,Geno Smith,NYJ,QB,5,1373
-34,Mac Jones,SF,QB,5,7527
-35,Aaron Rodgers,FA,QB,5,96
-36,Anthony Richardson Sr.,IND,QB,5,9229
-37,Deshaun Watson,CLE,QB,6,4017
-38,Marcus Mariota,WAS,QB,6,2307
-39,Joe Flacco,FA,QB,6,19
-40,Kirk Cousins,FA,QB,6,1166
-41,Joe Milton III,DAL,QB,6,11557
-42,Justin Fields,NYJ,QB,6,7591
-43,Jameis Winston,NYG,QB,6,2306
-44,Ty Simpson,FA,QB,6,13275
-45,Gardner Minshew II,ARI,QB,7,6011
-46,Riley Leonard,IND,QB,7,12470
-47,Jimmy Garoppolo,LAR,QB,7,1837
-48,Quinn Ewers,MIA,QB,7,12500
-49,Tyrod Taylor,FA,QB,7,827
-50,Garrett Nussmeier,FA,QB,7,13404
-51,Trey Lance,LAC,QB,7,7610
-52,Brady Cook,NYJ,QB,7,12538
-53,Tyson Bagent,CHI,QB,7,11256
-54,Mitchell Trubisky,TEN,QB,7,3976
+33,Aaron Rodgers,PIT,QB,5,96
+34,Ty Simpson,LAR,QB,5,13275
+35,Kirk Cousins,LV,QB,5,1166
+36,Deshaun Watson,CLE,QB,5,4017
+37,J.J. McCarthy,MIN,QB,5,11565
+38,Mac Jones,SF,QB,6,7527
+39,Justin Fields,KC,QB,6,7591
+40,Carson Beck,ARI,QB,6,13272
+41,Anthony Richardson Sr.,IND,QB,6,9229
+42,Jameis Winston,NYG,QB,6,2306
+43,Marcus Mariota,WAS,QB,6,2307
+44,Joe Milton III,DAL,QB,7,11557
+45,Joe Flacco,CIN,QB,7,19
+46,Gardner Minshew II,ARI,QB,7,6011
+47,Riley Leonard,IND,QB,7,12470
+48,Cade Klubnik,NYJ,QB,7,13303
+49,Quinn Ewers,MIA,QB,7,12500
+50,Taylen Green,CLE,QB,7,13306
+51,Tyrod Taylor,GB,QB,7,827
+52,Jimmy Garoppolo,LAR,QB,7,1837
+53,Garrett Nussmeier,KC,QB,7,13404
+54,Tyson Bagent,CHI,QB,7,11256
 55,Spencer Rattler,NO,QB,7,11562
-56,Jalen Milroe,SEA,QB,7,12510
-57,Zach Wilson,FA,QB,7,7538
-58,Mason Rudolph,PIT,QB,7,4972
-59,Dillon Gabriel,CLE,QB,8,12486
-60,Brandon Allen,FA,QB,8,3357
-61,Sam Howell,DAL,QB,8,8162
+56,Trey Lance,LAC,QB,7,7610
+57,Will Howard,PIT,QB,7,12511
+58,Carson Wentz,MIN,QB,7,3161
+59,Russell Wilson,FA,QB,7,1234
+60,Tanner McKee,PHI,QB,7,9230
+61,Kenny Pickett,CAR,QB,7,8160
+62,Jalen Milroe,SEA,QB,7,12510
+63,Drew Allar,PIT,QB,7,13289
+64,Brady Cook,NYJ,QB,8,12538
+65,Mitchell Trubisky,TEN,QB,8,3976
+66,Will Levis,TEN,QB,8,9999
+67,Dillon Gabriel,CLE,QB,8,12486
+68,Zach Wilson,NO,QB,8,7538
+69,Sam Howell,DAL,QB,8,8162

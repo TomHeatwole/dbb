@@ -66,7 +66,6 @@ function MobileTopNav() {
             <Link to="/hwangai" className="mobile-top-home-card-link">HwangAI</Link>
             <a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer" className="mobile-top-home-card-link">Podcast</a>
             <Link to="/h2h" className="mobile-top-home-card-link">Head&nbsp;to&nbsp;Head</Link>
-            <Link to="/future-scenarios" className="mobile-top-home-card-link">Future&nbsp;Scenarios</Link>
           </div>
         )}
       </nav>

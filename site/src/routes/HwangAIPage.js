@@ -105,13 +105,18 @@ function HwangAIPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages, systemPrompt }),
       });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.error('[HwangAI] Phase 1 failed:', res.status, errBody);
+        throw new Error(`Request failed: ${res.status}`);
+      }
       phase1Data = await res.json();
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: phase1Data.message,
       }]);
-    } catch {
+    } catch (err) {
+      console.error('[HwangAI] Phase 1 error:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);

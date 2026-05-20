@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import HomeCard from './HomeCard';
 
-// Hardcoded kickoff time: September 4th at 8:15PM ET.
-// For 2026, 8:15PM ET is 2026-09-05T00:15:00Z (EDT, UTC-4).
-const TARGET_KICKOFF_TS_MS = Date.parse('2026-09-05T00:15:00Z');
+// Hardcoded kickoff time: September 9th at 8:20PM ET.
+// For 2026, 8:20PM ET is 2026-09-10T00:20:00Z (EDT, UTC-4).
+const TARGET_KICKOFF_TS_MS = Date.parse('2026-09-10T00:20:00Z');
 
 function formatTwo(n) {
   const v = Number(n);
@@ -74,7 +74,7 @@ function Week1CountdownCard() {
             </div>
           </div>
           <div className="week1-countdown-kickoff">
-            Kickoff: Sep 4, {labelYear} • 8:15 PM ET
+            Kickoff: Wed Sep 9, {labelYear} • 8:20 PM ET
           </div>
         </div>
       </div>
