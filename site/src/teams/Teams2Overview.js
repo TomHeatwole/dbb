@@ -1,17 +1,14 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { getStandings, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { CURRENT_YEAR, isPostSeasonPreDraft, getCompletedWeeksCount } from '../utils/DateHelper';
 import { LEAGUE_ID, PREVIOUS_YEARS } from '../utils/global_constants';
-import FullRoster from './FullRoster';
 import { fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
-import useIsMobile from '../hooks/useIsMobile';
 
 function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, playerList, rosters, users }) {
   const { id } = useParams();
@@ -21,7 +18,6 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
   const [tradedPicks, setTradedPicks] = useState([]);
   const [draftOrder, setDraftOrder] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const isMobile = useIsMobile();
   const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
   const completedWeeks = getCompletedWeeksCount(urlYear || CURRENT_YEAR);
   const isPreSeason = isCurrentSeason && completedWeeks === 0;
