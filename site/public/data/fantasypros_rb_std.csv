@@ -20,17 +20,17 @@ rank,name,team,position,tier,sleeper_id
 19,Bucky Irving,TB,RB,3,11584
 20,Cam Skattebo,NYG,RB,4,12481
 21,TreVeyon Henderson,NE,RB,4,12529
-22,D'Andre Swift,CHI,RB,4,6790
-23,Quinshon Judkins,CLE,RB,4,12512
-24,David Montgomery,HOU,RB,4,5892
+22,David Montgomery,HOU,RB,4,5892
+23,D'Andre Swift,CHI,RB,4,6790
+24,Quinshon Judkins,CLE,RB,4,12512
 25,Bhayshul Tuten,JAC,RB,4,12490
 26,Jadarian Price,SEA,RB,4,13286
 27,Jaylen Warren,PIT,RB,4,8228
 28,Chuba Hubbard,CAR,RB,4,7594
 29,Rico Dowdle,PIT,RB,4,7021
 30,Blake Corum,LAR,RB,5,11586
-31,Kyle Monangai,CHI,RB,5,12534
-32,Rhamondre Stevenson,NE,RB,5,7611
+31,Rhamondre Stevenson,NE,RB,5,7611
+32,Kyle Monangai,CHI,RB,5,12534
 33,RJ Harvey,DEN,RB,5,12489
 34,Tony Pollard,TEN,RB,5,5967
 35,J.K. Dobbins,DEN,RB,5,6806
@@ -84,27 +84,27 @@ rank,name,team,position,tier,sleeper_id
 83,MarShawn Lloyd,GB,RB,8,11581
 84,Justice Hill,BAL,RB,8,5995
 85,Chris Brooks,GB,RB,8,11370
-86,George Holani,SEA,RB,8,12048
-87,Joe Mixon,FA,RB,8,4018
+86,Joe Mixon,FA,RB,8,4018
+87,George Holani,SEA,RB,8,12048
 88,Emari Demercado,KC,RB,8,11199
 89,Samaje Perine,CIN,RB,8,4147
 90,Jerome Ford,WAS,RB,8,8143
-91,Seth McGowan,IND,RB,8,
+91,Seth McGowan,IND,RB,8,13424
 92,LeQuint Allen Jr.,JAC,RB,8,12544
 93,Audric Estime,NO,RB,8,11579
 94,Jaleel McLaughlin,DEN,RB,8,11439
 95,Trevor Etienne,CAR,RB,8,12531
 96,Jarquez Hunter,LAR,RB,8,11569
-97,Kareem Hunt,FA,RB,8,4098
-98,Tahj Brooks,CIN,RB,8,12543
-99,J'Mari Taylor,JAC,RB,8,13348
+97,J'Mari Taylor,JAC,RB,8,13348
+98,Kareem Hunt,FA,RB,8,4098
+99,Tahj Brooks,CIN,RB,8,12543
 100,Bam Knight,ARI,RB,8,8122
-101,Kaelon Black,SF,RB,8,
+101,Kaelon Black,SF,RB,8,13414
 102,Will Shipley,PHI,RB,9,11577
 103,Nick Chubb,FA,RB,9,4988
 104,Michael Carter,TEN,RB,9,7607
 105,Austin Ekeler,FA,RB,9,4663
-106,Eli Heidenreich,PIT,RB,9,
+106,Eli Heidenreich,PIT,RB,9,13423
 107,Raheim Sanders,CLE,RB,9,12472
 108,Dameon Pierce,PHI,RB,9,8129
 109,Jawhar Jordan,HOU,RB,9,11588
@@ -114,5 +114,5 @@ rank,name,team,position,tier,sleeper_id
 113,Jam Miller,NE,RB,9,13403
 114,Roschon Johnson,CHI,RB,9,10235
 115,Phil Mafah,DAL,RB,9,12738
-116,Robert Henry Jr.,WAS,RB,9,
+116,Robert Henry Jr.,WAS,RB,9,13418
 117,Tyler Badie,DEN,RB,9,8208

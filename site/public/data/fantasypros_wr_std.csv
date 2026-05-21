@@ -60,8 +60,8 @@ rank,name,team,position,tier,sleeper_id
 59,Brandon Aiyuk,SF,WR,7,6803
 60,Jerry Jeudy,CLE,WR,7,6783
 61,Jauan Jennings,MIN,WR,7,7049
-62,Adonai Mitchell,NYJ,WR,7,11625
-63,Travis Hunter,JAC,WR,7,12530
+62,Travis Hunter,JAC,WR,7,12530
+63,Adonai Mitchell,NYJ,WR,7,11625
 64,Kayshon Boutte,NE,WR,7,9504
 65,Deebo Samuel Sr.,FA,WR,7,5872
 66,Antonio Williams,WAS,WR,7,13301
@@ -83,7 +83,7 @@ rank,name,team,position,tier,sleeper_id
 82,Tank Dell,HOU,WR,8,9502
 83,Elijah Sarratt,BAL,WR,8,13268
 84,Elic Ayomanor,TEN,WR,8,12499
-85,De'Zhaun Stribling,SF,WR,8,
+85,De'Zhaun Stribling,SF,WR,8,13417
 86,Zachariah Branch,ATL,WR,8,13320
 87,Ja'Kobi Lane,BAL,WR,8,13293
 88,Dontayvion Wicks,PHI,WR,8,9486
@@ -107,7 +107,7 @@ rank,name,team,position,tier,sleeper_id
 106,Xavier Legette,CAR,WR,9,11626
 107,Devaughn Vele,NO,WR,9,11834
 108,Tyquan Thornton,KC,WR,9,8188
-109,Hollywood Brown,PHI,WR,9,5859
+109,Hollywood Brown,PHI,WR,9,
 110,Isaiah Bond,CLE,WR,9,12503
 111,Andrei Iosivas,CIN,WR,10,10226
 112,Cedric Tillman,CLE,WR,10,10444
@@ -123,7 +123,7 @@ rank,name,team,position,tier,sleeper_id
 122,Olamide Zaccheaus,ATL,WR,10,6271
 123,Joshua Palmer,BUF,WR,10,7670
 124,Xavier Hutchinson,HOU,WR,10,10218
-125,Bryce Lance,NO,WR,10,
+125,Bryce Lance,NO,WR,10,13420
 126,Jalen Tolbert,MIA,WR,10,8117
 127,Brenen Thompson,LAC,WR,10,13380
 128,Jaylin Lane,WAS,WR,10,12641
@@ -132,14 +132,14 @@ rank,name,team,position,tier,sleeper_id
 131,Tutu Atwell,MIA,WR,11,7562
 132,Treylon Burks,WAS,WR,11,8135
 133,Kevin Coleman Jr.,MIA,WR,11,13338
-134,Cyrus Allen,KC,WR,11,
+134,Cyrus Allen,KC,WR,11,13413
 135,Malik Benson,LV,WR,11,13329
 136,KaVontae Turpin,DAL,WR,11,8917
 137,CJ Daniels,LAR,WR,11,13270
 138,Kendrick Bourne,ARI,WR,11,4454
 139,Kalif Raymond,CHI,WR,11,3634
 140,Nick Westbrook-Ikhine,IND,WR,11,7496
-141,Zavion Thomas,CHI,WR,11,
+141,Zavion Thomas,CHI,WR,11,13411
 142,Tai Felton,MIN,WR,11,12496
 143,Deion Burks,IND,WR,11,13333
 144,Dyami Brown,WAS,WR,11,7587
@@ -151,4 +151,4 @@ rank,name,team,position,tier,sleeper_id
 150,Demarcus Robinson,SF,WR,11,3286
 151,Josh Cameron,JAC,WR,11,13394
 152,Reggie Virgil,ARI,WR,11,13297
-153,Colbie Young,CIN,WR,11,
+153,Colbie Young,CIN,WR,11,13477

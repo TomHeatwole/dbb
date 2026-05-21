@@ -29,6 +29,7 @@ import FutureScenariosPage from './routes/FutureScenariosPage';
 import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
 import HwangAIPage from './routes/HwangAIPage';
+import Teams2Page from './routes/Teams2Page';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
@@ -121,6 +122,8 @@ function AppInner() {
       {/* Sandbox is always available for development */}
       <Route path="/sandbox" element={<SandboxPage />} />
       <Route path="/hwangai" element={<HwangAIPage />} />
+      <Route path="/teams-2" element={<Teams2Page />} />
+      <Route path="/teams-2/:id" element={<Teams2Page />} />
       
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
