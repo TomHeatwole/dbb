@@ -4,6 +4,7 @@ import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
+import PositionBadge from '../PositionBadge';
 
 const pieColors = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF4444', '#A28FD0', '#FFB6B9', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#FF9AA2'
@@ -141,7 +142,7 @@ export default function PositionAnalytics({
                       return (
                         <div className="position-analytics-tooltip" style={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff', borderRadius: '8px', padding: '8px 10px' }}>
                           <img src={getPlayerLogoUrl(d.img)} alt={d.name} className="position-analytics-tooltip-img" />
-                          <div><b>{d.name} ({d.position})</b></div>
+                          <div><b>{d.name}</b> <PositionBadge position={d.position} /></div>
                           <div><b>{posLabel} starts:</b> {playerStarts}</div>
                           <div><b>{posLabel} start percentage:</b> {startPct}%</div>
                           <div><b>Avg score as {posLabel}:</b> {avgScore}</div>

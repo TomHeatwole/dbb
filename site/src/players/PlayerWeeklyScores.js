@@ -6,6 +6,7 @@ import { loadSeasonStatsFromCSV, mapCSVStatsToSleeperFormat } from './WeeklyStat
 import useIsMobile from '../hooks/useIsMobile';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchPlayersData } from '../lookups/PlayerLookup';
+import PositionBadge from '../PositionBadge';
 
 function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride }) {
   // Default to previous year if current season hasn't started yet
@@ -320,7 +321,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
             <div className="player-card-name">{name}</div>
             <div className="player-card-position-row">
               {nflTeamLogo && <img src={nflTeamLogo} alt={team} className="player-nfl-team-logo" />}
-              <span>{position}{team && ` • ${team}`}</span>
+              <PositionBadge position={position} />{team && <span style={{ marginLeft: '0.35rem' }}>{team}</span>}
             </div>
           </div>
           

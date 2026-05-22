@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import PositionBadge from '../PositionBadge';
 
 function Teams2TeamCard({
   rosterId,
@@ -102,9 +103,7 @@ function Teams2TeamCard({
                 className="teams2-card-player-img"
               />
               <span className="teams2-card-player-name">{p.name}</span>
-              <span className={`teams2-pos-badge teams2-pos-${(p.position || '').toLowerCase()}`}>
-                {p.position}
-              </span>
+              <PositionBadge position={p.position} />
             </div>
           ))}
         </div>

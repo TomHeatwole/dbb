@@ -6,6 +6,7 @@ import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
+import PositionBadge from '../PositionBadge';
 
 export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, totalsPlacement = 'bottom', playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
   const isMobileView = useIsMobile();
@@ -106,7 +107,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                   <img src={getPlayerLogoUrl(info && info.espn_photo_url)} alt={info && info.name ? info.name : ''} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                   <span className="player-name">
                     {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
-                    {info && info.position ? ` (${info.position})` : ''}
+                    {info && info.position ? <> <PositionBadge position={info.position} /></> : ''}
                     {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
                     <InjuryBadge playerId={p.id} info={info} />
                   </span>
@@ -206,7 +207,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     <img src={getPlayerLogoUrl(info && info.espn_photo_url)} alt={info && info.name ? info.name : ''} className="player-avatar player-avatar-style team-scores-player-img-margin" />
                     <span className="player-name">
                       {formatPlayerNameForDisplay(info && info.name ? info.name : (p.id === '0' ? '\u00A0' : p.id))}
-                      {info && info.position ? ` (${info.position})` : ''}
+                      {info && info.position ? <> <PositionBadge position={info.position} /></> : ''}
                       {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
                       <InjuryBadge playerId={p.id} info={info} />
                     </span>

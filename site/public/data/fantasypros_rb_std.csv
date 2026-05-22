@@ -6,8 +6,8 @@ rank,name,team,position,tier,sleeper_id
 5,James Cook III,BUF,RB,1,8138
 6,Saquon Barkley,PHI,RB,2,4866
 7,Ashton Jeanty,LV,RB,2,12527
-8,De'Von Achane,MIA,RB,2,9226
-9,Derrick Henry,BAL,RB,2,3198
+8,Derrick Henry,BAL,RB,2,3198
+9,De'Von Achane,MIA,RB,2,9226
 10,Omarion Hampton,LAC,RB,2,12507
 11,Kenneth Walker III,KC,RB,3,8151
 12,Chase Brown,CIN,RB,3,9224
@@ -20,9 +20,9 @@ rank,name,team,position,tier,sleeper_id
 19,Bucky Irving,TB,RB,3,11584
 20,Cam Skattebo,NYG,RB,4,12481
 21,TreVeyon Henderson,NE,RB,4,12529
-22,David Montgomery,HOU,RB,4,5892
-23,D'Andre Swift,CHI,RB,4,6790
-24,Quinshon Judkins,CLE,RB,4,12512
+22,D'Andre Swift,CHI,RB,4,6790
+23,Quinshon Judkins,CLE,RB,4,12512
+24,David Montgomery,HOU,RB,4,5892
 25,Bhayshul Tuten,JAC,RB,4,12490
 26,Jadarian Price,SEA,RB,4,13286
 27,Jaylen Warren,PIT,RB,4,8228
@@ -52,8 +52,8 @@ rank,name,team,position,tier,sleeper_id
 51,Alvin Kamara,NO,RB,6,4035
 52,Dylan Sampson,CLE,RB,6,12469
 53,Keaton Mitchell,LAC,RB,6,9511
-54,Brian Robinson Jr.,ATL,RB,6,8154
-55,Tank Bigsby,PHI,RB,6,9225
+54,Tank Bigsby,PHI,RB,6,9225
+55,Brian Robinson Jr.,ATL,RB,6,8154
 56,Tyjae Spears,TEN,RB,6,9508
 57,Emanuel Wilson,SEA,RB,6,11435
 58,Mike Washington Jr.,LV,RB,6,13305
@@ -81,8 +81,8 @@ rank,name,team,position,tier,sleeper_id
 80,Jordan James,SF,RB,8,12467
 81,Malik Davis,DAL,RB,8,8800
 82,Isaac Guerendo,SF,RB,8,11651
-83,MarShawn Lloyd,GB,RB,8,11581
-84,Justice Hill,BAL,RB,8,5995
+83,Justice Hill,BAL,RB,8,5995
+84,MarShawn Lloyd,GB,RB,8,11581
 85,Chris Brooks,GB,RB,8,11370
 86,Joe Mixon,FA,RB,8,4018
 87,George Holani,SEA,RB,8,12048
@@ -93,11 +93,11 @@ rank,name,team,position,tier,sleeper_id
 92,LeQuint Allen Jr.,JAC,RB,8,12544
 93,Audric Estime,NO,RB,8,11579
 94,Jaleel McLaughlin,DEN,RB,8,11439
-95,Trevor Etienne,CAR,RB,8,12531
-96,Jarquez Hunter,LAR,RB,8,11569
-97,J'Mari Taylor,JAC,RB,8,13348
+95,Jarquez Hunter,LAR,RB,8,11569
+96,Trevor Etienne,CAR,RB,8,12531
+97,Tahj Brooks,CIN,RB,8,12543
 98,Kareem Hunt,FA,RB,8,4098
-99,Tahj Brooks,CIN,RB,8,12543
+99,J'Mari Taylor,JAC,RB,8,13348
 100,Bam Knight,ARI,RB,8,8122
 101,Kaelon Black,SF,RB,8,13414
 102,Will Shipley,PHI,RB,9,11577

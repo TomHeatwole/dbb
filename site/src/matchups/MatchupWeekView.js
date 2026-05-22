@@ -1,4 +1,5 @@
 import React from 'react';
+import PositionBadge from '../PositionBadge';
 
 /**
  * MatchupWeekView
@@ -225,7 +226,7 @@ function MatchupWeekView({
               {renderPlayerSide(leftSlot, 'left')}
             </div>
             <div className="yoffs-matchup-pos-col">
-              <span className="yoffs-matchup-pos-pill">{posLabel}</span>
+              <PositionBadge position={posLabel} />
             </div>
             <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
               {renderPlayerSide(rightSlot, 'right')}
@@ -250,9 +251,7 @@ function MatchupWeekView({
                   {renderPlayerSide(leftBench, 'left')}
                 </div>
                 <div className="yoffs-matchup-pos-col">
-                  <span className="yoffs-matchup-pos-pill yoffs-matchup-pos-pill--bench">
-                    BN
-                  </span>
+                  <PositionBadge position="BN" />
                 </div>
                 <div className="yoffs-matchup-cell yoffs-matchup-cell--right">
                   {renderPlayerSide(rightBench, 'right')}

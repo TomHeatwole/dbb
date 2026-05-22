@@ -17,6 +17,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchTeamData, fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
+import PositionBadge from '../PositionBadge';
 import {
   fetchKtcData,
   getKtcEntryByName,
@@ -36,7 +37,6 @@ import LoadingState from '../LoadingState';
 const PICKS_ENABLED = false;
 
 const RANKED_POSITIONS  = ['QB', 'RB', 'WR', 'TE'];
-const DISPLAY_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
 // Value source options: KTC SF, KTC SF TE+, FantasyCalc, FFB
 const VALUE_SOURCES = ['ktc_sf', 'ktc_sf_tep', 'fantasycalc', 'ffb'];
@@ -552,9 +552,6 @@ function DynastyRosterView() {
             <tbody>
               {/* ── Players ── */}
               {selectedPlayers.map(({ pid, name, position, nflTeam, espnPhotoUrl, displayValue, overallRank, posRank, hasValue }) => {
-                const posClass   = DISPLAY_POSITIONS.includes(position)
-                  ? `dynasty-pos-badge dynasty-pos-${position.toLowerCase()}`
-                  : 'dynasty-pos-badge dynasty-pos-other';
                 const pRankLabel = RANKED_POSITIONS.includes(position) && posRank
                   ? `${position}${posRank}`
                   : null;
@@ -573,7 +570,7 @@ function DynastyRosterView() {
                       />
                       <div className="dynasty-player-info">
                         <span className="dynasty-player-name">{name}</span>
-                        {position && <span className={posClass}>{position}</span>}
+                        {position && <PositionBadge position={position} />}
                       </div>
                     </td>
                     <td className="dynasty-td dynasty-td-ranks">

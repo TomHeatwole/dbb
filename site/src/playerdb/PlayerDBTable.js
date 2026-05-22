@@ -1,20 +1,7 @@
 import React from 'react';
 import { formatKtcValue } from '../lookups/KtcLookup';
 import useIsMobile from '../hooks/useIsMobile';
-
-const POS_CLASS = {
-  QB: 'dynasty-pos-qb',
-  RB: 'dynasty-pos-rb',
-  WR: 'dynasty-pos-wr',
-  TE: 'dynasty-pos-te',
-};
-
-function PosBadge({ position }) {
-  const cls = POS_CLASS[position] || 'dynasty-pos-other';
-  return (
-    <span className={`dynasty-pos-badge ${cls}`}>{position || '—'}</span>
-  );
-}
+import PositionBadge from '../PositionBadge';
 
 function FcTrend({ value }) {
   if (value === null || value === undefined) {
@@ -56,14 +43,14 @@ function renderCell(col, player, isMobile) {
           <span className="pdb-player-name">{player.name}</span>
           {isMobile && (
             <span className="player-meta-mobile">
-              {player.position} · {player.nflTeam || 'FA'}
+              <PositionBadge position={player.position} /> · {player.nflTeam || 'FA'}
             </span>
           )}
         </div>
       );
 
     case 'position':
-      return <PosBadge position={player.position} />;
+      return <PositionBadge position={player.position} />;
 
     case 'nflTeam':
       return <span className="dynasty-td-team">{player.nflTeam || '—'}</span>;

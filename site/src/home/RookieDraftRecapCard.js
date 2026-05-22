@@ -7,13 +7,7 @@ import { fetchLeagueDrafts, fetchDraft, fetchDraftPicks, fetchTeamData, buildRos
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { LOGO_LETTER_OVERLAY } from '../utils/global_constants';
-
-const POS_CLASS_MAP = {
-  QB: 'draft-recap-pos--qb',
-  RB: 'draft-recap-pos--rb',
-  WR: 'draft-recap-pos--wr',
-  TE: 'draft-recap-pos--te',
-};
+import PositionBadge from '../PositionBadge';
 
 function RookieDraftRecapCard() {
   const [loading, setLoading] = useState(true);
@@ -161,7 +155,7 @@ function RookieDraftRecapCard() {
         </select>
         <div className="draft-recap-pick-list">
           {activeRound.picks.map((pick) => {
-            const posClass = POS_CLASS_MAP[pick.position] || 'draft-recap-pos--other';
+            
             const letterOverlay =
               LOGO_LETTER_OVERLAY &&
               pick.rosterId != null &&
@@ -179,7 +173,7 @@ function RookieDraftRecapCard() {
                 <div className="draft-recap-player-info">
                   <span className="draft-recap-player-name">{pick.playerName}</span>
                   <span className="draft-recap-player-meta">
-                    <span className={'draft-recap-pos ' + posClass}>{pick.position}</span>
+                    <PositionBadge position={pick.position} />
                     {pick.nflTeam && <span className="draft-recap-nfl-team">{pick.nflTeam}</span>}
                   </span>
                 </div>

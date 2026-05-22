@@ -3,6 +3,7 @@ import { getTeamPlayerBreakdown } from '../scores/ScoresParser';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
+import PositionBadge from '../PositionBadge';
 
 function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, playersData, playerIdMap, STARTER_POSITION_NAMES, rosterPlayers = [] }) {
   const breakdown = useMemo(() => {
@@ -107,7 +108,7 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
                       {!isMobile && (
                         <img src={getPlayerLogoUrl(row.img)} alt={row.name} className="player-breakdown-avatar" />
                       )}
-                      <span>{row.name}{row.position ? ` (${row.position})` : ''}</span>
+                      <span>{row.name} <PositionBadge position={row.position} /></span>
                       <div className="player-breakdown-card-wrapper" style={cardStyle}>
                         <div className="player-start-card">
                           <div className="player-start-card-header">

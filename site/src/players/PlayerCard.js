@@ -1,5 +1,6 @@
 import React from 'react';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import PositionBadge from '../PositionBadge';
 
 function PlayerCard({ player, onClose }) {
   const name = player && player.name ? player.name : '';
@@ -30,7 +31,7 @@ function PlayerCard({ player, onClose }) {
         <img src={getPlayerLogoUrl(player && player.espn_photo_url)} alt={name} className="player-card-photo" />
         <div className="player-card-text">
           <div className="player-card-name">{name}</div>
-          <div className="player-card-position">{position}</div>
+          <div className="player-card-position"><PositionBadge position={position} /></div>
         </div>
       </div>
 

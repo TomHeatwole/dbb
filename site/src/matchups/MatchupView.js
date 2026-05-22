@@ -17,6 +17,7 @@ import { createLiveScoresPoller } from '../utils/livePolling';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
+import PositionBadge from '../PositionBadge';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -719,7 +720,7 @@ function MatchupView({
       const nameNode = (
         <span className="player-name">
           {playerName}
-          {info && info.position ? ` (${info.position})` : ''}
+          {info && info.position ? <> <PositionBadge position={info.position} /></> : ''}
           {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
           {injuryBadge}
         </span>

@@ -9,6 +9,7 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import PositionBadge from '../PositionBadge';
 
 function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
   const [loading, setLoading] = useState(true);
@@ -204,7 +205,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
             if (!item) {
               return (
                 <div className="week-stars-row" key={pos}>
-                  <div className="week-stars-pos">{pos}</div>
+                  <div className="week-stars-pos"><PositionBadge position={pos} /></div>
                   <div className="week-stars-player">
                     <span className="week-stars-points">—</span>
                     <span className="week-stars-player-name">—</span>
@@ -222,7 +223,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
 
             return (
               <div className="week-stars-row" key={pos}>
-                <div className="week-stars-pos">{pos}</div>
+                <div className="week-stars-pos"><PositionBadge position={pos} /></div>
                 <button
                   type="button"
                   className="week-stars-player week-stars-player--clickable"

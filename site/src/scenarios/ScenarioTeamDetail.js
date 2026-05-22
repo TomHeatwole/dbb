@@ -16,6 +16,7 @@ import { getPlayerInfo } from '../lookups/PlayerLookup';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
+import PositionBadge from '../PositionBadge';
 
 // ── FP rank badge (Future Scenarios only) ─────────────────────────────────────
 
@@ -303,7 +304,7 @@ function ScenarioWeekTable({
           <div className="scenario-week-player-inner">
             <img src={logo} alt="" className="scenario-week-avatar" />
             <span className="scenario-week-name">{name}</span>
-            {pos  && <span className="scenario-week-meta">{pos}</span>}
+            {pos  && <PositionBadge position={pos} />}
             {team && <span className="scenario-week-meta scenario-week-team">{team}</span>}
             <FpRankBadge
               playerId={p.id}
@@ -351,7 +352,7 @@ function ScenarioWeekTable({
         <div className="scenario-week-bench-player">
           <img src={logo} alt="" className="scenario-week-avatar" />
           <span className="scenario-week-name">{name}</span>
-          {pos && <span className="scenario-week-meta">{pos}</span>}
+          {pos && <PositionBadge position={pos} />}
           <FpRankBadge
             playerId={p.id}
             fpRankings={fpRankings}

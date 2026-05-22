@@ -8,6 +8,7 @@ import PlayerWeeklyScores from './PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import { CURRENT_YEAR } from '../utils/DateHelper';
+import PositionBadge from '../PositionBadge';
 
 function TrendingPlayers() {
   const [trendingData, setTrendingData] = useState(null);
@@ -139,11 +140,13 @@ function TrendingPlayers() {
                             <span style={{
                               color: 'rgba(255, 255, 255, 0.6)',
                               marginLeft: '0.5rem',
-                              fontSize: '0.9em'
+                              fontSize: '0.9em',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem'
                             }}>
-                              {position && `${position}`}
-                              {position && team && ' • '}
-                              {team && team}
+                              <PositionBadge position={position} />
+                              {team && <span>{team}</span>}
                             </span>
                           )}
                         </span>

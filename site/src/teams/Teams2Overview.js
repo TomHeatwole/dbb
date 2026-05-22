@@ -9,6 +9,7 @@ import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/Dra
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
+import PositionBadge from '../PositionBadge';
 
 function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, playerList, rosters, users }) {
   const { id } = useParams();
@@ -211,7 +212,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
         {positions.map(pos => (
           <div key={pos} className="teams2-roster-group">
             <div className="teams2-roster-group-header">
-              <span className={`teams2-pos-badge teams2-pos-${pos.toLowerCase()}`}>{pos}</span>
+              <PositionBadge position={pos} />
               <span className="teams2-roster-group-count">{positionGroups[pos]?.length || 0}</span>
             </div>
             <div className="teams2-roster-players">

@@ -8,6 +8,7 @@ import { buildTradeSides } from '../lookups/TransactionLookup';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { CURRENT_YEAR } from '../utils/DateHelper';
+import PositionBadge from '../PositionBadge';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -70,8 +71,7 @@ export function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players,
     const photo = info?.espn_photo_url || null;
     const pos = info?.position || '';
     const team = info?.team || info?.team_abbr || '';
-    const meta = [pos, team].filter(Boolean).join(' · ');
-    assets.push({ type: 'player', key: `p-${playerId}`, label: playerName, meta, photo, fullInfo: info });
+    assets.push({ type: 'player', key: `p-${playerId}`, label: playerName, pos, team, photo, fullInfo: info });
   }
 
   for (let i = 0; i < (side?.picks || []).length; i++) {
@@ -119,9 +119,10 @@ export function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players,
                     />
                     <div className="recent-trades-asset-text">
                       <span className="recent-trades-asset-name">{asset.label}</span>
-                      {asset.meta && (
-                        <span className="recent-trades-asset-meta">{asset.meta}</span>
-                      )}
+                      <span className="recent-trades-asset-meta">
+                        <PositionBadge position={asset.pos} />
+                        {asset.team && <span style={{ marginLeft: '0.3rem' }}>{asset.team}</span>}
+                      </span>
                     </div>
                   </button>
                 );

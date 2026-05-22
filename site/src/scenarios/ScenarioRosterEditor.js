@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
+import PositionBadge from '../PositionBadge';
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
@@ -14,7 +15,7 @@ const COL2_POSITIONS = ['RB', 'TE', 'K', 'DEF']; // eslint-disable-line no-unuse
 function PositionGroup({ pos, players, onRemovePlayer, onPlayerClick }) {
   return (
     <div className="scenario-editor-position-group">
-      <div className="scenario-editor-position-label">{pos}</div>
+      <div className="scenario-editor-position-label"><PositionBadge position={pos} /></div>
       {players.map((player) => (
         <div
           key={player.player_id}
@@ -221,10 +222,9 @@ function ScenarioRosterEditor({
                 />
                 <div className="scenario-editor-player-info">
                   <span className="scenario-editor-player-name">{player.name}</span>
-                  <span className="scenario-editor-player-pos">
-                    {player.position || ''}
-                    {player.position && (player.team || player.team_abbr) ? ' · ' : ''}
-                    {player.team || player.team_abbr || ''}
+                  <span className="scenario-editor-player-pos" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <PositionBadge position={player.position} />
+                    {(player.team || player.team_abbr) && <span>{player.team || player.team_abbr}</span>}
                   </span>
                 </div>
                 {player.alreadyOnRoster ? (

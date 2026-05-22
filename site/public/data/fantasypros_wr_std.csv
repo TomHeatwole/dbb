@@ -18,24 +18,24 @@ rank,name,team,position,tier,sleeper_id
 17,Zay Flowers,BAL,WR,4,9997
 18,DeVonta Smith,PHI,WR,4,7525
 19,Jameson Williams,DET,WR,4,8148
-20,Terry McLaurin,WAS,WR,4,5927
-21,Emeka Egbuka,TB,WR,4,12514
+20,Emeka Egbuka,TB,WR,4,12514
+21,Terry McLaurin,WAS,WR,4,5927
 22,Garrett Wilson,NYJ,WR,4,8146
 23,Ladd McConkey,LAC,WR,4,11635
 24,Jaylen Waddle,DEN,WR,4,7526
 25,Luther Burden III,CHI,WR,4,12519
 26,Christian Watson,GB,WR,4,8167
 27,Mike Evans,SF,WR,5,2216
-28,DJ Moore,BUF,WR,5,4983
-29,Rome Odunze,CHI,WR,5,11620
+28,Rome Odunze,CHI,WR,5,11620
+29,DJ Moore,BUF,WR,5,4983
 30,Carnell Tate,TEN,WR,5,13279
 31,Alec Pierce,IND,WR,5,8142
-32,Jordyn Tyson,NO,WR,5,13281
-33,DK Metcalf,PIT,WR,5,5846
-34,Marvin Harrison Jr.,ARI,WR,5,11628
+32,DK Metcalf,PIT,WR,5,5846
+33,Marvin Harrison Jr.,ARI,WR,5,11628
+34,Jordyn Tyson,NO,WR,5,13281
 35,Courtland Sutton,DEN,WR,5,5045
-36,Makai Lemon,PHI,WR,5,13294
-37,Brian Thomas Jr.,JAC,WR,5,11631
+36,Brian Thomas Jr.,JAC,WR,5,11631
+37,Makai Lemon,PHI,WR,5,13294
 38,Michael Wilson,ARI,WR,6,10232
 39,Chris Godwin Jr.,TB,WR,6,4037
 40,Jordan Addison,MIN,WR,6,9756
@@ -54,24 +54,24 @@ rank,name,team,position,tier,sleeper_id
 53,Khalil Shakir,BUF,WR,7,8134
 54,Jalen Coker,CAR,WR,7,11646
 55,Matthew Golden,GB,WR,7,12501
-56,Denzel Boston,CLE,WR,7,13346
-57,Rashid Shaheed,SEA,WR,7,8676
+56,Rashid Shaheed,SEA,WR,7,8676
+57,Denzel Boston,CLE,WR,7,13346
 58,Omar Cooper Jr.,NYJ,WR,7,13276
-59,Brandon Aiyuk,SF,WR,7,6803
-60,Jerry Jeudy,CLE,WR,7,6783
-61,Jauan Jennings,MIN,WR,7,7049
-62,Travis Hunter,JAC,WR,7,12530
+59,Jerry Jeudy,CLE,WR,7,6783
+60,Brandon Aiyuk,SF,WR,7,6803
+61,Travis Hunter,JAC,WR,7,12530
+62,Jauan Jennings,MIN,WR,7,7049
 63,Adonai Mitchell,NYJ,WR,7,11625
 64,Kayshon Boutte,NE,WR,7,9504
 65,Deebo Samuel Sr.,FA,WR,7,5872
-66,Antonio Williams,WAS,WR,7,13301
-67,Stefon Diggs,FA,WR,7,2449
+66,Stefon Diggs,FA,WR,7,2449
+67,Antonio Williams,WAS,WR,7,13301
 68,Jalen McMillan,TB,WR,8,11618
 69,Troy Franklin,DEN,WR,8,11627
 70,Isaac TeSlaa,DET,WR,8,12535
 71,Tyreek Hill,FA,WR,8,3321
-72,Tre Tucker,LV,WR,8,10213
-73,Tre' Harris,LAC,WR,8,12509
+72,Tre' Harris,LAC,WR,8,12509
+73,Tre Tucker,LV,WR,8,10213
 74,Calvin Ridley,TEN,WR,8,4981
 75,Jaylin Noel,HOU,WR,8,12536
 76,Germie Bernard,PIT,WR,8,13274
@@ -80,21 +80,21 @@ rank,name,team,position,tier,sleeper_id
 79,Pat Bryant,DEN,WR,8,12492
 80,Ryan Flournoy,DAL,WR,8,11783
 81,Chris Bell,MIA,WR,8,13311
-82,Tank Dell,HOU,WR,8,9502
-83,Elijah Sarratt,BAL,WR,8,13268
-84,Elic Ayomanor,TEN,WR,8,12499
-85,De'Zhaun Stribling,SF,WR,8,13417
-86,Zachariah Branch,ATL,WR,8,13320
-87,Ja'Kobi Lane,BAL,WR,8,13293
-88,Dontayvion Wicks,PHI,WR,8,9486
+82,Elic Ayomanor,TEN,WR,8,12499
+83,Tank Dell,HOU,WR,8,9502
+84,Elijah Sarratt,BAL,WR,8,13268
+85,Zachariah Branch,ATL,WR,8,13320
+86,De'Zhaun Stribling,SF,WR,8,13417
+87,Dontayvion Wicks,PHI,WR,8,9486
+88,Ja'Kobi Lane,BAL,WR,8,13293
 89,Chris Brazzell II,CAR,WR,8,13353
 90,Kyle Williams,NE,WR,8,12547
-91,Rashod Bateman,BAL,WR,9,7571
+91,Rashod Bateman,BAL,WR,8,7571
 92,Jalen Nailor,LV,WR,9,8180
-93,Malachi Fields,NYG,WR,9,13285
-94,Skyler Bell,BUF,WR,9,13402
+93,Skyler Bell,BUF,WR,9,13402
+94,Malachi Fields,NYG,WR,9,13285
 95,Tory Horton,SEA,WR,9,12497
-96,Ted Hurst,TB,WR,9,13317
+96,Ted Hurst III,TB,WR,9,13317
 97,Keon Coleman,BUF,WR,9,11637
 98,Marvin Mims Jr.,DEN,WR,9,9494
 99,Malik Washington,MIA,WR,9,11610
@@ -122,8 +122,8 @@ rank,name,team,position,tier,sleeper_id
 121,DeMario Douglas,NE,WR,10,9501
 122,Olamide Zaccheaus,ATL,WR,10,6271
 123,Joshua Palmer,BUF,WR,10,7670
-124,Xavier Hutchinson,HOU,WR,10,10218
-125,Bryce Lance,NO,WR,10,13420
+124,Bryce Lance,NO,WR,10,13420
+125,Xavier Hutchinson,HOU,WR,10,10218
 126,Jalen Tolbert,MIA,WR,10,8117
 127,Brenen Thompson,LAC,WR,10,13380
 128,Jaylin Lane,WAS,WR,10,12641

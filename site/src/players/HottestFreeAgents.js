@@ -12,6 +12,7 @@ import PlayerWeeklyScores from './PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
+import PositionBadge from '../PositionBadge';
 
 const KTC_FORMATS = ['sf', 'sf_tep'];
 
@@ -470,14 +471,14 @@ function HottestFreeAgents() {
                       <div className="player-info">
                         <div className="player-name">{agent.playerName}</div>
                         {isMobile && (
-                          <div className="player-meta-mobile">
-                            {agent.position} • {agent.team || 'FA'}
+                          <div className="player-meta-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <PositionBadge position={agent.position} /> {agent.team || 'FA'}
                           </div>
                         )}
                       </div>
                     </div>
                   </td>
-                  {!isMobile && <td className="position-col">{agent.position}</td>}
+                  {!isMobile && <td className="position-col"><PositionBadge position={agent.position} /></td>}
                   {!isMobile && <td className="team-col">{agent.team || '—'}</td>}
                   <td className="games-col">{agent.games}</td>
                   <td className="points-col">{agent.fantasyPoints.toFixed(2)}</td>

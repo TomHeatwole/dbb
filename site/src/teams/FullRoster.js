@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import useIsMobile from '../hooks/useIsMobile';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import PositionBadge from '../PositionBadge';
 
 function toOrdinal(n) {
   const num = Number(n);
@@ -183,7 +184,7 @@ function FullRoster({ playerList, positions = ['QB', 'WR', 'RB', 'TE'], picks = 
       <div className={`player-columns${isMobile ? ' roster-mobile-columns' : ''}`}>
         {positions.map(pos => (
           <div key={pos} className={`player-column${isMobile ? ' roster-mobile-column' : ''}`}>
-            <div className="player-column-header">{pos}</div>
+            <div className="player-column-header"><PositionBadge position={pos} /></div>
             <ul className="player-list">
               {pos === 'Picks'
                 ? sortedPicks.map((pick, i) => (

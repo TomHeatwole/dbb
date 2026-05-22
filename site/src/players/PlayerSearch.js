@@ -7,6 +7,7 @@ import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from './PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import PositionBadge from '../PositionBadge';
 
 function PlayerSearch() {
   const [trendingData, setTrendingData] = useState(null);
@@ -265,10 +266,9 @@ function PlayerSearch() {
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '500' }}>{player.name}</div>
-                  <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    {player.position && `${player.position}`}
-                    {player.position && (player.team || player.team_abbr) && ' • '}
-                    {(player.team || player.team_abbr) && (player.team || player.team_abbr)}
+                  <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <PositionBadge position={player.position} />
+                    {(player.team || player.team_abbr) && <span>{player.team || player.team_abbr}</span>}
                   </div>
                 </div>
                 {isRookie(player) && (

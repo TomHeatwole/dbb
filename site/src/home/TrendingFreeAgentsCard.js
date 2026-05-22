@@ -9,6 +9,7 @@ import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
+import PositionBadge from '../PositionBadge';
 
 function TrendingFreeAgentsCard() {
   const [trendingFreeAgents, setTrendingFreeAgents] = useState([]);
@@ -219,11 +220,13 @@ function TrendingFreeAgentsCard() {
                       lineHeight: 1.2,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
                     }}>
-                      {player.position && `${player.position}`}
-                      {player.position && player.team && ' • '}
-                      {player.team}
+                      <PositionBadge position={player.position} />
+                      {player.team && <span>{player.team}</span>}
                     </div>
                   </div>
 
