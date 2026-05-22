@@ -138,6 +138,17 @@ export async function fetchLeagueDrafts() {
   return Array.isArray(drafts) ? drafts : [];
 }
 
+// Fetch a specific draft object (includes slot_to_roster_id, draft_order, etc.).
+export async function fetchDraft(draftId) {
+  if (!draftId) throw new Error('No draft ID');
+  const res = await fetch(`https://api.sleeper.app/v1/draft/${draftId}`);
+  if (res.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
+  if (!res.ok) throw new Error('Failed to fetch draft');
+  return res.json();
+}
+
 // Fetch all picks made in a specific draft (by draft_id).
 export async function fetchDraftPicks(draftId) {
   if (!draftId) throw new Error('No draft ID');

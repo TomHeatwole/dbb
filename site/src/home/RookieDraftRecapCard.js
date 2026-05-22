@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
 import { CURRENT_YEAR } from '../utils/DateHelper';
-import { fetchLeagueDrafts, fetchDraftPicks, fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
+import { fetchLeagueDrafts, fetchDraft, fetchDraftPicks, fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { LOGO_LETTER_OVERLAY } from '../utils/global_constants';
@@ -19,7 +19,7 @@ function RookieDraftRecapCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rounds, setRounds] = useState(null);
-  const [expandedRound, setExpandedRound] = useState(1);
+  const [selectedRound, setSelectedRound] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,11 +29,13 @@ function RookieDraftRecapCard() {
       setError(null);
       try {
         const drafts = await fetchLeagueDrafts();
-        const completeDraft = drafts.find((d) => d.status === 'complete');
-        if (!completeDraft) throw new Error('No completed draft found');
+        const draftSummary = drafts.find((d) => d.status === 'complete');
+        if (!draftSummary) throw new Error('No completed draft found');
 
-        const [rawPicks, teamData, players, idMap] = await Promise.all([
-          fetchDraftPicks(completeDraft.draft_id),
+        // Fetch the full draft object (the list endpoint omits slot_to_roster_id)
+        const [fullDraft, rawPicks, teamData, players, idMap] = await Promise.all([
+          fetchDraft(draftSummary.draft_id),
+          fetchDraftPicks(draftSummary.draft_id),
           fetchTeamData(CURRENT_YEAR),
           fetchPlayersData(),
           fetchPlayerIdMap(),
@@ -45,8 +47,8 @@ function RookieDraftRecapCard() {
 
         const rosterMap = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
 
-        // slot_to_roster_id maps draft slot string -> roster_id
-        const slotToRoster = completeDraft.slot_to_roster_id || {};
+        // slot_to_roster_id maps draft slot string -> original roster_id
+        const slotToRoster = fullDraft.slot_to_roster_id || {};
 
         const picks = rawPicks
           .sort((a, b) => (a.pick_no || 0) - (b.pick_no || 0))
@@ -79,6 +81,17 @@ function RookieDraftRecapCard() {
               ? (user.team_avatar_url || user.user_avatar_url || user.avatar_url || null)
               : null;
 
+            // Detect traded picks: original slot owner vs who actually picked
+            const originalRosterId = slotToRoster[String(draftSlot)] != null
+              ? Number(slotToRoster[String(draftSlot)])
+              : null;
+            const isTraded = originalRosterId != null && rosterId != null && originalRosterId !== rosterId;
+            let originalTeamName = null;
+            if (isTraded) {
+              const origInfo = rosterMap[originalRosterId] || rosterMap[String(originalRosterId)];
+              originalTeamName = origInfo?.teamName || `Team ${originalRosterId}`;
+            }
+
             return {
               round,
               draftSlot,
@@ -90,6 +103,8 @@ function RookieDraftRecapCard() {
               rosterId,
               teamName,
               teamAvatarUrl,
+              isTraded,
+              originalTeamName,
             };
           });
 
@@ -131,72 +146,71 @@ function RookieDraftRecapCard() {
   } else if (!rounds || !rounds.length) {
     body = <div className="rookie-draft-status">No draft data found.</div>;
   } else {
+    const activeRound = rounds.find((r) => r.round === selectedRound) || rounds[0];
     body = (
-      <div className="draft-recap-rounds">
-        {rounds.map(({ round, picks }) => {
-          const isExpanded = expandedRound === round;
-          return (
-            <div key={round} className="draft-recap-round">
-              <button
-                type="button"
-                className={'draft-recap-round-header' + (isExpanded ? ' draft-recap-round-header--active' : '')}
-                onClick={() => setExpandedRound(isExpanded ? null : round)}
-                aria-expanded={isExpanded}
-              >
-                <span className="draft-recap-round-label">Round {round}</span>
-                <span className="draft-recap-round-chevron" aria-hidden="true">
-                  {isExpanded ? '▾' : '▸'}
-                </span>
-              </button>
-              {isExpanded && (
-                <div className="draft-recap-pick-list">
-                  {picks.map((pick) => {
-                    const posClass = POS_CLASS_MAP[pick.position] || 'draft-recap-pos--other';
-                    const letterOverlay =
-                      LOGO_LETTER_OVERLAY &&
-                      pick.rosterId != null &&
-                      Object.prototype.hasOwnProperty.call(LOGO_LETTER_OVERLAY, String(pick.rosterId))
-                        ? String(LOGO_LETTER_OVERLAY[String(pick.rosterId)] || '').trim()
-                        : '';
-                    return (
-                      <div key={pick.pickLabel} className="draft-recap-pick">
-                        <span className="draft-recap-pick-num">{pick.pickLabel}</span>
-                        <img
-                          className="draft-recap-player-photo"
-                          src={getPlayerLogoUrl(pick.photoUrl)}
-                          alt=""
-                        />
-                        <div className="draft-recap-player-info">
-                          <span className="draft-recap-player-name">{pick.playerName}</span>
-                          <span className="draft-recap-player-meta">
-                            <span className={'draft-recap-pos ' + posClass}>{pick.position}</span>
-                            {pick.nflTeam && <span className="draft-recap-nfl-team">{pick.nflTeam}</span>}
-                          </span>
-                        </div>
-                        <Link
-                          className="draft-recap-team-link"
-                          to={`/team/${pick.rosterId}`}
-                          title={pick.teamName}
-                        >
-                          <span className="draft-recap-team-avatar-wrap">
-                            {pick.teamAvatarUrl ? (
-                              <img className="draft-recap-team-avatar" src={pick.teamAvatarUrl} alt="" />
-                            ) : (
-                              <div className="draft-recap-team-avatar draft-recap-team-avatar--placeholder" />
-                            )}
-                            {letterOverlay && (
-                              <span className="draft-recap-team-letter-overlay">{letterOverlay}</span>
-                            )}
-                          </span>
-                        </Link>
-                      </div>
-                    );
-                  })}
+      <div className="draft-recap-container">
+        <select
+          className="draft-recap-round-select"
+          value={selectedRound}
+          onChange={(e) => setSelectedRound(Number(e.target.value))}
+          aria-label="Select round"
+        >
+          {rounds.map(({ round }) => (
+            <option key={round} value={round}>Round {round}</option>
+          ))}
+        </select>
+        <div className="draft-recap-pick-list">
+          {activeRound.picks.map((pick) => {
+            const posClass = POS_CLASS_MAP[pick.position] || 'draft-recap-pos--other';
+            const letterOverlay =
+              LOGO_LETTER_OVERLAY &&
+              pick.rosterId != null &&
+              Object.prototype.hasOwnProperty.call(LOGO_LETTER_OVERLAY, String(pick.rosterId))
+                ? String(LOGO_LETTER_OVERLAY[String(pick.rosterId)] || '').trim()
+                : '';
+            return (
+              <div key={pick.pickLabel} className="draft-recap-pick">
+                <span className="draft-recap-pick-num">{pick.pickLabel}</span>
+                <img
+                  className="draft-recap-player-photo"
+                  src={getPlayerLogoUrl(pick.photoUrl)}
+                  alt=""
+                />
+                <div className="draft-recap-player-info">
+                  <span className="draft-recap-player-name">{pick.playerName}</span>
+                  <span className="draft-recap-player-meta">
+                    <span className={'draft-recap-pos ' + posClass}>{pick.position}</span>
+                    {pick.nflTeam && <span className="draft-recap-nfl-team">{pick.nflTeam}</span>}
+                  </span>
                 </div>
-              )}
-            </div>
-          );
-        })}
+                <span className="draft-recap-traded-slot">
+                  {pick.isTraded ? (
+                    <span
+                      className="draft-recap-traded-icon"
+                      data-tooltip={`Traded from ${pick.originalTeamName}`}
+                      aria-label={`Traded from ${pick.originalTeamName}`}
+                    >↔</span>
+                  ) : null}
+                </span>
+                <Link
+                  className="draft-recap-team-link"
+                  to={`/team/${pick.rosterId}`}
+                >
+                  <span className="draft-recap-team-avatar-wrap">
+                    {pick.teamAvatarUrl ? (
+                      <img className="draft-recap-team-avatar" src={pick.teamAvatarUrl} alt="" />
+                    ) : (
+                      <div className="draft-recap-team-avatar draft-recap-team-avatar--placeholder" />
+                    )}
+                    {letterOverlay && (
+                      <span className="draft-recap-team-letter-overlay">{letterOverlay}</span>
+                    )}
+                  </span>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
