@@ -13,6 +13,7 @@ import Week1CountdownCard from './Week1CountdownCard';
 import PreviousYearRecapCard from './PreviousYearRecapCard';
 import RecentTradesCard from './RecentTradesCard';
 import RookieDraftCard from './RookieDraftCard';
+import RookieDraftRecapCard from './RookieDraftRecapCard';
 import IosShortcutNoticeCard from './IosShortcutNoticeCard';
 import TrendingFreeAgentsCard from './TrendingFreeAgentsCard';
 import HwangAICard from './HwangAICard';
@@ -21,6 +22,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
 import { getCurrentNFLWeek, isCurrentWeekCompleted, getCompletedWeeksCount } from '../utils/DateHelper';
+import { fetchRookieDraftComplete } from '../lookups/TeamLookup';
 
 // Optional manual override for the "current week" used by home cards.
 // - Set this to a positive integer (e.g. 10) to pretend the current week is 10.
@@ -41,14 +43,19 @@ function HomePage() {
 
   // Home page specific logic: as soon as a week is completed, advance to the next week
   const [homePageCurrentWeek, setHomePageCurrentWeek] = useState(null);
+  const [rookieDraftComplete, setRookieDraftComplete] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function computeHomeWeek() {
       try {
+        const [weekCompleted, draftComplete] = await Promise.all([
+          isCurrentWeekCompleted(),
+          fetchRookieDraftComplete(),
+        ]);
+
         const baseWeek = getCurrentNFLWeek();
-        const weekCompleted = await isCurrentWeekCompleted();
         
         // If the current week is completed, advance to the next week for home page display
         // NOTE: We intentionally allow "18" here after Week 17 completes so that
@@ -58,6 +65,7 @@ function HomePage() {
         
         if (!cancelled) {
           setHomePageCurrentWeek(effectiveWeek);
+          setRookieDraftComplete(draftComplete);
         }
       } catch (_) {
         // Fallback to base week on error
@@ -111,7 +119,7 @@ function HomePage() {
             <PreviousYearRecapCard />
             <RecentTradesCard />
             <TrendingFreeAgentsCard />
-            <RookieDraftCard />
+            {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
             <HwangAICard />
             <CommissionerNoteCard />
             <PodcastCard />
@@ -134,7 +142,7 @@ function HomePage() {
             </div>
             <div className="home-cards-column home-cards-column--right">
               <PreviousYearRecapCard />
-              <RookieDraftCard />
+              {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
               <HwangAICard />
               <CommissionerNoteCard />
             </div>

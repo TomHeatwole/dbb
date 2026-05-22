@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { CURRENT_YEAR, isPostSeasonPreDraft, getCompletedWeeksCount } from '../utils/DateHelper';
 import { LEAGUE_ID, PREVIOUS_YEARS } from '../utils/global_constants';
-import { fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
+import { fetchTradedPicks, fetchRookieDraftComplete, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
@@ -17,6 +17,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
   const urlYear = searchParams.get('year');
   const [tradedPicks, setTradedPicks] = useState([]);
   const [draftOrder, setDraftOrder] = useState(null);
+  const [rookieDraftComplete, setRookieDraftComplete] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
   const completedWeeks = getCompletedWeeksCount(urlYear || CURRENT_YEAR);
@@ -26,11 +27,25 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
     return buildRosterIdToTeamInfoMap(rosters, users);
   }, [rosters, users]);
 
+  // Fetch rookie draft status (only matters during preseason)
+  useEffect(() => {
+    let cancelled = false;
+    if (!isCurrentSeason || !isPreSeason) {
+      setRookieDraftComplete(false);
+      return;
+    }
+    (async () => {
+      const complete = await fetchRookieDraftComplete();
+      if (!cancelled) setRookieDraftComplete(complete);
+    })();
+    return () => { cancelled = true; };
+  }, [isCurrentSeason, isPreSeason]);
+
   // Load traded picks (same logic as TeamSummary)
   useEffect(() => {
     let cancelled = false;
-    if (!isCurrentSeason) {
-      setTradedPicks([]);
+    if (!isCurrentSeason || rookieDraftComplete === null) {
+      if (!isCurrentSeason) setTradedPicks([]);
       return () => { cancelled = true; };
     }
     const seasonForPicks = urlYear ? String(urlYear) : String(CURRENT_YEAR);
@@ -39,7 +54,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
         const allPicks = await fetchTradedPicks(seasonForPicks);
         if (cancelled || !Array.isArray(allPicks)) return;
         const currentYearNum = Number(CURRENT_YEAR);
-        const yearOffset = isPreSeason ? 0 : 1;
+        const yearOffset = (isPreSeason && !rookieDraftComplete) ? 0 : 1;
         const minSeason = currentYearNum + yearOffset;
         const maxSeason = currentYearNum + yearOffset + 2;
 
@@ -102,12 +117,15 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
       }
     })();
     return () => { cancelled = true; };
-  }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason, isPreSeason]);
+  }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason, isPreSeason, rookieDraftComplete]);
 
   // Load draft order
   useEffect(() => {
     let cancelled = false;
-    if (!isCurrentSeason || (!isPostSeasonPreDraft(CURRENT_YEAR) && !isPreSeason)) {
+    if (rookieDraftComplete === null) return;
+    const needsDraftOrder = isCurrentSeason &&
+      (isPostSeasonPreDraft(CURRENT_YEAR) || (isPreSeason && !rookieDraftComplete));
+    if (!needsDraftOrder) {
       setDraftOrder(null);
       return () => { cancelled = true; };
     }
@@ -135,7 +153,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
       }
     })();
     return () => { cancelled = true; };
-  }, [isCurrentSeason, isPreSeason]);
+  }, [isCurrentSeason, isPreSeason, rookieDraftComplete]);
 
   // Group players by position for the card grid
   const positionGroups = useMemo(() => {

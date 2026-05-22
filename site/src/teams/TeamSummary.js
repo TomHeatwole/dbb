@@ -5,7 +5,7 @@ import { CURRENT_YEAR, getCurrentNFLWeek, isPostSeasonPreDraft, getCompletedWeek
 import { LEAGUE_ID, PREVIOUS_YEARS } from '../utils/global_constants';
 import { StartSitSort } from '../players/StartSitDecider';
 import FullRoster from './FullRoster';
-import { fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
+import { fetchTradedPicks, fetchRookieDraftComplete, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import LoadingState from '../LoadingState';
@@ -17,6 +17,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
   const urlYear = searchParams.get('year');
   const [tradedPicks, setTradedPicks] = useState([]);
   const [draftOrder, setDraftOrder] = useState(null); // Map of rosterId -> pick number (1-10)
+  const [rookieDraftComplete, setRookieDraftComplete] = useState(null); // null = loading
   const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
   const completedWeeks = getCompletedWeeksCount(urlYear || CURRENT_YEAR);
   const isPreSeason = isCurrentSeason && completedWeeks === 0;
@@ -24,11 +25,25 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     return buildRosterIdToTeamInfoMap(rosters, users);
   }, [rosters, users]);
 
+  // Fetch rookie draft status (only matters during preseason)
+  useEffect(() => {
+    let cancelled = false;
+    if (!isCurrentSeason || !isPreSeason) {
+      setRookieDraftComplete(false);
+      return;
+    }
+    (async () => {
+      const complete = await fetchRookieDraftComplete();
+      if (!cancelled) setRookieDraftComplete(complete);
+    })();
+    return () => { cancelled = true; };
+  }, [isCurrentSeason, isPreSeason]);
+
   // Load traded picks for this team in the summary (Overview) tab and log them for now
   useEffect(() => {
     let cancelled = false;
-    if (!isCurrentSeason) {
-      setTradedPicks([]);
+    if (!isCurrentSeason || rookieDraftComplete === null) {
+      if (!isCurrentSeason) setTradedPicks([]);
       return () => {
         cancelled = true;
       };
@@ -41,9 +56,9 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           return;
         }
         const currentYearNum = Number(CURRENT_YEAR);
-        // In preseason the current year's draft hasn't happened yet, so include
-        // current year picks. During the season they've been used, so start at +1.
-        const yearOffset = isPreSeason ? 0 : 1;
+        // In preseason before the rookie draft, include current year picks.
+        // Once the draft completes (or during the season), start at +1.
+        const yearOffset = (isPreSeason && !rookieDraftComplete) ? 0 : 1;
         const minSeason = currentYearNum + yearOffset;
         const maxSeason = currentYearNum + yearOffset + 2;
 
@@ -148,14 +163,16 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     return () => {
       cancelled = true;
     };
-  }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason, isPreSeason]);
+  }, [urlYear, rosterId, rosterIdToTeamInfo, isCurrentSeason, isPreSeason, rookieDraftComplete]);
 
-  // Load draft order if we're in post-season, pre-draft state (or preseason of the new year)
+  // Load draft order if we're in post-season, pre-draft state (or preseason before the rookie draft)
   useEffect(() => {
     let cancelled = false;
     
-    // Fire for current season when: post-season pre-draft (week 17 done) OR preseason (not started yet)
-    if (!isCurrentSeason || (!isPostSeasonPreDraft(CURRENT_YEAR) && !isPreSeason)) {
+    if (rookieDraftComplete === null) return;
+    const needsDraftOrder = isCurrentSeason &&
+      (isPostSeasonPreDraft(CURRENT_YEAR) || (isPreSeason && !rookieDraftComplete));
+    if (!needsDraftOrder) {
       setDraftOrder(null);
       return () => {
         cancelled = true;
@@ -204,7 +221,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
     return () => {
       cancelled = true;
     };
-  }, [isCurrentSeason, isPreSeason]);
+  }, [isCurrentSeason, isPreSeason, rookieDraftComplete]);
 
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
@@ -292,7 +309,7 @@ function TeamSummary({ weeksParsedData, loading, playersData, playerIdMap, playe
           positions={['QB', 'WR', 'RB', 'TE', 'Picks']} 
           picks={tradedPicks}
           draftOrder={draftOrder}
-          nextDraftYear={isPreSeason ? String(CURRENT_YEAR) : String(Number(CURRENT_YEAR) + 1)}
+          nextDraftYear={(isPreSeason && !rookieDraftComplete) ? String(CURRENT_YEAR) : String(Number(CURRENT_YEAR) + 1)}
           rosters={rosters}
           users={users}
         />

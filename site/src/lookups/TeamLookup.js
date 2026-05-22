@@ -110,6 +110,46 @@ export function buildRosterIdToTeamInfoMap(rosters, users) {
   return map;
 }
 
+// Check whether the current league's rookie draft has completed.
+// Uses the Sleeper drafts endpoint: status can be "pre_draft", "drafting", or "complete".
+export async function fetchRookieDraftComplete() {
+  try {
+    const res = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/drafts`);
+    if (res.status === 429) {
+      try { await recordRateLimitHit('sleeper'); } catch (_) {}
+    }
+    if (!res.ok) return false;
+    const drafts = await res.json();
+    if (!Array.isArray(drafts) || drafts.length === 0) return false;
+    return drafts[0].status === 'complete';
+  } catch (_) {
+    return false;
+  }
+}
+
+// Fetch all drafts for the current league. Returns the raw array from Sleeper.
+export async function fetchLeagueDrafts() {
+  const res = await fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/drafts`);
+  if (res.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
+  if (!res.ok) throw new Error('Failed to fetch drafts');
+  const drafts = await res.json();
+  return Array.isArray(drafts) ? drafts : [];
+}
+
+// Fetch all picks made in a specific draft (by draft_id).
+export async function fetchDraftPicks(draftId) {
+  if (!draftId) throw new Error('No draft ID');
+  const res = await fetch(`https://api.sleeper.app/v1/draft/${draftId}/picks`);
+  if (res.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
+  if (!res.ok) throw new Error('Failed to fetch draft picks');
+  const picks = await res.json();
+  return Array.isArray(picks) ? picks : [];
+}
+
 // Fetch traded draft picks for a given season, normalized into a simple structure
 // Example item: { round: 2, season: '2025', roster_id: 1, owner_id: 4, previous_owner_id: 1 }
 export async function fetchTradedPicks(season = getCurrentYear()) {

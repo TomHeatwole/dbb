@@ -2618,6 +2618,182 @@
   }
 }
 
+/* ── Rookie Draft Recap Card ────────────────────────────────────── */
+
+.draft-recap-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.draft-recap-round-header {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  color: rgba(226, 232, 240, 0.95);
+  font-weight: 900;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.draft-recap-round-header:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.draft-recap-round-header--active {
+  background: rgba(99, 130, 200, 0.18);
+  border-color: rgba(148, 180, 255, 0.35);
+}
+
+.draft-recap-round-chevron {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.draft-recap-pick-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0.15rem 0 0.25rem 0;
+}
+
+.draft-recap-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.draft-recap-pick:last-child {
+  border-bottom: none;
+}
+
+.draft-recap-pick-num {
+  flex: 0 0 2.5rem;
+  font-weight: 900;
+  font-size: 0.78rem;
+  color: rgba(226, 232, 240, 0.65);
+  text-align: right;
+}
+
+.draft-recap-player-photo {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex: 0 0 auto;
+}
+
+.draft-recap-player-info {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.draft-recap-player-name {
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: rgba(226, 232, 240, 0.98);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-recap-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+}
+
+.draft-recap-pos {
+  font-weight: 800;
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.25rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.draft-recap-pos--qb { background: rgba(239, 68, 68, 0.30); color: rgba(252, 165, 165, 0.95); }
+.draft-recap-pos--rb { background: rgba(59, 130, 246, 0.30); color: rgba(147, 197, 253, 0.95); }
+.draft-recap-pos--wr { background: rgba(34, 197, 94, 0.30); color: rgba(134, 239, 172, 0.95); }
+.draft-recap-pos--te { background: rgba(234, 179, 8, 0.30); color: rgba(253, 224, 71, 0.95); }
+.draft-recap-pos--other { background: rgba(255, 255, 255, 0.10); color: rgba(226, 232, 240, 0.80); }
+
+.draft-recap-nfl-team {
+  color: rgba(226, 232, 240, 0.55);
+  font-weight: 700;
+}
+
+.draft-recap-team-link {
+  flex: 0 0 auto;
+  text-decoration: none;
+  color: inherit;
+}
+
+.draft-recap-team-avatar-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.draft-recap-team-avatar {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.draft-recap-team-avatar--placeholder {
+  display: inline-block;
+}
+
+.draft-recap-team-letter-overlay {
+  position: absolute;
+  inset: -0.03rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(15, 23, 42, 0.28);
+  border-radius: 999px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  pointer-events: none;
+}
+
+@media (max-width: 50em) {
+  .draft-recap-pick-num {
+    flex: 0 0 2.2rem;
+    font-size: 0.74rem;
+  }
+  .draft-recap-player-photo {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .draft-recap-player-name {
+    font-size: 0.78rem;
+  }
+  .draft-recap-team-avatar {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+}
+
 /* Previous year recap card */
 .previous-year-recap-card {
   border-color: rgba(148, 180, 255, 0.75);

@@ -118,6 +118,16 @@ export async function fetchNflScoreboard(season, week) {
   const isActiveWeek = isCurrentSeason && (Number(week) === currentWeek);
   const isPastSeason = !isCurrentSeason;
   const isFutureWeek = isCurrentSeason && (Number(week) > currentWeek);
+
+  function validateSeasonYear(data) {
+    if (!data) return data;
+    const returnedYear = data.season && data.season.year;
+    if (returnedYear != null && Number(returnedYear) !== Number(season)) {
+      return null;
+    }
+    return data;
+  }
+
   // DB first
   try {
     const cached = await readApiCacheLatestByKey(cacheKey);
@@ -128,9 +138,9 @@ export async function fetchNflScoreboard(season, week) {
         if (ageMs > 60 * 60 * 1000) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
-            return refreshed;
+            return validateSeasonYear(refreshed);
           } catch (_) {
-            return cached.data;
+            return validateSeasonYear(cached.data);
           }
         }
       }
@@ -140,17 +150,18 @@ export async function fetchNflScoreboard(season, week) {
         if (ageMs > 60 * 1000) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
-            return refreshed;
+            return validateSeasonYear(refreshed);
           } catch (_) {
-            return cached.data;
+            return validateSeasonYear(cached.data);
           }
         }
       }
-      return cached.data;
+      return validateSeasonYear(cached.data);
     }
   } catch (_) {}
   // Only fetch if missing and this is the active week OR a past season (seed once)
   if (!isActiveWeek && !isPastSeason && !isFutureWeek) { return null; }
   if (PAUSE_SCRAPES) { return null; }
-  return await fetchJson(url, cacheKey);
+  const result = await fetchJson(url, cacheKey);
+  return validateSeasonYear(result);
 } 

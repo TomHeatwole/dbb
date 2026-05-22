@@ -8,6 +8,19 @@ import { CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted, getCompletedWe
 
 const cachedPlayersDataByKey = {};
 let cachedPlayerIdMap = null;
+let cachedStaticPlayers = null;
+
+async function getStaticPlayers() {
+  if (cachedStaticPlayers) return cachedStaticPlayers;
+  try {
+    const res = await fetch('/data/players.txt');
+    if (!res.ok) return {};
+    cachedStaticPlayers = await res.json();
+    return cachedStaticPlayers;
+  } catch (_) {
+    return {};
+  }
+}
 
 function getCacheKey(rostersOrSeason) {
   if (!Array.isArray(rostersOrSeason) && rostersOrSeason != null) {
@@ -46,7 +59,8 @@ export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
     weekCompleted || (Number.isFinite(current.ageMs) && current.ageMs <= 60 * 60 * 1000)
   );
   if (hasSnapshot && isFresh) {
-    cachedPlayersDataByKey[cacheKey] = current.snapshot.data;
+    const staticPlayers = await getStaticPlayers();
+    cachedPlayersDataByKey[cacheKey] = { ...staticPlayers, ...current.snapshot.data };
     return cachedPlayersDataByKey[cacheKey];
   }
   // Snapshot missing or stale: fetch if we can compute cared IDs
@@ -84,20 +98,26 @@ export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
     const caredPlayerIds = Array.from(caredSet);
     const res = await updatePlayers(caredPlayerIds);
     const data = (res && res.snapshot && res.snapshot.data) ? res.snapshot.data : {};
-    cachedPlayersDataByKey[cacheKey] = data;
+    const staticPlayers = await getStaticPlayers();
+    cachedPlayersDataByKey[cacheKey] = { ...staticPlayers, ...data };
     return cachedPlayersDataByKey[cacheKey];
   }
   // If week is completed, never write new snapshots; return last known snapshot (or empty)
   // No rosters yet: if no snapshot or snapshot empty, do not blind fetch; return empty
-  cachedPlayersDataByKey[cacheKey] = hasSnapshot ? current.snapshot.data : {};
+  const snapshotData = hasSnapshot ? current.snapshot.data : {};
+  const staticPlayers = await getStaticPlayers();
+  cachedPlayersDataByKey[cacheKey] = { ...staticPlayers, ...snapshotData };
   return cachedPlayersDataByKey[cacheKey];
 }
 
 export async function fetchPlayerIdMap() {
   if (cachedPlayerIdMap) return cachedPlayerIdMap;
-  const res = await fetch('/data/player_ids.txt');
-  if (!res.ok) throw new Error('Failed to fetch player_ids.txt');
-  const text = await res.text();
+  const [idRes, suppRes] = await Promise.all([
+    fetch('/data/player_ids.txt'),
+    fetch('/data/espn_id_supplement.json').catch(() => null),
+  ]);
+  if (!idRes.ok) throw new Error('Failed to fetch player_ids.txt');
+  const text = await idRes.text();
   const lines = text.trim().split('\n');
   const header = lines[0].split(',');
   const sleeperIdx = header.indexOf('sleeper_id');
@@ -108,6 +128,19 @@ export async function fetchPlayerIdMap() {
     if (cols.length > Math.max(sleeperIdx, espnIdx)) {
       map[cols[sleeperIdx]] = cols[espnIdx] || null;
     }
+  }
+  // Merge supplementary ESPN IDs (fills gaps for rookies via nflverse data)
+  if (suppRes && suppRes.ok) {
+    try {
+      const supplement = await suppRes.json();
+      if (supplement && typeof supplement === 'object') {
+        for (const [sid, espnId] of Object.entries(supplement)) {
+          if (espnId && !map[sid]) {
+            map[sid] = String(espnId);
+          }
+        }
+      }
+    } catch (_) {}
   }
   cachedPlayerIdMap = map;
   return map;
