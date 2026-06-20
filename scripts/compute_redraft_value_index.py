@@ -3,7 +3,7 @@
 compute_redraft_value_index.py
 
 Maps each player's KTC dynasty value to a competitor-adjusted value on the same
-KTC scale using FantasyPros best-ball ADP.
+KTC scale using FantasyPros redraft ADP (Hwang-adjusted best-ball by default).
 
 Positional ADP rank is derived by sorting players within each position by OVR
 avg ADP (ascending). FantasyPros' POS label is kept only for discrepancy reporting.
@@ -19,13 +19,16 @@ Method:
      with γ from max(0, adp_eff_rank − ktc_pos_rank); asymmetric β on redraft flip.
      Flip friendliness is auto-calibrated on the ADP pool so
      sum(rebuild) = 2×sum(ktc) − sum(comp) (comp/rebuild midpoint = dynasty).
-  5. Prior experiments preserved as uncalled ApproachA–G helpers (B = peer exchange).
+  5. Off-ADP KTC players: synthetic rank at positional ADP ceiling (see UNRANKED_ADP).
+     Legacy max-rebuild credit available via UNRANKED_ADP.mode = "zero_redraft".
+  6. Prior experiments preserved as uncalled ApproachA–G helpers (B = peer exchange).
 
 Reads:
   site/public/data/ktc_values.csv  (ktc_value_tep_2qb = SF TE+ baseline)
   site/public/data/sf_ktc_values_historical.csv  (merged SF TE+: non_tep + TE+ overlay)
   site/public/data/ktc_average_rank_values.csv
-  site/public/data/adp/fantasypros_adp_bestball_{year}.csv
+  site/public/data/hwang_adjusted_positional_adp.csv  (when USE_HWANG_ADJUSTED_ADP)
+  site/public/data/adp/fantasypros_adp_bestball_{year}.csv  (when not)
 
 Writes:
   site/public/data/ktc_redraft_value_index.csv
@@ -33,6 +36,9 @@ Writes:
 
 Usage (from project root):
   python3 scripts/compute_redraft_value_index.py [year]
+
+  When USE_HWANG_ADJUSTED_ADP is True, run compute_hwang_scoring_adp.py first
+  (or let this script regenerate it automatically).
 """
 
 from __future__ import annotations
@@ -40,6 +46,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+import subprocess
 import sys
 import unicodedata
 from collections import defaultdict
@@ -53,6 +60,7 @@ HISTORICAL_NAME_IDS_CSV = PROJECT_ROOT / "site/public/data/ktc_historical_name_i
 HIST_RANK_VALUES_CSV = PROJECT_ROOT / "site/public/data/ktc_average_rank_values.csv"
 PLAYERS_FILE = PROJECT_ROOT / "site/public/data/players.txt"
 ADP_DIR = PROJECT_ROOT / "site/public/data/adp"
+HWANG_ADP_CSV = PROJECT_ROOT / "site/public/data/hwang_adjusted_positional_adp.csv"
 OUTPUT_CSV = PROJECT_ROOT / "site/public/data/ktc_redraft_value_index.csv"
 LOOKUP_CSV = PROJECT_ROOT / "site/public/data/ktc_redraft_rank_lookup.csv"
 
@@ -60,6 +68,11 @@ POSITIONS = ("QB", "RB", "WR", "TE")
 DEFAULT_ADP_YEAR = 2026
 KTC_VALUE_COL = "ktc_value_tep_2qb"
 ADP_TYPE = "bestball"
+
+# Redraft ADP input toggle.
+# True  → Hwang Adjusted Positional ADP (best-ball corrected for half→std RB/WR shift).
+# False → raw FantasyPros best-ball ADP from site/public/data/adp/.
+USE_HWANG_ADJUSTED_ADP = True
 PREMIUM_RETENTION = 0.5
 PICK_RE = re.compile(r"^\d{4}\s+(Early|Mid|Late)\s+", re.I)
 
@@ -97,6 +110,45 @@ REBUILD_FLIP_FRIENDLINESS = 0.0  # set in calibrate_rebuild_flip_friendliness()
 
 # ApproachH: OVR avg ADP → fractional stack rank, invert KTC lookup, blend toward stack (λ).
 OVR_KTC_RANK_LAMBDA = 0.40
+
+# --- Off-ADP (unranked) synthetic rank ---------------------------------------
+# KTC players missing from FantasyPros ADP get a synthetic redraft slot instead of
+# max rebuild credit. Tune here when ceiling treatment over/under-corrects.
+#
+# mode:
+#   "ceiling"      — ApproachG + normal rebuild at synthetic eff rank (default)
+#   "zero_redraft" — legacy: competitor=0, max rebuild credit (~1.8×)
+#
+# use_ktc_pos_rank_floor — eff rank = max(ceiling_eff, ktc_pos_rank) so deep dynasty
+#   ranks are not treated more favorably than the last ADP player.
+# eff_rank_offset — add to synthetic eff rank (+ = harsher redraft tax / lower comp).
+# eff_rank_scale  — multiply synthetic eff rank after offset (1.0 = no change).
+UNRANKED_ADP_MODE = "ceiling"
+UNRANKED_ADP_USE_KTC_FLOOR = True
+UNRANKED_ADP_EFF_RANK_OFFSET = 0.0
+UNRANKED_ADP_EFF_RANK_SCALE = 1.0
+
+
+@dataclass(frozen=True)
+class UnrankedAdpConfig:
+    mode: str = UNRANKED_ADP_MODE
+    use_ktc_pos_rank_floor: bool = UNRANKED_ADP_USE_KTC_FLOOR
+    eff_rank_offset: float = UNRANKED_ADP_EFF_RANK_OFFSET
+    eff_rank_scale: float = UNRANKED_ADP_EFF_RANK_SCALE
+
+    def describe(self) -> str:
+        parts = [f"mode={self.mode}"]
+        if self.mode == "ceiling":
+            if self.use_ktc_pos_rank_floor:
+                parts.append("ktc_floor")
+            if self.eff_rank_offset:
+                parts.append(f"offset={self.eff_rank_offset:+.2f}")
+            if self.eff_rank_scale != 1.0:
+                parts.append(f"scale={self.eff_rank_scale:.3f}")
+        return ", ".join(parts)
+
+
+DEFAULT_UNRANKED_ADP = UnrankedAdpConfig()
 
 # --- Peer ADP exchange tuning (adp_eff_rank) ---------------------------------
 # All percentages are OVR ADP step-up from the giver: (receiver_adp - giver_adp) / giver_adp
@@ -768,7 +820,7 @@ def assign_stack_ranks(
     return boards, ranked_rows
 
 
-def load_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, dict], dict[str, dict[int, dict]], list[dict]]:
+def load_bestball_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, dict], dict[str, dict[int, dict]], list[dict]]:
     adp_path = ADP_DIR / f"fantasypros_adp_{ADP_TYPE}_{year}.csv"
     if not adp_path.is_file():
         sys.exit(f"ERROR: missing {adp_path}")
@@ -806,6 +858,59 @@ def load_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, dict], d
             "norm_name": normalize_name(name),
         })
 
+    return _finalize_adp_load(parsed)
+
+
+def load_hwang_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, dict], dict[str, dict[int, dict]], list[dict]]:
+    if not HWANG_ADP_CSV.is_file():
+        sys.exit(
+            f"ERROR: missing {HWANG_ADP_CSV}. "
+            f"Run: python3 scripts/compute_hwang_scoring_adp.py {year}"
+        )
+
+    text = HWANG_ADP_CSV.read_text(encoding="utf-8").strip()
+    lines = text.split("\n")
+    headers = parse_csv_row(lines[0])
+    idx = {name: headers.index(name) for name in headers}
+
+    parsed: list[dict] = []
+    for line in lines[1:]:
+        cols = parse_csv_row(line)
+        position = (cols[idx["position"]] or "").strip().upper()
+        if position not in POSITIONS:
+            continue
+        name = (cols[idx["name"]] or "").strip()
+        if not name:
+            continue
+        try:
+            overall_rank = int(cols[idx["overall_rank"]])
+            adp_avg = float(cols[idx["hwang_adjusted_adp"]])
+            bb_avg_raw = (cols[idx["bb_avg_adp"]] or "").strip()
+            bb_avg = float(bb_avg_raw) if bb_avg_raw else adp_avg
+        except (KeyError, ValueError, TypeError):
+            continue
+
+        hwang_pos_raw = (cols[idx["hwang_pos_rank"]] or "").strip()
+        fp_pos_rank = int(hwang_pos_raw) if hwang_pos_raw.isdigit() else overall_rank
+
+        parsed.append({
+            "name": name,
+            "position": position,
+            "team": (cols[idx["team"]] or "").strip(),
+            "adp_fp_pos_rank": fp_pos_rank,
+            "adp_overall_rank": overall_rank,
+            "adp_avg": adp_avg,
+            "bb_avg_adp": bb_avg,
+            "sleeper_id": (cols[idx["sleeper_id"]] if "sleeper_id" in idx else "").strip(),
+            "norm_name": normalize_name(name),
+        })
+
+    return _finalize_adp_load(parsed)
+
+
+def _finalize_adp_load(
+    parsed: list[dict],
+) -> tuple[dict[tuple[str, str], dict], dict[str, dict], dict[str, dict[int, dict]], list[dict]]:
     boards, ranked_rows = assign_stack_ranks(parsed)
 
     by_name: dict[tuple[str, str], dict] = {}
@@ -826,12 +931,26 @@ def load_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, dict], d
     return by_name, by_sleeper, boards, ranked_rows
 
 
+def load_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, dict], dict[str, dict[int, dict]], list[dict]]:
+    if USE_HWANG_ADJUSTED_ADP:
+        return load_hwang_adp(year)
+    return load_bestball_adp(year)
+
+
+def adp_source_label(adp_year: int) -> str:
+    if USE_HWANG_ADJUSTED_ADP:
+        return f"hwang_adjusted_positional_adp_{adp_year}"
+    return f"fantasypros_{ADP_TYPE}_{adp_year}"
+
+
 def report_fp_vs_stack_discrepancies(ranked_rows: list[dict], adp_year: int) -> None:
     total = len(ranked_rows)
     mismatches = [r for r in ranked_rows if r["adp_fp_pos_rank"] != r["adp_stack_rank"]]
     exact = total - len(mismatches)
 
-    print(f"\nFP POS label vs avg-ADP stack rank ({ADP_TYPE} {adp_year}):")
+    label = "Hwang pos rank" if USE_HWANG_ADJUSTED_ADP else "FP POS label"
+    source = adp_source_label(adp_year)
+    print(f"\n{label} vs avg-ADP stack rank ({source}):")
     print(f"  Total ADP rows:     {total:,}")
     print(f"  Exact match:        {exact:,} ({100 * exact / total:.1f}%)")
     print(f"  Discrepancies:      {len(mismatches):,} ({100 * len(mismatches) / total:.1f}%)")
@@ -1452,7 +1571,7 @@ def compute_rebuilder_at_zero_redraft(
     rank_lookup: dict[str, dict[int, float]],
     position: str,
 ) -> tuple[int | None, float | None]:
-    """Maximum rebuild credit: run rebuilder formula as if competitor adjusted were 0."""
+    """Legacy max rebuild credit: run rebuilder formula as if competitor adjusted were 0."""
     eff = adp_eff_rank if adp_eff_rank is not None else float(ktc_pos_rank)
     return compute_rebuilder_adjusted(
         ktc_value,
@@ -1464,7 +1583,133 @@ def compute_rebuilder_at_zero_redraft(
     )
 
 
-def write_output(rows: list[dict], as_of: str | None, adp_year: int) -> None:
+def adp_board_ceiling_stack(
+    adp_boards: dict[str, dict[int, dict]],
+    position: str,
+) -> int | None:
+    board = adp_boards.get(position) or {}
+    return max(board) if board else None
+
+
+def clip_eff_rank_to_lookup(
+    eff_rank: float,
+    rank_lookup: dict[str, dict[int, float]],
+    position: str,
+) -> float:
+    lookup = rank_lookup.get(position) or {}
+    if not lookup:
+        return eff_rank
+    return max(1.0, min(float(eff_rank), max(lookup)))
+
+
+def resolve_unranked_synthetic_ranks(
+    ktc_pos_rank: int,
+    position: str,
+    adp_boards: dict[str, dict[int, dict]],
+    eff_ranks_by_pos: dict[str, dict[int, float]],
+    rank_lookup: dict[str, dict[int, float]],
+    config: UnrankedAdpConfig = DEFAULT_UNRANKED_ADP,
+) -> tuple[float | None, int | None]:
+    """
+    Synthetic ADP slot for KTC players missing from FantasyPros ADP.
+    Returns (eff_rank, ceiling_stack_rank) or (None, None) if no ADP board.
+    """
+    if config.mode != "ceiling":
+        return None, None
+
+    ceiling_stack = adp_board_ceiling_stack(adp_boards, position)
+    if ceiling_stack is None:
+        return None, None
+
+    eff = eff_ranks_by_pos.get(position, {}).get(ceiling_stack, float(ceiling_stack))
+    if config.use_ktc_pos_rank_floor:
+        eff = max(eff, float(ktc_pos_rank))
+    if config.eff_rank_offset:
+        eff += config.eff_rank_offset
+    if config.eff_rank_scale != 1.0:
+        eff *= config.eff_rank_scale
+    eff = clip_eff_rank_to_lookup(eff, rank_lookup, position)
+    return eff, ceiling_stack
+
+
+def apply_unranked_redraft_adjustments(
+    player: dict,
+    adp_boards: dict[str, dict[int, dict]],
+    eff_ranks_by_pos: dict[str, dict[int, float]],
+    rank_lookup: dict[str, dict[int, float]],
+    config: UnrankedAdpConfig = DEFAULT_UNRANKED_ADP,
+) -> dict:
+    """
+    Competitor + rebuild for off-ADP players.
+    ceiling mode: normal ApproachG + rebuild at synthetic rank.
+    zero_redraft mode: legacy max rebuild, no competitor value.
+    """
+    if config.mode == "zero_redraft":
+        rebuilder, rebuild_index = compute_rebuilder_at_zero_redraft(
+            player["ktc_value"],
+            player["ktc_pos_rank"],
+            None,
+            rank_lookup,
+            player["position"],
+        )
+        return {
+            "stack_rank": None,
+            "adp_eff_rank": None,
+            "adjusted": None,
+            "index": None,
+            "rebuilder": rebuilder,
+            "rebuild_index": rebuild_index,
+            "adp_synthetic": False,
+        }
+
+    adp_eff_rank, ceiling_stack = resolve_unranked_synthetic_ranks(
+        player["ktc_pos_rank"],
+        player["position"],
+        adp_boards,
+        eff_ranks_by_pos,
+        rank_lookup,
+        config,
+    )
+    if adp_eff_rank is None:
+        return {
+            "stack_rank": None,
+            "adp_eff_rank": None,
+            "adjusted": None,
+            "index": None,
+            "rebuilder": None,
+            "rebuild_index": None,
+            "adp_synthetic": False,
+        }
+
+    adjusted, index = ApproachG(
+        player["ktc_value"],
+        adp_eff_rank,
+        player["position"],
+        rank_lookup,
+    )
+    rebuilder = None
+    rebuild_index = None
+    if adjusted is not None and adjusted > 0:
+        rebuilder, rebuild_index = compute_rebuilder_adjusted(
+            player["ktc_value"],
+            player["ktc_pos_rank"],
+            adp_eff_rank,
+            adjusted,
+            rank_lookup,
+            player["position"],
+        )
+    return {
+        "stack_rank": ceiling_stack,
+        "adp_eff_rank": adp_eff_rank,
+        "adjusted": adjusted,
+        "index": index,
+        "rebuilder": rebuilder,
+        "rebuild_index": rebuild_index,
+        "adp_synthetic": True,
+    }
+
+
+def write_output(rows: list[dict], as_of: str | None, adp_year: int, adp_source: str) -> None:
     fieldnames = [
         "name",
         "position",
@@ -1473,11 +1718,13 @@ def write_output(rows: list[dict], as_of: str | None, adp_year: int) -> None:
         "ktc_pos_rank",
         "adp_stack_rank",
         "adp_eff_rank",
+        "bb_avg_adp",
         "adp_avg",
         "competitor_adjusted_value",
         "redraft_value_index",
         "rebuilder_adjusted_value",
         "rebuild_value_index",
+        "adp_synthetic",
         "as_of",
         "adp_source",
     ]
@@ -1490,7 +1737,7 @@ def write_output(rows: list[dict], as_of: str | None, adp_year: int) -> None:
             writer.writerow({
                 **row,
                 "as_of": as_of or "",
-                "adp_source": f"fantasypros_{ADP_TYPE}_{adp_year}",
+                "adp_source": adp_source,
             })
 
 
@@ -1507,6 +1754,13 @@ def main() -> None:
         build_redraft_rank_lookup(ktc_players)
     )
     lookup_rows = write_redraft_rank_lookup_csv(weighted_hist, current_by_rank, rank_lookup)
+
+    if USE_HWANG_ADJUSTED_ADP:
+        hwang_script = PROJECT_ROOT / "scripts/compute_hwang_scoring_adp.py"
+        print(f"Regenerating Hwang adjusted ADP for {adp_year}…")
+        subprocess.run([sys.executable, str(hwang_script), str(adp_year)], check=True)
+
+    adp_source = adp_source_label(adp_year)
     adp_by_name, adp_by_sleeper, adp_boards, ranked_adp_rows = load_adp(adp_year)
     sleeper_by_name, sleeper_by_last = load_sleeper_ids_by_player()
 
@@ -1557,8 +1811,10 @@ def main() -> None:
     else:
         REBUILD_FLIP_FRIENDLINESS = 0.0
 
+    unranked_config = DEFAULT_UNRANKED_ADP
     output_rows: list[dict] = []
     matched = 0
+    synthetic = 0
 
     for player in sorted(ktc_players, key=lambda r: (-r["ktc_value"], r["name"])):
         adp = find_adp_row(player, adp_by_name, adp_by_sleeper, sleeper_by_name, sleeper_by_last)
@@ -1569,6 +1825,7 @@ def main() -> None:
         index = None
         rebuilder = None
         rebuild_index = None
+        adp_synthetic = False
 
         if adp and stack_rank is not None:
             adp_eff_rank = eff_ranks_by_pos[player["position"]].get(stack_rank)
@@ -1582,24 +1839,40 @@ def main() -> None:
                 if adjusted is not None:
                     matched += 1
 
-        if adjusted is not None and adjusted > 0:
-            rebuilder, rebuild_index = compute_rebuilder_adjusted(
-                player["ktc_value"],
-                player["ktc_pos_rank"],
-                adp_eff_rank,
-                adjusted,
+            if adjusted is not None and adjusted > 0:
+                rebuilder, rebuild_index = compute_rebuilder_adjusted(
+                    player["ktc_value"],
+                    player["ktc_pos_rank"],
+                    adp_eff_rank,
+                    adjusted,
+                    rank_lookup,
+                    player["position"],
+                )
+            elif adjusted is None or adjusted == 0:
+                rebuilder, rebuild_index = compute_rebuilder_at_zero_redraft(
+                    player["ktc_value"],
+                    player["ktc_pos_rank"],
+                    adp_eff_rank,
+                    rank_lookup,
+                    player["position"],
+                )
+        else:
+            unranked = apply_unranked_redraft_adjustments(
+                player,
+                adp_boards,
+                eff_ranks_by_pos,
                 rank_lookup,
-                player["position"],
+                unranked_config,
             )
-        elif adjusted is None or adjusted == 0:
-            # No redraft value (off ADP board or zero comp adj) → max rebuild credit.
-            rebuilder, rebuild_index = compute_rebuilder_at_zero_redraft(
-                player["ktc_value"],
-                player["ktc_pos_rank"],
-                adp_eff_rank,
-                rank_lookup,
-                player["position"],
-            )
+            stack_rank = unranked["stack_rank"]
+            adp_eff_rank = unranked["adp_eff_rank"]
+            adjusted = unranked["adjusted"]
+            index = unranked["index"]
+            rebuilder = unranked["rebuilder"]
+            rebuild_index = unranked["rebuild_index"]
+            adp_synthetic = unranked["adp_synthetic"]
+            if adp_synthetic and adjusted is not None:
+                synthetic += 1
 
         output_rows.append({
             "name": player["name"],
@@ -1609,18 +1882,33 @@ def main() -> None:
             "ktc_pos_rank": player["ktc_pos_rank"],
             "adp_stack_rank": stack_rank if stack_rank is not None else "",
             "adp_eff_rank": adp_eff_rank if adp_eff_rank is not None else "",
+            "bb_avg_adp": (
+                round(adp["bb_avg_adp"], 1)
+                if adp and adp.get("bb_avg_adp") is not None
+                else ""
+            ),
             "adp_avg": round(adp["adp_avg"], 1) if adp and adp.get("adp_avg") is not None else "",
             "competitor_adjusted_value": adjusted if adjusted is not None else "",
             "redraft_value_index": index if index is not None else "",
             "rebuilder_adjusted_value": rebuilder if rebuilder is not None else "",
             "rebuild_value_index": rebuild_index if rebuild_index is not None else "",
+            "adp_synthetic": 1 if adp_synthetic else "",
         })
 
-    write_output(output_rows, as_of, adp_year)
+    write_output(output_rows, as_of, adp_year, adp_source)
 
     print(f"\nWrote {len(output_rows):,} players → {OUTPUT_CSV}")
     print(f"Wrote {lookup_rows:,} rank-slot lookups → {LOOKUP_CSV}")
-    print(f"Matched {matched:,} / {len(output_rows):,} KTC players to {ADP_TYPE} ADP {adp_year}")
+    print(f"Matched {matched:,} / {len(output_rows):,} KTC players to {adp_source}")
+    print(f"Unranked ADP: {unranked_config.describe()} ({synthetic:,} synthetic ceiling rows)")
+    for pos in POSITIONS:
+        ceiling = adp_board_ceiling_stack(adp_boards, pos)
+        if ceiling is not None:
+            print(f"  {pos} ADP ceiling stack rank: {ceiling}")
+    print(
+        f"Redraft ADP input: {'Hwang Adjusted Positional ADP' if USE_HWANG_ADJUSTED_ADP else f'FantasyPros {ADP_TYPE}'} "
+        f"({adp_source})"
+    )
     print(
         "Adjusted ADP approach: ApproachH "
         f"(λ={OVR_KTC_RANK_LAMBDA:g} OVR ADP + KTC lookup correction on stack rank)"

@@ -21,7 +21,10 @@ import {
   getYearLabel,
   getValueColumnLabel,
   sourceIsRedraftAdjusted,
+  sourceIsHwangAdjusted,
+  redraftUsesHwangAdp,
 } from './rankingsSources';
+import { HwangAdpTooltip } from './hwangAdpTooltip';
 import {
   formatKtcValue,
   getKtcHistoricalDateList,
@@ -127,6 +130,13 @@ function formatOvrAdp(value) {
 function formatRedraftIndex(value) {
   if (value == null || !Number.isFinite(value)) return '—';
   return `${value.toFixed(2)}×`;
+}
+
+function formatAdpDelta(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  if (Math.abs(value) < 0.05) return '—';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(1)}`;
 }
 
 function indexClassName(value) {
@@ -357,7 +367,9 @@ function RankingsViewer({ fixedSourceId = null }) {
 
   const hasValue = sourceHasValue(sourceOption);
   const isRedraftAdjusted = sourceIsRedraftAdjusted(sourceOption);
-  const colCount = isRedraftAdjusted ? 15 : 6;
+  const isHwangAdjusted = sourceIsHwangAdjusted(sourceOption);
+  const redraftHwangAdp = isRedraftAdjusted && redraftUsesHwangAdp(meta?.adpSource);
+  const colCount = isRedraftAdjusted ? (redraftHwangAdp ? 16 : 15) : (isHwangAdjusted ? 8 : 6);
 
   const handleSort = useCallback((key) => {
     if (sortKey === key) {
@@ -397,6 +409,7 @@ function RankingsViewer({ fixedSourceId = null }) {
     }
     if (meta.asOf) parts.push(`as of ${meta.asOf}`);
     if (meta.adpSource) parts.push(`via ${meta.adpSource.replace(/_/g, ' ')}`);
+    if (meta.scoringSource) parts.push(`shift from ${meta.scoringSource.replace(/_/g, ' ')}`);
     if (meta.premiumRetention != null) {
       parts.push(`λ=${meta.premiumRetention}`);
     }
@@ -500,7 +513,9 @@ function RankingsViewer({ fixedSourceId = null }) {
         <>
           {isRedraftAdjusted && (
             <p className="rv-hint">
-              Click a player to see how OVR-adjusted Pos ADP maps to a historical slot value.
+              {redraftHwangAdp
+                ? 'Click a player to see how Hwang-adjusted Pos ADP maps to a historical slot value. Best Ball ADP is the raw input; Hwang ADP applies the half→standard RB/WR scoring correction.'
+                : 'Click a player to see how OVR-adjusted Pos ADP maps to a historical slot value.'}
             </p>
           )}
           <div className={isRedraftAdjusted && selectedRedraftRow ? 'rv-redraft-layout' : undefined}>
@@ -525,7 +540,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                 />
                 <th className="rv-th rv-th-pos">Pos</th>
                 <th className="rv-th rv-th-team">Team</th>
-                {!isRedraftAdjusted && (
+                {!isRedraftAdjusted && !isHwangAdjusted && (
                   <SortableHeader
                     label={SORT_KEYS.posRank}
                     sortKey="posRank"
@@ -534,6 +549,34 @@ function RankingsViewer({ fixedSourceId = null }) {
                     onSort={handleSort}
                     className="rv-th-pos-rank"
                   />
+                )}
+                {isHwangAdjusted && (
+                  <>
+                    <SortableHeader
+                      label="Pos ADP"
+                      sortKey="posRank"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-pos-rank"
+                    />
+                    <SortableHeader
+                      label="Best Ball ADP"
+                      sortKey="bbAvgAdp"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-ovr-adp"
+                    />
+                    <SortableHeader
+                      label="Δ ADP"
+                      sortKey="adpDelta"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-adp-delta"
+                    />
+                  </>
                 )}
                 {isRedraftAdjusted && (
                   <>
@@ -561,8 +604,18 @@ function RankingsViewer({ fixedSourceId = null }) {
                       onSort={handleSort}
                       className="rv-th-adj-adp"
                     />
+                    {redraftHwangAdp && (
+                      <SortableHeader
+                        label="Best Ball ADP"
+                        sortKey="bbAvgAdp"
+                        activeKey={sortKey}
+                        activeDir={sortDir}
+                        onSort={handleSort}
+                        className="rv-th-bb-adp"
+                      />
+                    )}
                     <SortableHeader
-                      label="OVR ADP"
+                      label={redraftHwangAdp ? 'Hwang ADP' : 'OVR ADP'}
                       sortKey="adpAvg"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -651,10 +704,23 @@ function RankingsViewer({ fixedSourceId = null }) {
                       {row.position ? <PositionBadge position={row.position} /> : '—'}
                     </td>
                     <td className="rv-td rv-td-team">{row.team || '—'}</td>
-                    {!isRedraftAdjusted && (
+                    {!isRedraftAdjusted && !isHwangAdjusted && (
                       <td className="rv-td rv-td-pos-rank">
                         {row.posRank != null ? `${row.position || ''}${row.posRank}` : '—'}
                       </td>
+                    )}
+                    {isHwangAdjusted && (
+                      <>
+                        <td className="rv-td rv-td-pos-rank">
+                          {formatPosAdpRank(row.position, row.posRank)}
+                        </td>
+                        <td className="rv-td rv-td-ovr-adp">{formatOvrAdp(row.bbAvgAdp)}</td>
+                        <td className="rv-td rv-td-adp-delta">
+                          <HwangAdpTooltip row={row}>
+                            {formatAdpDelta(row.adpDelta)}
+                          </HwangAdpTooltip>
+                        </td>
+                      </>
                     )}
                     {isRedraftAdjusted && (
                       <>
@@ -665,15 +731,22 @@ function RankingsViewer({ fixedSourceId = null }) {
                           {formatPosAdpRank(row.position, row.adpPosRank)}
                         </td>
                         <td className="rv-td rv-td-adj-adp">{formatAdjustedAdpRank(row)}</td>
+                        {redraftHwangAdp && (
+                          <td className="rv-td rv-td-bb-adp">{formatOvrAdp(row.bbAvgAdp)}</td>
+                        )}
                         <td className="rv-td rv-td-ovr-adp">{formatOvrAdp(row.adpAvg)}</td>
                         <td className="rv-td rv-td-dynasty">{formatKtcNumber(row.ktcValue)}</td>
                       </>
                     )}
                     <td className="rv-td rv-td-value">
                       {isRedraftAdjusted ? (
-                        <RedraftAdjTooltip kind="comp" entry={row}>
+                        <RedraftAdjTooltip kind="comp" entry={row} usesHwangAdp={redraftHwangAdp}>
                           {formatValue(row)}
                         </RedraftAdjTooltip>
+                      ) : isHwangAdjusted ? (
+                        <HwangAdpTooltip row={row}>
+                          {formatValue(row)}
+                        </HwangAdpTooltip>
                       ) : (
                         formatValue(row)
                       )}
@@ -681,17 +754,17 @@ function RankingsViewer({ fixedSourceId = null }) {
                     {isRedraftAdjusted && (
                       <>
                         <td className={`rv-td ${indexClassName(row.redraftValueIndex)}`}>
-                          <RedraftAdjTooltip kind="comp" entry={row}>
+                          <RedraftAdjTooltip kind="comp" entry={row} usesHwangAdp={redraftHwangAdp}>
                             {formatRedraftIndex(row.redraftValueIndex)}
                           </RedraftAdjTooltip>
                         </td>
                         <td className="rv-td rv-td-rebuilder">
-                          <RedraftAdjTooltip kind="rebuild" entry={row}>
+                          <RedraftAdjTooltip kind="rebuild" entry={row} usesHwangAdp={redraftHwangAdp}>
                             {formatKtcNumber(row.rebuilderAdjustedValue)}
                           </RedraftAdjTooltip>
                         </td>
                         <td className={`rv-td ${indexClassName(row.rebuildValueIndex)}`}>
-                          <RedraftAdjTooltip kind="rebuild" entry={row}>
+                          <RedraftAdjTooltip kind="rebuild" entry={row} usesHwangAdp={redraftHwangAdp}>
                             {formatRedraftIndex(row.rebuildValueIndex)}
                           </RedraftAdjTooltip>
                         </td>
@@ -708,6 +781,7 @@ function RankingsViewer({ fixedSourceId = null }) {
               <RedraftAdjustmentPanel
                 row={selectedRedraftRow}
                 lookupMap={rankLookup}
+                usesHwangAdp={redraftHwangAdp}
               />
             )}
           </div>

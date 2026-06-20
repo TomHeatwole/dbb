@@ -124,6 +124,11 @@ export function buildSourceOptions() {
   groups.push({
     label: 'Other',
     options: [
+      {
+        id: 'hwang_adjusted_adp',
+        label: 'Hwang Adjusted Positional ADP',
+        kind: 'hwang_adjusted_adp',
+      },
       { id: 'fantasycalc', label: 'FantasyCalc Dynasty', kind: 'fantasycalc' },
       { id: 'ffb', label: 'FFB Dynasty Rankings', kind: 'ffb' },
       ...Object.entries(FP_ECR_SOURCES).map(([key, cfg]) => ({
@@ -159,7 +164,7 @@ export const REDRAFT_VALUE_INDEX_SOURCE_ID = REDRAFT_VALUE_INDEX_SOURCE.id;
 /** Sources with a meaningful numeric value column (KTC, FantasyCalc, ADP avg). */
 export function sourceHasValue(sourceOption) {
   if (!sourceOption) return false;
-  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'ktc_redraft_adjusted', 'fantasycalc', 'adp'].includes(sourceOption.kind);
+  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'ktc_redraft_adjusted', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
 }
 
 /** Default table sort when a source is selected or data reloads. */
@@ -176,7 +181,7 @@ export function defaultSortForSource(sourceOption) {
   if (sourceOption.kind === 'fantasycalc') {
     return { key: 'value', dir: 'desc' };
   }
-  if (sourceOption.kind === 'adp') {
+  if (sourceOption.kind === 'adp' || sourceOption.kind === 'hwang_adjusted_adp') {
     return { key: 'value', dir: 'asc' };
   }
   return { key: 'rank', dir: 'asc' };
@@ -191,9 +196,9 @@ export const SORT_KEYS = {
 
 export function defaultDirForSortKey(key, sourceOption = null) {
   if (key === 'value' || key === 'ktcValue' || key === 'redraftValueIndex' || key === 'rebuildValueIndex' || key === 'rebuilderAdjustedValue') {
-    return sourceOption?.kind === 'adp' ? 'asc' : 'desc';
+    return (sourceOption?.kind === 'adp' || sourceOption?.kind === 'hwang_adjusted_adp') ? 'asc' : 'desc';
   }
-  if (key === 'adpAvg' || key === 'adpEffRank' || key === 'ktcPosRank' || key === 'adpPosRank') {
+  if (key === 'adpAvg' || key === 'adpEffRank' || key === 'bbAvgAdp' || key === 'adpDelta' || key === 'scoringRankShift' || key === 'ktcPosRank' || key === 'adpPosRank') {
     return 'asc';
   }
   return 'asc';
@@ -207,10 +212,19 @@ export function getYearLabel(sourceOption) {
 export function getValueColumnLabel(sourceOption) {
   if (sourceOption?.kind === 'ktc_rookie') return 'Rookie Value';
   if (sourceOption?.kind === 'ktc_redraft_adjusted') return 'Competitor Adjusted Value';
+  if (sourceOption?.kind === 'hwang_adjusted_adp') return 'Hwang ADP';
   if (sourceOption?.kind === 'adp') return 'Avg ADP';
   return SORT_KEYS.value;
 }
 
 export function sourceIsRedraftAdjusted(sourceOption) {
   return sourceOption?.kind === 'ktc_redraft_adjusted';
+}
+
+export function redraftUsesHwangAdp(adpSource) {
+  return (adpSource || '').includes('hwang_adjusted');
+}
+
+export function sourceIsHwangAdjusted(sourceOption) {
+  return sourceOption?.kind === 'hwang_adjusted_adp';
 }

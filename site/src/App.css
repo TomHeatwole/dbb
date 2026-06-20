@@ -9178,8 +9178,36 @@ body.modal-open {
   transform: translateY(0);
 }
 
+/* Portaled tooltips escape overflow containers and stay in viewport */
+.redraft-adj-tooltip-wrap--fixed .redraft-adj-tooltip {
+  display: none;
+}
+
+.redraft-adj-tooltip--fixed {
+  position: fixed;
+  bottom: auto;
+  right: auto;
+  opacity: 0;
+  transform: none;
+  transition: opacity 0.12s ease;
+  z-index: 10050;
+  max-width: min(22rem, calc(100vw - 16px));
+}
+
+.redraft-adj-tooltip--fixed.redraft-adj-tooltip--visible {
+  opacity: 1;
+}
+
+.redraft-adj-tooltip--fixed .redraft-adj-tooltip-line {
+  white-space: normal;
+}
+
 @media (max-width: 640px) {
   .redraft-adj-tooltip {
+    display: none;
+  }
+
+  .redraft-adj-tooltip--fixed {
     display: none;
   }
 }

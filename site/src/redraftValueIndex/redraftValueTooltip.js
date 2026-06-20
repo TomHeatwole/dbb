@@ -43,7 +43,7 @@ const KIND_LABELS = {
   rebuild: 'Rebuilder adjusted',
 };
 
-export function buildRedraftAdjTooltipLines(entry, kind) {
+export function buildRedraftAdjTooltipLines(entry, kind, { usesHwangAdp = false } = {}) {
   const normalized = normalizeRedraftTooltipEntry(entry);
   if (!normalized) return null;
 
@@ -58,21 +58,26 @@ export function buildRedraftAdjTooltipLines(entry, kind) {
     return null;
   }
 
+  const adpLabel = usesHwangAdp ? 'Hwang ADP' : 'Adj ADP';
+
   return [
     KIND_LABELS[kind],
     `KTC TE+: ${formatKtcValue(normalized.ktcValue)}`,
     `KTC rank: ${formatPosRankLabel(normalized.position, normalized.ktcPosRank)}`,
-    `Adj ADP: ${formatAdjAdpLabel(
+    `${adpLabel}: ${formatAdjAdpLabel(
       normalized.position,
       normalized.adpEffRank,
       normalized.adpPosRank,
     )}`,
+    ...(usesHwangAdp && entry?.bbAvgAdp != null
+      ? [`Best Ball ADP: ${entry.bbAvgAdp.toFixed(1)}`]
+      : []),
     `Adjust: ${formatAdjustPct(index)}`,
   ];
 }
 
-export function buildRedraftAdjTooltipText(entry, kind) {
-  const lines = buildRedraftAdjTooltipLines(entry, kind);
+export function buildRedraftAdjTooltipText(entry, kind, options) {
+  const lines = buildRedraftAdjTooltipLines(entry, kind, options);
   return lines ? lines.join('\n') : null;
 }
 
@@ -86,8 +91,9 @@ export function RedraftAdjTooltip({
   children,
   className = '',
   as = 'span',
+  usesHwangAdp = false,
 }) {
-  const lines = buildRedraftAdjTooltipLines(entry, kind);
+  const lines = buildRedraftAdjTooltipLines(entry, kind, { usesHwangAdp });
   const title = lines ? lines.join('\n') : undefined;
   const Tag = as;
 

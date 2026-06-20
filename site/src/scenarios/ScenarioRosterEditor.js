@@ -6,6 +6,7 @@ import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
+const ADDABLE_POSITIONS = ['QB', 'RB', 'WR', 'TE'];
 
 // Left column: QB and WR; right column: everything else
 const COL1_POSITIONS = ['QB', 'WR'];
@@ -116,10 +117,13 @@ function ScenarioRosterEditor({
     if (!searchQuery.trim()) {
       // Show top fantasy-point scorers for the season when search is empty
       if (!topPlayersBySeason || topPlayersBySeason.length === 0) return [];
-      return topPlayersBySeason.slice(0, 15).map((player) => ({
-        ...player,
-        alreadyOnRoster: existingSet.has(player.player_id),
-      }));
+      return topPlayersBySeason
+        .filter((player) => ADDABLE_POSITIONS.includes(player.position))
+        .slice(0, 15)
+        .map((player) => ({
+          ...player,
+          alreadyOnRoster: existingSet.has(player.player_id),
+        }));
     }
 
     const query = searchQuery.toLowerCase();
@@ -132,7 +136,7 @@ function ScenarioRosterEditor({
       const last = (p.last_name || '').toLowerCase();
       if (full.includes(query) || first.includes(query) || last.includes(query)) {
         const info = getPlayerInfo(pid, playersData, playerIdMap);
-        if (info) {
+        if (info && ADDABLE_POSITIONS.includes(info.position)) {
           results.push({ ...info, player_id: pid, alreadyOnRoster: existingSet.has(pid) });
         }
       }

@@ -68,7 +68,7 @@ export function buildRedraftAdjustmentBreakdown(row, lookupMap) {
   };
 }
 
-function RedraftAdjustmentPanel({ row, lookupMap }) {
+function RedraftAdjustmentPanel({ row, lookupMap, usesHwangAdp = false }) {
   const breakdown = useMemo(
     () => buildRedraftAdjustmentBreakdown(row, lookupMap),
     [row, lookupMap],
@@ -131,6 +131,23 @@ function RedraftAdjustmentPanel({ row, lookupMap }) {
           value={effSlot}
           sub="Stack rank + λ × (KTC-implied rank − stack); λ=0.40"
         />
+        {usesHwangAdp && row.bbAvgAdp != null && (
+          <StatBlock
+            label="Best Ball ADP (raw input)"
+            value={row.bbAvgAdp.toFixed(1)}
+          />
+        )}
+        {usesHwangAdp && row.adpAvg != null && (
+          <StatBlock
+            label="Hwang ADP (scoring-adjusted input)"
+            value={row.adpAvg.toFixed(1)}
+            sub={
+              row.bbAvgAdp != null && row.adpAvg !== row.bbAvgAdp
+                ? `Half→std RB/WR correction: ${row.bbAvgAdp.toFixed(1)} → ${row.adpAvg.toFixed(1)}`
+                : 'No half→std positional shift for this player'
+            }
+          />
+        )}
 
         <StatBlock
           label="Year-weighted historical avg"
