@@ -2,7 +2,7 @@
 """
 compute_ktc_average_deltas.py
 
-Computes KTC historical rank statistics from sf_non_tep_ktc_values_historical.csv.
+Computes KTC historical rank statistics from sf_ktc_values_historical.csv (SF TE+ baseline).
 
 For each day:
   - Rank players within QB/RB/WR/TE by ktc_value (desc) → QB1, RB2, …
@@ -27,7 +27,7 @@ from collections import defaultdict
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-HISTORICAL_CSV = PROJECT_ROOT / "site/public/data/sf_non_tep_ktc_values_historical.csv"
+HISTORICAL_CSV = PROJECT_ROOT / "site/public/data/sf_ktc_values_historical.csv"
 NAME_IDS_CSV = PROJECT_ROOT / "site/public/data/ktc_historical_name_ids.csv"
 PLAYERS_FILE = PROJECT_ROOT / "site/public/data/players.txt"
 RANK_VALUES_CSV = PROJECT_ROOT / "site/public/data/ktc_average_rank_values.csv"

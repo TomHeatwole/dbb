@@ -29,6 +29,15 @@ const COLUMN_GROUPS = [
     keys: ['ffbRank', 'ffbPosRank'],
   },
   {
+    label: 'Redraft Adjusted',
+    keys: [
+      'competitorAdjustedValue',
+      'competitorAdjustedRank',
+      'rebuilderAdjustedValue',
+      'rebuilderAdjustedRank',
+    ],
+  },
+  {
     label: 'Ownership',
     keys: ['fantasyTeamName'],
   },

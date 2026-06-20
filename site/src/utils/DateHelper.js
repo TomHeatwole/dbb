@@ -153,6 +153,42 @@ export function isPostSeasonPreDraft(season = null) {
   return Number.isFinite(completedWeeks) && completedWeeks >= 17;
 }
 
+/**
+ * Whether the current season's rookie draft has finished.
+ * Uses Sleeper status when available; falls back to calendar (May+) in preseason.
+ */
+export function isCurrentYearRookieDraftDone(rookieDraftComplete = false) {
+  if (rookieDraftComplete) return true;
+  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
+  if (completedWeeks > 0) return true;
+  // NFL rookie draft finishes in late April; from May onward treat it as done.
+  return new Date().getMonth() >= 4;
+}
+
+/**
+ * Min/max draft seasons for future pick inventory (3 consecutive drafts).
+ * e.g. after the 2026 draft: 2027–2029.
+ */
+export function getFuturePickSeasonRange(rookieDraftComplete = false) {
+  const currentYearNum = Number(CURRENT_YEAR);
+  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
+  const isPreSeason = completedWeeks === 0;
+  const currentYearDraftDone = isCurrentYearRookieDraftDone(rookieDraftComplete);
+  const minSeason = currentYearNum + (currentYearDraftDone ? 1 : 0);
+  return {
+    minSeason,
+    maxSeason: minSeason + 2,
+    isPreSeason,
+    currentYearDraftDone,
+  };
+}
+
+export function getNextDraftYear(rookieDraftComplete = false) {
+  const { isPreSeason, currentYearDraftDone } = getFuturePickSeasonRange(rookieDraftComplete);
+  if (isPreSeason && !currentYearDraftDone) return String(CURRENT_YEAR);
+  return String(Number(CURRENT_YEAR) + 1);
+}
+
 // Decide if we should poll current week's data based on ESPN scoreboard json
 // Conditions:
 // 1) Any game shows an in-progress status

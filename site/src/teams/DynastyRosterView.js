@@ -15,7 +15,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { fetchTeamData, fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
+import { fetchTeamData, fetchTradedPicks, fetchRookieDraftComplete, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import PositionBadge from '../PositionBadge';
 import {
@@ -26,38 +26,97 @@ import {
 } from '../lookups/KtcLookup';
 import { fetchFantasyCalcData, getFantasyCalcEntry, formatFcValue } from '../lookups/FantasyCalcLookup';
 import { fetchFfbData, getFfbEntry, formatFfbRank } from '../lookups/FfbLookup';
+import {
+  fetchRedraftValueData,
+  getRedraftValueEntryByName,
+  formatRedraftAdjustedValue,
+} from '../lookups/RedraftValueLookup';
+import { RedraftAdjTooltip } from '../redraftValueIndex/redraftValueTooltip';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchScoresData } from '../lookups/ScoresLookup';
-import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount, getFuturePickSeasonRange, getNextDraftYear, isPostSeasonPreDraft } from '../utils/DateHelper';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
 
-// Draft pick KTC values are approximate — enable when real data is available
-const PICKS_ENABLED = false;
+const PICKS_ENABLED = true;
+
+const PICKS_VALUE_SOURCES = [
+  'ktc_sf',
+  'ktc_sf_tep',
+  'competitor_adjusted',
+  'rebuilder_adjusted',
+];
 
 const RANKED_POSITIONS  = ['QB', 'RB', 'WR', 'TE'];
 
-// Value source options: KTC SF, KTC SF TE+, FantasyCalc, FFB
-const VALUE_SOURCES = ['ktc_sf', 'ktc_sf_tep', 'fantasycalc', 'ffb'];
+// Value source options: KTC SF, KTC SF TE+, FantasyCalc, FFB, redraft-adjusted
+const VALUE_SOURCES = [
+  'ktc_sf',
+  'ktc_sf_tep',
+  'competitor_adjusted',
+  'rebuilder_adjusted',
+  'fantasycalc',
+  'ffb',
+];
 const VALUE_SOURCE_LABELS = {
-  ktc_sf:       'KTC SF',
-  ktc_sf_tep:   'KTC SF TE+',
-  fantasycalc:  'FantasyCalc',
-  ffb:          'FFB',
+  ktc_sf:               'KTC SF',
+  ktc_sf_tep:           'KTC SF TE+',
+  competitor_adjusted:  'Competitor Adj',
+  rebuilder_adjusted:   'Rebuild Adj',
+  fantasycalc:          'FantasyCalc',
+  ffb:                  'FFB',
 };
 const VALUE_SOURCE_COL_HEADER = {
-  ktc_sf:       'KTC',
-  ktc_sf_tep:   'KTC',
-  fantasycalc:  'FC',
-  ffb:          'FFB Rank',
+  ktc_sf:               'KTC',
+  ktc_sf_tep:           'KTC',
+  competitor_adjusted:  'Comp Adj',
+  rebuilder_adjusted:   'Rebuild',
+  fantasycalc:          'FC',
+  ffb:                  'FFB Rank',
 };
 const VALUE_SOURCE_TOTAL_LABEL = {
-  ktc_sf:       'Total KTC',
-  ktc_sf_tep:   'Total KTC',
-  fantasycalc:  'Total FC',
-  ffb:          'FFB Score',
+  ktc_sf:               'Total KTC',
+  ktc_sf_tep:           'Total KTC',
+  competitor_adjusted:  'Total Comp Adj',
+  rebuilder_adjusted:   'Total Rebuild',
+  fantasycalc:          'Total FC',
+  ffb:                  'FFB Score',
 };
+
+const REDRAFT_VALUE_SOURCES = new Set(['competitor_adjusted', 'rebuilder_adjusted']);
+
+function formatRedraftIndex(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `${value.toFixed(2)}×`;
+}
+
+function formatIndexDeltaPct(index) {
+  if (index == null || !Number.isFinite(index)) return null;
+  const pct = (index - 1) * 100;
+  const sign = pct > 0 ? '+' : '';
+  return `${sign}${pct.toFixed(1)}%`;
+}
+
+function indexClassName(value) {
+  if (value == null || !Number.isFinite(value)) return 'dynasty-index';
+  if (value > 1.005) return 'dynasty-index dynasty-index--up';
+  if (value < 0.995) return 'dynasty-index dynasty-index--down';
+  return 'dynasty-index dynasty-index--flat';
+}
+
+function computePlayerIndex(adjustedValue, dynastyKtcValue, csvIndex) {
+  if (csvIndex != null && Number.isFinite(csvIndex)) return csvIndex;
+  if (
+    adjustedValue == null
+    || !Number.isFinite(adjustedValue)
+    || !dynastyKtcValue
+    || dynastyKtcValue <= 0
+  ) {
+    return null;
+  }
+  return Math.round((adjustedValue / dynastyKtcValue) * 10000) / 10000;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -75,15 +134,11 @@ function toOrdinal(n) {
 
 /**
  * Build per-team pick lists from the Sleeper traded-picks API response.
- * Covers the next 3 drafts (or the current draft + 2 more during preseason).
+ * Covers the next 3 drafts after the upcoming one (e.g. 2027–2029 once the 2026 draft is done).
  */
-function buildPicksByRoster(teamData, allTradedPicks) {
-  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-  const isPreSeason    = completedWeeks === 0;
+function buildPicksByRoster(teamData, allTradedPicks, { rookieDraftComplete = false } = {}) {
+  const { minSeason, maxSeason } = getFuturePickSeasonRange(rookieDraftComplete);
   const currentYearNum = Number(CURRENT_YEAR);
-  const yearOffset     = isPreSeason ? 0 : 1;
-  const minSeason      = currentYearNum + yearOffset;
-  const maxSeason      = currentYearNum + yearOffset + 2;
 
   const futurePicks = (allTradedPicks || []).filter((p) => {
     const s = p.season != null ? Number(p.season) : currentYearNum;
@@ -172,8 +227,10 @@ function DynastyRosterView() {
   const [ktcAsOf, setKtcAsOf]             = useState(null);
   const [fcData, setFcData]               = useState(null); // { bySleeperId, byName }
   const [ffbData, setFfbData]             = useState(null); // { bySleeperId, byName }
+  const [redraftData, setRedraftData]     = useState(null); // { byName, asOf, adpSource }
   const [selectedId, setSelectedId]       = useState(null);
   const [valueSource, setValueSource]     = useState('ktc_sf_tep');
+  const [includePicksInTotal, setIncludePicksInTotal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // ── Data loading ────────────────────────────────────────────────────────────
@@ -188,10 +245,7 @@ function DynastyRosterView() {
         const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
         const isPreSeason    = completedWeeks === 0;
         const prevYearStr    = String(Number(CURRENT_YEAR) - 1);
-        // nextDraftYear: during preseason it's CURRENT_YEAR; after draft it's CURRENT_YEAR+1
-        const nextDraft      = isPreSeason ? String(CURRENT_YEAR) : String(Number(CURRENT_YEAR) + 1);
-
-        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, allTradedPicks, prevWeeksData] =
+        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, allTradedPicks, prevWeeksData, rookieDraftComplete] =
           await Promise.all([
             fetchTeamData(CURRENT_YEAR),
             fetchScoresData(CURRENT_YEAR),
@@ -199,11 +253,16 @@ function DynastyRosterView() {
             fetchKtcData(),
             fetchFantasyCalcData().catch(() => null),
             fetchFfbData().catch(() => null),
+            fetchRedraftValueData().catch(() => null),
             PICKS_ENABLED ? fetchTradedPicks(CURRENT_YEAR).catch(() => []) : Promise.resolve([]),
             PICKS_ENABLED && isPreSeason
               ? fetchScoresData(prevYearStr).catch(() => null)
               : Promise.resolve(null),
+            PICKS_ENABLED ? fetchRookieDraftComplete().catch(() => false) : Promise.resolve(false),
           ]);
+
+        const nextDraft = getNextDraftYear(rookieDraftComplete);
+        const { currentYearDraftDone } = getFuturePickSeasonRange(rookieDraftComplete);
 
         if (!teamData || !Array.isArray(teamData.rosters)) throw new Error('No team data');
         if (cancelled) return;
@@ -213,7 +272,9 @@ function DynastyRosterView() {
 
         // Draft order: maps rosterId → pick slot (1-10) for the upcoming draft
         let orderMap = {};
-        if (PICKS_ENABLED) {
+        const needsDraftOrder = isPostSeasonPreDraft(CURRENT_YEAR)
+          || (isPreSeason && !currentYearDraftDone);
+        if (PICKS_ENABLED && needsDraftOrder) {
           try {
             const scoresForOrder = isPreSeason ? prevWeeksData : weeksData;
             const scoresYear     = isPreSeason ? prevYearStr   : String(CURRENT_YEAR);
@@ -225,7 +286,9 @@ function DynastyRosterView() {
         }
 
         const infoMap  = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
-        const picksMap = PICKS_ENABLED ? buildPicksByRoster(teamData, allTradedPicks) : {};
+        const picksMap = PICKS_ENABLED
+          ? buildPicksByRoster(teamData, allTradedPicks, { rookieDraftComplete })
+          : {};
         const ktcM      = ktcResult.map;
 
         // Roster map
@@ -265,6 +328,7 @@ function DynastyRosterView() {
         setKtcAsOf(ktcResult.asOf);
         setFcData(fcResult || null);
         setFfbData(ffbResult || null);
+        setRedraftData(redraftResult || null);
       } catch (e) {
         if (!cancelled) setError('Failed to load dynasty roster data.');
       } finally {
@@ -275,6 +339,24 @@ function DynastyRosterView() {
     load();
     return () => { cancelled = true; };
   }, []);
+
+  // ── KTC lookups: SF = redraft pipeline dynasty base; SF TE+ = display reference ──
+
+  const getPlayerKtcSfValue = React.useCallback((pid, info) => {
+    if (!ktcMap || !info) return 0;
+    const name = info.full_name || info.name || '';
+    const hints = { position: info.position, team: info.team || info.team_abbr, age: info.age };
+    const entry = getKtcEntryByName(name, ktcMap, 'sf', hints);
+    return entry?.ktcValue ?? 0;
+  }, [ktcMap]);
+
+  const getPlayerKtcTepValue = React.useCallback((pid, info) => {
+    if (!ktcMap || !info) return 0;
+    const name = info.full_name || info.name || '';
+    const hints = { position: info.position, team: info.team || info.team_abbr, age: info.age };
+    const entry = getKtcEntryByName(name, ktcMap, 'sf_tep', hints);
+    return entry?.ktcValue ?? 0;
+  }, [ktcMap]);
 
   // ── Helper: get a numeric "sort value" for a player given the current source ──
 
@@ -299,8 +381,17 @@ function DynastyRosterView() {
       // Synthetic score: higher = better (top-ranked player scores ~389)
       return entry ? Math.max(0, 390 - entry.rank) : 0;
     }
+    if (valueSource === 'competitor_adjusted' || valueSource === 'rebuilder_adjusted') {
+      if (!redraftData?.byName) return 0;
+      const entry = getRedraftValueEntryByName(name, redraftData.byName, hints);
+      if (!entry) return 0;
+      const adjusted = valueSource === 'competitor_adjusted'
+        ? entry.competitorAdjustedValue
+        : entry.rebuilderAdjustedValue;
+      return adjusted != null ? adjusted : 0;
+    }
     return 0;
-  }, [valueSource, ktcMap, fcData, ffbData]);
+  }, [valueSource, ktcMap, fcData, ffbData, redraftData]);
 
   // ── Per-team value totals (recomputes when source changes) ───────────────────
 
@@ -314,18 +405,65 @@ function DynastyRosterView() {
         if (!info) continue;
         total += getPlayerSortValue(pid, info);
       }
-      // Picks only apply to KTC sources
-      if (PICKS_ENABLED && (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep')) {
+      // Picks use KTC values; included in total when toggled on
+      if (
+        includePicksInTotal
+        && PICKS_ENABLED
+        && PICKS_VALUE_SOURCES.includes(valueSource)
+      ) {
         for (const pick of (picksByRoster[team.rosterId] || [])) {
-          const origRid = pick.roster_id != null ? String(pick.roster_id) : null;
-          const pickNum = origRid ? draftOrderMap[origRid] : null;
-          total += getPickKtcValue(pick.season, pick.round, CURRENT_YEAR, pickNum ?? null);
+          total += getPickKtcValue(pick.season, pick.round, CURRENT_YEAR);
         }
       }
       totals[team.rosterId] = total;
     }
     return totals;
-  }, [playersData, playerIdMap, teams, rosters, picksByRoster, draftOrderMap, getPlayerSortValue, valueSource]);
+  }, [playersData, playerIdMap, teams, rosters, picksByRoster, getPlayerSortValue, valueSource, includePicksInTotal]);
+
+  const teamKtcTepBaselines = useMemo(() => {
+    if (!playersData || !playerIdMap) return {};
+    const baselines = {};
+    for (const team of teams) {
+      let total = 0;
+      for (const pid of (rosters[team.rosterId] || [])) {
+        const info = getPlayerInfo(pid, playersData, playerIdMap);
+        if (!info) continue;
+        total += getPlayerKtcTepValue(pid, info);
+      }
+      baselines[team.rosterId] = total;
+    }
+    return baselines;
+  }, [playersData, playerIdMap, teams, rosters, getPlayerKtcTepValue]);
+
+  const teamPlayerAdjustedTotals = useMemo(() => {
+    if (!REDRAFT_VALUE_SOURCES.has(valueSource) || !playersData || !playerIdMap) return {};
+    const totals = {};
+    for (const team of teams) {
+      let total = 0;
+      for (const pid of (rosters[team.rosterId] || [])) {
+        const info = getPlayerInfo(pid, playersData, playerIdMap);
+        if (!info) continue;
+        total += getPlayerSortValue(pid, info);
+      }
+      totals[team.rosterId] = total;
+    }
+    return totals;
+  }, [playersData, playerIdMap, teams, rosters, getPlayerSortValue, valueSource]);
+
+  const teamRedraftIndices = useMemo(() => {
+    if (!REDRAFT_VALUE_SOURCES.has(valueSource)) return {};
+    const indices = {};
+    for (const team of teams) {
+      const baseline = teamKtcTepBaselines[team.rosterId] ?? 0;
+      const adjusted = teamPlayerAdjustedTotals[team.rosterId] ?? 0;
+      indices[team.rosterId] = baseline > 0
+        ? Math.round((adjusted / baseline) * 10000) / 10000
+        : null;
+    }
+    return indices;
+  }, [teams, teamKtcTepBaselines, teamPlayerAdjustedTotals, valueSource]);
+
+  const isRedraftValueSource = REDRAFT_VALUE_SOURCES.has(valueSource);
 
   // Teams sorted by total KTC descending
   const sortedTeams = useMemo(() => {
@@ -341,17 +479,27 @@ function DynastyRosterView() {
   const selectedPlayers = useMemo(() => {
     if (!selectedId || !playersData || !playerIdMap) return [];
 
-    const ktcFmt = valueSource === 'ktc_sf_tep' ? 'sf_tep' : 'sf';
+    const ktcFmt = valueSource === 'ktc_sf' ? 'sf' : 'sf_tep';
 
     return (rosters[selectedId] || []).map((pid) => {
       const info  = getPlayerInfo(pid, playersData, playerIdMap);
       const name  = info?.full_name || info?.name || pid;
       const hints = { position: info?.position, team: info?.team || info?.team_abbr, age: info?.age };
 
-      // KTC
+      // KTC (active format for rank display; SF TE+ always for redraft baseline)
       const ktcEntry = ktcMap
         ? getKtcEntryByName(name, ktcMap, ktcFmt, hints)
         : null;
+      const ktcTepEntry = ktcMap
+        ? getKtcEntryByName(name, ktcMap, 'sf_tep', hints)
+        : null;
+      const ktcTepValue = ktcTepEntry?.ktcValue ?? 0;
+
+      // Redraft-adjusted
+      const redraftEntry = redraftData?.byName
+        ? getRedraftValueEntryByName(name, redraftData.byName, hints)
+        : null;
+      const dynastyKtcValue = redraftEntry?.ktcValue ?? getPlayerKtcTepValue(pid, info);
 
       // FantasyCalc
       const fcEntry = fcData
@@ -365,11 +513,35 @@ function DynastyRosterView() {
 
       // Active source fields for display
       let displayValue, overallRank, posRank, sortValue;
+      let adjustedValue = null;
+      let valueIndex = null;
       if (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') {
         displayValue = formatKtcValue(ktcEntry?.ktcValue);
         overallRank  = ktcEntry?.overallRank ?? null;
         posRank      = ktcEntry?.posRank     ?? null;
         sortValue    = ktcEntry?.ktcValue    ?? 0;
+      } else if (valueSource === 'competitor_adjusted') {
+        adjustedValue = redraftEntry?.competitorAdjustedValue ?? 0;
+        sortValue = adjustedValue;
+        displayValue = formatRedraftAdjustedValue(sortValue);
+        valueIndex = computePlayerIndex(
+          adjustedValue,
+          dynastyKtcValue,
+          redraftEntry?.redraftValueIndex,
+        );
+        overallRank  = ktcTepEntry?.overallRank ?? null;
+        posRank      = ktcTepEntry?.posRank     ?? null;
+      } else if (valueSource === 'rebuilder_adjusted') {
+        adjustedValue = redraftEntry?.rebuilderAdjustedValue ?? 0;
+        sortValue = adjustedValue;
+        displayValue = formatRedraftAdjustedValue(sortValue);
+        valueIndex = computePlayerIndex(
+          adjustedValue,
+          dynastyKtcValue,
+          redraftEntry?.rebuildValueIndex,
+        );
+        overallRank  = ktcTepEntry?.overallRank ?? null;
+        posRank      = ktcTepEntry?.posRank     ?? null;
       } else if (valueSource === 'fantasycalc') {
         displayValue = formatFcValue(fcEntry?.value);
         overallRank  = fcEntry?.overallRank ?? null;
@@ -393,10 +565,24 @@ function DynastyRosterView() {
         overallRank,
         posRank,
         sortValue,
+        ktcTepValue,
+        dynastyKtcValue,
+        adjustedValue,
+        valueIndex,
+        redraftTooltipEntry: redraftEntry
+          ? { ...redraftEntry, position: info?.position || redraftEntry.position }
+          : null,
         hasValue: sortValue > 0,
       };
     }).sort((a, b) => b.sortValue - a.sortValue);
-  }, [selectedId, playersData, playerIdMap, ktcMap, fcData, ffbData, rosters, valueSource]);
+  }, [selectedId, playersData, playerIdMap, ktcMap, fcData, ffbData, redraftData, rosters, valueSource, getPlayerKtcTepValue]);
+
+  const selectedTeamIndex = selectedId != null ? teamRedraftIndices[selectedId] : null;
+  const selectedIndexLabel = valueSource === 'competitor_adjusted'
+    ? 'Comp Index'
+    : valueSource === 'rebuilder_adjusted'
+      ? 'Rebuild Index'
+      : null;
 
   const selectedPicks = useMemo(() => {
     if (!selectedId) return [];
@@ -406,7 +592,7 @@ function DynastyRosterView() {
       return {
         ...pick,
         pickNum,
-        ktcValue: getPickKtcValue(pick.season, pick.round, CURRENT_YEAR, pickNum ?? null),
+        ktcValue: getPickKtcValue(pick.season, pick.round, CURRENT_YEAR),
         label:    formatPickLabel(pick, draftOrderMap, nextDraftYear, rosterInfoMap),
       };
     });
@@ -485,6 +671,22 @@ function DynastyRosterView() {
         {(valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') && ktcAsOf && (
           <span className="dynasty-as-of">as of {ktcAsOf}</span>
         )}
+        {(valueSource === 'competitor_adjusted' || valueSource === 'rebuilder_adjusted') && redraftData?.asOf && (
+          <span className="dynasty-as-of">
+            as of {redraftData.asOf} · KTC SF TE+ baseline
+          </span>
+        )}
+        {PICKS_ENABLED && PICKS_VALUE_SOURCES.includes(valueSource) && (
+          <label className="dynasty-picks-total-toggle">
+            <input
+              type="checkbox"
+              className="dynasty-picks-total-checkbox"
+              checked={includePicksInTotal}
+              onChange={(e) => setIncludePicksInTotal(e.target.checked)}
+            />
+            Include Draft Picks in Value Total
+          </label>
+        )}
       </div>
 
       {/* ── Team selector ── */}
@@ -516,7 +718,14 @@ function DynastyRosterView() {
                   {team.teamName}
                 </span>
                 {total != null && total > 0 && (
-                  <span className="dynasty-card-total">{total.toLocaleString()}</span>
+                  <div className="dynasty-card-values">
+                    <span className="dynasty-card-total">{total.toLocaleString()}</span>
+                    {isRedraftValueSource && teamRedraftIndices[team.rosterId] != null && (
+                      <span className={indexClassName(teamRedraftIndices[team.rosterId])}>
+                        {formatIndexDeltaPct(teamRedraftIndices[team.rosterId])}
+                      </span>
+                    )}
+                  </div>
                 )}
               </button>
             );
@@ -538,6 +747,15 @@ function DynastyRosterView() {
             <span className="dynasty-roster-team-name">{selectedTeam.teamName}</span>
             <span className="dynasty-roster-total-label">{VALUE_SOURCE_TOTAL_LABEL[valueSource]}</span>
             <span className="dynasty-roster-total-value">{selectedTotal.toLocaleString()}</span>
+            {isRedraftValueSource && selectedTeamIndex != null && selectedIndexLabel && (
+              <>
+                <span className="dynasty-roster-total-label">{selectedIndexLabel}</span>
+                <span className={indexClassName(selectedTeamIndex)}>
+                  {formatIndexDeltaPct(selectedTeamIndex)}
+                  <span className="dynasty-index-mult"> ({formatRedraftIndex(selectedTeamIndex)})</span>
+                </span>
+              </>
+            )}
           </div>
 
           <table className="dynasty-table">
@@ -546,12 +764,29 @@ function DynastyRosterView() {
                 <th className="dynasty-th dynasty-th-player">Player</th>
                 <th className="dynasty-th dynasty-th-ranks">Rank</th>
                 <th className="dynasty-th dynasty-th-team">NFL</th>
-                <th className="dynasty-th dynasty-th-ktc">{VALUE_SOURCE_COL_HEADER[valueSource]}</th>
+                <th className="dynasty-th dynasty-th-ktc">
+                  {isRedraftValueSource
+                    ? `KTC TE+ · ${VALUE_SOURCE_COL_HEADER[valueSource]} · Index`
+                    : VALUE_SOURCE_COL_HEADER[valueSource]}
+                </th>
               </tr>
             </thead>
             <tbody>
               {/* ── Players ── */}
-              {selectedPlayers.map(({ pid, name, position, nflTeam, espnPhotoUrl, displayValue, overallRank, posRank, hasValue }) => {
+              {selectedPlayers.map(({
+                pid,
+                name,
+                position,
+                nflTeam,
+                espnPhotoUrl,
+                displayValue,
+                overallRank,
+                posRank,
+                hasValue,
+                dynastyKtcValue,
+                valueIndex,
+                redraftTooltipEntry,
+              }) => {
                 const pRankLabel = RANKED_POSITIONS.includes(position) && posRank
                   ? `${position}${posRank}`
                   : null;
@@ -587,23 +822,47 @@ function DynastyRosterView() {
                     </td>
                     <td className="dynasty-td dynasty-td-team">{nflTeam}</td>
                     <td className="dynasty-td dynasty-td-ktc">
-                      <span className={hasValue ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
-                        {displayValue}
-                      </span>
+                      {isRedraftValueSource ? (
+                        <RedraftAdjTooltip
+                          kind={valueSource === 'competitor_adjusted' ? 'comp' : 'rebuild'}
+                          entry={redraftTooltipEntry}
+                          className="redraft-adj-tooltip-wrap--block"
+                          as="div"
+                        >
+                          <div className="dynasty-value-comparison">
+                            <div className="dynasty-value-comparison-row">
+                              <span className={dynastyKtcValue > 0 ? 'dynasty-ktc-baseline' : 'dynasty-ktc-none'}>
+                                {formatKtcValue(dynastyKtcValue)}
+                              </span>
+                              <span className="dynasty-value-arrow">→</span>
+                              <span className={hasValue ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
+                                {displayValue}
+                              </span>
+                            </div>
+                            <span className={indexClassName(valueIndex)}>
+                              {formatRedraftIndex(valueIndex)}
+                            </span>
+                          </div>
+                        </RedraftAdjTooltip>
+                      ) : (
+                        <span className={hasValue ? 'dynasty-ktc-value' : 'dynasty-ktc-none'}>
+                          {displayValue}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
               })}
 
               {/* ── Picks divider ── */}
-              {PICKS_ENABLED && (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') && selectedPicks.length > 0 && (
+              {PICKS_ENABLED && PICKS_VALUE_SOURCES.includes(valueSource) && selectedPicks.length > 0 && (
                 <tr className="dynasty-picks-divider-row">
                   <td colSpan={4} className="dynasty-picks-divider-cell">Draft Picks</td>
                 </tr>
               )}
 
               {/* ── Picks ── */}
-              {PICKS_ENABLED && (valueSource === 'ktc_sf' || valueSource === 'ktc_sf_tep') && selectedPicks.map((pick, i) => (
+              {PICKS_ENABLED && PICKS_VALUE_SOURCES.includes(valueSource) && selectedPicks.map((pick, i) => (
                 <tr key={`pick-${i}`} className="dynasty-player-row dynasty-pick-row">
                   <td className="dynasty-td dynasty-td-player">
                     <div className="dynasty-pick-icon">

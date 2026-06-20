@@ -121,7 +121,9 @@ export async function fetchRookieDraftComplete() {
     if (!res.ok) return false;
     const drafts = await res.json();
     if (!Array.isArray(drafts) || drafts.length === 0) return false;
-    return drafts[0].status === 'complete';
+    const currentSeason = String(getCurrentYear());
+    const seasonDraft = drafts.find((d) => String(d.season) === currentSeason) || drafts[0];
+    return seasonDraft?.status === 'complete';
   } catch (_) {
     return false;
   }

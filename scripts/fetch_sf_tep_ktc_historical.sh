@@ -39,3 +39,6 @@ python3 "$FETCHER" \
   --ktc-html "$TMP_KTC_HTML" \
   --name-map "$NAME_MAP" \
   -o "$OUT_CSV"
+
+echo "Rebuilding merged SF TE+ historical board..."
+python3 "$SCRIPT_DIR/build_sf_ktc_values_historical.py"

@@ -53,7 +53,7 @@ export const KTC_HISTORICAL_VARIANTS = {
   },
   sf_tep: {
     label: 'KTC Historical — Superflex TE+',
-    file: '/data/sf_tep_ktc_values_historical.csv',
+    file: '/data/sf_ktc_values_historical.csv',
     datesKey: 'sf_tep',
   },
 };

@@ -189,6 +189,48 @@ export const PLAYER_DB_COLUMNS = [
     width: '100px',
   },
 
+  // ── Redraft-adjusted (KTC SF TE+ base) ───────────────────────────────────────
+  {
+    key: 'competitorAdjustedValue',
+    label: 'Comp Adj Val',
+    sortable: true,
+    sortFn: (a, b) => (b.competitorAdjustedValue ?? -1) - (a.competitorAdjustedValue ?? -1),
+    align: 'right',
+    mobileVisible: false,
+    defaultVisible: true,
+    width: '110px',
+  },
+  {
+    key: 'competitorAdjustedRank',
+    label: 'Comp Adj Rk',
+    sortable: true,
+    sortFn: (a, b) => (a.competitorAdjustedRank ?? 9999) - (b.competitorAdjustedRank ?? 9999),
+    align: 'center',
+    mobileVisible: false,
+    defaultVisible: true,
+    width: '100px',
+  },
+  {
+    key: 'rebuilderAdjustedValue',
+    label: 'Rebuild Adj Val',
+    sortable: true,
+    sortFn: (a, b) => (b.rebuilderAdjustedValue ?? -1) - (a.rebuilderAdjustedValue ?? -1),
+    align: 'right',
+    mobileVisible: false,
+    defaultVisible: true,
+    width: '120px',
+  },
+  {
+    key: 'rebuilderAdjustedRank',
+    label: 'Rebuild Adj Rk',
+    sortable: true,
+    sortFn: (a, b) => (a.rebuilderAdjustedRank ?? 9999) - (b.rebuilderAdjustedRank ?? 9999),
+    align: 'center',
+    mobileVisible: false,
+    defaultVisible: true,
+    width: '110px',
+  },
+
   // ── Fantasy Ownership ────────────────────────────────────────────────────────
   {
     key: 'fantasyTeamName',

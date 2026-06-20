@@ -7,6 +7,7 @@ import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import RedraftAdjustmentPanel from '../redraftValueIndex/RedraftAdjustmentPanel';
+import { RedraftAdjTooltip } from '../redraftValueIndex/redraftValueTooltip';
 import {
   buildSourceOptions,
   defaultDirForSortKey,
@@ -116,6 +117,11 @@ function formatAdjustedAdpRank(row) {
   if (adpEffRank != null) return `${position}${adpEffRank.toFixed(2)}`;
   if (adpPosRank != null) return `${position}${adpPosRank}`;
   return '—';
+}
+
+function formatOvrAdp(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return value.toFixed(1);
 }
 
 function formatRedraftIndex(value) {
@@ -351,7 +357,7 @@ function RankingsViewer({ fixedSourceId = null }) {
 
   const hasValue = sourceHasValue(sourceOption);
   const isRedraftAdjusted = sourceIsRedraftAdjusted(sourceOption);
-  const colCount = isRedraftAdjusted ? 14 : 6;
+  const colCount = isRedraftAdjusted ? 15 : 6;
 
   const handleSort = useCallback((key) => {
     if (sortKey === key) {
@@ -494,7 +500,7 @@ function RankingsViewer({ fixedSourceId = null }) {
         <>
           {isRedraftAdjusted && (
             <p className="rv-hint">
-              Click a player to see how peer-adjusted Pos ADP maps to a historical slot value.
+              Click a player to see how OVR-adjusted Pos ADP maps to a historical slot value.
             </p>
           )}
           <div className={isRedraftAdjusted && selectedRedraftRow ? 'rv-redraft-layout' : undefined}>
@@ -554,6 +560,14 @@ function RankingsViewer({ fixedSourceId = null }) {
                       activeDir={sortDir}
                       onSort={handleSort}
                       className="rv-th-adj-adp"
+                    />
+                    <SortableHeader
+                      label="OVR ADP"
+                      sortKey="adpAvg"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-ovr-adp"
                     />
                     <SortableHeader
                       label="Dynasty"
@@ -651,20 +665,35 @@ function RankingsViewer({ fixedSourceId = null }) {
                           {formatPosAdpRank(row.position, row.adpPosRank)}
                         </td>
                         <td className="rv-td rv-td-adj-adp">{formatAdjustedAdpRank(row)}</td>
+                        <td className="rv-td rv-td-ovr-adp">{formatOvrAdp(row.adpAvg)}</td>
                         <td className="rv-td rv-td-dynasty">{formatKtcNumber(row.ktcValue)}</td>
                       </>
                     )}
-                    <td className="rv-td rv-td-value">{formatValue(row)}</td>
+                    <td className="rv-td rv-td-value">
+                      {isRedraftAdjusted ? (
+                        <RedraftAdjTooltip kind="comp" entry={row}>
+                          {formatValue(row)}
+                        </RedraftAdjTooltip>
+                      ) : (
+                        formatValue(row)
+                      )}
+                    </td>
                     {isRedraftAdjusted && (
                       <>
                         <td className={`rv-td ${indexClassName(row.redraftValueIndex)}`}>
-                          {formatRedraftIndex(row.redraftValueIndex)}
+                          <RedraftAdjTooltip kind="comp" entry={row}>
+                            {formatRedraftIndex(row.redraftValueIndex)}
+                          </RedraftAdjTooltip>
                         </td>
                         <td className="rv-td rv-td-rebuilder">
-                          {formatKtcNumber(row.rebuilderAdjustedValue)}
+                          <RedraftAdjTooltip kind="rebuild" entry={row}>
+                            {formatKtcNumber(row.rebuilderAdjustedValue)}
+                          </RedraftAdjTooltip>
                         </td>
                         <td className={`rv-td ${indexClassName(row.rebuildValueIndex)}`}>
-                          {formatRedraftIndex(row.rebuildValueIndex)}
+                          <RedraftAdjTooltip kind="rebuild" entry={row}>
+                            {formatRedraftIndex(row.rebuildValueIndex)}
+                          </RedraftAdjTooltip>
                         </td>
                       </>
                     )}

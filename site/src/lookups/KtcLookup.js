@@ -50,27 +50,23 @@ const PICK_VALUES = {
   },
 };
 
-function getPickTier(pickNum) {
-  if (pickNum <= 3) return 'early';
-  if (pickNum <= 7) return 'mid';
-  return 'late';
-}
-
 /**
  * Return the approximate KTC value for a draft pick.
- * @param {string|number} season       – draft year (e.g. "2026")
+ * Uses mid-tier values for all picks. Years beyond the modeled window (e.g. 2029+)
+ * reuse the furthest-out year table (2028 values when current year is 2026).
+ * @param {string|number} season       – draft year (e.g. "2027")
  * @param {number}        round        – 1–4
  * @param {string|number} currentYear  – CURRENT_YEAR constant
- * @param {number|null}   pickNum      – specific pick slot (1–10); null → mid tier
  */
-export function getPickKtcValue(season, round, currentYear, pickNum = null) {
-  const offset   = Number(season) - Number(currentYear);
-  const byRound  = PICK_VALUES[offset];
+export function getPickKtcValue(season, round, currentYear) {
+  const offset = Number(season) - Number(currentYear);
+  if (offset < 0) return 0;
+  const valueOffset = offset >= 3 ? 2 : offset;
+  const byRound = PICK_VALUES[valueOffset];
   if (!byRound) return 0;
   const tiers = byRound[Number(round)];
   if (!tiers) return 0;
-  const tier = pickNum != null ? getPickTier(pickNum) : 'mid';
-  return tiers[tier] ?? tiers.mid ?? 0;
+  return tiers.mid ?? 0;
 }
 
 // ── CSV parsing ───────────────────────────────────────────────────────────────

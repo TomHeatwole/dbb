@@ -8980,6 +8980,25 @@ body.modal-open {
   color: rgba(140, 150, 200, 0.5);
 }
 
+.dynasty-picks-total-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(170, 175, 220, 0.75);
+  cursor: pointer;
+  user-select: none;
+}
+
+.dynasty-picks-total-checkbox {
+  accent-color: #6b9fff;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
 /* ── Format toggle (SF / SF TE+) ── */
 
 .dynasty-format-toggle {
@@ -9048,7 +9067,121 @@ body.modal-open {
   border-radius: 0.4rem;
   padding: 0.15rem 0.5rem;
   white-space: nowrap;
+}
+
+.dynasty-card-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
   flex-shrink: 0;
+}
+
+.dynasty-index {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dynasty-index--up {
+  color: #7dffb0;
+}
+
+.dynasty-index--down {
+  color: #ff9a9a;
+}
+
+.dynasty-index--flat {
+  color: rgba(170, 175, 220, 0.75);
+}
+
+.dynasty-index-mult,
+.dynasty-index-pct {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.dynasty-value-comparison {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.dynasty-value-comparison-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.dynasty-ktc-baseline {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(170, 175, 220, 0.75);
+  font-variant-numeric: tabular-nums;
+}
+
+.dynasty-value-arrow {
+  font-size: 0.75rem;
+  color: rgba(140, 145, 180, 0.55);
+}
+
+/* Comp / rebuild adjusted value hover breakdown */
+.redraft-adj-tooltip-wrap {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+
+.redraft-adj-tooltip-wrap--block {
+  display: block;
+}
+
+.redraft-adj-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 11rem;
+  background: rgba(12, 14, 30, 0.97);
+  border: 1px solid rgba(120, 130, 200, 0.35);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.6rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 120;
+  text-align: left;
+}
+
+.redraft-adj-tooltip-line {
+  display: block;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: rgba(205, 210, 240, 0.88);
+  white-space: nowrap;
+}
+
+.redraft-adj-tooltip-line--title {
+  font-weight: 700;
+  color: rgba(180, 190, 255, 0.95);
+  margin-bottom: 0.15rem;
+}
+
+.redraft-adj-tooltip-wrap:hover .redraft-adj-tooltip,
+.redraft-adj-tooltip-wrap:focus-within .redraft-adj-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .redraft-adj-tooltip {
+    display: none;
+  }
 }
 
 /* ── Roster panel ── */

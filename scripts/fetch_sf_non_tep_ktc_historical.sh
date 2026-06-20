@@ -49,3 +49,6 @@ node "$SCRIPT_DIR/build_ktc_historical_name_map.js" \
 
 echo "Converting to long format with embedded IDs..."
 python3 "$FETCHER" "$TMP_WIDE" -o "$OUT_CSV" --name-map "$NAME_MAP"
+
+echo "Rebuilding merged SF TE+ historical board..."
+python3 "$SCRIPT_DIR/build_sf_ktc_values_historical.py"

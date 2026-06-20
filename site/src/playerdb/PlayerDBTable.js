@@ -2,6 +2,7 @@ import React from 'react';
 import { formatKtcValue } from '../lookups/KtcLookup';
 import useIsMobile from '../hooks/useIsMobile';
 import PositionBadge from '../PositionBadge';
+import { RedraftAdjTooltip } from '../redraftValueIndex/redraftValueTooltip';
 
 function FcTrend({ value }) {
   if (value === null || value === undefined) {
@@ -105,6 +106,42 @@ function renderCell(col, player, isMobile) {
 
     case 'ffbPosRank':
       return <PosRankCell rank={val} position={player.position} />;
+
+    case 'competitorAdjustedValue':
+      return (
+        <RedraftAdjTooltip kind="comp" entry={player}>
+          {val != null && val > 0 ? (
+            <span className="dynasty-ktc-value">{formatKtcValue(val)}</span>
+          ) : (
+            <span className="dynasty-ktc-none">—</span>
+          )}
+        </RedraftAdjTooltip>
+      );
+
+    case 'rebuilderAdjustedValue':
+      return (
+        <RedraftAdjTooltip kind="rebuild" entry={player}>
+          {val != null && val > 0 ? (
+            <span className="dynasty-ktc-value">{formatKtcValue(val)}</span>
+          ) : (
+            <span className="dynasty-ktc-none">—</span>
+          )}
+        </RedraftAdjTooltip>
+      );
+
+    case 'competitorAdjustedRank':
+      return (
+        <RedraftAdjTooltip kind="comp" entry={player}>
+          <PosRankCell rank={val} position={player.position} />
+        </RedraftAdjTooltip>
+      );
+
+    case 'rebuilderAdjustedRank':
+      return (
+        <RedraftAdjTooltip kind="rebuild" entry={player}>
+          <PosRankCell rank={val} position={player.position} />
+        </RedraftAdjTooltip>
+      );
 
     case 'fantasyTeamName':
       return val ? (

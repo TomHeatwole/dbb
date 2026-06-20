@@ -10,16 +10,18 @@ avg ADP (ascending). FantasyPros' POS label is kept only for discrepancy reporti
 
 Method:
   1. adp_stack_rank = integer positional rank by sorting within position on avg ADP.
-  2. adp_eff_rank = ApproachB peer exchange (OVR ADP % closeness skews fractional rank).
+  2. adp_eff_rank = ApproachH: stack rank corrected by OVR ADP vs positional KTC lookup (λ).
   3. Active approach (ApproachG): rank-slot lookup = 65% year-weighted hist (2021–2025)
      plus 35% current KTC at that positional rank; interpolate at adp_eff_rank.
+     Historical years 2022–2025 are scaled so each year's year-end top-300 sum matches
+     the current live SF TE+ top-300 total (2021 unscaled).
   4. Rebuilder adjusted = hist@KTC rank + γ×(dynasty−hist) − β×(adjusted−dynasty),
-     with γ from max(0, adp_eff_rank − ktc_pos_rank) and β=REBUILD_BETA.
-  5. Prior experiments preserved as uncalled ApproachA–F helpers.
+     with γ from max(0, adp_eff_rank − ktc_pos_rank); asymmetric β on redraft flip.
+  5. Prior experiments preserved as uncalled ApproachA–G helpers (B = peer exchange).
 
 Reads:
-  site/public/data/ktc_values.csv
-  site/public/data/sf_non_tep_ktc_values_historical.csv
+  site/public/data/ktc_values.csv  (ktc_value_tep_2qb = SF TE+ baseline)
+  site/public/data/sf_ktc_values_historical.csv  (merged SF TE+: non_tep + TE+ overlay)
   site/public/data/ktc_average_rank_values.csv
   site/public/data/adp/fantasypros_adp_bestball_{year}.csv
 
@@ -44,7 +46,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 KTC_CSV = PROJECT_ROOT / "site/public/data/ktc_values.csv"
-HISTORICAL_VALUES_CSV = PROJECT_ROOT / "site/public/data/sf_non_tep_ktc_values_historical.csv"
+HISTORICAL_VALUES_CSV = PROJECT_ROOT / "site/public/data/sf_ktc_values_historical.csv"
 HISTORICAL_NAME_IDS_CSV = PROJECT_ROOT / "site/public/data/ktc_historical_name_ids.csv"
 HIST_RANK_VALUES_CSV = PROJECT_ROOT / "site/public/data/ktc_average_rank_values.csv"
 PLAYERS_FILE = PROJECT_ROOT / "site/public/data/players.txt"
@@ -54,7 +56,7 @@ LOOKUP_CSV = PROJECT_ROOT / "site/public/data/ktc_redraft_rank_lookup.csv"
 
 POSITIONS = ("QB", "RB", "WR", "TE")
 DEFAULT_ADP_YEAR = 2026
-KTC_VALUE_COL = "ktc_value_2qb"
+KTC_VALUE_COL = "ktc_value_tep_2qb"
 ADP_TYPE = "bestball"
 PREMIUM_RETENTION = 0.5
 PICK_RE = re.compile(r"^\d{4}\s+(Early|Mid|Late)\s+", re.I)
@@ -67,12 +69,28 @@ HISTORICAL_YEAR_WEIGHTS: dict[int, float] = {
     2024: 0.235,
     2025: 0.265,
 }
+# Scale these years' KTC values before rank-slot averaging (2021 stays raw).
+HISTORICAL_INFLATION_YEARS = (2022, 2023, 2024, 2025)
+TOP300_INFLATION_TARGET_COUNT = 300
 REDRAFT_HIST_WEIGHT = 0.65
 REDRAFT_CURRENT_WEIGHT = 0.35
 
-# Rebuilder adjusted: γ from KTC vs ADP rank gap + damped redraft flip (β).
-REBUILD_BETA = 0.50
+# Rebuilder adjusted: γ from KTC vs ADP rank gap + asymmetric damped redraft flip.
+REBUILD_BETA_UP = 0.54
+REBUILD_BETA_DOWN = 0.77
 REBUILD_GAP_SCALE = 11.0
+# Extra reduction when ADP rank is better than KTC (redraft delta > 0 and rank_gap < 0).
+REBUILD_REDUCE_RANK_BOOST = 0.18
+# Depth dynasty-tax: modest β_up boost when ADP rank lags KTC and redraft index crashes.
+REBUILD_DEPTH_KTC_RANK_MIN = 40
+REBUILD_DEPTH_GAP_MIN = 25.0
+REBUILD_DEPTH_GAP_SCALE = 60.0
+REBUILD_BETA_UP_DEPTH_BOOST = 0.10
+REBUILD_SEV_RVI_FLOOR = 0.55
+REBUILD_SEV_RVI_SCALE = 0.40
+
+# ApproachH: OVR avg ADP → fractional stack rank, invert KTC lookup, blend toward stack (λ).
+OVR_KTC_RANK_LAMBDA = 0.40
 
 # --- Peer ADP exchange tuning (adp_eff_rank) ---------------------------------
 # All percentages are OVR ADP step-up from the giver: (receiver_adp - giver_adp) / giver_adp
@@ -296,9 +314,61 @@ def load_historical_by_date() -> dict[str, list[tuple[str, int]]]:
     return by_date
 
 
+def last_snapshot_date_by_year(by_date: dict[str, list[tuple[str, int]]]) -> dict[int, str]:
+    last: dict[int, str] = {}
+    for date_str in by_date:
+        year = int(date_str[:4])
+        if date_str > last.get(year, ""):
+            last[year] = date_str
+    return last
+
+
+def top300_value_sum(entries: list[tuple[str, int]]) -> int:
+    values = sorted((value for _pos, value in entries), reverse=True)
+    return sum(values[:TOP300_INFLATION_TARGET_COUNT])
+
+
+def current_live_top300_sum() -> int:
+    if not KTC_CSV.is_file():
+        sys.exit(f"ERROR: missing {KTC_CSV}")
+    values: list[int] = []
+    with KTC_CSV.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            name = (row.get("name") or "").strip()
+            if not name or PICK_RE.match(name):
+                continue
+            try:
+                values.append(int(row[KTC_VALUE_COL]))
+            except (KeyError, ValueError, TypeError):
+                continue
+    return sum(sorted(values, reverse=True)[:TOP300_INFLATION_TARGET_COUNT])
+
+
+def compute_historical_inflation_multipliers(
+    by_date: dict[str, list[tuple[str, int]]],
+    target_sum: int,
+    years: tuple[int, ...] = HISTORICAL_INFLATION_YEARS,
+) -> dict[int, float]:
+    """
+    Per-year scalar so year-end top-300 KTC sum matches target_sum (current live board).
+    Uniform scaling preserves within-year rank order.
+    """
+    last_by_year = last_snapshot_date_by_year(by_date)
+    multipliers: dict[int, float] = {}
+    for year in years:
+        date_str = last_by_year.get(year)
+        if not date_str:
+            continue
+        year_sum = top300_value_sum(by_date[date_str])
+        if year_sum > 0:
+            multipliers[year] = target_sum / year_sum
+    return multipliers
+
+
 def compute_year_rank_slot_averages(
     by_date: dict[str, list[tuple[str, int]]],
     year: int,
+    value_multiplier: float = 1.0,
 ) -> dict[str, dict[int, float]]:
     totals: dict[str, dict[int, float]] = {p: defaultdict(float) for p in POSITIONS}
     counts: dict[str, dict[int, int]] = {p: defaultdict(int) for p in POSITIONS}
@@ -308,7 +378,7 @@ def compute_year_rank_slot_averages(
             continue
         by_pos: dict[str, list[int]] = {p: [] for p in POSITIONS}
         for pos, value in entries:
-            by_pos[pos].append(value)
+            by_pos[pos].append(int(round(value * value_multiplier)))
         for pos in POSITIONS:
             values = sorted(by_pos[pos], reverse=True)
             for i, val in enumerate(values):
@@ -327,9 +397,15 @@ def compute_year_rank_slot_averages(
 
 def compute_weighted_historical_rank_values(
     by_date: dict[str, list[tuple[str, int]]],
-) -> dict[str, dict[int, float]]:
+) -> tuple[dict[str, dict[int, float]], dict[int, float], int]:
+    target_sum = current_live_top300_sum()
+    inflation = compute_historical_inflation_multipliers(by_date, target_sum)
     year_avgs = {
-        year: compute_year_rank_slot_averages(by_date, year)
+        year: compute_year_rank_slot_averages(
+            by_date,
+            year,
+            inflation.get(year, 1.0),
+        )
         for year in HISTORICAL_YEAR_WEIGHTS
     }
     weighted: dict[str, dict[int, float]] = {p: {} for p in POSITIONS}
@@ -350,7 +426,7 @@ def compute_weighted_historical_rank_values(
             if weight_sum > 0:
                 weighted[pos][rank] = total / weight_sum
 
-    return weighted
+    return weighted, inflation, target_sum
 
 
 def current_ktc_values_by_pos_rank(ktc_players: list[dict]) -> dict[str, dict[int, int]]:
@@ -386,12 +462,14 @@ def build_redraft_rank_lookup(ktc_players: list[dict]) -> tuple[
     dict[str, dict[int, float]],
     dict[str, dict[int, int]],
     dict[str, dict[int, float]],
+    dict[int, float],
+    int,
 ]:
     by_date = load_historical_by_date()
-    weighted_hist = compute_weighted_historical_rank_values(by_date)
+    weighted_hist, inflation, target_sum = compute_weighted_historical_rank_values(by_date)
     current = current_ktc_values_by_pos_rank(ktc_players)
     blended = build_blended_rank_lookup(weighted_hist, current)
-    return weighted_hist, current, blended
+    return weighted_hist, current, blended, inflation, target_sum
 
 
 def write_redraft_rank_lookup_csv(
@@ -468,6 +546,98 @@ def interpolate_hist(hist: dict[int, float], rank_eff: float) -> float | None:
     if v_high is None:
         return v_low
     return v_low + frac * (v_high - v_low)
+
+
+def adp_to_frac_stack_rank(adp: float, board: dict[int, dict]) -> float:
+    """Invert the stack-rank ↔ OVR avg ADP curve to a fractional stack rank."""
+    ranks = sorted(board)
+    if not ranks:
+        return 1.0
+    if len(ranks) == 1:
+        return float(ranks[0])
+
+    first, second = ranks[0], ranks[1]
+    a_first = board[first]["adp_avg"]
+    if adp <= a_first:
+        a_second = board[second]["adp_avg"]
+        if a_second == a_first:
+            return float(first)
+        slope = (second - first) / (a_second - a_first)
+        return max(1.0, first + (adp - a_first) * slope)
+
+    last, prev = ranks[-1], ranks[-2]
+    a_last = board[last]["adp_avg"]
+    if adp >= a_last:
+        a_prev = board[prev]["adp_avg"]
+        if a_last == a_prev:
+            return float(last)
+        slope = (last - prev) / (a_last - a_prev)
+        return last + (adp - a_last) * slope
+
+    for idx in range(len(ranks) - 1):
+        r_lo, r_hi = ranks[idx], ranks[idx + 1]
+        a_lo = board[r_lo]["adp_avg"]
+        a_hi = board[r_hi]["adp_avg"]
+        if a_lo <= adp <= a_hi:
+            if a_hi == a_lo:
+                return (r_lo + r_hi) / 2.0
+            frac = (adp - a_lo) / (a_hi - a_lo)
+            return r_lo + frac * (r_hi - r_lo)
+
+    return float(ranks[-1])
+
+
+def ovr_implied_frac_rank(stack_rank: int, board: dict[int, dict]) -> float:
+    """
+    Fractional stack rank from OVR ADP relative to neighbors (not the knot itself).
+    Spans [s-1, s+1] for interior ranks so bunched ADP compresses vs stack slots.
+    """
+    ranks = sorted(board)
+    if stack_rank not in board:
+        return float(stack_rank)
+    if len(ranks) == 1:
+        return float(stack_rank)
+
+    idx = ranks.index(stack_rank)
+    a = board[stack_rank]["adp_avg"]
+
+    if idx == 0:
+        return float(stack_rank)
+
+    if idx == len(ranks) - 1:
+        a_prev = board[ranks[idx - 1]]["adp_avg"]
+        span = max(a - a_prev, 1e-9)
+        return (stack_rank - 1) + min(1.0, max(0.0, (a - a_prev) / span))
+
+    a_prev = board[ranks[idx - 1]]["adp_avg"]
+    a_next = board[ranks[idx + 1]]["adp_avg"]
+    span = max(a_next - a_prev, 1e-9)
+    frac = (a - a_prev) / span
+    return (stack_rank - 1) + frac * 2.0
+
+
+def invert_lookup_rank(lookup: dict[int, float], target: float) -> float | None:
+    """Rank r where blended lookup value equals target (lookup decreases as rank rises)."""
+    if not lookup:
+        return None
+    max_rank = max(lookup)
+    v_top = interpolate_hist(lookup, 1.0)
+    v_bot = interpolate_hist(lookup, float(max_rank))
+    if v_top is None or v_bot is None:
+        return None
+
+    clamped = max(v_bot, min(v_top, target))
+    lo, hi = 1.0, float(max_rank)
+    for _ in range(64):
+        mid = (lo + hi) / 2.0
+        v_mid = interpolate_hist(lookup, mid)
+        if v_mid is None:
+            return None
+        if v_mid > clamped:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
 
 
 def load_ktc_players() -> tuple[list[dict], str | None]:
@@ -953,6 +1123,33 @@ def ApproachB(
     return enforce_monotonic_eff_ranks(board, rounded)
 
 
+# ApproachH: OVR ADP geometry + positional KTC lookup invert; λ-blend off integer stack rank.
+def ApproachH(
+    board: dict[int, dict],
+    lookup: dict[int, float],
+    lambda_: float = OVR_KTC_RANK_LAMBDA,
+) -> dict[int, float]:
+    if not board:
+        return {}
+    if not lookup:
+        return ApproachC(board)
+
+    eff: dict[int, float] = {}
+    for stack_rank in sorted(board):
+        r_ovr = ovr_implied_frac_rank(stack_rank, board)
+        v_ovr = interpolate_hist(lookup, r_ovr)
+        if v_ovr is None:
+            eff[stack_rank] = float(stack_rank)
+            continue
+        s_star = invert_lookup_rank(lookup, v_ovr)
+        if s_star is None:
+            s_star = r_ovr
+        eff[stack_rank] = stack_rank + lambda_ * (s_star - stack_rank)
+
+    rounded = {rank: round(eff[rank], 2) for rank in eff}
+    return enforce_monotonic_eff_ranks(board, rounded)
+
+
 # ApproachC: current placeholder/no-op; adjusted ADP just equals positional stack rank.
 def ApproachC(board: dict[int, dict]) -> dict[int, float]:
     if not board:
@@ -962,9 +1159,12 @@ def ApproachC(board: dict[int, dict]) -> dict[int, float]:
 
 def compute_effective_ranks_for_board(
     board: dict[int, dict],
+    rank_lookup: dict[int, float] | None = None,
     config: PeerExchangeConfig = DEFAULT_PEER_EXCHANGE,
 ) -> dict[int, float]:
-    """Adjusted positional ADP via ApproachB peer exchange."""
+    """Adjusted positional ADP via ApproachH (OVR ADP + KTC lookup correction)."""
+    if rank_lookup is not None:
+        return ApproachH(board, rank_lookup)
     return ApproachB(board, config)
 
 
@@ -1080,6 +1280,52 @@ def rebuilder_gamma(rank_gap: float, gap_scale: float = REBUILD_GAP_SCALE) -> fl
     return 1.0 / (1.0 + (gap / gap_scale) ** 2)
 
 
+def rebuilder_depth_beta_up_boost(
+    rank_gap: float,
+    ktc_pos_rank: int,
+    redraft_value_index: float | None,
+    gap_min: float = REBUILD_DEPTH_GAP_MIN,
+    gap_scale: float = REBUILD_DEPTH_GAP_SCALE,
+    depth_rank_min: int = REBUILD_DEPTH_KTC_RANK_MIN,
+    max_boost: float = REBUILD_BETA_UP_DEPTH_BOOST,
+    sev_rvi_floor: float = REBUILD_SEV_RVI_FLOOR,
+    sev_rvi_scale: float = REBUILD_SEV_RVI_SCALE,
+) -> float:
+    """Extra flip credit on deep dynasty-tax players with severe redraft downgrades."""
+    if ktc_pos_rank <= depth_rank_min or redraft_value_index is None:
+        return 0.0
+    gap_frac = min(1.0, max(0.0, rank_gap - gap_min) / gap_scale)
+    sev_frac = min(1.0, max(0.0, sev_rvi_floor - redraft_value_index) / sev_rvi_scale)
+    return max_boost * gap_frac * sev_frac
+
+
+def rebuilder_flip_beta(
+    redraft_delta: float,
+    rank_gap: float,
+    ktc_pos_rank: int | None = None,
+    redraft_value_index: float | None = None,
+    beta_up: float = REBUILD_BETA_UP,
+    beta_down: float = REBUILD_BETA_DOWN,
+    gap_scale: float = REBUILD_GAP_SCALE,
+    reduce_rank_boost: float = REBUILD_REDUCE_RANK_BOOST,
+) -> float:
+    """Stronger flip when redraft value exceeds dynasty; extra skew if ADP rank beats KTC rank."""
+    if redraft_delta <= 0:
+        beta = beta_up
+        if ktc_pos_rank is not None:
+            beta += rebuilder_depth_beta_up_boost(
+                rank_gap,
+                ktc_pos_rank,
+                redraft_value_index,
+            )
+        return beta
+    beta = beta_down
+    adp_better_gap = max(0.0, -rank_gap)
+    if adp_better_gap > 0:
+        beta *= 1.0 + reduce_rank_boost * (adp_better_gap / gap_scale) ** 2
+    return beta
+
+
 def compute_rebuilder_adjusted(
     ktc_value: int,
     ktc_pos_rank: int,
@@ -1087,14 +1333,15 @@ def compute_rebuilder_adjusted(
     adjusted: int,
     rank_lookup: dict[str, dict[int, float]],
     position: str,
-    beta: float = REBUILD_BETA,
+    beta_up: float = REBUILD_BETA_UP,
+    beta_down: float = REBUILD_BETA_DOWN,
     gap_scale: float = REBUILD_GAP_SCALE,
+    reduce_rank_boost: float = REBUILD_REDUCE_RANK_BOOST,
 ) -> tuple[int | None, float | None]:
     """
     rebuild_core = hist@KTC rank + γ × (dynasty − hist@KTC)
-    rebuilder = rebuild_core − β × (adjusted − dynasty)
-    index = rebuilder / dynasty
-    γ derived only from max(0, adp_eff_rank − ktc_pos_rank).
+    rebuilder = rebuild_core − β_eff × (adjusted − dynasty)
+    β_eff is asymmetric: higher when redraft delta > 0, boosted if ADP rank < KTC rank.
     """
     hist_at_ktc = interpolate_hist(rank_lookup[position], float(ktc_pos_rank))
     if hist_at_ktc is None or ktc_value <= 0:
@@ -1105,9 +1352,39 @@ def compute_rebuilder_adjusted(
     dynasty_premium = ktc_value - hist_at_ktc
     rebuild_core = hist_at_ktc + gamma * dynasty_premium
     redraft_delta = adjusted - ktc_value
-    rebuilder_int = max(0, round(rebuild_core - beta * redraft_delta))
+    redraft_index = round(adjusted / ktc_value, 4) if ktc_value > 0 else None
+    flip_beta = rebuilder_flip_beta(
+        redraft_delta,
+        rank_gap,
+        ktc_pos_rank,
+        redraft_index,
+        beta_up,
+        beta_down,
+        gap_scale,
+        reduce_rank_boost,
+    )
+    rebuilder_int = max(0, round(rebuild_core - flip_beta * redraft_delta))
     rebuild_index = round(rebuilder_int / ktc_value, 4)
     return rebuilder_int, rebuild_index
+
+
+def compute_rebuilder_at_zero_redraft(
+    ktc_value: int,
+    ktc_pos_rank: int,
+    adp_eff_rank: float | None,
+    rank_lookup: dict[str, dict[int, float]],
+    position: str,
+) -> tuple[int | None, float | None]:
+    """Maximum rebuild credit: run rebuilder formula as if competitor adjusted were 0."""
+    eff = adp_eff_rank if adp_eff_rank is not None else float(ktc_pos_rank)
+    return compute_rebuilder_adjusted(
+        ktc_value,
+        ktc_pos_rank,
+        eff,
+        0,
+        rank_lookup,
+        position,
+    )
 
 
 def write_output(rows: list[dict], as_of: str | None, adp_year: int) -> None:
@@ -1119,6 +1396,7 @@ def write_output(rows: list[dict], as_of: str | None, adp_year: int) -> None:
         "ktc_pos_rank",
         "adp_stack_rank",
         "adp_eff_rank",
+        "adp_avg",
         "competitor_adjusted_value",
         "redraft_value_index",
         "rebuilder_adjusted_value",
@@ -1148,7 +1426,9 @@ def main() -> None:
             sys.exit(f"Invalid year: {sys.argv[1]}")
 
     ktc_players, as_of = load_ktc_players()
-    weighted_hist, current_by_rank, rank_lookup = build_redraft_rank_lookup(ktc_players)
+    weighted_hist, current_by_rank, rank_lookup, inflation, inflation_target = (
+        build_redraft_rank_lookup(ktc_players)
+    )
     lookup_rows = write_redraft_rank_lookup_csv(weighted_hist, current_by_rank, rank_lookup)
     adp_by_name, adp_by_sleeper, adp_boards, ranked_adp_rows = load_adp(adp_year)
     sleeper_by_name, sleeper_by_last = load_sleeper_ids_by_player()
@@ -1156,7 +1436,7 @@ def main() -> None:
     report_fp_vs_stack_discrepancies(ranked_adp_rows, adp_year)
 
     eff_ranks_by_pos = {
-        pos: compute_effective_ranks_for_board(board)
+        pos: compute_effective_ranks_for_board(board, rank_lookup.get(pos))
         for pos, board in adp_boards.items()
     }
 
@@ -1183,16 +1463,26 @@ def main() -> None:
                     rank_lookup,
                 )
                 if adjusted is not None:
-                    rebuilder, rebuild_index = compute_rebuilder_adjusted(
-                        player["ktc_value"],
-                        player["ktc_pos_rank"],
-                        adp_eff_rank,
-                        adjusted,
-                        rank_lookup,
-                        player["position"],
-                    )
-            if adjusted is not None:
-                matched += 1
+                    matched += 1
+
+        if adjusted is not None and adjusted > 0:
+            rebuilder, rebuild_index = compute_rebuilder_adjusted(
+                player["ktc_value"],
+                player["ktc_pos_rank"],
+                adp_eff_rank,
+                adjusted,
+                rank_lookup,
+                player["position"],
+            )
+        elif adjusted is None or adjusted == 0:
+            # No redraft value (off ADP board or zero comp adj) → max rebuild credit.
+            rebuilder, rebuild_index = compute_rebuilder_at_zero_redraft(
+                player["ktc_value"],
+                player["ktc_pos_rank"],
+                adp_eff_rank,
+                rank_lookup,
+                player["position"],
+            )
 
         output_rows.append({
             "name": player["name"],
@@ -1202,6 +1492,7 @@ def main() -> None:
             "ktc_pos_rank": player["ktc_pos_rank"],
             "adp_stack_rank": stack_rank if stack_rank is not None else "",
             "adp_eff_rank": adp_eff_rank if adp_eff_rank is not None else "",
+            "adp_avg": round(adp["adp_avg"], 1) if adp and adp.get("adp_avg") is not None else "",
             "competitor_adjusted_value": adjusted if adjusted is not None else "",
             "redraft_value_index": index if index is not None else "",
             "rebuilder_adjusted_value": rebuilder if rebuilder is not None else "",
@@ -1214,9 +1505,20 @@ def main() -> None:
     print(f"Wrote {lookup_rows:,} rank-slot lookups → {LOOKUP_CSV}")
     print(f"Matched {matched:,} / {len(output_rows):,} KTC players to {ADP_TYPE} ADP {adp_year}")
     print(
-        "Adjusted ADP approach: ApproachG "
-        f"(65% year-weighted hist + 35% current KTC @ rank, ApproachB eff rank)"
+        "Adjusted ADP approach: ApproachH "
+        f"(λ={OVR_KTC_RANK_LAMBDA:g} OVR ADP + KTC lookup correction on stack rank)"
     )
+    print(
+        "Competitor value: ApproachG "
+        f"(65% year-weighted hist + 35% current KTC @ rank, at Adjusted ADP)"
+    )
+    print(
+        f"Historical inflation target: top-{TOP300_INFLATION_TARGET_COUNT} sum "
+        f"{inflation_target:,} (current live SF TE+)"
+    )
+    for year in sorted(inflation):
+        print(f"  {year} multiplier: {inflation[year]:.6f}")
+    print("  2021: unscaled (multiplier 1.0)")
     if as_of:
         print(f"KTC as_of: {as_of}")
 

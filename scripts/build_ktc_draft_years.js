@@ -95,7 +95,7 @@ function run() {
   const args = process.argv.slice(2);
   const ktcIdx = args.indexOf('--ktc-html');
   const rookIdx = args.indexOf('--rookie-html');
-  const ktcHtml = ktcIdx >= 0 ? args[tcIdx + 1] : DEFAULT_KTC;
+  const ktcHtml = ktcIdx >= 0 ? args[ktcIdx + 1] : DEFAULT_KTC;
   const rookHtml = rookIdx >= 0 ? args[rookIdx + 1] : DEFAULT_ROOK;
 
   const byName = new Map();

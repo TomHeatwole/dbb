@@ -3,7 +3,6 @@ import PositionBadge from '../PositionBadge';
 import { formatKtcValue } from '../lookups/KtcLookup';
 import { interpolateRedraftLookup } from './redraftRankLookupLoader';
 import {
-  REBUILD_BETA,
   REBUILD_GAP_SCALE,
   computeRebuilderAdjusted,
 } from './rebuilderAdjustedValue';
@@ -128,9 +127,9 @@ function RedraftAdjustmentPanel({ row, lookupMap }) {
           value={adpSlot}
         />
         <StatBlock
-          label="Adjusted Pos ADP (ApproachB peer exchange)"
+          label="Adjusted Pos ADP (ApproachH OVR–KTC correction)"
           value={effSlot}
-          sub="Skews toward peers with similar OVR avg ADP"
+          sub="Stack rank + λ × (KTC-implied rank − stack); λ=0.40"
         />
 
         <StatBlock
@@ -216,16 +215,16 @@ function RedraftAdjustmentPanel({ row, lookupMap }) {
               sub={`Hist@${breakdown.ktcSlot} + γ × (dynasty − hist)`}
             />
             <StatBlock
-              label={`Damped redraft flip (−${(REBUILD_BETA * 100).toFixed(0)}% × Δ)`}
+              label={`Damped redraft flip (−${(rebuilder.flipBeta * 100).toFixed(0)}% × Δ)`}
               value={fmtSigned(-Math.round(rebuilder.dampedFlip))}
-              sub={`Δ = competitor adjusted − dynasty (${fmtSigned(rebuilder.redraftDelta)})`}
+              sub={`Δ = competitor adjusted − dynasty (${fmtSigned(rebuilder.redraftDelta)}) · β↑ on gains (+depth boost on severe tax), β↓+ on cuts`}
             />
             <StatBlock
               label="Rebuilder adjusted value"
               value={formatKtcValue(
                 row.rebuilderAdjustedValue ?? rebuilder.rebuilderAdjustedValue,
               )}
-              sub="Rebuild core − β × redraft delta"
+              sub="Rebuild core − β_eff × redraft delta"
             />
             <StatBlock
               label="Rebuild Value Index"

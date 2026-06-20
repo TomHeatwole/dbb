@@ -23,7 +23,6 @@ let playersDataCache = null;
 /** @type {Map<string, Map<string, object[]>>} */
 const ktcHistoricalCache = new Map();
 let ktcDatesCache = null;
-let teNamesCache = null;
 let ktcDraftYearsCache = null;
 let ktcRedraftValueCache = null;
 
@@ -67,34 +66,6 @@ async function loadPlayersData() {
   if (!res.ok) throw new Error('Failed to fetch players.txt');
   playersDataCache = await res.json();
   return playersDataCache;
-}
-
-async function loadTeNameSet() {
-  if (teNamesCache) return teNamesCache;
-  const res = await fetch('/data/ktc_historical_name_ids.csv');
-  if (!res.ok) {
-    teNamesCache = new Set();
-    return teNamesCache;
-  }
-  const text = await res.text();
-  const lines = text.trim().split(/\r?\n/);
-  const headers = lines[0].split(',');
-  const nameIdx = headers.indexOf('name');
-  const posIdx = headers.indexOf('position');
-  const names = new Set();
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseCsvRow(lines[i]);
-    if ((cols[posIdx] || '').trim() === 'TE') {
-      names.add((cols[nameIdx] || '').trim());
-    }
-  }
-  teNamesCache = names;
-  return teNamesCache;
-}
-
-function isTeRow(row, teNames) {
-  if (row.position === 'TE') return true;
-  return teNames.has(row.name);
 }
 
 function enrichFromSleeper(row, playersData) {
@@ -229,8 +200,10 @@ export async function loadKtcRedraftAdjustedRankings() {
     const stackRank = stackRankRaw ? parseInt(stackRankRaw, 10) : null;
     const adpEffRaw = (cols[idx('adp_eff_rank')] || '').trim();
     const adpEffRank = adpEffRaw ? parseFloat(adpEffRaw) : null;
-    const premiumRetentionRaw = (cols[idx('premium_retention')] || '').trim();
-    const premiumRetention = premiumRetentionRaw ? parseFloat(premiumRetentionRaw) : null;
+    const adpAvgRaw = (cols[idx('adp_avg')] || '').trim();
+    const adpAvg = adpAvgRaw ? parseFloat(adpAvgRaw) : null;
+    const rowPremiumRetentionRaw = (cols[idx('premium_retention')] || '').trim();
+    const rowPremiumRetention = rowPremiumRetentionRaw ? parseFloat(rowPremiumRetentionRaw) : null;
 
     const base = {
       name,
@@ -242,7 +215,8 @@ export async function loadKtcRedraftAdjustedRankings() {
       ktcPosRank: parseInt(cols[idx('ktc_pos_rank')], 10) || null,
       adpPosRank: stackRank,
       adpEffRank: Number.isFinite(adpEffRank) ? adpEffRank : null,
-      premiumRetention: Number.isFinite(premiumRetention) ? premiumRetention : null,
+      adpAvg: Number.isFinite(adpAvg) ? adpAvg : null,
+      premiumRetention: Number.isFinite(rowPremiumRetention) ? rowPremiumRetention : null,
       sleeperId: '',
     };
     if (base.ktcPosRank != null && base.adpEffRank != null) {
@@ -358,15 +332,11 @@ export async function fetchKtcHistoricalDates() {
   return ktcDatesCache;
 }
 
-/** Date list for a historical variant (TE+ uses dates present in both files). */
+/** Date list for a historical variant. SF TE+ uses merged sf_ktc_values_historical.csv. */
 export async function getKtcHistoricalDateList(variant) {
   const datesJson = await fetchKtcHistoricalDates();
-  if (variant === 'sf_tep') {
-    const nonTep = new Set(datesJson.sf_non_tep?.dates || []);
-    return (datesJson.sf_tep?.dates || []).filter((d) => nonTep.has(d));
-  }
   const key = variant === 'sf_tep' ? 'sf_tep' : 'sf_non_tep';
-  return datesJson[key]?.dates || [];
+  return datesJson[key]?.dates || datesJson.sf_ktc?.dates || [];
 }
 
 async function loadKtcHistoricalIndex(variant) {
@@ -408,69 +378,6 @@ async function loadKtcHistoricalIndex(variant) {
 
   ktcHistoricalCache.set(variant, byDate);
   return byDate;
-}
-
-/**
- * Build a full SF TE+ board for one date:
- * non-TEP values for non-TEs, TE+ values where scraped, non-TEP fallback for other TEs.
- */
-async function stitchKtcTepHistorical(date, playersData) {
-  const teNames = await loadTeNameSet();
-  const [nonTepByDate, tepByDate] = await Promise.all([
-    loadKtcHistoricalIndex('sf_non_tep'),
-    loadKtcHistoricalIndex('sf_tep'),
-  ]);
-
-  const tepByKey = new Map();
-  for (const row of tepByDate.get(date) || []) {
-    const enriched = enrichFromSleeper(cloneHistoricalRow(row), playersData);
-    tepByKey.set(rowIdentityKey(enriched), {
-      ...enriched,
-      position: enriched.position || 'TE',
-    });
-  }
-
-  const combinedByKey = new Map();
-  let teFallbackCount = 0;
-
-  for (const row of (nonTepByDate.get(date) || []).map((r) => cloneHistoricalRow(r))) {
-    const enriched = enrichFromSleeper(row, playersData);
-    const key = rowIdentityKey(enriched);
-
-    if (isPickName(enriched.name)) {
-      combinedByKey.set(key, enriched);
-      continue;
-    }
-
-    if (tepByKey.has(key)) {
-      continue;
-    }
-
-    if (isTeRow(enriched, teNames)) {
-      combinedByKey.set(key, {
-        ...enriched,
-        position: enriched.position || 'TE',
-      });
-      teFallbackCount += 1;
-      continue;
-    }
-
-    combinedByKey.set(key, enriched);
-  }
-
-  for (const [key, row] of tepByKey) {
-    combinedByKey.set(key, row);
-  }
-
-  const combined = Array.from(combinedByKey.values());
-  assignRanks(combined);
-  computePosRanks(combined);
-
-  return {
-    rows: combined,
-    teTepCount: tepByKey.size,
-    teFallbackCount,
-  };
 }
 
 async function loadKtcDraftYearMap() {
@@ -605,22 +512,14 @@ export async function loadKtcHistoricalRankings(variant, date) {
   const cfg = KTC_HISTORICAL_VARIANTS[variant];
   const playersData = await loadPlayersData();
 
-  let rows;
-  let teTepCount = null;
-  let teFallbackCount = null;
-  if (variant === 'sf_tep') {
-    const stitched = await stitchKtcTepHistorical(date, playersData);
-    rows = stitched.rows;
-    teTepCount = stitched.teTepCount;
-    teFallbackCount = stitched.teFallbackCount;
-  } else {
-    const byDate = await loadKtcHistoricalIndex(variant);
-    rows = (byDate.get(date) || []).map((row) => enrichFromSleeper(cloneHistoricalRow(row), playersData));
-  }
+  const byDate = await loadKtcHistoricalIndex(variant);
+  const rows = (byDate.get(date) || []).map((row) => enrichFromSleeper(cloneHistoricalRow(row), playersData));
 
   if (rows.length === 0) {
     throw new Error(`No KTC data for ${date}`);
   }
+
+  computePosRanks(rows);
 
   return {
     rows,
@@ -628,9 +527,7 @@ export async function loadKtcHistoricalRankings(variant, date) {
       date,
       sourceLabel: cfg.label,
       rowCount: rows.length,
-      stitched: variant === 'sf_tep',
-      teTepCount,
-      teFallbackCount,
+      stitched: false,
     },
   };
 }

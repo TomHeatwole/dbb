@@ -10,6 +10,7 @@
  *                                 (tries CURRENT_YEAR first, falls back to CURRENT_YEAR-1
  *                                  so off-season still loads last season's stats)
  *   - ffb.csv                   → FFB ranking (pos ranks computed from data)
+ *   - ktc_redraft_value_index.csv → competitor / rebuilder adjusted values + ranks
  *   - player_ids.txt            → reliable sleeperId → espnId mapping for headshots
  *   - Sleeper API               → fantasy team ownership (via fetchTeamData)
  *   - players.txt               → sleeperId ↔ name mapping, ESPN ID supplement
@@ -26,11 +27,19 @@
 
 import { useState, useEffect } from 'react';
 import { fetchKtcData } from '../lookups/KtcLookup';
+import { fetchRedraftValueData, getRedraftValueEntryByName, assignPosValueRanks } from '../lookups/RedraftValueLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { normalisePlayerName, findBestPlayerMatch } from '../utils/playerNameMatcher';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 
 const SKILL_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
+
+/** Fill missing positional ranks from values (fallback after redraft lookup). */
+function ensurePlayerPosRanks(players) {
+  assignPosValueRanks(players, 'competitorAdjustedValue', 'competitorAdjustedRank');
+  assignPosValueRanks(players, 'rebuilderAdjustedValue', 'rebuilderAdjustedRank');
+  return players;
+}
 
 function parseCSVLine(line) {
   const result = [];
@@ -124,6 +133,7 @@ export function usePlayerDBData() {
 
         const [
           ktcResult,
+          redraftResult,
           fcResponse,
           statsText,
           ffbResponse,
@@ -132,6 +142,7 @@ export function usePlayerDBData() {
           sleeperToEspnMap,
         ] = await Promise.all([
           fetchKtcData().catch(() => null),
+          fetchRedraftValueData().catch(() => null),
           fetch('/data/fantasycalc.csv').catch(() => null),
           fetchStatsText(CURRENT_YEAR),
           fetch('/data/ffb.csv').catch(() => null),
@@ -307,10 +318,18 @@ export function usePlayerDBData() {
         // ── Candidate arrays for fallback name matching ──
         const ktcCandidates = ktcResult?.map ? Array.from(ktcResult.map.values()) : [];
         const fcCandidates  = Object.values(fcByNormName);
+        const redraftByName = redraftResult?.byName || null;
 
         // ── Helper: build a unified player record ──
         function buildPlayer(normName, displayName, position, nflTeam) {
           const ktcEntry = ktcResult?.map?.get(normName) || null;
+          const hints = {
+            position: position || ktcEntry?.position,
+            team: nflTeam || ktcEntry?.nflTeam,
+          };
+          const redraftEntry = redraftByName
+            ? getRedraftValueEntryByName(displayName, redraftByName, hints)
+            : null;
 
           // FC lookup: direct normName first, then last-name fallback with
           // position+team hints to handle nickname mismatches (e.g. "Chig" vs "Chigoziem")
@@ -393,6 +412,17 @@ export function usePlayerDBData() {
             // FFB
             ffbRank,
             ffbPosRank,
+            // Redraft-adjusted (SF TE+ KTC base + best-ball ADP)
+            competitorAdjustedValue: redraftEntry?.competitorAdjustedValue ?? null,
+            rebuilderAdjustedValue: redraftEntry?.rebuilderAdjustedValue ?? null,
+            competitorAdjustedRank: redraftEntry?.competitorAdjustedRank ?? null,
+            rebuilderAdjustedRank: redraftEntry?.rebuilderAdjustedRank ?? null,
+            redraftValueIndex: redraftEntry?.redraftValueIndex ?? null,
+            rebuildValueIndex: redraftEntry?.rebuildValueIndex ?? null,
+            redraftKtcValue: redraftEntry?.ktcValue ?? null,
+            redraftKtcPosRank: redraftEntry?.ktcPosRank ?? null,
+            redraftAdpEffRank: redraftEntry?.adpEffRank ?? null,
+            redraftAdpPosRank: redraftEntry?.adpPosRank ?? null,
           };
         }
 
@@ -447,7 +477,7 @@ export function usePlayerDBData() {
         });
 
         if (!cancelled) {
-          setPlayers(result);
+          setPlayers(ensurePlayerPosRanks(result));
           setRosterInfo({
             rosters: teamData?.rosters || null,
             users:   teamData?.users   || null,

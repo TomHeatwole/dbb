@@ -122,7 +122,7 @@ export async function loadKtcRankCompareData() {
     const position = (cols[idx('position')] || '').trim().toUpperCase();
     if (!POSITIONS.includes(position)) continue;
     const name = (cols[idx('name')] || '').trim();
-    const value = parseInt(cols[idx('ktc_value_2qb')], 10);
+    const value = parseInt(cols[idx('ktc_value_tep_2qb')], 10);
     if (!name || !Number.isFinite(value)) continue;
     if (!asOf && asOfIdx >= 0) asOf = (cols[asOfIdx] || '').trim();
 
