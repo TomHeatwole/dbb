@@ -43,16 +43,25 @@ with full match metadata (`ktc_slug`, `sleeper_name`, `position`, `team`, `ktc_m
 node scripts/build_ktc_historical_name_map.js --from-wide-csv /path/to/wide.csv --ktc-html /tmp/ktc_rankings.html
 ```
 
-## Per-player SF TE+ history (KTC profile pages)
+## SF TE+ history (all tight ends, KTC profile pages)
 
-Daily TE+ values for individual players are parsed from embedded `playerSuperflex.tep.history`
-JSON on KTC profile pages. Output goes under `site/public/data/tep_values/` (one CSV per player).
+Daily TE+ values for every TE are scraped from embedded `playerSuperflex.tep.history`
+on KTC profile pages and written to a single file:
+`site/public/data/sf_tep_ktc_values_historical.csv`.
+
+TE slugs come from the KTC dynasty rankings page, supplemented by
+`ktc_historical_name_ids.csv` for historical TE names that still have a slug.
+Requires the name map from `fetch_sf_non_tep_ktc_historical.sh`.
 
 ```bash
-bash scripts/fetch_ktc_tep_player_history.sh brock-bowers-1612 brock-bowers.csv
+bash scripts/fetch_sf_tep_ktc_historical.sh
 ```
 
-Output schema matches the SF historical file: `date`, `name`, `ktc_value`, `ktc_player_id`, `sleeper_id`.
+Run this occasionally (not part of `all_updates.sh`); current TE+ values are already
+refreshed daily via `fetch_ktc_values.sh`.
+
+Output schema matches the SF non-TEP historical file:
+`date`, `name`, `ktc_value`, `ktc_player_id`, `sleeper_id`.
 
 ## Setup
 
