@@ -14,6 +14,46 @@ Normalizes a raw KeepTradeCut (KTC) CSV export into a standard schema for use in
 
 Normalized output lands in `output/ktc_values.csv` by default.
 
+## Historical SF values (Community Trade Value Data)
+
+Daily KTC Superflex (non-TEP) history is fetched from the public
+[Community Trade Value Data](https://docs.google.com/spreadsheets/d/1n5aqip8iFCpltO8deiS7q9m3u_dFvKTZpwzfZXVTpgs)
+sheet (`SF Historical Data` tab) and written to
+`site/public/data/sf_non_tep_ktc_values_historical.csv`.
+
+```bash
+bash scripts/fetch_sf_non_tep_ktc_historical.sh
+```
+
+Output schema:
+
+| Column | Description |
+|--------|-------------|
+| `date` | Value date (ISO `YYYY-MM-DD`) |
+| `name` | Player or pick name |
+| `ktc_value` | KTC SF dynasty trade value (no TE premium) |
+| `ktc_player_id` | KTC internal player ID (blank for picks / unmatched) |
+| `sleeper_id` | Matched Sleeper player ID (blank for picks / unmatched) |
+
+A separate lookup file is written at `site/public/data/ktc_historical_name_ids.csv`
+with full match metadata (`ktc_slug`, `sleeper_name`, `position`, `team`, `ktc_match`,
+`sleeper_match`). Rebuild it with:
+
+```bash
+node scripts/build_ktc_historical_name_map.js --from-wide-csv /path/to/wide.csv --ktc-html /tmp/ktc_rankings.html
+```
+
+## Per-player SF TE+ history (KTC profile pages)
+
+Daily TE+ values for individual players are parsed from embedded `playerSuperflex.tep.history`
+JSON on KTC profile pages. Output goes under `site/public/data/tep_values/` (one CSV per player).
+
+```bash
+bash scripts/fetch_ktc_tep_player_history.sh brock-bowers-1612 brock-bowers.csv
+```
+
+Output schema matches the SF historical file: `date`, `name`, `ktc_value`, `ktc_player_id`, `sleeper_id`.
+
 ## Setup
 
 ```bash

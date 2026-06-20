@@ -1,0 +1,35 @@
+#!/bin/bash
+# Fetches current-season FantasyPros ADP for overall, half-PPR, full PPR, and best ball.
+# Writes one CSV per format to site/public/data/adp/fantasypros_adp_<type>_<year>.csv
+#
+# Usage (run from project root):
+#   ./scrape_adp
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROCESSOR="$SCRIPT_DIR/scripts/process_fantasypros_adp.js"
+YEAR="$(date +%Y)"
+
+TYPES=(overall half ppr bestball)
+
+echo "FantasyPros ADP: fetching ${YEAR} season (${#TYPES[@]} formats)..."
+echo ""
+
+errors=0
+
+for type in "${TYPES[@]}"; do
+  echo "── $type ──────────────────────────────────────────────────────────────"
+  if ! node "$PROCESSOR" "$type" "$YEAR"; then
+    echo "  ERROR: failed to fetch $type ADP" >&2
+    errors=$((errors + 1))
+  fi
+  echo ""
+done
+
+if [[ $errors -gt 0 ]]; then
+  echo "FantasyPros ADP: completed with $errors error(s)." >&2
+  exit 1
+fi
+
+echo "FantasyPros ADP: done."

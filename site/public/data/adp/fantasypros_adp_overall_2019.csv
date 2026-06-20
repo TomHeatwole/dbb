@@ -1,0 +1,403 @@
+rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,sleeper,rtsports,avg,sleeper_id
+1,Saquon Barkley,17240,saquon-barkley,PHI,10,RB,1,&nbsp;,&nbsp;,1.0,4866
+2,Christian McCaffrey,16393,christian-mccaffrey,SF,4,RB,2,&nbsp;,&nbsp;,2.5,4034
+3,Alvin Kamara,16421,alvin-kamara,NO,9,RB,3,&nbsp;,&nbsp;,2.5,4035
+4,Ezekiel Elliott,15498,ezekiel-elliott,,,RB,4,&nbsp;,&nbsp;,4.0,3164
+5,DeAndre Hopkins,11606,deandre-hopkins,BAL,8,WR,1,&nbsp;,&nbsp;,5.3,1426
+6,James Conner,16447,james-conner,ARI,12,RB,5,&nbsp;,&nbsp;,6.5,4137
+7,Le'Veon Bell,11645,leveon-bell,,,RB,6,&nbsp;,&nbsp;,7.5,1408
+8,Davante Adams,12123,davante-adams,LAR,9,WR,2,&nbsp;,&nbsp;,9.0,2133
+9,David Johnson,13948,david-johnson-rb,,,RB,7,&nbsp;,&nbsp;,9.3,2391
+10,Nick Chubb,17246,nick-chubb,,,RB,8,&nbsp;,&nbsp;,10.5,4988
+11,Todd Gurley II,13912,todd-gurley,,,RB,9,&nbsp;,&nbsp;,11.8,2315
+12,Patrick Mahomes II,16413,patrick-mahomes,KC,12,QB,1,&nbsp;,&nbsp;,12.0,4046
+13,Michael Thomas,15528,michael-thomas-wr,,,WR,3,&nbsp;,&nbsp;,12.8,3199
+14,Julio Jones,9867,julio-jones,,,WR,4,&nbsp;,&nbsp;,13.0,947
+15,Dalvin Cook,16374,dalvin-cook,,,RB,10,&nbsp;,&nbsp;,16.3,4029
+16,Tyreek Hill,15802,tyreek-hill,,,WR,5,&nbsp;,&nbsp;,16.3,3321
+17,JuJu Smith-Schuster,16427,juju-smith-schuster,NYG,11,WR,6,&nbsp;,&nbsp;,17.0,4040
+18,Odell Beckham Jr.,12127,odell-beckham,NYG,11,WR,7,&nbsp;,&nbsp;,17.0,2078
+19,Joe Mixon,16420,joe-mixon,,,RB,11,&nbsp;,&nbsp;,17.3,4018
+20,Travis Kelce,11594,travis-kelce,KC,12,TE,1,&nbsp;,&nbsp;,18.8,1466
+21,Leonard Fournette,16378,leonard-fournette,,,RB,12,&nbsp;,&nbsp;,21.5,3969
+22,Mike Evans,12119,mike-evans,SF,4,WR,8,&nbsp;,&nbsp;,22.3,2216
+23,Antonio Brown,9808,antonio-brown,,,WR,9,&nbsp;,&nbsp;,22.8,536
+24,Adam Thielen,13429,adam-thielen,,,WR,10,&nbsp;,&nbsp;,25.5,1689
+25,Damien Williams,12334,damien-williams,,,RB,13,&nbsp;,&nbsp;,26.0,1833
+26,Keenan Allen,11616,keenan-allen,LAC,12,WR,11,&nbsp;,&nbsp;,26.8,1479
+27,Kerryon Johnson,17247,kerryon-johnson,,,RB,14,&nbsp;,&nbsp;,27.0,5068
+28,Aaron Jones Sr.,16673,aaron-jones,MIN,12,RB,15,&nbsp;,&nbsp;,28.0,4199
+29,Zach Ertz,11689,zach-ertz,,,TE,2,&nbsp;,&nbsp;,31.3,1339
+30,Chris Carson,16754,chris-carson,,,RB,16,&nbsp;,&nbsp;,31.8,4273
+31,George Kittle,16499,george-kittle,SF,4,TE,3,&nbsp;,&nbsp;,32.8,4217
+32,Josh Jacobs,18269,josh-jacobs,GB,11,RB,17,&nbsp;,&nbsp;,33.0,5850
+33,Devonta Freeman,12108,devonta-freeman,,,RB,18,&nbsp;,&nbsp;,33.3,2168
+34,Amari Cooper,13894,amari-cooper,,,WR,12,&nbsp;,&nbsp;,33.3,2309
+35,Stefon Diggs,13981,stefon-diggs,,,WR,13,&nbsp;,&nbsp;,34.8,2449
+36,Derrick Henry,15514,derrick-henry,BAL,8,RB,19,&nbsp;,&nbsp;,36.5,3198
+37,Deshaun Watson,16398,deshaun-watson,CLE,7,QB,2,&nbsp;,&nbsp;,38.0,4017
+38,David Montgomery,18239,david-montgomery,HOU,10,RB,20,&nbsp;,&nbsp;,39.0,5892
+39,Marlon Mack,16444,marlon-mack,,,RB,21,&nbsp;,&nbsp;,39.0,4152
+40,Brandin Cooks,12122,brandin-cooks,,,WR,14,&nbsp;,&nbsp;,39.3,2197
+41,Mark Ingram II,9872,mark-ingram,,,RB,22,&nbsp;,&nbsp;,42.5,956
+42,Robert Woods,11610,robert-woods,,,WR,15,&nbsp;,&nbsp;,43.3,1352
+43,Julian Edelman,9332,julian-edelman,,,WR,16,&nbsp;,&nbsp;,44.0,344
+44,Sony Michel,17309,sony-michel,,,RB,23,&nbsp;,&nbsp;,44.8,4962
+45,T.Y. Hilton,11206,ty-hilton,,,WR,17,&nbsp;,&nbsp;,45.3,1110
+46,Tyler Lockett,13971,tyler-lockett,LV,,WR,18,&nbsp;,&nbsp;,45.5,2374
+47,Aaron Rodgers,9001,aaron-rodgers,PIT,7,QB,3,&nbsp;,&nbsp;,46.5,96
+48,Melvin Gordon III,13903,melvin-gordon,,,RB,24,&nbsp;,&nbsp;,47.5,2320
+49,Kenny Golladay,16488,kenny-golladay,,,WR,19,&nbsp;,&nbsp;,48.5,4131
+50,Chris Godwin Jr.,16406,chris-godwin,TB,7,WR,20,&nbsp;,&nbsp;,49.0,4037
+51,Cooper Kupp,16433,cooper-kupp,SEA,11,WR,21,&nbsp;,&nbsp;,50.5,4039
+52,Phillip Lindsay,17498,phillip-lindsay,,,RB,25,&nbsp;,&nbsp;,51.5,5170
+53,Calvin Ridley,17258,calvin-ridley,TEN,11,WR,22,&nbsp;,&nbsp;,54.8,4981
+54,Baker Mayfield,17237,baker-mayfield,TB,7,QB,4,&nbsp;,&nbsp;,56.0,4892
+55,O.J. Howard,16380,oj-howard,,,TE,4,&nbsp;,&nbsp;,56.5,4055
+56,Tevin Coleman,13926,tevin-coleman,,,RB,26,&nbsp;,&nbsp;,57.0,2378
+57,Tyler Boyd,15547,tyler-boyd,,,WR,23,&nbsp;,&nbsp;,58.0,3225
+58,Austin Ekeler,16483,austin-ekeler,,,RB,27,&nbsp;,&nbsp;,60.3,4663
+59,Mike Williams,16377,mike-williams-wr,,,WR,24,&nbsp;,&nbsp;,60.8,
+60,A.J. Green,9857,aj-green,,,WR,25,&nbsp;,&nbsp;,62.5,830
+61,Evan Engram,16411,evan-engram,DEN,10,TE,5,&nbsp;,&nbsp;,63.8,4066
+62,Matt Ryan,9444,matt-ryan,,,QB,5,&nbsp;,&nbsp;,64.3,24
+63,Alshon Jeffery,11199,alshon-jeffery,,,WR,26,&nbsp;,&nbsp;,64.5,1149
+64,James White,12195,james-white,,,RB,28,&nbsp;,&nbsp;,64.8,1848
+65,Josh Gordon,11440,josh-gordon,,,WR,27,&nbsp;,&nbsp;,67.3,1244
+66,Hunter Henry,15561,hunter-henry,NE,10,TE,6,&nbsp;,&nbsp;,68.3,3214
+67,DJ Moore,17265,dj-moore-wr,BUF,6,WR,28,&nbsp;,&nbsp;,68.8,4983
+68,Miles Sanders,18283,miles-sanders,,,RB,29,&nbsp;,&nbsp;,69.0,6151
+69,Jarvis Landry,12128,jarvis-landry,,,WR,29,&nbsp;,&nbsp;,71.0,1825
+70,Duke Johnson Jr.,13939,duke-johnson,,,RB,30,&nbsp;,&nbsp;,71.3,2382
+71,Drew Brees,9200,drew-brees,,,QB,6,&nbsp;,&nbsp;,72.3,289
+72,Carson Wentz,15520,carson-wentz,MIN,12,QB,7,&nbsp;,&nbsp;,72.5,3161
+73,Derrius Guice,17241,derrius-guice,,,RB,31,&nbsp;,&nbsp;,73.8,4949
+74,Kenyan Drake,15637,kenyan-drake,,,RB,32,&nbsp;,&nbsp;,74.0,3242
+75,Jared Cook,9265,jared-cook,,,TE,7,&nbsp;,&nbsp;,74.3,367
+76,Tarik Cohen,16450,tarik-cohen,,,RB,33,&nbsp;,&nbsp;,74.5,4157
+77,Allen Robinson II,12126,allen-robinson,,,WR,30,&nbsp;,&nbsp;,75.3,1992
+78,Robbie Chosen,15688,robby-anderson,,,WR,31,&nbsp;,&nbsp;,77.3,3423
+79,Jared Goff,15501,jared-goff,DET,5,QB,8,&nbsp;,&nbsp;,79.0,3163
+80,Dede Westbrook,16436,dede-westbrook,,,WR,32,&nbsp;,&nbsp;,80.0,4146
+81,William Fuller V,15629,will-fuller,,,WR,33,&nbsp;,&nbsp;,81.3,3157
+82,Russell Wilson,11180,russell-wilson,,,QB,9,&nbsp;,&nbsp;,83.0,1234
+83,Latavius Murray,11821,latavius-murray,,,RB,34,&nbsp;,&nbsp;,85.3,1476
+84,Chicago Bears,8050,,,6,DST,1,&nbsp;,&nbsp;,89.0,
+85,Vance McDonald,11699,vance-mcdonald,,,TE,8,&nbsp;,&nbsp;,89.3,1587
+86,Sammy Watkins,12118,sammy-watkins,,,WR,34,&nbsp;,&nbsp;,89.5,1817
+87,Jordan Howard,15585,jordan-howard,,,RB,35,&nbsp;,&nbsp;,89.8,3306
+88,Emmanuel Sanders,9707,emmanuel-sanders,,,WR,35,&nbsp;,&nbsp;,91.0,538
+89,Cam Newton,9869,cam-newton,,,QB,10,&nbsp;,&nbsp;,91.0,954
+90,Christian Kirk,17268,christian-kirk,SF,4,WR,36,&nbsp;,&nbsp;,91.3,4950
+91,Sterling Shepard,15569,sterling-shepard,,,WR,37,&nbsp;,&nbsp;,93.5,3200
+92,Corey Davis,16385,corey-davis,,,WR,38,&nbsp;,&nbsp;,95.5,4036
+93,Marvin Jones Jr.,11215,marvin-jones,,,WR,39,&nbsp;,&nbsp;,97.0,1067
+94,LeSean McCoy,9398,lesean-mccoy,,,RB,36,&nbsp;,&nbsp;,98.3,676
+95,Eric Ebron,12143,eric-ebron,,,TE,9,&nbsp;,&nbsp;,99.0,2118
+96,Ben Roethlisberger,9039,ben-roethlisberger,,,QB,11,&nbsp;,&nbsp;,99.5,138
+97,Matt Breida,17058,matt-breida,,,RB,37,&nbsp;,&nbsp;,99.8,4455
+98,Curtis Samuel,16434,curtis-samuel,,,WR,40,&nbsp;,&nbsp;,100.0,4082
+99,Devin Singletary,18280,devin-singletary,NYG,11,RB,38,&nbsp;,&nbsp;,100.8,6130
+100,Rashaad Penny,17308,rashaad-penny,,,RB,39,&nbsp;,&nbsp;,101.3,4985
+101,David Njoku,16399,david-njoku,LAC,12,TE,10,&nbsp;,&nbsp;,102.0,4033
+102,Darrell Henderson Jr.,18588,darrell-henderson,,,RB,40,&nbsp;,&nbsp;,102.3,5916
+103,Jameis Winston,13891,jameis-winston,NYG,11,QB,12,&nbsp;,&nbsp;,103.5,2306
+104,Larry Fitzgerald,9383,larry-fitzgerald,,,WR,41,&nbsp;,&nbsp;,103.8,223
+105,Tom Brady,9603,tom-brady,,,QB,13,&nbsp;,&nbsp;,104.0,167
+106,Lamar Jackson,17233,lamar-jackson,BAL,8,QB,14,&nbsp;,&nbsp;,104.3,4881
+107,Peyton Barber,15920,peyton-barber,,,RB,41,&nbsp;,&nbsp;,111.3,3594
+108,Kyler Murray,18600,kyler-murray,MIN,12,QB,15,&nbsp;,&nbsp;,111.8,5849
+109,Dante Pettis,17264,dante-pettis,NO,9,WR,42,&nbsp;,&nbsp;,112.0,4992
+110,Kareem Hunt,16425,kareem-hunt,,,RB,42,&nbsp;,&nbsp;,113.0,4098
+111,Los Angeles Rams,8280,,,9,DST,2,&nbsp;,&nbsp;,113.0,
+112,Royce Freeman,17245,royce-freeman,,,RB,43,&nbsp;,&nbsp;,113.3,5046
+113,Marquez Valdes-Scantling,17528,marquez-valdesscantling,DAL,8,WR,43,&nbsp;,&nbsp;,113.5,5086
+114,Tony Pollard,18705,tony-pollard,TEN,11,RB,44,&nbsp;,&nbsp;,114.3,5967
+115,Courtland Sutton,17253,courtland-sutton,DEN,10,WR,44,&nbsp;,&nbsp;,114.8,5045
+116,Philip Rivers,9509,philip-rivers,,,QB,16,&nbsp;,&nbsp;,115.0,331
+117,Delanie Walker,9172,delanie-walker,,,TE,11,&nbsp;,&nbsp;,116.3,284
+118,Greg Zuerlein,11345,greg-zuerlein,,,K,1,&nbsp;,&nbsp;,117.5,1266
+119,James Washington,17254,james-washington,,,WR,45,&nbsp;,&nbsp;,119.3,5024
+120,Geronimo Allison,15853,geronimo-allison,,,WR,46,&nbsp;,&nbsp;,123.3,3503
+121,Darwin Thompson,18620,darwin-thompson,,,RB,45,&nbsp;,&nbsp;,123.8,6178
+122,Dak Prescott,15600,dak-prescott,DAL,8,QB,17,&nbsp;,&nbsp;,123.8,3294
+123,Adrian Peterson,9006,adrian-peterson-min,,,RB,46,&nbsp;,&nbsp;,124.8,184
+124,Justin Tucker,11465,justin-tucker,,,K,2,&nbsp;,&nbsp;,125.5,1264
+125,Jacksonville Jaguars,8140,,,10,DST,3,&nbsp;,&nbsp;,125.5,
+126,Minnesota Vikings,8170,,,12,DST,4,&nbsp;,&nbsp;,125.8,
+127,DeSean Jackson,9186,desean-jackson,,,WR,47,&nbsp;,&nbsp;,130.5,147
+128,Justin Jackson,17300,justin-jackson-rb,,,RB,47,&nbsp;,&nbsp;,131.3,5131
+129,Austin Hooper,15581,austin-hooper,ATL,9,TE,12,&nbsp;,&nbsp;,132.3,3202
+130,Kalen Ballage,17250,kalen-ballage,,,RB,48,&nbsp;,&nbsp;,132.8,4994
+131,Dion Lewis,9983,dion-lewis,,,RB,49,&nbsp;,&nbsp;,133.8,788
+132,Michael Gallup,17259,michael-gallup,,,WR,48,&nbsp;,&nbsp;,135.3,5038
+133,Baltimore Ravens,8020,,,8,DST,5,&nbsp;,&nbsp;,135.3,
+134,Kirk Cousins,11177,kirk-cousins,LV,,QB,18,&nbsp;,&nbsp;,137.0,1166
+135,Donte Moncrief,12125,donte-moncrief,,,WR,49,&nbsp;,&nbsp;,139.0,1971
+136,T.J. Hockenson,18290,tj-hockenson,MIN,12,TE,13,&nbsp;,&nbsp;,139.3,5844
+137,Jaylen Samuels,17271,jaylen-samuels,,,RB,50,&nbsp;,&nbsp;,139.3,5107
+138,Harrison Butker,16712,harrison-butker,KC,12,K,3,&nbsp;,&nbsp;,139.5,4227
+139,Tyrell Williams,14324,tyrell-williams,,,WR,50,&nbsp;,&nbsp;,140.5,2583
+140,Mark Andrews,17269,mark-andrews,BAL,8,TE,14,&nbsp;,&nbsp;,144.8,5012
+141,Mitchell Trubisky,16381,mitch-trubisky,TEN,11,QB,19,&nbsp;,&nbsp;,146.5,3976
+142,John Brown,12231,john-brown,,,WR,51,&nbsp;,&nbsp;,147.0,2238
+143,Stephen Gostkowski,9573,stephen-gostkowski,,,K,4,&nbsp;,&nbsp;,147.3,110
+144,Anthony Miller,17255,anthony-miller,,,WR,52,&nbsp;,&nbsp;,147.8,5013
+145,DK Metcalf,18219,dk-metcalf,PIT,7,WR,53,&nbsp;,&nbsp;,148.3,5846
+146,Golden Tate,9683,golden-tate,,,WR,54,&nbsp;,&nbsp;,148.5,642
+147,Greg Olsen,9238,greg-olsen,,,TE,15,&nbsp;,&nbsp;,151.3,58
+148,Justice Hill,18256,justice-hill,BAL,8,RB,51,&nbsp;,&nbsp;,151.5,5995
+149,Ronald Jones II,17243,ronald-jones-ii,,,RB,52,&nbsp;,&nbsp;,152.5,
+150,Jimmy Garoppolo,12208,jimmy-garoppolo,LAR,9,QB,20,&nbsp;,&nbsp;,154.3,1837
+151,Carlos Hyde,12105,carlos-hyde,,,RB,53,&nbsp;,&nbsp;,155.5,2257
+152,Trey Burton,12153,trey-burton,,,TE,16,&nbsp;,&nbsp;,156.3,1793
+153,Alexander Mattison,18621,alexander-mattison,,,RB,54,&nbsp;,&nbsp;,159.3,5987
+154,Josh Allen,17298,josh-allen-qb,BUF,6,QB,21,&nbsp;,&nbsp;,159.3,4984
+155,Denver Broncos,8090,,,10,DST,6,&nbsp;,&nbsp;,161.5,
+156,New England Patriots,8180,,,10,DST,7,&nbsp;,&nbsp;,161.8,
+157,Houston Texans,8120,,,10,DST,8,&nbsp;,&nbsp;,161.8,
+158,Keke Coutee,17490,keke-coutee,,,WR,55,&nbsp;,&nbsp;,162.0,5007
+159,Damien Harris,18230,damien-harris-rb,,,RB,55,&nbsp;,&nbsp;,163.5,5890
+160,Ka'imi Fairbairn,15756,kaimi-fairbairn,HOU,10,K,5,&nbsp;,&nbsp;,164.3,3451
+161,Buffalo Bills,8030,,,6,DST,9,&nbsp;,&nbsp;,166.8,
+162,Cleveland Browns,8070,,,7,DST,10,&nbsp;,&nbsp;,168.8,
+163,Dallas Cowboys,8080,,,8,DST,11,&nbsp;,&nbsp;,170.5,
+164,Ito Smith,17249,ito-smith,,,RB,56,&nbsp;,&nbsp;,171.5,5004
+165,Jamison Crowder,13976,jamison-crowder,,,WR,56,&nbsp;,&nbsp;,172.5,2410
+166,Matthew Stafford,9451,matthew-stafford,LAR,9,QB,22,&nbsp;,&nbsp;,176.5,421
+167,Robbie Gould,9534,robbie-gould,,,K,6,&nbsp;,&nbsp;,179.3,49
+168,Los Angeles Chargers,8250,,,12,DST,12,&nbsp;,&nbsp;,143.3,
+169,Kyle Rudolph,9906,kyle-rudolph,,,TE,17,&nbsp;,&nbsp;,146.3,943
+170,Deebo Samuel Sr.,18244,deebo-samuel,,,WR,57,&nbsp;,&nbsp;,185.3,5872
+171,Wil Lutz,16026,wil-lutz,DEN,10,K,7,&nbsp;,&nbsp;,149.7,3678
+172,Seattle Seahawks,8260,,,11,DST,13,&nbsp;,&nbsp;,187.0,
+173,N'Keal Harry,18222,nkeal-harry,,,WR,58,&nbsp;,&nbsp;,154.0,5878
+174,Jordan Reed,11690,jordan-reed,,,TE,18,&nbsp;,&nbsp;,156.7,1500
+175,Marquise Goodwin,11599,marquise-goodwin,,,WR,59,&nbsp;,&nbsp;,193.0,1346
+176,New Orleans Saints,8190,,,9,DST,14,&nbsp;,&nbsp;,158.7,
+177,Jimmy Graham,9712,jimmy-graham,,,TE,19,&nbsp;,&nbsp;,158.7,616
+178,Jake Elliott,16540,jake-elliott,PHI,10,K,8,&nbsp;,&nbsp;,196.0,4195
+179,Philadelphia Eagles,8230,,,10,DST,15,&nbsp;,&nbsp;,199.8,
+180,Mohamed Sanu Sr.,11200,mohamed-sanu,,,WR,60,&nbsp;,&nbsp;,168.0,1071
+181,Michael Badgley,17693,michael-badgley,,,K,9,&nbsp;,&nbsp;,202.8,5230
+182,Derek Carr,12092,derek-carr,,,QB,23,&nbsp;,&nbsp;,172.0,2028
+183,Nyheim Miller-Hines,17297,nyheim-hines,,,RB,57,&nbsp;,&nbsp;,175.7,5347
+184,Hollywood Brown,18226,marquise-brown,PHI,10,WR,61,&nbsp;,&nbsp;,178.0,5848
+185,Mecole Hardman Jr.,18587,mecole-hardman,BUF,6,WR,62,&nbsp;,&nbsp;,179.0,5917
+186,Sam Darnold,17236,sam-darnold,SEA,11,QB,24,&nbsp;,&nbsp;,185.7,4943
+187,Kenny Stills,11611,kenny-stills,,,WR,63,&nbsp;,&nbsp;,186.7,1555
+188,Kansas City Chiefs,8150,,,12,DST,16,&nbsp;,&nbsp;,188.3,
+189,C.J. Anderson,11896,cj-anderson,,,RB,58,&nbsp;,&nbsp;,188.7,1451
+190,Chris Thompson,11651,chris-thompson,,,RB,59,&nbsp;,&nbsp;,189.0,1502
+191,Noah Fant,17527,noah-fant,NO,9,TE,20,&nbsp;,&nbsp;,190.3,5857
+192,Pittsburgh Steelers,8240,,,7,DST,17,&nbsp;,&nbsp;,192.3,
+193,Jamaal Williams,16424,jamaal-williams,,,RB,60,&nbsp;,&nbsp;,200.3,4149
+194,Darren Waller,14104,darren-waller,,,TE,21,&nbsp;,&nbsp;,202.7,2505
+195,Nick Foles,11176,nick-foles,,,QB,25,&nbsp;,&nbsp;,205.3,1029
+196,Jalen Richard,16120,jalen-richard,,,RB,61,&nbsp;,&nbsp;,206.0,3868
+197,Zay Jones,16431,zay-jones,,,WR,64,&nbsp;,&nbsp;,206.3,4080
+198,Malcolm Brown,13953,malcolm-brown,,,RB,62,&nbsp;,&nbsp;,207.7,2588
+199,Dare Ogunbowale,16879,dare-ogunbowale,,,RB,63,&nbsp;,&nbsp;,208.3,4718
+200,Devin Funchess,13915,devin-funchess,,,WR,65,&nbsp;,&nbsp;,163.5,2346
+201,Marqise Lee,12120,marqise-lee,,,WR,66,&nbsp;,&nbsp;,209.0,1987
+202,Nelson Agholor,13969,nelson-agholor,,,WR,67,&nbsp;,&nbsp;,210.0,2325
+203,Mason Crosby,9433,mason-crosby,,,K,10,&nbsp;,&nbsp;,210.3,59
+204,DaeSean Hamilton,17470,daesean-hamilton,,,WR,68,&nbsp;,&nbsp;,210.7,4998
+205,Albert Wilson,12338,albert-wilson,,,WR,69,&nbsp;,&nbsp;,212.7,2025
+206,Matt Prater,9443,matt-prater,,,K,11,&nbsp;,&nbsp;,213.3,17
+207,DeVante Parker,13897,devante-parker,,,WR,70,&nbsp;,&nbsp;,172.5,2319
+208,Tre'Quan Smith,17261,trequan-smith,,,WR,71,&nbsp;,&nbsp;,174.0,5026
+209,Ty Montgomery II,13977,ty-montgomery,,,RB,64,&nbsp;,&nbsp;,217.3,2399
+210,Jack Doyle,11987,jack-doyle,,,TE,22,&nbsp;,&nbsp;,217.7,1706
+211,Jason Witten,9275,jason-witten,,,TE,23,&nbsp;,&nbsp;,218.7,23
+212,Frank Gore,9218,frank-gore,,,RB,65,&nbsp;,&nbsp;,219.7,
+213,Miles Boykin,18636,miles-boykin,,,WR,72,&nbsp;,&nbsp;,225.3,5965
+214,Adam Vinatieri,9004,adam-vinatieri,,,K,12,&nbsp;,&nbsp;,226.3,120
+215,Indianapolis Colts,8130,,,6,DST,18,&nbsp;,&nbsp;,226.7,
+216,Matt Bryant,9434,matt-bryant,,,K,13,&nbsp;,&nbsp;,250.3,127
+217,Jason Myers,14003,jason-myers,SEA,11,K,14,&nbsp;,&nbsp;,228.0,2747
+218,Brett Maher,12378,brett-maher,,,K,15,&nbsp;,&nbsp;,228.3,4958
+219,Chris Herndon IV,17536,chris-herndon-iv,,,TE,24,&nbsp;,&nbsp;,196.0,5009
+220,Green Bay Packers,8110,,,11,DST,19,&nbsp;,&nbsp;,231.0,
+221,Adam Humphries,14498,adam-humphries,,,WR,73,&nbsp;,&nbsp;,200.5,2822
+222,J.J. Arcega-Whiteside,18235,jj-arcega-whiteside,,,WR,74,&nbsp;,&nbsp;,201.0,5863
+223,Tennessee Titans,8300,,,11,DST,20,&nbsp;,&nbsp;,233.7,
+224,Dallas Goedert,17270,dallas-goedert,PHI,10,TE,25,&nbsp;,&nbsp;,207.0,5022
+225,Giovani Bernard,11644,giovani-bernard,,,RB,66,&nbsp;,&nbsp;,207.5,1386
+226,Austin Seibert,18689,austin-seibert,,,K,16,&nbsp;,&nbsp;,240.3,6219
+227,Parris Campbell,18463,parris-campbell,,,WR,75,&nbsp;,&nbsp;,211.5,5880
+228,Chris Boswell,13029,chris-boswell,PIT,7,K,17,&nbsp;,&nbsp;,242.3,1945
+229,Marcus Mariota,13890,marcus-mariota,WAS,10,QB,26,&nbsp;,&nbsp;,215.0,2307
+230,A.J. Brown,18218,aj-brown,NE,10,WR,76,&nbsp;,&nbsp;,218.5,5859
+231,Gus Edwards,17687,gus-edwards,,,RB,67,&nbsp;,&nbsp;,218.5,5248
+232,Randall Cobb,9902,randall-cobb,,,WR,77,&nbsp;,&nbsp;,219.0,928
+233,Cameron Brate,13470,cameron-brate,,,TE,26,&nbsp;,&nbsp;,259.3,2214
+234,Giorgio Tavecchio,11145,giorgio-tavecchio,,,K,18,&nbsp;,&nbsp;,229.5,1750
+235,Mike Davis,13943,mike-davis-rb,,,RB,68,&nbsp;,&nbsp;,231.0,2431
+236,Demaryius Thomas,9691,demaryius-thomas,,,WR,78,&nbsp;,&nbsp;,232.0,560
+237,Washington Commanders,8310,,,10,DST,21,&nbsp;,&nbsp;,256.0,
+238,Andy Isabella,18409,andy-isabella,,,WR,79,&nbsp;,&nbsp;,234.0,5915
+239,Chase Edmonds,17496,chase-edmonds,WAS,10,RB,69,&nbsp;,&nbsp;,234.5,5000
+240,Chris Moore,15654,chris-moore,,,WR,80,&nbsp;,&nbsp;,288.5,3269
+241,Tyler Eifert,11692,tyler-eifert,,,TE,27,&nbsp;,&nbsp;,241.5,1388
+242,Antonio Callaway,17286,antonio-callaway,,,WR,81,&nbsp;,&nbsp;,187.0,5310
+243,Jacoby Brissett,15642,jacoby-brissett,ARI,12,QB,27,&nbsp;,&nbsp;,243.0,3257
+244,Darrel Williams,17514,darrel-williams,,,RB,70,&nbsp;,&nbsp;,189.0,5549
+245,T.J. Yeldon,13941,tj-yeldon,,,RB,71,&nbsp;,&nbsp;,244.0,2341
+246,Ted Ginn Jr.,9588,ted-ginn-jr,,,WR,82,&nbsp;,&nbsp;,248.5,695
+247,Kelvin Harmon,18228,kelvin-harmon,,,WR,83,&nbsp;,&nbsp;,196.0,5884
+248,Willie Snead IV,12904,willie-snead,,,WR,84,&nbsp;,&nbsp;,249.0,1911
+249,Trayveon Williams,18607,trayveon-williams,,,RB,72,&nbsp;,&nbsp;,200.0,6144
+250,Andy Dalton,9907,andy-dalton,PHI,10,QB,28,&nbsp;,&nbsp;,250.0,829
+251,Mike Gesicki,17272,mike-gesicki,CIN,9,TE,28,&nbsp;,&nbsp;,250.5,4993
+252,Diontae Johnson,18615,diontae-johnson,,,WR,85,&nbsp;,&nbsp;,203.0,5937
+253,San Francisco 49ers,8270,,,4,DST,22,&nbsp;,&nbsp;,251.0,
+254,Ryquell Armstead,18521,ryquell-armstead,,,RB,73,&nbsp;,&nbsp;,251.5,6007
+255,Rashard Higgins,15586,rashard-higgins,,,WR,86,&nbsp;,&nbsp;,254.5,3328
+256,Aldrick Rosas,16072,aldrick-rosas,,,K,19,&nbsp;,&nbsp;,254.5,3827
+257,Robert Foster,17458,robert-foster,,,WR,87,&nbsp;,&nbsp;,211.0,5250
+258,Jakobi Meyers,18598,jakobi-meyers,JAC,10,WR,88,&nbsp;,&nbsp;,212.0,5947
+259,Preston Williams,18612,preston-williams,,,WR,89,&nbsp;,&nbsp;,213.0,6148
+260,Cole Beasley,11459,cole-beasley,,,WR,90,&nbsp;,&nbsp;,256.0,1144
+261,Matt LaCosse,14288,matt-lacosse,,,TE,29,&nbsp;,&nbsp;,222.0,2944
+262,Dontrell Hilliard,18037,dontrell-hilliard,,,RB,74,&nbsp;,&nbsp;,260.5,5536
+263,Trey Quinn,17266,trey-quinn,,,WR,91,&nbsp;,&nbsp;,262.0,5139
+264,Paul Richardson Jr.,12129,paul-richardson,,,WR,92,&nbsp;,&nbsp;,262.0,2279
+265,Atlanta Falcons,8010,,,9,DST,23,&nbsp;,&nbsp;,269.0,
+266,Irv Smith Jr.,18610,irv-smith-jr,,,TE,30,&nbsp;,&nbsp;,229.0,6126
+267,Dan Bailey,10970,dan-bailey,,,K,20,&nbsp;,&nbsp;,264.0,899
+268,Jalen Hurd,18318,jalen-hurd,,,WR,93,&nbsp;,&nbsp;,230.0,5911
+269,Matt Gay,18545,matt-gay,LV,,K,21,&nbsp;,&nbsp;,265.0,6083
+270,Danny Amendola,9146,danny-amendola,,,WR,94,&nbsp;,&nbsp;,265.0,491
+271,Benjamin Watson,9040,benjamin-watson,,,TE,31,&nbsp;,&nbsp;,289.0,663
+272,Joe Flacco,9300,joe-flacco,CIN,9,QB,29,&nbsp;,&nbsp;,270.5,19
+273,Riley Ridley,18264,riley-ridley,,,WR,95,&nbsp;,&nbsp;,241.0,5873
+274,Ryan Succop,9549,ryan-succop,,,K,22,&nbsp;,&nbsp;,281.5,391
+275,Arizona Cardinals,8000,,,12,DST,24,&nbsp;,&nbsp;,242.0,
+276,Las Vegas Raiders,8220,,,,DST,25,&nbsp;,&nbsp;,312.0,
+277,Carolina Panthers,8040,,,7,DST,26,&nbsp;,&nbsp;,271.5,
+278,Jake Kumerow,14083,jake-kumerow,,,WR,96,&nbsp;,&nbsp;,307.5,2821
+279,Alfred Morris,11347,alfred-morris,,,RB,75,&nbsp;,&nbsp;,246.0,1170
+280,Brian Hill,16448,brian-hill,,,RB,76,&nbsp;,&nbsp;,247.0,4187
+281,,18214,,,,1,,&nbsp;,&nbsp;,273.0,
+282,Qadree Ollison,18480,qadree-ollison,,,RB,77,&nbsp;,&nbsp;,251.0,6002
+283,Hunter Renfrow,18345,hunter-renfrow,,,WR,97,&nbsp;,&nbsp;,275.0,5955
+284,New York Jets,8210,,,4,DST,27,&nbsp;,&nbsp;,281.0,
+285,Demarcus Robinson,15665,demarcus-robinson,SF,4,WR,98,&nbsp;,&nbsp;,257.0,3286
+286,Josh Doctson,15511,josh-doctson,,,WR,99,&nbsp;,&nbsp;,279.0,3178
+287,Dexter Williams,18460,dexter-williams,,,RB,78,&nbsp;,&nbsp;,260.0,6153
+288,Damarea Crockett,18617,damarea-crockett,,,RB,79,&nbsp;,&nbsp;,260.0,6334
+289,Will Dissly,18049,will-dissly,,,TE,32,&nbsp;,&nbsp;,312.5,5010
+290,DJ Chark Jr.,17292,dj-chark,,,WR,100,&nbsp;,&nbsp;,262.0,4951
+291,Josh Reynolds,16439,josh-reynolds,,,WR,101,&nbsp;,&nbsp;,263.0,4171
+292,John Ross,16388,john-ross,,,WR,102,&nbsp;,&nbsp;,282.0,4038
+293,Gerald Everett,16459,gerald-everett,,,TE,33,&nbsp;,&nbsp;,266.0,4089
+294,Eddy Pineiro,17575,eddy-pineiro,SF,4,K,23,&nbsp;,&nbsp;,282.5,5189
+295,Brandon McManus,13274,brandon-mcmanus,,,K,24,&nbsp;,&nbsp;,296.0,1433
+296,Myles Gaskin,17251,myles-gaskin,,,RB,80,&nbsp;,&nbsp;,267.0,5980
+297,Detroit Lions,8100,,,5,DST,28,&nbsp;,&nbsp;,289.0,
+298,Cincinnati Bengals,8060,,,9,DST,29,&nbsp;,&nbsp;,271.0,
+299,David Moore,16757,david-moore,CAR,7,WR,103,&nbsp;,&nbsp;,272.0,4274
+300,Wayne Gallman Jr.,16422,wayne-gallman,,,RB,81,&nbsp;,&nbsp;,301.5,4150
+301,KeeSean Johnson,18618,keesean-johnson,,,WR,104,&nbsp;,&nbsp;,273.0,5962
+302,Jay Ajayi,13940,jay-ajayi,,,RB,82,&nbsp;,&nbsp;,274.0,2452
+303,Stephen Hauschka,9581,steven-hauschka,,,K,25,&nbsp;,&nbsp;,322.5,775
+304,Daniel Carlson,17420,daniel-carlson,LV,,K,26,&nbsp;,&nbsp;,324.0,5095
+305,Bruce Anderson III,18720,bruce-anderson,,,RB,83,&nbsp;,&nbsp;,276.0,6072
+306,Miami Dolphins,8160,,,5,DST,30,&nbsp;,&nbsp;,317.0,
+307,Phillip Dorsett II,13979,phillip-dorsett,LV,,WR,105,&nbsp;,&nbsp;,308.5,2334
+308,Theo Riddick,11649,theo-riddick,,,RB,84,&nbsp;,&nbsp;,279.0,1517
+309,Ian Thomas,17387,ian-thomas,LV,,TE,34,&nbsp;,&nbsp;,280.0,4995
+310,Travis Benjamin,11214,travis-benjamin,,,WR,106,&nbsp;,&nbsp;,281.0,1077
+311,Rex Burkhead,11655,rex-burkhead,,,RB,85,&nbsp;,&nbsp;,290.0,1387
+312,Taylor Gabriel,12888,taylor-gabriel,,,WR,107,&nbsp;,&nbsp;,282.0,1903
+313,Vernon Davis,9621,vernon-davis,,,TE,35,&nbsp;,&nbsp;,338.0,200
+314,Josh Lambo,14327,josh-lambo,,,K,27,&nbsp;,&nbsp;,327.5,2671
+315,Benny Snell Jr.,18609,benjamin-snell-jr,,,RB,86,&nbsp;,&nbsp;,284.0,6156
+316,Eli Manning,9213,eli-manning,,,QB,30,&nbsp;,&nbsp;,295.0,188
+317,Alfred Blue,12282,alfred-blue,,,RB,87,&nbsp;,&nbsp;,292.0,1944
+318,Joey Slye,19028,joey-slye,TEN,11,K,28,&nbsp;,&nbsp;,332.0,6528
+319,Daniel Jones,18232,daniel-jones,IND,6,QB,31,&nbsp;,&nbsp;,324.0,5870
+320,Doug Martin,11186,doug-martin,,,RB,88,&nbsp;,&nbsp;,289.0,1195
+321,Taywan Taylor,16426,taywan-taylor,,,WR,108,&nbsp;,&nbsp;,291.0,4125
+322,Ryan Fitzpatrick,9545,ryan-fitzpatrick,,,QB,32,&nbsp;,&nbsp;,307.5,333
+323,Josh Rosen,17235,josh-rosen,,,QB,33,&nbsp;,&nbsp;,292.0,4863
+324,New York Giants,8200,,,11,DST,31,&nbsp;,&nbsp;,339.0,
+325,Dustin Hopkins,11818,dustin-hopkins,,,K,29,&nbsp;,&nbsp;,332.0,1348
+326,Randy Bullock,11339,randy-bullock,,,K,30,&nbsp;,&nbsp;,322.5,1099
+327,Corey Clement,16446,corey-clement,,,RB,89,&nbsp;,&nbsp;,298.0,4651
+328,Alex Collins,15546,alex-collins,,,RB,90,&nbsp;,&nbsp;,300.0,3327
+329,Chris Conley,14151,chris-conley,,,WR,109,&nbsp;,&nbsp;,301.0,2381
+330,Hayden Hurst,17283,hayden-hurst,,,TE,36,&nbsp;,&nbsp;,303.0,4973
+331,Devontae Booker,15555,devontae-booker,,,RB,91,&nbsp;,&nbsp;,308.0,3209
+332,Chris Hogan,11477,chris-hogan,,,WR,110,&nbsp;,&nbsp;,310.0,1329
+333,Laquon Treadwell,15495,laquon-treadwell,IND,6,WR,111,&nbsp;,&nbsp;,313.0,3155
+334,,17515,,,,2,,&nbsp;,&nbsp;,314.0,
+335,Kendrick Bourne,17066,kendrick-bourne,ARI,12,WR,112,&nbsp;,&nbsp;,315.0,4454
+336,Ricky Seals-Jones,16730,ricky-seals-jones,,,TE,37,&nbsp;,&nbsp;,316.0,4531
+337,Case Keenum,11425,case-keenum,CHI,6,QB,34,&nbsp;,&nbsp;,317.0,1737
+338,Deon Cain,17263,deon-cain,,,WR,113,&nbsp;,&nbsp;,318.0,5101
+339,Zach Zenner,14185,zach-zenner,,,RB,92,&nbsp;,&nbsp;,319.0,2560
+340,Blake Jarwin,16638,blake-jarwin,,,TE,38,&nbsp;,&nbsp;,320.0,4571
+341,Spencer Ware,11638,spencer-ware,,,RB,93,&nbsp;,&nbsp;,321.0,1601
+342,Breshad Perriman,13975,breshad-perriman,,,WR,114,&nbsp;,&nbsp;,323.0,2331
+343,Cordarrelle Patterson,11613,cordarrelle-patterson,,,RB,94,&nbsp;,&nbsp;,325.0,1535
+344,Bilal Powell,9963,bilal-powell,,,RB,95,&nbsp;,&nbsp;,327.0,818
+345,Michael Crabtree,9460,michael-crabtree,,,WR,115,&nbsp;,&nbsp;,329.0,455
+346,Cameron Artis-Payne,13942,cameron-artis-payne,,,RB,96,&nbsp;,&nbsp;,330.0,2477
+347,C.J. Uzomah,14084,cj-uzomah,,,TE,39,&nbsp;,&nbsp;,332.0,2460
+348,Chester Rogers,16038,chester-rogers,,,WR,116,&nbsp;,&nbsp;,333.0,3582
+349,Jesse James,13959,jesse-james,,,TE,40,&nbsp;,&nbsp;,334.0,2463
+350,Jaron Brown,11898,jaron-brown,,,WR,117,&nbsp;,&nbsp;,335.0,1684
+351,Wendell Smallwood,15672,wendell-smallwood,,,RB,97,&nbsp;,&nbsp;,336.0,3309
+352,Kyle Juszczyk,11798,kyle-juszczyk,SF,4,RB,98,&nbsp;,&nbsp;,337.0,
+353,Jordan Matthews,12124,jordan-matthews,,,TE,41,&nbsp;,&nbsp;,338.0,1800
+354,Seth Roberts,13840,seth-roberts,,,WR,118,&nbsp;,&nbsp;,340.0,2039
+355,Geoff Swaim,14164,geoff-swaim,,,TE,42,&nbsp;,&nbsp;,341.0,2545
+356,Jarius Wright,11211,jarius-wright,,,WR,119,&nbsp;,&nbsp;,342.0,1215
+357,Tajae Sharpe,15587,tajae-sharpe,,,WR,120,&nbsp;,&nbsp;,343.0,3297
+358,Drew Lock,18225,drew-lock,SEA,11,QB,35,&nbsp;,&nbsp;,344.0,5854
+359,Isaiah McKenzie,16604,isaiah-mckenzie,,,WR,121,&nbsp;,&nbsp;,345.0,4197
+360,Tim Patrick,16556,tim-patrick,NYJ,4,WR,122,&nbsp;,&nbsp;,347.0,4351
+361,Keelan Cole Sr.,16864,keelan-cole,,,WR,123,&nbsp;,&nbsp;,349.0,4622
+362,Jordan Wilkins,17497,jordan-wilkins,,,RB,99,&nbsp;,&nbsp;,350.0,5100
+363,Jordan Thomas,17399,jordan-thomas,,,TE,43,&nbsp;,&nbsp;,351.0,5117
+364,Kapri Bibbs,12343,kapri-bibbs,,,RB,100,&nbsp;,&nbsp;,352.0,2001
+365,James Develin,11941,james-develin,,,RB,101,&nbsp;,&nbsp;,353.0,
+366,Blake Bortles,12090,blake-bortles,,,QB,36,&nbsp;,&nbsp;,354.0,1979
+367,Zach Pascal,16972,zach-pascal,,,WR,124,&nbsp;,&nbsp;,355.0,4319
+368,Nick Vannett,15645,nick-vannett,LAR,9,TE,44,&nbsp;,&nbsp;,356.0,3258
+369,Aldrick Robinson,10006,aldrick-robinson,,,WR,125,&nbsp;,&nbsp;,357.0,919
+370,Ryan Tannehill,11174,ryan-tannehill,,,QB,37,&nbsp;,&nbsp;,359.0,1049
+371,C.J. Beathard,16419,cj-beathard,,,QB,38,&nbsp;,&nbsp;,361.0,4127
+372,Chris Ivory,9749,christopher-ivory,,,RB,102,&nbsp;,&nbsp;,362.0,717
+373,Terry McLaurin,18466,terry-mclaurin,WAS,10,WR,126,&nbsp;,&nbsp;,363.0,5927
+374,Jason Sanders,17533,jason-sanders,NYJ,4,K,31,&nbsp;,&nbsp;,365.0,5119
+375,Manasseh Garner,14273,manasseh-garner,,,TE,45,&nbsp;,&nbsp;,366.0,2604
+376,Demetrius Harris,11881,demetrius-harris,,,TE,46,&nbsp;,&nbsp;,368.0,1619
+377,Felton Davis III,18418,felton-davis,,,WR,127,&nbsp;,&nbsp;,374.0,5941
+378,Ty Johnson,18406,ty-johnson,BUF,6,RB,103,&nbsp;,&nbsp;,375.0,6039
+379,Greg Joseph,17647,greg-joseph,,,K,32,&nbsp;,&nbsp;,376.0,5272
+380,James O'Shaughnessy,14146,james-oshaughnessy,,,TE,47,&nbsp;,&nbsp;,377.0,2476
+381,Dawson Knox,18631,dawson-knox,BUF,6,TE,48,&nbsp;,&nbsp;,379.0,5906
+382,Darren Sproles,9155,darren-sproles,,,RB,104,&nbsp;,&nbsp;,380.0,246
+383,Jeff Heuerman,13961,jeff-heuerman,,,TE,49,&nbsp;,&nbsp;,381.0,2397
+384,Garrett Gilbert,12302,garrett-gilbert,,,QB,39,&nbsp;,&nbsp;,383.0,2229
+385,Trent Taylor,16505,trent-taylor,,,WR,128,&nbsp;,&nbsp;,384.0,4218
+386,Mason Rudolph,17234,mason-rudolph,PIT,7,QB,40,&nbsp;,&nbsp;,386.0,4972
+387,C.J. Prosise,15614,cj-prosise,,,RB,105,&nbsp;,&nbsp;,387.0,3204
+388,De'Angelo Henderson Sr.,16607,deangelo-henderson,,,RB,106,&nbsp;,&nbsp;,388.0,4239
+389,Quadree Henderson,17441,quadree-henderson,,,WR,129,&nbsp;,&nbsp;,389.0,5279
+390,Gary Jennings Jr.,18565,gary-jennings,,,WR,130,&nbsp;,&nbsp;,390.0,6045
+391,Tampa Bay Buccaneers,8290,,,7,DST,32,&nbsp;,&nbsp;,391.0,
+392,Jakeem Grant Sr.,15680,jakeem-grant,,,WR,131,&nbsp;,&nbsp;,393.0,3342
+393,Mark Walton,17305,mark-walton,,,RB,107,&nbsp;,&nbsp;,395.0,4997
+394,Josh Oliver,18487,josh-oliver,MIN,12,TE,50,&nbsp;,&nbsp;,396.0,5973
+395,Dontrelle Inman,13105,dontrelle-inman,,,WR,132,&nbsp;,&nbsp;,397.0,2291
+396,Ryan Switzer,16631,ryan-switzer,,,WR,133,&nbsp;,&nbsp;,398.0,4162
+397,Andre Ellington,11662,andre-ellington,,,RB,108,&nbsp;,&nbsp;,399.0,1575
+398,Tyler Kroft,13960,tyler-kroft,,,TE,51,&nbsp;,&nbsp;,401.0,2390
+399,Jonnu Smith,16460,jonnu-smith,,,TE,52,&nbsp;,&nbsp;,402.0,4144
+400,Foster Moreau,18397,foster-moreau,HOU,10,TE,53,&nbsp;,&nbsp;,403.0,5985
+401,Bryce Love,18266,bryce-love-rb,,,RB,109,&nbsp;,&nbsp;,408.0,5889
+402,D'Onta Foreman,16407,donta-foreman,,,RB,110,&nbsp;,&nbsp;,409.0,4111
