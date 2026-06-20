@@ -8,8 +8,22 @@ import H2hPage from './h2h';
 import DynastyRosterView from '../teams/DynastyRosterView';
 import PlayerDBPage from '../playerdb/PlayerDBPage';
 import RankingsViewer from '../rankingsViewer/RankingsViewer';
+import KtcRankCompare from '../ktcRankCompare/KtcRankCompare';
+import RedraftValueIndex from '../redraftValueIndex/RedraftValueIndex';
 
 const FEATURES = [
+  {
+    id: 'KTC_RANK_COMPARE',
+    label: 'KTC Rank Compare',
+    description: 'Compare current KTC ranks to historical slot values and rank gaps.',
+    component: <KtcRankCompare />,
+  },
+  {
+    id: 'REDRAFT_VALUE_INDEX',
+    label: 'Redraft Value Index',
+    description: 'KTC dynasty values adjusted for best-ball redraft ADP — competitor adjusted value and index multiplier.',
+    component: <RedraftValueIndex />,
+  },
   {
     id: 'RANKINGS_VIEWER',
     label: 'Rankings Viewer',

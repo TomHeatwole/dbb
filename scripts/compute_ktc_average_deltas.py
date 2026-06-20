@@ -9,10 +9,9 @@ For each day:
   - Rank all players overall by ktc_value → Overall1, Overall2, …
 
 Outputs:
-  - site/public/data/ktc_average_deltas.csv
-      Adjacent-rank value gaps averaged over time (RB1 vs RB2, etc.)
   - site/public/data/ktc_average_rank_values.csv
-      Average ktc_value at each rank slot over time (QB1, RB2, etc.)
+      Average ktc_value at each rank slot over full history (QB1, RB2, Overall3, etc.)
+      Consumed by the KTC Rank Compare sandbox (positional + Overall tabs).
 
 Usage (from project root):
   python3 scripts/compute_ktc_average_deltas.py
@@ -31,7 +30,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 HISTORICAL_CSV = PROJECT_ROOT / "site/public/data/sf_non_tep_ktc_values_historical.csv"
 NAME_IDS_CSV = PROJECT_ROOT / "site/public/data/ktc_historical_name_ids.csv"
 PLAYERS_FILE = PROJECT_ROOT / "site/public/data/players.txt"
-DELTAS_CSV = PROJECT_ROOT / "site/public/data/ktc_average_deltas.csv"
 RANK_VALUES_CSV = PROJECT_ROOT / "site/public/data/ktc_average_rank_values.csv"
 
 POSITIONS = ("QB", "RB", "WR", "TE")
@@ -68,12 +66,6 @@ def resolve_position(name: str, sleeper_id: str, by_name: dict[str, str], player
     return None
 
 
-def jump_label(metric: str, position: str, rank_higher: int, rank_lower: int) -> str:
-    if metric == "overall":
-        return f"Overall{rank_higher}_vs_Overall{rank_lower}"
-    return f"{position}{rank_higher}_vs_{position}{rank_lower}"
-
-
 def rank_label(metric: str, position: str, rank: int) -> str:
     if metric == "overall":
         return f"Overall{rank}"
@@ -98,13 +90,12 @@ def load_historical_by_date(by_name: dict[str, str], players: dict) -> dict[str,
     return by_date
 
 
-def compute_stats(by_date: dict[str, list[tuple[str, int]]]) -> tuple[int, dict, dict]:
-    delta_stats: dict[tuple, list[float | int]] = defaultdict(lambda: [0.0, 0])
+def compute_rank_value_stats(by_date: dict[str, list[tuple[str, int]]]) -> tuple[int, dict]:
     value_stats: dict[tuple, list[float | int]] = defaultdict(lambda: [0.0, 0])
     day_count = 0
 
-    for date in sorted(by_date.keys()):
-        entries = by_date[date]
+    for date_str in sorted(by_date.keys()):
+        entries = by_date[date_str]
         if not entries:
             continue
         day_count += 1
@@ -120,10 +111,6 @@ def compute_stats(by_date: dict[str, list[tuple[str, int]]]) -> tuple[int, dict,
                 value_key = ("positional", pos, rank)
                 value_stats[value_key][0] += val
                 value_stats[value_key][1] += 1
-                if i + 1 < len(values):
-                    delta_key = ("positional", pos, rank, rank + 1)
-                    delta_stats[delta_key][0] += val - values[i + 1]
-                    delta_stats[delta_key][1] += 1
 
         overall = sorted((v for _, v in entries), reverse=True)
         for i, val in enumerate(overall):
@@ -131,44 +118,11 @@ def compute_stats(by_date: dict[str, list[tuple[str, int]]]) -> tuple[int, dict,
             value_key = ("overall", "OVERALL", rank)
             value_stats[value_key][0] += val
             value_stats[value_key][1] += 1
-            if i + 1 < len(overall):
-                delta_key = ("overall", "OVERALL", rank, rank + 1)
-                delta_stats[delta_key][0] += val - overall[i + 1]
-                delta_stats[delta_key][1] += 1
 
-    return day_count, delta_stats, value_stats
+    return day_count, value_stats
 
 
-def write_deltas_csv(delta_stats: dict) -> int:
-    rows: list[dict] = []
-    for key in sorted(delta_stats.keys(), key=lambda k: (k[0], k[1], k[2])):
-        metric, position, rank_higher, rank_lower = key
-        total, count = delta_stats[key]
-        if count == 0:
-            continue
-        rows.append({
-            "metric": metric,
-            "position": position,
-            "rank_higher": rank_higher,
-            "rank_lower": rank_lower,
-            "label": jump_label(metric, position, rank_higher, rank_lower),
-            "average_delta": round(total / count, 2),
-            "day_count": count,
-        })
-
-    fieldnames = [
-        "metric", "position", "rank_higher", "rank_lower",
-        "label", "average_delta", "day_count",
-    ]
-    DELTAS_CSV.parent.mkdir(parents=True, exist_ok=True)
-    with DELTAS_CSV.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-    return len(rows)
-
-
-def write_rank_values_csv(value_stats: dict) -> int:
+def write_rank_values_csv(value_stats: dict, out_path: Path) -> int:
     rows: list[dict] = []
     for key in sorted(value_stats.keys(), key=lambda k: (k[0], k[1], k[2])):
         metric, position, rank = key
@@ -185,8 +139,8 @@ def write_rank_values_csv(value_stats: dict) -> int:
         })
 
     fieldnames = ["metric", "position", "rank", "label", "average_value", "day_count"]
-    RANK_VALUES_CSV.parent.mkdir(parents=True, exist_ok=True)
-    with RANK_VALUES_CSV.open("w", newline="", encoding="utf-8") as f:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
@@ -200,13 +154,11 @@ def main() -> None:
     by_name = load_position_lookup()
     players = load_players()
     by_date = load_historical_by_date(by_name, players)
-    day_count, delta_stats, value_stats = compute_stats(by_date)
 
-    delta_rows = write_deltas_csv(delta_stats)
-    value_rows = write_rank_values_csv(value_stats)
+    day_count, value_stats = compute_rank_value_stats(by_date)
+    value_rows = write_rank_values_csv(value_stats, RANK_VALUES_CSV)
 
     print(f"Processed {day_count:,} days")
-    print(f"Wrote {delta_rows:,} adjacent-rank deltas → {DELTAS_CSV}")
     print(f"Wrote {value_rows:,} rank-slot averages → {RANK_VALUES_CSV}")
 
 

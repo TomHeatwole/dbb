@@ -10038,6 +10038,60 @@ body.modal-open {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.rv-row--selected,
+.rv-row--selected:hover {
+  background: rgba(255, 208, 128, 0.1);
+}
+
+.rv-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.rv-redraft-layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 340px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.rv-redraft-layout .rv-table-wrap {
+  max-height: calc(100vh - 20rem);
+}
+
+.rv-redraft-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+.rv-redraft-formula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rv-redraft-formula-op,
+.rv-redraft-formula-eq {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #888;
+}
+
+@media (max-width: 960px) {
+  .rv-redraft-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-redraft-panel {
+    position: static;
+  }
+}
+
 .rv-td {
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -10054,6 +10108,59 @@ body.modal-open {
   color: #ffd080;
 }
 
+.rv-th-ktc-rank,
+.rv-td-ktc-rank,
+.rv-th-adj-adp,
+.rv-td-adj-adp {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: #c8d4ff;
+}
+
+.rv-th-adj-adp,
+.rv-td-adj-adp {
+  color: #b8a8ff;
+}
+
+.rv-th-ovr-adp,
+.rv-td-ovr-adp {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #9ecfff;
+  white-space: nowrap;
+}
+
+.rv-th-dynasty,
+.rv-td-dynasty,
+.rv-th-rebuilder,
+.rv-td-rebuilder,
+.rv-th-rebuild-index,
+.rv-th-index,
+.rv-td-index {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-td-dynasty {
+  color: #aaa;
+}
+
+.rv-td-index {
+  font-weight: 600;
+}
+
+.rv-td-index--up {
+  color: #7dcea0;
+}
+
+.rv-td-index--down {
+  color: #e88888;
+}
+
+.rv-td-index--flat {
+  color: #bbb;
+}
+
 .rv-empty {
   text-align: center;
   padding: 2rem;
@@ -10067,6 +10174,261 @@ body.modal-open {
 
   .rv-table-wrap {
     max-height: calc(100vh - 22rem);
+  }
+}
+
+/* KTC Rank Compare (sandbox) */
+.ktc-rc-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.ktc-rc-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.ktc-rc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ktc-rc-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.ktc-rc-select {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #eee;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.65rem;
+  min-width: 6rem;
+}
+
+.ktc-rc-meta,
+.ktc-rc-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.ktc-rc-layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 340px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.ktc-rc-table-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 16rem);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.ktc-rc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.ktc-rc-th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  background: #1a1a1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  font-weight: 600;
+}
+
+.ktc-rc-th-rank,
+.ktc-rc-td-rank {
+  width: 4rem;
+}
+
+.ktc-rc-th-value,
+.ktc-rc-td-value {
+  text-align: right;
+  color: #ffd080;
+}
+
+.ktc-rc-row {
+  cursor: pointer;
+}
+
+.ktc-rc-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ktc-rc-row--selected {
+  background: rgba(174, 78, 2, 0.15);
+}
+
+.ktc-rc-row--selected:hover {
+  background: rgba(174, 78, 2, 0.22);
+}
+
+.ktc-rc-td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ktc-rc-td-name {
+  font-weight: 500;
+}
+
+.ktc-rc-td-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.ktc-rc-sel-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-right: 0.35rem;
+  border-radius: 999px;
+  background: #ae4e02;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.ktc-rc-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ktc-rc-panel-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: #eee;
+}
+
+.ktc-rc-panel-empty,
+.ktc-rc-panel-tip {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.ktc-rc-panel-tip {
+  margin-top: 1rem;
+}
+
+.ktc-rc-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ktc-rc-player-head,
+.ktc-rc-compare-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.ktc-rc-compare-head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.65rem;
+}
+
+.ktc-rc-vs {
+  align-self: center;
+  color: #666;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ktc-rc-player-name {
+  font-weight: 600;
+  color: #eee;
+  margin-right: 0.35rem;
+}
+
+.ktc-rc-rank-tag {
+  font-size: 0.8rem;
+  color: #ffd080;
+  margin-right: 0.5rem;
+}
+
+.ktc-rc-val {
+  display: block;
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-top: 0.15rem;
+}
+
+.ktc-rc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ktc-rc-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.ktc-rc-stat-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffd080;
+  font-variant-numeric: tabular-nums;
+}
+
+.ktc-rc-stat-sub {
+  font-size: 0.78rem;
+  color: #777;
+}
+
+.ktc-rc-error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(220, 60, 60, 0.12);
+  border: 1px solid rgba(220, 60, 60, 0.25);
+  color: #ffaaaa;
+}
+
+.ktc-rc-loading {
+  min-height: 12rem;
+}
+
+@media (max-width: 900px) {
+  .ktc-rc-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ktc-rc-table-wrap {
+    max-height: 50vh;
   }
 }
 

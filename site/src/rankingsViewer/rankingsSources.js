@@ -148,10 +148,18 @@ export function findSourceOption(sourceId, groups = buildSourceOptions()) {
 
 export const DEFAULT_SOURCE_ID = 'adp:overall';
 
+export const REDRAFT_VALUE_INDEX_SOURCE = {
+  id: 'ktc_redraft_adjusted',
+  label: 'KTC — Competitor Adjusted Value',
+  kind: 'ktc_redraft_adjusted',
+};
+
+export const REDRAFT_VALUE_INDEX_SOURCE_ID = REDRAFT_VALUE_INDEX_SOURCE.id;
+
 /** Sources with a meaningful numeric value column (KTC, FantasyCalc, ADP avg). */
 export function sourceHasValue(sourceOption) {
   if (!sourceOption) return false;
-  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'fantasycalc', 'adp'].includes(sourceOption.kind);
+  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'ktc_redraft_adjusted', 'fantasycalc', 'adp'].includes(sourceOption.kind);
 }
 
 /** Default table sort when a source is selected or data reloads. */
@@ -161,6 +169,7 @@ export function defaultSortForSource(sourceOption) {
     sourceOption.kind === 'ktc_current'
     || sourceOption.kind === 'ktc_historical'
     || sourceOption.kind === 'ktc_rookie'
+    || sourceOption.kind === 'ktc_redraft_adjusted'
   ) {
     return { key: 'value', dir: 'desc' };
   }
@@ -181,8 +190,11 @@ export const SORT_KEYS = {
 };
 
 export function defaultDirForSortKey(key, sourceOption = null) {
-  if (key === 'value') {
+  if (key === 'value' || key === 'ktcValue' || key === 'redraftValueIndex' || key === 'rebuildValueIndex' || key === 'rebuilderAdjustedValue') {
     return sourceOption?.kind === 'adp' ? 'asc' : 'desc';
+  }
+  if (key === 'adpAvg' || key === 'adpEffRank' || key === 'ktcPosRank' || key === 'adpPosRank') {
+    return 'asc';
   }
   return 'asc';
 }
@@ -194,6 +206,11 @@ export function getYearLabel(sourceOption) {
 
 export function getValueColumnLabel(sourceOption) {
   if (sourceOption?.kind === 'ktc_rookie') return 'Rookie Value';
+  if (sourceOption?.kind === 'ktc_redraft_adjusted') return 'Competitor Adjusted Value';
   if (sourceOption?.kind === 'adp') return 'Avg ADP';
   return SORT_KEYS.value;
+}
+
+export function sourceIsRedraftAdjusted(sourceOption) {
+  return sourceOption?.kind === 'ktc_redraft_adjusted';
 }

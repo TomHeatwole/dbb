@@ -1,16 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import LoadingState from '../LoadingState';
 import PositionBadge from '../PositionBadge';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
+import { getPlayerInfo, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { fetchTeamData } from '../lookups/TeamLookup';
+import { CURRENT_YEAR } from '../utils/DateHelper';
+import RedraftAdjustmentPanel from '../redraftValueIndex/RedraftAdjustmentPanel';
 import {
   buildSourceOptions,
   defaultDirForSortKey,
   defaultSortForSource,
   findSourceOption,
   DEFAULT_SOURCE_ID,
+  REDRAFT_VALUE_INDEX_SOURCE,
+  REDRAFT_VALUE_INDEX_SOURCE_ID,
   sourceHasValue,
   SORT_KEYS,
   getYearLabel,
   getValueColumnLabel,
+  sourceIsRedraftAdjusted,
 } from './rankingsSources';
 import {
   formatKtcValue,
@@ -86,8 +95,66 @@ function formatValue(row) {
   return String(row.value);
 }
 
-function RankingsViewer() {
-  const [sourceId, setSourceId] = useState(DEFAULT_SOURCE_ID);
+function formatKtcNumber(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return formatKtcValue(value);
+}
+
+function formatPosRankSlot(position, rank) {
+  if (!position || rank == null) return '—';
+  return `${position}${rank}`;
+}
+
+function formatPosAdpRank(position, rank) {
+  if (!position || rank == null) return '—';
+  return `${position}${rank}`;
+}
+
+function formatAdjustedAdpRank(row) {
+  const { position, adpEffRank, adpPosRank } = row;
+  if (!position) return '—';
+  if (adpEffRank != null) return `${position}${adpEffRank.toFixed(2)}`;
+  if (adpPosRank != null) return `${position}${adpPosRank}`;
+  return '—';
+}
+
+function formatRedraftIndex(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `${value.toFixed(2)}×`;
+}
+
+function indexClassName(value) {
+  if (value == null || !Number.isFinite(value)) return '';
+  if (value > 1.005) return 'rv-td-index rv-td-index--up';
+  if (value < 0.995) return 'rv-td-index rv-td-index--down';
+  return 'rv-td-index rv-td-index--flat';
+}
+
+function resolveSleeperId(row, playersData) {
+  if (row.sleeperId) return row.sleeperId;
+  if (!playersData || !row.name) return null;
+
+  const nameLower = row.name.toLowerCase();
+  const exact = Object.keys(playersData).find((id) => {
+    const p = playersData[id];
+    return (p.full_name || '').toLowerCase() === nameLower;
+  });
+  if (exact) return exact;
+
+  if (row.position) {
+    return Object.keys(playersData).find((id) => {
+      const p = playersData[id];
+      if ((p.full_name || '').toLowerCase() !== nameLower) return false;
+      const pos = p.position || (p.fantasy_positions && p.fantasy_positions[0]) || '';
+      return pos === row.position;
+    }) || null;
+  }
+
+  return null;
+}
+
+function RankingsViewer({ fixedSourceId = null }) {
+  const [sourceId, setSourceId] = useState(fixedSourceId || DEFAULT_SOURCE_ID);
   const [year, setYear] = useState('2026');
   const [date, setDate] = useState('');
   const [availableDates, setAvailableDates] = useState([]);
@@ -98,11 +165,20 @@ function RankingsViewer() {
   const [error, setError] = useState(null);
   const [sortKey, setSortKey] = useState('rank');
   const [sortDir, setSortDir] = useState('asc');
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedRedraftRow, setSelectedRedraftRow] = useState(null);
+  const [rankLookup, setRankLookup] = useState(null);
+  const [playersData, setPlayersData] = useState(null);
+  const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [rosters, setRosters] = useState(null);
+  const [users, setUsers] = useState(null);
 
-  const sourceOption = useMemo(
-    () => findSourceOption(sourceId, SOURCE_GROUPS),
-    [sourceId],
-  );
+  const sourceOption = useMemo(() => {
+    if (fixedSourceId === REDRAFT_VALUE_INDEX_SOURCE_ID) {
+      return REDRAFT_VALUE_INDEX_SOURCE;
+    }
+    return findSourceOption(fixedSourceId || sourceId, SOURCE_GROUPS);
+  }, [fixedSourceId, sourceId]);
 
   const yearOptions = useMemo(
     () => (sourceOption ? getYearsForSource(sourceOption) : []),
@@ -110,10 +186,17 @@ function RankingsViewer() {
   );
 
   useEffect(() => {
-    const defaults = defaultSortForSource(sourceOption);
+    if (!fixedSourceId && !sourceOption) return;
+    if (!fixedSourceId) {
+      const defaults = defaultSortForSource(sourceOption);
+      setSortKey(defaults.key);
+      setSortDir(defaults.dir);
+      return;
+    }
+    const defaults = defaultSortForSource(REDRAFT_VALUE_INDEX_SOURCE);
     setSortKey(defaults.key);
     setSortDir(defaults.dir);
-  }, [sourceId, sourceOption]);
+  }, [sourceId, sourceOption, fixedSourceId]);
 
   useEffect(() => {
     if (!sourceOption || !sourceUsesYear(sourceOption)) return;
@@ -160,6 +243,12 @@ function RankingsViewer() {
       const result = await loadRankings(sourceOption, { year, date });
       setRows(result.rows);
       setMeta(result.meta);
+      if (sourceIsRedraftAdjusted(sourceOption)) {
+        setRankLookup(result.meta?.rankLookup ?? null);
+      } else {
+        setRankLookup(null);
+        setSelectedRedraftRow(null);
+      }
     } catch (err) {
       setRows([]);
       setMeta(null);
@@ -173,6 +262,83 @@ function RankingsViewer() {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch('/data/players.txt').then((res) => (res.ok ? res.json() : null)),
+      fetchPlayerIdMap(),
+      fetchTeamData(CURRENT_YEAR),
+    ])
+      .then(([players, idMap, teamData]) => {
+        if (cancelled) return;
+        setPlayersData(players);
+        setPlayerIdMap(idMap);
+        setRosters(teamData?.rosters ?? null);
+        setUsers(teamData?.users ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPlayersData(null);
+          setPlayerIdMap(null);
+          setRosters(null);
+          setUsers(null);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        if (selectedRedraftRow) setSelectedRedraftRow(null);
+        else setSelectedPlayer(null);
+      }
+    }
+    if (selectedPlayer || selectedRedraftRow) {
+      document.addEventListener('keydown', onKeyDown);
+    }
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedPlayer, selectedRedraftRow]);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [selectedPlayer]);
+
+  const handlePlayerClick = useCallback((row) => {
+    if (sourceIsRedraftAdjusted(sourceOption)) {
+      setSelectedRedraftRow((prev) => (
+        prev?.name === row.name && prev?.position === row.position ? null : row
+      ));
+      return;
+    }
+
+    if (!playersData) return;
+
+    const sleeperId = resolveSleeperId(row, playersData);
+    if (sleeperId) {
+      const info = getPlayerInfo(sleeperId, playersData, playerIdMap);
+      if (info) {
+        setSelectedPlayer(info);
+        return;
+      }
+    }
+
+    setSelectedPlayer({
+      player_id: sleeperId || undefined,
+      full_name: row.name,
+      name: row.name,
+      position: row.position,
+      team: row.team,
+    });
+  }, [playersData, playerIdMap, sourceOption]);
+
+  const handleCloseModal = useCallback(() => setSelectedPlayer(null), []);
+
   const filteredRows = useMemo(() => {
     if (positionFilter === 'ALL') return rows;
     return rows.filter((row) => row.position === positionFilter);
@@ -184,17 +350,35 @@ function RankingsViewer() {
   );
 
   const hasValue = sourceHasValue(sourceOption);
+  const isRedraftAdjusted = sourceIsRedraftAdjusted(sourceOption);
+  const colCount = isRedraftAdjusted ? 14 : 6;
 
   const handleSort = useCallback((key) => {
-    setSortKey((prevKey) => {
-      if (prevKey === key) {
-        setSortDir((prevDir) => (prevDir === 'asc' ? 'desc' : 'asc'));
-        return prevKey;
-      }
-      setSortDir(defaultDirForSortKey(key, sourceOption));
-      return key;
-    });
-  }, [sourceOption]);
+    if (sortKey === key) {
+      setSortDir((prevDir) => (prevDir === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortKey(key);
+    setSortDir(defaultDirForSortKey(key, sourceOption));
+  }, [sortKey, sourceOption]);
+
+  const playerModal = !isRedraftAdjusted && selectedPlayer ? (
+    <div className="player-modal-overlay" onClick={handleCloseModal}>
+      <div
+        className="player-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <PlayerWeeklyScores
+          player={selectedPlayer}
+          onClose={handleCloseModal}
+          rosters={rosters}
+          users={users}
+        />
+      </div>
+    </div>
+  ) : null;
 
   const subtitle = useMemo(() => {
     if (!meta) return '';
@@ -206,6 +390,10 @@ function RankingsViewer() {
       parts.push('historical May 20 unavailable for this class');
     }
     if (meta.asOf) parts.push(`as of ${meta.asOf}`);
+    if (meta.adpSource) parts.push(`via ${meta.adpSource.replace(/_/g, ' ')}`);
+    if (meta.premiumRetention != null) {
+      parts.push(`λ=${meta.premiumRetention}`);
+    }
     if (meta.stitched) parts.push('stitched TE+');
     if (meta.teFallbackCount > 0) {
       parts.push(`${meta.teFallbackCount} TEs w/ non-TEP fallback`);
@@ -217,24 +405,26 @@ function RankingsViewer() {
   return (
     <div className="rv-root">
       <div className="rv-controls">
-        <label className="rv-field">
-          <span className="rv-label">Source</span>
-          <select
-            className="rv-select"
-            value={sourceId}
-            onChange={(e) => setSourceId(e.target.value)}
-          >
-            {SOURCE_GROUPS.map((group) => (
-              <optgroup key={group.label} label={group.label}>
-                {group.options.map((opt) => (
-                  <option key={opt.id} value={opt.id}>{opt.label}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
+        {!fixedSourceId && (
+          <label className="rv-field">
+            <span className="rv-label">Source</span>
+            <select
+              className="rv-select"
+              value={sourceId}
+              onChange={(e) => setSourceId(e.target.value)}
+            >
+              {SOURCE_GROUPS.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((opt) => (
+                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+        )}
 
-        {sourceUsesYear(sourceOption) && (
+        {!fixedSourceId && sourceUsesYear(sourceOption) && (
           <label className="rv-field">
             <span className="rv-label">{getYearLabel(sourceOption)}</span>
             <select
@@ -249,7 +439,7 @@ function RankingsViewer() {
           </label>
         )}
 
-        {sourceUsesDate(sourceOption) && (
+        {!fixedSourceId && sourceUsesDate(sourceOption) && (
           <label className="rv-field">
             <span className="rv-label">Date</span>
             <input
@@ -301,8 +491,15 @@ function RankingsViewer() {
           className="rv-loading"
         />
       ) : (
-        <div className="rv-table-wrap">
-          <table className="rv-table">
+        <>
+          {isRedraftAdjusted && (
+            <p className="rv-hint">
+              Click a player to see how peer-adjusted Pos ADP maps to a historical slot value.
+            </p>
+          )}
+          <div className={isRedraftAdjusted && selectedRedraftRow ? 'rv-redraft-layout' : undefined}>
+            <div className="rv-table-wrap">
+              <table className="rv-table">
             <thead>
               <tr>
                 <SortableHeader
@@ -322,14 +519,52 @@ function RankingsViewer() {
                 />
                 <th className="rv-th rv-th-pos">Pos</th>
                 <th className="rv-th rv-th-team">Team</th>
-                <SortableHeader
-                  label={SORT_KEYS.posRank}
-                  sortKey="posRank"
-                  activeKey={sortKey}
-                  activeDir={sortDir}
-                  onSort={handleSort}
-                  className="rv-th-pos-rank"
-                />
+                {!isRedraftAdjusted && (
+                  <SortableHeader
+                    label={SORT_KEYS.posRank}
+                    sortKey="posRank"
+                    activeKey={sortKey}
+                    activeDir={sortDir}
+                    onSort={handleSort}
+                    className="rv-th-pos-rank"
+                  />
+                )}
+                {isRedraftAdjusted && (
+                  <>
+                    <SortableHeader
+                      label="KTC Rank"
+                      sortKey="ktcPosRank"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-ktc-rank"
+                    />
+                    <SortableHeader
+                      label="Pos ADP"
+                      sortKey="adpPosRank"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-pos-adp"
+                    />
+                    <SortableHeader
+                      label="Adjusted ADP"
+                      sortKey="adpEffRank"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-adj-adp"
+                    />
+                    <SortableHeader
+                      label="Dynasty"
+                      sortKey="ktcValue"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-dynasty"
+                    />
+                  </>
+                )}
                 {hasValue ? (
                   <SortableHeader
                     label={getValueColumnLabel(sourceOption)}
@@ -342,33 +577,114 @@ function RankingsViewer() {
                 ) : (
                   <th className="rv-th rv-th-value">{SORT_KEYS.value}</th>
                 )}
+                {isRedraftAdjusted && (
+                  <>
+                    <SortableHeader
+                      label="Redraft Value Index"
+                      sortKey="redraftValueIndex"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-index"
+                    />
+                    <SortableHeader
+                      label="Rebuilder Adjusted Value"
+                      sortKey="rebuilderAdjustedValue"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-rebuilder"
+                    />
+                    <SortableHeader
+                      label="Rebuild Value Index"
+                      sortKey="rebuildValueIndex"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-rebuild-index"
+                    />
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
               {sortedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="rv-empty">No players match the current filters.</td>
+                  <td colSpan={colCount} className="rv-empty">No players match the current filters.</td>
                 </tr>
               ) : (
-                sortedRows.map((row, idx) => (
-                  <tr key={`${row.rank}-${row.name}-${idx}`} className="rv-row">
+                sortedRows.map((row, idx) => {
+                  const isSelected = isRedraftAdjusted
+                    && selectedRedraftRow?.name === row.name
+                    && selectedRedraftRow?.position === row.position;
+                  return (
+                  <tr
+                    key={`${row.rank}-${row.name}-${idx}`}
+                    className={`rv-row player-clickable${isSelected ? ' rv-row--selected' : ''}`}
+                    onClick={() => handlePlayerClick(row)}
+                    role={isRedraftAdjusted ? 'button' : undefined}
+                    tabIndex={isRedraftAdjusted ? 0 : undefined}
+                    onKeyDown={isRedraftAdjusted ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handlePlayerClick(row);
+                      }
+                    } : undefined}
+                  >
                     <td className="rv-td rv-td-rank">{idx + 1}</td>
                     <td className="rv-td rv-td-name">{row.name}</td>
                     <td className="rv-td rv-td-pos">
                       {row.position ? <PositionBadge position={row.position} /> : '—'}
                     </td>
                     <td className="rv-td rv-td-team">{row.team || '—'}</td>
-                    <td className="rv-td rv-td-pos-rank">
-                      {row.posRank != null ? `${row.position || ''}${row.posRank}` : '—'}
-                    </td>
+                    {!isRedraftAdjusted && (
+                      <td className="rv-td rv-td-pos-rank">
+                        {row.posRank != null ? `${row.position || ''}${row.posRank}` : '—'}
+                      </td>
+                    )}
+                    {isRedraftAdjusted && (
+                      <>
+                        <td className="rv-td rv-td-ktc-rank">
+                          {formatPosRankSlot(row.position, row.ktcPosRank)}
+                        </td>
+                        <td className="rv-td rv-td-pos-adp">
+                          {formatPosAdpRank(row.position, row.adpPosRank)}
+                        </td>
+                        <td className="rv-td rv-td-adj-adp">{formatAdjustedAdpRank(row)}</td>
+                        <td className="rv-td rv-td-dynasty">{formatKtcNumber(row.ktcValue)}</td>
+                      </>
+                    )}
                     <td className="rv-td rv-td-value">{formatValue(row)}</td>
+                    {isRedraftAdjusted && (
+                      <>
+                        <td className={`rv-td ${indexClassName(row.redraftValueIndex)}`}>
+                          {formatRedraftIndex(row.redraftValueIndex)}
+                        </td>
+                        <td className="rv-td rv-td-rebuilder">
+                          {formatKtcNumber(row.rebuilderAdjustedValue)}
+                        </td>
+                        <td className={`rv-td ${indexClassName(row.rebuildValueIndex)}`}>
+                          {formatRedraftIndex(row.rebuildValueIndex)}
+                        </td>
+                      </>
+                    )}
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
-        </div>
+            </div>
+            {isRedraftAdjusted && selectedRedraftRow && (
+              <RedraftAdjustmentPanel
+                row={selectedRedraftRow}
+                lookupMap={rankLookup}
+              />
+            )}
+          </div>
+        </>
       )}
+      {playerModal && createPortal(playerModal, document.body)}
     </div>
   );
 }

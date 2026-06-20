@@ -15,6 +15,7 @@ import {
   FP_ECR_SOURCES,
 } from './rankingsSources';
 import { normalisePlayerName } from '../utils/playerNameMatcher';
+import { loadRedraftRankLookup } from '../redraftValueIndex/redraftRankLookupLoader';
 
 export { formatKtcValue };
 
@@ -24,6 +25,9 @@ const ktcHistoricalCache = new Map();
 let ktcDatesCache = null;
 let teNamesCache = null;
 let ktcDraftYearsCache = null;
+let ktcRedraftValueCache = null;
+
+const REDRAFT_VALUE_CSV = '/data/ktc_redraft_value_index.csv';
 
 const PICK_RE = /^\d{4}\s+(Early|Mid|Late)\s/i;
 
@@ -182,6 +186,100 @@ export async function loadAdpRankings(adpType, year) {
       rowCount: rows.length,
     },
   };
+}
+
+export async function loadKtcRedraftAdjustedRankings() {
+  if (ktcRedraftValueCache) return ktcRedraftValueCache;
+
+  const [res, rankLookup] = await Promise.all([
+    fetch(REDRAFT_VALUE_CSV),
+    loadRedraftRankLookup(),
+  ]);
+  if (!res.ok) throw new Error('Failed to fetch ktc_redraft_value_index.csv');
+
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) {
+    return { rows: [], meta: { sourceLabel: 'KTC — Competitor Adjusted Value', rowCount: 0 } };
+  }
+
+  const headers = parseCsvRow(lines[0]);
+  const idx = (name) => headers.indexOf(name);
+
+  const playersData = await loadPlayersData();
+  let asOf = null;
+  let adpSource = null;
+  let premiumRetention = null;
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvRow(lines[i]);
+    const name = (cols[idx('name')] || '').trim();
+    const position = (cols[idx('position')] || '').trim();
+    if (!name) continue;
+
+    const adjustedRaw = (cols[idx('competitor_adjusted_value')] || cols[idx('redraft_adjusted_value')] || '').trim();
+    const adjusted = adjustedRaw ? parseInt(adjustedRaw, 10) : null;
+    if (!Number.isFinite(adjusted)) continue;
+
+    if (!asOf) asOf = (cols[idx('as_of')] || '').trim() || null;
+    if (!adpSource) adpSource = (cols[idx('adp_source')] || '').trim() || null;
+
+    const stackRankRaw = (cols[idx('adp_stack_rank')] || cols[idx('adp_pos_rank')] || '').trim();
+    const stackRank = stackRankRaw ? parseInt(stackRankRaw, 10) : null;
+    const adpEffRaw = (cols[idx('adp_eff_rank')] || '').trim();
+    const adpEffRank = adpEffRaw ? parseFloat(adpEffRaw) : null;
+    const premiumRetentionRaw = (cols[idx('premium_retention')] || '').trim();
+    const premiumRetention = premiumRetentionRaw ? parseFloat(premiumRetentionRaw) : null;
+
+    const base = {
+      name,
+      position,
+      team: (cols[idx('team')] || '').trim(),
+      value: adjusted,
+      ktcValue: parseInt(cols[idx('ktc_value')], 10) || null,
+      redraftValueIndex: parseFloat(cols[idx('redraft_value_index')]) || null,
+      ktcPosRank: parseInt(cols[idx('ktc_pos_rank')], 10) || null,
+      adpPosRank: stackRank,
+      adpEffRank: Number.isFinite(adpEffRank) ? adpEffRank : null,
+      premiumRetention: Number.isFinite(premiumRetention) ? premiumRetention : null,
+      sleeperId: '',
+    };
+    if (base.ktcPosRank != null && base.adpEffRank != null) {
+      base.rankDelta = Math.round((base.adpEffRank - base.ktcPosRank) * 100) / 100;
+    } else if (base.ktcPosRank != null && base.adpPosRank != null) {
+      base.rankDelta = base.adpPosRank - base.ktcPosRank;
+    }
+    const rebuilderRaw = (cols[idx('rebuilder_adjusted_value')] || '').trim();
+    const rebuilderParsed = rebuilderRaw ? parseInt(rebuilderRaw, 10) : null;
+    if (Number.isFinite(rebuilderParsed)) {
+      base.rebuilderAdjustedValue = rebuilderParsed;
+    }
+    base.rebuildValueIndex = parseFloat(cols[idx('rebuild_value_index')]) || null;
+    rows.push(enrichFromSleeper(base, playersData));
+    if (premiumRetention == null && base.premiumRetention != null) {
+      premiumRetention = base.premiumRetention;
+    }
+  }
+
+  assignRanks(rows);
+  computePosRanks(rows);
+  rows.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
+
+  const result = {
+    rows,
+    meta: {
+      sourceLabel: 'KTC — Competitor Adjusted Value',
+      asOf,
+      adpSource,
+      premiumRetention,
+      rowCount: rows.length,
+      rankLookup,
+    },
+  };
+
+  ktcRedraftValueCache = result;
+  return result;
 }
 
 export async function loadKtcCurrentRankings(format) {
@@ -652,6 +750,8 @@ export async function loadRankings(sourceOption, { year, date } = {}) {
       return loadAdpRankings(sourceOption.adpType, year);
     case 'ktc_current':
       return loadKtcCurrentRankings(sourceOption.format);
+    case 'ktc_redraft_adjusted':
+      return loadKtcRedraftAdjustedRankings();
     case 'ktc_historical':
       return loadKtcHistoricalRankings(sourceOption.variant, date);
     case 'ktc_rookie':
