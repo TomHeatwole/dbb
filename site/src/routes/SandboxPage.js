@@ -7,8 +7,15 @@ import YoffsPage from './YoffsPage';
 import H2hPage from './h2h';
 import DynastyRosterView from '../teams/DynastyRosterView';
 import PlayerDBPage from '../playerdb/PlayerDBPage';
+import RankingsViewer from '../rankingsViewer/RankingsViewer';
 
 const FEATURES = [
+  {
+    id: 'RANKINGS_VIEWER',
+    label: 'Rankings Viewer',
+    description: 'Browse ADP, KTC, FantasyCalc, FFB, and FantasyPros rankings by year or date.',
+    component: <RankingsViewer />,
+  },
   {
     id: 'PLAYER_SEARCH',
     label: 'Player Search',

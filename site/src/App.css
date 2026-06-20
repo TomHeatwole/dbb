@@ -9860,6 +9860,216 @@ body.modal-open {
   line-height: 1.4;
 }
 
+/* Rankings Viewer (sandbox) */
+.rv-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.rv-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+}
+
+.rv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.rv-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.rv-select,
+.rv-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #eee;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.65rem;
+  min-height: 2.2rem;
+}
+
+.rv-select {
+  min-width: 14rem;
+}
+
+.rv-select--narrow {
+  min-width: 6rem;
+}
+
+.rv-input {
+  min-width: 10rem;
+}
+
+.rv-select:focus,
+.rv-input:focus {
+  outline: none;
+  border-color: rgba(174, 78, 2, 0.55);
+}
+
+.rv-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.rv-error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(220, 60, 60, 0.12);
+  border: 1px solid rgba(220, 60, 60, 0.25);
+  color: #ffaaaa;
+  font-size: 0.9rem;
+}
+
+.rv-loading {
+  min-height: 12rem;
+}
+
+.rv-table-wrap {
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  max-height: calc(100vh - 18rem);
+}
+
+.rv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.rv-th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  background: #1a1a1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rv-th--sortable {
+  padding: 0;
+}
+
+.rv-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.rv-th-rank .rv-sort-btn {
+  justify-content: flex-end;
+}
+
+.rv-th-value .rv-sort-btn {
+  justify-content: flex-end;
+}
+
+.rv-sort-btn:hover {
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rv-th--active .rv-sort-btn {
+  color: #ffd080;
+}
+
+.rv-sort-arrow {
+  font-size: 0.65rem;
+  opacity: 0.9;
+}
+
+.rv-th-rank,
+.rv-td-rank {
+  width: 3rem;
+  text-align: right;
+  color: #888;
+}
+
+.rv-th-pos,
+.rv-td-pos {
+  width: 3.5rem;
+}
+
+.rv-th-team,
+.rv-td-team {
+  width: 4rem;
+}
+
+.rv-th-pos-rank,
+.rv-td-pos-rank {
+  width: 4rem;
+  color: #888;
+}
+
+.rv-th-value,
+.rv-td-value {
+  width: 5rem;
+  text-align: right;
+}
+
+.rv-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rv-td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.rv-td-name {
+  font-weight: 500;
+  color: #eee;
+}
+
+.rv-td-value {
+  font-variant-numeric: tabular-nums;
+  color: #ffd080;
+}
+
+.rv-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #777;
+}
+
+@media (max-width: 640px) {
+  .rv-select {
+    min-width: 100%;
+  }
+
+  .rv-table-wrap {
+    max-height: calc(100vh - 22rem);
+  }
+}
+
 /* HwangAI Chat Page */
 .hwang-ai-root {
   display: flex;

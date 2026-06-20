@@ -12,8 +12,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUT_CSV="$PROJECT_ROOT/site/public/data/ktc_values.csv"
 TMP_HTML="$(mktemp /tmp/ktc_page_XXXXXX.html)"
+TMP_ROOKIE_HTML="$(mktemp /tmp/ktc_rookie_page_XXXXXX.html)"
 
-cleanup() { rm -f "$TMP_HTML"; }
+cleanup() { rm -f "$TMP_HTML" "$TMP_ROOKIE_HTML"; }
 trap cleanup EXIT
 
 echo "Fetching KTC dynasty rankings..."
@@ -21,6 +22,19 @@ curl -s --fail \
   -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
   "https://keeptradecut.com/dynasty-rankings" \
   -o "$TMP_HTML"
+
+echo "Fetching KTC rookie rankings..."
+curl -s --fail \
+  -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+  "https://keeptradecut.com/dynasty-rankings/rookie-rankings" \
+  -o "$TMP_ROOKIE_HTML"
+
+echo "Building draft year lookup..."
+cp "$TMP_HTML" /tmp/ktc_rankings.html
+cp "$TMP_ROOKIE_HTML" /tmp/ktc_rookie_rankings.html
+node "$SCRIPT_DIR/build_ktc_draft_years.js" \
+  --ktc-html "$TMP_HTML" \
+  --rookie-html "$TMP_ROOKIE_HTML"
 
 echo "Parsing and writing CSV..."
 python3 - "$TMP_HTML" "$OUT_CSV" << 'PYEOF'
