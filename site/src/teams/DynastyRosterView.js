@@ -342,14 +342,6 @@ function DynastyRosterView() {
 
   // ── KTC lookups: SF = redraft pipeline dynasty base; SF TE+ = display reference ──
 
-  const getPlayerKtcSfValue = React.useCallback((pid, info) => {
-    if (!ktcMap || !info) return 0;
-    const name = info.full_name || info.name || '';
-    const hints = { position: info.position, team: info.team || info.team_abbr, age: info.age };
-    const entry = getKtcEntryByName(name, ktcMap, 'sf', hints);
-    return entry?.ktcValue ?? 0;
-  }, [ktcMap]);
-
   const getPlayerKtcTepValue = React.useCallback((pid, info) => {
     if (!ktcMap || !info) return 0;
     const name = info.full_name || info.name || '';

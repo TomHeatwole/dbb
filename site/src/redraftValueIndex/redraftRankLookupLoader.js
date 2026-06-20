@@ -1,5 +1,5 @@
 /**
- * Rank-slot lookup table for Redraft Value Index (65% year-weighted hist + 35% current KTC).
+ * Rank-slot lookup table for Redraft Value Index (40% year-weighted hist + 60% current KTC).
  */
 
 const LOOKUP_CSV = '/data/ktc_redraft_rank_lookup.csv';

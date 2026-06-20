@@ -83,11 +83,6 @@ function isPickName(name) {
   return PICK_RE.test(name || '');
 }
 
-function rowIdentityKey(row) {
-  if (row.sleeperId) return `id:${row.sleeperId}`;
-  return `name:${row.name}`;
-}
-
 function cloneHistoricalRow(row) {
   return { ...row };
 }

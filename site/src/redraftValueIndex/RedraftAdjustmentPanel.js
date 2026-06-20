@@ -147,12 +147,12 @@ function RedraftAdjustmentPanel({ row, lookupMap }) {
         {interp.rankLow !== interp.rankHigh ? (
           <>
             <StatBlock
-              label={`At ${betterSlot}: 65% hist + 35% current`}
+              label={`At ${betterSlot}: 40% hist + 60% current`}
               value={formatKtcValue(interp.blendedLow)}
               sub={`Hist ${formatKtcValue(interp.weightedLow)} · Current ${formatKtcValue(interp.currentLow)}`}
             />
             <StatBlock
-              label={`At ${worseSlot}: 65% hist + 35% current`}
+              label={`At ${worseSlot}: 40% hist + 60% current`}
               value={formatKtcValue(interp.blendedHigh)}
               sub={`Hist ${formatKtcValue(interp.weightedHigh)} · Current ${formatKtcValue(interp.currentHigh)}`}
             />
@@ -161,7 +161,7 @@ function RedraftAdjustmentPanel({ row, lookupMap }) {
           <StatBlock
             label={`Rank-slot lookup at ${betterSlot}`}
             value={formatKtcValue(interp.blendedLow)}
-            sub={`65% year-weighted hist + 35% current ${betterSlot} KTC`}
+            sub={`40% year-weighted hist + 60% current ${betterSlot} KTC`}
           />
         )}
 

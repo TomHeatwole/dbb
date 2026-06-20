@@ -11,12 +11,14 @@ avg ADP (ascending). FantasyPros' POS label is kept only for discrepancy reporti
 Method:
   1. adp_stack_rank = integer positional rank by sorting within position on avg ADP.
   2. adp_eff_rank = ApproachH: stack rank corrected by OVR ADP vs positional KTC lookup (λ).
-  3. Active approach (ApproachG): rank-slot lookup = 65% year-weighted hist (2021–2025)
-     plus 35% current KTC at that positional rank; interpolate at adp_eff_rank.
+  3. Active approach (ApproachG): rank-slot lookup = 40% year-weighted hist (2021–2025)
+     plus 60% current KTC at that positional rank; interpolate at adp_eff_rank.
      Historical years 2022–2025 are scaled so each year's year-end top-300 sum matches
      the current live SF TE+ top-300 total (2021 unscaled).
   4. Rebuilder adjusted = hist@KTC rank + γ×(dynasty−hist) − β×(adjusted−dynasty),
      with γ from max(0, adp_eff_rank − ktc_pos_rank); asymmetric β on redraft flip.
+     Flip friendliness is auto-calibrated on the ADP pool so
+     sum(rebuild) = 2×sum(ktc) − sum(comp) (comp/rebuild midpoint = dynasty).
   5. Prior experiments preserved as uncalled ApproachA–G helpers (B = peer exchange).
 
 Reads:
@@ -72,8 +74,8 @@ HISTORICAL_YEAR_WEIGHTS: dict[int, float] = {
 # Scale these years' KTC values before rank-slot averaging (2021 stays raw).
 HISTORICAL_INFLATION_YEARS = (2022, 2023, 2024, 2025)
 TOP300_INFLATION_TARGET_COUNT = 300
-REDRAFT_HIST_WEIGHT = 0.65
-REDRAFT_CURRENT_WEIGHT = 0.35
+REDRAFT_HIST_WEIGHT = 0.40
+REDRAFT_CURRENT_WEIGHT = 0.60
 
 # Rebuilder adjusted: γ from KTC vs ADP rank gap + asymmetric damped redraft flip.
 REBUILD_BETA_UP = 0.54
@@ -88,6 +90,10 @@ REBUILD_DEPTH_GAP_SCALE = 60.0
 REBUILD_BETA_UP_DEPTH_BOOST = 0.10
 REBUILD_SEV_RVI_FLOOR = 0.55
 REBUILD_SEV_RVI_SCALE = 0.40
+# Auto-calibrated each run on ADP-matched players so sum(rebuild) = 2×sum(ktc) − sum(comp).
+# Scales β up when comp < dynasty and relaxes β down when comp > dynasty (positive inversion).
+REBUILD_AUTO_MIDPOINT_ANCHOR = True
+REBUILD_FLIP_FRIENDLINESS = 0.0  # set in calibrate_rebuild_flip_friendliness()
 
 # ApproachH: OVR avg ADP → fractional stack rank, invert KTC lookup, blend toward stack (λ).
 OVR_KTC_RANK_LAMBDA = 0.40
@@ -1244,7 +1250,7 @@ def ApproachG(
     position: str,
     rank_lookup: dict[str, dict[int, float]],
 ) -> tuple[int | None, float | None]:
-    """Lookup = 65% year-weighted hist + 35% current KTC at rank; index = adjusted / dynasty."""
+    """Lookup = 40% year-weighted hist + 60% current KTC at rank; index = adjusted / dynasty."""
     lookup_at_eff = interpolate_hist(rank_lookup[position], adp_eff_rank)
     if lookup_at_eff is None or ktc_value <= 0:
         return None, None
@@ -1272,6 +1278,68 @@ def compute_competitor_adjusted(
     adjusted_int = max(0, round(adjusted))
     index = round(adjusted_int / ktc_value, 4) if ktc_value > 0 else None
     return adjusted_int, index
+
+
+def effective_rebuild_flip_betas(
+    beta_up: float = REBUILD_BETA_UP,
+    beta_down: float = REBUILD_BETA_DOWN,
+    friendliness: float | None = None,
+) -> tuple[float, float]:
+    """Relax flip penalties when comp exceeds dynasty; strengthen credit when comp lags."""
+    if friendliness is None:
+        friendliness = REBUILD_FLIP_FRIENDLINESS
+    return beta_up * (1.0 + friendliness), beta_down * (1.0 - friendliness)
+
+
+def calibrate_rebuild_flip_friendliness(
+    calibration_rows: list[dict],
+    rank_lookup: dict[str, dict[int, float]],
+    beta_up: float = REBUILD_BETA_UP,
+    beta_down: float = REBUILD_BETA_DOWN,
+) -> float:
+    """
+    Find flip friendliness so ADP-matched rebuild totals anchor the comp/rebuild midpoint
+    to dynasty KTC: sum(rebuild) = 2×sum(ktc) − sum(comp).
+    """
+    if not calibration_rows:
+        return 0.0
+
+    ktc_sum = sum(row["ktc_value"] for row in calibration_rows)
+    comp_sum = sum(row["adjusted"] for row in calibration_rows)
+    target_rebuild = 2 * ktc_sum - comp_sum
+
+    def rebuild_sum(friendliness: float) -> int:
+        up_eff, down_eff = effective_rebuild_flip_betas(beta_up, beta_down, friendliness)
+        total = 0
+        for row in calibration_rows:
+            rebuilder, _ = compute_rebuilder_adjusted(
+                row["ktc_value"],
+                row["ktc_pos_rank"],
+                row["adp_eff_rank"],
+                row["adjusted"],
+                rank_lookup,
+                row["position"],
+                beta_up=up_eff,
+                beta_down=down_eff,
+            )
+            total += rebuilder or 0
+        return total
+
+    base = rebuild_sum(0.0)
+    if base >= target_rebuild:
+        return 0.0
+
+    lo, hi = 0.0, 1.0
+    if rebuild_sum(hi) < target_rebuild:
+        return hi
+
+    for _ in range(48):
+        mid = (lo + hi) / 2.0
+        if rebuild_sum(mid) < target_rebuild:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
 
 
 def rebuilder_gamma(rank_gap: float, gap_scale: float = REBUILD_GAP_SCALE) -> float:
@@ -1333,16 +1401,25 @@ def compute_rebuilder_adjusted(
     adjusted: int,
     rank_lookup: dict[str, dict[int, float]],
     position: str,
-    beta_up: float = REBUILD_BETA_UP,
-    beta_down: float = REBUILD_BETA_DOWN,
+    beta_up: float | None = None,
+    beta_down: float | None = None,
     gap_scale: float = REBUILD_GAP_SCALE,
     reduce_rank_boost: float = REBUILD_REDUCE_RANK_BOOST,
+    flip_friendliness: float | None = None,
 ) -> tuple[int | None, float | None]:
     """
     rebuild_core = hist@KTC rank + γ × (dynasty − hist@KTC)
     rebuilder = rebuild_core − β_eff × (adjusted − dynasty)
     β_eff is asymmetric: higher when redraft delta > 0, boosted if ADP rank < KTC rank.
+    flip_friendliness relaxes β down / strengthens β up for midpoint anchoring.
     """
+    if beta_up is None or beta_down is None:
+        friendliness = REBUILD_FLIP_FRIENDLINESS if flip_friendliness is None else flip_friendliness
+        beta_up, beta_down = effective_rebuild_flip_betas(
+            REBUILD_BETA_UP,
+            REBUILD_BETA_DOWN,
+            friendliness,
+        )
     hist_at_ktc = interpolate_hist(rank_lookup[position], float(ktc_pos_rank))
     if hist_at_ktc is None or ktc_value <= 0:
         return None, None
@@ -1440,6 +1517,46 @@ def main() -> None:
         for pos, board in adp_boards.items()
     }
 
+    calibration_rows: list[dict] = []
+    for player in ktc_players:
+        adp = find_adp_row(player, adp_by_name, adp_by_sleeper, sleeper_by_name, sleeper_by_last)
+        if not adp or adp.get("adp_stack_rank") is None:
+            continue
+        adp_eff_rank = eff_ranks_by_pos[player["position"]].get(adp["adp_stack_rank"])
+        if adp_eff_rank is None:
+            continue
+        adjusted, _ = ApproachG(
+            player["ktc_value"],
+            adp_eff_rank,
+            player["position"],
+            rank_lookup,
+        )
+        if adjusted is None or adjusted <= 0:
+            continue
+        calibration_rows.append({
+            "ktc_value": player["ktc_value"],
+            "ktc_pos_rank": player["ktc_pos_rank"],
+            "adp_eff_rank": adp_eff_rank,
+            "adjusted": adjusted,
+            "position": player["position"],
+        })
+
+    global REBUILD_FLIP_FRIENDLINESS
+    if REBUILD_AUTO_MIDPOINT_ANCHOR and calibration_rows:
+        REBUILD_FLIP_FRIENDLINESS = calibrate_rebuild_flip_friendliness(
+            calibration_rows,
+            rank_lookup,
+        )
+        up_eff, down_eff = effective_rebuild_flip_betas()
+        print(
+            "Rebuild midpoint anchor: "
+            f"flip friendliness={REBUILD_FLIP_FRIENDLINESS:.4f} "
+            f"(β_up {REBUILD_BETA_UP:.2f}→{up_eff:.3f}, "
+            f"β_down {REBUILD_BETA_DOWN:.2f}→{down_eff:.3f} on ADP pool)"
+        )
+    else:
+        REBUILD_FLIP_FRIENDLINESS = 0.0
+
     output_rows: list[dict] = []
     matched = 0
 
@@ -1510,7 +1627,7 @@ def main() -> None:
     )
     print(
         "Competitor value: ApproachG "
-        f"(65% year-weighted hist + 35% current KTC @ rank, at Adjusted ADP)"
+        f"(40% year-weighted hist + 60% current KTC @ rank, at Adjusted ADP)"
     )
     print(
         f"Historical inflation target: top-{TOP300_INFLATION_TARGET_COUNT} sum "
