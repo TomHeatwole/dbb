@@ -24,6 +24,8 @@ const PLAYERS_FILE   = path.join(DATA_DIR, 'players.txt');
 const OUT_FILE       = path.join(DATA_DIR, 'ktc_historical_name_ids.csv');
 const DEFAULT_KTC_HTML = '/tmp/ktc_rankings.html';
 
+const { lookupSleeperAlias } = require('./ktc_historical_sleeper_aliases');
+
 const RELEVANT_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
 const PICK_RE = /^\d{4}\s+(Early|Mid|Late)\s+[1234](?:st|nd|rd|th)$/i;
 
@@ -306,7 +308,15 @@ function run() {
     if (ktcEntry.ktcPlayerId) counts.ktc_matched += 1;
 
     const hints = resolveHints(name, ktcHints, ktcEntry);
-    const { candidate, strategy, ambiguous } = findBestPlayerMatch(name, sleeperPool, hints);
+    let { candidate, strategy, ambiguous } = findBestPlayerMatch(name, sleeperPool, hints);
+    if (!candidate) {
+      const alias = lookupSleeperAlias(name, sleeperPool);
+      if (alias) {
+        candidate = alias.candidate;
+        strategy = alias.strategy;
+        ambiguous = [];
+      }
+    }
 
     let sleeperMatch = 'no_match';
     if (!candidate && ambiguous.length > 0) {
