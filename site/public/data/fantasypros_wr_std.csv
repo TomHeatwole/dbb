@@ -10,8 +10,8 @@ rank,name,team,position,tier,sleeper_id
 9,George Pickens,DAL,WR,2,8137
 10,A.J. Brown,NE,WR,2,5859
 11,Chris Olave,NO,WR,3,8144
-12,Rashee Rice,KC,WR,3,10229
-13,Tee Higgins,CIN,WR,3,6801
+12,Tee Higgins,CIN,WR,3,6801
+13,Rashee Rice,KC,WR,3,10229
 14,Malik Nabers,NYG,WR,3,11632
 15,Tetairoa McMillan,CAR,WR,3,12526
 16,Zay Flowers,BAL,WR,4,9997
@@ -67,10 +67,10 @@ rank,name,team,position,tier,sleeper_id
 66,Calvin Ridley,TEN,WR,7,4981
 67,Troy Franklin,DEN,WR,7,11627
 68,Tre Tucker,LV,WR,7,10213
-69,Isaac TeSlaa,DET,WR,7,12535
-70,Deebo Samuel Sr.,FA,WR,7,5872
+69,Deebo Samuel Sr.,FA,WR,7,5872
+70,Isaac TeSlaa,DET,WR,7,12535
 71,Ryan Flournoy,DAL,WR,7,11783
-72,Brandon Aiyuk,SF,WR,7,6803
+72,Brandon Aiyuk,SF,WR,8,6803
 73,Stefon Diggs,FA,WR,8,2449
 74,Jaylin Noel,HOU,WR,8,12536
 75,Darnell Mooney,NYG,WR,8,7090
@@ -83,13 +83,13 @@ rank,name,team,position,tier,sleeper_id
 82,Dontayvion Wicks,PHI,WR,8,9486
 83,Tank Dell,HOU,WR,8,9502
 84,Tyreek Hill,FA,WR,8,3321
-85,Malik Washington,MIA,WR,8,11610
-86,Ted Hurst III,TB,WR,8,13317
+85,Ted Hurst III,TB,WR,8,13317
+86,Malik Washington,MIA,WR,8,11610
 87,Antonio Williams,WAS,WR,8,13301
 88,Cooper Kupp,SEA,WR,8,4039
 89,Keon Coleman,BUF,WR,8,11637
-90,Tory Horton,SEA,WR,8,12497
-91,Zachariah Branch,ATL,WR,8,13320
+90,Zachariah Branch,ATL,WR,8,13320
+91,Tory Horton,SEA,WR,8,12497
 92,Germie Bernard,PIT,WR,8,13274
 93,Jack Bech,LV,WR,8,12483
 94,Christian Kirk,SF,WR,8,4950
@@ -102,8 +102,8 @@ rank,name,team,position,tier,sleeper_id
 101,Darius Slayton,NYG,WR,9,6149
 102,Malachi Fields,NYG,WR,9,13285
 103,Keenan Allen,LAC,WR,9,1479
-104,Xavier Legette,CAR,WR,9,11626
-105,Hollywood Brown,PHI,WR,9,
+104,Hollywood Brown,PHI,WR,9,5848
+105,Xavier Legette,CAR,WR,9,11626
 106,Devaughn Vele,NO,WR,9,11834
 107,Chris Brazzell II,CAR,WR,9,13353
 108,Isaiah Bond,CLE,WR,9,12503

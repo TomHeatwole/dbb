@@ -7,7 +7,7 @@ rank,name,team,position,tier,sleeper_id
 6,Derrick Henry,BAL,RB,2,3198
 7,Ashton Jeanty,LV,RB,2,12527
 8,Saquon Barkley,PHI,RB,2,4866
-9,De'Von Achane,MIA,RB,3,9226
+9,De'Von Achane,MIA,RB,2,9226
 10,Omarion Hampton,LAC,RB,3,12507
 11,Kenneth Walker III,KC,RB,3,8151
 12,Chase Brown,CIN,RB,3,9224
@@ -32,8 +32,8 @@ rank,name,team,position,tier,sleeper_id
 31,Chuba Hubbard,CAR,RB,5,7594
 32,Blake Corum,LAR,RB,5,11586
 33,Kyle Monangai,CHI,RB,5,12534
-34,RJ Harvey,DEN,RB,5,12489
-35,J.K. Dobbins,DEN,RB,5,6806
+34,J.K. Dobbins,DEN,RB,5,6806
+35,RJ Harvey,DEN,RB,5,12489
 36,Jacory Croskey-Merritt,WAS,RB,6,12533
 37,Aaron Jones Sr.,MIN,RB,6,4199
 38,Kenneth Gainwell,TB,RB,6,7567
@@ -47,9 +47,9 @@ rank,name,team,position,tier,sleeper_id
 46,Woody Marks,HOU,RB,6,12474
 47,Isiah Pacheco,DET,RB,6,8205
 48,Brian Robinson Jr.,ATL,RB,7,8154
-49,Alvin Kamara,NO,RB,7,4035
-50,Jonah Coleman,DEN,RB,7,13345
-51,Keaton Mitchell,LAC,RB,7,9511
+49,Keaton Mitchell,LAC,RB,7,9511
+50,Alvin Kamara,NO,RB,7,4035
+51,Jonah Coleman,DEN,RB,7,13345
 52,Braelon Allen,NYJ,RB,7,11576
 53,Dylan Sampson,CLE,RB,7,12469
 54,Tank Bigsby,PHI,RB,7,9225
@@ -62,9 +62,9 @@ rank,name,team,position,tier,sleeper_id
 61,Ray Davis,BUF,RB,7,11575
 62,Nicholas Singleton,TEN,RB,7,13288
 63,Sean Tucker,TB,RB,7,9506
-64,Kaytron Allen,WAS,RB,7,13405
+64,Jaylen Wright,MIA,RB,7,11643
 65,Ollie Gordon II,MIA,RB,7,12495
-66,Jaylen Wright,MIA,RB,7,11643
+66,Kaytron Allen,WAS,RB,7,13405
 67,Devin Neal,NO,RB,8,12476
 68,Kaleb Johnson,PIT,RB,8,12504
 69,Trey Benson,ARI,RB,8,11589
@@ -93,8 +93,8 @@ rank,name,team,position,tier,sleeper_id
 92,Kaelon Black,SF,RB,9,13414
 93,Joe Mixon,FA,RB,9,4018
 94,Trevor Etienne,CAR,RB,9,12531
-95,Jaleel McLaughlin,DEN,RB,9,11439
-96,Tahj Brooks,CIN,RB,9,12543
+95,Tahj Brooks,CIN,RB,9,12543
+96,Jaleel McLaughlin,DEN,RB,9,11439
 97,Jarquez Hunter,LAR,RB,9,11569
 98,Audric Estime,NO,RB,9,11579
 99,Kareem Hunt,FA,RB,9,4098
@@ -104,17 +104,17 @@ rank,name,team,position,tier,sleeper_id
 103,Michael Carter,TEN,RB,10,7607
 104,Eli Heidenreich,PIT,RB,10,13423
 105,Nick Chubb,FA,RB,10,4988
-106,Austin Ekeler,FA,RB,10,4663
-107,Raheim Sanders,CLE,RB,10,12472
+106,Raheim Sanders,CLE,RB,10,12472
+107,Austin Ekeler,FA,RB,10,4663
 108,Jawhar Jordan,HOU,RB,10,11588
 109,Dameon Pierce,PHI,RB,10,8129
 110,Phil Mafah,DAL,RB,10,12738
-111,Damien Martinez,GB,RB,10,12462
-112,Terrell Jennings,NE,RB,10,12412
-113,Antonio Gibson,FA,RB,10,6945
-114,Jam Miller,NE,RB,10,13403
-115,Raheem Mostert,LV,RB,10,2749
-116,Roschon Johnson,CHI,RB,10,10235
+111,Terrell Jennings,NE,RB,10,12412
+112,Damien Martinez,GB,RB,10,12462
+113,Jam Miller,NE,RB,10,13403
+114,Raheem Mostert,LV,RB,10,2749
+115,Roschon Johnson,CHI,RB,10,10235
+116,Antonio Gibson,FA,RB,10,6945
 117,Zavier Scott,MIN,RB,10,11299
 118,Tyler Goodson,ATL,RB,10,8207
 119,Jaret Patterson,LAC,RB,10,7537
@@ -129,7 +129,7 @@ rank,name,team,position,tier,sleeper_id
 128,Khalil Herbert,FA,RB,10,7608
 129,Robert Henry Jr.,WAS,RB,10,13418
 130,Ameer Abdullah,JAC,RB,10,2359
-131,Miles Sanders,FA,RB,11,6151
+131,Miles Sanders,FA,RB,10,6151
 132,British Brooks,HOU,RB,11,12171
 133,Ronnie Rivers,LAR,RB,11,8195
 134,Cash Jones,ATL,RB,11,13595
