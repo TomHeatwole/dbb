@@ -455,8 +455,10 @@ def compute_year_rank_slot_averages(
 
 def compute_weighted_historical_rank_values(
     by_date: dict[str, list[tuple[str, int]]],
+    target_sum: int | None = None,
 ) -> tuple[dict[str, dict[int, float]], dict[int, float], int]:
-    target_sum = current_live_top300_sum()
+    if target_sum is None:
+        target_sum = current_live_top300_sum()
     inflation = compute_historical_inflation_multipliers(by_date, target_sum)
     year_avgs = {
         year: compute_year_rank_slot_averages(
@@ -865,17 +867,25 @@ def load_hwang_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, di
     if not HWANG_ADP_CSV.is_file():
         sys.exit(
             f"ERROR: missing {HWANG_ADP_CSV}. "
-            f"Run: python3 scripts/compute_hwang_scoring_adp.py {year}"
+            f"Run: python3 scripts/compute_hwang_scoring_adp.py"
         )
 
     text = HWANG_ADP_CSV.read_text(encoding="utf-8").strip()
     lines = text.split("\n")
     headers = parse_csv_row(lines[0])
     idx = {name: headers.index(name) for name in headers}
+    year_idx = idx.get("year", -1)
 
     parsed: list[dict] = []
     for line in lines[1:]:
         cols = parse_csv_row(line)
+        if year_idx >= 0:
+            try:
+                row_year = int((cols[year_idx] or "").strip())
+            except ValueError:
+                continue
+            if row_year != year:
+                continue
         position = (cols[idx["position"]] or "").strip().upper()
         if position not in POSITIONS:
             continue
@@ -904,6 +914,12 @@ def load_hwang_adp(year: int) -> tuple[dict[tuple[str, str], dict], dict[str, di
             "sleeper_id": (cols[idx["sleeper_id"]] if "sleeper_id" in idx else "").strip(),
             "norm_name": normalize_name(name),
         })
+
+    if not parsed:
+        sys.exit(
+            f"ERROR: no Hwang ADP rows for {year} in {HWANG_ADP_CSV}. "
+            f"Run: python3 scripts/compute_hwang_scoring_adp.py"
+        )
 
     return _finalize_adp_load(parsed)
 
@@ -1757,8 +1773,8 @@ def main() -> None:
 
     if USE_HWANG_ADJUSTED_ADP:
         hwang_script = PROJECT_ROOT / "scripts/compute_hwang_scoring_adp.py"
-        print(f"Regenerating Hwang adjusted ADP for {adp_year}…")
-        subprocess.run([sys.executable, str(hwang_script), str(adp_year)], check=True)
+        print("Regenerating Hwang adjusted ADP (all available seasons)…")
+        subprocess.run([sys.executable, str(hwang_script)], check=True)
 
     adp_source = adp_source_label(adp_year)
     adp_by_name, adp_by_sleeper, adp_boards, ranked_adp_rows = load_adp(adp_year)

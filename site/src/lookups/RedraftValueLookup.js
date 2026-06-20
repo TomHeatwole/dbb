@@ -73,10 +73,22 @@ export function assignPosValueRanks(entries, valueKey, rankKey) {
   }
 }
 
-function ensurePosRanks(byName) {
+/** Overall rank across all skill positions by adjusted value. */
+export function assignOverallValueRanks(entries, valueKey, rankKey) {
+  const ranked = entries
+    .filter((entry) => entry[valueKey] != null && entry[valueKey] > 0)
+    .sort((a, b) => b[valueKey] - a[valueKey]);
+  ranked.forEach((entry, idx) => {
+    entry[rankKey] = idx + 1;
+  });
+}
+
+function ensureAdjustedRanks(byName) {
   const entries = Array.from(byName.values());
   assignPosValueRanks(entries, 'competitorAdjustedValue', 'competitorAdjustedRank');
   assignPosValueRanks(entries, 'rebuilderAdjustedValue', 'rebuilderAdjustedRank');
+  assignOverallValueRanks(entries, 'competitorAdjustedValue', 'competitorAdjustedOverallRank');
+  assignOverallValueRanks(entries, 'rebuilderAdjustedValue', 'rebuilderAdjustedOverallRank');
 }
 
 /**
@@ -85,7 +97,7 @@ function ensurePosRanks(byName) {
  */
 export async function fetchRedraftValueData() {
   if (cachedByName) {
-    ensurePosRanks(cachedByName);
+    ensureAdjustedRanks(cachedByName);
     return { byName: cachedByName, asOf: cachedAsOf, adpSource: cachedAdpSource };
   }
 
@@ -141,7 +153,7 @@ export async function fetchRedraftValueData() {
     byName.set(normalisePlayerName(name), entry);
   }
 
-  ensurePosRanks(byName);
+  ensureAdjustedRanks(byName);
 
   cachedByName = byName;
   cachedAsOf = asOf;

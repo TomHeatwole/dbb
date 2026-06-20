@@ -21,7 +21,7 @@ const FEATURES = [
   {
     id: 'REDRAFT_VALUE_INDEX',
     label: 'Redraft Value Index',
-    description: 'KTC dynasty values adjusted for best-ball redraft ADP — competitor adjusted value and index multiplier.',
+    description: 'KTC dynasty values adjusted for redraft ADP — browse by season (2020–2025 historical, 2026 current).',
     component: <RedraftValueIndex />,
   },
   {

@@ -12,10 +12,13 @@ import {
   KTC_HISTORICAL_VARIANTS,
   KTC_ROOKIE_CLASS_YEARS,
   KTC_ROOKIE_VALUES,
+  FINAL_KTC_YEARS,
+  HWANG_ADP_YEARS,
   FP_ECR_SOURCES,
 } from './rankingsSources';
 import { normalisePlayerName } from '../utils/playerNameMatcher';
 import { loadRedraftRankLookup } from '../redraftValueIndex/redraftRankLookupLoader';
+import { assignPosValueRanks, assignOverallValueRanks } from '../lookups/RedraftValueLookup';
 
 export { formatKtcValue };
 
@@ -25,10 +28,20 @@ const ktcHistoricalCache = new Map();
 let ktcDatesCache = null;
 let ktcDraftYearsCache = null;
 let ktcRedraftValueCache = null;
-let hwangAdpCache = null;
+/** @type {Map<number, object[]> | null} */
+let hwangAdpByYearCache = null;
+/** @type {Map<number, object[]> | null} */
+let finalKtcValuesCache = null;
+/** @type {object[] | null} */
+let finalKtcRedraftCache = null;
+/** @type {Map<number, Map<string, object>> | null} */
+let finalKtcRedraftLookupCache = null;
 
 const REDRAFT_VALUE_CSV = '/data/ktc_redraft_value_index.csv';
 const HWANG_ADP_CSV = '/data/hwang_adjusted_positional_adp.csv';
+const FINAL_KTC_CSV = '/data/final_ktc_values.csv';
+const FINAL_KTC_REDRAFT_CSV = '/data/final_ktc_redraft_value_index.csv';
+const FINAL_KTC_REDRAFT_LOOKUP_CSV = '/data/final_ktc_redraft_rank_lookup.csv';
 
 const PICK_RE = /^\d{4}\s+(Early|Mid|Late)\s/i;
 
@@ -91,7 +104,10 @@ function cloneHistoricalRow(row) {
 
 function assignRanks(rows, valueKey = 'value') {
   const sorted = [...rows].sort((a, b) => (b[valueKey] || 0) - (a[valueKey] || 0));
-  return sorted.map((row, idx) => ({ ...row, rank: idx + 1 }));
+  sorted.forEach((row, idx) => {
+    row.rank = idx + 1;
+  });
+  return rows;
 }
 
 function computePosRanks(rows) {
@@ -238,6 +254,8 @@ export async function loadKtcRedraftAdjustedRankings() {
 
   assignRanks(rows);
   computePosRanks(rows);
+  assignOverallValueRanks(rows, 'rebuilderAdjustedValue', 'rebuilderOverallRank');
+  assignPosValueRanks(rows, 'rebuilderAdjustedValue', 'rebuilderPosRank');
   rows.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
 
   const result = {
@@ -257,86 +275,104 @@ export async function loadKtcRedraftAdjustedRankings() {
   return result;
 }
 
-export async function loadHwangAdjustedAdpRankings() {
-  if (hwangAdpCache) return hwangAdpCache;
-
-  const res = await fetch(HWANG_ADP_CSV);
-  if (!res.ok) throw new Error('Failed to fetch hwang_adjusted_positional_adp.csv');
-
-  const text = await res.text();
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) {
-    return { rows: [], meta: { sourceLabel: 'Hwang Adjusted Positional ADP', rowCount: 0 } };
+export async function loadHwangAdjustedAdpRankings(year) {
+  const yearNum = Number(year);
+  if (!HWANG_ADP_YEARS.includes(yearNum)) {
+    throw new Error(`Hwang adjusted ADP is not available for ${year}`);
   }
 
-  const headers = parseCsvRow(lines[0]);
-  const idx = (name) => headers.indexOf(name);
+  if (!hwangAdpByYearCache) {
+    const res = await fetch(HWANG_ADP_CSV);
+    if (!res.ok) throw new Error('Failed to fetch hwang_adjusted_positional_adp.csv');
+
+    const text = await res.text();
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) {
+      hwangAdpByYearCache = new Map();
+    } else {
+      const headers = parseCsvRow(lines[0]);
+      const idx = (name) => headers.indexOf(name);
+      const hasYearCol = idx('year') >= 0;
+      const byYear = new Map();
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCsvRow(lines[i]);
+        const rowYear = hasYearCol
+          ? parseInt((cols[idx('year')] || '').trim(), 10)
+          : HWANG_ADP_YEARS[HWANG_ADP_YEARS.length - 1];
+        const name = (cols[idx('name')] || '').trim();
+        const position = (cols[idx('position')] || '').trim();
+        if (!Number.isFinite(rowYear) || !name) continue;
+
+        const hwangAdp = parseFloat((cols[idx('hwang_adjusted_adp')] || '').trim());
+        if (!Number.isFinite(hwangAdp)) continue;
+
+        const parseOptionalInt = (col) => {
+          const raw = (cols[idx(col)] || '').trim();
+          if (!raw) return null;
+          const n = parseInt(raw, 10);
+          return Number.isFinite(n) ? n : null;
+        };
+        const parseOptionalFloat = (col) => {
+          const raw = (cols[idx(col)] || '').trim();
+          if (!raw) return null;
+          const n = parseFloat(raw);
+          return Number.isFinite(n) ? n : null;
+        };
+
+        const base = {
+          year: rowYear,
+          rank: parseInt(cols[idx('overall_rank')], 10) || null,
+          name,
+          position,
+          team: (cols[idx('team')] || '').trim(),
+          value: hwangAdp,
+          posRank: parseOptionalInt('hwang_pos_rank'),
+          bbAvgAdp: parseOptionalFloat('bb_avg_adp'),
+          bbStackRank: parseOptionalInt('bb_stack_rank'),
+          bbEffRank: parseOptionalFloat('bb_eff_rank'),
+          halfStackRank: parseOptionalInt('half_stack_rank'),
+          stdStackRank: parseOptionalInt('std_stack_rank'),
+          scoringRankShift: parseOptionalInt('scoring_rank_shift'),
+          hwangEffRank: parseOptionalFloat('hwang_eff_rank'),
+          adpDelta: parseOptionalFloat('adp_delta'),
+          adpSource: (cols[idx('adp_source')] || '').trim() || null,
+          scoringSource: (cols[idx('scoring_source')] || '').trim() || null,
+          sleeperId: (cols[idx('sleeper_id')] || '').trim(),
+        };
+
+        if (!byYear.has(rowYear)) byYear.set(rowYear, []);
+        byYear.get(rowYear).push(base);
+      }
+
+      hwangAdpByYearCache = byYear;
+    }
+  }
+
   const playersData = await loadPlayersData();
-
-  let adpSource = null;
-  let scoringSource = null;
-  const rows = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseCsvRow(lines[i]);
-    const name = (cols[idx('name')] || '').trim();
-    const position = (cols[idx('position')] || '').trim();
-    if (!name) continue;
-
-    const hwangAdp = parseFloat(cols[idx('hwang_adjusted_adp')]);
-    if (!Number.isFinite(hwangAdp)) continue;
-
-    if (!adpSource) adpSource = (cols[idx('adp_source')] || '').trim() || null;
-    if (!scoringSource) scoringSource = (cols[idx('scoring_source')] || '').trim() || null;
-
-    const parseOptionalInt = (col) => {
-      const raw = (cols[idx(col)] || '').trim();
-      if (!raw) return null;
-      const n = parseInt(raw, 10);
-      return Number.isFinite(n) ? n : null;
-    };
-    const parseOptionalFloat = (col) => {
-      const raw = (cols[idx(col)] || '').trim();
-      if (!raw) return null;
-      const n = parseFloat(raw);
-      return Number.isFinite(n) ? n : null;
-    };
-
-    const base = {
-      rank: parseInt(cols[idx('overall_rank')], 10) || null,
-      name,
-      position,
-      team: (cols[idx('team')] || '').trim(),
-      value: hwangAdp,
-      posRank: parseOptionalInt('hwang_pos_rank'),
-      bbAvgAdp: parseOptionalFloat('bb_avg_adp') ?? parseOptionalFloat('overall_avg_adp'),
-      bbStackRank: parseOptionalInt('bb_stack_rank') ?? parseOptionalInt('overall_stack_rank'),
-      bbEffRank: parseOptionalFloat('bb_eff_rank') ?? parseOptionalFloat('overall_eff_rank'),
-      halfStackRank: parseOptionalInt('half_stack_rank'),
-      stdStackRank: parseOptionalInt('std_stack_rank'),
-      scoringRankShift: parseOptionalInt('scoring_rank_shift'),
-      hwangEffRank: parseOptionalFloat('hwang_eff_rank'),
-      adpDelta: parseOptionalFloat('adp_delta'),
-      sleeperId: (cols[idx('sleeper_id')] || '').trim(),
-    };
-
-    rows.push(enrichFromSleeper(base, playersData));
+  const yearRows = hwangAdpByYearCache?.get(yearNum) || [];
+  if (yearRows.length === 0) {
+    throw new Error(`No Hwang adjusted ADP data for ${year}`);
   }
 
-  rows.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
+  const rows = yearRows
+    .map((row) => enrichFromSleeper({ ...row }, playersData))
+    .sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
 
-  const result = {
+  const adpSource = rows.find((r) => r.adpSource)?.adpSource
+    || `hwang_adjusted_positional_adp_${yearNum}`;
+  const scoringSource = rows.find((r) => r.scoringSource)?.scoringSource || null;
+
+  return {
     rows,
     meta: {
       sourceLabel: 'Hwang Adjusted Positional ADP',
+      year: String(yearNum),
       adpSource,
       scoringSource,
       rowCount: rows.length,
     },
   };
-
-  hwangAdpCache = result;
-  return result;
 }
 
 export async function loadKtcCurrentRankings(format) {
@@ -591,6 +627,244 @@ export async function loadKtcRookieValuesRankings(rookieKey, classYear) {
   };
 }
 
+async function loadFinalKtcValuesIndex() {
+  if (finalKtcValuesCache) return finalKtcValuesCache;
+
+  const res = await fetch(FINAL_KTC_CSV);
+  if (!res.ok) throw new Error('Failed to fetch final_ktc_values.csv');
+
+  const text = await res.text();
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) {
+    finalKtcValuesCache = new Map();
+    return finalKtcValuesCache;
+  }
+
+  const headers = parseCsvRow(lines[0]);
+  const idx = (name) => headers.indexOf(name);
+  const byYear = new Map();
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvRow(lines[i]);
+    const year = parseInt((cols[idx('year')] || '').trim(), 10);
+    const name = (cols[idx('name')] || '').trim();
+    const value = parseInt((cols[idx('ktc_value')] || '').trim(), 10);
+    if (!Number.isFinite(year) || !name || !Number.isFinite(value)) continue;
+
+    if (!byYear.has(year)) byYear.set(year, []);
+    byYear.get(year).push({
+      name,
+      value,
+      position: (cols[idx('position')] || '').trim(),
+      sleeperId: (cols[idx('sleeper_id')] || '').trim(),
+      team: '',
+      date: (cols[idx('date')] || '').trim(),
+    });
+  }
+
+  for (const rows of byYear.values()) {
+    assignRanks(rows);
+    computePosRanks(rows);
+  }
+
+  finalKtcValuesCache = byYear;
+  return byYear;
+}
+
+async function loadFinalKtcRedraftIndex() {
+  if (finalKtcRedraftCache) return finalKtcRedraftCache;
+
+  const res = await fetch(FINAL_KTC_REDRAFT_CSV);
+  if (!res.ok) throw new Error('Failed to fetch final_ktc_redraft_value_index.csv');
+
+  const text = await res.text();
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) {
+    finalKtcRedraftCache = [];
+    return finalKtcRedraftCache;
+  }
+
+  const headers = parseCsvRow(lines[0]);
+  const idx = (name) => headers.indexOf(name);
+  finalKtcRedraftCache = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvRow(lines[i]);
+    const year = parseInt((cols[idx('year')] || '').trim(), 10);
+    const name = (cols[idx('name')] || '').trim();
+    const position = (cols[idx('position')] || '').trim();
+    if (!Number.isFinite(year) || !name) continue;
+
+    const adjustedRaw = (cols[idx('competitor_adjusted_value')] || '').trim();
+    const adjusted = adjustedRaw ? parseInt(adjustedRaw, 10) : null;
+    if (!Number.isFinite(adjusted)) continue;
+
+    const parseOptionalInt = (col) => {
+      const raw = (cols[idx(col)] || '').trim();
+      if (!raw) return null;
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) ? n : null;
+    };
+    const parseOptionalFloat = (col) => {
+      const raw = (cols[idx(col)] || '').trim();
+      if (!raw) return null;
+      const n = parseFloat(raw);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const stackRank = parseOptionalInt('adp_stack_rank');
+    const adpEffRank = parseOptionalFloat('adp_eff_rank');
+    const ktcPosRank = parseOptionalInt('ktc_pos_rank');
+
+    const base = {
+      year,
+      ktcSnapshotDate: (cols[idx('ktc_snapshot_date')] || '').trim(),
+      name,
+      position,
+      team: (cols[idx('team')] || '').trim(),
+      value: adjusted,
+      ktcValue: parseOptionalInt('ktc_value'),
+      redraftValueIndex: parseOptionalFloat('redraft_value_index'),
+      ktcPosRank,
+      adpPosRank: stackRank,
+      adpEffRank,
+      adpAvg: parseOptionalFloat('adp_avg'),
+      bbAvgAdp: parseOptionalFloat('bb_avg_adp'),
+      sleeperId: '',
+      adpSource: (cols[idx('adp_source')] || '').trim() || null,
+    };
+    if (ktcPosRank != null && adpEffRank != null) {
+      base.rankDelta = Math.round((adpEffRank - ktcPosRank) * 100) / 100;
+    } else if (ktcPosRank != null && stackRank != null) {
+      base.rankDelta = stackRank - ktcPosRank;
+    }
+    const rebuilderParsed = parseOptionalInt('rebuilder_adjusted_value');
+    if (rebuilderParsed != null) base.rebuilderAdjustedValue = rebuilderParsed;
+    base.rebuildValueIndex = parseOptionalFloat('rebuild_value_index');
+    finalKtcRedraftCache.push(base);
+  }
+
+  return finalKtcRedraftCache;
+}
+
+async function loadFinalKtcRedraftRankLookup(year) {
+  const yearNum = Number(year);
+  if (finalKtcRedraftLookupCache?.has(yearNum)) {
+    return finalKtcRedraftLookupCache.get(yearNum);
+  }
+
+  const res = await fetch(FINAL_KTC_REDRAFT_LOOKUP_CSV);
+  if (!res.ok) throw new Error('Failed to fetch final_ktc_redraft_rank_lookup.csv');
+
+  const text = await res.text();
+  const lines = text.trim().split(/\r?\n/);
+  const headers = parseCsvRow(lines[0]);
+  const idx = (name) => headers.indexOf(name);
+
+  if (!finalKtcRedraftLookupCache) finalKtcRedraftLookupCache = new Map();
+
+  const byYear = new Map();
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvRow(lines[i]);
+    const rowYear = parseInt((cols[idx('year')] || '').trim(), 10);
+    const position = (cols[idx('position')] || '').trim();
+    const rank = parseInt((cols[idx('rank')] || '').trim(), 10);
+    if (!Number.isFinite(rowYear) || !position || !Number.isFinite(rank)) continue;
+
+    if (!byYear.has(rowYear)) byYear.set(rowYear, new Map());
+    const map = byYear.get(rowYear);
+
+    const weightedRaw = (cols[idx('weighted_hist_avg')] || '').trim();
+    const finalKtcRaw = (cols[idx('final_ktc_at_rank')] || '').trim();
+    const blendedRaw = (cols[idx('blended_lookup_value')] || '').trim();
+
+    map.set(`${position}:${rank}`, {
+      position,
+      rank,
+      weighted_hist_avg: weightedRaw ? parseFloat(weightedRaw) : null,
+      current_ktc_at_rank: finalKtcRaw ? parseInt(finalKtcRaw, 10) : null,
+      blended_lookup_value: blendedRaw ? parseFloat(blendedRaw) : null,
+    });
+  }
+
+  for (const [y, map] of byYear.entries()) {
+    finalKtcRedraftLookupCache.set(y, map);
+  }
+
+  return finalKtcRedraftLookupCache.get(yearNum) || new Map();
+}
+
+export async function loadFinalKtcRedraftAdjustedRankings(year) {
+  const yearNum = Number(year);
+  if (!FINAL_KTC_YEARS.includes(yearNum)) {
+    throw new Error(`Final KTC redraft values are not available for ${year}`);
+  }
+
+  const [allRows, rankLookup, playersData] = await Promise.all([
+    loadFinalKtcRedraftIndex(),
+    loadFinalKtcRedraftRankLookup(yearNum),
+    loadPlayersData(),
+  ]);
+
+  const yearRows = allRows.filter((row) => row.year === yearNum);
+  if (yearRows.length === 0) {
+    throw new Error(`No final KTC redraft data for ${year}`);
+  }
+
+  const rows = yearRows.map((row) => enrichFromSleeper({ ...row }, playersData));
+  assignRanks(rows);
+  computePosRanks(rows);
+  assignOverallValueRanks(rows, 'rebuilderAdjustedValue', 'rebuilderOverallRank');
+  assignPosValueRanks(rows, 'rebuilderAdjustedValue', 'rebuilderPosRank');
+  rows.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
+
+  const snapshotDate = rows[0]?.ktcSnapshotDate || '';
+
+  return {
+    rows,
+    meta: {
+      sourceLabel: 'Final KTC — Competitor Adjusted Value',
+      year: String(yearNum),
+      date: snapshotDate,
+      snapshotLabel: `${yearNum} preseason snapshot (${snapshotDate}) · 50% hist + 50% final KTC lookup`,
+      adpSource: `hwang_adjusted_positional_adp_${yearNum}`,
+      usesHwangAdp: true,
+      rowCount: rows.length,
+      rankLookup,
+    },
+  };
+}
+
+export async function loadFinalKtcValuesRankings(year) {
+  const yearNum = Number(year);
+  if (!FINAL_KTC_YEARS.includes(yearNum)) {
+    throw new Error(`Final KTC values are not available for ${year}`);
+  }
+
+  const [byYear, playersData] = await Promise.all([
+    loadFinalKtcValuesIndex(),
+    loadPlayersData(),
+  ]);
+
+  const dayRows = byYear.get(yearNum) || [];
+  if (dayRows.length === 0) {
+    throw new Error(`No final KTC data for ${year}`);
+  }
+
+  const rows = dayRows.map((row) => enrichFromSleeper(cloneHistoricalRow(row), playersData));
+  const snapshotDate = rows[0]?.date || '';
+
+  return {
+    rows,
+    meta: {
+      sourceLabel: 'Final KTC Values — SF TE+',
+      date: snapshotDate,
+      snapshotLabel: `${yearNum} preseason snapshot (${snapshotDate})`,
+      rowCount: rows.length,
+    },
+  };
+}
+
 export async function loadKtcHistoricalRankings(variant, date) {
   const cfg = KTC_HISTORICAL_VARIANTS[variant];
   const playersData = await loadPlayersData();
@@ -733,11 +1007,15 @@ export async function loadRankings(sourceOption, { year, date } = {}) {
     case 'ktc_redraft_adjusted':
       return loadKtcRedraftAdjustedRankings();
     case 'hwang_adjusted_adp':
-      return loadHwangAdjustedAdpRankings();
+      return loadHwangAdjustedAdpRankings(year);
     case 'ktc_historical':
       return loadKtcHistoricalRankings(sourceOption.variant, date);
     case 'ktc_rookie':
       return loadKtcRookieValuesRankings(sourceOption.rookieKey, year);
+    case 'final_ktc_values':
+      return loadFinalKtcValuesRankings(year);
+    case 'final_ktc_redraft_adjusted':
+      return loadFinalKtcRedraftAdjustedRankings(year);
     case 'fantasycalc':
       return loadFantasyCalcRankings();
     case 'ffb':
@@ -756,11 +1034,21 @@ export function getYearsForSource(sourceOption) {
   if (sourceOption.kind === 'ktc_rookie') {
     return KTC_ROOKIE_CLASS_YEARS;
   }
+  if (sourceOption.kind === 'final_ktc_values' || sourceOption.kind === 'final_ktc_redraft_adjusted') {
+    return FINAL_KTC_YEARS;
+  }
+  if (sourceOption.kind === 'hwang_adjusted_adp') {
+    return HWANG_ADP_YEARS;
+  }
   return [];
 }
 
 export function sourceUsesYear(sourceOption) {
-  return sourceOption?.kind === 'adp' || sourceOption?.kind === 'ktc_rookie';
+  return sourceOption?.kind === 'adp'
+    || sourceOption?.kind === 'ktc_rookie'
+    || sourceOption?.kind === 'final_ktc_values'
+    || sourceOption?.kind === 'final_ktc_redraft_adjusted'
+    || sourceOption?.kind === 'hwang_adjusted_adp';
 }
 
 export function sourceUsesDate(sourceOption) {

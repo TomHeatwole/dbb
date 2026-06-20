@@ -68,7 +68,12 @@ export function buildRedraftAdjustmentBreakdown(row, lookupMap) {
   };
 }
 
-function RedraftAdjustmentPanel({ row, lookupMap, usesHwangAdp = false }) {
+function RedraftAdjustmentPanel({
+  row,
+  lookupMap,
+  usesHwangAdp = false,
+  lookupBlend = { histWeight: 0.4, seasonWeight: 0.6, seasonLabel: 'Current KTC' },
+}) {
   const breakdown = useMemo(
     () => buildRedraftAdjustmentBreakdown(row, lookupMap),
     [row, lookupMap],
@@ -105,6 +110,11 @@ function RedraftAdjustmentPanel({ row, lookupMap, usesHwangAdp = false }) {
     redraftValueIndex,
     rebuilder,
   } = breakdown;
+
+  const histPct = Math.round(lookupBlend.histWeight * 100);
+  const seasonPct = Math.round(lookupBlend.seasonWeight * 100);
+  const seasonLabel = lookupBlend.seasonLabel || 'Current KTC';
+  const blendLabel = `${histPct}% hist + ${seasonPct}% ${seasonLabel.toLowerCase()}`;
 
   const betterSlot = rankLabel(row.position, interp.rankLow);
   const worseSlot = rankLabel(row.position, interp.rankHigh);
@@ -164,21 +174,21 @@ function RedraftAdjustmentPanel({ row, lookupMap, usesHwangAdp = false }) {
         {interp.rankLow !== interp.rankHigh ? (
           <>
             <StatBlock
-              label={`At ${betterSlot}: 40% hist + 60% current`}
+              label={`At ${betterSlot}: ${blendLabel}`}
               value={formatKtcValue(interp.blendedLow)}
-              sub={`Hist ${formatKtcValue(interp.weightedLow)} · Current ${formatKtcValue(interp.currentLow)}`}
+              sub={`Hist ${formatKtcValue(interp.weightedLow)} · ${seasonLabel} ${formatKtcValue(interp.currentLow)}`}
             />
             <StatBlock
-              label={`At ${worseSlot}: 40% hist + 60% current`}
+              label={`At ${worseSlot}: ${blendLabel}`}
               value={formatKtcValue(interp.blendedHigh)}
-              sub={`Hist ${formatKtcValue(interp.weightedHigh)} · Current ${formatKtcValue(interp.currentHigh)}`}
+              sub={`Hist ${formatKtcValue(interp.weightedHigh)} · ${seasonLabel} ${formatKtcValue(interp.currentHigh)}`}
             />
           </>
         ) : (
           <StatBlock
             label={`Rank-slot lookup at ${betterSlot}`}
             value={formatKtcValue(interp.blendedLow)}
-            sub={`40% year-weighted hist + 60% current ${betterSlot} KTC`}
+            sub={`${blendLabel} at ${betterSlot}`}
           />
         )}
 

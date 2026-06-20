@@ -27,17 +27,24 @@
 
 import { useState, useEffect } from 'react';
 import { fetchKtcData } from '../lookups/KtcLookup';
-import { fetchRedraftValueData, getRedraftValueEntryByName, assignPosValueRanks } from '../lookups/RedraftValueLookup';
+import {
+  fetchRedraftValueData,
+  getRedraftValueEntryByName,
+  assignPosValueRanks,
+  assignOverallValueRanks,
+} from '../lookups/RedraftValueLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { normalisePlayerName, findBestPlayerMatch } from '../utils/playerNameMatcher';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 
 const SKILL_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
 
-/** Fill missing positional ranks from values (fallback after redraft lookup). */
-function ensurePlayerPosRanks(players) {
+/** Fill missing adjusted ranks from values (fallback after redraft lookup). */
+function ensurePlayerAdjustedRanks(players) {
   assignPosValueRanks(players, 'competitorAdjustedValue', 'competitorAdjustedRank');
   assignPosValueRanks(players, 'rebuilderAdjustedValue', 'rebuilderAdjustedRank');
+  assignOverallValueRanks(players, 'competitorAdjustedValue', 'competitorAdjustedOverallRank');
+  assignOverallValueRanks(players, 'rebuilderAdjustedValue', 'rebuilderAdjustedOverallRank');
   return players;
 }
 
@@ -416,7 +423,9 @@ export function usePlayerDBData() {
             competitorAdjustedValue: redraftEntry?.competitorAdjustedValue ?? null,
             rebuilderAdjustedValue: redraftEntry?.rebuilderAdjustedValue ?? null,
             competitorAdjustedRank: redraftEntry?.competitorAdjustedRank ?? null,
+            competitorAdjustedOverallRank: redraftEntry?.competitorAdjustedOverallRank ?? null,
             rebuilderAdjustedRank: redraftEntry?.rebuilderAdjustedRank ?? null,
+            rebuilderAdjustedOverallRank: redraftEntry?.rebuilderAdjustedOverallRank ?? null,
             redraftValueIndex: redraftEntry?.redraftValueIndex ?? null,
             rebuildValueIndex: redraftEntry?.rebuildValueIndex ?? null,
             redraftKtcValue: redraftEntry?.ktcValue ?? null,
@@ -477,7 +486,7 @@ export function usePlayerDBData() {
         });
 
         if (!cancelled) {
-          setPlayers(ensurePlayerPosRanks(result));
+          setPlayers(ensurePlayerAdjustedRanks(result));
           setRosterInfo({
             rosters: teamData?.rosters || null,
             users:   teamData?.users   || null,

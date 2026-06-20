@@ -16,6 +16,10 @@ import {
   DEFAULT_SOURCE_ID,
   REDRAFT_VALUE_INDEX_SOURCE,
   REDRAFT_VALUE_INDEX_SOURCE_ID,
+  REDRAFT_VALUE_INDEX_YEARS,
+  REDRAFT_VALUE_INDEX_CURRENT_YEAR,
+  resolveRedraftValueIndexSource,
+  getRedraftLookupBlend,
   sourceHasValue,
   SORT_KEYS,
   getYearLabel,
@@ -104,6 +108,16 @@ function formatKtcNumber(value) {
   return formatKtcValue(value);
 }
 
+function formatKtcCompact(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return String(Math.round(value));
+}
+
+function formatCompactRankNumber(rank) {
+  if (rank == null || !Number.isFinite(rank)) return '—';
+  return Number.isInteger(rank) ? String(rank) : rank.toFixed(1);
+}
+
 function formatPosRankSlot(position, rank) {
   if (!position || rank == null) return '—';
   return `${position}${rank}`;
@@ -170,8 +184,9 @@ function resolveSleeperId(row, playersData) {
 }
 
 function RankingsViewer({ fixedSourceId = null }) {
+  const isRedraftValueIndexMode = fixedSourceId === REDRAFT_VALUE_INDEX_SOURCE_ID;
   const [sourceId, setSourceId] = useState(fixedSourceId || DEFAULT_SOURCE_ID);
-  const [year, setYear] = useState('2026');
+  const [year, setYear] = useState(String(REDRAFT_VALUE_INDEX_CURRENT_YEAR));
   const [date, setDate] = useState('');
   const [availableDates, setAvailableDates] = useState([]);
   const [positionFilter, setPositionFilter] = useState('ALL');
@@ -190,29 +205,37 @@ function RankingsViewer({ fixedSourceId = null }) {
   const [users, setUsers] = useState(null);
 
   const sourceOption = useMemo(() => {
-    if (fixedSourceId === REDRAFT_VALUE_INDEX_SOURCE_ID) {
-      return REDRAFT_VALUE_INDEX_SOURCE;
+    if (isRedraftValueIndexMode) {
+      return resolveRedraftValueIndexSource(year);
     }
-    return findSourceOption(fixedSourceId || sourceId, SOURCE_GROUPS);
-  }, [fixedSourceId, sourceId]);
+    if (fixedSourceId) {
+      return findSourceOption(fixedSourceId, SOURCE_GROUPS);
+    }
+    return findSourceOption(sourceId, SOURCE_GROUPS);
+  }, [isRedraftValueIndexMode, fixedSourceId, sourceId, year]);
 
-  const yearOptions = useMemo(
-    () => (sourceOption ? getYearsForSource(sourceOption) : []),
-    [sourceOption],
+  const redraftLookupBlend = useMemo(
+    () => (isRedraftValueIndexMode ? getRedraftLookupBlend(year) : getRedraftLookupBlend(REDRAFT_VALUE_INDEX_CURRENT_YEAR)),
+    [isRedraftValueIndexMode, year],
   );
+
+  const yearOptions = useMemo(() => {
+    if (isRedraftValueIndexMode) return REDRAFT_VALUE_INDEX_YEARS;
+    return sourceOption ? getYearsForSource(sourceOption) : [];
+  }, [isRedraftValueIndexMode, sourceOption]);
 
   useEffect(() => {
     if (!fixedSourceId && !sourceOption) return;
-    if (!fixedSourceId) {
+    if (!fixedSourceId || isRedraftValueIndexMode) {
       const defaults = defaultSortForSource(sourceOption);
       setSortKey(defaults.key);
       setSortDir(defaults.dir);
       return;
     }
-    const defaults = defaultSortForSource(REDRAFT_VALUE_INDEX_SOURCE);
+    const defaults = defaultSortForSource(sourceOption);
     setSortKey(defaults.key);
     setSortDir(defaults.dir);
-  }, [sourceId, sourceOption, fixedSourceId]);
+  }, [sourceId, sourceOption, fixedSourceId, isRedraftValueIndexMode]);
 
   useEffect(() => {
     if (!sourceOption || !sourceUsesYear(sourceOption)) return;
@@ -277,6 +300,10 @@ function RankingsViewer({ fixedSourceId = null }) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    setSelectedRedraftRow(null);
+  }, [year, sourceOption?.kind]);
 
   useEffect(() => {
     let cancelled = false;
@@ -369,7 +396,7 @@ function RankingsViewer({ fixedSourceId = null }) {
   const isRedraftAdjusted = sourceIsRedraftAdjusted(sourceOption);
   const isHwangAdjusted = sourceIsHwangAdjusted(sourceOption);
   const redraftHwangAdp = isRedraftAdjusted && redraftUsesHwangAdp(meta?.adpSource);
-  const colCount = isRedraftAdjusted ? (redraftHwangAdp ? 16 : 15) : (isHwangAdjusted ? 8 : 6);
+  const colCount = isRedraftAdjusted ? (redraftHwangAdp ? 15 : 14) : (isHwangAdjusted ? 8 : 6);
 
   const handleSort = useCallback((key) => {
     if (sortKey === key) {
@@ -400,8 +427,9 @@ function RankingsViewer({ fixedSourceId = null }) {
 
   const subtitle = useMemo(() => {
     if (!meta) return '';
-    const parts = [meta.sourceLabel];
-    if (meta.year) parts.push(`${meta.year} class`);
+    const parts = [isRedraftValueIndexMode ? 'Redraft Value Index' : meta.sourceLabel];
+    if (meta.year && sourceOption?.kind === 'ktc_rookie') parts.push(`${meta.year} class`);
+    else if (meta.year && !meta.snapshotLabel) parts.push(String(meta.year));
     if (meta.snapshotLabel) parts.push(meta.snapshotLabel);
     else if (meta.date) parts.push(meta.date);
     if (meta.usedCurrentFallback) {
@@ -419,10 +447,10 @@ function RankingsViewer({ fixedSourceId = null }) {
     }
     if (meta.rowCount != null) parts.push(`${meta.rowCount.toLocaleString()} players`);
     return parts.join(' · ');
-  }, [meta]);
+  }, [meta, sourceOption, isRedraftValueIndexMode]);
 
   return (
-    <div className="rv-root">
+    <div className={`rv-root${isRedraftAdjusted ? ' rv-root--redraft' : ''}`}>
       <div className="rv-controls">
         {!fixedSourceId && (
           <label className="rv-field">
@@ -443,9 +471,9 @@ function RankingsViewer({ fixedSourceId = null }) {
           </label>
         )}
 
-        {!fixedSourceId && sourceUsesYear(sourceOption) && (
+        {(!fixedSourceId && sourceUsesYear(sourceOption)) || isRedraftValueIndexMode ? (
           <label className="rv-field">
-            <span className="rv-label">{getYearLabel(sourceOption)}</span>
+            <span className="rv-label">{isRedraftValueIndexMode ? 'Season' : getYearLabel(sourceOption)}</span>
             <select
               className="rv-select rv-select--narrow"
               value={year}
@@ -456,7 +484,7 @@ function RankingsViewer({ fixedSourceId = null }) {
               ))}
             </select>
           </label>
-        )}
+        ) : null}
 
         {!fixedSourceId && sourceUsesDate(sourceOption) && (
           <label className="rv-field">
@@ -503,7 +531,10 @@ function RankingsViewer({ fixedSourceId = null }) {
       {loading ? (
         <LoadingState
           label={
-            sourceOption?.kind === 'ktc_rookie' || sourceUsesDate(sourceOption)
+            sourceOption?.kind === 'ktc_rookie'
+              || sourceOption?.kind === 'final_ktc_values'
+              || sourceOption?.kind === 'final_ktc_redraft_adjusted'
+              || sourceUsesDate(sourceOption)
               ? 'Loading KTC historical data…'
               : 'Loading rankings…'
           }
@@ -513,14 +544,21 @@ function RankingsViewer({ fixedSourceId = null }) {
         <>
           {isRedraftAdjusted && (
             <p className="rv-hint">
-              {redraftHwangAdp
-                ? 'Click a player to see how Hwang-adjusted Pos ADP maps to a historical slot value. Best Ball ADP is the raw input; Hwang ADP applies the half→standard RB/WR scoring correction.'
-                : 'Click a player to see how OVR-adjusted Pos ADP maps to a historical slot value.'}
+              Click a row for rank lookup math. Hwang ADP = half→standard RB/WR correction on best ball.
             </p>
           )}
           <div className={isRedraftAdjusted && selectedRedraftRow ? 'rv-redraft-layout' : undefined}>
             <div className="rv-table-wrap">
-              <table className="rv-table">
+              <table className={`rv-table${isRedraftAdjusted ? ' rv-table--redraft' : ''}`}>
+            {isRedraftAdjusted && (
+              <colgroup>
+                <col className="rv-col-rank" />
+                <col className="rv-col-name" />
+                <col className="rv-col-pos" />
+                <col className="rv-col-team" />
+                <col className="rv-col-num" span={redraftHwangAdp ? 11 : 10} />
+              </colgroup>
+            )}
             <thead>
               <tr>
                 <SortableHeader
@@ -537,6 +575,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                   activeKey={sortKey}
                   activeDir={sortDir}
                   onSort={handleSort}
+                  className="rv-th-name"
                 />
                 <th className="rv-th rv-th-pos">Pos</th>
                 <th className="rv-th rv-th-team">Team</th>
@@ -581,7 +620,15 @@ function RankingsViewer({ fixedSourceId = null }) {
                 {isRedraftAdjusted && (
                   <>
                     <SortableHeader
-                      label="KTC Rank"
+                      label="Adj#"
+                      sortKey="posRank"
+                      activeKey={sortKey}
+                      activeDir={sortDir}
+                      onSort={handleSort}
+                      className="rv-th-pos-rank"
+                    />
+                    <SortableHeader
+                      label="KTC#"
                       sortKey="ktcPosRank"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -589,7 +636,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-ktc-rank"
                     />
                     <SortableHeader
-                      label="Pos ADP"
+                      label="ADP"
                       sortKey="adpPosRank"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -597,7 +644,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-pos-adp"
                     />
                     <SortableHeader
-                      label="Adjusted ADP"
+                      label="Eff"
                       sortKey="adpEffRank"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -606,7 +653,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                     />
                     {redraftHwangAdp && (
                       <SortableHeader
-                        label="Best Ball ADP"
+                        label="BB"
                         sortKey="bbAvgAdp"
                         activeKey={sortKey}
                         activeDir={sortDir}
@@ -615,7 +662,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       />
                     )}
                     <SortableHeader
-                      label={redraftHwangAdp ? 'Hwang ADP' : 'OVR ADP'}
+                      label={redraftHwangAdp ? 'Hwang' : 'OVR'}
                       sortKey="adpAvg"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -623,7 +670,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-ovr-adp"
                     />
                     <SortableHeader
-                      label="Dynasty"
+                      label="Dyn"
                       sortKey="ktcValue"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -647,7 +694,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                 {isRedraftAdjusted && (
                   <>
                     <SortableHeader
-                      label="Redraft Value Index"
+                      label="RVI"
                       sortKey="redraftValueIndex"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -655,7 +702,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-index"
                     />
                     <SortableHeader
-                      label="Rebuilder Adjusted Value"
+                      label="Rebld"
                       sortKey="rebuilderAdjustedValue"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -663,7 +710,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-rebuilder"
                     />
                     <SortableHeader
-                      label="Rebuild Value Index"
+                      label="RBI"
                       sortKey="rebuildValueIndex"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -698,8 +745,10 @@ function RankingsViewer({ fixedSourceId = null }) {
                       }
                     } : undefined}
                   >
-                    <td className="rv-td rv-td-rank">{idx + 1}</td>
-                    <td className="rv-td rv-td-name">{row.name}</td>
+                    <td className="rv-td rv-td-rank">
+                      {isRedraftAdjusted ? (row.rank ?? '—') : (idx + 1)}
+                    </td>
+                    <td className="rv-td rv-td-name" title={row.name}>{row.name}</td>
                     <td className="rv-td rv-td-pos">
                       {row.position ? <PositionBadge position={row.position} /> : '—'}
                     </td>
@@ -724,24 +773,27 @@ function RankingsViewer({ fixedSourceId = null }) {
                     )}
                     {isRedraftAdjusted && (
                       <>
+                        <td className="rv-td rv-td-pos-rank">
+                          {formatCompactRankNumber(row.posRank)}
+                        </td>
                         <td className="rv-td rv-td-ktc-rank">
-                          {formatPosRankSlot(row.position, row.ktcPosRank)}
+                          {formatCompactRankNumber(row.ktcPosRank)}
                         </td>
                         <td className="rv-td rv-td-pos-adp">
-                          {formatPosAdpRank(row.position, row.adpPosRank)}
+                          {formatCompactRankNumber(row.adpPosRank)}
                         </td>
-                        <td className="rv-td rv-td-adj-adp">{formatAdjustedAdpRank(row)}</td>
+                        <td className="rv-td rv-td-adj-adp">{formatCompactRankNumber(row.adpEffRank)}</td>
                         {redraftHwangAdp && (
                           <td className="rv-td rv-td-bb-adp">{formatOvrAdp(row.bbAvgAdp)}</td>
                         )}
                         <td className="rv-td rv-td-ovr-adp">{formatOvrAdp(row.adpAvg)}</td>
-                        <td className="rv-td rv-td-dynasty">{formatKtcNumber(row.ktcValue)}</td>
+                        <td className="rv-td rv-td-dynasty">{formatKtcCompact(row.ktcValue)}</td>
                       </>
                     )}
                     <td className="rv-td rv-td-value">
                       {isRedraftAdjusted ? (
                         <RedraftAdjTooltip kind="comp" entry={row} usesHwangAdp={redraftHwangAdp}>
-                          {formatValue(row)}
+                          {formatKtcCompact(row.value)}
                         </RedraftAdjTooltip>
                       ) : isHwangAdjusted ? (
                         <HwangAdpTooltip row={row}>
@@ -760,7 +812,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                         </td>
                         <td className="rv-td rv-td-rebuilder">
                           <RedraftAdjTooltip kind="rebuild" entry={row} usesHwangAdp={redraftHwangAdp}>
-                            {formatKtcNumber(row.rebuilderAdjustedValue)}
+                            {formatKtcCompact(row.rebuilderAdjustedValue)}
                           </RedraftAdjTooltip>
                         </td>
                         <td className={`rv-td ${indexClassName(row.rebuildValueIndex)}`}>
@@ -782,6 +834,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                 row={selectedRedraftRow}
                 lookupMap={rankLookup}
                 usesHwangAdp={redraftHwangAdp}
+                lookupBlend={redraftLookupBlend}
               />
             )}
           </div>

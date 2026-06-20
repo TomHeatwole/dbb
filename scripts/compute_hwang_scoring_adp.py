@@ -19,10 +19,11 @@ Reads:
   site/public/data/adp/fantasypros_adp_half_{year}.csv
 
 Writes:
-  site/public/data/hwang_adjusted_positional_adp.csv
+  site/public/data/hwang_adjusted_positional_adp.csv  (all seasons, year column)
 
 Usage (from project root):
-  python3 scripts/compute_hwang_scoring_adp.py [year]
+  python3 scripts/compute_hwang_scoring_adp.py           # all available years
+  python3 scripts/compute_hwang_scoring_adp.py 2024     # single year only
 """
 
 from __future__ import annotations
@@ -41,6 +42,7 @@ OUTPUT_CSV = PROJECT_ROOT / "site/public/data/hwang_adjusted_positional_adp.csv"
 POSITIONS = ("QB", "RB", "WR", "TE")
 SCORING_SHIFT_POSITIONS = frozenset({"RB", "WR"})
 DEFAULT_ADP_YEAR = 2026
+YEAR_RANGE = range(2020, 2027)
 
 
 def normalize_name(name: str) -> str:
@@ -235,47 +237,18 @@ def compute_pos_ranks(rows: list[dict]) -> None:
             row["hwang_pos_rank"] = i
 
 
-def write_output(rows: list[dict], adp_year: int) -> None:
-    fieldnames = [
-        "name",
-        "position",
-        "team",
-        "sleeper_id",
-        "overall_rank",
-        "bb_avg_adp",
-        "bb_stack_rank",
-        "bb_eff_rank",
-        "half_stack_rank",
-        "std_stack_rank",
-        "scoring_rank_shift",
-        "hwang_eff_rank",
-        "hwang_adjusted_adp",
-        "hwang_pos_rank",
-        "adp_delta",
-        "adp_source",
-        "scoring_source",
-    ]
-
-    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
-    with OUTPUT_CSV.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({
-                **row,
-                "adp_source": f"fantasypros_bestball_{adp_year}",
-                "scoring_source": f"fantasypros_half_{adp_year}",
-            })
+def available_hwang_years() -> list[int]:
+    years: list[int] = []
+    for year in YEAR_RANGE:
+        if all(
+            (ADP_DIR / f"fantasypros_adp_{adp_type}_{year}.csv").is_file()
+            for adp_type in ("bestball", "half", "overall")
+        ):
+            years.append(year)
+    return years
 
 
-def main() -> None:
-    adp_year = DEFAULT_ADP_YEAR
-    if len(sys.argv) > 1:
-        try:
-            adp_year = int(sys.argv[1])
-        except ValueError:
-            sys.exit(f"Invalid year: {sys.argv[1]}")
-
+def compute_hwang_rows(adp_year: int) -> list[dict]:
     bb_by_name, bb_by_sleeper, bb_boards, bb_rows = load_adp("bestball", adp_year)
     half_by_name, half_by_sleeper, _, _ = load_adp("half", adp_year)
     std_by_name, std_by_sleeper, _, _ = load_adp("overall", adp_year)
@@ -286,7 +259,6 @@ def main() -> None:
     }
 
     output_rows: list[dict] = []
-    shifted_count = 0
 
     for row in bb_rows:
         pos = row["position"]
@@ -294,7 +266,6 @@ def main() -> None:
         bb_avg = row["adp_avg"]
         bb_eff = eff_ranks_by_pos[pos].get(bb_stack, float(bb_stack))
 
-        key = (row["norm_name"], pos)
         half_row = find_row(row, half_by_name, half_by_sleeper) if pos in SCORING_SHIFT_POSITIONS else None
         std_row = find_row(row, std_by_name, std_by_sleeper) if pos in SCORING_SHIFT_POSITIONS else None
 
@@ -302,9 +273,6 @@ def main() -> None:
             shift = std_row["adp_stack_rank"] - half_row["adp_stack_rank"]
         else:
             shift = 0
-
-        if shift:
-            shifted_count += 1
 
         if pos in SCORING_SHIFT_POSITIONS and shift != 0:
             hwang_eff = max(1.0, bb_eff + shift)
@@ -338,6 +306,8 @@ def main() -> None:
             "hwang_adjusted_adp": hwang_adp,
             "hwang_pos_rank": "",
             "adp_delta": adp_delta if pos in SCORING_SHIFT_POSITIONS else "",
+            "adp_source": f"fantasypros_bestball_{adp_year}",
+            "scoring_source": f"fantasypros_half_{adp_year}",
         })
 
     output_rows.sort(key=lambda r: (r["hwang_adjusted_adp"], r["name"]))
@@ -345,25 +315,69 @@ def main() -> None:
         row["overall_rank"] = i
 
     compute_pos_ranks(output_rows)
-    write_output(output_rows, adp_year)
+    return output_rows
 
-    rb_wr = [r for r in output_rows if r["position"] in SCORING_SHIFT_POSITIONS]
-    nonzero = [r for r in rb_wr if r["scoring_rank_shift"] != 0]
 
-    print(f"Wrote {len(output_rows):,} players → {OUTPUT_CSV}")
-    print(f"ADP year: {adp_year} (best-ball base, half→std shift for RB/WR)")
-    print(f"RB/WR with scoring shift applied: {shifted_count:,} / {len(rb_wr):,}")
-    print(f"RB/WR with non-zero shift: {len(nonzero):,}")
-    if nonzero:
-        top = sorted(nonzero, key=lambda r: abs(int(r["scoring_rank_shift"])), reverse=True)[:5]
-        print("Largest shifts:")
-        for r in top:
-            print(
-                f"  {r['name']:22} {r['position']} "
-                f"half={r['half_stack_rank']} std={r['std_stack_rank']} "
-                f"Δ={r['scoring_rank_shift']:+d}  "
-                f"ADP {r['bb_avg_adp']}→{r['hwang_adjusted_adp']}"
-            )
+def write_output(all_rows: list[dict]) -> None:
+    fieldnames = [
+        "year",
+        "name",
+        "position",
+        "team",
+        "sleeper_id",
+        "overall_rank",
+        "bb_avg_adp",
+        "bb_stack_rank",
+        "bb_eff_rank",
+        "half_stack_rank",
+        "std_stack_rank",
+        "scoring_rank_shift",
+        "hwang_eff_rank",
+        "hwang_adjusted_adp",
+        "hwang_pos_rank",
+        "adp_delta",
+        "adp_source",
+        "scoring_source",
+    ]
+
+    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
+    with OUTPUT_CSV.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in all_rows:
+            writer.writerow(row)
+
+
+def main() -> None:
+    years = available_hwang_years()
+    if len(sys.argv) > 1:
+        try:
+            years = [int(sys.argv[1])]
+        except ValueError:
+            sys.exit(f"Invalid year: {sys.argv[1]}")
+
+    if not years:
+        sys.exit("ERROR: no ADP seasons with bestball + half + overall files found")
+
+    all_rows: list[dict] = []
+    for adp_year in years:
+        rows = compute_hwang_rows(adp_year)
+        for row in rows:
+            row["year"] = adp_year
+        all_rows.extend(rows)
+
+        rb_wr = [r for r in rows if r["position"] in SCORING_SHIFT_POSITIONS]
+        nonzero = [r for r in rb_wr if r["scoring_rank_shift"] != 0]
+        shifted_count = len([r for r in rb_wr if r["scoring_rank_shift"] != 0])
+
+        print(f"\n=== {adp_year} ===")
+        print(f"  {len(rows):,} players")
+        print(f"  RB/WR with scoring shift applied: {shifted_count:,} / {len(rb_wr):,}")
+        print(f"  RB/WR with non-zero shift: {len(nonzero):,}")
+
+    write_output(all_rows)
+    print(f"\nWrote {len(all_rows):,} rows → {OUTPUT_CSV}")
+    print(f"Seasons: {years[0]}–{years[-1]}" if len(years) > 1 else f"Season: {years[0]}")
 
 
 if __name__ == "__main__":

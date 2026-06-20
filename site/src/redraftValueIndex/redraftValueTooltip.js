@@ -33,6 +33,10 @@ export function normalizeRedraftTooltipEntry(source) {
     adpPosRank: source.adpPosRank ?? source.redraftAdpPosRank ?? null,
     competitorAdjustedValue: source.competitorAdjustedValue ?? source.value ?? null,
     rebuilderAdjustedValue: source.rebuilderAdjustedValue ?? null,
+    competitorAdjustedRank: source.competitorAdjustedRank ?? source.posRank ?? null,
+    competitorAdjustedOverallRank: source.competitorAdjustedOverallRank ?? source.rank ?? null,
+    rebuilderAdjustedRank: source.rebuilderAdjustedRank ?? source.rebuilderPosRank ?? null,
+    rebuilderAdjustedOverallRank: source.rebuilderAdjustedOverallRank ?? source.rebuilderOverallRank ?? null,
     redraftValueIndex: source.redraftValueIndex ?? null,
     rebuildValueIndex: source.rebuildValueIndex ?? null,
   };
@@ -59,9 +63,25 @@ export function buildRedraftAdjTooltipLines(entry, kind, { usesHwangAdp = false 
   }
 
   const adpLabel = usesHwangAdp ? 'Hwang ADP' : 'Adj ADP';
+  const adjPosRank = kind === 'comp'
+    ? normalized.competitorAdjustedRank
+    : normalized.rebuilderAdjustedRank;
+  const adjOverallRank = kind === 'comp'
+    ? normalized.competitorAdjustedOverallRank
+    : normalized.rebuilderAdjustedOverallRank;
 
-  return [
+  const lines = [
     KIND_LABELS[kind],
+  ];
+
+  if (adjOverallRank != null) {
+    lines.push(`Adj overall: #${adjOverallRank}`);
+  }
+  if (adjPosRank != null) {
+    lines.push(`Adj rank: ${formatPosRankLabel(normalized.position, adjPosRank)}`);
+  }
+
+  lines.push(
     `KTC TE+: ${formatKtcValue(normalized.ktcValue)}`,
     `KTC rank: ${formatPosRankLabel(normalized.position, normalized.ktcPosRank)}`,
     `${adpLabel}: ${formatAdjAdpLabel(
@@ -69,11 +89,15 @@ export function buildRedraftAdjTooltipLines(entry, kind, { usesHwangAdp = false 
       normalized.adpEffRank,
       normalized.adpPosRank,
     )}`,
-    ...(usesHwangAdp && entry?.bbAvgAdp != null
-      ? [`Best Ball ADP: ${entry.bbAvgAdp.toFixed(1)}`]
-      : []),
-    `Adjust: ${formatAdjustPct(index)}`,
-  ];
+  );
+
+  if (usesHwangAdp && entry?.bbAvgAdp != null) {
+    lines.push(`Best Ball ADP: ${entry.bbAvgAdp.toFixed(1)}`);
+  }
+
+  lines.push(`Adjust: ${formatAdjustPct(index)}`);
+
+  return lines;
 }
 
 export function buildRedraftAdjTooltipText(entry, kind, options) {

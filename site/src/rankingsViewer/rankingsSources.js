@@ -61,6 +61,9 @@ export const KTC_HISTORICAL_VARIANTS = {
 /** Draft classes with May 20 snapshots in SF historical data (2020-04-01 onward). */
 export const KTC_ROOKIE_CLASS_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026];
 
+/** Preseason SF TE+ KTC snapshot years (week-1 eve dates in final_ktc_values.csv). */
+export const FINAL_KTC_YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
+
 export const KTC_ROOKIE_VALUES = {
   sf: {
     label: 'KTC Rookie Values — Superflex',
@@ -118,6 +121,11 @@ export function buildSourceOptions() {
         kind: 'ktc_rookie',
         rookieKey: key,
       })),
+      {
+        id: 'final_ktc_values',
+        label: 'Final KTC Values — SF TE+',
+        kind: 'final_ktc_values',
+      },
     ],
   });
 
@@ -161,10 +169,42 @@ export const REDRAFT_VALUE_INDEX_SOURCE = {
 
 export const REDRAFT_VALUE_INDEX_SOURCE_ID = REDRAFT_VALUE_INDEX_SOURCE.id;
 
+/** Current live index year; prior seasons use final_ktc_redraft_value_index.csv. */
+export const REDRAFT_VALUE_INDEX_CURRENT_YEAR = 2026;
+export const REDRAFT_VALUE_INDEX_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026];
+
+/** Seasons with best-ball + half + standard ADP for Hwang adjustment. */
+export const HWANG_ADP_YEARS = REDRAFT_VALUE_INDEX_YEARS;
+
+export const FINAL_KTC_REDRAFT_SOURCE = {
+  id: 'final_ktc_redraft_adjusted',
+  label: 'Final KTC — Competitor Adjusted Value',
+  kind: 'final_ktc_redraft_adjusted',
+};
+
+export function redraftValueIndexUsesHistoricalSeason(year) {
+  const yearNum = Number(year);
+  return yearNum >= 2020 && yearNum <= 2025;
+}
+
+export function resolveRedraftValueIndexSource(year) {
+  if (redraftValueIndexUsesHistoricalSeason(year)) {
+    return FINAL_KTC_REDRAFT_SOURCE;
+  }
+  return REDRAFT_VALUE_INDEX_SOURCE;
+}
+
+export function getRedraftLookupBlend(year) {
+  if (redraftValueIndexUsesHistoricalSeason(year)) {
+    return { histWeight: 0.5, seasonWeight: 0.5, seasonLabel: 'Final KTC' };
+  }
+  return { histWeight: 0.4, seasonWeight: 0.6, seasonLabel: 'Current KTC' };
+}
+
 /** Sources with a meaningful numeric value column (KTC, FantasyCalc, ADP avg). */
 export function sourceHasValue(sourceOption) {
   if (!sourceOption) return false;
-  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'ktc_redraft_adjusted', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
+  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'final_ktc_values', 'ktc_redraft_adjusted', 'final_ktc_redraft_adjusted', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
 }
 
 /** Default table sort when a source is selected or data reloads. */
@@ -173,8 +213,10 @@ export function defaultSortForSource(sourceOption) {
   if (
     sourceOption.kind === 'ktc_current'
     || sourceOption.kind === 'ktc_historical'
-    || sourceOption.kind === 'ktc_rookie'
+    ||     sourceOption.kind === 'ktc_rookie'
+    || sourceOption.kind === 'final_ktc_values'
     || sourceOption.kind === 'ktc_redraft_adjusted'
+    || sourceOption.kind === 'final_ktc_redraft_adjusted'
   ) {
     return { key: 'value', dir: 'desc' };
   }
@@ -211,14 +253,15 @@ export function getYearLabel(sourceOption) {
 
 export function getValueColumnLabel(sourceOption) {
   if (sourceOption?.kind === 'ktc_rookie') return 'Rookie Value';
-  if (sourceOption?.kind === 'ktc_redraft_adjusted') return 'Competitor Adjusted Value';
+  if (sourceOption?.kind === 'ktc_redraft_adjusted' || sourceOption?.kind === 'final_ktc_redraft_adjusted') return 'Comp';
   if (sourceOption?.kind === 'hwang_adjusted_adp') return 'Hwang ADP';
   if (sourceOption?.kind === 'adp') return 'Avg ADP';
   return SORT_KEYS.value;
 }
 
 export function sourceIsRedraftAdjusted(sourceOption) {
-  return sourceOption?.kind === 'ktc_redraft_adjusted';
+  return sourceOption?.kind === 'ktc_redraft_adjusted'
+    || sourceOption?.kind === 'final_ktc_redraft_adjusted';
 }
 
 export function redraftUsesHwangAdp(adpSource) {

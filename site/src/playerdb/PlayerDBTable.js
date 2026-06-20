@@ -31,6 +31,20 @@ function PosRankCell({ rank, position }) {
   return <span className="pdb-pos-rank">{posLabel}</span>;
 }
 
+function AdjRankCell({ overallRank, posRank, position }) {
+  if (overallRank == null && !posRank) return <span className="pdb-pts-none">—</span>;
+  return (
+    <div className="dynasty-rank-stack">
+      {overallRank != null && (
+        <span className="dynasty-rank-overall">#{overallRank}</span>
+      )}
+      {posRank && position && (
+        <span className="dynasty-rank-pos">{position}{posRank}</span>
+      )}
+    </div>
+  );
+}
+
 /**
  * Renders the content of a single table cell based on column key.
  */
@@ -132,14 +146,22 @@ function renderCell(col, player, isMobile) {
     case 'competitorAdjustedRank':
       return (
         <RedraftAdjTooltip kind="comp" entry={player}>
-          <PosRankCell rank={val} position={player.position} />
+          <AdjRankCell
+            overallRank={player.competitorAdjustedOverallRank}
+            posRank={val}
+            position={player.position}
+          />
         </RedraftAdjTooltip>
       );
 
     case 'rebuilderAdjustedRank':
       return (
         <RedraftAdjTooltip kind="rebuild" entry={player}>
-          <PosRankCell rank={val} position={player.position} />
+          <AdjRankCell
+            overallRank={player.rebuilderAdjustedOverallRank}
+            posRank={val}
+            position={player.position}
+          />
         </RedraftAdjTooltip>
       );
 

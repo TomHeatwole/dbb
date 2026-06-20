@@ -32,6 +32,7 @@ import {
   formatRedraftAdjustedValue,
 } from '../lookups/RedraftValueLookup';
 import { RedraftAdjTooltip } from '../redraftValueIndex/redraftValueTooltip';
+import { redraftUsesHwangAdp } from '../rankingsViewer/rankingsSources';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { CURRENT_YEAR, getCompletedWeeksCount, getFuturePickSeasonRange, getNextDraftYear, isPostSeasonPreDraft } from '../utils/DateHelper';
@@ -521,8 +522,8 @@ function DynastyRosterView() {
           dynastyKtcValue,
           redraftEntry?.redraftValueIndex,
         );
-        overallRank  = ktcTepEntry?.overallRank ?? null;
-        posRank      = ktcTepEntry?.posRank     ?? null;
+        overallRank = redraftEntry?.competitorAdjustedOverallRank ?? null;
+        posRank = redraftEntry?.competitorAdjustedRank ?? null;
       } else if (valueSource === 'rebuilder_adjusted') {
         adjustedValue = redraftEntry?.rebuilderAdjustedValue ?? 0;
         sortValue = adjustedValue;
@@ -532,8 +533,8 @@ function DynastyRosterView() {
           dynastyKtcValue,
           redraftEntry?.rebuildValueIndex,
         );
-        overallRank  = ktcTepEntry?.overallRank ?? null;
-        posRank      = ktcTepEntry?.posRank     ?? null;
+        overallRank = redraftEntry?.rebuilderAdjustedOverallRank ?? null;
+        posRank = redraftEntry?.rebuilderAdjustedRank ?? null;
       } else if (valueSource === 'fantasycalc') {
         displayValue = formatFcValue(fcEntry?.value);
         overallRank  = fcEntry?.overallRank ?? null;
@@ -570,6 +571,7 @@ function DynastyRosterView() {
   }, [selectedId, playersData, playerIdMap, ktcMap, fcData, ffbData, redraftData, rosters, valueSource, getPlayerKtcTepValue]);
 
   const selectedTeamIndex = selectedId != null ? teamRedraftIndices[selectedId] : null;
+  const redraftHwangAdp = redraftUsesHwangAdp(redraftData?.adpSource);
   const selectedIndexLabel = valueSource === 'competitor_adjusted'
     ? 'Comp Index'
     : valueSource === 'rebuilder_adjusted'
@@ -802,14 +804,33 @@ function DynastyRosterView() {
                     </td>
                     <td className="dynasty-td dynasty-td-ranks">
                       {(overallRank != null || pRankLabel) ? (
-                        <div className="dynasty-rank-stack">
-                          {overallRank != null && (
-                            <span className="dynasty-rank-overall">#{overallRank}</span>
-                          )}
-                          {pRankLabel && (
-                            <span className="dynasty-rank-pos">{pRankLabel}</span>
-                          )}
-                        </div>
+                        isRedraftValueSource ? (
+                          <RedraftAdjTooltip
+                            kind={valueSource === 'competitor_adjusted' ? 'comp' : 'rebuild'}
+                            entry={redraftTooltipEntry}
+                            className="redraft-adj-tooltip-wrap--block"
+                            as="div"
+                            usesHwangAdp={redraftHwangAdp}
+                          >
+                            <div className="dynasty-rank-stack">
+                              {overallRank != null && (
+                                <span className="dynasty-rank-overall">#{overallRank}</span>
+                              )}
+                              {pRankLabel && (
+                                <span className="dynasty-rank-pos">{pRankLabel}</span>
+                              )}
+                            </div>
+                          </RedraftAdjTooltip>
+                        ) : (
+                          <div className="dynasty-rank-stack">
+                            {overallRank != null && (
+                              <span className="dynasty-rank-overall">#{overallRank}</span>
+                            )}
+                            {pRankLabel && (
+                              <span className="dynasty-rank-pos">{pRankLabel}</span>
+                            )}
+                          </div>
+                        )
                       ) : null}
                     </td>
                     <td className="dynasty-td dynasty-td-team">{nflTeam}</td>
@@ -820,6 +841,7 @@ function DynastyRosterView() {
                           entry={redraftTooltipEntry}
                           className="redraft-adj-tooltip-wrap--block"
                           as="div"
+                          usesHwangAdp={redraftHwangAdp}
                         >
                           <div className="dynasty-value-comparison">
                             <div className="dynasty-value-comparison-row">

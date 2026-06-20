@@ -112,16 +112,7 @@ function TooltipContent({ lines }) {
 export function HwangAdpTooltip({ row, children, className = '', as = 'span' }) {
   const lines = useMemo(
     () => buildHwangAdpTooltipLines(row),
-    [
-      row,
-      row?.position,
-      row?.halfStackRank,
-      row?.stdStackRank,
-      row?.scoringRankShift,
-      row?.adpDelta,
-      row?.bbAvgAdp,
-      row?.value,
-    ],
+    [row],
   );
   const title = lines ? lines.join('\n') : undefined;
   const Tag = as;

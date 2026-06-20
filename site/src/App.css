@@ -9321,6 +9321,7 @@ body.modal-open {
 .dynasty-player-info {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 0.2rem;
   min-width: 0;
 }
@@ -10212,9 +10213,170 @@ body.modal-open {
 
 .rv-redraft-layout {
   display: grid;
-  grid-template-columns: 1fr minmax(260px, 340px);
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+  gap: 0.75rem;
   align-items: start;
+  min-width: 0;
+}
+
+.rv-root--redraft {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.rv-root--redraft .rv-table-wrap {
+  overflow-x: clip;
+  overflow-y: auto;
+  min-width: 0;
+  max-width: 100%;
+  scrollbar-gutter: stable;
+}
+
+.rv-redraft-layout > .rv-table-wrap {
+  min-width: 0;
+}
+
+.rv-table--redraft {
+  table-layout: auto;
+  width: max-content;
+  max-width: 100%;
+  font-size: 0.78rem;
+}
+
+.rv-table--redraft .rv-col-rank { width: 2.25rem; }
+.rv-table--redraft .rv-col-name { width: auto; }
+.rv-table--redraft .rv-col-pos { width: 2.5rem; }
+.rv-table--redraft .rv-col-team { width: 2.25rem; }
+
+.rv-table--redraft .rv-th,
+.rv-table--redraft .rv-td {
+  padding: 0.4rem 0.45rem;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.rv-table--redraft .rv-th {
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: 0.73rem;
+}
+
+.rv-table--redraft .rv-th--sortable {
+  padding: 0;
+}
+
+.rv-table--redraft .rv-sort-btn {
+  padding: 0.4rem 0.45rem;
+  font-size: inherit;
+  letter-spacing: -0.01em;
+  gap: 0.15rem;
+}
+
+.rv-table--redraft .rv-sort-arrow {
+  font-size: 0.6rem;
+}
+
+.rv-table--redraft .rv-th-name,
+.rv-table--redraft .rv-td-name {
+  text-align: left;
+  width: auto;
+  max-width: 9.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-table--redraft .rv-th-name .rv-sort-btn {
+  justify-content: flex-start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rv-table--redraft .rv-th-pos,
+.rv-table--redraft .rv-td-pos {
+  width: 1%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rv-table--redraft .rv-th-team,
+.rv-table--redraft .rv-td-team {
+  width: 1%;
+  text-align: center;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.rv-table--redraft .rv-th-rank,
+.rv-table--redraft .rv-td-rank,
+.rv-table--redraft .rv-th-pos-rank,
+.rv-table--redraft .rv-td-pos-rank,
+.rv-table--redraft .rv-th-ktc-rank,
+.rv-table--redraft .rv-td-ktc-rank,
+.rv-table--redraft .rv-th-pos-adp,
+.rv-table--redraft .rv-td-pos-adp,
+.rv-table--redraft .rv-th-adj-adp,
+.rv-table--redraft .rv-td-adj-adp,
+.rv-table--redraft .rv-th-bb-adp,
+.rv-table--redraft .rv-td-bb-adp,
+.rv-table--redraft .rv-th-ovr-adp,
+.rv-table--redraft .rv-td-ovr-adp,
+.rv-table--redraft .rv-th-dynasty,
+.rv-table--redraft .rv-td-dynasty,
+.rv-table--redraft .rv-th-value,
+.rv-table--redraft .rv-td-value,
+.rv-table--redraft .rv-th-index,
+.rv-table--redraft .rv-td-index,
+.rv-table--redraft .rv-th-rebuilder,
+.rv-table--redraft .rv-td-rebuilder,
+.rv-table--redraft .rv-th-rebuild-index,
+.rv-table--redraft .rv-td-rebuild-index {
+  width: 1%;
+  min-width: 0;
+  max-width: none;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-table--redraft .rv-th-rank .rv-sort-btn,
+.rv-table--redraft .rv-th-pos-rank .rv-sort-btn,
+.rv-table--redraft .rv-th-ktc-rank .rv-sort-btn,
+.rv-table--redraft .rv-th-pos-adp .rv-sort-btn,
+.rv-table--redraft .rv-th-adj-adp .rv-sort-btn,
+.rv-table--redraft .rv-th-bb-adp .rv-sort-btn,
+.rv-table--redraft .rv-th-ovr-adp .rv-sort-btn,
+.rv-table--redraft .rv-th-dynasty .rv-sort-btn,
+.rv-table--redraft .rv-th-value .rv-sort-btn,
+.rv-table--redraft .rv-th-index .rv-sort-btn,
+.rv-table--redraft .rv-th-rebuilder .rv-sort-btn,
+.rv-table--redraft .rv-th-rebuild-index .rv-sort-btn {
+  justify-content: flex-end;
+}
+
+.rv-table--redraft .redraft-adj-tooltip-wrap {
+  display: inline;
+}
+
+.rv-table--redraft .pos-badge {
+  font-size: 0.62rem;
+  padding: 0 0.15rem;
+  letter-spacing: 0;
+}
+
+.rv-root--redraft .rv-hint {
+  font-size: 0.72rem;
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+
+.rv-root--redraft .rv-meta {
+  font-size: 0.75rem;
+}
+
+.rv-root--redraft .rv-controls {
+  gap: 0.5rem 0.75rem;
 }
 
 .rv-redraft-layout .rv-table-wrap {
