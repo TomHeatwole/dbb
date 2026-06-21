@@ -14,14 +14,12 @@ import {
   loadCurrentHwangAdpRankMap,
   loadHwangPositionMaxRanks,
 } from '../scenarios/hwangAdpLoader';
-import { loadHistoricalOutcomeCatalog } from '../scenarios/historicalOutcomeData';
-import { buildPlayerProjections } from '../scenarios/outcomeDistribution';
-import { collectRequiredSeasonYears } from '../scenarios/computeFutureScenario2Eval';
+import { loadHistoricalOutcomeCatalog, getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
 import {
   prepareSimulatorContext,
   runMonteCarloSimulation,
   DEFAULT_ITERATIONS,
-  SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS,
+  isLightweightSimulatorRun,
 } from '../scenarios/simulatorMonteCarlo';
 import SimulatorResultsPanel from '../scenarios/SimulatorResultsPanel';
 import SimulatorTeamDetail from '../scenarios/SimulatorTeamDetail';
@@ -67,6 +65,7 @@ function SimulatorRunPage() {
   const [results, setResults] = useState(null);
   const [resultDeltas, setResultDeltas] = useState(null);
   const [teamFinishBuckets, setTeamFinishBuckets] = useState(null);
+  const [teamScoreHistograms, setTeamScoreHistograms] = useState(null);
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [teamsForGrid, setTeamsForGrid] = useState([]);
   const [originalRosters, setOriginalRosters] = useState({});
@@ -116,19 +115,7 @@ function SimulatorRunPage() {
         setPlayerIdMap(idMap);
         setProgress(0.15);
 
-        const allPlayerIds = new Set();
-        for (const rid in modified) {
-          for (const pid of modified[rid]) allPlayerIds.add(pid);
-        }
-
-        const projections = buildPlayerProjections(
-          allPlayerIds,
-          adpMap,
-          catalog.catalog,
-          maxRanks,
-          Object.fromEntries([...allPlayerIds].map((pid) => [pid, 50])),
-        );
-        const yearsNeeded = collectRequiredSeasonYears(projections);
+        const yearsNeeded = getOutcomeHistoryYears(Number(seasonYear));
 
         const allWeeks = Array.from({ length: 17 }, (_, i) => i + 1);
         const weeklyStatsByYear = {};
@@ -158,7 +145,12 @@ function SimulatorRunPage() {
         setPhase('running');
         setProgress(0.2);
 
-        const { results: simResults, resultDeltas, teamFinishBuckets: finishBuckets } = await runMonteCarloSimulation(
+        const {
+          results: simResults,
+          resultDeltas,
+          teamFinishBuckets: finishBuckets,
+          teamScoreHistograms: scoreHists,
+        } = await runMonteCarloSimulation(
           ctx,
           players,
           idMap,
@@ -174,6 +166,7 @@ function SimulatorRunPage() {
           setResults(simResults);
           setResultDeltas(resultDeltas);
           setTeamFinishBuckets(finishBuckets);
+          setTeamScoreHistograms(scoreHists);
           setProgress(1);
           setPhase('done');
         }
@@ -190,7 +183,7 @@ function SimulatorRunPage() {
     return () => { cancelled = true; };
   }, [scenarioParam]);
 
-  const drillDownEnabled = iterations <= SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS;
+  const simSamplesAvailable = !isLightweightSimulatorRun(iterations);
 
   const backLink = (
     <Link
@@ -258,24 +251,26 @@ function SimulatorRunPage() {
                   iterations={iterations}
                   selectedRosterId={selectedRosterId}
                   onSelectTeam={setSelectedRosterId}
-                  drillDownEnabled={drillDownEnabled}
+                  drillDownEnabled
                 />
               </div>
             </div>
 
-            {drillDownEnabled && selectedRosterId != null && teamFinishBuckets ? (
+            {selectedRosterId != null && teamFinishBuckets ? (
               <SimulatorTeamDetail
                 rosterId={selectedRosterId}
                 teamsForGrid={teamsForGrid}
                 teamFinishBuckets={teamFinishBuckets}
+                teamScoreHistograms={teamScoreHistograms}
                 originalRosters={originalRosters}
                 scenarioRosters={scenarioRosters}
                 seasonYear={scenarioSeason}
                 iterations={iterations}
+                simSamplesAvailable={simSamplesAvailable}
               />
-            ) : !drillDownEnabled ? null : (
+            ) : (
               <div className="scenario-eval-team-stats-placeholder">
-                Click a team above to see finish distribution and open specific simulations
+                Click a team above to see finish and score distributions
               </div>
             )}
           </div>

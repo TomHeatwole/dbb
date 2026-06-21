@@ -8,6 +8,9 @@ import { HVORP_VALUE_ADJUSTMENTS } from '../lookups/HvorpValueAdjustmentLookup';
 
 export { HWANG_VALUE_ADJUSTMENTS };
 
+/** Dynasty startup ADP from Dynasty Data Lab (Sleeper draft sample). */
+export const DDL_STARTUP_ADP_YEARS = [2021, 2022, 2023, 2024, 2025];
+
 export const ADP_TYPES = {
   overall: {
     label: 'ADP — Overall',
@@ -99,6 +102,16 @@ export function buildSourceOptions() {
       adpType,
       defaultYear: cfg.years[cfg.years.length - 1],
     })),
+  });
+
+  groups.push({
+    label: 'ADP (Dynasty Data Lab)',
+    options: [{
+      id: 'ddl_startup_adp',
+      label: 'ADP — Dynasty Startup',
+      kind: 'ddl_startup_adp',
+      defaultYear: DDL_STARTUP_ADP_YEARS[DDL_STARTUP_ADP_YEARS.length - 1],
+    }],
   });
 
   groups.push({
@@ -245,7 +258,7 @@ export function getRedraftLookupBlend(year) {
 /** Sources with a meaningful numeric value column (KTC, FantasyCalc, ADP avg). */
 export function sourceHasValue(sourceOption) {
   if (!sourceOption) return false;
-  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'final_ktc_values', 'ktc_redraft_adjusted', 'final_ktc_redraft_adjusted', 'hvorp_values_empty_roster_final_ktc', 'hvorp_values_empty_roster_competitor_adjusted_final_ktc', 'hwang_market_value_adjusted_ktc', 'hwang_true_value_adjusted_ktc', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
+  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'final_ktc_values', 'ktc_redraft_adjusted', 'final_ktc_redraft_adjusted', 'hvorp_values_empty_roster_final_ktc', 'hvorp_values_empty_roster_competitor_adjusted_final_ktc', 'hwang_market_value_adjusted_ktc', 'hwang_true_value_adjusted_ktc', 'hwang_adjusted_adp', 'fantasycalc', 'adp', 'ddl_startup_adp'].includes(sourceOption.kind);
 }
 
 /** Default table sort when a source is selected or data reloads. */
@@ -268,7 +281,7 @@ export function defaultSortForSource(sourceOption) {
   if (sourceOption.kind === 'fantasycalc') {
     return { key: 'value', dir: 'desc' };
   }
-  if (sourceOption.kind === 'adp' || sourceOption.kind === 'hwang_adjusted_adp') {
+  if (sourceOption.kind === 'adp' || sourceOption.kind === 'hwang_adjusted_adp' || sourceOption.kind === 'ddl_startup_adp') {
     return { key: 'value', dir: 'asc' };
   }
   return { key: 'rank', dir: 'asc' };
@@ -283,7 +296,7 @@ export const SORT_KEYS = {
 
 export function defaultDirForSortKey(key, sourceOption = null) {
   if (key === 'value' || key === 'ktcValue' || key === 'redraftValueIndex' || key === 'rebuildValueIndex' || key === 'rebuilderAdjustedValue') {
-    return (sourceOption?.kind === 'adp' || sourceOption?.kind === 'hwang_adjusted_adp') ? 'asc' : 'desc';
+    return (sourceOption?.kind === 'adp' || sourceOption?.kind === 'hwang_adjusted_adp' || sourceOption?.kind === 'ddl_startup_adp') ? 'asc' : 'desc';
   }
   if (key === 'adpAvg' || key === 'adpEffRank' || key === 'bbAvgAdp' || key === 'adpDelta' || key === 'scoringRankShift' || key === 'ktcPosRank' || key === 'adpPosRank') {
     return 'asc';
@@ -300,6 +313,7 @@ export function getValueColumnLabel(sourceOption) {
   if (sourceOption?.kind === 'ktc_rookie') return 'Rookie Value';
   if (sourceOption?.kind === 'ktc_redraft_adjusted' || sourceOption?.kind === 'final_ktc_redraft_adjusted') return 'Comp';
   if (sourceOption?.kind === 'hwang_adjusted_adp') return 'Hwang ADP';
+  if (sourceOption?.kind === 'ddl_startup_adp') return 'Startup ADP';
   if (sourceOption?.kind === 'adp') return 'Avg ADP';
   return SORT_KEYS.value;
 }

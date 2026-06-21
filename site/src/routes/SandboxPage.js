@@ -11,6 +11,7 @@ import RankingsViewer from '../rankingsViewer/RankingsViewer';
 import KtcRankCompare from '../ktcRankCompare/KtcRankCompare';
 import RedraftValueIndex from '../redraftValueIndex/RedraftValueIndex';
 import PosValueCompare from '../posValueCompare/PosValueCompare';
+import HistoricalKtcRanks from '../historicalKtcRanks/HistoricalKtcRanks';
 
 const FEATURES = [
   {
@@ -18,6 +19,12 @@ const FEATURES = [
     label: 'KTC Rank Compare',
     description: 'Compare current KTC ranks to historical slot values and rank gaps.',
     component: <KtcRankCompare />,
+  },
+  {
+    id: 'HISTORICAL_KTC_RANKS',
+    label: 'Historical KTC Ranks',
+    description: 'Browse scraped KTC positional rank history by date/year, with gaps vs value history.',
+    component: <HistoricalKtcRanks />,
   },
   {
     id: 'POS_VALUE_COMPARE',

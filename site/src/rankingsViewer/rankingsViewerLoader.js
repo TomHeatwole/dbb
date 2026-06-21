@@ -8,6 +8,7 @@ import { fetchFantasyCalcData } from '../lookups/FantasyCalcLookup';
 import { fetchFfbData } from '../lookups/FfbLookup';
 import {
   ADP_TYPES,
+  DDL_STARTUP_ADP_YEARS,
   KTC_CURRENT_FORMATS,
   KTC_HISTORICAL_VARIANTS,
   KTC_ROOKIE_CLASS_YEARS,
@@ -38,12 +39,15 @@ let finalKtcValuesCache = null;
 let finalKtcRedraftCache = null;
 /** @type {Map<number, Map<string, object>> | null} */
 let finalKtcRedraftLookupCache = null;
+/** @type {Map<number, object[]> | null} */
+let ddlStartupAdpByYearCache = null;
 
 const REDRAFT_VALUE_CSV = '/data/ktc_redraft_value_index.csv';
 const HWANG_ADP_CSV = '/data/hwang_adjusted_positional_adp.csv';
 const FINAL_KTC_CSV = '/data/final_ktc_values.csv';
 const FINAL_KTC_REDRAFT_CSV = '/data/final_ktc_redraft_value_index.csv';
 const FINAL_KTC_REDRAFT_LOOKUP_CSV = '/data/final_ktc_redraft_rank_lookup.csv';
+const DDL_STARTUP_ADP_CSV = '/data/ddl_startup_adp_historical.csv';
 
 const PICK_RE = /^\d{4}\s+(Early|Mid|Late)\s/i;
 
@@ -161,6 +165,82 @@ function computePosRanks(rows) {
     });
   }
   return rows;
+}
+
+export async function loadDdlStartupAdpRankings(year) {
+  const yearNum = Number(year);
+  if (!DDL_STARTUP_ADP_YEARS.includes(yearNum)) {
+    throw new Error(`DDL startup ADP is not available for ${year}`);
+  }
+
+  if (!ddlStartupAdpByYearCache) {
+    const res = await fetch(DDL_STARTUP_ADP_CSV);
+    if (!res.ok) throw new Error('Failed to fetch ddl_startup_adp_historical.csv');
+
+    const text = await res.text();
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) {
+      ddlStartupAdpByYearCache = new Map();
+    } else {
+      const headers = parseCsvRow(lines[0]);
+      const idx = (name) => headers.indexOf(name);
+      const byYear = new Map();
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCsvRow(lines[i]);
+        const rowYear = parseInt((cols[idx('season')] || '').trim(), 10);
+        const name = (cols[idx('name')] || '').trim();
+        const adp = parseFloat((cols[idx('adp')] || '').trim());
+        if (!Number.isFinite(rowYear) || !name || !Number.isFinite(adp)) continue;
+
+        const rank = parseInt((cols[idx('overall_rank')] || '').trim(), 10);
+        const posRank = parseInt((cols[idx('pos_rank')] || '').trim(), 10);
+
+        const base = {
+          year: rowYear,
+          rank: Number.isFinite(rank) ? rank : null,
+          name,
+          position: (cols[idx('position')] || '').trim(),
+          team: (cols[idx('team')] || '').trim(),
+          value: adp,
+          posRank: Number.isFinite(posRank) ? posRank : null,
+          sleeperId: (cols[idx('sleeper_id')] || '').trim(),
+          windowStart: (cols[idx('window_start')] || '').trim(),
+          windowEnd: (cols[idx('window_end')] || '').trim(),
+        };
+
+        if (!byYear.has(rowYear)) byYear.set(rowYear, []);
+        byYear.get(rowYear).push(base);
+      }
+
+      ddlStartupAdpByYearCache = byYear;
+    }
+  }
+
+  const playersData = await loadPlayersData();
+  const yearRows = ddlStartupAdpByYearCache?.get(yearNum) || [];
+  if (yearRows.length === 0) {
+    throw new Error(`No DDL startup ADP data for ${year}`);
+  }
+
+  const rows = yearRows
+    .map((row) => enrichFromSleeper({ ...row }, playersData))
+    .sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
+
+  const windowStart = rows[0]?.windowStart || '';
+  const windowEnd = rows[0]?.windowEnd || '';
+
+  return {
+    rows,
+    meta: {
+      sourceLabel: 'ADP — Dynasty Startup (DDL)',
+      year: String(yearNum),
+      snapshotLabel: windowStart && windowEnd
+        ? `${windowStart} – ${windowEnd} Sleeper startup drafts`
+        : null,
+      rowCount: rows.length,
+    },
+  };
 }
 
 export async function loadAdpRankings(adpType, year) {
@@ -1039,6 +1119,8 @@ export async function loadRankings(sourceOption, { year, date } = {}) {
   switch (sourceOption.kind) {
     case 'adp':
       return loadAdpRankings(sourceOption.adpType, year);
+    case 'ddl_startup_adp':
+      return loadDdlStartupAdpRankings(year);
     case 'ktc_current':
       return loadKtcCurrentRankings(sourceOption.format);
     case 'ktc_redraft_adjusted':
@@ -1090,6 +1172,9 @@ export function getYearsForSource(sourceOption) {
   if (sourceOption.kind === 'hwang_adjusted_adp') {
     return HWANG_ADP_YEARS;
   }
+  if (sourceOption.kind === 'ddl_startup_adp') {
+    return DDL_STARTUP_ADP_YEARS;
+  }
   return [];
 }
 
@@ -1100,7 +1185,8 @@ export function sourceUsesYear(sourceOption) {
     || sourceOption?.kind === 'final_ktc_redraft_adjusted'
     || sourceOption?.kind === 'hvorp_values_empty_roster_final_ktc'
     || sourceOption?.kind === 'hvorp_values_empty_roster_competitor_adjusted_final_ktc'
-    || sourceOption?.kind === 'hwang_adjusted_adp';
+    || sourceOption?.kind === 'hwang_adjusted_adp'
+    || sourceOption?.kind === 'ddl_startup_adp';
 }
 
 export function sourceUsesDate(sourceOption) {

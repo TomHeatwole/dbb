@@ -50,8 +50,8 @@ function SimulatorRunSettings({ iterations, onChangeIterations }) {
         <div className="simulator-run-settings-popover" role="dialog" aria-label="Simulation settings">
           <div className="simulator-run-settings-title">Simulation runs</div>
           <p className="simulator-run-settings-hint">
-            Runs above {SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS.toLocaleString()} return aggregate
-            stats only (no per-sim drill-down).
+            Histograms (finish + score distributions) work at any run count.
+            Per-sim deep links are kept for runs up to {SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS.toLocaleString()}.
           </p>
           <label className="simulator-run-settings-label" htmlFor="simulator-run-count">
             Number of runs (max {MAX_SIMULATOR_ITERATIONS.toLocaleString()})

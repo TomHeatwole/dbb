@@ -1,6 +1,11 @@
 import React, { useMemo } from 'react';
 import { buildFutureScenario2EvalUrl } from './scenarioEncoding';
 import { percentileColor } from './luckMetrics';
+import SimulatorHistogramChart from './SimulatorHistogramChart';
+import {
+  buildTeamFinishChartData,
+  buildScoreHistogramChartData,
+} from './simulatorHistograms';
 
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -39,14 +44,33 @@ export function buildTeamFinishBuckets(simRuns, rosterId) {
   return buckets;
 }
 
+function ScoreHistogramSection({ title, subtitle, data, barColor, activeBarColor }) {
+  return (
+    <div className="simulator-team-detail-section simulator-team-detail-section--score-hist">
+      <div className="simulator-team-detail-section-title">{title}</div>
+      <div className="simulator-team-detail-subtitle">{subtitle}</div>
+      <SimulatorHistogramChart
+        data={data}
+        height={180}
+        barColor={barColor}
+        activeBarColor={activeBarColor}
+        valueLabel="runs"
+        emptyLabel="No scores recorded"
+      />
+    </div>
+  );
+}
+
 function SimulatorTeamDetail({
   rosterId,
   teamsForGrid,
   teamFinishBuckets,
+  teamScoreHistograms,
   originalRosters,
   scenarioRosters,
   seasonYear,
   iterations,
+  simSamplesAvailable,
 }) {
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
 
@@ -55,7 +79,34 @@ function SimulatorTeamDetail({
     [teamFinishBuckets, rosterId],
   );
 
+  const scoreHist = useMemo(
+    () => teamScoreHistograms?.[rosterId] || teamScoreHistograms?.[String(rosterId)] || null,
+    [teamScoreHistograms, rosterId],
+  );
+
+  const finishChartData = useMemo(
+    () => buildTeamFinishChartData(buckets, iterations),
+    [buckets, iterations],
+  );
+
+  const regChartData = useMemo(
+    () => buildScoreHistogramChartData(scoreHist?.reg, iterations),
+    [scoreHist, iterations],
+  );
+
+  const playoffChartData = useMemo(
+    () => buildScoreHistogramChartData(scoreHist?.playoff, iterations),
+    [scoreHist, iterations],
+  );
+
+  const totalChartData = useMemo(
+    () => buildScoreHistogramChartData(scoreHist?.total, iterations),
+    [scoreHist, iterations],
+  );
+
   if (!buckets || buckets.every((b) => b.count === 0)) return null;
+
+  const showOutcomeLinks = simSamplesAvailable;
 
   return (
     <div className="simulator-team-detail">
@@ -68,73 +119,124 @@ function SimulatorTeamDetail({
         <span className="simulator-team-detail-name">{team.teamName || `Team ${rosterId}`}</span>
       </div>
 
-      <div className="simulator-team-detail-subtitle">
-        Finish distribution across {iterations.toLocaleString()} simulations · click a row to open that outcome set in Future Scenarios v2
-        {buckets.some((b) => b.count > b.runs.length) && (
-          <span className="simulator-team-detail-note">
-            {' '}(links show top 50 scores per finish)
-          </span>
-        )}
+      <div className="simulator-team-detail-section simulator-team-detail-section--histogram">
+        <div className="simulator-team-detail-section-title">League finish distribution</div>
+        <div className="simulator-team-detail-subtitle">
+          Final standing across {iterations.toLocaleString()} simulations
+        </div>
+        <SimulatorHistogramChart
+          data={finishChartData}
+          height={200}
+          barColor="#7c9cff"
+          activeBarColor="#ffd56b"
+          highlightPredicate={(row) => row.isPlayoff}
+          valueLabel="runs"
+        />
       </div>
 
-      <div className="simulator-finish-grid">
-        {buckets.map((bucket) => (
-          <div
-            key={bucket.place}
-            className={
-              'simulator-finish-col' +
-              (bucket.place <= 4 ? ' simulator-finish-col--playoff' : '')
-            }
-          >
-            <div className="simulator-finish-col-header">{ordinal(bucket.place)}</div>
-            <div className="simulator-finish-col-count">
-              {bucket.count}
-              <span className="simulator-finish-col-count-denom">/{iterations}</span>
-            </div>
-            <div className="simulator-finish-col-links">
-              {bucket.runs.length === 0 ? (
-                <span className="simulator-finish-col-empty">—</span>
-              ) : (
-                bucket.runs.map((run) => {
-                  const href = buildFutureScenario2EvalUrl(
-                    originalRosters,
-                    scenarioRosters,
-                    run.rolls,
-                    seasonYear,
-                  );
-                  const luckLabel = run.luckPercentile != null
-                    ? `P${Math.round(run.luckPercentile)}`
-                    : '—';
-                  return (
-                    <a
-                      key={run.simIndex}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="simulator-sim-link-row"
-                      title={`Sim #${run.simIndex} · ${run.totalScore.toFixed(1)} pts · ${luckLabel} luck · open in Future Scenarios v2`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span className="simulator-sim-link-id">#{run.simIndex}</span>
-                      <span className="simulator-sim-link-score">
-                        {run.totalScore.toFixed(1)}
-                      </span>
-                      <span
-                        className="simulator-sim-link-luck"
-                        style={run.luckPercentile != null ? {
-                          '--roll-color': percentileColor(run.luckPercentile),
-                        } : undefined}
-                      >
-                        {luckLabel}
-                      </span>
-                    </a>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        ))}
+      <div className="simulator-team-detail-section simulator-team-detail-section--scores">
+        <div className="simulator-team-detail-section-title">Starter points distributions</div>
+        <div className="simulator-team-detail-subtitle">
+          Optimal lineup totals across {iterations.toLocaleString()} simulations
+        </div>
+
+        <div className="simulator-score-hist-grid">
+          <ScoreHistogramSection
+            title="14-week score"
+            subtitle="Regular season (weeks 1–14)"
+            data={regChartData}
+            barColor="#6b9e78"
+            activeBarColor="#8fd4a0"
+          />
+          <ScoreHistogramSection
+            title="Playoff score"
+            subtitle="Weeks 15–17"
+            data={playoffChartData}
+            barColor="#c49a6c"
+            activeBarColor="#e0b88a"
+          />
+          <ScoreHistogramSection
+            title="Total score"
+            subtitle="Full season (weeks 1–17)"
+            data={totalChartData}
+            barColor="#7c9cff"
+            activeBarColor="#a0b8ff"
+          />
+        </div>
       </div>
+
+      {showOutcomeLinks && (
+        <div className="simulator-team-detail-section simulator-team-detail-section--outcomes">
+          <div className="simulator-team-detail-section-title">Specific simulations</div>
+          <div className="simulator-team-detail-subtitle">
+            Open an outcome set in Future Scenarios v2
+            {buckets.some((b) => b.count > b.runs.length) && (
+              <span className="simulator-team-detail-note">
+                {' '}· top 50 scores per finish shown
+              </span>
+            )}
+          </div>
+
+          <div className="simulator-finish-grid">
+            {buckets.map((bucket) => (
+              <div
+                key={bucket.place}
+                className={
+                  'simulator-finish-col' +
+                  (bucket.place <= 4 ? ' simulator-finish-col--playoff' : '')
+                }
+              >
+                <div className="simulator-finish-col-header">{ordinal(bucket.place)}</div>
+                <div className="simulator-finish-col-count">
+                  {bucket.count}
+                  <span className="simulator-finish-col-count-denom">/{iterations}</span>
+                </div>
+                <div className="simulator-finish-col-links">
+                  {bucket.runs.length === 0 ? (
+                    <span className="simulator-finish-col-empty">—</span>
+                  ) : (
+                    bucket.runs.map((run) => {
+                      const href = buildFutureScenario2EvalUrl(
+                        originalRosters,
+                        scenarioRosters,
+                        run.rolls,
+                        seasonYear,
+                      );
+                      const luckLabel = run.luckPercentile != null
+                        ? `P${Math.round(run.luckPercentile)}`
+                        : '—';
+                      return (
+                        <a
+                          key={run.simIndex}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="simulator-sim-link-row"
+                          title={`Sim #${run.simIndex} · ${run.totalScore.toFixed(1)} pts · ${luckLabel} luck · open in Future Scenarios v2`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="simulator-sim-link-id">#{run.simIndex}</span>
+                          <span className="simulator-sim-link-score">
+                            {run.totalScore.toFixed(1)}
+                          </span>
+                          <span
+                            className="simulator-sim-link-luck"
+                            style={run.luckPercentile != null ? {
+                              '--roll-color': percentileColor(run.luckPercentile),
+                            } : undefined}
+                          >
+                            {luckLabel}
+                          </span>
+                        </a>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

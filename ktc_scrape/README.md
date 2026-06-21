@@ -43,6 +43,27 @@ with full match metadata (`ktc_slug`, `sleeper_name`, `position`, `team`, `ktc_m
 node scripts/build_ktc_historical_name_map.js --from-wide-csv /path/to/wide.csv --ktc-html /tmp/ktc_rankings.html
 ```
 
+## SF positional rank history (all dynasty players, KTC profile pages)
+
+Daily positional and overall SF rank history for every QB/RB/WR/TE on the KTC dynasty
+board is scraped from `playerSuperflex.positionalRankHistory` and
+`playerSuperflex.overallRankHistory` on KTC profile pages.
+
+TE positional ranks use the SF TE+ board; QB/RB/WR use regular Superflex ranks.
+
+```bash
+bash scripts/fetch_sf_ktc_rank_history.sh
+```
+
+Output files:
+
+| File | Contents |
+|------|----------|
+| `sf_ktc_pos_ranks_historical.csv` | Daily rows: date, name, position, positional_rank, overall_rank, IDs |
+| `sf_ktc_rank_history_players.csv` | One row per scraped player with history span metadata |
+
+Run occasionally (not part of `all_updates.sh`).
+
 ## SF TE+ history (all tight ends, KTC profile pages)
 
 Daily TE+ values for every TE are scraped from embedded `playerSuperflex.tep.history`

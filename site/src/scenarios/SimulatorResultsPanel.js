@@ -94,7 +94,7 @@ function SimulatorResultsPanel({
         <span className="simulator-results-title">Simulation Results</span>
         <span className="simulator-results-subtitle">
           {iterations.toLocaleString()} runs · sorted by win %
-          {drillDownEnabled ? ' · click a team for finish breakdown' : ''}
+          {drillDownEnabled !== false ? ' · click a team for finish breakdown' : ''}
           {hasDeltas ? ' · deltas vs original rosters' : ''}
         </span>
       </div>
