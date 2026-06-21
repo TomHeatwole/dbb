@@ -7,6 +7,7 @@ export const POS_VALUE_COMPARE_DATASETS = {
     datasetId: 'final_ktc_top300_empty_roster',
     valueSource: 'final_ktc_values.csv (preseason SF TE+, top 300 by KTC value)',
     valueColumnLabel: 'KTC',
+    hvorpAdjustmentKey: 'final_ktc',
   },
   comp_adj: {
     id: 'comp_adj',
@@ -15,6 +16,7 @@ export const POS_VALUE_COMPARE_DATASETS = {
     datasetId: 'final_ktc_comp_adj_top300_empty_roster',
     valueSource: 'final_ktc_redraft_value_index.csv (competitor_adjusted_value, top 300)',
     valueColumnLabel: 'Comp Adj',
+    hvorpAdjustmentKey: 'comp_adj_final_ktc',
   },
 };
 

@@ -21,12 +21,14 @@ import { fileURLToPath } from 'url';
 import { calculateFantasyPoints } from './fantasyCalculator.js';
 import { fetchWeeklyStats } from './weeklyStatsLoader.js';
 import {
+  computeQbGroundedMultipliers,
   filterTopKtcPlayers,
   groupHvorpPctDelta,
   hvorpPctDelta,
   TOP_KTC_RANK,
 } from '../posValueCompare/posValueCompareMetrics.js';
 import { POS_VALUE_COMPARE_DATASETS } from '../posValueCompare/posValueCompareDatasets.js';
+import { HVORP_VALUE_ADJUSTMENTS } from '../lookups/HvorpValueAdjustmentLookup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '../../..');
@@ -428,6 +430,36 @@ async function writeDataset(config, allComparisons, seasonMeta, aggregate) {
 
   console.log(`\nWrote ${allComparisons.length.toLocaleString()} rows → ${outputCsv}`);
   console.log(`Wrote metadata → ${outputMeta}`);
+
+  await writeHvorpMultiplierCsv(config, allComparisons);
+}
+
+function formatMultiplierCsv(grounded) {
+  const lines = ['position,multiplier'];
+  for (const pos of ['QB', 'RB', 'WR', 'TE']) {
+    const entry = grounded.byPosition?.[pos];
+    if (entry?.multiplier != null && Number.isFinite(entry.multiplier)) {
+      lines.push(`${pos},${entry.multiplier}`);
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+async function writeHvorpMultiplierCsv(config, allComparisons) {
+  const adjustmentKey = config.hvorpAdjustmentKey;
+  const adjustmentCfg = HVORP_VALUE_ADJUSTMENTS[adjustmentKey];
+  if (!adjustmentCfg) return;
+
+  const grounded = computeQbGroundedMultipliers(allComparisons);
+  const outputPath = path.join(DATA_DIR, path.basename(adjustmentCfg.multipliersCsv));
+  await fs.writeFile(outputPath, formatMultiplierCsv(grounded), 'utf8');
+
+  const summary = ['QB', 'RB', 'WR', 'TE']
+    .filter((pos) => grounded.byPosition?.[pos]?.multiplier != null)
+    .map((pos) => `${pos}×${grounded.byPosition[pos].multiplier}`)
+    .join(', ');
+  console.log(`Wrote HVORP multipliers → ${outputPath}`);
+  console.log(`  ${summary}`);
 }
 
 async function buildDataset({ config, loadByYear }, getWeeklyPoints, playersData) {

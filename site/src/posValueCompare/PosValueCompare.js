@@ -49,9 +49,10 @@ function QbGroundedMultipliers({ comparisons, valueColumnLabel }) {
     <div className="pvc-section">
       <h3 className="pvc-section-title">QB-grounded value multipliers</h3>
       <p className="pvc-section-desc">
-        Hold QB at 1.0× and scale other positions so matched-pair HVORP aligns with QB scoring.
-        Each multiplier is the |Δ|-weighted average of (pos HVORP ÷ QB HVORP) in QB vs pos pairs.
-        Apply to {valueColumnLabel} values: e.g. RB 5000 × multiplier → QB-equivalent value.
+        Hold QB at 1.0×. Other multipliers = weighted avg pos HVORP ÷ weighted avg QB HVORP
+        in matched QB vs pos pairs (same |Δ| weighting as summary stats).
+        Below 1.0 means that position delivers less scoring than QB at the same nominal {valueColumnLabel} value
+        — scale their value down to compare on a QB-equivalent basis (e.g. RB 5000 × 0.51 ≈ 2550).
       </p>
       <div className="pvc-table-wrap">
         <table className="pvc-table">

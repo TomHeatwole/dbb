@@ -4,6 +4,7 @@
  */
 
 import { HWANG_VALUE_ADJUSTMENTS } from '../lookups/HwangValueAdjustmentLookup';
+import { HVORP_VALUE_ADJUSTMENTS } from '../lookups/HvorpValueAdjustmentLookup';
 
 export { HWANG_VALUE_ADJUSTMENTS };
 
@@ -134,6 +135,24 @@ export function buildSourceOptions() {
   });
 
   groups.push({
+    label: 'HVORP Values',
+    options: [
+      {
+        id: HVORP_VALUE_ADJUSTMENTS.final_ktc.id,
+        label: HVORP_VALUE_ADJUSTMENTS.final_ktc.label,
+        kind: 'hvorp_values_empty_roster_final_ktc',
+        adjustmentKey: 'final_ktc',
+      },
+      {
+        id: HVORP_VALUE_ADJUSTMENTS.comp_adj_final_ktc.id,
+        label: HVORP_VALUE_ADJUSTMENTS.comp_adj_final_ktc.label,
+        kind: 'hvorp_values_empty_roster_competitor_adjusted_final_ktc',
+        adjustmentKey: 'comp_adj_final_ktc',
+      },
+    ],
+  });
+
+  groups.push({
     label: 'Hwang',
     options: [
       {
@@ -226,7 +245,7 @@ export function getRedraftLookupBlend(year) {
 /** Sources with a meaningful numeric value column (KTC, FantasyCalc, ADP avg). */
 export function sourceHasValue(sourceOption) {
   if (!sourceOption) return false;
-  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'final_ktc_values', 'ktc_redraft_adjusted', 'final_ktc_redraft_adjusted', 'hwang_market_value_adjusted_ktc', 'hwang_true_value_adjusted_ktc', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
+  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'final_ktc_values', 'ktc_redraft_adjusted', 'final_ktc_redraft_adjusted', 'hvorp_values_empty_roster_final_ktc', 'hvorp_values_empty_roster_competitor_adjusted_final_ktc', 'hwang_market_value_adjusted_ktc', 'hwang_true_value_adjusted_ktc', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
 }
 
 /** Default table sort when a source is selected or data reloads. */
@@ -239,6 +258,8 @@ export function defaultSortForSource(sourceOption) {
     || sourceOption.kind === 'final_ktc_values'
     || sourceOption.kind === 'ktc_redraft_adjusted'
     || sourceOption.kind === 'final_ktc_redraft_adjusted'
+    || sourceOption.kind === 'hvorp_values_empty_roster_final_ktc'
+    || sourceOption.kind === 'hvorp_values_empty_roster_competitor_adjusted_final_ktc'
     || sourceOption.kind === 'hwang_market_value_adjusted_ktc'
     || sourceOption.kind === 'hwang_true_value_adjusted_ktc'
   ) {

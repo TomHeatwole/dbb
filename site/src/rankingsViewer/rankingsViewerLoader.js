@@ -20,6 +20,7 @@ import { normalisePlayerName } from '../utils/playerNameMatcher';
 import { loadRedraftRankLookup } from '../redraftValueIndex/redraftRankLookupLoader';
 import { assignPosValueRanks, assignOverallValueRanks } from '../lookups/RedraftValueLookup';
 import { loadHwangAdjustedKtcRankings } from './hwangValueAdjustmentLoader';
+import { loadHvorpAdjustedRankings } from './hvorpValueAdjustmentLoader';
 
 export { formatKtcValue };
 
@@ -1056,6 +1057,10 @@ export async function loadRankings(sourceOption, { year, date } = {}) {
       return loadFinalKtcValuesRankings(year);
     case 'final_ktc_redraft_adjusted':
       return loadFinalKtcRedraftAdjustedRankings(year);
+    case 'hvorp_values_empty_roster_final_ktc':
+      return loadHvorpAdjustedRankings('final_ktc', year, loadFinalKtcValuesRankings);
+    case 'hvorp_values_empty_roster_competitor_adjusted_final_ktc':
+      return loadHvorpAdjustedRankings('comp_adj_final_ktc', year, loadFinalKtcRedraftAdjustedRankings);
     case 'fantasycalc':
       return loadFantasyCalcRankings();
     case 'ffb':
@@ -1074,7 +1079,12 @@ export function getYearsForSource(sourceOption) {
   if (sourceOption.kind === 'ktc_rookie') {
     return KTC_ROOKIE_CLASS_YEARS;
   }
-  if (sourceOption.kind === 'final_ktc_values' || sourceOption.kind === 'final_ktc_redraft_adjusted') {
+  if (
+    sourceOption.kind === 'final_ktc_values'
+    || sourceOption.kind === 'final_ktc_redraft_adjusted'
+    || sourceOption.kind === 'hvorp_values_empty_roster_final_ktc'
+    || sourceOption.kind === 'hvorp_values_empty_roster_competitor_adjusted_final_ktc'
+  ) {
     return FINAL_KTC_YEARS;
   }
   if (sourceOption.kind === 'hwang_adjusted_adp') {
@@ -1088,6 +1098,8 @@ export function sourceUsesYear(sourceOption) {
     || sourceOption?.kind === 'ktc_rookie'
     || sourceOption?.kind === 'final_ktc_values'
     || sourceOption?.kind === 'final_ktc_redraft_adjusted'
+    || sourceOption?.kind === 'hvorp_values_empty_roster_final_ktc'
+    || sourceOption?.kind === 'hvorp_values_empty_roster_competitor_adjusted_final_ktc'
     || sourceOption?.kind === 'hwang_adjusted_adp';
 }
 

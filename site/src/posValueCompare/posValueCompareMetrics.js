@@ -47,8 +47,8 @@ export function groupHvorpPctDelta(comparisons) {
 
 /**
  * Value multipliers grounded on QB = 1.0.
- * For each other position, |Δ|-weighted mean of (pos HVORP / QB HVORP) in QB vs pos pairs.
- * Applying mult × nominal value approximates QB-equivalent scoring power.
+ * mult_pos = (|Δ|-weighted avg pos HVORP) / (|Δ|-weighted avg QB HVORP) in QB vs pos pairs.
+ * Values below 1 mean the position scores less HVORP than QB at the same nominal price.
  */
 export function computeQbGroundedMultipliers(comparisons) {
   const QB = 'QB';
@@ -79,33 +79,28 @@ export function computeQbGroundedMultipliers(comparisons) {
     }
 
     let sumW = 0;
-    let sumRatio = 0;
     let sumHvorpQb = 0;
     let sumHvorpPos = 0;
     let sumDelta = 0;
 
     for (const c of pairs) {
       const w = Math.abs(c.delta);
-      if (!Number.isFinite(c.hvorpA) || c.hvorpA === 0) continue;
-      const ratio = c.hvorpB / c.hvorpA;
-      if (!Number.isFinite(ratio)) continue;
-
-      if (w > 0) {
-        sumW += w;
-        sumRatio += w * ratio;
-        sumHvorpQb += w * c.hvorpA;
-        sumHvorpPos += w * c.hvorpB;
-        sumDelta += w * c.delta;
-      }
+      if (!Number.isFinite(c.hvorpA) || !Number.isFinite(c.hvorpB) || w === 0) continue;
+      sumW += w;
+      sumHvorpQb += w * c.hvorpA;
+      sumHvorpPos += w * c.hvorpB;
+      sumDelta += w * c.delta;
     }
 
-    if (sumW > 0) {
+    if (sumW > 0 && sumHvorpQb > 0) {
+      const avgQb = sumHvorpQb / sumW;
+      const avgPos = sumHvorpPos / sumW;
       byPosition[pos] = {
         position: pos,
-        multiplier: Math.round((sumRatio / sumW) * 1000) / 1000,
+        multiplier: Math.round((avgPos / avgQb) * 1000) / 1000,
         pairCount: pairs.length,
-        avgHvorpQb: Math.round((sumHvorpQb / sumW) * 10) / 10,
-        avgHvorpPos: Math.round((sumHvorpPos / sumW) * 10) / 10,
+        avgHvorpQb: Math.round(avgQb * 10) / 10,
+        avgHvorpPos: Math.round(avgPos * 10) / 10,
         avgDelta: Math.round((sumDelta / sumW) * 10) / 10,
       };
     } else {
