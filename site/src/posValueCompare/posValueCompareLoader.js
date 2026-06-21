@@ -1,169 +1,226 @@
 /**
  * Data loading for Pos Value Compare sandbox feature.
+ * Reads precomputed baselines built by compute_pos_value_compare.js.
  */
 
-import { fetchScoresData } from '../lookups/ScoresLookup';
-import { fetchPlayerIdMap } from '../lookups/PlayerLookup';
-import { fetchMultipleWeeksStats } from '../data_parse/weeklyStatsLoader';
-import { getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
-import { buildSleeperBasePoints } from '../scenarios/sleeperScoring';
-import { loadFinalKtcValuesRankings } from '../rankingsViewer/rankingsViewerLoader';
+import { POSITIONS, DEFAULT_VALUE_TOLERANCE } from './computePosValueCompare';
 import {
-  computePosValueCompare,
-  DEFAULT_VALUE_TOLERANCE,
-  EMPTY_ROSTER,
-} from './computePosValueCompare';
+  DEFAULT_DATASET_ID,
+  getPosValueCompareDataset,
+  POS_VALUE_COMPARE_DATASETS,
+} from './posValueCompareDatasets';
+import {
+  groupHvorpPctDelta,
+  hvorpPctDelta,
+  TOP_KTC_RANK,
+} from './posValueCompareMetrics';
+
+export { TOP_KTC_RANK, POS_VALUE_COMPARE_DATASETS, DEFAULT_DATASET_ID };
 
 export const ANALYSIS_YEARS = [2021, 2022, 2023, 2024, 2025];
 
-function buildPlayerWeeklyPoints(weeksParsedData, sleeperWeeklyStats, scoringConfig, playersData) {
-  const base = (sleeperWeeklyStats && scoringConfig)
-    ? buildSleeperBasePoints(sleeperWeeklyStats, scoringConfig, playersData)
-    : Array.from({ length: 17 }, () => ({}));
+const cacheByDataset = new Map();
 
-  return (weeksParsedData || []).map((weekEntries, weekIdx) => {
-    const weekPts = { ...base[weekIdx] };
-    (weekEntries || []).forEach((entry) => {
-      for (const [pid, pts] of Object.entries(entry?.players_points || {})) {
-        weekPts[pid] = pts;
+function parseCsvRow(line) {
+  const fields = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += c;
       }
-    });
-    return weekPts;
-  });
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      fields.push(current);
+      current = '';
+    } else {
+      current += c;
+    }
+  }
+  fields.push(current.replace(/\r$/, ''));
+  return fields;
 }
 
-async function loadScoringContext(season) {
-  const allWeeks = Array.from({ length: 17 }, (_, i) => i + 1);
+function parseComparisonRow(cols, idx) {
+  const season = parseInt(cols[idx('season')], 10);
+  const hvorpA = parseFloat(cols[idx('hvorp_a')]);
+  const hvorpB = parseFloat(cols[idx('hvorp_b')]);
+  const delta = parseFloat(cols[idx('delta')]);
+  if (!Number.isFinite(season) || !Number.isFinite(delta)) return null;
 
-  const [weeksData, idMap, players, scoringConfig, sleeperWeeklyStats] = await Promise.all([
-    fetchScoresData(season),
-    fetchPlayerIdMap(),
-    fetch('/data/players.txt').then((r) => r.json()).catch(() => null),
-    fetch('/data/score_format.json').then((r) => r.json()).catch(() => null),
-    fetchMultipleWeeksStats(season, allWeeks, 0).catch(() => null),
-  ]);
-
-  const sleeperWeeklyStatsArray = sleeperWeeklyStats
-    ? Array.from({ length: 17 }, (_, i) => sleeperWeeklyStats[i + 1] || null)
-    : null;
-
-  const playerWeeklyPoints = buildPlayerWeeklyPoints(
-    weeksData,
-    sleeperWeeklyStatsArray,
-    scoringConfig,
-    players,
-  );
-  const playerSeasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
+  const posA = (cols[idx('pos_a')] || '').trim();
+  const posB = (cols[idx('pos_b')] || '').trim();
+  const valueA = parseInt(cols[idx('value_a')] ?? cols[idx('ktc_value_a')], 10);
+  const valueB = parseInt(cols[idx('value_b')] ?? cols[idx('ktc_value_b')], 10);
 
   return {
-    playerWeeklyPoints,
-    playersData: players,
-    playerIdMap: idMap,
-    playerSeasonTotalsMap,
+    season,
+    posA,
+    posB,
+    pairKey: (cols[idx('pair_key')] || '').trim() || `${posA}_vs_${posB}`,
+    playerA: (cols[idx('player_a')] || '').trim(),
+    playerB: (cols[idx('player_b')] || '').trim(),
+    playerIdA: (cols[idx('player_id_a')] || '').trim(),
+    playerIdB: (cols[idx('player_id_b')] || '').trim(),
+    valueA,
+    valueB,
+    valueGap: parseFloat(cols[idx('value_gap')]),
+    hvorpA,
+    hvorpB,
+    delta,
+    pctDelta: hvorpPctDelta(hvorpA, hvorpB, delta),
   };
 }
 
-/**
- * Preseason KTC board → { name, position, value, playerId } for one season.
- */
-export async function loadSeasonValuePlayers(season) {
-  const { rows } = await loadFinalKtcValuesRankings(season);
-  return rows
-    .filter((row) => row.sleeperId && row.position && Number.isFinite(row.value))
-    .map((row) => ({
-      name: row.name,
-      position: row.position.toUpperCase(),
-      value: row.value,
-      playerId: row.sleeperId,
-    }));
-}
-
-export async function runSeasonPosValueCompare(season, options = {}) {
-  const {
-    baseRoster = EMPTY_ROSTER,
-    valueTolerance = DEFAULT_VALUE_TOLERANCE,
-  } = options;
-
-  const [players, scoringContext] = await Promise.all([
-    loadSeasonValuePlayers(season),
-    loadScoringContext(season),
-  ]);
-
-  return computePosValueCompare({
-    players,
-    baseRoster,
-    valueTolerance,
-    season,
-    ...scoringContext,
-  });
-}
-
-function mergePairGroups(seasonResults) {
-  const merged = {};
-  for (const result of seasonResults) {
-    for (const [key, group] of Object.entries(result.byPair || {})) {
-      if (!merged[key]) {
-        merged[key] = {
-          ...group,
-          comparisons: [],
-          count: 0,
-          avgDelta: null,
-        };
-      }
-      merged[key].comparisons.push(...group.comparisons.map((c) => ({
-        ...c,
-        season: result.season,
-      })));
+function aggregateComparisons(comparisons) {
+  const byPair = {};
+  for (let i = 0; i < POSITIONS.length; i += 1) {
+    for (let j = i + 1; j < POSITIONS.length; j += 1) {
+      const posA = POSITIONS[i];
+      const posB = POSITIONS[j];
+      byPair[`${posA}_vs_${posB}`] = {
+        posA,
+        posB,
+        label: `${posA} vs ${posB}`,
+        comparisons: [],
+        avgDelta: null,
+        avgPctDelta: null,
+        count: 0,
+      };
     }
   }
 
-  for (const group of Object.values(merged)) {
-    group.count = group.comparisons.length;
-    if (group.count > 0) {
-      const sum = group.comparisons.reduce((s, c) => s + c.delta, 0);
-      group.avgDelta = Math.round((sum / group.count) * 10) / 10;
+  for (const row of comparisons) {
+    const bucket = byPair[row.pairKey];
+    if (!bucket) continue;
+    bucket.comparisons.push(row);
+  }
+
+  for (const bucket of Object.values(byPair)) {
+    bucket.count = bucket.comparisons.length;
+    if (bucket.count > 0) {
+      const sum = bucket.comparisons.reduce((s, c) => s + c.delta, 0);
+      bucket.avgDelta = Math.round((sum / bucket.count) * 10) / 10;
+      bucket.avgPctDelta = groupHvorpPctDelta(bucket.comparisons);
     }
   }
 
-  const allComparisons = seasonResults.flatMap((r) =>
-    r.comparisons.map((c) => ({ ...c, season: r.season })),
-  );
-  const avgDeltaOverall = allComparisons.length
+  const avgDeltaOverall = comparisons.length
     ? Math.round(
-      (allComparisons.reduce((s, c) => s + c.delta, 0) / allComparisons.length) * 10,
+      (comparisons.reduce((s, c) => s + c.delta, 0) / comparisons.length) * 10,
     ) / 10
     : null;
+  const avgPctDeltaOverall = groupHvorpPctDelta(comparisons);
 
   return {
-    byPair: merged,
-    comparisons: allComparisons,
+    byPair,
+    comparisons,
     avgDeltaOverall,
-    totalComparisons: allComparisons.length,
+    avgPctDeltaOverall,
+    totalComparisons: comparisons.length,
   };
+}
+
+function buildSeasonResults(comparisons, meta) {
+  const seasonMetaByYear = {};
+  for (const row of meta?.seasons || []) {
+    seasonMetaByYear[row.season] = row;
+  }
+
+  const bySeason = new Map();
+  for (const row of comparisons) {
+    if (!bySeason.has(row.season)) bySeason.set(row.season, []);
+    bySeason.get(row.season).push(row);
+  }
+
+  return ANALYSIS_YEARS.filter((y) => bySeason.has(y)).map((season) => {
+    const seasonComparisons = bySeason.get(season);
+    const agg = aggregateComparisons(seasonComparisons);
+    const seasonMeta = seasonMetaByYear[season] || {};
+    return {
+      season,
+      baseRosterSize: meta?.base_roster_size ?? 0,
+      playersEvaluated: seasonMeta.playersEvaluated ?? 0,
+      valueTolerance: meta?.value_tolerance ?? DEFAULT_VALUE_TOLERANCE,
+      comparisons: seasonComparisons,
+      byPair: agg.byPair,
+      avgDeltaOverall: agg.avgDeltaOverall,
+      avgPctDeltaOverall: agg.avgPctDeltaOverall,
+      totalComparisons: agg.totalComparisons,
+    };
+  });
+}
+
+async function parseComparisonsCsv(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+
+  const headers = parseCsvRow(lines[0]);
+  const idx = (name) => headers.indexOf(name);
+  const comparisons = [];
+
+  for (let i = 1; i < lines.length; i += 1) {
+    const cols = parseCsvRow(lines[i]);
+    const row = parseComparisonRow(cols, idx);
+    if (row) comparisons.push(row);
+  }
+
+  return comparisons;
 }
 
 /**
- * Run analysis for 2021–2025 (configurable via years param).
+ * Load precomputed multi-season comparison dataset.
+ * @param {string} [datasetId] — 'final_ktc' | 'comp_adj'
  */
-export async function runMultiSeasonPosValueCompare(years = ANALYSIS_YEARS, onProgress) {
-  const seasonResults = [];
+export async function loadPosValueCompareData(datasetId = DEFAULT_DATASET_ID) {
+  if (cacheByDataset.has(datasetId)) return cacheByDataset.get(datasetId);
 
-  for (let i = 0; i < years.length; i += 1) {
-    const year = years[i];
-    if (onProgress) onProgress({ phase: 'season', year, index: i, total: years.length });
-    const result = await runSeasonPosValueCompare(year);
-    seasonResults.push(result);
+  const config = getPosValueCompareDataset(datasetId);
+  const comparisonsCsv = `/data/${config.basename}.csv`;
+  const metaJson = `/data/${config.basename}_meta.json`;
+
+  const [csvRes, metaRes] = await Promise.all([
+    fetch(comparisonsCsv),
+    fetch(metaJson),
+  ]);
+
+  if (!csvRes.ok) {
+    throw new Error(
+      `${config.basename}.csv not found — run: node site/src/data_parse/compute_pos_value_compare.js`,
+    );
   }
 
-  const aggregate = mergePairGroups(seasonResults);
+  const comparisons = await parseComparisonsCsv(await csvRes.text());
+  const meta = metaRes.ok ? await metaRes.json() : null;
 
-  return {
-    years,
+  const seasonResults = buildSeasonResults(comparisons, meta);
+  const aggregate = aggregateComparisons(comparisons);
+
+  const results = {
+    datasetId,
+    dataset: config,
+    years: meta?.years || ANALYSIS_YEARS,
     seasonResults,
     aggregate,
-    valueTolerance: DEFAULT_VALUE_TOLERANCE,
-    baseRoster: EMPTY_ROSTER,
+    valueTolerance: meta?.value_tolerance ?? DEFAULT_VALUE_TOLERANCE,
+    topKtcRank: meta?.top_ktc_rank ?? TOP_KTC_RANK,
+    baseRoster: [],
+    meta,
+    generatedAt: meta?.generated_at ?? null,
   };
+
+  cacheByDataset.set(datasetId, results);
+  return results;
 }
 
-export { DEFAULT_VALUE_TOLERANCE, EMPTY_ROSTER };
+export { DEFAULT_VALUE_TOLERANCE };

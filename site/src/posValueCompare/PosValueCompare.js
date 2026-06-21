@@ -1,11 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import LoadingState from '../LoadingState';
 import { POSITIONS } from './computePosValueCompare';
-import { ANALYSIS_YEARS, runMultiSeasonPosValueCompare } from './posValueCompareLoader';
+import { computeQbGroundedMultipliers } from './posValueCompareMetrics';
+import {
+  ANALYSIS_YEARS,
+  DEFAULT_DATASET_ID,
+  loadPosValueCompareData,
+  POS_VALUE_COMPARE_DATASETS,
+  TOP_KTC_RANK,
+} from './posValueCompareLoader';
 
 function fmtSigned(value) {
   if (value == null || !Number.isFinite(value)) return '—';
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}`;
+}
+
+function fmtPctSigned(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+}
+
+function pctClass(value) {
+  if (value == null || !Number.isFinite(value)) return '';
+  if (value > 0) return 'pvc-pos';
+  if (value < 0) return 'pvc-neg';
+  return '';
 }
 
 function fmtValue(value) {
@@ -13,7 +32,66 @@ function fmtValue(value) {
   return value.toLocaleString();
 }
 
-function PairSummaryTable({ byPair, title }) {
+function fmtMultiplier(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return value.toFixed(3);
+}
+
+function QbGroundedMultipliers({ comparisons, valueColumnLabel }) {
+  const grounded = useMemo(
+    () => computeQbGroundedMultipliers(comparisons),
+    [comparisons],
+  );
+
+  const rows = POSITIONS.map((pos) => grounded.byPosition[pos]).filter(Boolean);
+
+  return (
+    <div className="pvc-section">
+      <h3 className="pvc-section-title">QB-grounded value multipliers</h3>
+      <p className="pvc-section-desc">
+        Hold QB at 1.0× and scale other positions so matched-pair HVORP aligns with QB scoring.
+        Each multiplier is the |Δ|-weighted average of (pos HVORP ÷ QB HVORP) in QB vs pos pairs.
+        Apply to {valueColumnLabel} values: e.g. RB 5000 × multiplier → QB-equivalent value.
+      </p>
+      <div className="pvc-table-wrap">
+        <table className="pvc-table">
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th className="pvc-th-num">Multiplier</th>
+              <th className="pvc-th-num">Avg QB HVORP</th>
+              <th className="pvc-th-num">Avg pos HVORP</th>
+              <th className="pvc-th-num">Avg Δ (QB − pos)</th>
+              <th className="pvc-th-num"># Pairs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.position}>
+                <td className="pvc-td-label">{row.position}</td>
+                <td className="pvc-td-num pvc-mult">{fmtMultiplier(row.multiplier)}</td>
+                <td className="pvc-td-num">
+                  {row.position === 'QB' ? '—' : row.avgHvorpQb?.toFixed(1) ?? '—'}
+                </td>
+                <td className="pvc-td-num">
+                  {row.position === 'QB' ? '—' : row.avgHvorpPos?.toFixed(1) ?? '—'}
+                </td>
+                <td className={`pvc-td-num ${pctClass(row.avgDelta)}`}>
+                  {row.position === 'QB' ? '—' : fmtSigned(row.avgDelta)}
+                </td>
+                <td className="pvc-td-num">
+                  {row.pairCount > 0 ? row.pairCount.toLocaleString() : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PairSummaryTable({ byPair, title, valueColumnLabel }) {
   const rows = useMemo(() => {
     const list = [];
     for (let i = 0; i < POSITIONS.length; i += 1) {
@@ -35,6 +113,7 @@ function PairSummaryTable({ byPair, title }) {
             <tr>
               <th>Comparison</th>
               <th className="pvc-th-num">Avg Δ HVORP</th>
+              <th className="pvc-th-num">Avg Δ %</th>
               <th className="pvc-th-num"># Pairs</th>
               <th className="pvc-th-note">Interpretation</th>
             </tr>
@@ -43,14 +122,17 @@ function PairSummaryTable({ byPair, title }) {
             {rows.map((group) => (
               <tr key={group.label}>
                 <td className="pvc-td-label">{group.label}</td>
-                <td className={`pvc-td-num ${group.avgDelta > 0 ? 'pvc-pos' : group.avgDelta < 0 ? 'pvc-neg' : ''}`}>
+                <td className={`pvc-td-num ${pctClass(group.avgDelta)}`}>
                   {fmtSigned(group.avgDelta)}
+                </td>
+                <td className={`pvc-td-num ${pctClass(group.avgPctDelta)}`}>
+                  {fmtPctSigned(group.avgPctDelta)}
                 </td>
                 <td className="pvc-td-num">{group.count.toLocaleString()}</td>
                 <td className="pvc-td-note">
                   {group.avgDelta == null
                     ? 'No matched pairs'
-                    : `${group.posA} averaged ${fmtSigned(group.avgDelta)} HVORP vs ${group.posB} at similar KTC`}
+                    : `${group.posA} averaged ${fmtSigned(group.avgDelta)} HVORP (${fmtPctSigned(group.avgPctDelta)} vs ${group.posB}) at similar ${valueColumnLabel}`}
                 </td>
               </tr>
             ))}
@@ -61,7 +143,7 @@ function PairSummaryTable({ byPair, title }) {
   );
 }
 
-function ComparisonDetails({ comparisons, pairFilter }) {
+function ComparisonDetails({ comparisons, pairFilter, valueColumnLabel }) {
   const filtered = useMemo(() => {
     const list = pairFilter
       ? comparisons.filter((c) => c.pairKey === pairFilter)
@@ -81,12 +163,13 @@ function ComparisonDetails({ comparisons, pairFilter }) {
             <th>Season</th>
             <th>Pair</th>
             <th>{filtered[0]?.posA || 'A'}</th>
-            <th>KTC</th>
+            <th>{valueColumnLabel}</th>
             <th>HVORP</th>
             <th>{filtered[0]?.posB || 'B'}</th>
-            <th>KTC</th>
+            <th>{valueColumnLabel}</th>
             <th>HVORP</th>
             <th className="pvc-th-num">Δ</th>
+            <th className="pvc-th-num">Δ %</th>
           </tr>
         </thead>
         <tbody>
@@ -100,8 +183,11 @@ function ComparisonDetails({ comparisons, pairFilter }) {
               <td>{row.playerB}</td>
               <td className="pvc-td-num">{fmtValue(row.valueB)}</td>
               <td className="pvc-td-num">{row.hvorpB.toFixed(1)}</td>
-              <td className={`pvc-td-num ${row.delta > 0 ? 'pvc-pos' : row.delta < 0 ? 'pvc-neg' : ''}`}>
+              <td className={`pvc-td-num ${pctClass(row.delta)}`}>
                 {fmtSigned(row.delta)}
+              </td>
+              <td className={`pvc-td-num ${pctClass(row.pctDelta)}`}>
+                {fmtPctSigned(row.pctDelta)}
               </td>
             </tr>
           ))}
@@ -113,11 +199,14 @@ function ComparisonDetails({ comparisons, pairFilter }) {
 
 function PosValueCompare() {
   const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
+  const [generatedAt, setGeneratedAt] = useState(null);
+  const [valueDataset, setValueDataset] = useState(DEFAULT_DATASET_ID);
   const [selectedSeason, setSelectedSeason] = useState('all');
   const [pairFilter, setPairFilter] = useState('');
+
+  const datasetConfig = POS_VALUE_COMPARE_DATASETS[valueDataset] || POS_VALUE_COMPARE_DATASETS.final_ktc;
 
   useEffect(() => {
     let cancelled = false;
@@ -126,22 +215,20 @@ function PosValueCompare() {
       setLoading(true);
       setError(null);
       try {
-        const data = await runMultiSeasonPosValueCompare(ANALYSIS_YEARS, (p) => {
-          if (!cancelled) setProgress(p);
-        });
-        if (!cancelled) setResults(data);
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Failed to run positional value comparison');
-      } finally {
+        const data = await loadPosValueCompareData(valueDataset);
         if (!cancelled) {
-          setLoading(false);
-          setProgress(null);
+          setResults(data);
+          setGeneratedAt(data.generatedAt);
         }
+      } catch (err) {
+        if (!cancelled) setError(err.message || 'Failed to load positional value comparison');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
 
     return () => { cancelled = true; };
-  }, []);
+  }, [valueDataset]);
 
   const activeView = useMemo(() => {
     if (!results) return null;
@@ -150,6 +237,7 @@ function PosValueCompare() {
         byPair: results.aggregate.byPair,
         comparisons: results.aggregate.comparisons,
         avgDeltaOverall: results.aggregate.avgDeltaOverall,
+        avgPctDeltaOverall: results.aggregate.avgPctDeltaOverall,
         totalComparisons: results.aggregate.totalComparisons,
         playersEvaluated: results.seasonResults.reduce((s, r) => s + r.playersEvaluated, 0),
         label: `${ANALYSIS_YEARS[0]}–${ANALYSIS_YEARS[ANALYSIS_YEARS.length - 1]} combined`,
@@ -161,11 +249,12 @@ function PosValueCompare() {
       byPair: seasonResult.byPair,
       comparisons: seasonResult.comparisons.map((c) => ({ ...c, season: seasonResult.season })),
       avgDeltaOverall: seasonResult.avgDeltaOverall,
+      avgPctDeltaOverall: seasonResult.avgPctDeltaOverall,
       totalComparisons: seasonResult.totalComparisons,
       playersEvaluated: seasonResult.playersEvaluated,
-      label: `${seasonResult.season} preseason KTC`,
+      label: `${seasonResult.season} (${datasetConfig.label})`,
     };
-  }, [results, selectedSeason]);
+  }, [results, selectedSeason, datasetConfig.label]);
 
   const pairOptions = useMemo(() => {
     if (!activeView) return [];
@@ -175,10 +264,7 @@ function PosValueCompare() {
   }, [activeView]);
 
   if (loading) {
-    const label = progress?.year
-      ? `Loading ${progress.year} scoring data (${progress.index + 1}/${progress.total})…`
-      : 'Running positional value comparison…';
-    return <LoadingState label={label} className="pvc-loading" />;
+    return <LoadingState label="Loading positional value comparison…" className="pvc-loading" />;
   }
 
   if (error) {
@@ -192,12 +278,33 @@ function PosValueCompare() {
   return (
     <div className="pvc-root">
       <p className="pvc-intro">
-        Preseason KTC SF TE+ values matched across positions (±200 KTC, min 2% of avg value).
-        HVORP is optimal lineup contribution on an empty roster — positive Δ means the first
-        position scored more roster value at the same dynasty price.
+        Top {TOP_KTC_RANK} by {datasetConfig.label.toLowerCase()} per year, matched across positions
+        (±200 value, min 2% of avg). HVORP on an empty roster. Positive Δ means the first
+        position scored more at the same dynasty price. Per-pair Δ % uses symmetric HVORP;
+        summary Δ % weights each pair by |Δ HVORP| so elite mismatches count more than depth pairs.
+        {generatedAt && (
+          <span className="pvc-meta"> Baseline computed {generatedAt.slice(0, 10)}.</span>
+        )}
       </p>
 
       <div className="pvc-controls">
+        <label className="pvc-field">
+          <span className="pvc-label">Value basis</span>
+          <select
+            className="pvc-select"
+            value={valueDataset}
+            onChange={(e) => {
+              setValueDataset(e.target.value);
+              setSelectedSeason('all');
+              setPairFilter('');
+            }}
+          >
+            {Object.values(POS_VALUE_COMPARE_DATASETS).map((ds) => (
+              <option key={ds.id} value={ds.id}>{ds.label}</option>
+            ))}
+          </select>
+        </label>
+
         <label className="pvc-field">
           <span className="pvc-label">Season</span>
           <select
@@ -247,9 +354,22 @@ function PosValueCompare() {
           <span className="pvc-stat-label">Overall avg Δ HVORP</span>
           <span className="pvc-stat-value">{fmtSigned(activeView.avgDeltaOverall)}</span>
         </div>
+        <div className="pvc-stat">
+          <span className="pvc-stat-label">Overall avg Δ %</span>
+          <span className="pvc-stat-value">{fmtPctSigned(activeView.avgPctDeltaOverall)}</span>
+        </div>
       </div>
 
-      <PairSummaryTable byPair={activeView.byPair} title="Summary by position pair" />
+      <PairSummaryTable
+        byPair={activeView.byPair}
+        title="Summary by position pair"
+        valueColumnLabel={datasetConfig.valueColumnLabel}
+      />
+
+      <QbGroundedMultipliers
+        comparisons={activeView.comparisons}
+        valueColumnLabel={datasetConfig.valueColumnLabel}
+      />
 
       <div className="pvc-section">
         <h3 className="pvc-section-title">
@@ -259,6 +379,7 @@ function PosValueCompare() {
         <ComparisonDetails
           comparisons={activeView.comparisons}
           pairFilter={pairFilter || null}
+          valueColumnLabel={datasetConfig.valueColumnLabel}
         />
       </div>
     </div>

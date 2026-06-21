@@ -18,14 +18,21 @@ import { computeLuckFromRolls } from './luckMetrics';
 const NUM_WEEKS = 17;
 export const DEFAULT_ITERATIONS = 1000;
 export const MAX_SIMULATOR_ITERATIONS = 100000;
+/** Above this count, only aggregate results are kept (no team drill-down). */
+export const SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS = 5000;
 const MIN_SIMULATOR_ITERATIONS = 1;
 const BATCH_SIZE = 25;
+const LIGHTWEIGHT_BATCH_SIZE = 100;
 /** Max drill-down links kept per finish place (avoids hoarding 100k full roll sets). */
 const MAX_RUNS_PER_FINISH = 50;
 
 export function clampSimulatorIterations(n) {
   const val = Math.round(Number(n) || DEFAULT_ITERATIONS);
   return Math.max(MIN_SIMULATOR_ITERATIONS, Math.min(MAX_SIMULATOR_ITERATIONS, val));
+}
+
+export function isLightweightSimulatorRun(iterations) {
+  return clampSimulatorIterations(iterations) > SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS;
 }
 
 function buildProjectedSeasonTotals(playerWeeklyPoints) {
@@ -196,7 +203,7 @@ function recordTeamFinishRun(buckets, rosterId, simIndex, rolls, teamResult) {
   bucket.runs.length = MAX_RUNS_PER_FINISH;
 }
 
-function scoreRostersFromRolls(ctx, rosters, rolls, playersData, playerIdMap) {
+function scoreRostersFromRolls(ctx, rosters, rolls, playersData, playerIdMap, lightweight = false) {
   const playerWeeklyPoints = buildWeeklyPointsFromRolls(
     ctx.allPlayerIds,
     ctx.pools,
@@ -216,6 +223,10 @@ function scoreRostersFromRolls(ctx, rosters, rolls, playersData, playerIdMap) {
   const ploffTotals = computePlayoffTotals(weeklyScores);
   const standings = buildFinalStandings(regTotals, ploffTotals);
   const champion = standings.find((r) => r.place === 1) || null;
+
+  if (lightweight) {
+    return { champion, standings, regTotals, ploffTotals };
+  }
 
   const teamResults = {};
   for (const row of standings) {
@@ -350,7 +361,7 @@ export function getSimulatorRequiredYears(context, hwangAdpRankMap, catalog, pos
   return collectRequiredSeasonYears(projections);
 }
 
-function runSingleIteration(ctx, playersData, playerIdMap) {
+function runSingleIteration(ctx, playersData, playerIdMap, lightweight = false) {
   const rolls = randomRolls(ctx.allPlayerIds);
   const scenarioOutcome = scoreRostersFromRolls(
     ctx,
@@ -358,6 +369,7 @@ function runSingleIteration(ctx, playersData, playerIdMap) {
     rolls,
     playersData,
     playerIdMap,
+    lightweight,
   );
 
   let baselineOutcome = null;
@@ -368,7 +380,12 @@ function runSingleIteration(ctx, playersData, playerIdMap) {
       rolls,
       playersData,
       playerIdMap,
+      lightweight,
     );
+  }
+
+  if (lightweight) {
+    return { scenarioOutcome, baselineOutcome };
   }
 
   return {
@@ -395,19 +412,51 @@ export async function runMonteCarloSimulation(
   {
     iterations = DEFAULT_ITERATIONS,
     onProgress,
-    batchSize = BATCH_SIZE,
+    batchSize,
   } = {},
 ) {
+  const lightweight = isLightweightSimulatorRun(iterations);
+  const effectiveBatchSize = batchSize ?? (lightweight ? LIGHTWEIGHT_BATCH_SIZE : BATCH_SIZE);
   const stats = emptyStats(ctx.rosterIds);
   const baselineStats = ctx.baselineRosters ? emptyStats(ctx.rosterIds) : null;
 
-  const teamFinishBuckets = createTeamFinishBuckets(ctx.rosterIds);
+  const teamFinishBuckets = lightweight ? null : createTeamFinishBuckets(ctx.rosterIds);
   let completed = 0;
   let lastReportedProgress = 0;
 
   while (completed < iterations) {
-    const batchEnd = Math.min(completed + batchSize, iterations);
+    const batchEnd = Math.min(completed + effectiveBatchSize, iterations);
     for (let i = completed; i < batchEnd; i++) {
+      const iteration = runSingleIteration(ctx, playersData, playerIdMap, lightweight);
+
+      if (lightweight) {
+        const { scenarioOutcome, baselineOutcome } = iteration;
+        const regSeasonRankByRid = buildRegSeasonRankByRid(scenarioOutcome.regTotals);
+        accumulateIterationStats(
+          stats,
+          scenarioOutcome.champion,
+          scenarioOutcome.standings,
+          scenarioOutcome.regTotals,
+          scenarioOutcome.ploffTotals,
+          regSeasonRankByRid,
+          ctx.rosterIds,
+        );
+
+        if (baselineOutcome && baselineStats) {
+          const baselineRegSeasonRankByRid = buildRegSeasonRankByRid(baselineOutcome.regTotals);
+          accumulateIterationStats(
+            baselineStats,
+            baselineOutcome.champion,
+            baselineOutcome.standings,
+            baselineOutcome.regTotals,
+            baselineOutcome.ploffTotals,
+            baselineRegSeasonRankByRid,
+            ctx.rosterIds,
+          );
+        }
+        continue;
+      }
+
       const {
         rolls,
         champion,
@@ -416,7 +465,7 @@ export async function runMonteCarloSimulation(
         ploffTotals,
         teamResults,
         baselineOutcome,
-      } = runSingleIteration(ctx, playersData, playerIdMap);
+      } = iteration;
 
       for (const [rid, tr] of Object.entries(teamResults || {})) {
         recordTeamFinishRun(teamFinishBuckets, rid, i + 1, rolls, tr);

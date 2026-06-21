@@ -11,6 +11,12 @@ import {
   computeAllWeeklyScores,
   computePlayerRosterStats,
 } from '../scenarios/computeScenarioEval';
+import {
+  filterTopKtcPlayers,
+  groupHvorpPctDelta,
+  hvorpPctDelta,
+  TOP_KTC_RANK,
+} from './posValueCompareMetrics';
 
 export const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
 
@@ -21,6 +27,8 @@ const ROSTER_KEY = 'compare';
 
 /** Default max |valueA − valueB| for a cross-position pair. */
 export const DEFAULT_VALUE_TOLERANCE = 200;
+
+export { TOP_KTC_RANK, filterTopKtcPlayers, hvorpPctDelta, groupHvorpPctDelta };
 
 function pairKey(posA, posB) {
   return `${posA}_vs_${posB}`;
@@ -136,6 +144,7 @@ export function findValueMatchedPairs(playersWithHvorp, tolerance = DEFAULT_VALU
         for (const playerB of listB) {
           if (!valuesMatch(playerA.value, playerB.value, tolerance)) continue;
 
+          const delta = Math.round((playerA.hvorp - playerB.hvorp) * 10) / 10;
           comparisons.push({
             posA,
             posB,
@@ -149,7 +158,8 @@ export function findValueMatchedPairs(playersWithHvorp, tolerance = DEFAULT_VALU
             valueGap: Math.round((playerA.value - playerB.value) * 10) / 10,
             hvorpA: playerA.hvorp,
             hvorpB: playerB.hvorp,
-            delta: Math.round((playerA.hvorp - playerB.hvorp) * 10) / 10,
+            delta,
+            pctDelta: hvorpPctDelta(playerA.hvorp, playerB.hvorp, delta),
           });
         }
       }
@@ -170,6 +180,7 @@ function aggregateComparisons(comparisons) {
         label: `${posA} vs ${posB}`,
         comparisons: [],
         avgDelta: null,
+        avgPctDelta: null,
         count: 0,
       };
     }
@@ -186,6 +197,7 @@ function aggregateComparisons(comparisons) {
     if (bucket.count > 0) {
       const sum = bucket.comparisons.reduce((s, c) => s + c.delta, 0);
       bucket.avgDelta = Math.round((sum / bucket.count) * 10) / 10;
+      bucket.avgPctDelta = groupHvorpPctDelta(bucket.comparisons);
     }
   }
 
@@ -193,8 +205,9 @@ function aggregateComparisons(comparisons) {
   const avgDeltaOverall = allDeltas.length
     ? Math.round((allDeltas.reduce((s, d) => s + d, 0) / allDeltas.length) * 10) / 10
     : null;
+  const avgPctDeltaOverall = groupHvorpPctDelta(comparisons);
 
-  return { byPair, avgDeltaOverall, totalComparisons: comparisons.length };
+  return { byPair, avgDeltaOverall, avgPctDeltaOverall, totalComparisons: comparisons.length };
 }
 
 /**
@@ -219,9 +232,11 @@ export function computePosValueCompare({
   playerSeasonTotalsMap,
   valueTolerance = DEFAULT_VALUE_TOLERANCE,
   season = null,
+  topKtcRank = TOP_KTC_RANK,
 }) {
+  const rankedPlayers = filterTopKtcPlayers(players, topKtcRank);
   const hvorpLookup = buildHvorpLookup(
-    players,
+    rankedPlayers,
     baseRoster,
     playerWeeklyPoints,
     playersData,
@@ -231,7 +246,7 @@ export function computePosValueCompare({
 
   const playersWithHvorp = [...hvorpLookup.values()];
   const comparisons = findValueMatchedPairs(playersWithHvorp, valueTolerance);
-  const { byPair, avgDeltaOverall, totalComparisons } = aggregateComparisons(comparisons);
+  const { byPair, avgDeltaOverall, avgPctDeltaOverall, totalComparisons } = aggregateComparisons(comparisons);
 
   return {
     season,
@@ -241,6 +256,7 @@ export function computePosValueCompare({
     comparisons,
     byPair,
     avgDeltaOverall,
+    avgPctDeltaOverall,
     totalComparisons,
   };
 }

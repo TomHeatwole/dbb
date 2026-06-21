@@ -21,6 +21,7 @@ import {
   prepareSimulatorContext,
   runMonteCarloSimulation,
   DEFAULT_ITERATIONS,
+  SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS,
 } from '../scenarios/simulatorMonteCarlo';
 import SimulatorResultsPanel from '../scenarios/SimulatorResultsPanel';
 import SimulatorTeamDetail from '../scenarios/SimulatorTeamDetail';
@@ -189,6 +190,8 @@ function SimulatorRunPage() {
     return () => { cancelled = true; };
   }, [scenarioParam]);
 
+  const drillDownEnabled = iterations <= SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS;
+
   const backLink = (
     <Link
       to="/simulator?state=builder"
@@ -255,11 +258,12 @@ function SimulatorRunPage() {
                   iterations={iterations}
                   selectedRosterId={selectedRosterId}
                   onSelectTeam={setSelectedRosterId}
+                  drillDownEnabled={drillDownEnabled}
                 />
               </div>
             </div>
 
-            {selectedRosterId != null && teamFinishBuckets ? (
+            {drillDownEnabled && selectedRosterId != null && teamFinishBuckets ? (
               <SimulatorTeamDetail
                 rosterId={selectedRosterId}
                 teamsForGrid={teamsForGrid}
@@ -269,7 +273,7 @@ function SimulatorRunPage() {
                 seasonYear={scenarioSeason}
                 iterations={iterations}
               />
-            ) : (
+            ) : !drillDownEnabled ? null : (
               <div className="scenario-eval-team-stats-placeholder">
                 Click a team above to see finish distribution and open specific simulations
               </div>

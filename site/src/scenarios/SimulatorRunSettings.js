@@ -3,6 +3,7 @@ import {
   clampSimulatorIterations,
   DEFAULT_ITERATIONS,
   MAX_SIMULATOR_ITERATIONS,
+  SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS,
 } from './simulatorMonteCarlo';
 
 const PRESETS = [1000, 5000, 10000, 50000, 100000];
@@ -48,6 +49,10 @@ function SimulatorRunSettings({ iterations, onChangeIterations }) {
       {open && (
         <div className="simulator-run-settings-popover" role="dialog" aria-label="Simulation settings">
           <div className="simulator-run-settings-title">Simulation runs</div>
+          <p className="simulator-run-settings-hint">
+            Runs above {SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS.toLocaleString()} return aggregate
+            stats only (no per-sim drill-down).
+          </p>
           <label className="simulator-run-settings-label" htmlFor="simulator-run-count">
             Number of runs (max {MAX_SIMULATOR_ITERATIONS.toLocaleString()})
           </label>

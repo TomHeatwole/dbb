@@ -22,7 +22,7 @@ const FEATURES = [
   {
     id: 'POS_VALUE_COMPARE',
     label: 'Pos Value Compare',
-    description: 'Cross-position KTC value matches vs actual HVORP outcomes (2021–2025).',
+    description: 'Cross-position HVORP vs Final KTC or Competitor Adjusted Value (top 300, 2021–2025).',
     component: <PosValueCompare />,
   },
   {

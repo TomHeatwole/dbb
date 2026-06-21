@@ -8676,6 +8676,13 @@ body.modal-open {
   margin-bottom: 0.55rem;
 }
 
+.simulator-run-settings-hint {
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: rgba(160, 170, 220, 0.55);
+  margin: 0 0 0.55rem;
+}
+
 .simulator-run-settings-label {
   display: block;
   font-size: 0.72rem;
@@ -12964,6 +12971,10 @@ body.modal-open {
   margin: 0;
 }
 
+.pvc-meta {
+  color: rgba(140, 150, 200, 0.55);
+}
+
 .pvc-controls {
   display: flex;
   flex-wrap: wrap;
@@ -13031,6 +13042,18 @@ body.modal-open {
   font-weight: 600;
   color: #e8eaff;
   margin: 0 0 0.65rem;
+}
+
+.pvc-section-desc {
+  font-size: 0.84rem;
+  color: rgba(170, 175, 220, 0.72);
+  line-height: 1.5;
+  margin: -0.35rem 0 0.75rem;
+}
+
+.pvc-mult {
+  font-weight: 600;
+  color: #ffd080;
 }
 
 .pvc-table-wrap {

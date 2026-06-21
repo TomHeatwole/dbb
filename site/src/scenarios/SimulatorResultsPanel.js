@@ -66,6 +66,7 @@ function RankMovement({ delta }) {
  */
 function SimulatorResultsPanel({
   results, resultDeltas, teamsForGrid, iterations, selectedRosterId, onSelectTeam,
+  drillDownEnabled = true,
 }) {
   const teamInfoById = {};
   for (const t of (teamsForGrid || [])) teamInfoById[t.rosterId] = t;
@@ -92,7 +93,8 @@ function SimulatorResultsPanel({
       <div className="simulator-results-header">
         <span className="simulator-results-title">Simulation Results</span>
         <span className="simulator-results-subtitle">
-          {iterations.toLocaleString()} runs · click a team for finish breakdown · sorted by win %
+          {iterations.toLocaleString()} runs · sorted by win %
+          {drillDownEnabled ? ' · click a team for finish breakdown' : ''}
           {hasDeltas ? ' · deltas vs original rosters' : ''}
         </span>
       </div>
@@ -127,13 +129,16 @@ function SimulatorResultsPanel({
                 <tr
                   key={row.rosterId}
                   className={
-                    'simulator-results-tr simulator-results-tr--clickable' +
+                    'simulator-results-tr' +
                     (idx === 0 ? ' simulator-results-tr--leader' : '') +
-                    (selectedRosterId === row.rosterId ? ' simulator-results-tr--selected' : '')
+                    (drillDownEnabled ? ' simulator-results-tr--clickable' : '') +
+                    (drillDownEnabled && selectedRosterId === row.rosterId
+                      ? ' simulator-results-tr--selected'
+                      : '')
                   }
-                  onClick={() => onSelectTeam && onSelectTeam(
+                  onClick={drillDownEnabled && onSelectTeam ? () => onSelectTeam(
                     selectedRosterId === row.rosterId ? null : row.rosterId,
-                  )}
+                  ) : undefined}
                 >
                   <td className="simulator-results-td simulator-results-td--rank">{idx + 1}.</td>
                   {hasDeltas && (
