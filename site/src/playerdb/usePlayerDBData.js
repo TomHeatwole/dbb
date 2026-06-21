@@ -33,6 +33,11 @@ import {
   assignPosValueRanks,
   assignOverallValueRanks,
 } from '../lookups/RedraftValueLookup';
+import {
+  loadHwangPositionMultipliers,
+  getStitchedKtcTepSfValue,
+  applyHwangKtcAdjustment,
+} from '../lookups/HwangValueAdjustmentLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { normalisePlayerName, findBestPlayerMatch } from '../utils/playerNameMatcher';
 import { CURRENT_YEAR } from '../utils/DateHelper';
@@ -45,6 +50,10 @@ function ensurePlayerAdjustedRanks(players) {
   assignPosValueRanks(players, 'rebuilderAdjustedValue', 'rebuilderAdjustedRank');
   assignOverallValueRanks(players, 'competitorAdjustedValue', 'competitorAdjustedOverallRank');
   assignOverallValueRanks(players, 'rebuilderAdjustedValue', 'rebuilderAdjustedOverallRank');
+  assignPosValueRanks(players, 'hwangMarketValue', 'hwangMarketPosRank');
+  assignPosValueRanks(players, 'hwangTrueValue', 'hwangTruePosRank');
+  assignOverallValueRanks(players, 'hwangMarketValue', 'hwangMarketRank');
+  assignOverallValueRanks(players, 'hwangTrueValue', 'hwangTrueRank');
   return players;
 }
 
@@ -147,6 +156,8 @@ export function usePlayerDBData() {
           teamData,
           sleeperPlayers,
           sleeperToEspnMap,
+          marketMult,
+          trueMult,
         ] = await Promise.all([
           fetchKtcData().catch(() => null),
           fetchRedraftValueData().catch(() => null),
@@ -156,6 +167,8 @@ export function usePlayerDBData() {
           fetchTeamData(CURRENT_YEAR).catch(() => null),
           fetch('/data/players.txt').then(r => r.ok ? r.json() : {}).catch(() => ({})),
           fetchSleeperToEspnMap(),
+          loadHwangPositionMultipliers('market').catch(() => null),
+          loadHwangPositionMultipliers('true').catch(() => null),
         ]);
 
         if (cancelled) return;
@@ -386,12 +399,14 @@ export function usePlayerDBData() {
               : null);
 
           const sleeperPlayer = sleeperId ? (sleeperPlayers[sleeperId] || null) : null;
+          const playerPosition = position || ktcEntry?.position || fcEntry?.position || '';
+          const stitchedKtc = getStitchedKtcTepSfValue(ktcEntry);
 
           return {
             sleeperId,
             name:      displayName,
             normName,
-            position:  position  || ktcEntry?.position  || fcEntry?.position  || '',
+            position:  playerPosition,
             nflTeam:   nflTeam   || ktcEntry?.nflTeam   || fcEntry?.nflTeam   || '',
             age:       fcEntry?.age ?? null,
             yearsExp:  sleeperPlayer?.years_exp ?? null,
@@ -432,6 +447,17 @@ export function usePlayerDBData() {
             redraftKtcPosRank: redraftEntry?.ktcPosRank ?? null,
             redraftAdpEffRank: redraftEntry?.adpEffRank ?? null,
             redraftAdpPosRank: redraftEntry?.adpPosRank ?? null,
+            // Hwang-adjusted KTC (stitched SF TE+ base × position multiplier)
+            hwangMarketValue: stitchedKtc != null && marketMult
+              ? applyHwangKtcAdjustment(stitchedKtc, playerPosition, marketMult)
+              : null,
+            hwangTrueValue: stitchedKtc != null && trueMult
+              ? applyHwangKtcAdjustment(stitchedKtc, playerPosition, trueMult)
+              : null,
+            hwangMarketRank: null,
+            hwangMarketPosRank: null,
+            hwangTrueRank: null,
+            hwangTruePosRank: null,
           };
         }
 

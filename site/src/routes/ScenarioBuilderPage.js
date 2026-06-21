@@ -21,7 +21,8 @@ import ScenarioTeamGrid from '../scenarios/ScenarioTeamGrid';
 import ScenarioRosterEditor from '../scenarios/ScenarioRosterEditor';
 import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import ScenarioBuilderTooltip from '../scenarios/ScenarioBuilderTooltip';
-import { encodeScenario, decodeScenario, applyScenarioChanges } from '../scenarios/scenarioEncoding';
+import { encodeScenario, decodeScenario, applyScenarioChanges, sanitizeRosters } from '../scenarios/scenarioEncoding';
+import { isValidPlayerId } from '../scenarios/scenarioUtils';
 
 const OG_TITLE = 'Scenario Builder';
 const OG_DESCRIPTION = 'Build what-if scenarios by editing team rosters.';
@@ -221,7 +222,7 @@ function ScenarioBuilderPage() {
         pendingScenarioRef.current = null;
 
         if (pending && String(pending.y) === String(season) && Array.isArray(pending.c) && pending.c.length > 0) {
-          setScenarioRosters(applyScenarioChanges(initial, pending.c));
+          setScenarioRosters(sanitizeRosters(applyScenarioChanges(initial, pending.c)));
           // Strip any leftover ?scenario= from the URL.
           setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
@@ -229,7 +230,7 @@ function ScenarioBuilderPage() {
             return next;
           }, { replace: true });
         } else {
-          setScenarioRosters(initial);
+          setScenarioRosters(sanitizeRosters(initial));
         }
         const snapshot = {};
         for (const rid in initial) snapshot[rid] = [...initial[rid]];
@@ -270,7 +271,7 @@ function ScenarioBuilderPage() {
   };
 
   const handleAddPlayer = (playerId) => {
-    if (selectedRosterId == null) return;
+    if (selectedRosterId == null || !isValidPlayerId(playerId)) return;
     setScenarioRosters((prev) => {
       const current = prev[selectedRosterId] || [];
       if (current.includes(playerId)) return prev;

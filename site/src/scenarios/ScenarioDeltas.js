@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
+import { isValidPlayerId } from './scenarioUtils';
 
 /**
  * Live "Your Scenario" summary panel.
@@ -15,14 +16,15 @@ function ScenarioDeltas({ originalRosters, scenarioRosters, teamsForGrid, player
         const curr = scenarioRosters[rid] || [];
         const currSet = new Set(curr);
 
-        const added = curr.filter((p) => !origSet.has(p));
-        const removed = [...(originalRosters[rid] || [])].filter((p) => !currSet.has(p));
+        const added = curr.filter((p) => isValidPlayerId(p) && !origSet.has(p));
+        const removed = [...(originalRosters[rid] || [])]
+          .filter((p) => isValidPlayerId(p) && !currSet.has(p));
 
         if (added.length === 0 && removed.length === 0) return null;
 
         const resolve = (pid) => {
           const info = getPlayerInfo(pid, playersData, playerIdMap);
-          return info ? info.name : pid;
+          return info?.name || `Player ${pid}`;
         };
 
         return {

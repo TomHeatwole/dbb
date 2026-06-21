@@ -29,6 +29,17 @@ const COLUMN_GROUPS = [
     keys: ['ffbRank', 'ffbPosRank'],
   },
   {
+    label: 'Hwang Adjusted KTC',
+    keys: [
+      'hwangMarketValue',
+      'hwangMarketRank',
+      'hwangMarketPosRank',
+      'hwangTrueValue',
+      'hwangTrueRank',
+      'hwangTruePosRank',
+    ],
+  },
+  {
     label: 'Redraft Adjusted',
     keys: [
       'competitorAdjustedValue',

@@ -165,6 +165,22 @@ function renderCell(col, player, isMobile) {
         </RedraftAdjTooltip>
       );
 
+    case 'hwangMarketValue':
+    case 'hwangTrueValue':
+      return val != null && val > 0 ? (
+        <span className="dynasty-ktc-value">{formatKtcValue(val)}</span>
+      ) : (
+        <span className="dynasty-ktc-none">—</span>
+      );
+
+    case 'hwangMarketRank':
+    case 'hwangTrueRank':
+      return val != null ? `#${val}` : '—';
+
+    case 'hwangMarketPosRank':
+    case 'hwangTruePosRank':
+      return <PosRankCell rank={val} position={player.position} />;
+
     case 'fantasyTeamName':
       return val ? (
         <span className="pdb-fantasy-team">{val}</span>

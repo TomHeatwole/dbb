@@ -31,6 +31,14 @@ import {
   getRedraftValueEntryByName,
   formatRedraftAdjustedValue,
 } from '../lookups/RedraftValueLookup';
+import {
+  loadHwangPositionMultipliers,
+  buildHwangAdjustedLookup,
+  getHwangAdjustedEntryByName,
+  lookupKtcMapEntry,
+  getStitchedKtcTepSfValue,
+  formatMultiplierSummary,
+} from '../lookups/HwangValueAdjustmentLookup';
 import { RedraftAdjTooltip } from '../redraftValueIndex/redraftValueTooltip';
 import { redraftUsesHwangAdp } from '../rankingsViewer/rankingsSources';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
@@ -45,16 +53,20 @@ const PICKS_ENABLED = true;
 const PICKS_VALUE_SOURCES = [
   'ktc_sf',
   'ktc_sf_tep',
+  'hwang_market_value',
+  'hwang_true_value',
   'competitor_adjusted',
   'rebuilder_adjusted',
 ];
 
 const RANKED_POSITIONS  = ['QB', 'RB', 'WR', 'TE'];
 
-// Value source options: KTC SF, KTC SF TE+, FantasyCalc, FFB, redraft-adjusted
+// Value source options: KTC SF, KTC SF TE+, Hwang-adjusted KTC, FantasyCalc, FFB, redraft-adjusted
 const VALUE_SOURCES = [
   'ktc_sf',
   'ktc_sf_tep',
+  'hwang_market_value',
+  'hwang_true_value',
   'competitor_adjusted',
   'rebuilder_adjusted',
   'fantasycalc',
@@ -63,6 +75,8 @@ const VALUE_SOURCES = [
 const VALUE_SOURCE_LABELS = {
   ktc_sf:               'KTC SF',
   ktc_sf_tep:           'KTC SF TE+',
+  hwang_market_value:   'Hwang Market',
+  hwang_true_value:     'Hwang True',
   competitor_adjusted:  'Competitor Adj',
   rebuilder_adjusted:   'Rebuild Adj',
   fantasycalc:          'FantasyCalc',
@@ -71,6 +85,8 @@ const VALUE_SOURCE_LABELS = {
 const VALUE_SOURCE_COL_HEADER = {
   ktc_sf:               'KTC',
   ktc_sf_tep:           'KTC',
+  hwang_market_value:   'Market Adj',
+  hwang_true_value:     'True Adj',
   competitor_adjusted:  'Comp Adj',
   rebuilder_adjusted:   'Rebuild',
   fantasycalc:          'FC',
@@ -79,6 +95,8 @@ const VALUE_SOURCE_COL_HEADER = {
 const VALUE_SOURCE_TOTAL_LABEL = {
   ktc_sf:               'Total KTC',
   ktc_sf_tep:           'Total KTC',
+  hwang_market_value:   'Total Market Adj',
+  hwang_true_value:     'Total True Adj',
   competitor_adjusted:  'Total Comp Adj',
   rebuilder_adjusted:   'Total Rebuild',
   fantasycalc:          'Total FC',
@@ -229,6 +247,7 @@ function DynastyRosterView() {
   const [fcData, setFcData]               = useState(null); // { bySleeperId, byName }
   const [ffbData, setFfbData]             = useState(null); // { bySleeperId, byName }
   const [redraftData, setRedraftData]     = useState(null); // { byName, asOf, adpSource }
+  const [hwangMultipliers, setHwangMultipliers] = useState({ market: null, true: null });
   const [selectedId, setSelectedId]       = useState(null);
   const [valueSource, setValueSource]     = useState('ktc_sf_tep');
   const [includePicksInTotal, setIncludePicksInTotal] = useState(false);
@@ -246,7 +265,7 @@ function DynastyRosterView() {
         const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
         const isPreSeason    = completedWeeks === 0;
         const prevYearStr    = String(Number(CURRENT_YEAR) - 1);
-        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, allTradedPicks, prevWeeksData, rookieDraftComplete] =
+        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, marketMult, trueMult, allTradedPicks, prevWeeksData, rookieDraftComplete] =
           await Promise.all([
             fetchTeamData(CURRENT_YEAR),
             fetchScoresData(CURRENT_YEAR),
@@ -255,6 +274,8 @@ function DynastyRosterView() {
             fetchFantasyCalcData().catch(() => null),
             fetchFfbData().catch(() => null),
             fetchRedraftValueData().catch(() => null),
+            loadHwangPositionMultipliers('market').catch(() => null),
+            loadHwangPositionMultipliers('true').catch(() => null),
             PICKS_ENABLED ? fetchTradedPicks(CURRENT_YEAR).catch(() => []) : Promise.resolve([]),
             PICKS_ENABLED && isPreSeason
               ? fetchScoresData(prevYearStr).catch(() => null)
@@ -330,6 +351,7 @@ function DynastyRosterView() {
         setFcData(fcResult || null);
         setFfbData(ffbResult || null);
         setRedraftData(redraftResult || null);
+        setHwangMultipliers({ market: marketMult, true: trueMult });
       } catch (e) {
         if (!cancelled) setError('Failed to load dynasty roster data.');
       } finally {
@@ -347,9 +369,21 @@ function DynastyRosterView() {
     if (!ktcMap || !info) return 0;
     const name = info.full_name || info.name || '';
     const hints = { position: info.position, team: info.team || info.team_abbr, age: info.age };
-    const entry = getKtcEntryByName(name, ktcMap, 'sf_tep', hints);
-    return entry?.ktcValue ?? 0;
+    const mapEntry = lookupKtcMapEntry(name, ktcMap, hints);
+    return getStitchedKtcTepSfValue(mapEntry) ?? 0;
   }, [ktcMap]);
+
+  const hwangMarketLookup = useMemo(() => (
+    ktcMap && hwangMultipliers.market
+      ? buildHwangAdjustedLookup(ktcMap, hwangMultipliers.market)
+      : null
+  ), [ktcMap, hwangMultipliers.market]);
+
+  const hwangTrueLookup = useMemo(() => (
+    ktcMap && hwangMultipliers.true
+      ? buildHwangAdjustedLookup(ktcMap, hwangMultipliers.true)
+      : null
+  ), [ktcMap, hwangMultipliers.true]);
 
   // ── Helper: get a numeric "sort value" for a player given the current source ──
 
@@ -383,8 +417,14 @@ function DynastyRosterView() {
         : entry.rebuilderAdjustedValue;
       return adjusted != null ? adjusted : 0;
     }
+    if (valueSource === 'hwang_market_value' || valueSource === 'hwang_true_value') {
+      const lookup = valueSource === 'hwang_market_value' ? hwangMarketLookup : hwangTrueLookup;
+      if (!lookup?.byName) return 0;
+      const entry = getHwangAdjustedEntryByName(name, lookup.byName, hints);
+      return entry?.value ?? 0;
+    }
     return 0;
-  }, [valueSource, ktcMap, fcData, ffbData, redraftData]);
+  }, [valueSource, ktcMap, fcData, ffbData, redraftData, hwangMarketLookup, hwangTrueLookup]);
 
   // ── Per-team value totals (recomputes when source changes) ───────────────────
 
@@ -535,6 +575,15 @@ function DynastyRosterView() {
         );
         overallRank = redraftEntry?.rebuilderAdjustedOverallRank ?? null;
         posRank = redraftEntry?.rebuilderAdjustedRank ?? null;
+      } else if (valueSource === 'hwang_market_value' || valueSource === 'hwang_true_value') {
+        const lookup = valueSource === 'hwang_market_value' ? hwangMarketLookup : hwangTrueLookup;
+        const hwangEntry = lookup?.byName
+          ? getHwangAdjustedEntryByName(name, lookup.byName, hints)
+          : null;
+        sortValue = hwangEntry?.value ?? 0;
+        displayValue = formatKtcValue(sortValue);
+        overallRank = hwangEntry?.overallRank ?? null;
+        posRank = hwangEntry?.posRank ?? null;
       } else if (valueSource === 'fantasycalc') {
         displayValue = formatFcValue(fcEntry?.value);
         overallRank  = fcEntry?.overallRank ?? null;
@@ -568,7 +617,7 @@ function DynastyRosterView() {
         hasValue: sortValue > 0,
       };
     }).sort((a, b) => b.sortValue - a.sortValue);
-  }, [selectedId, playersData, playerIdMap, ktcMap, fcData, ffbData, redraftData, rosters, valueSource, getPlayerKtcTepValue]);
+  }, [selectedId, playersData, playerIdMap, ktcMap, fcData, ffbData, redraftData, rosters, valueSource, getPlayerKtcTepValue, hwangMarketLookup, hwangTrueLookup]);
 
   const selectedTeamIndex = selectedId != null ? teamRedraftIndices[selectedId] : null;
   const redraftHwangAdp = redraftUsesHwangAdp(redraftData?.adpSource);
@@ -668,6 +717,14 @@ function DynastyRosterView() {
         {(valueSource === 'competitor_adjusted' || valueSource === 'rebuilder_adjusted') && redraftData?.asOf && (
           <span className="dynasty-as-of">
             as of {redraftData.asOf} · KTC SF TE+ baseline
+          </span>
+        )}
+        {(valueSource === 'hwang_market_value' || valueSource === 'hwang_true_value') && ktcAsOf && (
+          <span className="dynasty-as-of">
+            as of {ktcAsOf} · KTC SF TE+ baseline
+            {hwangMultipliers[valueSource === 'hwang_market_value' ? 'market' : 'true']
+              ? ` · ${formatMultiplierSummary(hwangMultipliers[valueSource === 'hwang_market_value' ? 'market' : 'true'])}`
+              : ''}
           </span>
         )}
         {PICKS_ENABLED && PICKS_VALUE_SOURCES.includes(valueSource) && (

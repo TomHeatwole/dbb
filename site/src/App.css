@@ -8114,6 +8114,392 @@ body.modal-open {
   font-size: 0.85em;
 }
 
+/* Future Scenarios v2 — split ADP + roll pills */
+.outcome-projection-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  margin-left: 0.35em;
+  vertical-align: middle;
+}
+
+.outcome-adp-pill {
+  margin-left: 0;
+}
+
+.outcome-roll-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  font-size: 0.67em;
+  font-weight: 700;
+  padding: 0.1em 0.42em;
+  border-radius: 3px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  color: var(--roll-color, #c9b8ff);
+  background: color-mix(in srgb, var(--roll-color, #c9b8ff) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--roll-color, #c9b8ff) 42%, transparent);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.outcome-roll-badge.fp-rank-badge--clickable:hover {
+  background: color-mix(in srgb, var(--roll-color, #c9b8ff) 28%, transparent);
+  border-color: color-mix(in srgb, var(--roll-color, #c9b8ff) 58%, transparent);
+}
+
+.outcome-roll-pct {
+  font-variant-numeric: tabular-nums;
+}
+
+.outcome-roll-finish {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.88;
+  font-weight: 600;
+  padding-left: 0.15em;
+  border-left: 1px solid color-mix(in srgb, var(--roll-color, #c9b8ff) 35%, transparent);
+}
+
+.scenario-player-stats-th--badge {
+  text-align: center;
+  width: 4.5em;
+  min-width: 4.5em;
+}
+
+.scenario-player-stats-badge-col {
+  text-align: center;
+  padding: 0.4em 0.35em;
+  vertical-align: middle;
+}
+
+.scenario-player-stats-badge-col .outcome-projection-pills {
+  margin-left: 0;
+  justify-content: center;
+}
+
+.outcome-modal-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.75em 1.1em;
+  border-bottom: 1px solid rgba(120, 120, 160, 0.15);
+  flex-wrap: wrap;
+}
+
+.outcome-modal-percentile-label {
+  font-size: 0.82em;
+  color: rgba(170, 175, 220, 0.75);
+}
+
+.outcome-modal-slider {
+  flex: 1;
+  min-width: 120px;
+  max-width: 220px;
+}
+
+.outcome-modal-percentile-value {
+  font-weight: 700;
+  color: #c9b8ff;
+  min-width: 2.5em;
+}
+
+.outcome-modal-apply-btn {
+  padding: 0.35em 0.85em;
+  border-radius: 6px;
+  border: 1px solid rgba(124, 156, 255, 0.45);
+  background: rgba(124, 156, 255, 0.15);
+  color: #a0b8ff;
+  font-size: 0.82em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.outcome-modal-apply-btn:hover {
+  background: rgba(124, 156, 255, 0.28);
+}
+
+.outcome-modal-season {
+  color: rgba(140, 148, 210, 0.55);
+  font-size: 0.9em;
+}
+
+.outcome-modal-synthetic {
+  color: rgba(180, 140, 40, 0.65);
+  font-size: 0.78em;
+  font-style: italic;
+}
+
+.scenario-player-stats-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.scenario-player-stats-th {
+  text-align: left;
+  padding: 0.45em 0.65em;
+  border-bottom: 1px solid rgba(120, 120, 160, 0.22);
+  color: rgba(170, 175, 220, 0.65);
+  font-size: 0.78em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.scenario-player-stats-th--num {
+  text-align: right;
+  width: 5.5em;
+}
+
+.scenario-player-stats-row {
+  border-bottom: 1px solid rgba(120, 120, 160, 0.1);
+}
+
+.scenario-player-stats-row:hover {
+  background: rgba(124, 156, 255, 0.06);
+}
+
+.scenario-player-stats-player {
+  padding: 0.4em 0.65em;
+}
+
+.scenario-player-stats-num {
+  text-align: right;
+  padding: 0.4em 0.65em;
+  font-weight: 600;
+  color: #e0e4ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.scenario-player-stats-num--hvorp {
+  color: #a0b8ff;
+}
+
+.fp-rank-modal-th--adp,
+.fp-rank-modal-td--adp {
+  text-align: center;
+  width: 3.5em;
+  color: rgba(170, 175, 220, 0.65);
+  font-size: 0.88em;
+}
+
+.outcome-reroll-all-btn {
+  margin-left: 1em;
+  padding: 0.35em 0.85em;
+  border-radius: 6px;
+  border: 1px solid rgba(180, 140, 40, 0.45);
+  background: rgba(180, 140, 40, 0.12);
+  color: rgba(220, 190, 100, 0.95);
+  font-size: 0.82em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.outcome-reroll-all-btn:hover {
+  background: rgba(180, 140, 40, 0.22);
+}
+
+/* Season Simulator — progress + results */
+.simulator-run-layout {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.simulator-progress {
+  margin-bottom: 1.5rem;
+}
+
+.simulator-progress-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(210, 215, 250, 0.9);
+  margin-bottom: 0.6rem;
+}
+
+.simulator-progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(120, 120, 160, 0.2);
+  overflow: hidden;
+}
+
+.simulator-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7c9cff, #a0b8ff);
+  transition: width 0.15s ease-out;
+}
+
+.simulator-progress-detail {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: rgba(170, 175, 220, 0.6);
+}
+
+.simulator-results {
+  background: rgba(20, 22, 42, 0.6);
+  border: 1px solid rgba(120, 130, 200, 0.18);
+  border-radius: 10px;
+  padding: 1rem 1.1rem 0.6rem;
+}
+
+.simulator-results-header {
+  margin-bottom: 0.85rem;
+}
+
+.simulator-results-title {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e0e4ff;
+}
+
+.simulator-results-subtitle {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(170, 175, 220, 0.55);
+  margin-top: 0.25rem;
+}
+
+.simulator-results-scroll {
+  overflow-x: auto;
+  margin: 0 -0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.simulator-results-tbl {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.simulator-results-th {
+  text-align: left;
+  padding: 0.45em 0.55em;
+  border-bottom: 1px solid rgba(120, 120, 160, 0.22);
+  color: rgba(170, 175, 220, 0.55);
+  font-size: 0.72em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.simulator-results-th--rank {
+  width: 2em;
+  text-align: right;
+}
+
+.simulator-results-th--team {
+  min-width: 9em;
+}
+
+.simulator-results-th--num {
+  text-align: right;
+}
+
+.simulator-results-tr {
+  border-bottom: 1px solid rgba(120, 120, 160, 0.08);
+}
+
+.simulator-results-tr:last-child {
+  border-bottom: none;
+}
+
+.simulator-results-tr--leader {
+  background: rgba(180, 140, 40, 0.08);
+}
+
+.simulator-results-tr--leader .simulator-results-td--team {
+  border-radius: 6px 0 0 6px;
+}
+
+.simulator-results-tr--leader .simulator-results-td--total {
+  border-radius: 0 6px 6px 0;
+}
+
+.simulator-results-td {
+  padding: 0.45em 0.55em;
+  vertical-align: middle;
+  color: #e0e4ff;
+}
+
+.simulator-results-td--rank {
+  text-align: right;
+  font-weight: 700;
+  color: rgba(170, 175, 220, 0.7);
+}
+
+.simulator-results-td--team {
+  max-width: 12em;
+}
+
+.simulator-results-team-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  min-width: 0;
+}
+
+.simulator-results-td--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.simulator-results-td--win {
+  color: #a0b8ff;
+  font-weight: 700;
+}
+
+.simulator-results-td--total {
+  font-weight: 700;
+}
+
+.simulator-results-sub {
+  display: block;
+  font-size: 0.78em;
+  font-weight: 500;
+  color: rgba(170, 175, 220, 0.5);
+  margin-top: 0.1em;
+}
+
+.simulator-results-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.simulator-results-avatar--placeholder {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(120, 120, 160, 0.25);
+  flex-shrink: 0;
+}
+
+.simulator-results-name {
+  font-weight: 600;
+  color: #e0e4ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.simulator-results-trophy {
+  margin-right: 0.25em;
+}
+
+.simulator-run-btn {
+  background: linear-gradient(135deg, rgba(124, 156, 255, 0.35), rgba(160, 130, 230, 0.25));
+}
+
 /* pts column: fixed width, right-aligned number only */
 .scenario-week-pts {
   text-align: right;
@@ -10213,8 +10599,8 @@ body.modal-open {
 
 .rv-redraft-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
-  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 1rem;
   align-items: start;
   min-width: 0;
 }
@@ -10226,11 +10612,37 @@ body.modal-open {
 }
 
 .rv-root--redraft .rv-table-wrap {
-  overflow-x: clip;
+  overflow-x: auto;
   overflow-y: auto;
   min-width: 0;
   max-width: 100%;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(72, 145, 255, 0.65) rgba(22, 38, 72, 0.45);
+}
+
+.rv-root--redraft .rv-table-wrap::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.rv-root--redraft .rv-table-wrap::-webkit-scrollbar-track {
+  background: rgba(18, 32, 64, 0.55);
+  border-radius: 5px;
+}
+
+.rv-root--redraft .rv-table-wrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(96, 168, 255, 0.92), rgba(48, 112, 220, 0.82));
+  border-radius: 5px;
+  border: 1px solid rgba(130, 190, 255, 0.35);
+}
+
+.rv-root--redraft .rv-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(120, 188, 255, 1), rgba(62, 130, 240, 0.95));
+}
+
+.rv-root--redraft .rv-table-wrap::-webkit-scrollbar-corner {
+  background: rgba(18, 32, 64, 0.55);
 }
 
 .rv-redraft-layout > .rv-table-wrap {
@@ -10241,25 +10653,25 @@ body.modal-open {
   table-layout: auto;
   width: max-content;
   max-width: 100%;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
 }
 
-.rv-table--redraft .rv-col-rank { width: 2.25rem; }
+.rv-table--redraft .rv-col-rank { width: 2.75rem; }
 .rv-table--redraft .rv-col-name { width: auto; }
-.rv-table--redraft .rv-col-pos { width: 2.5rem; }
-.rv-table--redraft .rv-col-team { width: 2.25rem; }
+.rv-table--redraft .rv-col-pos { width: 3rem; }
+.rv-table--redraft .rv-col-team { width: 3.25rem; }
 
 .rv-table--redraft .rv-th,
 .rv-table--redraft .rv-td {
-  padding: 0.4rem 0.45rem;
+  padding: 0.5rem 0.6rem;
   min-width: 0;
   box-sizing: border-box;
 }
 
 .rv-table--redraft .rv-th {
   white-space: nowrap;
-  line-height: 1.2;
-  font-size: 0.73rem;
+  line-height: 1.25;
+  font-size: 0.78rem;
 }
 
 .rv-table--redraft .rv-th--sortable {
@@ -10281,7 +10693,7 @@ body.modal-open {
 .rv-table--redraft .rv-td-name {
   text-align: left;
   width: auto;
-  max-width: 9.5rem;
+  max-width: 13rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10304,7 +10716,10 @@ body.modal-open {
 .rv-table--redraft .rv-td-team {
   width: 1%;
   text-align: center;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #aab8e8;
   white-space: nowrap;
 }
 
@@ -10360,15 +10775,15 @@ body.modal-open {
 }
 
 .rv-table--redraft .pos-badge {
-  font-size: 0.62rem;
-  padding: 0 0.15rem;
-  letter-spacing: 0;
+  font-size: 0.68rem;
+  padding: 0.05rem 0.25rem;
+  letter-spacing: 0.02em;
 }
 
 .rv-root--redraft .rv-hint {
-  font-size: 0.72rem;
-  margin-bottom: 0.35rem;
-  line-height: 1.3;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
 }
 
 .rv-root--redraft .rv-meta {
@@ -10380,12 +10795,35 @@ body.modal-open {
 }
 
 .rv-redraft-layout .rv-table-wrap {
-  max-height: calc(100vh - 20rem);
+  max-height: calc(100vh - 18rem);
 }
 
 .rv-redraft-panel {
   position: sticky;
   top: 1rem;
+  max-height: calc(100vh - 18rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(72, 145, 255, 0.65) rgba(22, 38, 72, 0.45);
+}
+
+.rv-redraft-panel::-webkit-scrollbar {
+  width: 9px;
+}
+
+.rv-redraft-panel::-webkit-scrollbar-track {
+  background: rgba(18, 32, 64, 0.55);
+  border-radius: 5px;
+}
+
+.rv-redraft-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(96, 168, 255, 0.92), rgba(48, 112, 220, 0.82));
+  border-radius: 5px;
+  border: 1px solid rgba(130, 190, 255, 0.35);
+}
+
+.rv-redraft-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(120, 188, 255, 1), rgba(62, 130, 240, 0.95));
 }
 
 .rv-redraft-formula {

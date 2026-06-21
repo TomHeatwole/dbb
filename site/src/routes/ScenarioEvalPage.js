@@ -307,6 +307,8 @@ function ScenarioEvalPage() {
                   scenarioWeeklyScores={evalResult.scenarioWeeklyScores}
                   playersData={playersData}
                   playerIdMap={playerIdMap}
+                  scenarioRosters={scenarioRosters}
+                  playerWeeklyPoints={evalResult.playerWeeklyPoints}
                 />
               ) : (
                 <div className="scenario-eval-team-stats-placeholder">

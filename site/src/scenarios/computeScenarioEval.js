@@ -65,7 +65,7 @@ function buildPlayerWeeklyPoints(weeksParsedData, sleeperWeeklyStats, scoringCon
  * Run StartSitSort for a single team/week, treating the entire roster
  * as the candidate pool (no pre-set starters).
  */
-function computeOptimalWeek(playerList, weekPts, playersData, playerIdMap, playerSeasonTotalsMap) {
+export function computeOptimalWeek(playerList, weekPts, playersData, playerIdMap, playerSeasonTotalsMap) {
   const teamScore = {
     starters: [],
     bench: (playerList || []).map((id) => ({ id, pts: weekPts[id] ?? 0 })),
@@ -216,4 +216,75 @@ export function computeScenarioEval(weeksParsedData, originalRosters, scenarioRo
     teamDeltas,
     playerWeeklyPoints,
   };
+}
+
+/**
+ * Per-player season totals for a scenario roster: fantasy points, lineup usage,
+ * and HVORP (starterTotal with player minus optimal starterTotal without them).
+ */
+export function computePlayerRosterStats(
+  rosterId,
+  rosterPlayerIds,
+  scenarioWeeklyScores,
+  playerWeeklyPoints,
+  playersData,
+  playerIdMap,
+  playerSeasonTotalsMap,
+) {
+  const weeks = (scenarioWeeklyScores || {})[rosterId] || [];
+  const playerList = (rosterPlayerIds || []).filter((pid) => pid && pid !== '0');
+  const statsByPlayer = {};
+
+  for (const pid of playerList) {
+    statsByPlayer[pid] = {
+      playerId: pid,
+      totalScore: 0,
+      weeksStarted: 0,
+      weeksBenched: 0,
+      hvorp: 0,
+    };
+  }
+
+  for (let wi = 0; wi < NUM_WEEKS; wi++) {
+    const weekData = weeks[wi] || {};
+    const weekPts = playerWeeklyPoints[wi] || {};
+    const withTotal = weekData.starterTotal || 0;
+
+    const starterIds = new Set(
+      (weekData.starters || []).map((p) => p.id).filter((id) => id && id !== '0'),
+    );
+    const benchIds = new Set(
+      (weekData.bench || []).map((p) => p.id).filter((id) => id && id !== '0'),
+    );
+
+    for (const pid of playerList) {
+      statsByPlayer[pid].totalScore += weekPts[pid] ?? 0;
+      if (starterIds.has(pid)) {
+        statsByPlayer[pid].weeksStarted += 1;
+      } else if (benchIds.has(pid)) {
+        statsByPlayer[pid].weeksBenched += 1;
+      }
+    }
+
+    for (const pid of playerList) {
+      const rosterWithout = playerList.filter((id) => id !== pid);
+      const withoutOptimal = computeOptimalWeek(
+        rosterWithout,
+        weekPts,
+        playersData,
+        playerIdMap,
+        playerSeasonTotalsMap,
+      );
+      const withoutTotal = withoutOptimal?.starterTotal || 0;
+      statsByPlayer[pid].hvorp += withTotal - withoutTotal;
+    }
+  }
+
+  return playerList
+    .map((pid) => ({
+      ...statsByPlayer[pid],
+      totalScore: Math.round(statsByPlayer[pid].totalScore * 10) / 10,
+      hvorp: Math.round(statsByPlayer[pid].hvorp * 10) / 10,
+    }))
+    .sort((a, b) => b.hvorp - a.hvorp);
 }

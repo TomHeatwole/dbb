@@ -1,7 +1,5 @@
 /**
  * Scenario URL encoding / decoding
- *
- * Schema:
  * {
  *   y: string,          // season year, e.g. "2025"
  *   c: Array<{
@@ -13,6 +11,10 @@
  *
  * The object is JSON-stringified then base64-encoded so the URL stays clean.
  */
+
+import { isValidPlayerId, sanitizeRoster, sanitizeRosters } from './scenarioUtils';
+
+export { sanitizeRoster, sanitizeRosters, isValidPlayerId };
 
 /**
  * Encode a scenario state into a URL-safe base64 string.
@@ -114,6 +116,70 @@ export function decodeFutureScenario(encoded) {
   }
 }
 
+// ── Future Scenario v2 encoding ───────────────────────────────────────────────
+//
+// Outcome-based projections using Hwang ADP ±5 historical pools + percentile rolls.
+//
+// { y: "future2", c: [{ r, a, d }], p: { [playerId]: percentile 0-100 } }
+
+export function encodeFutureScenario2(originalRosters, scenarioRosters, percentileRolls = {}) {
+  const changes = [];
+
+  for (const rid in originalRosters) {
+    const orig = new Set(originalRosters[rid] || []);
+    const curr = scenarioRosters[rid] || [];
+    const currSet = new Set(curr);
+
+    const added = curr.filter((pid) => !orig.has(pid));
+    const removed = [...orig].filter((pid) => !currSet.has(pid));
+
+    if (added.length > 0 || removed.length > 0) {
+      changes.push({ r: Number(rid), a: added, d: removed });
+    }
+  }
+
+  const schema = {
+    y: 'future2',
+    c: changes,
+    p: percentileRolls || {},
+  };
+  return btoa(JSON.stringify(schema));
+}
+
+export function decodeFutureScenario2(encoded) {
+  if (!encoded) return null;
+  try {
+    const obj = JSON.parse(atob(encoded));
+    if (!obj || !Array.isArray(obj.c)) return null;
+    if (obj.y !== 'future2' && obj.y !== 'simulator') return null;
+    return {
+      c: obj.c,
+      p: obj.p && typeof obj.p === 'object' ? obj.p : {},
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function encodeSimulatorScenario(originalRosters, scenarioRosters) {
+  const changes = [];
+
+  for (const rid in originalRosters) {
+    const orig = new Set(originalRosters[rid] || []);
+    const curr = scenarioRosters[rid] || [];
+    const currSet = new Set(curr);
+
+    const added = curr.filter((pid) => !orig.has(pid));
+    const removed = [...orig].filter((pid) => !currSet.has(pid));
+
+    if (added.length > 0 || removed.length > 0) {
+      changes.push({ r: Number(rid), a: added, d: removed });
+    }
+  }
+
+  return btoa(JSON.stringify({ y: 'simulator', c: changes }));
+}
+
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 /**
@@ -127,22 +193,20 @@ export function decodeFutureScenario(encoded) {
 export function applyScenarioChanges(originalRosters, changes) {
   const result = {};
 
-  // Start from a deep copy of original
   for (const rid in originalRosters) {
-    result[rid] = [...(originalRosters[rid] || [])];
+    result[rid] = sanitizeRoster(originalRosters[rid]);
   }
 
   for (const { r, a, d } of changes) {
     const rid = String(r);
     const base = result[rid] || [];
-    const dropSet = new Set(d || []);
+    const dropSet = new Set((d || []).filter(isValidPlayerId));
     const withDrops = base.filter((pid) => !dropSet.has(pid));
-    // Add players that aren't already present
     const addSet = new Set(withDrops);
     for (const pid of (a || [])) {
-      if (!addSet.has(pid)) withDrops.push(pid);
+      if (isValidPlayerId(pid) && !addSet.has(pid)) withDrops.push(pid);
     }
-    result[rid] = withDrops;
+    result[rid] = sanitizeRoster(withDrops);
   }
 
   return result;

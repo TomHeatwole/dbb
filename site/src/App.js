@@ -26,6 +26,8 @@ import H2hPage from './routes/h2h';
 import NotesPage from './routes/NotesPage';
 import ScenariosPage from './routes/ScenariosPage';
 import FutureScenariosPage from './routes/FutureScenariosPage';
+import FutureScenarios2Page from './routes/FutureScenarios2Page';
+import SimulatorPage from './routes/SimulatorPage';
 import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
 import HwangAIPage from './routes/HwangAIPage';
@@ -111,6 +113,12 @@ function AppInner() {
       )}
       {isFeatureEnabled('FUTURE_SCENARIOS_ENABLED', MAIN_FEATURES) && (
         <Route path="/future-scenarios" element={<FutureScenariosPage />} />
+      )}
+      {isFeatureEnabled('FUTURE_SCENARIOS_2_ENABLED', MAIN_FEATURES) && (
+        <Route path="/future-scenarios-2" element={<FutureScenarios2Page />} />
+      )}
+      {isFeatureEnabled('SIMULATOR_ENABLED', MAIN_FEATURES) && (
+        <Route path="/simulator" element={<SimulatorPage />} />
       )}
       {isFeatureEnabled('PLAYOFFS_ENABLED', MAIN_FEATURES) && (
         <Route path="/yoffs" element={<YoffsPage />} />

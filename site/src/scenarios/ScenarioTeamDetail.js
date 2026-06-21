@@ -17,6 +17,257 @@ import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import PositionBadge from '../PositionBadge';
+import { computePlayerRosterStats } from './computeScenarioEval';
+
+function percentileColor(pct) {
+  const p = Math.max(0, Math.min(100, Number(pct) || 0));
+  const stops = [
+    { at: 0, h: 0, s: 72, l: 56 },
+    { at: 25, h: 28, s: 78, l: 54 },
+    { at: 50, h: 225, s: 10, l: 62 },
+    { at: 75, h: 210, s: 62, l: 56 },
+    { at: 100, h: 142, s: 52, l: 48 },
+  ];
+
+  let i = 0;
+  while (i < stops.length - 1 && p > stops[i + 1].at) i += 1;
+  const lo = stops[i];
+  const hi = stops[Math.min(i + 1, stops.length - 1)];
+  const span = hi.at - lo.at || 1;
+  const t = (p - lo.at) / span;
+  const h = lo.h + (hi.h - lo.h) * t;
+  const s = lo.s + (hi.s - lo.s) * t;
+  const l = lo.l + (hi.l - lo.l) * t;
+  return `hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`;
+}
+
+function buildSeasonTotalsMap(playerWeeklyPoints) {
+  const totals = {};
+  for (const weekPts of playerWeeklyPoints || []) {
+    for (const [pid, pts] of Object.entries(weekPts || {})) {
+      totals[pid] = (totals[pid] || 0) + pts;
+    }
+  }
+  return totals;
+}
+
+// ── Outcome projection badge (Future Scenarios v2) ────────────────────────────
+
+function OutcomeListModal({
+  projection, playersData, onClose, onPercentileChange,
+}) {
+  const [localPercentile, setLocalPercentile] = useState(projection?.percentile ?? 50);
+
+  useEffect(() => {
+    setLocalPercentile(projection?.percentile ?? 50);
+  }, [projection?.percentile, projection?.selectedIndex]);
+
+  if (!projection) return null;
+
+  const { adpLabel, position, outcomes, selectedIndex } = projection;
+  const scoringNote = position === 'TE' ? 'half-PPR' : 'standard';
+
+  const handleApply = () => {
+    if (onPercentileChange) onPercentileChange(localPercentile);
+    onClose();
+  };
+
+  return createPortal(
+    <div className="player-modal-overlay" onClick={onClose}>
+      <div
+        className="player-modal fp-rank-modal outcome-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="player-card-close" aria-label="Close" onClick={onClose}>×</button>
+
+        <div className="fp-rank-modal-header">
+          <span className="fp-rank-modal-title">{adpLabel} — Possible Outcomes</span>
+          <span className="fp-rank-modal-subtitle">
+            Past 5 seasons · {scoringNote} · sorted by season points
+          </span>
+        </div>
+
+        <div className="outcome-modal-controls">
+          <label className="outcome-modal-percentile-label" htmlFor="outcome-percentile-input">
+            Percentile roll
+          </label>
+          <input
+            id="outcome-percentile-input"
+            type="range"
+            min={0}
+            max={100}
+            value={localPercentile}
+            onChange={(e) => setLocalPercentile(Number(e.target.value))}
+            className="outcome-modal-slider"
+          />
+          <span className="outcome-modal-percentile-value">P{localPercentile}</span>
+          <button type="button" className="outcome-modal-apply-btn" onClick={handleApply}>
+            Apply
+          </button>
+        </div>
+
+        <div className="fp-rank-modal-scroll">
+          <table className="fp-rank-modal-table">
+            <thead>
+              <tr>
+                <th className="fp-rank-modal-th fp-rank-modal-th--rank">#</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--name">Player · Season</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--adp">ADP</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--pts">Finish</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--pts">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(outcomes || []).map((entry, i) => {
+                const name = playerName(playersData && playersData[entry.sleeperId]);
+                const adpStr = entry.adpRank != null
+                  ? `${position}${entry.adpRank}`
+                  : `${position}${Math.round(entry.effRank)}`;
+                const isActive = i === selectedIndex;
+                return (
+                  <tr
+                    key={`${entry.sleeperId}-${entry.seasonYear}-${i}`}
+                    className={`fp-rank-modal-row${isActive ? ' fp-rank-modal-row--active' : ''}`}
+                  >
+                    <td className="fp-rank-modal-td fp-rank-modal-td--rank">{i + 1}</td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--name">
+                      {name || entry.sleeperId}
+                      <span className="outcome-modal-season"> · {entry.seasonYear}</span>
+                      {entry.synthetic && <span className="outcome-modal-synthetic"> synth</span>}
+                    </td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--adp">{adpStr}</td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--pts">
+                      {entry.outcomeRank != null ? `${position}${entry.outcomeRank}` : '—'}
+                    </td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--pts">
+                      {entry.scoringPts.toFixed(1)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function OutcomeProjectionPills({
+  projection,
+  playersData,
+  onPercentileChange,
+  playerId,
+  showAdp = true,
+  showRoll = true,
+}) {
+  const [tipPos, setTipPos] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  if (!projection || projection.unranked) {
+    if (!showAdp && !showRoll) return null;
+    return (
+      <span
+        className="fp-rank-badge fp-rank-badge--not-found"
+        title="Player not found in Hwang ADP — will project as 0 pts"
+      >
+        not ranked
+      </span>
+    );
+  }
+
+  const { adpLabel, percentile, selectedOutcome, position } = projection;
+  const historicalPlayer = selectedOutcome
+    && playersData
+    && playersData[selectedOutcome.sleeperId];
+  const historicalPlayerName = playerName(historicalPlayer);
+  const outcomeRank = selectedOutcome?.outcomeRank;
+  const rollColor = percentileColor(percentile);
+
+  const tooltip = historicalPlayerName && selectedOutcome
+    ? `${historicalPlayerName}, ${selectedOutcome.seasonYear} season · finish ${position}${outcomeRank ?? '?'} · P${Math.round(percentile)}`
+    : `${adpLabel} outcome pool · P${Math.round(percentile)}`;
+
+  const openModal = (e) => {
+    e.stopPropagation();
+    setTipPos(null);
+    setModalOpen(true);
+  };
+
+  const pills = (
+    <>
+      {showAdp && (
+        <span
+          className="fp-rank-badge fp-rank-badge--found fp-rank-badge--clickable outcome-adp-pill"
+          onClick={openModal}
+        >
+          {adpLabel}
+        </span>
+      )}
+      {showRoll && percentile != null && (
+        <span
+          className="outcome-roll-badge fp-rank-badge--clickable"
+          style={{ '--roll-color': rollColor }}
+          onClick={openModal}
+        >
+          <span className="outcome-roll-pct">P{Math.round(percentile)}</span>
+          {outcomeRank != null && (
+            <span className="outcome-roll-finish">{position}{outcomeRank}</span>
+          )}
+        </span>
+      )}
+    </>
+  );
+
+  if (!showAdp && !showRoll) return null;
+
+  return (
+    <>
+      <span
+        className="outcome-projection-pills fp-rank-tooltip-wrap"
+        onMouseEnter={(e) => setTipPos({ x: e.clientX, y: e.clientY })}
+        onMouseMove={(e) => setTipPos({ x: e.clientX, y: e.clientY })}
+        onMouseLeave={() => setTipPos(null)}
+      >
+        {pills}
+      </span>
+
+      {tipPos && !modalOpen && (
+        <span
+          className="fp-rank-tooltip-fixed"
+          style={{ right: window.innerWidth - tipPos.x + 8, top: tipPos.y - 36 }}
+        >
+          {tooltip}
+        </span>
+      )}
+
+      {modalOpen && (
+        <OutcomeListModal
+          projection={projection}
+          playersData={playersData}
+          onClose={() => setModalOpen(false)}
+          onPercentileChange={(p) => onPercentileChange && onPercentileChange(playerId, p)}
+        />
+      )}
+    </>
+  );
+}
+
+function OutcomeProjectionBadge({ playerId, playerProjections, playersData, onPercentileChange }) {
+  if (!playerProjections) return null;
+  const proj = playerProjections[playerId];
+  return (
+    <OutcomeProjectionPills
+      playerId={playerId}
+      projection={proj}
+      playersData={playersData}
+      onPercentileChange={onPercentileChange}
+    />
+  );
+}
 
 // ── FP rank badge (Future Scenarios only) ─────────────────────────────────────
 
@@ -240,6 +491,7 @@ function PtsDelta({ delta, tooltip }) {
 function ScenarioWeekTable({
   scenarioWeek, originalWeek, playersData, playerIdMap, onPlayerClick,
   fpRankings, historicalPositionRanks, projectionYear,
+  playerProjections, onPercentileChange,
 }) {
   const [benchExpanded, setBenchExpanded] = useState(false);
   const startersSectionRef = useRef(null);
@@ -304,15 +556,26 @@ function ScenarioWeekTable({
           <div className="scenario-week-player-inner">
             <img src={logo} alt="" className="scenario-week-avatar" />
             <span className="scenario-week-name">{name}</span>
-            {pos  && <PositionBadge position={pos} />}
             {team && <span className="scenario-week-meta scenario-week-team">{team}</span>}
-            <FpRankBadge
-              playerId={p.id}
-              fpRankings={fpRankings}
-              historicalPositionRanks={historicalPositionRanks}
-              projectionYear={projectionYear}
-              playersData={playersData}
-            />
+            {playerProjections ? (
+              <OutcomeProjectionBadge
+                playerId={p.id}
+                playerProjections={playerProjections}
+                playersData={playersData}
+                onPercentileChange={onPercentileChange}
+              />
+            ) : (
+              <>
+                {pos && <PositionBadge position={pos} />}
+                <FpRankBadge
+                  playerId={p.id}
+                  fpRankings={fpRankings}
+                  historicalPositionRanks={historicalPositionRanks}
+                  projectionYear={projectionYear}
+                  playersData={playersData}
+                />
+              </>
+            )}
           </div>
         </td>
         <td className="scenario-week-pts">{pts.toFixed(1)}</td>
@@ -352,14 +615,25 @@ function ScenarioWeekTable({
         <div className="scenario-week-bench-player">
           <img src={logo} alt="" className="scenario-week-avatar" />
           <span className="scenario-week-name">{name}</span>
-          {pos && <PositionBadge position={pos} />}
-          <FpRankBadge
-            playerId={p.id}
-            fpRankings={fpRankings}
-            historicalPositionRanks={historicalPositionRanks}
-            projectionYear={projectionYear}
-            playersData={playersData}
-          />
+          {playerProjections ? (
+            <OutcomeProjectionBadge
+              playerId={p.id}
+              playerProjections={playerProjections}
+              playersData={playersData}
+              onPercentileChange={onPercentileChange}
+            />
+          ) : (
+            <>
+              {pos && <PositionBadge position={pos} />}
+              <FpRankBadge
+                playerId={p.id}
+                fpRankings={fpRankings}
+                historicalPositionRanks={historicalPositionRanks}
+                projectionYear={projectionYear}
+                playersData={playersData}
+              />
+            </>
+          )}
         </div>
         <span className="scenario-week-bench-pts">{pts.toFixed(1)}</span>
         <span className="scenario-week-bench-delta-col"><PtsDelta delta={delta} tooltip={deltaTooltip} /></span>
@@ -772,6 +1046,129 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
   );
 }
 
+// ── Season player stats table ───────────────────────────────────────────────────
+
+function ScenarioPlayerStatsTable({
+  rosterId,
+  scenarioRosters,
+  scenarioWeeklyScores,
+  playerWeeklyPoints,
+  playersData,
+  playerIdMap,
+  onPlayerClick,
+  playerProjections,
+  onPercentileChange,
+}) {
+  const showProjections = Boolean(playerProjections);
+
+  const playerStats = useMemo(() => {
+    if (!scenarioRosters || !playerWeeklyPoints || !scenarioWeeklyScores) return [];
+    const rosterPlayerIds = scenarioRosters[rosterId] || [];
+    const seasonTotalsMap = buildSeasonTotalsMap(playerWeeklyPoints);
+    return computePlayerRosterStats(
+      rosterId,
+      rosterPlayerIds,
+      scenarioWeeklyScores,
+      playerWeeklyPoints,
+      playersData,
+      playerIdMap,
+      seasonTotalsMap,
+    );
+  }, [rosterId, scenarioRosters, scenarioWeeklyScores, playerWeeklyPoints, playersData, playerIdMap]);
+
+  if (playerStats.length === 0) return null;
+
+  return (
+    <div className="scenario-player-stats">
+      <table className="scenario-player-stats-tbl">
+        <thead>
+          <tr>
+            <th className="scenario-player-stats-th scenario-player-stats-th--player">Player</th>
+            {showProjections && (
+              <>
+                <th
+                  className="scenario-player-stats-th scenario-player-stats-th--badge"
+                  title="Hwang Adjusted positional ADP"
+                >
+                  ADP
+                </th>
+                <th
+                  className="scenario-player-stats-th scenario-player-stats-th--badge"
+                  title="Percentile roll and rolled outcome finish rank"
+                >
+                  Roll
+                </th>
+              </>
+            )}
+            <th className="scenario-player-stats-th scenario-player-stats-th--num">Total Score</th>
+            <th
+              className="scenario-player-stats-th scenario-player-stats-th--num"
+              title="Hwang value over replacement — starter points lost if this player were off the roster"
+            >
+              HVORP
+            </th>
+            <th className="scenario-player-stats-th scenario-player-stats-th--num">Started</th>
+            <th className="scenario-player-stats-th scenario-player-stats-th--num">Benched</th>
+          </tr>
+        </thead>
+        <tbody>
+          {playerStats.map((row) => {
+            const info = getPlayerInfo(row.playerId, playersData, playerIdMap);
+            const name = info?.name || row.playerId;
+            const pos = info?.position || '';
+            const logo = getPlayerLogoUrl(info?.espn_photo_url);
+            return (
+              <tr
+                key={row.playerId}
+                className={`scenario-player-stats-row${info ? ' player-clickable' : ''}`}
+                onClick={() => info && onPlayerClick && onPlayerClick(info)}
+              >
+                <td className="scenario-player-stats-player">
+                  <div className="scenario-week-player-inner">
+                    <img src={logo} alt="" className="scenario-week-avatar" />
+                    <span className="scenario-week-name">{name}</span>
+                    {pos && <PositionBadge position={pos} />}
+                  </div>
+                </td>
+                {showProjections && (
+                  <>
+                    <td className="scenario-player-stats-badge-col">
+                      <OutcomeProjectionPills
+                        playerId={row.playerId}
+                        projection={playerProjections[row.playerId]}
+                        playersData={playersData}
+                        onPercentileChange={onPercentileChange}
+                        showAdp
+                        showRoll={false}
+                      />
+                    </td>
+                    <td className="scenario-player-stats-badge-col">
+                      <OutcomeProjectionPills
+                        playerId={row.playerId}
+                        projection={playerProjections[row.playerId]}
+                        playersData={playersData}
+                        onPercentileChange={onPercentileChange}
+                        showAdp={false}
+                        showRoll
+                      />
+                    </td>
+                  </>
+                )}
+                <td className="scenario-player-stats-num">{row.totalScore.toFixed(1)}</td>
+                <td className="scenario-player-stats-num scenario-player-stats-num--hvorp">
+                  {row.hvorp.toFixed(1)}
+                </td>
+                <td className="scenario-player-stats-num">{row.weeksStarted}</td>
+                <td className="scenario-player-stats-num">{row.weeksBenched}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 /**
@@ -793,6 +1190,8 @@ function PositionImpactTable({ originalWeeklyScores, scenarioWeeklyScores, roste
 function ScenarioTeamDetail({
   rosterId, teamsForGrid, originalWeeklyScores, scenarioWeeklyScores, playersData, playerIdMap,
   fpRankings, historicalPositionRanks, projectionYear,
+  playerProjections, onPercentileChange,
+  scenarioRosters, playerWeeklyPoints,
 }) {
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
 
@@ -912,6 +1311,8 @@ function ScenarioTeamDetail({
           fpRankings={fpRankings}
           historicalPositionRanks={historicalPositionRanks}
           projectionYear={projectionYear}
+          playerProjections={playerProjections}
+          onPercentileChange={onPercentileChange}
         />
       </div>
 
@@ -930,6 +1331,28 @@ function ScenarioTeamDetail({
           teamsForGrid={teamsForGrid}
         />
       </div>
+
+      {/* ── Season player stats ── */}
+      {scenarioRosters && playerWeeklyPoints && (
+        <div className="scenario-team-detail-section">
+          <div className="scenario-team-detail-section-title">Player Scoring</div>
+          <div className="scenario-team-detail-section-subtitle">
+            Season totals, lineup usage, and HVORP
+            {playerProjections ? ' · ADP rolls from outcome distributions' : ' (Hwang value over replacement)'}
+          </div>
+          <ScenarioPlayerStatsTable
+            rosterId={rosterId}
+            scenarioRosters={scenarioRosters}
+            scenarioWeeklyScores={scenarioWeeklyScores}
+            playerWeeklyPoints={playerWeeklyPoints}
+            playersData={playersData}
+            playerIdMap={playerIdMap}
+            onPlayerClick={setSelectedPlayer}
+            playerProjections={playerProjections}
+            onPercentileChange={onPercentileChange}
+          />
+        </div>
+      )}
       {selectedPlayer && createPortal(
         <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
           <div className="player-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>

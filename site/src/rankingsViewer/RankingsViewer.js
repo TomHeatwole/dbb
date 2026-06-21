@@ -14,7 +14,6 @@ import {
   defaultSortForSource,
   findSourceOption,
   DEFAULT_SOURCE_ID,
-  REDRAFT_VALUE_INDEX_SOURCE,
   REDRAFT_VALUE_INDEX_SOURCE_ID,
   REDRAFT_VALUE_INDEX_YEARS,
   REDRAFT_VALUE_INDEX_CURRENT_YEAR,
@@ -106,16 +105,6 @@ function formatValue(row) {
 function formatKtcNumber(value) {
   if (value == null || !Number.isFinite(value)) return '—';
   return formatKtcValue(value);
-}
-
-function formatKtcCompact(value) {
-  if (value == null || !Number.isFinite(value)) return '—';
-  return String(Math.round(value));
-}
-
-function formatCompactRankNumber(rank) {
-  if (rank == null || !Number.isFinite(rank)) return '—';
-  return Number.isInteger(rank) ? String(rank) : rank.toFixed(1);
 }
 
 function formatPosRankSlot(position, rank) {
@@ -442,6 +431,7 @@ function RankingsViewer({ fixedSourceId = null }) {
       parts.push(`λ=${meta.premiumRetention}`);
     }
     if (meta.stitched) parts.push('stitched TE+');
+    if (meta.adjustmentSummary) parts.push(meta.adjustmentSummary);
     if (meta.teFallbackCount > 0) {
       parts.push(`${meta.teFallbackCount} TEs w/ non-TEP fallback`);
     }
@@ -620,7 +610,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                 {isRedraftAdjusted && (
                   <>
                     <SortableHeader
-                      label="Adj#"
+                      label="Adj Rank"
                       sortKey="posRank"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -628,7 +618,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-pos-rank"
                     />
                     <SortableHeader
-                      label="KTC#"
+                      label="KTC Rank"
                       sortKey="ktcPosRank"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -636,7 +626,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-ktc-rank"
                     />
                     <SortableHeader
-                      label="ADP"
+                      label="Pos ADP"
                       sortKey="adpPosRank"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -644,7 +634,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-pos-adp"
                     />
                     <SortableHeader
-                      label="Eff"
+                      label="Eff ADP"
                       sortKey="adpEffRank"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -653,7 +643,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                     />
                     {redraftHwangAdp && (
                       <SortableHeader
-                        label="BB"
+                        label="BB ADP"
                         sortKey="bbAvgAdp"
                         activeKey={sortKey}
                         activeDir={sortDir}
@@ -662,7 +652,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       />
                     )}
                     <SortableHeader
-                      label={redraftHwangAdp ? 'Hwang' : 'OVR'}
+                      label={redraftHwangAdp ? 'Hwang ADP' : 'OVR ADP'}
                       sortKey="adpAvg"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -670,7 +660,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-ovr-adp"
                     />
                     <SortableHeader
-                      label="Dyn"
+                      label="Dynasty"
                       sortKey="ktcValue"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -694,7 +684,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                 {isRedraftAdjusted && (
                   <>
                     <SortableHeader
-                      label="RVI"
+                      label="Redraft Idx"
                       sortKey="redraftValueIndex"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -702,7 +692,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-index"
                     />
                     <SortableHeader
-                      label="Rebld"
+                      label="Rebuild Val"
                       sortKey="rebuilderAdjustedValue"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -710,7 +700,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                       className="rv-th-rebuilder"
                     />
                     <SortableHeader
-                      label="RBI"
+                      label="Rebuild Idx"
                       sortKey="rebuildValueIndex"
                       activeKey={sortKey}
                       activeDir={sortDir}
@@ -774,26 +764,26 @@ function RankingsViewer({ fixedSourceId = null }) {
                     {isRedraftAdjusted && (
                       <>
                         <td className="rv-td rv-td-pos-rank">
-                          {formatCompactRankNumber(row.posRank)}
+                          {formatPosRankSlot(row.position, row.posRank)}
                         </td>
                         <td className="rv-td rv-td-ktc-rank">
-                          {formatCompactRankNumber(row.ktcPosRank)}
+                          {formatPosRankSlot(row.position, row.ktcPosRank)}
                         </td>
                         <td className="rv-td rv-td-pos-adp">
-                          {formatCompactRankNumber(row.adpPosRank)}
+                          {formatPosRankSlot(row.position, row.adpPosRank)}
                         </td>
-                        <td className="rv-td rv-td-adj-adp">{formatCompactRankNumber(row.adpEffRank)}</td>
+                        <td className="rv-td rv-td-adj-adp">{formatAdjustedAdpRank(row)}</td>
                         {redraftHwangAdp && (
                           <td className="rv-td rv-td-bb-adp">{formatOvrAdp(row.bbAvgAdp)}</td>
                         )}
                         <td className="rv-td rv-td-ovr-adp">{formatOvrAdp(row.adpAvg)}</td>
-                        <td className="rv-td rv-td-dynasty">{formatKtcCompact(row.ktcValue)}</td>
+                        <td className="rv-td rv-td-dynasty">{formatKtcNumber(row.ktcValue)}</td>
                       </>
                     )}
                     <td className="rv-td rv-td-value">
                       {isRedraftAdjusted ? (
                         <RedraftAdjTooltip kind="comp" entry={row} usesHwangAdp={redraftHwangAdp}>
-                          {formatKtcCompact(row.value)}
+                          {formatKtcNumber(row.value)}
                         </RedraftAdjTooltip>
                       ) : isHwangAdjusted ? (
                         <HwangAdpTooltip row={row}>
@@ -812,7 +802,7 @@ function RankingsViewer({ fixedSourceId = null }) {
                         </td>
                         <td className="rv-td rv-td-rebuilder">
                           <RedraftAdjTooltip kind="rebuild" entry={row} usesHwangAdp={redraftHwangAdp}>
-                            {formatKtcCompact(row.rebuilderAdjustedValue)}
+                            {formatKtcNumber(row.rebuilderAdjustedValue)}
                           </RedraftAdjTooltip>
                         </td>
                         <td className={`rv-td ${indexClassName(row.rebuildValueIndex)}`}>

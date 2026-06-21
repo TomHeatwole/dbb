@@ -4,9 +4,14 @@ import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
+import { isValidPlayerId } from './scenarioUtils';
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 const ADDABLE_POSITIONS = ['QB', 'RB', 'WR', 'TE'];
+
+function resolvePlayerId(player) {
+  return player?.player_id || player?.id || null;
+}
 
 // Left column: QB and WR; right column: everything else
 const COL1_POSITIONS = ['QB', 'WR'];
@@ -83,7 +88,7 @@ function ScenarioRosterEditor({
 
   // Resolve player IDs to full info, grouped by position
   const playersByPosition = {};
-  for (const pid of (playerIds || [])) {
+  for (const pid of (playerIds || []).filter(isValidPlayerId)) {
     const info = getPlayerInfo(pid, playersData, playerIdMap);
     const player = info
       ? { ...info, player_id: pid }
@@ -109,7 +114,7 @@ function ScenarioRosterEditor({
   // Search results: mirror PlayerSearch sandbox behavior
   // - Empty query + has trending → show top 10 trending
   // - Non-empty query → filter all playersData by name
-  const existingSet = new Set(playerIds || []);
+  const existingSet = new Set((playerIds || []).filter(isValidPlayerId));
 
   const getDropdownPlayers = () => {
     if (!playersData) return [];
@@ -120,10 +125,15 @@ function ScenarioRosterEditor({
       return topPlayersBySeason
         .filter((player) => ADDABLE_POSITIONS.includes(player.position))
         .slice(0, 15)
-        .map((player) => ({
-          ...player,
-          alreadyOnRoster: existingSet.has(player.player_id),
-        }));
+        .map((player) => {
+          const pid = resolvePlayerId(player);
+          return {
+            ...player,
+            player_id: pid,
+            alreadyOnRoster: pid ? existingSet.has(pid) : false,
+          };
+        })
+        .filter((player) => player.player_id);
     }
 
     const query = searchQuery.toLowerCase();
@@ -148,15 +158,18 @@ function ScenarioRosterEditor({
   const showTopPlayersLabel = !searchQuery.trim() && dropdownPlayers.length > 0;
 
   const handleAddPlayer = (player) => {
-    if (player.alreadyOnRoster) return;
-    onAddPlayer(player.player_id);
+    const pid = resolvePlayerId(player);
+    if (!pid || player.alreadyOnRoster) return;
+    onAddPlayer(pid);
     setSearchQuery('');
     setShowDropdown(false);
   };
 
   const handleDropFromDropdown = (e, player) => {
     e.stopPropagation();
-    onRemovePlayer(player.player_id);
+    const pid = resolvePlayerId(player);
+    if (!pid) return;
+    onRemovePlayer(pid);
     setSearchQuery('');
     setShowDropdown(false);
   };
@@ -210,9 +223,11 @@ function ScenarioRosterEditor({
             {showTopPlayersLabel && (
               <div className="scenario-editor-dropdown-section-label">Top Fantasy Players</div>
             )}
-            {dropdownPlayers.map((player) => (
+            {dropdownPlayers.map((player) => {
+              const pid = resolvePlayerId(player);
+              return (
               <div
-                key={player.player_id}
+                key={pid || player.name}
                 className={
                   'scenario-editor-dropdown-item' +
                   (player.alreadyOnRoster ? ' scenario-editor-dropdown-item--on-roster' : '')
@@ -241,7 +256,8 @@ function ScenarioRosterEditor({
                   </button>
                 ) : null}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

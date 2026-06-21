@@ -341,6 +341,8 @@ function FutureScenarioEvalPage() {
                   fpRankings={fpRankings}
                   historicalPositionRanks={historicalPositionRanks}
                   projectionYear={projectionYear}
+                  scenarioRosters={scenarioRosters}
+                  playerWeeklyPoints={evalResult.playerWeeklyPoints}
                 />
               ) : (
                 <div className="scenario-eval-team-stats-placeholder">

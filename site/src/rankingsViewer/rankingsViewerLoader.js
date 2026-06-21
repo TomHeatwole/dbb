@@ -19,6 +19,7 @@ import {
 import { normalisePlayerName } from '../utils/playerNameMatcher';
 import { loadRedraftRankLookup } from '../redraftValueIndex/redraftRankLookupLoader';
 import { assignPosValueRanks, assignOverallValueRanks } from '../lookups/RedraftValueLookup';
+import { loadHwangAdjustedKtcRankings } from './hwangValueAdjustmentLoader';
 
 export { formatKtcValue };
 
@@ -83,14 +84,49 @@ async function loadPlayersData() {
   return playersDataCache;
 }
 
+function buildPlayerLookup(playersData) {
+  const map = new Map();
+  for (const [id, p] of Object.entries(playersData || {})) {
+    const name = p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ').trim();
+    const norm = normalisePlayerName(name);
+    const pos = (p.position || '').trim().toUpperCase();
+    if (!norm || !pos) continue;
+    const key = `${norm}|${pos}`;
+    if (!map.has(key)) map.set(key, id);
+  }
+  return map;
+}
+
+function resolveSleeperId(row, playersData) {
+  const direct = (row.sleeperId || '').trim();
+  if (direct) return direct;
+  if (!row.name || !row.position || !playersData) return '';
+  const lookup = buildPlayerLookup(playersData);
+  return lookup.get(`${normalisePlayerName(row.name)}|${row.position.toUpperCase()}`) || '';
+}
+
 function enrichFromSleeper(row, playersData) {
-  if (!row.sleeperId || !playersData) return row;
-  const p = playersData[row.sleeperId];
-  if (!p) return row;
+  if (!playersData) return row;
+
+  const sleeperId = resolveSleeperId(row, playersData);
+  const merged = { ...row, sleeperId: sleeperId || row.sleeperId || '' };
+  const p = merged.sleeperId ? playersData[merged.sleeperId] : null;
+
+  const csvTeam = (row.team || '').trim();
+  const sleeperTeam = (p?.team || p?.team_abbr || '').trim().toUpperCase();
+  let team = csvTeam;
+  if ((!team || team === 'FA') && sleeperTeam) {
+    team = sleeperTeam;
+  }
+
+  if (!p) {
+    return { ...merged, team: team || csvTeam };
+  }
+
   return {
-    ...row,
-    position: row.position || p.position || (p.fantasy_positions && p.fantasy_positions[0]) || '',
-    team: row.team || p.team || p.team_abbr || '',
+    ...merged,
+    position: merged.position || p.position || (p.fantasy_positions && p.fantasy_positions[0]) || '',
+    team: team || p.team || p.team_abbr || '',
   };
 }
 
@@ -1008,6 +1044,10 @@ export async function loadRankings(sourceOption, { year, date } = {}) {
       return loadKtcRedraftAdjustedRankings();
     case 'hwang_adjusted_adp':
       return loadHwangAdjustedAdpRankings(year);
+    case 'hwang_market_value_adjusted_ktc':
+      return loadHwangAdjustedKtcRankings('market');
+    case 'hwang_true_value_adjusted_ktc':
+      return loadHwangAdjustedKtcRankings('true');
     case 'ktc_historical':
       return loadKtcHistoricalRankings(sourceOption.variant, date);
     case 'ktc_rookie':

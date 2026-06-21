@@ -3,6 +3,10 @@
  * ADP year lists reflect files present under /data/adp/.
  */
 
+import { HWANG_VALUE_ADJUSTMENTS } from '../lookups/HwangValueAdjustmentLookup';
+
+export { HWANG_VALUE_ADJUSTMENTS };
+
 export const ADP_TYPES = {
   overall: {
     label: 'ADP — Overall',
@@ -130,13 +134,31 @@ export function buildSourceOptions() {
   });
 
   groups.push({
-    label: 'Other',
+    label: 'Hwang',
     options: [
+      {
+        id: 'hwang_market_value_adjusted_ktc',
+        label: HWANG_VALUE_ADJUSTMENTS.market.label,
+        kind: 'hwang_market_value_adjusted_ktc',
+        adjustmentKey: 'market',
+      },
+      {
+        id: 'hwang_true_value_adjusted_ktc',
+        label: HWANG_VALUE_ADJUSTMENTS.true.label,
+        kind: 'hwang_true_value_adjusted_ktc',
+        adjustmentKey: 'true',
+      },
       {
         id: 'hwang_adjusted_adp',
         label: 'Hwang Adjusted Positional ADP',
         kind: 'hwang_adjusted_adp',
       },
+    ],
+  });
+
+  groups.push({
+    label: 'Other',
+    options: [
       { id: 'fantasycalc', label: 'FantasyCalc Dynasty', kind: 'fantasycalc' },
       { id: 'ffb', label: 'FFB Dynasty Rankings', kind: 'ffb' },
       ...Object.entries(FP_ECR_SOURCES).map(([key, cfg]) => ({
@@ -204,7 +226,7 @@ export function getRedraftLookupBlend(year) {
 /** Sources with a meaningful numeric value column (KTC, FantasyCalc, ADP avg). */
 export function sourceHasValue(sourceOption) {
   if (!sourceOption) return false;
-  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'final_ktc_values', 'ktc_redraft_adjusted', 'final_ktc_redraft_adjusted', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
+  return ['ktc_current', 'ktc_historical', 'ktc_rookie', 'final_ktc_values', 'ktc_redraft_adjusted', 'final_ktc_redraft_adjusted', 'hwang_market_value_adjusted_ktc', 'hwang_true_value_adjusted_ktc', 'hwang_adjusted_adp', 'fantasycalc', 'adp'].includes(sourceOption.kind);
 }
 
 /** Default table sort when a source is selected or data reloads. */
@@ -217,6 +239,8 @@ export function defaultSortForSource(sourceOption) {
     || sourceOption.kind === 'final_ktc_values'
     || sourceOption.kind === 'ktc_redraft_adjusted'
     || sourceOption.kind === 'final_ktc_redraft_adjusted'
+    || sourceOption.kind === 'hwang_market_value_adjusted_ktc'
+    || sourceOption.kind === 'hwang_true_value_adjusted_ktc'
   ) {
     return { key: 'value', dir: 'desc' };
   }
