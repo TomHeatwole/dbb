@@ -11,11 +11,10 @@ competitor value + rebuilder adjusted), except the rank-slot lookup blends:
   50% that year's final KTC value at each positional rank
 Historical rank-slot values are inflation-scaled to each target season's own
 final KTC top-300 total (not the live 2026 board).
-ADP input: that season's Hwang Adjusted Positional ADP (same as live 2026 index).
 
 Reads:
   site/public/data/final_ktc_values.csv
-  site/public/data/sf_ktc_values_historical.csv
+  site/public/data/sf_ktc_values_historical_filled.csv
   site/public/data/adp/fantasypros_adp_bestball_{year}.csv
 
 Writes:
@@ -55,12 +54,11 @@ def final_ktc_top300_sum(year: int) -> int:
 
 
 def compute_season_weighted_hist(
-    by_date: dict[str, list[tuple[str, int]]],
     target_year: int,
 ) -> tuple[dict[str, dict[int, float]], dict[int, float], int]:
-    """Year-weighted hist rank slots scaled to target season's final KTC top-300 total."""
+    """Year-weighted hist rank slots from imputed Final KTC boards (no inflation)."""
     target_sum = final_ktc_top300_sum(target_year)
-    return rvi.compute_weighted_historical_rank_values(by_date, target_sum=target_sum)
+    return rvi.compute_weighted_historical_rank_values(target_sum=target_sum)
 
 
 def load_final_ktc_players(year: int) -> tuple[list[dict], str]:
@@ -351,7 +349,6 @@ def main() -> None:
     print("Regenerating Hwang adjusted ADP (all available seasons)…")
     subprocess.run([sys.executable, str(hwang_script)], check=True)
 
-    by_date = rvi.load_historical_by_date()
     sleeper_by_name, sleeper_by_last = rvi.load_sleeper_ids_by_player()
     current_target_sum = rvi.current_live_top300_sum()
 
@@ -360,14 +357,12 @@ def main() -> None:
 
     for year in FINAL_KTC_YEARS:
         print(f"\n=== {year} ===")
-        weighted_hist, inflation, target_sum = compute_season_weighted_hist(by_date, year)
+        weighted_hist, inflation, target_sum = compute_season_weighted_hist(year)
         print(
-            f"  inflation anchor: top-{rvi.TOP300_INFLATION_TARGET_COUNT} sum "
-            f"{target_sum:,} ({year} final KTC; live 2026 = {current_target_sum:,})"
+            f"  hist rank slots: imputed Final KTC ({rvi.HISTORICAL_VALUES_CSV.name}), "
+            f"no inflation (reference {year} final top-300 = {target_sum:,}; "
+            f"live 2026 = {current_target_sum:,})"
         )
-        for hist_year in sorted(inflation):
-            print(f"    {hist_year} multiplier: {inflation[hist_year]:.6f}")
-        print("    2021: unscaled (multiplier 1.0)")
 
         rows, rank_lookup, snapshot_date, matched, synthetic = compute_season_redraft_values(
             year,

@@ -12,33 +12,41 @@ alwaysApply: false
 |------|----------|
 | `sf_non_tep_ktc_values_historical.csv` | **Scrape input.** Full SF board, all positions, **no TE premium** |
 | `sf_tep_ktc_values_historical.csv` | **Scrape input.** TE-only rows with **TE+** values from KTC profiles |
-| `sf_ktc_values_historical.csv` | **Canonical merged board.** Built by `scripts/build_sf_ktc_values_historical.py` |
+| `sf_ktc_values_historical.csv` | **Raw merged board.** Built by `scripts/build_sf_ktc_values_historical.py` |
+| `sf_ktc_values_historical_filled.csv` | **Canonical imputed board (2021+).** ADP + Unknown slot fill |
+| `sf_ktc_values_historical_filled_metadata.csv` | Fill provenance for imputed board |
 
-## Merge rule
+## Merge rule (raw board)
 
 **Only TE values need TEP adjustment.** QB/RB/WR use non_tep as-is.
 
-To build the canonical SF TE+ historical board:
+To build the raw SF TE+ historical board:
 
 1. Start from the full non_tep board for each date
 2. Replace TE rows with matching TE+ rows from the tep scrape (match by `sleeper_id`, else `name`)
 3. Keep non_tep TE values as fallback when no TE+ row exists
-4. Never use the tep file alone for historical rank stats — it contains TEs only
 
 ## Consumption
 
-Scripts and features on the **SF TE+ baseline** (dynasty roster, redraft value index, rank compare) must read **`sf_ktc_values_historical.csv`**, not `sf_tep_ktc_values_historical.csv` directly.
+**Production scripts and site features** on the SF TE+ baseline should read **`sf_ktc_values_historical_filled.csv`** for historical rank-slot curves and sandbox historical KTC:
 
-Current KTC values (`ktc_values.csv`) use `ktc_value_tep_2qb` for the same baseline.
+- `compute_redraft_value_index.py`
+- `compute_final_ktc_redraft_value_index.py`
+- `compute_ktc_average_deltas.py`
+- Rankings Viewer `ktc_historical` (sf_tep variant)
+- Historical KTC Ranks (values lookup)
 
-## Historical inflation (redraft rank lookup)
+**Live current values** remain `ktc_values.csv` (`ktc_value_tep_2qb`).
 
-Before year-weighted rank-slot averaging, **2022–2025** daily KTC values are multiplied so each year's **year-end top-300 sum** matches the **current live** SF TE+ top-300 total (`ktc_value_tep_2qb`). **2021 stays unscaled.** Multipliers are recomputed each run of `compute_redraft_value_index.py`.
+Raw `sf_ktc_values_historical.csv` is still used to **build** filled output and `final_ktc_values.csv`.
 
-## After fetching
+## Historical rank lookup (redraft)
 
-Run merge after updating either source scrape:
+Year-weighted rank-slot averages use **Final KTC imputed snapshots** with **true positional ranks**. **No top-300 inflation multiplier.**
+
+Regenerate filled board after raw scrape updates:
 
 ```bash
-python3 scripts/build_sf_ktc_values_historical.py
+python3 scripts/build_sf_ktc_values_historical_filled.py
+python3 scripts/compute_redraft_value_index.py
 ```

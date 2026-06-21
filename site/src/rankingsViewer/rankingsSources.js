@@ -60,9 +60,10 @@ export const KTC_HISTORICAL_VARIANTS = {
     datesKey: 'sf_non_tep',
   },
   sf_tep: {
-    label: 'KTC Historical — Superflex TE+',
-    file: '/data/sf_ktc_values_historical.csv',
+    label: 'KTC Historical — Superflex TE+ (imputed)',
+    file: '/data/sf_ktc_values_historical_filled.csv',
     datesKey: 'sf_tep',
+    filled: true,
   },
 };
 

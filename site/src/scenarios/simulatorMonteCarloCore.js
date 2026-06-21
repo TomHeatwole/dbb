@@ -20,12 +20,16 @@ const MAX_RUNS_PER_FINISH = 50;
 const ZERO_WEEKS = new Float32Array(NUM_WEEKS);
 
 export const DEFAULT_ITERATIONS = 1000;
-export const MAX_SIMULATOR_ITERATIONS = 100000;
+export const MAX_SIMULATOR_ITERATIONS = 1_000_000;
 export const SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS = 5000;
 
 const BATCH_SIZE = 25;
-const LIGHTWEIGHT_BATCH_SIZE = 500;
-const WORKER_PROGRESS_INTERVAL = 5000;
+const LIGHTWEIGHT_BATCH_SIZE = 2000;
+const PROGRESS_TIME_MS = 80;
+
+function getLightweightProgressInterval(iterations) {
+  return Math.max(500, Math.floor(iterations / 200));
+}
 
 export function clampSimulatorIterations(n) {
   const val = Math.round(Number(n) || DEFAULT_ITERATIONS);
@@ -377,9 +381,12 @@ export function runSimulationIterations(ctx, state, {
     stats, baselineStats, teamFinishBuckets, teamScoreHistograms, keepSimSamples,
   } = state;
   const reportEvery = progressInterval
-    ?? (lightweight ? WORKER_PROGRESS_INTERVAL : Math.max(1, Math.floor((totalIterations || count) / 100)));
+    ?? (lightweight
+      ? getLightweightProgressInterval(totalIterations || count)
+      : Math.max(1, Math.floor((totalIterations || count) / 100)));
 
   let lastReported = startIndex;
+  let lastReportTime = Date.now();
 
   for (let i = 0; i < count; i++) {
     const simIndex = startIndex + i;
@@ -437,8 +444,14 @@ export function runSimulationIterations(ctx, state, {
 
     if (onProgress) {
       const done = simIndex + 1;
-      if (done - lastReported >= reportEvery || done === totalIterations) {
+      const now = Date.now();
+      if (
+        done - lastReported >= reportEvery
+        || now - lastReportTime >= PROGRESS_TIME_MS
+        || done === totalIterations
+      ) {
         lastReported = done;
+        lastReportTime = now;
         onProgress(done / totalIterations);
       }
     }

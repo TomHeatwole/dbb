@@ -26,41 +26,19 @@ import SimulatorTeamDetail from '../scenarios/SimulatorTeamDetail';
 import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
 import { normalizeOutcomeScenarioYear } from '../scenarios/outcomeScenarioConfig';
 
+import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
+import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
+
 const OG_TITLE = 'Season Simulator — Results';
 const OG_DESCRIPTION = 'Championship odds from outcome-roll simulations.';
-
-function SimulatorProgressBar({ progress, phase, iterations }) {
-  const pct = Math.round((progress || 0) * 100);
-  const total = iterations || DEFAULT_ITERATIONS;
-  return (
-    <div className="simulator-progress">
-      <div className="simulator-progress-label">
-        {phase === 'loading' ? 'Loading simulation data…' : `Running simulations… ${pct}%`}
-      </div>
-      <div className="simulator-progress-track">
-        <div
-          className="simulator-progress-fill"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      {phase === 'running' && (
-        <div className="simulator-progress-detail">
-          {Math.round((progress || 0) * total).toLocaleString()}
-          {' / '}
-          {total.toLocaleString()}
-          {' complete'}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function SimulatorRunPage() {
   const [searchParams] = useSearchParams();
   const scenarioParam = searchParams.get('scenario');
 
   const [phase, setPhase] = useState('loading');
-  const [progress, setProgress] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [simProgress, setSimProgress] = useState(0);
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
   const [resultDeltas, setResultDeltas] = useState(null);
@@ -93,7 +71,8 @@ function SimulatorRunPage() {
     async function run() {
       try {
         setPhase('loading');
-        setProgress(0.05);
+        setLoadingProgress(0);
+        setSimProgress(0);
 
         const [rosterData, cfg, adpMap, maxRanks] = await Promise.all([
           loadOutcomeScenarioRosterData(seasonYear),
@@ -113,7 +92,7 @@ function SimulatorRunPage() {
         setScenarioRosters(modified);
         setPlayersData(players);
         setPlayerIdMap(idMap);
-        setProgress(0.15);
+        setLoadingProgress(0.45);
 
         const yearsNeeded = getOutcomeHistoryYears(Number(seasonYear));
 
@@ -129,7 +108,7 @@ function SimulatorRunPage() {
         );
 
         if (cancelled) return;
-        setProgress(0.2);
+        setLoadingProgress(0.9);
 
         const ctx = prepareSimulatorContext({
           scenarioRosters: modified,
@@ -142,8 +121,9 @@ function SimulatorRunPage() {
           playersData: players,
         });
 
+        setLoadingProgress(1);
         setPhase('running');
-        setProgress(0.2);
+        setSimProgress(0);
 
         const {
           results: simResults,
@@ -157,7 +137,7 @@ function SimulatorRunPage() {
           {
             iterations: runCount,
             onProgress: (p) => {
-              if (!cancelled) setProgress(0.2 + p * 0.8);
+              if (!cancelled) setSimProgress(p);
             },
           },
         );
@@ -167,8 +147,14 @@ function SimulatorRunPage() {
           setResultDeltas(resultDeltas);
           setTeamFinishBuckets(finishBuckets);
           setTeamScoreHistograms(scoreHists);
-          setProgress(1);
-          setPhase('done');
+          setSimProgress(1);
+          setPhase('celebrating');
+          await new Promise((resolve) => {
+            setTimeout(resolve, TOUCHDOWN_CELEBRATION_MS);
+          });
+          if (!cancelled) {
+            setPhase('done');
+          }
         }
       } catch (e) {
         if (!cancelled) {
@@ -207,11 +193,12 @@ function SimulatorRunPage() {
         subtitle={scenarioSeason ? `${scenarioSeason} · ${iterations.toLocaleString()} runs` : null}
         leftHeader={backLink}
       >
-        {(phase === 'loading' || phase === 'running') && (
+        {(phase === 'loading' || phase === 'running' || phase === 'celebrating') && (
           <div className="simulator-run-layout">
             <SimulatorProgressBar
-              progress={progress}
               phase={phase}
+              loadingProgress={loadingProgress}
+              simProgress={simProgress}
               iterations={iterations}
             />
             {phase === 'loading' && (

@@ -117,7 +117,7 @@ async function runOnMainThread(ctx, iterations, onProgress) {
 
     if (onProgress) {
       const progress = state.completed / iterations;
-      if (progress - lastReportedProgress >= 0.01 || state.completed === iterations) {
+      if (progress - lastReportedProgress >= 0.005 || state.completed === iterations) {
         lastReportedProgress = progress;
         onProgress(progress);
       }

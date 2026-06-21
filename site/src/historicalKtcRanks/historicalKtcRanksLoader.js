@@ -14,6 +14,8 @@ import { normalisePlayerName } from '../utils/playerNameMatcher';
 const RANKS_CSV = '/data/sf_ktc_pos_ranks_historical.csv';
 const PLAYERS_CSV = '/data/sf_ktc_rank_history_players.csv';
 const VALUES_CSV = '/data/sf_ktc_values_historical.csv';
+const FILLED_CSV = '/data/sf_ktc_values_historical_filled.csv';
+const FILLED_METADATA_CSV = '/data/sf_ktc_values_historical_filled_metadata.csv';
 const FINAL_KTC_CSV = '/data/final_ktc_values.csv';
 const STARTUP_ADP_CSV = '/data/ddl_startup_adp_historical.csv';
 
@@ -24,13 +26,30 @@ export const SNAPSHOT_TYPES = {
   final_ktc: {
     id: 'final_ktc',
     label: 'Final KTC (preseason)',
-    years: FINAL_KTC_YEARS,
+    years: FINAL_KTC_YEARS.filter((y) => y >= 2021),
   },
   rookie_draft: {
     id: 'rookie_draft',
     label: 'Rookie Draft KTC (May 20)',
-    years: KTC_ROOKIE_CLASS_YEARS,
+    years: KTC_ROOKIE_CLASS_YEARS.filter((y) => y >= 2021),
   },
+  monthly: {
+    id: 'monthly',
+    label: 'Monthly (10th)',
+    years: [2021, 2022, 2023, 2024, 2025],
+    months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  },
+};
+
+export const FILL_SOURCE_LABELS = {
+  historical: 'Historical',
+  adp: 'ADP fill',
+  unknown: 'Unknown',
+};
+
+export const DATA_MODES = {
+  raw: { id: 'raw', label: 'Raw (rank scrape + values)' },
+  filled: { id: 'filled', label: 'Filled board (imputed)' },
 };
 
 let cache = null;
@@ -150,7 +169,7 @@ export function getStartupAdpSeason(year) {
   return DDL_STARTUP_ADP_YEARS.includes(season) ? season : null;
 }
 
-export function getSnapshotTargetDate(snapshotType, year, finalKtcDatesByYear) {
+export function getSnapshotTargetDate(snapshotType, year, finalKtcDatesByYear, month = null) {
   const yearNum = Number(year);
   if (snapshotType === 'final_ktc') {
     return finalKtcDatesByYear.get(yearNum) || null;
@@ -158,18 +177,240 @@ export function getSnapshotTargetDate(snapshotType, year, finalKtcDatesByYear) {
   if (snapshotType === 'rookie_draft') {
     return rookieSnapshotDate(yearNum);
   }
+  if (snapshotType === 'monthly') {
+    const monthNum = Number(month);
+    if (!Number.isFinite(monthNum) || monthNum < 1 || monthNum > 12) return null;
+    const day = 10;
+    return `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
   return null;
+}
+
+const FILLED_KIND_PRIORITY = { final_ktc: 3, rookie_draft: 2, monthly: 1 };
+
+function buildValuesByDateFromFilled(filledRows) {
+  const bestByDateName = new Map();
+  for (const row of filledRows) {
+    const date = (row.resolved_date || '').trim();
+    const name = (row.name || '').trim();
+    const kind = (row.snapshot_kind || '').trim();
+    const value = parseIntField(row.ktc_value);
+    if (!date || !name || value == null || value <= 0) continue;
+    const key = `${date}|${name}`;
+    const prev = bestByDateName.get(key);
+    if (prev && (FILLED_KIND_PRIORITY[kind] || 0) <= (FILLED_KIND_PRIORITY[prev.kind] || 0)) continue;
+    bestByDateName.set(key, { date, name, value, kind });
+  }
+
+  const valuesByDate = new Map();
+  for (const { date, name, value } of bestByDateName.values()) {
+    if (!valuesByDate.has(date)) valuesByDate.set(date, new Map());
+    valuesByDate.get(date).set(name, value);
+  }
+  return valuesByDate;
+}
+
+function filledSnapshotKey(target, kind) {
+  return `${kind}|${target}`;
+}
+
+function parseFilledSnapshotRow(row) {
+  return {
+    target: (row.snapshot_target || '').trim(),
+    kind: (row.snapshot_kind || '').trim(),
+    label: (row.snapshot_label || '').trim(),
+    resolvedDate: (row.resolved_date || '').trim(),
+    year: parseIntField(row.year),
+  };
+}
+
+function parseFilledBoardRow(row) {
+  const position = (row.position || '').trim().toUpperCase();
+  const slot = parseIntField(row.positional_rank);
+  return {
+    kind: 'player',
+    slot,
+    slotLabel: slot != null ? `${position}${slot}` : '',
+    name: (row.name || '').trim(),
+    position,
+    positionalRank: slot,
+    overallRank: parseIntField(row.overall_rank),
+    ktcValue: parseIntField(row.ktc_value),
+    ktcPlayerId: (row.ktc_player_id || '').trim(),
+    sleeperId: (row.sleeper_id || '').trim(),
+    snapshotTarget: (row.snapshot_target || '').trim(),
+    snapshotKind: (row.snapshot_kind || '').trim(),
+    snapshotLabel: (row.snapshot_label || '').trim(),
+    resolvedDate: (row.resolved_date || '').trim(),
+    inKtcRanks: true,
+  };
+}
+
+function parseMetadataRow(row) {
+  return {
+    snapshotTarget: (row.snapshot_target || '').trim(),
+    snapshotKind: (row.snapshot_kind || '').trim(),
+    position: (row.position || '').trim().toUpperCase(),
+    slot: parseIntField(row.positional_rank),
+    fillSource: (row.fill_source || '').trim(),
+    assignedName: (row.assigned_name || '').trim(),
+    adpOverall: (row.adp_overall || '').trim(),
+    adpPosRank: (row.adp_pos_rank || '').trim(),
+    anchorUpperSlot: (row.anchor_upper_slot || '').trim(),
+    anchorUpperName: (row.anchor_upper_name || '').trim(),
+    anchorUpperValue: (row.anchor_upper_value || '').trim(),
+    anchorUpperAdp: (row.anchor_upper_adp || '').trim(),
+    anchorLowerSlot: (row.anchor_lower_slot || '').trim(),
+    anchorLowerName: (row.anchor_lower_name || '').trim(),
+    anchorLowerValue: (row.anchor_lower_value || '').trim(),
+    anchorLowerAdp: (row.anchor_lower_adp || '').trim(),
+    interpolateFraction: (row.interpolate_fraction || '').trim(),
+    baselineValue: (row.baseline_value || '').trim(),
+    rawComputedValue: (row.raw_computed_value || '').trim(),
+    clamped: row.clamped === '1',
+    clampReason: (row.clamp_reason || '').trim(),
+    valueResolvedDate: (row.value_resolved_date || '').trim(),
+    rankResolvedDate: (row.rank_resolved_date || '').trim(),
+  };
+}
+
+export function formatFillMetadata(meta) {
+  if (!meta) return '';
+  if (meta.fillSource === 'historical') {
+    const parts = ['Community-sheet KTC value'];
+    if (meta.valueResolvedDate) parts.push(`value date ${meta.valueResolvedDate}`);
+    return parts.join(' · ');
+  }
+  if (meta.fillSource === 'adp') {
+    const parts = [];
+    if (meta.clampReason === 'interpolated') {
+      parts.push('ADP-interpolated between known KTC neighbors');
+      if (meta.anchorUpperSlot && meta.anchorLowerSlot) {
+        parts.push(
+          `${meta.position}${meta.anchorUpperSlot} (${meta.anchorUpperValue}) ↔ `
+          + `${meta.position}${meta.anchorLowerSlot} (${meta.anchorLowerValue})`,
+        );
+      }
+      if (meta.interpolateFraction) {
+        parts.push(`${(parseFloat(meta.interpolateFraction) * 100).toFixed(0)}% toward upper anchor`);
+      }
+    } else if (meta.clampReason?.startsWith('cap_')) {
+      parts.push(`Capped at ${meta.anchorUpperName || 'upper anchor'} value`);
+    } else if (meta.clampReason?.startsWith('floor_')) {
+      parts.push(`Floored at ${meta.anchorLowerName || 'lower anchor'} value`);
+    } else {
+      parts.push('Assigned from startup ADP pool');
+    }
+    if (meta.adpOverall) parts.push(`ADP OVR ${meta.adpOverall}`);
+    if (meta.clamped && meta.clampReason && !['interpolated', 'cap_above_upper_adp', 'floor_below_lower_adp'].includes(meta.clampReason.split(';')[0])) {
+      parts.push(`clamped: ${meta.clampReason}`);
+    }
+    return parts.join(' · ');
+  }
+  if (meta.fillSource === 'unknown') {
+    const parts = ['No ADP left — 2026 slot baseline'];
+    if (meta.baselineValue) parts.push(`baseline ${meta.baselineValue}`);
+    if (meta.clamped) parts.push(`clamped: ${meta.clampReason || 'monotone order'}`);
+    return parts.join(' · ');
+  }
+  return meta.fillSource || '';
+}
+
+export function summarizeFilledCoverage(rows) {
+  const counts = { historical: 0, adp: 0, unknown: 0, other: 0 };
+  for (const row of rows) {
+    const src = row.fillSource || 'other';
+    if (counts[src] != null) counts[src] += 1;
+    else counts.other += 1;
+  }
+  return {
+    total: rows.length,
+    ...counts,
+  };
+}
+
+export function buildFilledSlotBoard(filledRows, metadataBySlot, position, adpIndex) {
+  const pos = position === 'ALL' ? null : position;
+  const filtered = pos
+    ? filledRows.filter((r) => r.position === pos)
+    : filledRows.filter((r) => POSITIONS.includes(r.position));
+
+  const buildOne = (rows, posLabel) => {
+    const bySlot = new Map();
+    for (const row of rows) {
+      if (row.slot != null) bySlot.set(row.slot, row);
+    }
+    const maxSlot = rows.reduce((max, row) => Math.max(max, row.slot || 0), 0);
+    const board = [];
+    for (let slot = 1; slot <= maxSlot; slot += 1) {
+      const player = bySlot.get(slot);
+      if (player) {
+        const meta = metadataBySlot.get(`${posLabel}${slot}`);
+        const adp = lookupStartupAdp(adpIndex, player);
+        board.push({
+          ...player,
+          fillSource: meta?.fillSource || 'historical',
+          fillMeta: meta || null,
+          startupAdp: adp?.adp ?? null,
+          startupAdpPosRank: adp?.posRank ?? null,
+          startupAdpSlotLabel: adp?.adpSlotLabel ?? null,
+          inStartupAdp: Boolean(adp),
+        });
+      } else {
+        board.push({
+          kind: 'gap',
+          slot,
+          slotLabel: `${posLabel}${slot}`,
+          position: posLabel,
+          name: null,
+        });
+      }
+    }
+    return board;
+  };
+
+  if (pos) {
+    return buildOne(filtered, pos);
+  }
+
+  return {
+    mode: 'all',
+    boards: POSITIONS.map((p) => ({
+      position: p,
+      rows: buildOne(filtered.filter((r) => r.position === p), p),
+    })),
+  };
+}
+
+export function getFilledRowsForSnapshot(filledBySnapshot, snapshotTarget, snapshotKind) {
+  const key = filledSnapshotKey(snapshotTarget, snapshotKind);
+  return filledBySnapshot.get(key) || [];
+}
+
+export function getFilledMetadataForSnapshot(filledMetadataBySnapshot, snapshotTarget, snapshotKind) {
+  const key = filledSnapshotKey(snapshotTarget, snapshotKind);
+  return filledMetadataBySnapshot.get(key) || new Map();
 }
 
 export async function loadHistoricalKtcRanksData() {
   if (cache) return cache;
 
-  const [ranksRes, playersRes, valuesRes, startupAdpRes, finalKtcDatesByYear] = await Promise.all([
+  const [
+    ranksRes,
+    playersRes,
+    valuesRes,
+    startupAdpRes,
+    finalKtcDatesByYear,
+    filledRes,
+    filledMetaRes,
+  ] = await Promise.all([
     fetch(RANKS_CSV),
     fetch(PLAYERS_CSV),
     fetch(VALUES_CSV),
     fetch(STARTUP_ADP_CSV),
     loadFinalKtcDatesByYear(),
+    fetch(FILLED_CSV),
+    fetch(FILLED_METADATA_CSV),
   ]);
 
   if (!ranksRes.ok) {
@@ -182,16 +423,25 @@ export async function loadHistoricalKtcRanksData() {
       `Missing ${PLAYERS_CSV}. Run: bash scripts/fetch_sf_ktc_rank_history.sh`
     );
   }
-  if (!valuesRes.ok) {
-    throw new Error(`Failed to fetch ${VALUES_CSV}`);
+  if (!valuesRes.ok && !filledRes.ok) {
+    throw new Error(`Failed to fetch historical KTC values (${VALUES_CSV})`);
   }
   if (!startupAdpRes.ok) {
     throw new Error(`Failed to fetch ${STARTUP_ADP_CSV}`);
   }
 
+  const filledAvailable = filledRes.ok && filledMetaRes.ok;
+  if (!filledAvailable) {
+    console.warn(
+      'Filled historical KTC CSVs not found. Run: python3 scripts/build_sf_ktc_values_historical_filled.py',
+    );
+  }
+
   const { rows: rankRows } = parseCsv(await ranksRes.text());
   const { rows: playerRows } = parseCsv(await playersRes.text());
-  const { rows: valueRows } = parseCsv(await valuesRes.text());
+  const { rows: valueRows } = valuesRes.ok ? parseCsv(await valuesRes.text()) : [];
+  const filledCsvText = filledRes.ok ? await filledRes.text() : '';
+  const filledMetaText = filledMetaRes.ok ? await filledMetaRes.text() : '';
   const { rows: startupAdpRows } = parseCsv(await startupAdpRes.text());
 
   const startupAdpBySeason = new Map();
@@ -246,15 +496,20 @@ export async function loadHistoricalKtcRanksData() {
     ranksByDate.get(date).push(entry);
   }
 
-  const valuesByDate = new Map();
-  for (const row of valueRows) {
-    const date = (row.date || '').trim();
-    const name = (row.name || '').trim();
-    const value = parseIntField(row.ktc_value);
-    if (!date || !name || value == null) continue;
-    if (!valuesByDate.has(date)) valuesByDate.set(date, new Map());
-    valuesByDate.get(date).set(name, value);
-  }
+  const valuesByDate = filledAvailable
+    ? buildValuesByDateFromFilled(parseCsv(filledCsvText).rows)
+    : (() => {
+      const map = new Map();
+      for (const row of valueRows) {
+        const date = (row.date || '').trim();
+        const name = (row.name || '').trim();
+        const value = parseIntField(row.ktc_value);
+        if (!date || !name || value == null || value <= 0) continue;
+        if (!map.has(date)) map.set(date, new Map());
+        map.get(date).set(name, value);
+      }
+      return map;
+    })();
 
   const players = playerRows.map((row) => ({
     name: (row.name || '').trim(),
@@ -269,6 +524,39 @@ export async function loadHistoricalKtcRanksData() {
     historyEnd: (row.history_end || '').trim(),
   }));
 
+  const filledBySnapshot = new Map();
+  const filledMetadataBySnapshot = new Map();
+  const filledSnapshots = [];
+  const filledSnapshotSet = new Set();
+
+  if (filledAvailable) {
+    const { rows: filledRows } = parseCsv(filledCsvText);
+    const { rows: metaRows } = parseCsv(filledMetaText);
+
+    for (const row of filledRows) {
+      const boardRow = parseFilledBoardRow(row);
+      const key = filledSnapshotKey(boardRow.snapshotTarget, boardRow.snapshotKind);
+      if (!filledBySnapshot.has(key)) filledBySnapshot.set(key, []);
+      filledBySnapshot.get(key).push(boardRow);
+
+      if (!filledSnapshotSet.has(key)) {
+        filledSnapshotSet.add(key);
+        filledSnapshots.push(parseFilledSnapshotRow(row));
+      }
+    }
+
+    for (const row of metaRows) {
+      const meta = parseMetadataRow(row);
+      const key = filledSnapshotKey(meta.snapshotTarget, meta.snapshotKind);
+      if (!filledMetadataBySnapshot.has(key)) {
+        filledMetadataBySnapshot.set(key, new Map());
+      }
+      filledMetadataBySnapshot.get(key).set(`${meta.position}${meta.slot}`, meta);
+    }
+
+    filledSnapshots.sort((a, b) => a.target.localeCompare(b.target) || a.kind.localeCompare(b.kind));
+  }
+
   cache = {
     ranksByDate,
     valuesByDate,
@@ -277,6 +565,10 @@ export async function loadHistoricalKtcRanksData() {
     players,
     playerCount: players.length,
     recordCount: rankRows.length,
+    filledAvailable,
+    filledBySnapshot,
+    filledMetadataBySnapshot,
+    filledSnapshots,
   };
   return cache;
 }

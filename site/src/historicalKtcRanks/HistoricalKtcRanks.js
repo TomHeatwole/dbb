@@ -4,12 +4,18 @@ import PositionBadge from '../PositionBadge';
 import { formatKtcValue } from '../lookups/KtcLookup';
 import {
   buildAdpSlotBoard,
+  buildFilledSlotBoard,
   buildKtcSlotBoard,
   buildRankIndex,
   buildSideBySideRows,
   buildStartupAdpIndex,
   countGaps,
+  DATA_MODES,
+  FILL_SOURCE_LABELS,
   formatDayOffset,
+  formatFillMetadata,
+  getFilledMetadataForSnapshot,
+  getFilledRowsForSnapshot,
   getSnapshotTargetDate,
   getStartupAdpRows,
   getStartupAdpSeason,
@@ -19,6 +25,7 @@ import {
   resolveRankRowsForSnapshot,
   SNAPSHOT_TYPES,
   summarizeCompareCoverage,
+  summarizeFilledCoverage,
   summarizeSnapshotCoverage,
 } from './historicalKtcRanksLoader';
 
@@ -52,7 +59,20 @@ function ValueCell({ row, targetDate }) {
   );
 }
 
-function PlayerCell({ row, showAdpOnlyTag = true }) {
+function FillSourceTag({ fillSource }) {
+  if (!fillSource || fillSource === 'historical') {
+    return <span className="hkr-tag hkr-tag--historical">Historical</span>;
+  }
+  if (fillSource === 'adp') {
+    return <span className="hkr-tag hkr-tag--adp-fill">ADP fill</span>;
+  }
+  if (fillSource === 'unknown') {
+    return <span className="hkr-tag hkr-tag--unknown">Unknown</span>;
+  }
+  return <span className="hkr-tag">{fillSource}</span>;
+}
+
+function PlayerCell({ row, showAdpOnlyTag = true, showFillSource = false }) {
   if (row.kind === 'gap' || !row.name) {
     return <span className="hkr-value-missing">—</span>;
   }
@@ -60,7 +80,10 @@ function PlayerCell({ row, showAdpOnlyTag = true }) {
     <>
       <span className="hkr-name">{row.name}</span>
       <PositionBadge position={row.position} />
-      {showAdpOnlyTag && row.inKtcRanks === false && (
+      {showFillSource && row.fillSource && (
+        <FillSourceTag fillSource={row.fillSource} />
+      )}
+      {showAdpOnlyTag && row.inKtcRanks === false && !showFillSource && (
         <span className="hkr-tag hkr-tag--adp-only">ADP only</span>
       )}
     </>
@@ -74,6 +97,8 @@ function UnifiedRankTable({
   rankDayOffset,
   rankResolvedDate,
   sortMode,
+  showFillMeta = false,
+  resolvedDate = null,
 }) {
   const gaps = countGaps(rows);
 
@@ -81,14 +106,19 @@ function UnifiedRankTable({
     <div className="hkr-board">
       <div className="hkr-board-head">
         <h3 className="hkr-board-title">{title}</h3>
-        {gaps > 0 && sortMode === 'ktc' && (
+        {gaps > 0 && sortMode === 'ktc' && !showFillMeta && (
           <span className="hkr-board-meta">
             {gaps} KTC rank slot gap{gaps === 1 ? '' : 's'}
           </span>
         )}
-        {rankDayOffset !== 0 && rankResolvedDate && sortMode === 'ktc' && (
+        {rankDayOffset !== 0 && rankResolvedDate && sortMode === 'ktc' && !showFillMeta && (
           <span className="hkr-board-meta">
             Ranks from {rankResolvedDate} ({formatDayOffset(rankDayOffset)})
+          </span>
+        )}
+        {showFillMeta && resolvedDate && resolvedDate !== targetDate && (
+          <span className="hkr-board-meta">
+            Resolved date {resolvedDate}
           </span>
         )}
       </div>
@@ -96,8 +126,9 @@ function UnifiedRankTable({
         <table className="hkr-table">
           <thead>
             <tr>
-              <th className="hkr-th hkr-th-slot">KTC Historical slot</th>
+              <th className="hkr-th hkr-th-slot">KTC slot</th>
               <th className="hkr-th">Player</th>
+              {showFillMeta && <th className="hkr-th">Fill detail</th>}
               <th className="hkr-th hkr-th-num">KTC OVR</th>
               <th className="hkr-th hkr-th-num">KTC Value</th>
               <th className="hkr-th hkr-th-num">Startup ADP OVR</th>
@@ -116,7 +147,7 @@ function UnifiedRankTable({
                     <td className="hkr-td hkr-td-slot">
                       {row.ktcHistoricalSlotLabel || row.slotLabel}
                     </td>
-                    <td className="hkr-td hkr-td-gap" colSpan={5}>
+                    <td className="hkr-td hkr-td-gap" colSpan={showFillMeta ? 6 : 5}>
                       {sortMode === 'ktc'
                         ? 'Missing player at this KTC rank slot'
                         : 'Missing player at this ADP rank slot'}
@@ -127,8 +158,10 @@ function UnifiedRankTable({
 
               const rowClass = [
                 'hkr-row',
-                row.ktcValue == null && row.inKtcRanks !== false ? 'hkr-row--missing-value' : '',
-                row.inKtcRanks === false ? 'hkr-row--adp-only' : '',
+                showFillMeta && row.fillSource === 'adp' ? 'hkr-row--filled-adp' : '',
+                showFillMeta && row.fillSource === 'unknown' ? 'hkr-row--filled-unknown' : '',
+                !showFillMeta && row.ktcValue == null && row.inKtcRanks !== false ? 'hkr-row--missing-value' : '',
+                !showFillMeta && row.inKtcRanks === false ? 'hkr-row--adp-only' : '',
               ].filter(Boolean).join(' ');
 
               return (
@@ -136,7 +169,14 @@ function UnifiedRankTable({
                   <td className="hkr-td hkr-td-slot">
                     {row.ktcHistoricalSlotLabel || row.slotLabel || '—'}
                   </td>
-                  <td className="hkr-td hkr-td-name"><PlayerCell row={row} /></td>
+                  <td className="hkr-td hkr-td-name">
+                    <PlayerCell row={row} showFillSource={showFillMeta} />
+                  </td>
+                  {showFillMeta && (
+                    <td className="hkr-td hkr-td-fill-detail" title={formatFillMetadata(row.fillMeta)}>
+                      {formatFillMetadata(row.fillMeta)}
+                    </td>
+                  )}
                   <td className="hkr-td hkr-td-num">{row.overallRank ?? '—'}</td>
                   <td className="hkr-td hkr-td-num">
                     <ValueCell row={row} targetDate={targetDate} />
@@ -262,9 +302,11 @@ function HistoricalKtcRanks() {
 
   const [snapshotType, setSnapshotType] = useState('final_ktc');
   const [year, setYear] = useState(null);
+  const [month, setMonth] = useState(9);
   const [position, setPosition] = useState('TE');
   const [sortMode, setSortMode] = useState('ktc');
   const [sideBySide, setSideBySide] = useState(false);
+  const [dataMode, setDataMode] = useState('filled');
 
   useEffect(() => {
     let cancelled = false;
@@ -299,8 +341,23 @@ function HistoricalKtcRanks() {
 
   const targetDate = useMemo(() => {
     if (!data || year == null) return null;
-    return getSnapshotTargetDate(snapshotType, year, data.finalKtcDatesByYear);
-  }, [data, snapshotType, year]);
+    return getSnapshotTargetDate(
+      snapshotType,
+      year,
+      data.finalKtcDatesByYear,
+      snapshotType === 'monthly' ? month : null,
+    );
+  }, [data, snapshotType, year, month]);
+
+  const filledRows = useMemo(() => {
+    if (!data?.filledAvailable || !targetDate || dataMode !== 'filled') return [];
+    return getFilledRowsForSnapshot(data.filledBySnapshot, targetDate, snapshotType);
+  }, [data, targetDate, snapshotType, dataMode]);
+
+  const filledMetadata = useMemo(() => {
+    if (!data?.filledAvailable || !targetDate || dataMode !== 'filled') return new Map();
+    return getFilledMetadataForSnapshot(data.filledMetadataBySnapshot, targetDate, snapshotType);
+  }, [data, targetDate, snapshotType, dataMode]);
 
   const startupAdpSeason = useMemo(() => getStartupAdpSeason(year), [year]);
 
@@ -310,6 +367,21 @@ function HistoricalKtcRanks() {
   }, [data, startupAdpSeason]);
 
   const adpIndex = useMemo(() => buildStartupAdpIndex(adpRows), [adpRows]);
+
+  const filledResolvedDate = filledRows[0]?.resolvedDate || null;
+
+  const filledBoard = useMemo(() => {
+    if (dataMode !== 'filled' || !filledRows.length) return null;
+    return buildFilledSlotBoard(filledRows, filledMetadata, position, adpIndex);
+  }, [dataMode, filledRows, filledMetadata, position, adpIndex]);
+
+  const filledCoverage = useMemo(() => {
+    if (dataMode !== 'filled' || !filledMetadata.size) return null;
+    const entries = [...filledMetadata.values()].filter(
+      (meta) => position === 'ALL' || meta.position === position,
+    );
+    return summarizeFilledCoverage(entries);
+  }, [dataMode, filledMetadata, position]);
 
   const rankSnapshot = useMemo(() => {
     if (!data || !targetDate) return null;
@@ -346,9 +418,10 @@ function HistoricalKtcRanks() {
 
   const activeBoard = useMemo(() => {
     if (sideBySide) return null;
+    if (dataMode === 'filled') return filledBoard;
     if (sortMode === 'adp') return adpBoard;
     return ktcBoard;
-  }, [sideBySide, sortMode, ktcBoard, adpBoard]);
+  }, [sideBySide, dataMode, sortMode, ktcBoard, adpBoard, filledBoard]);
 
   const coverage = useMemo(() => {
     if (!data || !targetDate || !rankSnapshot?.rows?.length) return null;
@@ -385,12 +458,14 @@ function HistoricalKtcRanks() {
     return (
       <UnifiedRankTable
         key={posLabel}
-        title={`${posLabel} — sorted by ${sortMode === 'ktc' ? 'KTC Historical slot' : 'Startup ADP slot'}`}
+        title={`${posLabel} — ${dataMode === 'filled' ? 'filled KTC board' : `sorted by ${sortMode === 'ktc' ? 'KTC Historical slot' : 'Startup ADP slot'}`}`}
         rows={board}
         targetDate={targetDate}
         rankDayOffset={rankSnapshot?.dayOffset ?? 0}
         rankResolvedDate={rankSnapshot?.resolvedDate}
         sortMode={sortMode}
+        showFillMeta={dataMode === 'filled'}
+        resolvedDate={filledResolvedDate}
       />
     );
   };
@@ -411,13 +486,28 @@ function HistoricalKtcRanks() {
   return (
     <div className="hkr-root">
       <p className="hkr-intro">
-        Positional ranks from KTC profile scrapes at Final KTC (preseason) and Rookie Draft (May 20)
-        snapshot dates, plus Dynasty Data Lab startup ADP for the same season year.
-        TE ranks use SF TE+; QB/RB/WR use regular Superflex.
-        Rank/value rows use ±{MAX_FALLBACK_DAYS}-day date fallback; startup ADP uses the Jan–Aug season window.
+        Compare raw KTC rank scrapes vs the imputed filled board (historical + startup ADP + Unknown slots).
+        Snapshots: monthly (10th, resolved forward in month), Final KTC preseason, and Rookie Draft (May 20).
+        TE ranks use SF TE+; QB/RB/WR use regular Superflex. Startup ADP uses the Jan–Aug season window (2021+).
       </p>
 
       <div className="hkr-controls">
+        <label className="hkr-field">
+          <span className="hkr-label">Board</span>
+          <select
+            className="hkr-select hkr-select--wide"
+            value={dataMode}
+            onChange={(e) => {
+              setDataMode(e.target.value);
+              if (e.target.value === 'filled') setSideBySide(false);
+            }}
+          >
+            {Object.values(DATA_MODES).map((mode) => (
+              <option key={mode.id} value={mode.id}>{mode.label}</option>
+            ))}
+          </select>
+        </label>
+
         <label className="hkr-field">
           <span className="hkr-label">Snapshot</span>
           <select
@@ -444,6 +534,23 @@ function HistoricalKtcRanks() {
           </select>
         </label>
 
+        {snapshotType === 'monthly' && (
+          <label className="hkr-field">
+            <span className="hkr-label">Month</span>
+            <select
+              className="hkr-select"
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+            >
+              {SNAPSHOT_TYPES.monthly.months.map((m) => (
+                <option key={m} value={m}>
+                  {new Date(2000, m - 1, 1).toLocaleString('en-US', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <label className="hkr-field">
           <span className="hkr-label">Position</span>
           <select
@@ -458,7 +565,7 @@ function HistoricalKtcRanks() {
           </select>
         </label>
 
-        {!sideBySide && (
+        {!sideBySide && dataMode === 'raw' && (
           <label className="hkr-field">
             <span className="hkr-label">Sort by</span>
             <select
@@ -473,20 +580,38 @@ function HistoricalKtcRanks() {
           </label>
         )}
 
-        <label className="hkr-check">
-          <input
-            type="checkbox"
-            checked={sideBySide}
-            onChange={(e) => setSideBySide(e.target.checked)}
-          />
-          Side-by-side compare
-        </label>
+        {dataMode === 'raw' && (
+          <label className="hkr-check">
+            <input
+              type="checkbox"
+              checked={sideBySide}
+              onChange={(e) => setSideBySide(e.target.checked)}
+            />
+            Side-by-side compare
+          </label>
+        )}
       </div>
+
+      {dataMode === 'filled' && !data.filledAvailable && (
+        <div className="hkr-empty">
+          Filled board CSV not found. Run{' '}
+          <code>python3 scripts/build_sf_ktc_values_historical_filled.py</code>
+        </div>
+      )}
+
+      {dataMode === 'filled' && data.filledAvailable && filledRows.length === 0 && targetDate && (
+        <div className="hkr-empty">
+          No filled data for {snapshotType} snapshot {targetDate}.
+        </div>
+      )}
 
       {targetDate && (
         <div className="hkr-snapshot-meta">
-          <span>KTC target: <strong>{targetDate}</strong></span>
-          {rankSnapshot?.resolvedDate && rankSnapshot.dayOffset !== 0 && (
+          <span>Target: <strong>{targetDate}</strong></span>
+          {dataMode === 'filled' && filledResolvedDate && filledResolvedDate !== targetDate && (
+            <span>Resolved: <strong>{filledResolvedDate}</strong></span>
+          )}
+          {dataMode === 'raw' && rankSnapshot?.resolvedDate && rankSnapshot.dayOffset !== 0 && (
             <span>
               Rank data: <strong>{rankSnapshot.resolvedDate}</strong>
               {' '}({formatDayOffset(rankSnapshot.dayOffset)})
@@ -503,6 +628,27 @@ function HistoricalKtcRanks() {
               No startup ADP for {year} (DDL data from 2021)
             </span>
           )}
+        </div>
+      )}
+
+      {dataMode === 'filled' && filledCoverage && (
+        <div className="hkr-stats">
+          <div className="hkr-stat">
+            <span className="hkr-stat-label">Total slots</span>
+            <span className="hkr-stat-value">{filledCoverage.total}</span>
+          </div>
+          <div className="hkr-stat">
+            <span className="hkr-stat-label">{FILL_SOURCE_LABELS.historical}</span>
+            <span className="hkr-stat-value">{filledCoverage.historical}</span>
+          </div>
+          <div className="hkr-stat hkr-stat--warn">
+            <span className="hkr-stat-label">{FILL_SOURCE_LABELS.adp}</span>
+            <span className="hkr-stat-value">{filledCoverage.adp}</span>
+          </div>
+          <div className="hkr-stat hkr-stat--warn">
+            <span className="hkr-stat-label">{FILL_SOURCE_LABELS.unknown}</span>
+            <span className="hkr-stat-value">{filledCoverage.unknown}</span>
+          </div>
         </div>
       )}
 
@@ -543,7 +689,7 @@ function HistoricalKtcRanks() {
         </div>
       )}
 
-      {sideBySide && ktcBoard && (
+      {dataMode === 'raw' && sideBySide && ktcBoard && (
         startupAdpSeason != null && adpBoard
           ? (position === 'ALL' && ktcBoard.mode === 'all' && adpBoard.mode === 'all'
             ? POSITIONS.map((pos) => {
@@ -558,10 +704,6 @@ function HistoricalKtcRanks() {
               Side-by-side compare requires startup ADP (available from 2021).
             </div>
           )
-      )}
-
-      {!sideBySide && !activeBoard && targetDate && (
-        <div className="hkr-empty">No data for snapshot {targetDate}.</div>
       )}
 
       {!sideBySide && activeBoard && renderUnified(activeBoard, position === 'ALL' ? null : position)}

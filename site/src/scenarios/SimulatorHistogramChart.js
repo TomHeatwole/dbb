@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  formatHistogramAxisCount,
+  histogramYAxisWidth,
+} from './simulatorProgress';
+import {
   BarChart,
   Bar,
   XAxis,
@@ -72,16 +76,17 @@ function ContinuousScoreHistogram({
     return () => ro.disconnect();
   }, []);
 
-  const padding = { top: 8, right: 8, bottom: 28, left: 40 };
-  const plotW = Math.max(0, width - padding.left - padding.right);
-  const plotH = height - padding.top - padding.bottom;
-
   const maxCount = useMemo(
     () => Math.max(...(data || []).map((d) => d.count), 0),
     [data],
   );
 
   const yMax = niceYMax(maxCount);
+  const yAxisLeft = histogramYAxisWidth(yMax);
+  const padding = { top: 8, right: 8, bottom: 28, left: yAxisLeft };
+  const plotW = Math.max(0, width - padding.left - padding.right);
+  const plotH = height - padding.top - padding.bottom;
+
   const minLo = data?.[0]?.lo ?? 0;
   const maxHi = data?.[data.length - 1]?.hi ?? minLo + 1;
   const span = maxHi - minLo || 1;
@@ -129,7 +134,7 @@ function ContinuousScoreHistogram({
                   fill="rgba(170,175,220,0.55)"
                   fontSize={10}
                 >
-                  {tick}
+                  {formatHistogramAxisCount(tick)}
                 </text>
               </g>
             );
@@ -233,10 +238,13 @@ function SimulatorHistogramChart({
     return <div className="simulator-hist-empty">{emptyLabel}</div>;
   }
 
+  const maxCount = Math.max(...chartData.map((d) => d.count), 0);
+  const yAxisW = histogramYAxisWidth(niceYMax(maxCount));
+
   return (
     <div className="simulator-hist-chart">
       <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 4, left: -12 }}>
+        <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 4, left: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(120,120,160,0.12)" vertical={false} />
           <XAxis
             dataKey="label"
@@ -253,7 +261,8 @@ function SimulatorHistogramChart({
             tick={{ fill: 'rgba(170,175,220,0.55)', fontSize: 10 }}
             axisLine={false}
             tickLine={false}
-            width={36}
+            width={yAxisW}
+            tickFormatter={formatHistogramAxisCount}
           />
           <Tooltip
             content={<HistogramTooltip valueLabel={valueLabel} />}

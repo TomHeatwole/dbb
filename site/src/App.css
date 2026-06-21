@@ -8344,13 +8344,18 @@ body.modal-open {
 
 /* Season Simulator — progress + results */
 .simulator-run-layout {
-  max-width: 640px;
+  max-width: 920px;
   margin: 2rem auto;
   padding: 0 1rem;
 }
 
 .simulator-progress {
   margin-bottom: 1.5rem;
+}
+
+.simulator-progress--running {
+  text-align: center;
+  padding-top: 1.5rem;
 }
 
 .simulator-progress-label {
@@ -8360,8 +8365,103 @@ body.modal-open {
   margin-bottom: 0.6rem;
 }
 
+.simulator-yard-line-label {
+  font-size: 2.35rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #e8ebff;
+  margin-bottom: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.simulator-hwang-track {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2172 / 724;
+  margin-bottom: 1rem;
+  border-radius: 0.85rem;
+  overflow: visible;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.28));
+}
+
+.simulator-hwang-track-bg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  border-radius: 0.85rem;
+  user-select: none;
+}
+
+.simulator-hwang-track-bg--dim {
+  opacity: 0.34;
+  z-index: 0;
+}
+
+.simulator-hwang-track-bg--lit {
+  opacity: 1;
+  z-index: 1;
+  clip-path: inset(0 calc(100% - var(--fill-pct, 0%)) 0 0);
+  transition: clip-path 0.12s ease-out;
+}
+
+.simulator-hwang-runner {
+  position: absolute;
+  bottom: 5.5%;
+  left: var(--runner-pct, 0%);
+  height: 82%;
+  /* Fill edge at 75% across sprite — ~75% of Hwang stays in the lit trail behind. */
+  transform: translateX(calc(var(--ball-x-frac, 0.68) * -100%));
+  transition: left 0.12s ease-out;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.simulator-hwang-runner img {
+  display: block;
+  height: 100%;
+  width: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+.simulator-hwang-runner--touchdown img {
+  animation: hwang-touchdown-jump 0.55s ease-in-out infinite;
+}
+
+.simulator-hwang-runner--celebrating img {
+  animation: hwang-touchdown-jump 0.55s ease-in-out 2;
+  animation-fill-mode: forwards;
+}
+
+@keyframes hwang-touchdown-jump {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-22%); }
+  60% { transform: translateY(-14%); }
+}
+
+.simulator-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 0.85rem;
+  font-size: 1.05rem;
+  color: rgba(170, 175, 220, 0.65);
+}
+
+.simulator-progress-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.simulator-progress-pct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(190, 200, 255, 0.75);
+}
+
 .simulator-progress-track {
-  height: 10px;
+  height: 1.125rem;
   border-radius: 999px;
   background: rgba(120, 120, 160, 0.2);
   overflow: hidden;
@@ -8372,6 +8472,10 @@ body.modal-open {
   border-radius: 999px;
   background: linear-gradient(90deg, #7c9cff, #a0b8ff);
   transition: width 0.15s ease-out;
+}
+
+.simulator-progress-fill--loading {
+  background: linear-gradient(90deg, #6a8aee, #9a88dd);
 }
 
 .simulator-progress-detail {
@@ -8665,6 +8769,12 @@ body.modal-open {
   border: 1px solid rgba(100, 120, 200, 0.35);
   background: rgba(18, 16, 32, 0.98);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.simulator-run-settings-popover--portal {
+  position: fixed;
+  right: auto;
+  bottom: auto;
 }
 
 .simulator-run-settings-title {
@@ -12124,6 +12234,36 @@ body.modal-open {
 .hkr-tag--adp-only {
   background: rgba(80, 160, 220, 0.2);
   color: #9cf;
+}
+
+.hkr-tag--historical {
+  background: rgba(100, 180, 120, 0.2);
+  color: #9d9;
+}
+
+.hkr-tag--adp-fill {
+  background: rgba(174, 120, 40, 0.25);
+  color: #fc9;
+}
+
+.hkr-tag--unknown {
+  background: rgba(140, 140, 140, 0.25);
+  color: #bbb;
+}
+
+.hkr-row--filled-adp {
+  background: rgba(174, 120, 40, 0.08);
+}
+
+.hkr-row--filled-unknown {
+  background: rgba(140, 140, 140, 0.08);
+}
+
+.hkr-td-fill-detail {
+  max-width: 22rem;
+  font-size: 0.78rem;
+  color: #aaa;
+  line-height: 1.35;
 }
 
 .hkr-table--compare .hkr-th-compare-group {

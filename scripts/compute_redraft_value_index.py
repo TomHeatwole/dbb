@@ -13,8 +13,8 @@ Method:
   2. adp_eff_rank = ApproachH: stack rank corrected by OVR ADP vs positional KTC lookup (λ).
   3. Active approach (ApproachG): rank-slot lookup = 40% year-weighted hist (2021–2025)
      plus 60% current KTC at that positional rank; interpolate at adp_eff_rank.
-     Historical years 2022–2025 are scaled so each year's year-end top-300 sum matches
-     the current live SF TE+ top-300 total (2021 unscaled).
+     Historical rank-slot curve from imputed Final KTC boards (2021–2025) using true
+     positional ranks; no top-300 inflation scaling.
   4. Rebuilder adjusted = hist@KTC rank + γ×(dynasty−hist) − β×(adjusted−dynasty),
      with γ from max(0, adp_eff_rank − ktc_pos_rank); asymmetric β on redraft flip.
      Flip friendliness is auto-calibrated on the ADP pool so
@@ -25,7 +25,7 @@ Method:
 
 Reads:
   site/public/data/ktc_values.csv  (ktc_value_tep_2qb = SF TE+ baseline)
-  site/public/data/sf_ktc_values_historical.csv  (merged SF TE+: non_tep + TE+ overlay)
+  site/public/data/sf_ktc_values_historical_filled.csv  (imputed SF TE+ snapshots)
   site/public/data/ktc_average_rank_values.csv
   site/public/data/hwang_adjusted_positional_adp.csv  (when USE_HWANG_ADJUSTED_ADP)
   site/public/data/adp/fantasypros_adp_bestball_{year}.csv  (when not)
@@ -55,7 +55,8 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 KTC_CSV = PROJECT_ROOT / "site/public/data/ktc_values.csv"
-HISTORICAL_VALUES_CSV = PROJECT_ROOT / "site/public/data/sf_ktc_values_historical.csv"
+HISTORICAL_VALUES_CSV = PROJECT_ROOT / "site/public/data/sf_ktc_values_historical_filled.csv"
+RAW_HISTORICAL_VALUES_CSV = PROJECT_ROOT / "site/public/data/sf_ktc_values_historical.csv"
 HISTORICAL_NAME_IDS_CSV = PROJECT_ROOT / "site/public/data/ktc_historical_name_ids.csv"
 HIST_RANK_VALUES_CSV = PROJECT_ROOT / "site/public/data/ktc_average_rank_values.csv"
 PLAYERS_FILE = PROJECT_ROOT / "site/public/data/players.txt"
@@ -84,9 +85,10 @@ HISTORICAL_YEAR_WEIGHTS: dict[int, float] = {
     2024: 0.235,
     2025: 0.265,
 }
-# Scale these years' KTC values before rank-slot averaging (2021 stays raw).
-HISTORICAL_INFLATION_YEARS = (2022, 2023, 2024, 2025)
+# Legacy inflation (raw daily historical only). Imputed filled boards skip scaling.
+HISTORICAL_INFLATION_YEARS: tuple[int, ...] = ()
 TOP300_INFLATION_TARGET_COUNT = 300
+FILLED_SNAPSHOT_KIND = "final_ktc"
 REDRAFT_HIST_WEIGHT = 0.40
 REDRAFT_CURRENT_WEIGHT = 0.60
 
@@ -342,15 +344,51 @@ def resolve_historical_position(
     return None
 
 
-def load_historical_by_date() -> dict[str, list[tuple[str, int]]]:
+def load_filled_final_ktc_slots_by_year() -> dict[int, dict[str, dict[int, int]]]:
+    """Final KTC imputed snapshots: year -> position -> positional_rank -> value."""
     if not HISTORICAL_VALUES_CSV.is_file():
-        sys.exit(f"ERROR: missing {HISTORICAL_VALUES_CSV}")
+        sys.exit(
+            f"ERROR: missing {HISTORICAL_VALUES_CSV}. "
+            "Run: python3 scripts/build_sf_ktc_values_historical_filled.py"
+        )
+
+    by_year: dict[int, dict[str, dict[int, int]]] = {
+        year: {p: {} for p in POSITIONS} for year in HISTORICAL_YEAR_WEIGHTS
+    }
+
+    with HISTORICAL_VALUES_CSV.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if (row.get("snapshot_kind") or "").strip() != FILLED_SNAPSHOT_KIND:
+                continue
+            try:
+                year = int((row.get("year") or "").strip())
+                rank = int(row["positional_rank"])
+                value = int(row["ktc_value"])
+            except (KeyError, ValueError, TypeError):
+                continue
+            if year not in HISTORICAL_YEAR_WEIGHTS:
+                continue
+            pos = (row.get("position") or "").strip().upper()
+            if pos not in POSITIONS:
+                continue
+            name = (row.get("name") or "").strip()
+            if not name or PICK_RE.match(name) or value <= 0:
+                continue
+            by_year[year][pos][rank] = value
+
+    return by_year
+
+
+def load_historical_by_date() -> dict[str, list[tuple[str, int]]]:
+    """Legacy raw daily historical (stack-rank fallback). Prefer filled snapshots."""
+    if not RAW_HISTORICAL_VALUES_CSV.is_file():
+        sys.exit(f"ERROR: missing {RAW_HISTORICAL_VALUES_CSV}")
 
     by_name = load_historical_position_lookup()
     players = json.loads(PLAYERS_FILE.read_text(encoding="utf-8")) if PLAYERS_FILE.is_file() else {}
     by_date: dict[str, list[tuple[str, int]]] = defaultdict(list)
 
-    with HISTORICAL_VALUES_CSV.open(newline="", encoding="utf-8") as f:
+    with RAW_HISTORICAL_VALUES_CSV.open(newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             name = (row.get("name") or "").strip()
             if not name or PICK_RE.match(name):
@@ -358,6 +396,8 @@ def load_historical_by_date() -> dict[str, list[tuple[str, int]]]:
             try:
                 value = int(row["ktc_value"])
             except (KeyError, ValueError, TypeError):
+                continue
+            if value <= 0:
                 continue
             pos = resolve_historical_position(
                 name,
@@ -454,20 +494,22 @@ def compute_year_rank_slot_averages(
 
 
 def compute_weighted_historical_rank_values(
-    by_date: dict[str, list[tuple[str, int]]],
+    by_date: dict[str, list[tuple[str, int]]] | None = None,
     target_sum: int | None = None,
 ) -> tuple[dict[str, dict[int, float]], dict[int, float], int]:
     if target_sum is None:
         target_sum = current_live_top300_sum()
-    inflation = compute_historical_inflation_multipliers(by_date, target_sum)
-    year_avgs = {
-        year: compute_year_rank_slot_averages(
-            by_date,
-            year,
-            inflation.get(year, 1.0),
-        )
+
+    filled_by_year = load_filled_final_ktc_slots_by_year()
+    inflation = {year: 1.0 for year in HISTORICAL_YEAR_WEIGHTS}
+    year_avgs: dict[int, dict[str, dict[int, float]]] = {
+        year: {
+            pos: {rank: float(val) for rank, val in slots.items()}
+            for pos, slots in filled_by_year.get(year, {p: {} for p in POSITIONS}).items()
+        }
         for year in HISTORICAL_YEAR_WEIGHTS
     }
+
     weighted: dict[str, dict[int, float]] = {p: {} for p in POSITIONS}
 
     for pos in POSITIONS:
@@ -525,8 +567,7 @@ def build_redraft_rank_lookup(ktc_players: list[dict]) -> tuple[
     dict[int, float],
     int,
 ]:
-    by_date = load_historical_by_date()
-    weighted_hist, inflation, target_sum = compute_weighted_historical_rank_values(by_date)
+    weighted_hist, inflation, target_sum = compute_weighted_historical_rank_values()
     current = current_ktc_values_by_pos_rank(ktc_players)
     blended = build_blended_rank_lookup(weighted_hist, current)
     return weighted_hist, current, blended, inflation, target_sum
@@ -1934,12 +1975,12 @@ def main() -> None:
         f"(40% year-weighted hist + 60% current KTC @ rank, at Adjusted ADP)"
     )
     print(
-        f"Historical inflation target: top-{TOP300_INFLATION_TARGET_COUNT} sum "
-        f"{inflation_target:,} (current live SF TE+)"
+        f"Historical rank slots: imputed Final KTC ({HISTORICAL_VALUES_CSV.name}), "
+        "true positional ranks, no inflation scaling"
     )
-    for year in sorted(inflation):
-        print(f"  {year} multiplier: {inflation[year]:.6f}")
-    print("  2021: unscaled (multiplier 1.0)")
+    if inflation:
+        for year in sorted(inflation):
+            print(f"  {year} multiplier: {inflation[year]:.6f}")
     if as_of:
         print(f"KTC as_of: {as_of}")
 

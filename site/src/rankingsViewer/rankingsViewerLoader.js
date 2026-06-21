@@ -568,8 +568,13 @@ export async function fetchKtcHistoricalDates() {
   return ktcDatesCache;
 }
 
-/** Date list for a historical variant. SF TE+ uses merged sf_ktc_values_historical.csv. */
+/** Date list for a historical variant. SF TE+ imputed board uses filled snapshot dates. */
 export async function getKtcHistoricalDateList(variant) {
+  const cfg = KTC_HISTORICAL_VARIANTS[variant];
+  if (cfg?.filled) {
+    const index = await loadKtcHistoricalIndex(variant);
+    return [...index.keys()].sort();
+  }
   const datesJson = await fetchKtcHistoricalDates();
   const key = variant === 'sf_tep' ? 'sf_tep' : 'sf_non_tep';
   return datesJson[key]?.dates || datesJson.sf_ktc?.dates || [];
@@ -588,24 +593,67 @@ async function loadKtcHistoricalIndex(variant) {
 
   const text = await res.text();
   const lines = text.trim().split(/\r?\n/);
+  const headers = parseCsvRow(lines[0]);
+  const idx = (name) => headers.indexOf(name);
   const byDate = new Map();
+  const kindPriority = { final_ktc: 3, rookie_draft: 2, monthly: 1 };
 
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseCsvRow(lines[i]);
-    if (cols.length < 3) continue;
-    const date = cols[0];
-    const name = cols[1];
-    const value = parseInt(cols[2], 10);
-    if (!date || !name || !Number.isFinite(value)) continue;
+  if (cfg.filled) {
+    const slotByDate = new Map();
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCsvRow(lines[i]);
+      const row = Object.fromEntries(headers.map((h, j) => [h, cols[j] ?? '']));
+      const date = (row.resolved_date || '').trim();
+      const name = (row.name || '').trim();
+      const value = parseInt(row.ktc_value, 10);
+      const position = (row.position || '').trim();
+      const kind = (row.snapshot_kind || '').trim();
+      const posRank = parseInt(row.positional_rank, 10);
+      if (!date || !name || !Number.isFinite(value) || value <= 0) continue;
 
-    if (!byDate.has(date)) byDate.set(date, []);
-    byDate.get(date).push({
-      name,
-      value,
-      sleeperId: (cols[4] || '').trim(),
-      position: '',
-      team: '',
-    });
+      const slotKey = `${date}|${position}|${posRank}`;
+      const prev = slotByDate.get(slotKey);
+      if (prev && (kindPriority[kind] || 0) <= (kindPriority[prev.kind] || 0)) continue;
+
+      slotByDate.set(slotKey, {
+        date,
+        kind,
+        name,
+        value,
+        position,
+        sleeperId: (row.sleeper_id || '').trim(),
+        team: '',
+      });
+    }
+
+    for (const entry of slotByDate.values()) {
+      if (!byDate.has(entry.date)) byDate.set(entry.date, []);
+      byDate.get(entry.date).push({
+        name: entry.name,
+        value: entry.value,
+        sleeperId: entry.sleeperId,
+        position: entry.position,
+        team: entry.team,
+      });
+    }
+  } else {
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCsvRow(lines[i]);
+      if (cols.length < 3) continue;
+      const date = cols[0];
+      const name = cols[1];
+      const value = parseInt(cols[2], 10);
+      if (!date || !name || !Number.isFinite(value)) continue;
+
+      if (!byDate.has(date)) byDate.set(date, []);
+      byDate.get(date).push({
+        name,
+        value,
+        sleeperId: (cols[4] || '').trim(),
+        position: '',
+        team: '',
+      });
+    }
   }
 
   for (const rows of byDate.values()) {
