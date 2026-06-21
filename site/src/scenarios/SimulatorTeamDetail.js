@@ -177,6 +177,14 @@ function SimulatorTeamDetail({
 
         <div className="simulator-score-hist-grid">
           <ScoreHistogramSection
+            title="Total score"
+            subtitle="Full season (weeks 1–17)"
+            data={totalChartData}
+            hist={scoreHist?.total}
+            barColor="#7c9cff"
+            activeBarColor="#a0b8ff"
+          />
+          <ScoreHistogramSection
             title="14-week score"
             subtitle="Regular season (weeks 1–14)"
             data={regChartData}
@@ -191,14 +199,6 @@ function SimulatorTeamDetail({
             hist={scoreHist?.playoff}
             barColor="#c49a6c"
             activeBarColor="#e0b88a"
-          />
-          <ScoreHistogramSection
-            title="Total score"
-            subtitle="Full season (weeks 1–17)"
-            data={totalChartData}
-            hist={scoreHist?.total}
-            barColor="#7c9cff"
-            activeBarColor="#a0b8ff"
           />
         </div>
       </div>

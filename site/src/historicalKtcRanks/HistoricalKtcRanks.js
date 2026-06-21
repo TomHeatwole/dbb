@@ -285,8 +285,10 @@ function HistoricalKtcRanks() {
     return () => { cancelled = true; };
   }, []);
 
-  const snapshotCfg = SNAPSHOT_TYPES[snapshotType];
-  const availableYears = snapshotCfg?.years || [];
+  const availableYears = useMemo(
+    () => SNAPSHOT_TYPES[snapshotType]?.years || [],
+    [snapshotType],
+  );
 
   useEffect(() => {
     if (!availableYears.length) return;
