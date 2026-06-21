@@ -20,7 +20,6 @@ import {
   getStartupAdpRows,
   getStartupAdpSeason,
   loadHistoricalKtcRanksData,
-  MAX_FALLBACK_DAYS,
   POSITIONS,
   resolveRankRowsForSnapshot,
   SNAPSHOT_TYPES,

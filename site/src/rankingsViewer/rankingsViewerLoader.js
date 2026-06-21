@@ -594,7 +594,6 @@ async function loadKtcHistoricalIndex(variant) {
   const text = await res.text();
   const lines = text.trim().split(/\r?\n/);
   const headers = parseCsvRow(lines[0]);
-  const idx = (name) => headers.indexOf(name);
   const byDate = new Map();
   const kindPriority = { final_ktc: 3, rookie_draft: 2, monthly: 1 };
 

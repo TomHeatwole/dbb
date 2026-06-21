@@ -442,16 +442,16 @@ export function runSimulationIterations(ctx, state, {
       );
     }
 
-    if (onProgress) {
-      const done = simIndex + 1;
-      const now = Date.now();
-      if (
-        done - lastReported >= reportEvery
-        || now - lastReportTime >= PROGRESS_TIME_MS
-        || done === totalIterations
-      ) {
-        lastReported = done;
-        lastReportTime = now;
+    const done = simIndex + 1;
+    const now = Date.now();
+    if (
+      done - lastReported >= reportEvery
+      || now - lastReportTime >= PROGRESS_TIME_MS
+      || done === totalIterations
+    ) {
+      lastReported = done;
+      lastReportTime = now;
+      if (onProgress) {
         onProgress(done / totalIterations);
       }
     }
