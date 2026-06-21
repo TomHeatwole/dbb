@@ -23,7 +23,9 @@ export function percentileToOutcomeIndex(percentile, outcomeCount) {
  * Select an outcome from a sorted pool given a percentile.
  */
 export function selectOutcomeFromPool(outcomes, percentile) {
-  if (!outcomes || outcomes.length === 0) return null;
+  if (!outcomes || outcomes.length === 0) {
+    return { outcome: null, index: -1 };
+  }
   const idx = percentileToOutcomeIndex(percentile, outcomes.length);
   return { outcome: outcomes[idx], index: idx };
 }
@@ -165,6 +167,21 @@ export function buildPlayerProjections(
     const posLabel = adpInfo.posRank != null
       ? `${adpInfo.position}${adpInfo.posRank}`
       : `${adpInfo.position}${Math.round(adpInfo.effRank)}`;
+
+    if (!outcomes.length) {
+      projections[playerId] = {
+        adpLabel: posLabel,
+        position: adpInfo.position,
+        posRank: adpInfo.posRank,
+        effRank: adpInfo.effRank,
+        percentile: null,
+        outcomes: [],
+        selectedIndex: -1,
+        selectedOutcome: null,
+        unranked: true,
+      };
+      continue;
+    }
 
     const percentile = percentileRolls[playerId] != null
       ? Number(percentileRolls[playerId])

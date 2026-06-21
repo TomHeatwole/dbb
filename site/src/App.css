@@ -8460,6 +8460,12 @@ body.modal-open {
   text-align: right;
 }
 
+.simulator-results-th--move {
+  width: 1.8em;
+  padding-left: 0.15em;
+  padding-right: 0.15em;
+}
+
 .simulator-results-th--team {
   min-width: 9em;
 }
@@ -8515,6 +8521,33 @@ body.modal-open {
   text-align: right;
   font-weight: 700;
   color: rgba(170, 175, 220, 0.7);
+}
+
+.simulator-results-td--move {
+  width: 1.8em;
+  padding-left: 0.15em;
+  padding-right: 0.15em;
+}
+
+.simulator-results-movement {
+  display: inline-block;
+  min-width: 1.4em;
+  font-size: 0.72em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.simulator-results-metric {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+}
+
+.simulator-results-cell-delta {
+  display: block;
+  font-size: 0.62em;
+  line-height: 1.1;
 }
 
 .simulator-results-td--team {

@@ -145,3 +145,26 @@ export function computeTeamLuckMetrics(
       : null,
   };
 }
+
+/** Luck / roll percentile color: red → orange → yellow → green. */
+const LUCK_COLOR_STOPS = [
+  { at: 0, h: 0, s: 100, l: 50 },     // red
+  { at: 25, h: 30, s: 100, l: 50 },   // orange
+  { at: 50, h: 52, s: 100, l: 50 },   // yellow
+  { at: 75, h: 88, s: 90, l: 42 },    // yellow-green
+  { at: 100, h: 120, s: 100, l: 45 }, // bright green
+];
+
+export function percentileColor(pct) {
+  const p = Math.max(0, Math.min(100, Number(pct) || 0));
+  let i = 0;
+  while (i < LUCK_COLOR_STOPS.length - 1 && p > LUCK_COLOR_STOPS[i + 1].at) i += 1;
+  const lo = LUCK_COLOR_STOPS[i];
+  const hi = LUCK_COLOR_STOPS[Math.min(i + 1, LUCK_COLOR_STOPS.length - 1)];
+  const span = hi.at - lo.at || 1;
+  const t = (p - lo.at) / span;
+  const h = lo.h + (hi.h - lo.h) * t;
+  const s = lo.s + (hi.s - lo.s) * t;
+  const l = lo.l + (hi.l - lo.l) * t;
+  return `hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`;
+}

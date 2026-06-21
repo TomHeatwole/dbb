@@ -5,7 +5,6 @@
 import {
   HWANG_VALUE_ADJUSTMENTS,
   loadHwangPositionMultipliers,
-  getStitchedKtcTepSfValue,
   applyHwangKtcAdjustment,
   formatMultiplierSummary,
 } from '../lookups/HwangValueAdjustmentLookup';

@@ -1,26 +1,6 @@
 import React, { useMemo } from 'react';
 import { buildFutureScenario2EvalUrl } from './scenarioEncoding';
-
-function percentileColor(pct) {
-  const p = Math.max(0, Math.min(100, Number(pct) || 0));
-  const stops = [
-    { at: 0, h: 0, s: 72, l: 56 },
-    { at: 25, h: 28, s: 78, l: 54 },
-    { at: 50, h: 225, s: 10, l: 62 },
-    { at: 75, h: 210, s: 62, l: 56 },
-    { at: 100, h: 142, s: 52, l: 48 },
-  ];
-  let i = 0;
-  while (i < stops.length - 1 && p > stops[i + 1].at) i += 1;
-  const lo = stops[i];
-  const hi = stops[Math.min(i + 1, stops.length - 1)];
-  const span = hi.at - lo.at || 1;
-  const t = (p - lo.at) / span;
-  const h = lo.h + (hi.h - lo.h) * t;
-  const s = lo.s + (hi.s - lo.s) * t;
-  const l = lo.l + (hi.l - lo.l) * t;
-  return `hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`;
-}
+import { percentileColor } from './luckMetrics';
 
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd'];

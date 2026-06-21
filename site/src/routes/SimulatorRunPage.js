@@ -64,6 +64,7 @@ function SimulatorRunPage() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
+  const [resultDeltas, setResultDeltas] = useState(null);
   const [simRuns, setSimRuns] = useState(null);
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [teamsForGrid, setTeamsForGrid] = useState([]);
@@ -144,6 +145,7 @@ function SimulatorRunPage() {
 
         const ctx = prepareSimulatorContext({
           scenarioRosters: modified,
+          baselineRosters: orig,
           hwangAdpRankMap: adpMap,
           catalog: catalog.catalog,
           positionMaxRanks: maxRanks,
@@ -155,7 +157,7 @@ function SimulatorRunPage() {
         setPhase('running');
         setProgress(0.2);
 
-        const { results: simResults, simRuns: runs } = await runMonteCarloSimulation(
+        const { results: simResults, resultDeltas, simRuns: runs } = await runMonteCarloSimulation(
           ctx,
           players,
           idMap,
@@ -169,12 +171,14 @@ function SimulatorRunPage() {
 
         if (!cancelled) {
           setResults(simResults);
+          setResultDeltas(resultDeltas);
           setSimRuns(runs);
           setProgress(1);
           setPhase('done');
         }
       } catch (e) {
         if (!cancelled) {
+          console.error('Simulator run failed:', e);
           setError('Simulation failed. Please try again.');
           setPhase('error');
         }
@@ -246,6 +250,7 @@ function SimulatorRunPage() {
               <div className="scenario-page-editor-col">
                 <SimulatorResultsPanel
                   results={results}
+                  resultDeltas={resultDeltas}
                   teamsForGrid={teamsForGrid}
                   iterations={iterations}
                   selectedRosterId={selectedRosterId}

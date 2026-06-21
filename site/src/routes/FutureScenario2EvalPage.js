@@ -238,7 +238,7 @@ function FutureScenario2EvalPage() {
 
     loadWeeklyStats();
     return () => { cancelled = true; };
-  }, [yearsNeeded.join(',')]);
+  }, [yearsNeeded]);
 
   const handlePercentileChange = useCallback((playerId, percentile) => {
     setPercentileRolls((prev) => {
