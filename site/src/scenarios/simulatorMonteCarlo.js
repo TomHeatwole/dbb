@@ -396,7 +396,11 @@ export async function runMonteCarloSimulation(
     if (onProgress) {
       onProgress(completed / iterations);
     }
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Yield so the progress bar can repaint. Browsers throttle setTimeout heavily
+    // in background tabs, so skip the yield when hidden to keep sims running.
+    if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
   }
 
   const results = buildResultsFromStats(stats, iterations, ctx.rosterIds);
