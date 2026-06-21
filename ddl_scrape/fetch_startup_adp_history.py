@@ -2,8 +2,13 @@
 """Fetch historical dynasty startup ADP from Dynasty Data Lab.
 
 Source API: https://api.dynastydatalab.com/api/
-  - GET adp/adp?start_date=&end_date=&type=picks  (startup ADP over a window)
-  - GET players/nfl                               (player metadata by Sleeper ID)
+  - GET adp/adp?start_date=&end_date=&type=picks    (veteran startup sample)
+  - GET adp/adp?start_date=&end_date=&type=rookies   (full startup incl. rookies)
+  - GET players/nfl                                  (player metadata by Sleeper ID)
+
+DDL's live startup page switches from ``picks`` to ``rookies`` after the NFL draft
+(~Apr 23). For each season we merge both windows: union of players, preferring
+``rookies`` ADP when a player appears in both (post-draft startup price).
 
 Output: long-format CSV with one row per player per season.
 """
@@ -80,10 +85,12 @@ def load_player_map() -> dict[str, dict[str, str]]:
         first = (row.get("id_firstname") or "").strip()
         last = (row.get("id_lastname") or "").strip()
         name = f"{first} {last}".strip() if last else (first or "Unknown")
+        draft_year = row.get("draft_year")
         out[sid] = {
             "name": name,
             "position": (row.get("id_pos") or "").strip(),
             "team": (row.get("id_team") or "").strip(),
+            "draft_year": int(draft_year) if draft_year is not None else None,
         }
     return out
 
@@ -100,25 +107,48 @@ def assign_ranks(rows: list[dict]) -> list[dict]:
     return rows
 
 
-def fetch_season_adp(season: int, player_map: dict[str, dict[str, str]]) -> list[dict]:
-    start_ts, end_ts, window_start, window_end = season_window(season)
+def fetch_adp_by_type(
+    season: int,
+    adp_type: str,
+    start_ts: int,
+    end_ts: int,
+) -> dict[str, float]:
     raw = api_get(
         "adp/adp",
         {
             "start_date": str(start_ts),
             "end_date": str(end_ts),
-            "type": "picks",
+            "type": adp_type,
         },
     )
     if not isinstance(raw, list):
-        sys.exit(f"ERROR: adp/adp for {season} did not return a list")
+        sys.exit(f"ERROR: adp/adp ({adp_type}) for {season} did not return a list")
 
-    rows: list[dict] = []
+    out: dict[str, float] = {}
     for item in raw:
         sid = str(item.get("id_sleeper") or "").strip()
         adp = item.get("adp_adp")
         if not sid or adp is None:
             continue
+        out[sid] = float(adp)
+    return out
+
+
+def merge_startup_adp(picks: dict[str, float], rookies: dict[str, float]) -> dict[str, float]:
+    """Union picks + rookies; rookies ADP wins on overlap (post-draft startup board)."""
+    merged = dict(picks)
+    merged.update(rookies)
+    return merged
+
+
+def fetch_season_adp(season: int, player_map: dict[str, dict[str, str]]) -> list[dict]:
+    start_ts, end_ts, window_start, window_end = season_window(season)
+    picks = fetch_adp_by_type(season, "picks", start_ts, end_ts)
+    rookies = fetch_adp_by_type(season, "rookies", start_ts, end_ts)
+    adp_by_id = merge_startup_adp(picks, rookies)
+
+    rows: list[dict] = []
+    for sid, adp in adp_by_id.items():
         meta = player_map.get(sid, {})
         rows.append(
             {
@@ -197,7 +227,15 @@ def main() -> None:
         print(f"Fetching startup ADP for {season} ...", end=" ", flush=True)
         rows = fetch_season_adp(season, player_map)
         unmatched = sum(1 for r in rows if not r["name"])
-        print(f"{len(rows)} players ({unmatched} without name metadata)")
+        rookie_class = sum(
+            1
+            for r in rows
+            if player_map.get(r["sleeper_id"], {}).get("draft_year") == season
+        )
+        print(
+            f"{len(rows)} players ({rookie_class} from {season} draft class, "
+            f"{unmatched} without name metadata)"
+        )
         all_rows.extend(rows)
         if i < len(season_list) - 1 and args.delay > 0:
             time.sleep(args.delay)

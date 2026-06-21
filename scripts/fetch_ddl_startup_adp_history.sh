@@ -1,5 +1,6 @@
 #!/bin/bash
 # Fetches historical dynasty startup ADP from Dynasty Data Lab (past 5 seasons by default).
+# Merges type=picks (veterans) + type=rookies (incl. that year's draft class).
 #
 # Source: https://api.dynastydatalab.com/api/adp/adp
 # Output: site/public/data/ddl_startup_adp_historical.csv

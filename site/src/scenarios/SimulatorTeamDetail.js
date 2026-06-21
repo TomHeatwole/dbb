@@ -5,6 +5,7 @@ import SimulatorHistogramChart from './SimulatorHistogramChart';
 import {
   buildTeamFinishChartData,
   buildScoreHistogramChartData,
+  computeScoreHistogramStats,
 } from './simulatorHistograms';
 
 function ordinal(n) {
@@ -44,7 +45,39 @@ export function buildTeamFinishBuckets(simRuns, rosterId) {
   return buckets;
 }
 
-function ScoreHistogramSection({ title, subtitle, data, barColor, activeBarColor }) {
+function fmtPts(n) {
+  if (n == null || !Number.isFinite(n)) return '—';
+  return Number(n).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+function ScoreHistogramStats({ stats }) {
+  if (!stats) return null;
+
+  return (
+    <div className="simulator-score-hist-stats">
+      <div className="simulator-score-hist-stat">
+        <span className="simulator-score-hist-stat-label">Median</span>
+        <span className="simulator-score-hist-stat-val">{fmtPts(stats.median)}</span>
+      </div>
+      <div className="simulator-score-hist-stat">
+        <span className="simulator-score-hist-stat-label">P75</span>
+        <span className="simulator-score-hist-stat-val">{fmtPts(stats.p75)}</span>
+      </div>
+      <div className="simulator-score-hist-stat">
+        <span className="simulator-score-hist-stat-label">P25</span>
+        <span className="simulator-score-hist-stat-val">{fmtPts(stats.p25)}</span>
+      </div>
+      <div className="simulator-score-hist-stat">
+        <span className="simulator-score-hist-stat-label">Std dev</span>
+        <span className="simulator-score-hist-stat-val">{fmtPts(stats.stdDev)}</span>
+      </div>
+    </div>
+  );
+}
+
+function ScoreHistogramSection({ title, subtitle, data, hist, barColor, activeBarColor }) {
+  const stats = useMemo(() => computeScoreHistogramStats(hist), [hist]);
+
   return (
     <div className="simulator-team-detail-section simulator-team-detail-section--score-hist">
       <div className="simulator-team-detail-section-title">{title}</div>
@@ -56,7 +89,9 @@ function ScoreHistogramSection({ title, subtitle, data, barColor, activeBarColor
         activeBarColor={activeBarColor}
         valueLabel="runs"
         emptyLabel="No scores recorded"
+        variant="continuous"
       />
+      <ScoreHistogramStats stats={stats} />
     </div>
   );
 }
@@ -145,6 +180,7 @@ function SimulatorTeamDetail({
             title="14-week score"
             subtitle="Regular season (weeks 1–14)"
             data={regChartData}
+            hist={scoreHist?.reg}
             barColor="#6b9e78"
             activeBarColor="#8fd4a0"
           />
@@ -152,6 +188,7 @@ function SimulatorTeamDetail({
             title="Playoff score"
             subtitle="Weeks 15–17"
             data={playoffChartData}
+            hist={scoreHist?.playoff}
             barColor="#c49a6c"
             activeBarColor="#e0b88a"
           />
@@ -159,6 +196,7 @@ function SimulatorTeamDetail({
             title="Total score"
             subtitle="Full season (weeks 1–17)"
             data={totalChartData}
+            hist={scoreHist?.total}
             barColor="#7c9cff"
             activeBarColor="#a0b8ff"
           />

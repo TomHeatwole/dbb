@@ -23,7 +23,7 @@ const FEATURES = [
   {
     id: 'HISTORICAL_KTC_RANKS',
     label: 'Historical KTC Ranks',
-    description: 'Browse scraped KTC positional rank history by date/year, with gaps vs value history.',
+    description: 'Compare scraped KTC positional ranks to values at Final KTC and Rookie Draft snapshot dates.',
     component: <HistoricalKtcRanks />,
   },
   {

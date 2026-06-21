@@ -4,25 +4,20 @@
  * Lightweight histogram accumulators for Monte Carlo team scores and finishes.
  */
 
-export const SCORE_BIN_WIDTH = {
-  reg: 50,
-  playoff: 20,
-  total: 50,
-};
+/** All score metrics use the same bucket width (points). */
+export const SCORE_BUCKET_WIDTH = 25;
 
 export const SCORE_BIN_ORIGIN = {
-  reg: 1200,
+  reg: 1000,
   playoff: 0,
-  total: 1200,
+  total: 1000,
 };
 
 export const SCORE_BIN_COUNT = {
-  reg: 80,
-  playoff: 60,
-  total: 90,
+  reg: 160,    // 1000–5000
+  playoff: 48, // 0–1200
+  total: 180,  // 1000–5500
 };
-
-const DISPLAY_BUCKETS = 20;
 
 function scoreBinIndex(value, origin, width, count) {
   return Math.min(count - 1, Math.max(0, Math.floor((value - origin) / width)));
@@ -31,8 +26,11 @@ function scoreBinIndex(value, origin, width, count) {
 function createScoreHistogram(metric) {
   return {
     origin: SCORE_BIN_ORIGIN[metric],
-    width: SCORE_BIN_WIDTH[metric],
+    width: SCORE_BUCKET_WIDTH,
     bins: new Uint32Array(SCORE_BIN_COUNT[metric]),
+    sum: 0,
+    sumSq: 0,
+    count: 0,
   };
 }
 
@@ -54,17 +52,24 @@ function incrementScoreBin(hist, value) {
   hist.bins[idx] += 1;
 }
 
+function recordScoreValue(hist, value) {
+  incrementScoreBin(hist, value);
+  hist.sum += value;
+  hist.sumSq += value * value;
+  hist.count += 1;
+}
+
 /** Record starter totals for each team in one iteration. */
 export function accumulateTeamScoreHistograms(histograms, regTotals, ploffTotals, rosterIds) {
   for (const rid of rosterIds) {
-    const team = histograms[rid];
+    const team = histograms[rid] ?? histograms[String(rid)];
     if (!team) continue;
 
-    const reg = regTotals[rid] || 0;
-    const playoff = ploffTotals[rid] || 0;
-    incrementScoreBin(team.reg, reg);
-    incrementScoreBin(team.playoff, playoff);
-    incrementScoreBin(team.total, reg + playoff);
+    const reg = Number(regTotals[rid] ?? regTotals[String(rid)]) || 0;
+    const playoff = Number(ploffTotals[rid] ?? ploffTotals[String(rid)]) || 0;
+    recordScoreValue(team.reg, reg);
+    recordScoreValue(team.playoff, playoff);
+    recordScoreValue(team.total, reg + playoff);
   }
 }
 
@@ -76,16 +81,25 @@ export function serializeTeamScoreHistograms(histograms) {
         origin: team.reg.origin,
         width: team.reg.width,
         bins: Array.from(team.reg.bins),
+        sum: team.reg.sum,
+        sumSq: team.reg.sumSq,
+        count: team.reg.count,
       },
       playoff: {
         origin: team.playoff.origin,
         width: team.playoff.width,
         bins: Array.from(team.playoff.bins),
+        sum: team.playoff.sum,
+        sumSq: team.playoff.sumSq,
+        count: team.playoff.count,
       },
       total: {
         origin: team.total.origin,
         width: team.total.width,
         bins: Array.from(team.total.bins),
+        sum: team.total.sum,
+        sumSq: team.total.sumSq,
+        count: team.total.count,
       },
     };
   }
@@ -93,9 +107,9 @@ export function serializeTeamScoreHistograms(histograms) {
 }
 
 /**
- * Merge fixed-width bins into ~20 display bars for a score histogram.
+ * Build chart rows for 25-pt score bins (includes empty bins in range for a continuous shape).
  */
-export function buildScoreHistogramChartData(hist, iterations, targetBuckets = DISPLAY_BUCKETS) {
+export function buildScoreHistogramChartData(hist, iterations) {
   if (!hist?.bins?.length) return [];
 
   const { origin, width, bins } = hist;
@@ -109,27 +123,105 @@ export function buildScoreHistogramChartData(hist, iterations, targetBuckets = D
   }
   if (first < 0) return [];
 
-  const span = last - first + 1;
-  const mergeSize = Math.max(1, Math.ceil(span / targetBuckets));
   const data = [];
-
-  for (let start = first; start <= last; start += mergeSize) {
-    const end = Math.min(last, start + mergeSize - 1);
-    let count = 0;
-    for (let i = start; i <= end; i++) count += bins[i];
-
-    const lo = origin + start * width;
-    const hi = origin + (end + 1) * width;
+  for (let i = first; i <= last; i++) {
+    const lo = origin + i * width;
+    const hi = lo + width;
+    const mid = lo + width / 2;
     data.push({
-      label: `${lo.toFixed(0)}–${hi.toFixed(0)}`,
+      label: `${Math.round(mid)}`,
+      mid,
       lo,
       hi,
-      count,
-      pct: iterations > 0 ? (count / iterations) * 100 : 0,
+      count: bins[i],
+      pct: iterations > 0 ? (bins[i] / iterations) * 100 : 0,
     });
   }
 
   return data;
+}
+
+function histogramTotal(hist) {
+  if (hist?.count > 0) return hist.count;
+  return (hist?.bins || []).reduce((s, c) => s + c, 0);
+}
+
+function percentileFromHist(hist, p) {
+  const { origin, width, bins } = hist;
+  const total = histogramTotal(hist);
+  if (total <= 0) return null;
+
+  const target = total * p;
+  let cumulative = 0;
+
+  for (let i = 0; i < bins.length; i++) {
+    const count = bins[i];
+    if (count === 0) continue;
+
+    const lo = origin + i * width;
+    if (cumulative + count >= target) {
+      const frac = (target - cumulative) / count;
+      return lo + frac * width;
+    }
+    cumulative += count;
+  }
+
+  const lastIdx = bins.length - 1;
+  return origin + lastIdx * width + width / 2;
+}
+
+/** Median, P25, P75, and standard deviation for a score histogram. */
+export function computeScoreHistogramStats(hist) {
+  if (!hist?.bins?.length) return null;
+
+  const total = histogramTotal(hist);
+  if (total <= 0) return null;
+
+  const { origin, width, bins } = hist;
+  let stdDev = null;
+
+  // Prefer exact std dev when running sums were tracked during simulation.
+  if (
+    typeof hist.sum === 'number'
+    && typeof hist.sumSq === 'number'
+    && hist.count > 0
+    && Number.isFinite(hist.sum)
+    && Number.isFinite(hist.sumSq)
+  ) {
+    const mean = hist.sum / hist.count;
+    const variance = Math.max(0, hist.sumSq / hist.count - mean * mean);
+    stdDev = Math.sqrt(variance);
+  } else {
+    // Fallback: estimate from bin midpoints (always available from bins alone).
+    let sumMid = 0;
+    let sumSqMid = 0;
+    for (let i = 0; i < bins.length; i++) {
+      const count = bins[i];
+      if (count === 0) continue;
+      const mid = origin + (i + 0.5) * width;
+      sumMid += mid * count;
+      sumSqMid += mid * mid * count;
+    }
+    const meanMid = sumMid / total;
+    const varianceMid = Math.max(0, sumSqMid / total - meanMid * meanMid);
+    stdDev = Math.sqrt(varianceMid);
+  }
+
+  const median = percentileFromHist(hist, 0.5);
+  const p25 = percentileFromHist(hist, 0.25);
+  const p75 = percentileFromHist(hist, 0.75);
+
+  if (
+    median == null
+    || p25 == null
+    || p75 == null
+    || stdDev == null
+    || !Number.isFinite(stdDev)
+  ) {
+    return null;
+  }
+
+  return { median, p25, p75, stdDev };
 }
 
 /** Team league finish (1st–10th) bar chart rows. */
