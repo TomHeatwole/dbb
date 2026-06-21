@@ -8413,8 +8413,7 @@ body.modal-open {
   left: var(--runner-pct, 0%);
   height: 82%;
   /* Fill edge at 75% across sprite — ~75% of Hwang stays in the lit trail behind. */
-  transform: translateX(calc(var(--ball-x-frac, 0.68) * -100%));
-  transition: left 0.12s ease-out;
+  transform: translateX(calc(var(--ball-x-frac, 0.68) * -100% - var(--runner-offset-px, 0px)));
   z-index: 2;
   pointer-events: none;
 }

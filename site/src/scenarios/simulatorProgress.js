@@ -1,50 +1,62 @@
 /**
  * Yard-line progress display + histogram axis formatting.
  *
- * loading_hwang_background.png (2172×724) layout:
- *
- *   [left EZ art] | GOAL |←—— 100 yd playing field ——→| GOAL | [right EZ art]
- *   ~0–3.7%       11.3%                              88.5%  ~96%
- *
- * x≈82 (3.8%) is the end-zone border, NOT the goal line. The goal line (0 yd)
- * is at ~11.3% (x≈248). Yard lines are evenly spaced 11.3%→88.5%.
+ * Field position (% of loading_hwang_background.png width) is piecewise-linear
+ * between measured yard-line anchors (see YARD_MARKERS).
  */
 
-const LEFT_GOAL_PCT = 11.3;
-const RIGHT_GOAL_PCT = 88.5;
-const FIELD_SPAN_PCT = RIGHT_GOAL_PCT - LEFT_GOAL_PCT;
-
 const YARD_MARKERS = [
-  { yard: -10, imgPct: 1.0 },
-  { yard: 0, imgPct: LEFT_GOAL_PCT },
+  { yard: -10, imgPct: 3.0 }, // extrapolated from goal line
+  { yard: 0, imgPct: 11.0 },
+  { yard: 5, imgPct: 15.0 },
   { yard: 10, imgPct: 19.0 },
-  { yard: 20, imgPct: 26.8 },
-  { yard: 30, imgPct: 34.5 },
-  { yard: 40, imgPct: 42.2 },
-  { yard: 50, imgPct: 49.9 },
-  { yard: 60, imgPct: 57.6 },
-  { yard: 70, imgPct: 65.3 },
-  { yard: 80, imgPct: 73.0 },
-  { yard: 90, imgPct: 80.8 },
-  { yard: 100, imgPct: RIGHT_GOAL_PCT },
-  { yard: 105, imgPct: 100 },
+  { yard: 15, imgPct: 23.0 },
+  { yard: 20, imgPct: 26.0 },
+  { yard: 25, imgPct: 30.0 },
+  { yard: 30, imgPct: 35.0 },
+  { yard: 35, imgPct: 38.0 },
+  { yard: 40, imgPct: 42.0 },
+  { yard: 45, imgPct: 46.0 },
+  { yard: 50, imgPct: 50.0 },
+  { yard: 55, imgPct: 54.0 },
+  { yard: 60, imgPct: 58.0 },
+  { yard: 65, imgPct: 61.0 },
+  { yard: 70, imgPct: 65.0 },
+  { yard: 75, imgPct: 69.0 },
+  { yard: 80, imgPct: 72.0 },
+  { yard: 85, imgPct: 76.0 },
+  { yard: 90, imgPct: 80.0 },
+  { yard: 95, imgPct: 83.0 },
+  { yard: 100, imgPct: 88.0 },
+  { yard: 105, imgPct: 100.0 }, // end zone — extrapolated through goal line
 ];
 
 const DRIVE_START_YARDS = -10;
 const DRIVE_END_YARDS = 105;
 const DRIVE_SPAN = DRIVE_END_YARDS - DRIVE_START_YARDS;
 
-export const TOUCHDOWN_PROGRESS = 0.99;
+/** Sim progress at which Hwang starts jumping and "Touchdown!" shows; keeps moving through EZ to 100%. */
+export const CELEBRATE_PROGRESS = 0.95;
+export const TOUCHDOWN_PROGRESS = CELEBRATE_PROGRESS;
 export const TOUCHDOWN_JUMP_DURATION_MS = 550;
 export const TOUCHDOWN_JUMP_COUNT = 2;
 export const TOUCHDOWN_CELEBRATION_MS =
   TOUCHDOWN_JUMP_DURATION_MS * TOUCHDOWN_JUMP_COUNT + 80;
 
 export const RUNNER_BALL_X_FRAC = 0.68;
+/** Shift runner left (px) so more of the sprite trails in the lit zone. */
+export const RUNNER_OFFSET_PX = 20;
 
 function yardPositionFromProgress(p) {
   const clamped = Math.max(0, Math.min(1, p || 0));
   return DRIVE_START_YARDS + clamped * DRIVE_SPAN;
+}
+
+/** Progress fraction (0–1) → field position (%). Single source of truth for runner/fill. */
+function progressToFieldPct(p) {
+  const progress = Math.max(0, Math.min(1, p || 0));
+  const yard = yardPositionFromProgress(progress);
+  return yardToImgPct(yard);
 }
 
 function yardToImgPct(yard) {
@@ -64,16 +76,14 @@ function yardToImgPct(yard) {
   return YARD_MARKERS[0].imgPct;
 }
 
-/** Lit fill edge on the field image (%). Full width at touchdown. */
+/** Lit fill edge on the field image (%). Same curve as runner. */
 export function simProgressToFillPct(p) {
-  const progress = Math.max(0, Math.min(1, p || 0));
-  if (progress >= TOUCHDOWN_PROGRESS) return 100;
-  return yardToImgPct(yardPositionFromProgress(progress));
+  return progressToFieldPct(p);
 }
 
-/** Runner anchor on the field (%), independent of fill width at TD. */
+/** Runner anchor on the field (%). */
 export function simProgressToRunnerPct(p) {
-  return yardToImgPct(yardPositionFromProgress(p));
+  return progressToFieldPct(p);
 }
 
 export function simProgressToImagePct(p) {
@@ -83,11 +93,10 @@ export function simProgressToImagePct(p) {
 export function simFractionToYardLine(p) {
   const progress = Math.max(0, Math.min(1, p || 0));
 
-  if (progress >= TOUCHDOWN_PROGRESS) return 'Touchdown!';
+  if (progress >= CELEBRATE_PROGRESS) return 'Touchdown!';
 
   const yard = yardPositionFromProgress(progress);
 
-  if (yard >= 100) return 'Touchdown!';
   if (yard <= 0) return 'Own end zone';
 
   const marker = Math.round(yard / 5) * 5;
@@ -98,7 +107,11 @@ export function simFractionToYardLine(p) {
 }
 
 export function isTouchdownProgress(p) {
-  return (p || 0) >= TOUCHDOWN_PROGRESS;
+  return (p || 0) >= CELEBRATE_PROGRESS;
+}
+
+export function isCelebrateProgress(p) {
+  return isTouchdownProgress(p);
 }
 
 export function formatHistogramAxisCount(n) {

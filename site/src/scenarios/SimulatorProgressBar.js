@@ -1,54 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { DEFAULT_ITERATIONS } from './simulatorMonteCarlo';
 import {
   simFractionToYardLine,
   simProgressToFillPct,
   simProgressToRunnerPct,
   RUNNER_BALL_X_FRAC,
+  RUNNER_OFFSET_PX,
   isTouchdownProgress,
 } from './simulatorProgress';
 
 const BG_SRC = '/loading_hwang_background.png';
-const RUNNER_SRC = '/loading_hwang_runner.png';
-
-const SMOOTH_SPEED = 0.12;
-
-function useSmoothProgress(target) {
-  const [display, setDisplay] = useState(target);
-  const targetRef = useRef(target);
-  const displayRef = useRef(target);
-  const rafRef = useRef(null);
-
-  useEffect(() => {
-    targetRef.current = target;
-  }, [target]);
-
-  useEffect(() => {
-    function tick() {
-      const tgt = targetRef.current;
-      const cur = displayRef.current;
-      const next = cur + (tgt - cur) * SMOOTH_SPEED;
-      const settled = Math.abs(tgt - next) < 0.001;
-      const value = settled ? tgt : next;
-      displayRef.current = value;
-      setDisplay(value);
-      if (!settled) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    }
-
-    if (Math.abs(displayRef.current - target) >= 0.001) {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(tick);
-    }
-
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [target]);
-
-  return display;
-}
+const RUNNER_SRC = '/hwang_running_clean_transparent_dust.png';
 
 function HwangProgressField({ progress, celebrating = false }) {
   const fillPct = simProgressToFillPct(progress);
@@ -62,6 +24,7 @@ function HwangProgressField({ progress, celebrating = false }) {
         '--fill-pct': `${fillPct}%`,
         '--runner-pct': `${runnerPct}%`,
         '--ball-x-frac': RUNNER_BALL_X_FRAC,
+        '--runner-offset-px': `${RUNNER_OFFSET_PX}px`,
       }}
       aria-hidden="true"
     >
@@ -92,30 +55,27 @@ function HwangProgressField({ progress, celebrating = false }) {
 
 function SimulatorProgressBar({ phase, loadingProgress, simProgress, iterations }) {
   const total = iterations || DEFAULT_ITERATIONS;
-  const smoothSim = useSmoothProgress(simProgress ?? 0);
-  const smoothLoading = useSmoothProgress(loadingProgress ?? 0);
   const celebrating = phase === 'celebrating';
-  const displayProgress = celebrating ? 1 : simProgress;
+  const progress = celebrating ? 1 : phase === 'loading' ? (loadingProgress ?? 0) : (simProgress ?? 0);
+  const pct = Math.round(progress * 100);
 
   if (phase === 'loading') {
-    const pct = Math.round(smoothLoading * 100);
     return (
       <div className="simulator-progress">
         <div className="simulator-progress-label">Loading simulation data… {pct}%</div>
-        <HwangProgressField progress={loadingProgress} />
+        <HwangProgressField progress={progress} />
         <div className="simulator-progress-detail">Preparing outcome pools and weekly stats</div>
       </div>
     );
   }
 
-  const completed = Math.round((celebrating ? 1 : smoothSim) * total);
-  const yardLine = celebrating ? 'Touchdown!' : simFractionToYardLine(smoothSim);
-  const pct = Math.round((celebrating ? 1 : smoothSim) * 100);
+  const completed = Math.round(progress * total);
+  const yardLine = celebrating ? 'Touchdown!' : simFractionToYardLine(progress);
 
   return (
     <div className="simulator-progress simulator-progress--running">
       <div className="simulator-yard-line-label">{yardLine}</div>
-      <HwangProgressField progress={displayProgress} celebrating={celebrating} />
+      <HwangProgressField progress={progress} celebrating={celebrating} />
       <div className="simulator-progress-meta">
         <span className="simulator-progress-count">
           {completed.toLocaleString()}
