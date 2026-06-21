@@ -13,6 +13,8 @@ import {
 } from 'recharts';
 import WeekSelector from '../scores/WeekSelector';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
+import { fetchRedraftValueData } from '../lookups/RedraftValueLookup';
+import { computeTeamLuckMetrics } from './luckMetrics';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
@@ -1169,6 +1171,60 @@ function ScenarioPlayerStatsTable({
   );
 }
 
+function ScenarioLuckSummary({ luckMetrics }) {
+  if (!luckMetrics) return null;
+
+  const {
+    rollCount,
+    rawTotalLuck,
+    rawWeightedLuck,
+    totalLuckPercentile,
+    weightedLuckPercentile,
+  } = luckMetrics;
+
+  const fmtRaw = (v) => (v != null ? `P${v.toFixed(1)}` : '—');
+  const fmtLuck = (v) => (v != null ? `P${Math.round(v)}` : '—');
+
+  return (
+    <div className="scenario-team-detail-luck">
+      <div className="scenario-team-detail-luck-item">
+        <span className="scenario-team-detail-luck-label">Total luck</span>
+        <span
+          className="scenario-team-detail-luck-value"
+          style={{ '--roll-color': percentileColor(totalLuckPercentile) }}
+          title={
+            `Avg roll ${fmtRaw(rawTotalLuck)} across ${rollCount} players · ` +
+            `${fmtLuck(totalLuckPercentile)} luck if rolls were independent (50 = typical)`
+          }
+        >
+          {fmtLuck(totalLuckPercentile)}
+        </span>
+        <span className="scenario-team-detail-luck-raw" title="Unadjusted roster average">
+          {fmtRaw(rawTotalLuck)} avg
+        </span>
+      </div>
+      {weightedLuckPercentile != null && (
+        <div className="scenario-team-detail-luck-item">
+          <span className="scenario-team-detail-luck-label">Weighted luck</span>
+          <span
+            className="scenario-team-detail-luck-value"
+            style={{ '--roll-color': percentileColor(weightedLuckPercentile) }}
+            title={
+              `Comp-adj weighted avg ${fmtRaw(rawWeightedLuck)} · ` +
+              `${fmtLuck(weightedLuckPercentile)} luck if rolls were independent (50 = typical)`
+            }
+          >
+            {fmtLuck(weightedLuckPercentile)}
+          </span>
+          <span className="scenario-team-detail-luck-raw" title="Unadjusted weighted average">
+            {fmtRaw(rawWeightedLuck)} avg
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 /**
@@ -1194,12 +1250,39 @@ function ScenarioTeamDetail({
   scenarioRosters, playerWeeklyPoints,
 }) {
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
+  const showProjections = Boolean(playerProjections);
 
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [redraftByName, setRedraftByName] = useState(null);
 
   // Reset week to 1 whenever the selected team changes
   useEffect(() => { setSelectedWeek(1); }, [rosterId]);
+
+  useEffect(() => {
+    if (!showProjections) return undefined;
+    let cancelled = false;
+    fetchRedraftValueData()
+      .then(({ byName }) => {
+        if (!cancelled) setRedraftByName(byName);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showProjections]);
+
+  const luckMetrics = useMemo(() => {
+    if (!showProjections) return null;
+    return computeTeamLuckMetrics(
+      scenarioRosters?.[rosterId] || [],
+      playerProjections,
+      playersData,
+      playerIdMap,
+      redraftByName,
+    );
+  }, [
+    showProjections, rosterId, scenarioRosters, playerProjections,
+    playersData, playerIdMap, redraftByName,
+  ]);
 
   const chartData = useMemo(() => {
     const origWeeks = (originalWeeklyScores || {})[rosterId] || [];
@@ -1223,6 +1306,27 @@ function ScenarioTeamDetail({
     };
   }, [chartData]);
 
+  const playerScoringSection = scenarioRosters && playerWeeklyPoints ? (
+    <div className="scenario-team-detail-section">
+      <div className="scenario-team-detail-section-title">Player Scoring</div>
+      <div className="scenario-team-detail-section-subtitle">
+        Season totals, lineup usage, and HVORP
+        {showProjections ? ' · ADP rolls from outcome distributions' : ' (Hwang value over replacement)'}
+      </div>
+      <ScenarioPlayerStatsTable
+        rosterId={rosterId}
+        scenarioRosters={scenarioRosters}
+        scenarioWeeklyScores={scenarioWeeklyScores}
+        playerWeeklyPoints={playerWeeklyPoints}
+        playersData={playersData}
+        playerIdMap={playerIdMap}
+        onPlayerClick={setSelectedPlayer}
+        playerProjections={playerProjections}
+        onPercentileChange={onPercentileChange}
+      />
+    </div>
+  ) : null;
+
   return (
     <div className="scenario-team-detail">
       {/* ── Header ── */}
@@ -1234,6 +1338,10 @@ function ScenarioTeamDetail({
         }
         <span className="scenario-team-detail-name">{team.teamName || `Team ${rosterId}`}</span>
       </div>
+
+      {showProjections && <ScenarioLuckSummary luckMetrics={luckMetrics} />}
+
+      {showProjections && playerScoringSection}
 
       {/* ── Weekly scoring chart ── */}
       <div className="scenario-team-detail-section">
@@ -1332,27 +1440,7 @@ function ScenarioTeamDetail({
         />
       </div>
 
-      {/* ── Season player stats ── */}
-      {scenarioRosters && playerWeeklyPoints && (
-        <div className="scenario-team-detail-section">
-          <div className="scenario-team-detail-section-title">Player Scoring</div>
-          <div className="scenario-team-detail-section-subtitle">
-            Season totals, lineup usage, and HVORP
-            {playerProjections ? ' · ADP rolls from outcome distributions' : ' (Hwang value over replacement)'}
-          </div>
-          <ScenarioPlayerStatsTable
-            rosterId={rosterId}
-            scenarioRosters={scenarioRosters}
-            scenarioWeeklyScores={scenarioWeeklyScores}
-            playerWeeklyPoints={playerWeeklyPoints}
-            playersData={playersData}
-            playerIdMap={playerIdMap}
-            onPlayerClick={setSelectedPlayer}
-            playerProjections={playerProjections}
-            onPercentileChange={onPercentileChange}
-          />
-        </div>
-      )}
+      {!showProjections && playerScoringSection}
       {selectedPlayer && createPortal(
         <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
           <div className="player-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>

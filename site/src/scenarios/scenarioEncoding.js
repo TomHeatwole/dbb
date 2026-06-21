@@ -13,6 +13,8 @@
  */
 
 import { isValidPlayerId, sanitizeRoster, sanitizeRosters } from './scenarioUtils';
+import { normalizeOutcomeScenarioYear, DEFAULT_OUTCOME_SCENARIO_YEAR } from './outcomeScenarioConfig';
+import { clampSimulatorIterations, DEFAULT_ITERATIONS } from './simulatorMonteCarlo';
 
 export { sanitizeRoster, sanitizeRosters, isValidPlayerId };
 
@@ -120,9 +122,14 @@ export function decodeFutureScenario(encoded) {
 //
 // Outcome-based projections using Hwang ADP ±5 historical pools + percentile rolls.
 //
-// { y: "future2", c: [{ r, a, d }], p: { [playerId]: percentile 0-100 } }
+// { y: "future2", sy: "2025", c: [{ r, a, d }], p: { [playerId]: percentile 0-100 } }
 
-export function encodeFutureScenario2(originalRosters, scenarioRosters, percentileRolls = {}) {
+export function encodeFutureScenario2(
+  originalRosters,
+  scenarioRosters,
+  percentileRolls = {},
+  seasonYear = DEFAULT_OUTCOME_SCENARIO_YEAR,
+) {
   const changes = [];
 
   for (const rid in originalRosters) {
@@ -140,6 +147,7 @@ export function encodeFutureScenario2(originalRosters, scenarioRosters, percenti
 
   const schema = {
     y: 'future2',
+    sy: normalizeOutcomeScenarioYear(seasonYear),
     c: changes,
     p: percentileRolls || {},
   };
@@ -153,15 +161,21 @@ export function decodeFutureScenario2(encoded) {
     if (!obj || !Array.isArray(obj.c)) return null;
     if (obj.y !== 'future2' && obj.y !== 'simulator') return null;
     return {
+      sy: normalizeOutcomeScenarioYear(obj.sy),
       c: obj.c,
       p: obj.p && typeof obj.p === 'object' ? obj.p : {},
+      n: obj.y === 'simulator' ? clampSimulatorIterations(obj.n) : undefined,
     };
   } catch {
     return null;
   }
 }
 
-export function encodeSimulatorScenario(originalRosters, scenarioRosters) {
+export function encodeSimulatorScenario(
+  originalRosters,
+  scenarioRosters,
+  { seasonYear = DEFAULT_OUTCOME_SCENARIO_YEAR, iterations = DEFAULT_ITERATIONS } = {},
+) {
   const changes = [];
 
   for (const rid in originalRosters) {
@@ -177,7 +191,30 @@ export function encodeSimulatorScenario(originalRosters, scenarioRosters) {
     }
   }
 
-  return btoa(JSON.stringify({ y: 'simulator', c: changes }));
+  return btoa(JSON.stringify({
+    y: 'simulator',
+    sy: normalizeOutcomeScenarioYear(seasonYear),
+    n: clampSimulatorIterations(iterations),
+    c: changes,
+  }));
+}
+
+/**
+ * Build a Future Scenarios v2 eval URL for a specific percentile-roll outcome set.
+ */
+export function buildFutureScenario2EvalUrl(
+  originalRosters,
+  scenarioRosters,
+  percentileRolls,
+  seasonYear = DEFAULT_OUTCOME_SCENARIO_YEAR,
+) {
+  const encoded = encodeFutureScenario2(
+    originalRosters,
+    scenarioRosters,
+    percentileRolls,
+    seasonYear,
+  );
+  return `/future-scenarios-2?state=eval&scenario=${encodeURIComponent(encoded)}`;
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────

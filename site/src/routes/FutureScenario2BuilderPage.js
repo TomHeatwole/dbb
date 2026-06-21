@@ -7,11 +7,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
-import { fetchTeamData } from '../lookups/TeamLookup';
-import { fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
-import { fetchScoresData } from '../lookups/ScoresLookup';
-import { getStandings } from '../scores/ScoresParser';
-import { getCurrentYear } from '../utils/DateHelper';
+import { getPlayerInfo } from '../lookups/PlayerLookup';
 import ScenarioTeamGrid from '../scenarios/ScenarioTeamGrid';
 import ScenarioRosterEditor from '../scenarios/ScenarioRosterEditor';
 import ScenarioDeltas from '../scenarios/ScenarioDeltas';
@@ -27,13 +23,18 @@ import {
 } from '../scenarios/scenarioEncoding';
 import { isValidPlayerId } from '../scenarios/scenarioUtils';
 import { getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
+import OutcomeScenarioSeasonDropdown from '../scenarios/OutcomeScenarioSeasonDropdown';
+import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
+import {
+  DEFAULT_OUTCOME_SCENARIO_YEAR,
+  normalizeOutcomeScenarioYear,
+} from '../scenarios/outcomeScenarioConfig';
 
 const OG_TITLE = 'Future Scenarios v2';
 const OG_DESCRIPTION = 'Project rosters using Hwang ADP outcome distributions from historical seasons.';
 
-function FutureScenarios2Tooltip() {
-  const currentYear = getCurrentYear();
-  const years = getOutcomeHistoryYears(currentYear);
+function FutureScenarios2Tooltip({ season }) {
+  const years = getOutcomeHistoryYears(season);
   const yearLabel = years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : 'past seasons';
 
   return (
@@ -83,6 +84,11 @@ function FutureScenario2BuilderPage() {
   const [scenarioRosters, setScenarioRosters] = useState({});
   const [originalRosters, setOriginalRosters] = useState({});
   const [selectedRosterId, setSelectedRosterId] = useState(null);
+  const [season, setSeason] = useState(() => {
+    const pre = pendingScenarioRef.current;
+    if (pre?.sy) return normalizeOutcomeScenarioYear(pre.sy);
+    return DEFAULT_OUTCOME_SCENARIO_YEAR;
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -96,20 +102,15 @@ function FutureScenario2BuilderPage() {
       setLoading(true);
       setError(null);
       try {
-        const currentYear = getCurrentYear();
-
-        const [teamData, idMap, weeksData, players, hwangRows] = await Promise.all([
-          fetchTeamData(currentYear),
-          fetchPlayerIdMap(),
-          fetchScoresData(currentYear).catch(() => null),
+        const [rosterData, players, hwangRows] = await Promise.all([
+          loadOutcomeScenarioRosterData(season),
           fetch('/data/players.txt').then((r) => r.json()).catch(() => null),
-          loadHwangAdpRowsForYear(currentYear).catch(() => []),
+          loadHwangAdpRowsForYear(season).catch(() => []),
         ]);
 
-        if (!teamData || !Array.isArray(teamData.rosters) || !Array.isArray(teamData.users)) {
-          throw new Error('No team data');
-        }
         if (cancelled) return;
+
+        const { teams, originalRosters: initial, idMap } = rosterData;
 
         const topPlayers = players && idMap
           ? buildTopPlayersFromHwangAdp(hwangRows, players, idMap, getPlayerInfo)
@@ -118,51 +119,7 @@ function FutureScenario2BuilderPage() {
         setPlayersData(players);
         setPlayerIdMap(idMap);
         setTopPlayersBySeason(topPlayers);
-
-        const standings = getStandings(weeksData) || [];
-        const placeByRosterId = {};
-        const pointsByRosterId = {};
-        standings.forEach((row) => {
-          if (row && row.roster_id != null) {
-            placeByRosterId[String(row.roster_id)] = row.place != null ? row.place : 999;
-            pointsByRosterId[String(row.roster_id)] = row.points_scored ?? 0;
-          }
-        });
-
-        const teamsUnsorted = (teamData.rosters || []).map((roster) => {
-          const rid = roster && roster.roster_id != null ? Number(roster.roster_id) : null;
-          if (rid == null) return null;
-          const user = (teamData.users || []).find(
-            (u) => roster && String(u.user_id) === String(roster.owner_id),
-          );
-          let teamName = `Team ${rid}`;
-          if (user?.metadata?.team_name) teamName = user.metadata.team_name;
-          else if (user?.display_name) teamName = `Team ${user.display_name}`;
-          const avatarUrl =
-            (user && (user.team_avatar_url || user.user_avatar_url || user.avatar_url)) || null;
-          const place = placeByRosterId[String(rid)];
-          const totalPoints = pointsByRosterId[String(rid)];
-          return {
-            rosterId: rid,
-            teamName,
-            avatarUrl,
-            place: place && place !== 999 ? place : null,
-            totalPoints: totalPoints ?? null,
-          };
-        }).filter(Boolean);
-
-        const teams = teamsUnsorted.slice().sort((a, b) => {
-          const pa = placeByRosterId[String(a.rosterId)] ?? 999;
-          const pb = placeByRosterId[String(b.rosterId)] ?? 999;
-          return pa !== pb ? pa - pb : Number(a.rosterId) - Number(b.rosterId);
-        });
         setTeamsForGrid(teams);
-
-        const initial = {};
-        for (const roster of teamData.rosters) {
-          const rid = roster && roster.roster_id != null ? Number(roster.roster_id) : null;
-          if (rid != null) initial[rid] = Array.isArray(roster.players) ? [...roster.players] : [];
-        }
 
         const storedEncoded = sessionStorage.getItem('pendingFuture2BuilderScenario');
         const pending = storedEncoded
@@ -171,13 +128,17 @@ function FutureScenario2BuilderPage() {
         if (storedEncoded) sessionStorage.removeItem('pendingFuture2BuilderScenario');
         pendingScenarioRef.current = null;
 
-        if (pending && Array.isArray(pending.c) && pending.c.length > 0) {
-          setScenarioRosters(sanitizeRosters(applyScenarioChanges(initial, pending.c)));
-          setSearchParams((prev) => {
-            const next = new URLSearchParams(prev);
-            next.delete('scenario');
-            return next;
-          }, { replace: true });
+        if (pending?.sy && normalizeOutcomeScenarioYear(pending.sy) === season) {
+          if (Array.isArray(pending.c) && pending.c.length > 0) {
+            setScenarioRosters(sanitizeRosters(applyScenarioChanges(initial, pending.c)));
+            setSearchParams((prev) => {
+              const next = new URLSearchParams(prev);
+              next.delete('scenario');
+              return next;
+            }, { replace: true });
+          } else {
+            setScenarioRosters(sanitizeRosters(initial));
+          }
         } else {
           setScenarioRosters(sanitizeRosters(initial));
         }
@@ -195,7 +156,7 @@ function FutureScenario2BuilderPage() {
     load();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [season]);
 
   useEffect(() => {
     if (loading || teamsForGrid.length === 0) return;
@@ -239,7 +200,7 @@ function FutureScenario2BuilderPage() {
   };
 
   const handleEvaluate = () => {
-    const encoded = encodeFutureScenario2(originalRosters, scenarioRosters, {});
+    const encoded = encodeFutureScenario2(originalRosters, scenarioRosters, {}, season);
     navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`);
   };
 
@@ -248,26 +209,29 @@ function FutureScenario2BuilderPage() {
     [teamsForGrid, selectedRosterId],
   );
 
-  const historyYears = getOutcomeHistoryYears(getCurrentYear());
+  const historyYears = getOutcomeHistoryYears(season);
   const historyLabel = historyYears.length > 0
     ? `${historyYears[0]}–${historyYears[historyYears.length - 1]}`
     : 'historical seasons';
 
   const leftHeader = (
-    <span className="future-scenario-proj-label">
-      Outcomes: {historyLabel}
-    </span>
+    <div className="outcome-scenario-header-meta">
+      <OutcomeScenarioSeasonDropdown season={season} onSeasonChange={setSeason} />
+      <span className="future-scenario-proj-label">
+        {season} ADP · outcomes {historyLabel}
+      </span>
+    </div>
   );
 
   return (
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper
-        title={<>Future Scenarios v2 <FutureScenarios2Tooltip /></>}
+        title={<>Future Scenarios v2 <FutureScenarios2Tooltip season={season} /></>}
         subtitle={null}
         leftHeader={leftHeader}
       >
-        {loading && <LoadingState label="Loading current rosters…" />}
+        {loading && <LoadingState label={`Loading ${season} rosters…`} />}
 
         {!loading && error && (
           <div style={{ color: '#ff6b6b', padding: '20px' }}>{error}</div>

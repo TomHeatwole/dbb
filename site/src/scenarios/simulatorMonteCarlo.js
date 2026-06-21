@@ -13,10 +13,18 @@ import {
 } from './computeScenarioEval';
 import { buildOutcomePool, percentileToOutcomeIndex, buildPlayerProjections } from './outcomeDistribution';
 import { collectRequiredSeasonYears } from './computeFutureScenario2Eval';
+import { computeLuckFromRolls } from './luckMetrics';
 
 const NUM_WEEKS = 17;
-const DEFAULT_ITERATIONS = 1000;
+export const DEFAULT_ITERATIONS = 1000;
+export const MAX_SIMULATOR_ITERATIONS = 100000;
+const MIN_SIMULATOR_ITERATIONS = 1;
 const BATCH_SIZE = 25;
+
+export function clampSimulatorIterations(n) {
+  const val = Math.round(Number(n) || DEFAULT_ITERATIONS);
+  return Math.max(MIN_SIMULATOR_ITERATIONS, Math.min(MAX_SIMULATOR_ITERATIONS, val));
+}
 
 function buildProjectedSeasonTotals(playerWeeklyPoints) {
   const totals = {};
@@ -105,6 +113,7 @@ export function prepareSimulatorContext({
 
   return {
     scenarioRosters,
+    hwangAdpRankMap,
     allPlayerIds: playerIdList,
     pools,
     basePointsByYear,
@@ -148,11 +157,38 @@ function runSingleIteration(ctx, playersData, playerIdMap) {
   const standings = buildFinalStandings(regTotals, ploffTotals);
   const champion = standings.find((r) => r.place === 1) || null;
 
-  return { champion, standings, regTotals, ploffTotals };
+  const teamResults = {};
+  for (const row of standings) {
+    const rid = row.rosterId;
+    const reg = regTotals[rid] || 0;
+    const ploff = ploffTotals[rid] || 0;
+    const rosterPlayerIds = ctx.scenarioRosters[rid]
+      || ctx.scenarioRosters[String(rid)]
+      || [];
+    const luck = computeLuckFromRolls(
+      rosterPlayerIds,
+      rolls,
+      ctx.hwangAdpRankMap,
+      ctx.pools,
+    );
+    teamResults[rid] = {
+      place: row.place,
+      isPlayoff: row.isPlayoff,
+      regSeason: reg,
+      playoff: ploff,
+      totalScore: reg + ploff,
+      luckPercentile: luck?.totalLuckPercentile ?? null,
+    };
+  }
+
+  return { rolls, champion, standings, regTotals, ploffTotals, teamResults };
 }
 
 /**
- * @returns {Promise<Array<{ rosterId, wins, winPct, avgTotalScore, avgRegSeason, avgPlayoff }>>}
+ * @returns {Promise<{
+ *   results: Array,
+ *   simRuns: Array<{ simIndex, rolls, teamResults }>,
+ * }>}
  */
 export async function runMonteCarloSimulation(
   ctx,
@@ -178,14 +214,17 @@ export async function runMonteCarloSimulation(
     };
   }
 
+  const simRuns = [];
   let completed = 0;
 
   while (completed < iterations) {
     const batchEnd = Math.min(completed + batchSize, iterations);
     for (let i = completed; i < batchEnd; i++) {
-      const { champion, standings, regTotals, ploffTotals } = runSingleIteration(
-        ctx, playersData, playerIdMap,
-      );
+      const {
+        rolls, champion, standings, regTotals, ploffTotals, teamResults,
+      } = runSingleIteration(ctx, playersData, playerIdMap);
+
+      simRuns.push({ simIndex: i + 1, rolls, teamResults });
 
       if (champion) {
         stats[champion.rosterId].wins += 1;
@@ -219,7 +258,7 @@ export async function runMonteCarloSimulation(
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  return ctx.rosterIds.map((rid) => {
+  const results = ctx.rosterIds.map((rid) => {
     const row = stats[rid];
     const avgRegSeason = row.regSeasonSum / iterations;
     const avgPlayoff = row.playoffSum / iterations;
@@ -239,6 +278,6 @@ export async function runMonteCarloSimulation(
     if (b.winPct !== a.winPct) return b.winPct - a.winPct;
     return b.avgTotalScore - a.avgTotalScore;
   });
-}
 
-export { DEFAULT_ITERATIONS };
+  return { results, simRuns };
+}

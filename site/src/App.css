@@ -7522,6 +7522,49 @@ body.modal-open {
   color: rgba(220, 225, 255, 0.95);
 }
 
+.scenario-team-detail-luck {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem 2rem;
+  padding: 0.55rem 1.1rem;
+  border-bottom: 1px solid rgba(100, 100, 140, 0.15);
+  background: rgba(30, 26, 48, 0.45);
+}
+
+.scenario-team-detail-luck-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.scenario-team-detail-luck-raw {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(130, 130, 180, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.scenario-team-detail-luck-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(130, 130, 180, 0.55);
+}
+
+.scenario-team-detail-luck-value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--roll-color, #c9b8ff);
+  padding: 0.12rem 0.45rem;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--roll-color, #c9b8ff) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--roll-color, #c9b8ff) 38%, transparent);
+}
+
 /* Section block (chart, table, etc.) */
 .scenario-team-detail-section {
   padding: 1rem 1.1rem 0.75rem;
@@ -8338,13 +8381,19 @@ body.modal-open {
 }
 
 .simulator-results {
-  background: rgba(20, 22, 42, 0.6);
-  border: 1px solid rgba(120, 130, 200, 0.18);
-  border-radius: 10px;
-  padding: 1rem 1.1rem 0.6rem;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(26, 22, 40, 0.95);
+  border: 1px solid rgba(100, 100, 140, 0.35);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem 0.75rem;
 }
 
 .simulator-results-header {
+  flex-shrink: 0;
   margin-bottom: 0.85rem;
 }
 
@@ -8363,9 +8412,28 @@ body.modal-open {
 }
 
 .simulator-results-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-x: auto;
+  overflow-y: auto;
   margin: 0 -0.25rem;
   padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 110, 170, 0.45) transparent;
+}
+
+.simulator-results-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.simulator-results-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.simulator-results-scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 110, 170, 0.4);
+  border-radius: 999px;
 }
 
 .simulator-results-tbl {
@@ -8410,6 +8478,23 @@ body.modal-open {
 
 .simulator-results-tr--leader {
   background: rgba(180, 140, 40, 0.08);
+}
+
+.simulator-results-tr--clickable {
+  cursor: pointer;
+}
+
+.simulator-results-tr--clickable:hover {
+  background: rgba(124, 156, 255, 0.08);
+}
+
+.simulator-results-tr--selected {
+  background: rgba(124, 156, 255, 0.14);
+  outline: 1px solid rgba(124, 156, 255, 0.35);
+}
+
+.simulator-results-tr--selected.simulator-results-tr--leader {
+  background: rgba(180, 140, 40, 0.12);
 }
 
 .simulator-results-tr--leader .simulator-results-td--team {
@@ -8498,6 +8583,321 @@ body.modal-open {
 
 .simulator-run-btn {
   background: linear-gradient(135deg, rgba(124, 156, 255, 0.35), rgba(160, 130, 230, 0.25));
+  flex: 1;
+  min-width: 0;
+}
+
+.simulator-run-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+}
+
+.simulator-run-settings-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.simulator-run-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  height: 100%;
+  min-height: 2.65rem;
+  padding: 0;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(100, 130, 220, 0.35);
+  background: rgba(40, 45, 75, 0.65);
+  color: rgba(180, 195, 255, 0.85);
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.simulator-run-settings-btn:hover {
+  background: rgba(60, 70, 120, 0.75);
+  border-color: rgba(130, 160, 255, 0.55);
+  color: #fff;
+}
+
+.simulator-run-settings-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.45rem);
+  z-index: 40;
+  width: 15.5rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(100, 120, 200, 0.35);
+  background: rgba(18, 16, 32, 0.98);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.simulator-run-settings-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(190, 200, 240, 0.75);
+  margin-bottom: 0.55rem;
+}
+
+.simulator-run-settings-label {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(160, 170, 220, 0.65);
+  margin-bottom: 0.35rem;
+}
+
+.simulator-run-settings-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(100, 120, 200, 0.35);
+  background: rgba(10, 12, 24, 0.85);
+  color: #e8ebff;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.simulator-run-settings-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.simulator-run-settings-preset {
+  padding: 0.22rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(100, 120, 200, 0.25);
+  background: rgba(40, 45, 75, 0.55);
+  color: rgba(180, 190, 240, 0.85);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.simulator-run-settings-preset--active,
+.simulator-run-settings-preset:hover {
+  border-color: rgba(130, 160, 255, 0.55);
+  background: rgba(80, 100, 180, 0.25);
+  color: #fff;
+}
+
+.simulator-run-settings-apply {
+  margin-top: 0.6rem;
+  width: 100%;
+  padding: 0.38rem 0.55rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(100, 130, 220, 0.45);
+  background: rgba(80, 100, 180, 0.28);
+  color: rgba(220, 228, 255, 0.95);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.simulator-run-settings-apply:hover {
+  background: rgba(90, 115, 200, 0.4);
+}
+
+.outcome-scenario-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Simulator team finish breakdown */
+.simulator-team-detail {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem 1.1rem;
+  background: rgba(20, 22, 42, 0.6);
+  border: 1px solid rgba(120, 130, 200, 0.18);
+  border-radius: 10px;
+}
+
+.simulator-team-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.35rem;
+}
+
+.simulator-team-detail-label {
+  font-size: 0.78rem;
+  color: rgba(170, 175, 220, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.simulator-team-detail-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.simulator-team-detail-avatar--placeholder {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(120, 120, 160, 0.25);
+}
+
+.simulator-team-detail-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e0e4ff;
+}
+
+.simulator-team-detail-subtitle {
+  font-size: 0.78rem;
+  color: rgba(170, 175, 220, 0.55);
+  margin-bottom: 1rem;
+}
+
+.simulator-finish-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+@media (max-width: 900px) {
+  .simulator-finish-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.simulator-finish-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  padding: 0.45rem 0.35rem;
+  background: rgba(12, 14, 28, 0.55);
+  border: 1px solid rgba(120, 130, 200, 0.12);
+  border-radius: 6px;
+}
+
+.simulator-finish-col--playoff {
+  background: rgba(180, 140, 40, 0.07);
+  border-color: rgba(180, 140, 40, 0.22);
+}
+
+.simulator-finish-col-header {
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(170, 175, 220, 0.65);
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.simulator-finish-col-count {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #e0e4ff;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.simulator-finish-col-count-denom {
+  font-size: 0.65em;
+  font-weight: 500;
+  color: rgba(170, 175, 220, 0.45);
+}
+
+.simulator-finish-col-links {
+  flex: 1;
+  margin-top: 0.4rem;
+  max-height: 160px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.1rem;
+  padding: 0 0.15rem 0 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 110, 170, 0.45) transparent;
+}
+
+.simulator-finish-col-links::-webkit-scrollbar {
+  width: 5px;
+}
+
+.simulator-finish-col-links::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.simulator-finish-col-links::-webkit-scrollbar-thumb {
+  background: rgba(100, 110, 170, 0.4);
+  border-radius: 999px;
+}
+
+.simulator-finish-col-links::-webkit-scrollbar-thumb:hover {
+  background: rgba(130, 140, 210, 0.55);
+}
+
+.simulator-finish-col-empty {
+  color: rgba(170, 175, 220, 0.3);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.simulator-sim-link-row {
+  display: grid;
+  grid-template-columns: minmax(2.1rem, auto) 1fr auto;
+  align-items: baseline;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.08rem 0.2rem;
+  border-radius: 3px;
+  font-size: 0.58rem;
+  line-height: 1.3;
+  color: rgba(160, 184, 255, 0.85);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.simulator-sim-link-row:hover {
+  background: rgba(100, 120, 200, 0.12);
+  color: #c9d8ff;
+  text-decoration: none;
+}
+
+.simulator-sim-link-id {
+  color: rgba(140, 155, 210, 0.75);
+  white-space: nowrap;
+}
+
+.simulator-sim-link-row:hover .simulator-sim-link-id {
+  color: rgba(170, 185, 240, 0.9);
+}
+
+.simulator-sim-link-score {
+  text-align: right;
+  font-weight: 600;
+  color: rgba(200, 205, 240, 0.88);
+  white-space: nowrap;
+}
+
+.simulator-sim-link-luck {
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: 0.56rem;
+  color: var(--roll-color, rgba(170, 175, 220, 0.45));
+  padding: 0.02rem 0.2rem;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--roll-color, rgba(170, 175, 220, 0.45)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--roll-color, rgba(170, 175, 220, 0.45)) 40%, transparent);
 }
 
 /* pts column: fixed width, right-aligned number only */

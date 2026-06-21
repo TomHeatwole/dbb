@@ -15,7 +15,9 @@ function fmtFinish(place) {
 /**
  * Monte Carlo simulator results — win rate and aggregate standings stats.
  */
-function SimulatorResultsPanel({ results, teamsForGrid, iterations }) {
+function SimulatorResultsPanel({
+  results, teamsForGrid, iterations, selectedRosterId, onSelectTeam,
+}) {
   const teamInfoById = {};
   for (const t of (teamsForGrid || [])) teamInfoById[t.rosterId] = t;
 
@@ -26,7 +28,7 @@ function SimulatorResultsPanel({ results, teamsForGrid, iterations }) {
       <div className="simulator-results-header">
         <span className="simulator-results-title">Simulation Results</span>
         <span className="simulator-results-subtitle">
-          {iterations.toLocaleString()} runs · sorted by win %, avg total score tiebreaker
+          {iterations.toLocaleString()} runs · click a team for finish breakdown · sorted by win %
         </span>
       </div>
 
@@ -52,7 +54,14 @@ function SimulatorResultsPanel({ results, teamsForGrid, iterations }) {
               return (
                 <tr
                   key={row.rosterId}
-                  className={`simulator-results-tr${idx === 0 ? ' simulator-results-tr--leader' : ''}`}
+                  className={
+                    'simulator-results-tr simulator-results-tr--clickable' +
+                    (idx === 0 ? ' simulator-results-tr--leader' : '') +
+                    (selectedRosterId === row.rosterId ? ' simulator-results-tr--selected' : '')
+                  }
+                  onClick={() => onSelectTeam && onSelectTeam(
+                    selectedRosterId === row.rosterId ? null : row.rosterId,
+                  )}
                 >
                   <td className="simulator-results-td simulator-results-td--rank">{idx + 1}.</td>
                   <td className="simulator-results-td simulator-results-td--team">
