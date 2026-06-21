@@ -65,7 +65,7 @@ function SimulatorRunPage() {
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
   const [resultDeltas, setResultDeltas] = useState(null);
-  const [simRuns, setSimRuns] = useState(null);
+  const [teamFinishBuckets, setTeamFinishBuckets] = useState(null);
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [teamsForGrid, setTeamsForGrid] = useState([]);
   const [originalRosters, setOriginalRosters] = useState({});
@@ -157,7 +157,7 @@ function SimulatorRunPage() {
         setPhase('running');
         setProgress(0.2);
 
-        const { results: simResults, resultDeltas, simRuns: runs } = await runMonteCarloSimulation(
+        const { results: simResults, resultDeltas, teamFinishBuckets: finishBuckets } = await runMonteCarloSimulation(
           ctx,
           players,
           idMap,
@@ -172,7 +172,7 @@ function SimulatorRunPage() {
         if (!cancelled) {
           setResults(simResults);
           setResultDeltas(resultDeltas);
-          setSimRuns(runs);
+          setTeamFinishBuckets(finishBuckets);
           setProgress(1);
           setPhase('done');
         }
@@ -259,11 +259,11 @@ function SimulatorRunPage() {
               </div>
             </div>
 
-            {selectedRosterId != null && simRuns ? (
+            {selectedRosterId != null && teamFinishBuckets ? (
               <SimulatorTeamDetail
                 rosterId={selectedRosterId}
                 teamsForGrid={teamsForGrid}
-                simRuns={simRuns}
+                teamFinishBuckets={teamFinishBuckets}
                 originalRosters={originalRosters}
                 scenarioRosters={scenarioRosters}
                 seasonYear={scenarioSeason}

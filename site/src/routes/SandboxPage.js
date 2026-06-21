@@ -10,6 +10,7 @@ import PlayerDBPage from '../playerdb/PlayerDBPage';
 import RankingsViewer from '../rankingsViewer/RankingsViewer';
 import KtcRankCompare from '../ktcRankCompare/KtcRankCompare';
 import RedraftValueIndex from '../redraftValueIndex/RedraftValueIndex';
+import PosValueCompare from '../posValueCompare/PosValueCompare';
 
 const FEATURES = [
   {
@@ -17,6 +18,12 @@ const FEATURES = [
     label: 'KTC Rank Compare',
     description: 'Compare current KTC ranks to historical slot values and rank gaps.',
     component: <KtcRankCompare />,
+  },
+  {
+    id: 'POS_VALUE_COMPARE',
+    label: 'Pos Value Compare',
+    description: 'Cross-position KTC value matches vs actual HVORP outcomes (2021–2025).',
+    component: <PosValueCompare />,
   },
   {
     id: 'REDRAFT_VALUE_INDEX',

@@ -12948,3 +12948,161 @@ body.modal-open {
     height: 60px;
   }
 }
+
+/* ── Pos Value Compare (sandbox) ── */
+
+.pvc-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pvc-intro {
+  font-size: 0.88rem;
+  color: rgba(170, 175, 220, 0.75);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pvc-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.pvc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pvc-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(140, 150, 200, 0.65);
+}
+
+.pvc-select {
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(100, 110, 180, 0.4);
+  background: rgba(20, 24, 45, 0.85);
+  color: #e8eaff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  min-width: 12rem;
+}
+
+.pvc-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pvc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 8rem;
+}
+
+.pvc-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.pvc-stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffd080;
+  font-variant-numeric: tabular-nums;
+}
+
+.pvc-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e8eaff;
+  margin: 0 0 0.65rem;
+}
+
+.pvc-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(100, 110, 180, 0.25);
+}
+
+.pvc-table-wrap--scroll {
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.pvc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.pvc-table th {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  background: rgba(40, 50, 90, 0.55);
+  color: rgba(170, 175, 220, 0.85);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.pvc-table td {
+  padding: 0.45rem 0.75rem;
+  border-top: 1px solid rgba(100, 110, 180, 0.15);
+  color: rgba(220, 225, 255, 0.9);
+}
+
+.pvc-th-num,
+.pvc-td-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pvc-th-note,
+.pvc-td-note {
+  font-size: 0.78rem;
+  color: rgba(150, 160, 200, 0.7);
+}
+
+.pvc-td-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pvc-td-muted {
+  color: rgba(150, 160, 200, 0.65);
+  font-size: 0.78rem;
+}
+
+.pvc-pos {
+  color: #7ddea8;
+}
+
+.pvc-neg {
+  color: #f08080;
+}
+
+.pvc-empty,
+.pvc-error {
+  color: rgba(240, 128, 128, 0.9);
+  font-size: 0.88rem;
+}
+
+.pvc-loading {
+  min-height: 8rem;
+}

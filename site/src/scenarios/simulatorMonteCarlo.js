@@ -20,6 +20,8 @@ export const DEFAULT_ITERATIONS = 1000;
 export const MAX_SIMULATOR_ITERATIONS = 100000;
 const MIN_SIMULATOR_ITERATIONS = 1;
 const BATCH_SIZE = 25;
+/** Max drill-down links kept per finish place (avoids hoarding 100k full roll sets). */
+const MAX_RUNS_PER_FINISH = 50;
 
 export function clampSimulatorIterations(n) {
   const val = Math.round(Number(n) || DEFAULT_ITERATIONS);
@@ -142,6 +144,56 @@ function buildRegSeasonRankByRid(regTotals) {
     .sort((a, b) => (regTotals[b] || 0) - (regTotals[a] || 0))
     .forEach((rid, idx) => { regSeasonRankByRid[rid] = idx + 1; });
   return regSeasonRankByRid;
+}
+
+function createTeamFinishBuckets(rosterIds) {
+  const byTeam = {};
+  for (const rid of rosterIds) {
+    byTeam[rid] = Array.from({ length: 10 }, (_, i) => ({
+      place: i + 1,
+      count: 0,
+      runs: [],
+    }));
+  }
+  return byTeam;
+}
+
+/** Keep top-N runs by score per finish bucket; always increment count. */
+function recordTeamFinishRun(buckets, rosterId, simIndex, rolls, teamResult) {
+  const place = teamResult?.place;
+  if (place == null || place < 1 || place > 10) return;
+
+  const rid = Number(rosterId);
+  const teamBuckets = buckets[rid];
+  if (!teamBuckets) return;
+
+  const bucket = teamBuckets[place - 1];
+  bucket.count += 1;
+
+  const entry = {
+    simIndex,
+    rolls,
+    totalScore: teamResult.totalScore,
+    luckPercentile: teamResult.luckPercentile ?? null,
+  };
+
+  if (bucket.runs.length < MAX_RUNS_PER_FINISH) {
+    bucket.runs.push(entry);
+    if (bucket.runs.length === MAX_RUNS_PER_FINISH) {
+      bucket.runs.sort((a, b) => b.totalScore - a.totalScore);
+    }
+    return;
+  }
+
+  const worstKept = bucket.runs[bucket.runs.length - 1];
+  if (entry.totalScore <= worstKept.totalScore) return;
+
+  let insertAt = bucket.runs.length - 1;
+  while (insertAt > 0 && entry.totalScore > bucket.runs[insertAt - 1].totalScore) {
+    insertAt -= 1;
+  }
+  bucket.runs.splice(insertAt, 0, entry);
+  bucket.runs.length = MAX_RUNS_PER_FINISH;
 }
 
 function scoreRostersFromRolls(ctx, rosters, rolls, playersData, playerIdMap) {
@@ -333,7 +385,7 @@ function runSingleIteration(ctx, playersData, playerIdMap) {
 /**
  * @returns {Promise<{
  *   results: Array,
- *   simRuns: Array<{ simIndex, rolls, teamResults }>,
+ *   teamFinishBuckets: Object,
  * }>}
  */
 export async function runMonteCarloSimulation(
@@ -349,8 +401,9 @@ export async function runMonteCarloSimulation(
   const stats = emptyStats(ctx.rosterIds);
   const baselineStats = ctx.baselineRosters ? emptyStats(ctx.rosterIds) : null;
 
-  const simRuns = [];
+  const teamFinishBuckets = createTeamFinishBuckets(ctx.rosterIds);
   let completed = 0;
+  let lastReportedProgress = 0;
 
   while (completed < iterations) {
     const batchEnd = Math.min(completed + batchSize, iterations);
@@ -365,7 +418,9 @@ export async function runMonteCarloSimulation(
         baselineOutcome,
       } = runSingleIteration(ctx, playersData, playerIdMap);
 
-      simRuns.push({ simIndex: i + 1, rolls, teamResults });
+      for (const [rid, tr] of Object.entries(teamResults || {})) {
+        recordTeamFinishRun(teamFinishBuckets, rid, i + 1, rolls, tr);
+      }
 
       const regSeasonRankByRid = buildRegSeasonRankByRid(regTotals);
       accumulateIterationStats(
@@ -394,7 +449,12 @@ export async function runMonteCarloSimulation(
 
     completed = batchEnd;
     if (onProgress) {
-      onProgress(completed / iterations);
+      const progress = completed / iterations;
+      // Avoid thousands of React re-renders on large iteration counts.
+      if (progress - lastReportedProgress >= 0.01 || completed === iterations) {
+        lastReportedProgress = progress;
+        onProgress(progress);
+      }
     }
     // Yield so the progress bar can repaint. Browsers throttle setTimeout heavily
     // in background tabs, so skip the yield when hidden to keep sims running.
@@ -411,5 +471,5 @@ export async function runMonteCarloSimulation(
     ? computeSimulatorResultDeltas(baselineResults, results)
     : null;
 
-  return { results, baselineResults, resultDeltas, simRuns };
+  return { results, baselineResults, resultDeltas, teamFinishBuckets };
 }

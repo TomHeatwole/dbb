@@ -42,7 +42,7 @@ export function buildTeamFinishBuckets(simRuns, rosterId) {
 function SimulatorTeamDetail({
   rosterId,
   teamsForGrid,
-  simRuns,
+  teamFinishBuckets,
   originalRosters,
   scenarioRosters,
   seasonYear,
@@ -51,11 +51,11 @@ function SimulatorTeamDetail({
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
 
   const buckets = useMemo(
-    () => buildTeamFinishBuckets(simRuns, rosterId),
-    [simRuns, rosterId],
+    () => teamFinishBuckets?.[rosterId] || teamFinishBuckets?.[String(rosterId)] || null,
+    [teamFinishBuckets, rosterId],
   );
 
-  if (!simRuns || simRuns.length === 0) return null;
+  if (!buckets || buckets.every((b) => b.count === 0)) return null;
 
   return (
     <div className="simulator-team-detail">
@@ -70,6 +70,11 @@ function SimulatorTeamDetail({
 
       <div className="simulator-team-detail-subtitle">
         Finish distribution across {iterations.toLocaleString()} simulations · click a row to open that outcome set in Future Scenarios v2
+        {buckets.some((b) => b.count > b.runs.length) && (
+          <span className="simulator-team-detail-note">
+            {' '}(links show top 50 scores per finish)
+          </span>
+        )}
       </div>
 
       <div className="simulator-finish-grid">
