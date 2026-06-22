@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hokkaido Map — English Labels</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  body { margin:0; font-family: Arial, sans-serif; }
+  #map { height: 100vh; width: 100vw; }
+  .label {
+    background: white;
+    border: 1px solid #777;
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #222;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .label-layout .leaflet-tooltip {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+  .legend {
+    background:white; padding:10px 12px; border-radius:6px; border:1px solid #999;
+    line-height:1.6; font-size:13px;
+  }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; border:1px solid #333; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+const map = L.map('map', { zoomControl: true }).setView([42.714413, 141.387906], 7);
+map.getContainer().classList.add('label-layout');
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  maxZoom: 19
+}).addTo(map);
+
+const markers = [{"day": "Jul 29", "color": "#00A6A6", "cluster": "Hakodate", "loc": "Hakodate Station", "lat": 41.7737, "lon": 140.7264, "notes": "Arrival anchor", "popup": "<b>Hakodate Station</b><br>Jul 29<br>Hakodate<br>Arrival anchor"}, {"day": "Jul 29/30", "color": "#00A6A6", "cluster": "Hakodate", "loc": "Hakodate Bay Area", "lat": 41.7684, "lon": 140.7167, "notes": "Seafood/dinner stroll", "popup": "<b>Hakodate Bay Area</b><br>Jul 29/30<br>Hakodate<br>Seafood/dinner stroll"}, {"day": "Jul 30", "color": "#00A6A6", "cluster": "Hakodate", "loc": "Hakodate Morning Market", "lat": 41.7727, "lon": 140.7273, "notes": "Seafood breakfast", "popup": "<b>Hakodate Morning Market</b><br>Jul 30<br>Hakodate<br>Seafood breakfast"}, {"day": "Jul 29/30", "color": "#00A6A6", "cluster": "Hakodate", "loc": "Mt Hakodate Ropeway", "lat": 41.759, "lon": 140.7043, "notes": "Night view/weather dependent", "popup": "<b>Mt Hakodate Ropeway</b><br>Jul 29/30<br>Hakodate<br>Night view/weather dependent"}, {"day": "Jul 30-Aug 2", "color": "#8064A2", "cluster": "Lake Toya", "loc": "Toyako Onsen", "lat": 42.565, "lon": 140.8172, "notes": "Lake Toya base", "popup": "<b>Toyako Onsen</b><br>Jul 30-Aug 2<br>Lake Toya<br>Lake Toya base"}, {"day": "Jul 31", "color": "#8064A2", "cluster": "Lake Toya", "loc": "Lake Toya Cruise Pier", "lat": 42.5657, "lon": 140.8212, "notes": "Cruise", "popup": "<b>Lake Toya Cruise Pier</b><br>Jul 31<br>Lake Toya<br>Cruise"}, {"day": "Jul 31", "color": "#8064A2", "cluster": "Lake Toya", "loc": "Mount Usu Ropeway", "lat": 42.5441, "lon": 140.8499, "notes": "Volcano views optional", "popup": "<b>Mount Usu Ropeway</b><br>Jul 31<br>Lake Toya<br>Volcano views optional"}, {"day": "Aug 1", "color": "#FFD966", "cluster": "Noboribetsu", "loc": "Noboribetsu Jigokudani", "lat": 42.4925, "lon": 141.1446, "notes": "Hell Valley day trip", "popup": "<b>Noboribetsu Jigokudani</b><br>Aug 1<br>Noboribetsu<br>Hell Valley day trip"}, {"day": "Aug 2-4", "color": "#FF66CC", "cluster": "Sapporo", "loc": "Sapporo Station", "lat": 43.0687, "lon": 141.3508, "notes": "City base", "popup": "<b>Sapporo Station</b><br>Aug 2-4<br>Sapporo<br>City base"}, {"day": "Aug 2-4", "color": "#FF66CC", "cluster": "Sapporo", "loc": "Susukino", "lat": 43.0555, "lon": 141.3532, "notes": "Dinner/drinks", "popup": "<b>Susukino</b><br>Aug 2-4<br>Sapporo<br>Dinner/drinks"}, {"day": "Aug 3", "color": "#FF66CC", "cluster": "Otaru", "loc": "Otaru Canal", "lat": 43.1989, "lon": 141.0012, "notes": "Easy day trip", "popup": "<b>Otaru Canal</b><br>Aug 3<br>Otaru<br>Easy day trip"}, {"day": "Aug 4", "color": "#F4B183", "cluster": "Biei", "loc": "Shirogane Blue Pond", "lat": 43.4935, "lon": 142.6145, "notes": "Scenic stop", "popup": "<b>Shirogane Blue Pond</b><br>Aug 4<br>Biei<br>Scenic stop"}, {"day": "Aug 4/5", "color": "#F4B183", "cluster": "Furano", "loc": "Farm Tomita", "lat": 43.4185, "lon": 142.4268, "notes": "Flowers/lavender", "popup": "<b>Farm Tomita</b><br>Aug 4/5<br>Furano<br>Flowers/lavender"}, {"day": "Aug 5", "color": "#F4B183", "cluster": "Biei", "loc": "Shikisai no Oka", "lat": 43.5287, "lon": 142.4684, "notes": "Flower fields", "popup": "<b>Shikisai no Oka</b><br>Aug 5<br>Biei<br>Flower fields"}, {"day": "Aug 6", "color": "#F4B183", "cluster": "Daisetsuzan", "loc": "Asahidake Ropeway", "lat": 43.6505, "lon": 142.7917, "notes": "Hiking/weather dependent", "popup": "<b>Asahidake Ropeway</b><br>Aug 6<br>Daisetsuzan<br>Hiking/weather dependent"}, {"day": "Aug 7/8", "color": "#A6A6A6", "cluster": "Transit", "loc": "New Chitose Airport", "lat": 42.7752, "lon": 141.6923, "notes": "Final logistics", "popup": "<b>New Chitose Airport</b><br>Aug 7/8<br>Transit<br>Final logistics"}];
+
+const latlngs = [];
+const labelEntries = [];
+
+markers.forEach(m => {
+  const latlng = L.latLng(m.lat, m.lon);
+  const marker = L.circleMarker(latlng, {
+    radius: 8,
+    color: '#111',
+    weight: 1,
+    fillColor: m.color,
+    fillOpacity: 0.9
+  }).addTo(map);
+  marker.bindPopup(m.popup);
+  marker.bindTooltip(m.loc, {
+    permanent: true,
+    direction: 'center',
+    offset: [0, 0],
+    className: 'label'
+  });
+  labelEntries.push({ marker, latlng, text: m.loc });
+  latlngs.push([m.lat, m.lon]);
+});
+
+L.polyline(latlngs, { color: '#666', weight: 2, opacity: 0.55, dashArray: '6 6' }).addTo(map);
+map.fitBounds(latlngs, { padding: [50, 50] });
+
+function rectsOverlap(a, b, pad) {
+  return !(a.right + pad < b.left || a.left > b.right + pad || a.bottom + pad < b.top || a.top > b.bottom + pad);
+}
+
+function layoutLabels() {
+  const pad = 6;
+  const markerPad = 10;
+  const placed = [];
+
+  labelEntries.sort((a, b) => {
+    if (b.latlng.lat !== a.latlng.lat) return b.latlng.lat - a.latlng.lat;
+    return a.latlng.lng - b.latlng.lng;
+  });
+
+  labelEntries.forEach(entry => {
+    const tooltip = entry.marker.getTooltip();
+    const el = tooltip && tooltip.getElement();
+    if (!el) return;
+
+    const anchor = map.latLngToContainerPoint(entry.latlng);
+    const w = el.offsetWidth || 120;
+    const h = el.offsetHeight || 22;
+    const gap = 14;
+
+    const candidates = [
+      [gap, -h / 2],
+      [-w - gap, -h / 2],
+      [-w / 2, -h - gap],
+      [-w / 2, gap],
+      [gap, -h - 6],
+      [gap, 6],
+      [-w - gap, -h - 6],
+      [-w - gap, 6],
+      [gap + 18, -h / 2],
+      [-w - gap - 18, -h / 2],
+      [-w / 2, -h - gap - 18],
+      [-w / 2, gap + 18],
+      [gap + 36, -h / 2],
+      [-w - gap - 36, -h / 2],
+      [gap, -h - 24],
+      [gap, 24],
+      [-w - gap, -h - 24],
+      [-w - gap, 24]
+    ];
+
+    let chosen = candidates[0];
+    for (const [dx, dy] of candidates) {
+      const rect = {
+        left: anchor.x + dx,
+        top: anchor.y + dy,
+        right: anchor.x + dx + w,
+        bottom: anchor.y + dy + h
+      };
+      const hitsLabel = placed.some(r => rectsOverlap(rect, r, pad));
+      const hitsMarker = labelEntries.some(other => {
+        if (other === entry) return false;
+        const p = map.latLngToContainerPoint(other.latlng);
+        const mrect = {
+          left: p.x - markerPad,
+          top: p.y - markerPad,
+          right: p.x + markerPad,
+          bottom: p.y + markerPad
+        };
+        return rectsOverlap(rect, mrect, 0);
+      });
+      if (!hitsLabel && !hitsMarker) {
+        chosen = [dx, dy];
+        break;
+      }
+    }
+
+    const [dx, dy] = chosen;
+    placed.push({
+      left: anchor.x + dx - pad,
+      top: anchor.y + dy - pad,
+      right: anchor.x + dx + w + pad,
+      bottom: anchor.y + dy + h + pad
+    });
+
+    tooltip.options.offset = L.point(dx + w / 2, dy + h / 2);
+    tooltip.update();
+  });
+}
+
+map.whenReady(() => {
+  requestAnimationFrame(() => {
+    layoutLabels();
+    map.on('zoomend moveend resize', layoutLabels);
+  });
+});
+
+const legend = L.control({ position: 'bottomleft' });
+legend.onAdd = function() {
+  const div = L.DomUtil.create('div', 'legend');
+  const seen = new Set();
+  let html = '<b>Hokkaido Map — English Labels</b><br>English labels; day-coded pins<br>';
+  markers.forEach(m => {
+    const key = m.day + '|' + m.color;
+    if (!seen.has(key)) {
+      seen.add(key);
+      html += `<span class="dot" style="background:${m.color}"></span>${m.day}<br>`;
+    }
+  });
+  div.innerHTML = html;
+  return div;
+};
+legend.addTo(map);
+</script>
+</body>
+</html>
