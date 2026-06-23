@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kyoto Map — Non-overlapping English Labels</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html, body { margin:0; height:100%; font-family: Arial, sans-serif; }
+  #map { height: 100vh; width: 100vw; }
+  .label {
+    background: rgba(255,255,255,.96);
+    border: 1px solid #666;
+    border-radius: 5px;
+    padding: 3px 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111;
+    box-shadow: 0 1px 4px rgba(0,0,0,.28);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .label-layout .leaflet-tooltip {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+  .leaflet-tooltip-left.label:before,
+  .leaflet-tooltip-right.label:before,
+  .leaflet-tooltip-top.label:before,
+  .leaflet-tooltip-bottom.label:before { display:none; }
+  .legend {
+    background:rgba(255,255,255,.95); padding:10px 12px; border-radius:6px; border:1px solid #999;
+    line-height:1.6; font-size:13px; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; border:1px solid #333; }
+  .hint { font-size:11px; color:#444; margin-top:4px; max-width:220px; line-height:1.25; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+const map = L.map('map').setView([35.002597, 135.762247], 12);
+map.getContainer().classList.add('label-layout');
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  maxZoom: 19
+}).addTo(map);
+
+const markers = [{"day": "Jul 26", "color": "#4F81BD", "cluster": "Arrival", "loc": "Kyoto Station", "lat": 34.985849, "lon": 135.758766, "notes": "Arrival anchor", "popup": "<b>Kyoto Station</b><br>Jul 26<br>Arrival<br>Arrival anchor"}, {"day": "Jul 26", "color": "#4F81BD", "cluster": "Central", "loc": "Nishiki Market", "lat": 35.005027, "lon": 135.764724, "notes": "Food/shopping", "popup": "<b>Nishiki Market</b><br>Jul 26<br>Central<br>Food/shopping"}, {"day": "Jul 26", "color": "#4F81BD", "cluster": "Central", "loc": "Pontocho Alley", "lat": 35.007607, "lon": 135.770144, "notes": "Dinner/night atmosphere", "popup": "<b>Pontocho Alley</b><br>Jul 26<br>Central<br>Dinner/night atmosphere"}, {"day": "Jul 26/27", "color": "#5B9BD5", "cluster": "East", "loc": "Gion Shirakawa", "lat": 35.005896, "lon": 135.775517, "notes": "Evening stroll", "popup": "<b>Gion Shirakawa</b><br>Jul 26/27<br>East<br>Evening stroll"}, {"day": "Jul 27", "color": "#70AD47", "cluster": "South/East", "loc": "Fushimi Inari Taisha", "lat": 34.967146, "lon": 135.772672, "notes": "Early morning must-do", "popup": "<b>Fushimi Inari Taisha</b><br>Jul 27<br>South/East<br>Early morning must-do"}, {"day": "Jul 27", "color": "#70AD47", "cluster": "East", "loc": "Kiyomizu-dera", "lat": 34.994856, "lon": 135.785046, "notes": "Optional scenic temple", "popup": "<b>Kiyomizu-dera</b><br>Jul 27<br>East<br>Optional scenic temple"}, {"day": "Jul 27", "color": "#70AD47", "cluster": "East", "loc": "Sannenzaka / Ninenzaka", "lat": 34.9971, "lon": 135.7816, "notes": "Traditional lanes", "popup": "<b>Sannenzaka / Ninenzaka</b><br>Jul 27<br>East<br>Traditional lanes"}, {"day": "Jul 27", "color": "#70AD47", "cluster": "East", "loc": "Yasaka Shrine", "lat": 35.003656, "lon": 135.778553, "notes": "Evening route anchor", "popup": "<b>Yasaka Shrine</b><br>Jul 27<br>East<br>Evening route anchor"}, {"day": "Jul 27", "color": "#70AD47", "cluster": "East", "loc": "Kyoto Handicraft Center", "lat": 35.015672, "lon": 135.780295, "notes": "Tea/crafts candidate", "popup": "<b>Kyoto Handicraft Center</b><br>Jul 27<br>East<br>Tea/crafts candidate"}, {"day": "Jul 28", "color": "#F4B183", "cluster": "West", "loc": "Arashiyama Bamboo Grove", "lat": 35.017209, "lon": 135.67106, "notes": "Optional early morning", "popup": "<b>Arashiyama Bamboo Grove</b><br>Jul 28<br>West<br>Optional early morning"}, {"day": "Jul 28", "color": "#F4B183", "cluster": "Central", "loc": "Kyoto Takashimaya / Kawaramachi", "lat": 35.003646, "lon": 135.769984, "notes": "AC food/shopping", "popup": "<b>Kyoto Takashimaya / Kawaramachi</b><br>Jul 28<br>Central<br>AC food/shopping"}, {"day": "Jul 28", "color": "#F4B183", "cluster": "Northwest", "loc": "Kamishichiken Beer Garden", "lat": 35.0275, "lon": 135.7386, "notes": "Fun final-night option", "popup": "<b>Kamishichiken Beer Garden</b><br>Jul 28<br>Northwest<br>Fun final-night option"}];
+
+const latlngs = [];
+const labelEntries = [];
+
+markers.forEach(m => {
+  const latlng = L.latLng(m.lat, m.lon);
+  const marker = L.circleMarker(latlng, {
+    radius: 8,
+    color: '#111',
+    weight: 1,
+    fillColor: m.color,
+    fillOpacity: 0.92
+  }).addTo(map);
+  marker.bindPopup(m.popup);
+  marker.bindTooltip(m.loc, {
+    permanent: true,
+    direction: 'center',
+    offset: [0, 0],
+    className: 'label',
+    opacity: 1
+  });
+  labelEntries.push({ marker, latlng, text: m.loc });
+  latlngs.push([m.lat, m.lon]);
+});
+
+L.polyline(latlngs, { color: '#666', weight: 2, opacity: 0.45, dashArray: '6 6' }).addTo(map);
+map.fitBounds(latlngs, { padding: [80, 80] });
+
+function rectsOverlap(a, b, pad) {
+  return !(a.right + pad < b.left || a.left > b.right + pad || a.bottom + pad < b.top || a.top > b.bottom + pad);
+}
+
+function layoutLabels() {
+  const pad = 6;
+  const markerPad = 10;
+  const placed = [];
+
+  labelEntries.sort((a, b) => {
+    if (b.latlng.lat !== a.latlng.lat) return b.latlng.lat - a.latlng.lat;
+    return a.latlng.lng - b.latlng.lng;
+  });
+
+  labelEntries.forEach(entry => {
+    const tooltip = entry.marker.getTooltip();
+    const el = tooltip && tooltip.getElement();
+    if (!el) return;
+
+    const anchor = map.latLngToContainerPoint(entry.latlng);
+    const w = el.offsetWidth || 120;
+    const h = el.offsetHeight || 22;
+    const gap = 14;
+
+    const candidates = [
+      [gap, -h / 2],
+      [-w - gap, -h / 2],
+      [-w / 2, -h - gap],
+      [-w / 2, gap],
+      [gap, -h - 6],
+      [gap, 6],
+      [-w - gap, -h - 6],
+      [-w - gap, 6],
+      [gap + 18, -h / 2],
+      [-w - gap - 18, -h / 2],
+      [-w / 2, -h - gap - 18],
+      [-w / 2, gap + 18],
+      [gap + 36, -h / 2],
+      [-w - gap - 36, -h / 2],
+      [gap, -h - 24],
+      [gap, 24],
+      [-w - gap, -h - 24],
+      [-w - gap, 24]
+    ];
+
+    let chosen = candidates[0];
+    for (const [dx, dy] of candidates) {
+      const rect = {
+        left: anchor.x + dx,
+        top: anchor.y + dy,
+        right: anchor.x + dx + w,
+        bottom: anchor.y + dy + h
+      };
+      const hitsLabel = placed.some(r => rectsOverlap(rect, r, pad));
+      const hitsMarker = labelEntries.some(other => {
+        if (other === entry) return false;
+        const p = map.latLngToContainerPoint(other.latlng);
+        const mrect = {
+          left: p.x - markerPad,
+          top: p.y - markerPad,
+          right: p.x + markerPad,
+          bottom: p.y + markerPad
+        };
+        return rectsOverlap(rect, mrect, 0);
+      });
+      if (!hitsLabel && !hitsMarker) {
+        chosen = [dx, dy];
+        break;
+      }
+    }
+
+    const [dx, dy] = chosen;
+    placed.push({
+      left: anchor.x + dx - pad,
+      top: anchor.y + dy - pad,
+      right: anchor.x + dx + w + pad,
+      bottom: anchor.y + dy + h + pad
+    });
+
+    tooltip.options.offset = L.point(dx + w / 2, dy + h / 2);
+    tooltip.update();
+  });
+}
+
+map.whenReady(() => {
+  requestAnimationFrame(() => {
+    layoutLabels();
+    map.on('zoomend moveend resize', layoutLabels);
+  });
+});
+
+const legend = L.control({ position: 'bottomleft' });
+legend.onAdd = function() {
+  const div = L.DomUtil.create('div', 'legend');
+  const seen = new Set();
+  let html = '<b>Kyoto Map — Non-overlapping English Labels</b><br>Day-coded pins, English labels<br>';
+  markers.forEach(m => {
+    const key = m.day + '|' + m.color;
+    if (!seen.has(key)) {
+      seen.add(key);
+      html += `<span class="dot" style="background:${m.color}"></span>${m.day}<br>`;
+    }
+  });
+  html += '<div class="hint">Click a pin for details.</div>';
+  div.innerHTML = html;
+  return div;
+};
+legend.addTo(map);
+</script>
+</body>
+</html>
