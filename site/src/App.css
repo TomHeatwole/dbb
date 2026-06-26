@@ -13898,9 +13898,9 @@ body.modal-open {
 .sop-tabs {
   position: relative;
   z-index: 2;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
   margin-bottom: 1.25rem;
 }
 
@@ -13908,9 +13908,11 @@ body.modal-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.95rem 1rem;
-  border-radius: 0.85rem;
-  font-size: clamp(1.1rem, 3.5vw, 1.45rem);
+  flex: 0 0 auto;
+  min-width: 6.5rem;
+  padding: 0.7rem 1.6rem;
+  border-radius: 999px;
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -13963,7 +13965,6 @@ body.modal-open {
   pointer-events: none;
   opacity: 0.35;
   background:
-    linear-gradient(to right, transparent 49.5%, rgba(255, 255, 255, 0.85) 49.5%, rgba(255, 255, 255, 0.85) 50.5%, transparent 50.5%),
     radial-gradient(circle at 50% 42%, transparent 58px, rgba(255, 255, 255, 0.75) 59px, rgba(255, 255, 255, 0.75) 61px, transparent 62px);
 }
 
