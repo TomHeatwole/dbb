@@ -6,6 +6,9 @@
     },
     "api/search.mjs": {
       "maxDuration": 30
+    },
+    "api/fanduel-sop.mjs": {
+      "maxDuration": 30
     }
   }
 }

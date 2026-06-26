@@ -86,3 +86,45 @@ export function computeBreakevenOdds(noGoalAmerican) {
     og: toOutcome(GOAL_TYPE_RATES.og),
   };
 }
+
+/** Higher American odds = better price for the bettor. */
+export function isBetterAmericanOdds(offered, breakeven) {
+  if (!Number.isFinite(offered) || !Number.isFinite(breakeven)) return false;
+  return offered > breakeven;
+}
+
+/** Implied-probability edge in percentage points (positive = +EV). */
+export function impliedEdgePoints(offered, breakeven) {
+  const offeredProb = americanToImpliedProb(offered);
+  const fairProb = americanToImpliedProb(breakeven);
+  if (offeredProb == null || fairProb == null) return null;
+  return (fairProb - offeredProb) * 100;
+}
+
+export function analyzeAgainstBreakeven(fdAmerican, breakevenAmerican) {
+  if (breakevenAmerican == null) return null;
+  const profitable = isBetterAmericanOdds(fdAmerican, breakevenAmerican);
+  const edgePoints = impliedEdgePoints(fdAmerican, breakevenAmerican);
+  return {
+    profitable: Number.isFinite(fdAmerican) ? profitable : false,
+    edgePoints,
+    breakevenAmerican,
+  };
+}
+
+export const GOAL_TYPE_META = [
+  { key: 'sop', label: 'SOP', fdRunner: 'Shot Open Play' },
+  { key: 'header', label: 'HEADER', fdRunner: 'Header' },
+  { key: 'pk', label: 'PK', fdRunner: 'Penalty' },
+  { key: 'fk', label: 'FK', fdRunner: 'Free Kick' },
+  { key: 'og', label: 'OG', fdRunner: 'Own Goal' },
+];
+
+export const NO_GOAL_SOURCE_KEYS = {
+  nextGoalMethod: 'nextGoalMethod',
+  correctScore: 'correctScore',
+  totalGoalsUnder: 'totalGoalsUnder',
+  nthGoalNeither: 'nthGoalNeither',
+};
+
+export const DEFAULT_NO_GOAL_SOURCE = NO_GOAL_SOURCE_KEYS.totalGoalsUnder;

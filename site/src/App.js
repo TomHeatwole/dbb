@@ -83,7 +83,8 @@ function AppInner() {
   const showHorizontalNav = useShowHorizontalNav();
   const location = useLocation();
   const isHomeRoute = location.pathname === '/oldhome/';
-  const isSopRoute = location.pathname.toUpperCase() === '/SOP';
+  const pathUpper = location.pathname.toUpperCase();
+  const isSopRoute = pathUpper === '/SOP' || pathUpper.startsWith('/SOP/');
   
   // Determine main content class based on viewport mode
   let mainClassName = 'main-content-shared';
@@ -136,7 +137,8 @@ function AppInner() {
       <Route path="/hwangai" element={<HwangAIPage />} />
       <Route path="/teams-2" element={<Teams2Page />} />
       <Route path="/teams-2/:id" element={<Teams2Page />} />
-      <Route path="/SOP" element={<SOPPage />} />
+      <Route path="/SOP/*" element={<SOPPage />} />
+      <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
       
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>

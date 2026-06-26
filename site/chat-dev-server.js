@@ -34,26 +34,26 @@ function shimResponse(res) {
 const server = http.createServer(async (req, res) => {
   shimResponse(res);
 
-  const apiHandlers = {
-    '/api/chat':   'chat',
+  const pathname = (req.url || '').split('?')[0];
+
+  const postHandlers = {
+    '/api/chat': 'chat',
     '/api/search': 'search',
   };
-  const handlerName = apiHandlers[req.url];
 
-  if (req.method === 'POST' && handlerName) {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        req.body = JSON.parse(body);
-      } catch {
-        res.status(400).json({ error: 'Invalid JSON' });
-        return;
-      }
+  const getHandlers = {
+    '/api/fanduel-sop': 'fanduel-sop',
+  };
 
+  const handlerName =
+  req.method === 'POST' ? postHandlers[pathname]
+    : req.method === 'GET' ? getHandlers[pathname]
+      : null;
+
+  if (handlerName && (req.method === 'GET' || req.method === 'POST')) {
+    const runHandler = async (body) => {
       try {
-        // Dynamic import so ESM handlers work from this CommonJS file.
-        // Cache-bust with timestamp so server restart isn't needed during dev.
+        req.body = body;
         const { default: handler } = await import(`./api/${handlerName}.mjs?v=${Date.now()}`);
         await handler(req, res);
       } catch (err) {
@@ -61,10 +61,26 @@ const server = http.createServer(async (req, res) => {
         console.error('Handler error:', err);
         res.status(500).json({ error: err.message });
       }
-    });
-  } else {
-    res.status(404).json({ error: 'Not found' });
+    };
+
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          await runHandler(JSON.parse(body));
+        } catch {
+          res.status(400).json({ error: 'Invalid JSON' });
+        }
+      });
+      return;
+    }
+
+    await runHandler(undefined);
+    return;
   }
+
+  res.status(404).json({ error: 'Not found' });
 });
 
 // eslint-disable-next-line no-console
