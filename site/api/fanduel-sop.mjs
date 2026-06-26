@@ -13,7 +13,7 @@ const FD_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (compatible; HwangDynasty-SOP/1.0)',
 };
 
-const GOAL_METHOD_MARKET = 'Next Goal Method';
+const GOAL_METHOD_MARKET_PREFIX = 'Next Goal Method';
 const CORRECT_SCORE_MARKET = 'Correct Score';
 const NTH_GOAL_ORDINALS = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth'];
 
@@ -24,6 +24,8 @@ const GOAL_TYPE_RUNNERS = {
   fk: 'Free Kick',
   og: 'Own Goal',
 };
+
+const NO_GOAL_RUNNERS = ['No Goal', 'No Goals', 'Neither'];
 
 function runnersList(market) {
   const runners = market?.runners;
@@ -37,8 +39,19 @@ function americanOdds(runner) {
   return Number.isFinite(raw) ? raw : null;
 }
 
+function impliedProbFromAmerican(american) {
+  if (!Number.isFinite(american) || american === 0) return null;
+  if (american > 0) return 100 / (american + 100);
+  return Math.abs(american) / (Math.abs(american) + 100);
+}
+
 function findMarketByName(markets, name) {
   return Object.values(markets).find((m) => m.marketName === name) ?? null;
+}
+
+function findMarketByPrefix(markets, prefix) {
+  const p = String(prefix).toLowerCase();
+  return Object.values(markets).find((m) => String(m.marketName ?? '').toLowerCase().startsWith(p)) ?? null;
 }
 
 function findRunnerByName(market, name) {
@@ -47,8 +60,26 @@ function findRunnerByName(market, name) {
   return runnersList(market).find((r) => String(r.runnerName ?? '').toLowerCase() === target) ?? null;
 }
 
+function findRunnerByNames(market, names) {
+  for (const name of names) {
+    const runner = findRunnerByName(market, name);
+    if (runner) return runner;
+  }
+  return null;
+}
+
 function runnerQuote(market, runnerName) {
   const runner = findRunnerByName(market, runnerName);
+  if (!runner) return null;
+  return {
+    american: americanOdds(runner),
+    status: runner.runnerStatus ?? null,
+    runnerName: runner.runnerName,
+  };
+}
+
+function runnerQuoteAny(market, runnerNames) {
+  const runner = findRunnerByNames(market, runnerNames);
   if (!runner) return null;
   return {
     american: americanOdds(runner),
@@ -100,7 +131,7 @@ function parseEventScore(event) {
     }
   }
 
-  return { home: 0, away: 0 };
+  return null;
 }
 
 function parseTeams(eventName) {
@@ -119,8 +150,104 @@ function nthGoalMarketName(goalNumber) {
   return `Team To Score the ${ord} Goal`;
 }
 
-function nthGoalNeitherRunner(goalNumber) {
-  return goalNumber === 1 ? 'No Goals' : 'Neither';
+function findNthGoalMarket(markets) {
+  for (let i = 0; i < NTH_GOAL_ORDINALS.length; i += 1) {
+    const goalNumber = i + 1;
+    const market = findMarketByName(markets, nthGoalMarketName(goalNumber));
+    if (market && market.marketStatus !== 'CLOSED') {
+      return { market, goalNumber };
+    }
+  }
+  return { market: null, goalNumber: 1 };
+}
+
+function teamHasScoredFromOu(markets, side) {
+  const market = findMarketByName(markets, `${side} Team Over/Under 0.5 Goals`);
+  if (!market) return null;
+
+  const over = findRunnerByName(market, 'Over');
+  const under = findRunnerByName(market, 'Under');
+  if (!over || !under) return null;
+  if (over.runnerStatus !== 'ACTIVE' || under.runnerStatus !== 'ACTIVE') return null;
+
+  const overProb = impliedProbFromAmerican(americanOdds(over));
+  const underProb = impliedProbFromAmerican(americanOdds(under));
+  if (overProb == null || underProb == null) return null;
+
+  if (overProb > underProb + 0.03) return true;
+  if (underProb > overProb + 0.03) return false;
+  return null;
+}
+
+function activeCorrectScores(markets) {
+  const market = findMarketByName(markets, CORRECT_SCORE_MARKET);
+  if (!market) return [];
+
+  return runnersList(market)
+    .filter((r) => r.runnerStatus === 'ACTIVE')
+    .map((r) => {
+      const m = String(r.runnerName ?? '').match(/^(\d+)-(\d+)$/);
+      if (!m) return null;
+      return {
+        home: Number(m[1]),
+        away: Number(m[2]),
+        key: r.runnerName,
+        american: americanOdds(r),
+      };
+    })
+    .filter(Boolean);
+}
+
+function inferLiveScore(markets) {
+  const { goalNumber } = findNthGoalMarket(markets);
+  const totalGoals = Math.max(0, goalNumber - 1);
+
+  if (totalGoals === 0) {
+    return { home: 0, away: 0 };
+  }
+
+  const homeScored = teamHasScoredFromOu(markets, 'Home');
+  const awayScored = teamHasScoredFromOu(markets, 'Away');
+
+  const activeScores = activeCorrectScores(markets).filter(
+    (s) => s.home + s.away === totalGoals,
+  );
+
+  if (homeScored === true && awayScored === false) {
+    return { home: totalGoals, away: 0 };
+  }
+  if (homeScored === false && awayScored === true) {
+    return { home: 0, away: totalGoals };
+  }
+
+  if (activeScores.length === 1) {
+    return { home: activeScores[0].home, away: activeScores[0].away };
+  }
+
+  if (homeScored === true && awayScored === true && totalGoals >= 2) {
+    const draw = activeScores.find((s) => s.home === s.away);
+    if (draw) return { home: draw.home, away: draw.away };
+  }
+
+  if (homeScored === true) {
+    return { home: Math.min(totalGoals, 1), away: Math.max(0, totalGoals - 1) };
+  }
+  if (awayScored === true) {
+    return { home: Math.max(0, totalGoals - 1), away: Math.min(totalGoals, 1) };
+  }
+
+  return { home: 0, away: totalGoals };
+}
+
+function resolveScore(event, markets) {
+  const direct = parseEventScore(event);
+  if (direct) return direct;
+
+  if (event?.inPlay) {
+    return inferLiveScore(markets);
+  }
+
+  return { home: 0, away: 0 };
 }
 
 function mergeMarkets(payloads) {
@@ -142,7 +269,7 @@ function mergeEvent(payloads) {
 }
 
 function extractGoalTypes(markets) {
-  const market = findMarketByName(markets, GOAL_METHOD_MARKET);
+  const market = findMarketByPrefix(markets, GOAL_METHOD_MARKET_PREFIX);
   if (!market) return null;
 
   const out = {};
@@ -153,16 +280,17 @@ function extractGoalTypes(markets) {
   return Object.keys(out).length ? out : null;
 }
 
-function extractNoGoalMarkets(markets, score, teams) {
+function extractNoGoalMarkets(markets, score, teams, inPlay) {
   const totalGoals = score.home + score.away;
   const nextGoalNumber = totalGoals + 1;
   const underLine = totalGoals + 0.5;
   const scoreKey = scoreDisplay(score);
 
-  const nextGoalMethod = findMarketByName(markets, GOAL_METHOD_MARKET);
+  const nextGoalMethod = findMarketByPrefix(markets, GOAL_METHOD_MARKET_PREFIX);
   const correctScore = findMarketByName(markets, CORRECT_SCORE_MARKET);
   const totalsMarket = findMarketByName(markets, `Over/Under ${underLine} Goals`);
-  const nthGoalMarket = findMarketByName(markets, nthGoalMarketName(nextGoalNumber));
+  const { market: nthGoalMarket, goalNumber: nthFromMarket } = findNthGoalMarket(markets);
+  const nthGoalNumber = inPlay ? nthFromMarket : nextGoalNumber;
 
   const underRunner = totalsMarket
     ? runnersList(totalsMarket).find((r) => {
@@ -171,13 +299,15 @@ function extractNoGoalMarkets(markets, score, teams) {
       })
     : null;
 
-  const nthRunnerName = nthGoalNeitherRunner(nextGoalNumber);
+  const nthRunnerNames = nthGoalNumber === 1
+    ? ['No Goals', 'No Goal', 'Neither']
+    : ['Neither', 'No Goals', 'No Goal'];
 
   return {
     nextGoalMethod: {
-      market: GOAL_METHOD_MARKET,
+      market: nextGoalMethod?.marketName ?? GOAL_METHOD_MARKET_PREFIX,
       selection: 'No Goal',
-      ...runnerQuote(nextGoalMethod, 'No Goal'),
+      ...runnerQuoteAny(nextGoalMethod, NO_GOAL_RUNNERS),
     },
     correctScore: {
       market: CORRECT_SCORE_MARKET,
@@ -195,38 +325,45 @@ function extractNoGoalMarkets(markets, score, teams) {
       runnerName: underRunner?.runnerName ?? null,
     },
     nthGoalNeither: {
-      market: nthGoalMarket?.marketName ?? nthGoalMarketName(nextGoalNumber),
-      selection: nthRunnerName,
-      goalNumber: nextGoalNumber,
-      ...runnerQuote(nthGoalMarket, nthRunnerName),
+      market: nthGoalMarket?.marketName ?? nthGoalMarketName(nthGoalNumber),
+      selection: nthRunnerNames[0],
+      goalNumber: nthGoalNumber,
+      ...runnerQuoteAny(nthGoalMarket, nthRunnerNames),
     },
     meta: {
       score: scoreKey,
       teams,
       totalGoals,
-      nextGoalNumber,
+      nextGoalNumber: nthGoalNumber,
+      inPlay,
     },
   };
 }
 
 async function fetchEventBundle(eventId) {
-  const tabs = ['quick-bets', 'popular', 'goals'];
+  const baseTabs = ['quick-bets', 'popular', 'goals'];
   const payloads = await Promise.all(
-    tabs.map((tab) => fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=${tab}`)),
+    baseTabs.map((tab) => fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=${tab}`)),
   );
 
   const event = mergeEvent(payloads);
+  if (event?.inPlay) {
+    payloads.push(await fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=live`));
+  }
+
   const markets = mergeMarkets(payloads);
   const teams = parseTeams(event?.name);
-  const score = parseEventScore(event);
+  const inPlay = Boolean(event?.inPlay);
+  const score = resolveScore(event, markets);
 
   return {
     event,
     markets,
     teams,
     score,
+    inPlay,
     goalTypes: extractGoalTypes(markets),
-    noGoalMarkets: extractNoGoalMarkets(markets, score, teams),
+    noGoalMarkets: extractNoGoalMarkets(markets, score, teams, inPlay),
   };
 }
 
@@ -240,7 +377,7 @@ export async function fetchWorldCupSopOdds() {
         const bundle = await fetchEventBundle(ev.eventId);
         return {
           ...ev,
-          inPlay: Boolean(bundle.event?.inPlay ?? ev.inPlay),
+          inPlay: bundle.inPlay,
           score: bundle.score,
           scoreDisplay: scoreDisplay(bundle.score),
           teams: bundle.teams,
@@ -272,7 +409,7 @@ export default async function handler(req, res) {
 
   try {
     const data = await fetchWorldCupSopOdds();
-    res.setHeader('Cache-Control', 'public, max-age=30');
+    res.setHeader('Cache-Control', 'public, max-age=15');
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console
