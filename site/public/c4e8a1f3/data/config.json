@@ -1,0 +1,71 @@
+{
+  "sheetId": "1Y1qivGCgrYEGoDAriGrBREDwJ6hR3ON9B8yPUYGa-qg",
+  "title": "JAPLAN",
+  "subtitle": "私たちの夏",
+  "departureDate": "2026-07-25",
+  "tabs": [
+    {
+      "id": "itinerary",
+      "gid": 601141568,
+      "title": "Itinerary",
+      "emoji": "🗓️",
+      "renderer": "timeline"
+    },
+    {
+      "id": "bookings",
+      "gid": 1616444469,
+      "title": "Booking Checklist",
+      "emoji": "🏷️",
+      "renderer": "hanko"
+    },
+    {
+      "id": "packing",
+      "gid": 14521517,
+      "title": "Packing",
+      "emoji": "🎒",
+      "renderer": "checklist"
+    },
+    {
+      "id": "flights",
+      "gid": 485014681,
+      "title": "Flights",
+      "emoji": "✈️",
+      "renderer": "boarding-pass"
+    },
+    {
+      "id": "ideas",
+      "gid": 0,
+      "title": "Ideas",
+      "emoji": "💡",
+      "renderer": "scrapbook"
+    },
+    {
+      "id": "transport",
+      "gid": 1755088975,
+      "title": "Transport Legs",
+      "emoji": "🚃",
+      "renderer": "transit"
+    },
+    {
+      "id": "map-routes",
+      "gid": 1218970773,
+      "title": "Map Routes",
+      "emoji": "🗺️",
+      "renderer": "map-routes"
+    },
+    {
+      "id": "food",
+      "gid": 2117925570,
+      "title": "Food Ideas",
+      "emoji": "🍜",
+      "renderer": "menu"
+    },
+    {
+      "id": "sources",
+      "gid": 1555826150,
+      "title": "Sources",
+      "emoji": "📚",
+      "renderer": "sources"
+    }
+  ]
+}
