@@ -32,6 +32,7 @@ import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
 import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
+import SOPPage from './routes/SOPPage';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
@@ -82,10 +83,13 @@ function AppInner() {
   const showHorizontalNav = useShowHorizontalNav();
   const location = useLocation();
   const isHomeRoute = location.pathname === '/oldhome/';
+  const isSopRoute = location.pathname.toUpperCase() === '/SOP';
   
   // Determine main content class based on viewport mode
   let mainClassName = 'main-content-shared';
-  if (viewportMode === VIEWPORT_MODES.MOBILE) {
+  if (isSopRoute) {
+    mainClassName += ' sop-main-shell';
+  } else if (viewportMode === VIEWPORT_MODES.MOBILE) {
     mainClassName += ' mobile-main-content';
   } else if (viewportMode === VIEWPORT_MODES.TABLET) {
     mainClassName += ' tablet-main-content';
@@ -132,20 +136,21 @@ function AppInner() {
       <Route path="/hwangai" element={<HwangAIPage />} />
       <Route path="/teams-2" element={<Teams2Page />} />
       <Route path="/teams-2/:id" element={<Teams2Page />} />
+      <Route path="/SOP" element={<SOPPage />} />
       
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>
   );
 
   return (
-    <div className="App">
-      <div className="background-bg" />
-      <div className="content-wrapper">
-        {showVerticalSidebar && <Sidebar />}
+    <div className={`App${isSopRoute ? ' App--sop' : ''}`}>
+      {!isSopRoute && <div className="background-bg" />}
+      <div className={`content-wrapper${isSopRoute ? ' content-wrapper--sop' : ''}`}>
+        {showVerticalSidebar && !isSopRoute && <Sidebar />}
         <div className={mainClassName}>
-          <div className="watermark-bg" />
-          {showHorizontalNav && <MobileTopNav />}
-          {viewportMode === VIEWPORT_MODES.MOBILE ? (
+          {!isSopRoute && <div className="watermark-bg" />}
+          {showHorizontalNav && !isSopRoute && <MobileTopNav />}
+          {viewportMode === VIEWPORT_MODES.MOBILE && !isSopRoute ? (
             <div className="mobile-scale-container">{routes}</div>
           ) : (
             routes

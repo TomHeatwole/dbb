@@ -34,6 +34,11 @@
     "ogDescription": "Your dynasty fantasy football AI assistant",
     "ogImage": "/data/hwangai.png"
   },
+  "/SOP": {
+    "ogTitle": "SOP — Soccer Odds Protocol",
+    "ogDescription": "VAR-approved goal-type pricing from NO GOAL odds.",
+    "ogImage": "/logo.png"
+  },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",
     "ogDescription": "",

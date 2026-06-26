@@ -13801,3 +13801,398 @@ body.modal-open {
 .pvc-loading {
   min-height: 8rem;
 }
+
+/* ── SOP — Soccer Odds Protocol ─────────────────────────────────────────── */
+
+.App--sop {
+  min-height: 100vh;
+  background: #041a0d;
+}
+
+.content-wrapper--sop {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(80, 180, 100, 0.12), transparent),
+    linear-gradient(180deg, #041a0d 0%, #062212 45%, #041a0d 100%);
+}
+
+.sop-main-shell {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+.sop-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+  overflow: hidden;
+  border-radius: 0;
+  box-sizing: border-box;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.025) 0,
+      rgba(255, 255, 255, 0.025) 2px,
+      transparent 2px,
+      transparent 28px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.018) 0,
+      rgba(255, 255, 255, 0.018) 2px,
+      transparent 2px,
+      transparent 28px
+    ),
+    linear-gradient(165deg, #0b5e2e 0%, #14803f 38%, #0a4d26 100%);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.22),
+    inset 0 0 80px rgba(0, 0, 0, 0.35),
+    0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.sop-pitch-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background:
+    linear-gradient(to right, transparent 49.5%, rgba(255, 255, 255, 0.85) 49.5%, rgba(255, 255, 255, 0.85) 50.5%, transparent 50.5%),
+    radial-gradient(circle at 50% 42%, transparent 58px, rgba(255, 255, 255, 0.75) 59px, rgba(255, 255, 255, 0.75) 61px, transparent 62px);
+}
+
+.sop-spotlight {
+  position: absolute;
+  top: -20%;
+  width: 55%;
+  height: 70%;
+  pointer-events: none;
+  filter: blur(40px);
+  opacity: 0.22;
+}
+
+.sop-spotlight--left {
+  left: -10%;
+  background: radial-gradient(circle, rgba(255, 240, 180, 0.9), transparent 70%);
+}
+
+.sop-spotlight--right {
+  right: -10%;
+  background: radial-gradient(circle, rgba(180, 220, 255, 0.85), transparent 70%);
+}
+
+.sop-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.35) 0,
+    rgba(0, 0, 0, 0.35) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.sop-header {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.sop-header-badge {
+  display: inline-block;
+  margin-bottom: 0.65rem;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ffe08a;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 224, 138, 0.45);
+  animation: sop-pulse-badge 2.2s ease-in-out infinite;
+}
+
+@keyframes sop-pulse-badge {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 224, 138, 0.35); }
+  50% { box-shadow: 0 0 18px 4px rgba(255, 224, 138, 0.18); }
+}
+
+.sop-title {
+  margin: 0;
+  font-size: clamp(1.65rem, 4.5vw, 2.75rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #fff;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    0 0 24px rgba(255, 255, 255, 0.15);
+}
+
+.sop-title-ball {
+  display: inline-block;
+  animation: sop-ball-spin 4s linear infinite;
+  margin: 0 0.35rem;
+}
+
+@keyframes sop-ball-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.sop-subtitle {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(230, 255, 240, 0.72);
+}
+
+.sop-loader {
+  position: relative;
+  z-index: 1;
+}
+
+.sop-loader-card {
+  padding: 1.25rem 1rem 1.5rem;
+  border-radius: 1rem;
+  background: rgba(8, 20, 12, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+}
+
+.sop-loader-kicker {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: rgba(255, 230, 160, 0.85);
+  margin-bottom: 0.85rem;
+}
+
+.sop-loader-card .simulator-progress-label {
+  color: rgba(235, 255, 245, 0.92);
+}
+
+.sop-loader-detail {
+  margin-top: 0.55rem;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(210, 255, 225, 0.88);
+  min-height: 1.25rem;
+}
+
+.sop-loader-sub {
+  margin-top: 0.75rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: rgba(200, 230, 210, 0.55);
+}
+
+.sop-main {
+  position: relative;
+  z-index: 1;
+  animation: sop-fade-in 0.55s ease-out;
+}
+
+@keyframes sop-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sop-input-panel {
+  padding: 1.1rem 1.15rem;
+  border-radius: 1rem;
+  background: rgba(0, 0, 0, 0.38);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  margin-bottom: 1.25rem;
+}
+
+.sop-input-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #ffe08a;
+  margin-bottom: 0.55rem;
+}
+
+.sop-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sop-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  font-size: 1.65rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0.75rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sop-input:focus {
+  border-color: #ffe08a;
+  box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.22);
+}
+
+.sop-input-hint {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(220, 240, 225, 0.55);
+}
+
+.sop-input-meta {
+  margin-top: 0.65rem;
+  font-size: 0.82rem;
+  color: rgba(210, 240, 220, 0.75);
+}
+
+.sop-input-meta--warn {
+  color: rgba(255, 180, 140, 0.85);
+}
+
+.sop-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.85rem;
+}
+
+.sop-outcome-card {
+  padding: 0.95rem 0.9rem 0.85rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(160deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.28));
+  border: 2px solid color-mix(in srgb, var(--sop-accent) 55%, rgba(255, 255, 255, 0.2));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.sop-outcome-top {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+}
+
+.sop-outcome-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.sop-outcome-label {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--sop-accent);
+}
+
+.sop-outcome-tag {
+  font-size: 0.68rem;
+  color: rgba(230, 240, 235, 0.62);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sop-outcome-odds {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.sop-outcome-american {
+  font-size: 1.55rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.sop-outcome-decimal {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(220, 235, 225, 0.72);
+}
+
+.sop-outcome-bar {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.sop-outcome-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sop-accent), rgba(255, 255, 255, 0.85));
+  transition: width 0.25s ease-out;
+}
+
+.sop-outcome-implied {
+  font-size: 0.72rem;
+  color: rgba(210, 230, 215, 0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+.sop-outcome-empty {
+  font-size: 0.78rem;
+  color: rgba(220, 220, 220, 0.55);
+  font-style: italic;
+}
+
+.sop-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.25rem;
+  margin-top: 1.35rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.18);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.72);
+}
+
+@media (max-width: 640px) {
+  .sop-page {
+    padding-inline: 0.75rem;
+  }
+
+  .sop-input {
+    font-size: 1.35rem;
+  }
+}
+
+@media (min-width: 641px) {
+  .sop-page {
+    border-radius: 1.25rem;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    min-height: calc(100vh - 2.5rem);
+  }
+}
