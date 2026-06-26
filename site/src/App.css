@@ -13806,14 +13806,12 @@ body.modal-open {
 
 .App--sop {
   min-height: 100vh;
-  background: #041a0d;
+  background: #000;
 }
 
 .content-wrapper--sop {
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(80, 180, 100, 0.12), transparent),
-    linear-gradient(180deg, #041a0d 0%, #062212 45%, #041a0d 100%);
+  background: #000;
 }
 
 .sop-main-shell {
@@ -13826,8 +13824,39 @@ body.modal-open {
   justify-content: flex-start !important;
 }
 
+.sop-collage-frame {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background-color: #000;
+  overflow: hidden;
+}
+
+.sop-collage-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 200px);
+  grid-auto-rows: auto;
+  justify-content: center;
+  gap: 0;
+  pointer-events: none;
+}
+
+.sop-collage-grid img {
+  width: 200px;
+  height: auto;
+  display: block;
+}
+
 .sop-page {
   position: relative;
+  z-index: 1;
   width: 100%;
   min-height: 100vh;
   max-width: 980px;
@@ -13836,6 +13865,7 @@ body.modal-open {
   overflow: hidden;
   border-radius: 0;
   box-sizing: border-box;
+  flex-shrink: 0;
   background:
     repeating-linear-gradient(
       0deg,
@@ -14180,6 +14210,8 @@ body.modal-open {
 
 @media (max-width: 640px) {
   .sop-page {
+    width: calc(100% - 1.5rem);
+    margin-inline: auto;
     padding-inline: 0.75rem;
   }
 
@@ -14194,5 +14226,9 @@ body.modal-open {
     margin-top: 1.25rem;
     margin-bottom: 1.25rem;
     min-height: calc(100vh - 2.5rem);
+  }
+
+  .sop-collage-frame {
+    padding-bottom: 1.25rem;
   }
 }

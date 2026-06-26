@@ -13,10 +13,38 @@ import {
   parseNoGoalAmericanOdds,
 } from '../sop/sopModel';
 
-const OG_TITLE = 'SOP — Soccer Odds Protocol';
-const OG_DESCRIPTION = 'VAR-approved goal-type pricing from NO GOAL odds.';
+const OG_TITLE = 'SHOT OPEN PLAY';
+const OG_DESCRIPTION = 'SHOT OPEN PLAY';
+const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/data/sop.jpeg`;
 
 const LOADING_DURATION_MS = 10_000;
+const SOP_COLLAGE_SRC = '/data/sop.jpeg';
+const COLLAGE_TILE_W = 200;
+const COLLAGE_TILE_H = Math.round(COLLAGE_TILE_W * (1442 / 1916));
+
+function SopCollageGrid() {
+  const [tileCount, setTileCount] = useState(48);
+
+  useEffect(() => {
+    const update = () => {
+      const cols = Math.ceil(window.innerWidth / COLLAGE_TILE_W) + 2;
+      const rows = Math.ceil(window.innerHeight / COLLAGE_TILE_H) + 2;
+      setTileCount(cols * rows);
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  return (
+    <div className="sop-collage-grid" aria-hidden="true">
+      {Array.from({ length: tileCount }, (_, i) => (
+        <img key={i} src={SOP_COLLAGE_SRC} alt="" draggable={false} loading="lazy" />
+      ))}
+    </div>
+  );
+}
 
 const LOADING_MESSAGES = [
   'Initializing pitch sensors…',
@@ -85,9 +113,11 @@ function SOPPage() {
 
   return (
     <>
-      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} image={OG_IMAGE} />
 
-      <div className="sop-page">
+      <div className="sop-collage-frame">
+        <SopCollageGrid />
+        <div className="sop-page">
         <div className="sop-pitch-lines" aria-hidden="true" />
         <div className="sop-spotlight sop-spotlight--left" aria-hidden="true" />
         <div className="sop-spotlight sop-spotlight--right" aria-hidden="true" />
@@ -195,6 +225,7 @@ function SOPPage() {
             </footer>
           </section>
         )}
+        </div>
       </div>
     </>
   );
