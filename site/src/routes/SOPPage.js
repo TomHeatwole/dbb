@@ -110,8 +110,10 @@ function SOPPage() {
   const [games, setGames] = useState([]);
   const [fetchedAt, setFetchedAt] = useState(null);
   const [bookError, setBookError] = useState(null);
+  const [bookRefreshing, setBookRefreshing] = useState(false);
 
-  const refreshBook = useCallback(async () => {
+  const refreshBook = useCallback(async ({ manual = false } = {}) => {
+    if (manual) setBookRefreshing(true);
     try {
       const res = await fetch('/api/fanduel-sop');
       if (!res.ok) {
@@ -126,6 +128,7 @@ function SOPPage() {
       setBookError(err.message || 'Failed to load odds');
     } finally {
       setBookLoaded(true);
+      if (manual) setBookRefreshing(false);
     }
   }, []);
 
@@ -205,7 +208,15 @@ function SOPPage() {
             <Routes>
               <Route
                 index
-                element={<SOPBookPanel games={games} fetchedAt={fetchedAt} error={bookError} />}
+                element={
+                  <SOPBookPanel
+                    games={games}
+                    fetchedAt={fetchedAt}
+                    error={bookError}
+                    refreshing={bookRefreshing}
+                    onRefresh={() => refreshBook({ manual: true })}
+                  />
+                }
               />
               <Route path="manual" element={<SOPManualPanel />} />
               <Route path="*" element={<Navigate to="/SOP" replace />} />

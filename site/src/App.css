@@ -14324,7 +14324,85 @@ body.modal-open {
 
 .sop-exp-header {
   text-align: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.sop-exp-toolbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.sop-exp-refresh-btn {
+  flex: 0 0 auto;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 224, 138, 0.55);
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffe08a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.sop-exp-refresh-btn:hover:not(:disabled) {
+  background: rgba(255, 224, 138, 0.14);
+  border-color: #ffe08a;
+}
+
+.sop-exp-refresh-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.sop-exp-search-wrap {
+  flex: 1 1 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.sop-exp-search-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.7);
+}
+
+.sop-exp-search-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.55rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.32);
+  color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.sop-exp-search-input::placeholder {
+  color: rgba(210, 230, 215, 0.45);
+}
+
+.sop-exp-search-input:focus {
+  border-color: #ffe08a;
+  box-shadow: 0 0 0 2px rgba(255, 224, 138, 0.2);
+}
+
+.sop-exp-search-hint {
+  margin: -0.35rem 0 0.65rem;
+  font-size: 0.72rem;
+  color: rgba(210, 240, 220, 0.6);
 }
 
 .sop-exp-title {
@@ -14431,11 +14509,56 @@ body.modal-open {
   border-radius: 0.9rem;
   background: rgba(0, 0, 0, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  padding: 1rem;
+  overflow: hidden;
 }
 
 .sop-exp-game-header {
-  margin-bottom: 0.85rem;
+  margin-bottom: 0;
+}
+
+.sop-exp-game-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sop-exp-game-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sop-exp-game-chevron {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  font-size: 0.65rem;
+  color: rgba(255, 224, 138, 0.85);
+}
+
+.sop-exp-game-toggle-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sop-exp-game-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sop-exp-ev-badge {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #1a1a1a;
+  background: #ffe08a;
 }
 
 .sop-exp-game-title {
@@ -14481,6 +14604,7 @@ body.modal-open {
 
 .sop-exp-no-goal {
   margin-bottom: 0.9rem;
+  margin-top: 0.85rem;
 }
 
 .sop-exp-no-goal-grid {
