@@ -1,0 +1,78 @@
+{
+  "fetchedAt": "2026-06-30T05:20:12.675Z",
+  "leagueId": "209533",
+  "events": [
+    {
+      "eventId": "34322861",
+      "name": "Netherlands vs Morocco",
+      "slug": "netherlands-vs-morocco",
+      "openDate": "2026-06-30T00:59:59.0000000Z"
+    },
+    {
+      "eventId": "34326921",
+      "name": "Ivory Coast vs Norway",
+      "slug": "ivory-coast-vs-norway",
+      "openDate": "2026-06-30T17:00:00.0000000Z"
+    },
+    {
+      "eventId": "34327181",
+      "name": "France vs Sweden",
+      "slug": "france-vs-sweden",
+      "openDate": "2026-06-30T21:00:00.0000000Z"
+    },
+    {
+      "eventId": "34330733",
+      "name": "Mexico vs Ecuador",
+      "slug": "mexico-vs-ecuador",
+      "openDate": "2026-07-01T01:00:00.0000000Z"
+    },
+    {
+      "eventId": "34330736",
+      "name": "England vs DR Congo",
+      "slug": "england-vs-dr-congo",
+      "openDate": "2026-07-01T16:00:00.0000000Z"
+    },
+    {
+      "eventId": "34330737",
+      "name": "Belgium vs Senegal",
+      "slug": "belgium-vs-senegal",
+      "openDate": "2026-07-01T20:00:00.0000000Z"
+    },
+    {
+      "eventId": "34331119",
+      "name": "Spain vs Austria",
+      "slug": "spain-vs-austria",
+      "openDate": "2026-07-02T19:00:00.0000000Z"
+    },
+    {
+      "eventId": "34330735",
+      "name": "Portugal vs Croatia",
+      "slug": "portugal-vs-croatia",
+      "openDate": "2026-07-02T23:00:00.0000000Z"
+    },
+    {
+      "eventId": "34331120",
+      "name": "Switzerland vs Algeria",
+      "slug": "switzerland-vs-algeria",
+      "openDate": "2026-07-03T03:00:00.0000000Z"
+    },
+    {
+      "eventId": "34328095",
+      "name": "Australia vs Egypt",
+      "slug": "australia-vs-egypt",
+      "openDate": "2026-07-03T18:00:00.0000000Z"
+    },
+    {
+      "eventId": "34327115",
+      "name": "Argentina vs Cape Verde",
+      "slug": "argentina-vs-cape-verde",
+      "openDate": "2026-07-03T22:00:00.0000000Z"
+    },
+    {
+      "eventId": "34330734",
+      "name": "Colombia vs Ghana",
+      "slug": "colombia-vs-ghana",
+      "openDate": "2026-07-04T01:30:00.0000000Z"
+    }
+  ]
+}

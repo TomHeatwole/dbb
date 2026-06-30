@@ -20,6 +20,7 @@
     "api": "node chat-dev-server.js",
     "dk:login": "node scripts/dk-login.mjs",
     "dk:test-fetch": "node scripts/dk-test-fetch.mjs",
+    "dk:discover-events": "node scripts/dk-discover-events.mjs",
     "build": "react-scripts build",
     "serve": "node server.js",
     "start:prod": "npm run build && npm run serve",

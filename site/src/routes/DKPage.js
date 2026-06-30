@@ -7,7 +7,7 @@ import PageMeta from '../PageMeta';
 import DKBookPanel from './DKBookPanel';
 
 const OG_TITLE = 'DK First Goal Method';
-const OG_DESCRIPTION = 'DraftKings World Cup First Goal Method odds scanner';
+const OG_DESCRIPTION = 'DraftKings World Cup First Goal Method +EV scanner (Nash API)';
 const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/data/sop.jpeg`;
 const SOP_COLLAGE_SRC = '/data/sop.jpeg';
 const COLLAGE_TILE_W = 200;
@@ -41,6 +41,8 @@ function DkCollageGrid() {
 
 function DKPage() {
   const [games, setGames] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [eventMapUpdatedAt, setEventMapUpdatedAt] = useState(null);
   const [fetchedAt, setFetchedAt] = useState(null);
   const [bookError, setBookError] = useState(null);
   const [bookRefreshing, setBookRefreshing] = useState(false);
@@ -55,6 +57,8 @@ function DKPage() {
       }
       const data = await res.json();
       setGames(data.games ?? []);
+      setStats(data.stats ?? null);
+      setEventMapUpdatedAt(data.eventMapUpdatedAt ?? null);
       setFetchedAt(data.fetchedAt ?? null);
       setBookError(null);
     } catch (err) {
@@ -88,6 +92,8 @@ function DKPage() {
 
           <DKBookPanel
             games={games}
+            stats={stats}
+            eventMapUpdatedAt={eventMapUpdatedAt}
             fetchedAt={fetchedAt}
             error={bookError}
             refreshing={bookRefreshing}

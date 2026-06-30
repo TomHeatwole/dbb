@@ -26,6 +26,7 @@ const GOAL_TYPE_RUNNERS = {
 };
 
 const NO_GOAL_RUNNERS = ['No Goal', 'No Goals', 'Neither'];
+const NO_GOALSCORER_RUNNERS = ['No Goalscorer', 'No Goal', 'No Goals'];
 
 function runnersList(market) {
   const runners = market?.runners;
@@ -154,6 +155,23 @@ function findNthGoalMarket(markets) {
   for (let i = 0; i < NTH_GOAL_ORDINALS.length; i += 1) {
     const goalNumber = i + 1;
     const market = findMarketByName(markets, nthGoalMarketName(goalNumber));
+    if (market && market.marketStatus !== 'CLOSED') {
+      return { market, goalNumber };
+    }
+  }
+  return { market: null, goalNumber: 1 };
+}
+
+function nthGoalscorerMarketName(goalNumber) {
+  const ord = NTH_GOAL_ORDINALS[goalNumber - 1];
+  if (!ord) return null;
+  return `${ord} Goalscorer`;
+}
+
+function findNextGoalscorerMarket(markets) {
+  for (let i = 0; i < NTH_GOAL_ORDINALS.length; i += 1) {
+    const goalNumber = i + 1;
+    const market = findMarketByName(markets, nthGoalscorerMarketName(goalNumber));
     if (market && market.marketStatus !== 'CLOSED') {
       return { market, goalNumber };
     }
@@ -290,7 +308,9 @@ function extractNoGoalMarkets(markets, score, teams, inPlay) {
   const correctScore = findMarketByName(markets, CORRECT_SCORE_MARKET);
   const totalsMarket = findMarketByName(markets, `Over/Under ${underLine} Goals`);
   const { market: nthGoalMarket, goalNumber: nthFromMarket } = findNthGoalMarket(markets);
+  const { market: goalscorerMarket, goalNumber: scorerFromMarket } = findNextGoalscorerMarket(markets);
   const nthGoalNumber = inPlay ? nthFromMarket : nextGoalNumber;
+  const goalscorerGoalNumber = inPlay ? scorerFromMarket : nextGoalNumber;
 
   const underRunner = totalsMarket
     ? runnersList(totalsMarket).find((r) => {
@@ -329,6 +349,12 @@ function extractNoGoalMarkets(markets, score, teams, inPlay) {
       selection: nthRunnerNames[0],
       goalNumber: nthGoalNumber,
       ...runnerQuoteAny(nthGoalMarket, nthRunnerNames),
+    },
+    nextGoalscorer: {
+      market: goalscorerMarket?.marketName ?? nthGoalscorerMarketName(goalscorerGoalNumber),
+      selection: 'No Goalscorer',
+      goalNumber: goalscorerGoalNumber,
+      ...runnerQuoteAny(goalscorerMarket, NO_GOALSCORER_RUNNERS),
     },
     meta: {
       score: scoreKey,

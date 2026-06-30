@@ -18,8 +18,8 @@ const TEAM_SEARCH_LIST_ID = 'dk-book-team-search';
 const NO_GOAL_SOURCES = [
   {
     key: NO_GOAL_SOURCE_KEYS.nextGoalMethod,
-    short: 'Next Goal',
-    desc: 'Goal Method → No Goal',
+    short: 'Goal Method',
+    desc: '1st Goal Method → No Goal (DraftKings)',
   },
   {
     key: NO_GOAL_SOURCE_KEYS.correctScore,
@@ -35,6 +35,11 @@ const NO_GOAL_SOURCES = [
     key: NO_GOAL_SOURCE_KEYS.nthGoalNeither,
     short: 'Nth Goal',
     desc: 'Team to Score Nth Goal → Neither / No Goals',
+  },
+  {
+    key: NO_GOAL_SOURCE_KEYS.nextGoalscorer,
+    short: 'Next Scorer',
+    desc: 'Next Goalscorer → No Goalscorer',
   },
 ];
 
@@ -63,6 +68,9 @@ function noGoalLabel(sourceKey, quote) {
   }
   if (sourceKey === NO_GOAL_SOURCE_KEYS.nthGoalNeither && quote.goalNumber) {
     return quote.selection ?? `G${quote.goalNumber}`;
+  }
+  if (sourceKey === NO_GOAL_SOURCE_KEYS.nextGoalscorer) {
+    return quote.selection ?? 'No Goalscorer';
   }
   return quote.selection ?? 'No Goal';
 }
@@ -94,6 +102,19 @@ function collectTeamNames(games) {
     }
   }
   return [...names].sort((a, b) => a.localeCompare(b));
+}
+
+function countEvBets(game, selectedNoGoalSource) {
+  const activeNoGoal = game.noGoalMarkets?.[selectedNoGoalSource];
+  const noGoalAmerican = activeNoGoal?.american ?? null;
+  if (noGoalAmerican == null || !game.goalTypes) return 0;
+  const model = computeBreakevenOdds(noGoalAmerican);
+  if (!model) return 0;
+  return GOAL_TYPE_META.filter(({ key }) => {
+    const bookAmerican = game.goalTypes[key]?.american;
+    const breakeven = model[key]?.american;
+    return analyzeAgainstBreakeven(bookAmerican, breakeven)?.profitable;
+  }).length;
 }
 
 function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
@@ -128,7 +149,7 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
   const evCount = goalAnalyses.filter((row) => row.analysis?.profitable).length;
 
   return (
-    <article className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}>
+    <article className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}${evCount > 0 ? ' sop-exp-game--has-ev' : ''}`}>
       <header className="sop-exp-game-header">
         <button
           type="button"
@@ -147,26 +168,52 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
               {game.openDate && (
                 <span className="sop-exp-time">{formatKickoff(game.openDate)}</span>
               )}
+              {game.dkEventId && (
+                <span className="sop-exp-dk-id" title="DraftKings event ID">
+                  #{game.dkEventId}
+                </span>
+              )}
               {!expanded && evCount > 0 && (
                 <span className="sop-exp-ev-badge">{evCount} +EV</span>
               )}
             </span>
           </span>
         </button>
+        {game.dkEventUrl && (
+          <a
+            className="sop-exp-dk-link"
+            href={game.dkEventUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Open DK ↗
+          </a>
+        )}
       </header>
 
       {expanded && (
         <div className="sop-exp-game-body">
           {game.error && (
-            <p className="sop-exp-status sop-exp-error">{game.error}</p>
+            <p className={`sop-exp-status sop-exp-error${game.errorCode === 'event_not_found' ? ' sop-exp-error--soft' : ''}`}>
+              {game.error}
+            </p>
           )}
 
-          {!game.goalTypes && !game.error && (
+          {!game.goalTypes && !game.error && game.dkEventId && (
+            <p className="sop-exp-status">DraftKings event matched but odds not loaded yet.</p>
+          )}
+
+          {!game.goalTypes && !game.error && !game.dkEventId && (
             <p className="sop-exp-status">No First Goal Method market on DraftKings for this match.</p>
           )}
 
           {game.goalTypes && (
             <>
+              {game.marketName && (
+                <div className="sop-exp-market-name">DK market: {game.marketName}</div>
+              )}
+
               <section className="sop-exp-no-goal">
                 <div className="sop-exp-section-label">No Goal proxy</div>
                 <div className="sop-exp-no-goal-grid">
@@ -174,6 +221,7 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
                     const quote = game.noGoalMarkets?.[key];
                     const selected = selectedNoGoalSource === key;
                     const hasOdds = quote?.american != null;
+                    const proxyBook = game.noGoalProxySources?.[key];
                     return (
                       <button
                         key={key}
@@ -183,7 +231,14 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
                         disabled={!hasOdds}
                         title={desc}
                       >
-                        <span className="sop-exp-no-goal-short">{short}</span>
+                        <span className="sop-exp-no-goal-short">
+                          {short}
+                          {proxyBook && (
+                            <span className={`sop-exp-proxy-tag sop-exp-proxy-tag--${proxyBook}`}>
+                              {proxyBook.toUpperCase()}
+                            </span>
+                          )}
+                        </span>
                         <span className="sop-exp-no-goal-pick">{noGoalLabel(key, quote)}</span>
                         <span className="sop-exp-no-goal-odds">
                           {hasOdds ? formatAmericanOdds(quote.american) : '—'}
@@ -263,20 +318,12 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
   );
 }
 
-function DKBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
+function DKBookPanel({ games, stats, eventMapUpdatedAt, fetchedAt, error, refreshing, onRefresh }) {
   const [noGoalSourceByEvent, setNoGoalSourceByEvent] = useState({});
   const [teamQuery, setTeamQuery] = useState('');
+  const [evOnly, setEvOnly] = useState(false);
 
   const teamNames = useMemo(() => collectTeamNames(games), [games]);
-
-  const filteredGames = useMemo(() => {
-    if (!teamQuery.trim()) return games;
-    return games.filter((g) => gameMatchesQuery(g, teamQuery));
-  }, [games, teamQuery]);
-
-  const handleSelectNoGoalSource = useCallback((eventId, sourceKey) => {
-    setNoGoalSourceByEvent((prev) => ({ ...prev, [eventId]: sourceKey }));
-  }, []);
 
   const getNoGoalSource = useCallback(
     (game) => {
@@ -293,12 +340,35 @@ function DKBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
     [noGoalSourceByEvent],
   );
 
+  const handleSelectNoGoalSource = useCallback((eventId, sourceKey) => {
+    setNoGoalSourceByEvent((prev) => ({ ...prev, [eventId]: sourceKey }));
+  }, []);
+
+  const filteredGames = useMemo(() => {
+    let list = games;
+    if (teamQuery.trim()) {
+      list = list.filter((g) => gameMatchesQuery(g, teamQuery));
+    }
+    if (evOnly) {
+      list = list.filter((g) => countEvBets(g, getNoGoalSource(g)) > 0);
+    }
+    return list;
+  }, [games, teamQuery, evOnly, getNoGoalSource]);
+
+  const summary = stats ?? {
+    total: games.length,
+    withOdds: games.filter((g) => g.goalTypes).length,
+    withEventId: games.filter((g) => g.dkEventId).length,
+    missingEventId: games.filter((g) => !g.dkEventId).length,
+    totalEvBets: 0,
+  };
+
   return (
     <div className="sop-exp-content">
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">DK First Goal Method</h1>
         <p className="sop-exp-subtitle">
-          FIFA World Cup 2026 · DraftKings live
+          FIFA World Cup 2026 · DraftKings Nash API
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -307,6 +377,25 @@ function DKBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
           )}
         </p>
       </header>
+
+      <div className="sop-exp-summary" role="status">
+        <span className="sop-exp-summary-chip">
+          <strong>{summary.withOdds}</strong>/{summary.total} with DK odds
+        </span>
+        <span className="sop-exp-summary-chip">
+          <strong>{summary.withEventId}</strong> event IDs matched
+        </span>
+        {summary.totalEvBets > 0 && (
+          <span className="sop-exp-summary-chip sop-exp-summary-chip--ev">
+            <strong>{summary.totalEvBets}</strong> +EV bets
+          </span>
+        )}
+        {summary.missingEventId > 0 && (
+          <span className="sop-exp-summary-chip sop-exp-summary-chip--warn">
+            {summary.missingEventId} unmatched
+          </span>
+        )}
+      </div>
 
       <div className="sop-exp-toolbar">
         <button
@@ -334,6 +423,14 @@ function DKBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
             ))}
           </datalist>
         </label>
+        <label className="sop-exp-ev-filter">
+          <input
+            type="checkbox"
+            checked={evOnly}
+            onChange={(e) => setEvOnly(e.target.checked)}
+          />
+          +EV only
+        </label>
       </div>
 
       {teamQuery.trim() && (
@@ -344,11 +441,19 @@ function DKBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
 
       {error && <p className="sop-exp-error">{error}</p>}
 
+      {!error && summary.withOdds === 0 && summary.withEventId > 0 && (
+        <p className="sop-exp-status sop-exp-status--info">
+          {summary.withEventId} DraftKings matches found but odds could not be loaded
+          {summary.missingEventId > 0 ? ` (${summary.missingEventId} still unmatched)` : ''}.
+          This often happens when DraftKings blocks the server IP — try Refresh.
+        </p>
+      )}
+
       {!error && filteredGames.length > 0 && (
         <div className="sop-exp-games">
           {filteredGames.map((g) => (
             <GameCard
-              key={g.eventId}
+              key={g.eventId ?? g.name}
               game={g}
               selectedNoGoalSource={getNoGoalSource(g)}
               onSelectNoGoalSource={handleSelectNoGoalSource}
@@ -357,16 +462,21 @@ function DKBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
         </div>
       )}
 
-      {!error && games.length > 0 && teamQuery.trim() && filteredGames.length === 0 && (
-        <p className="sop-exp-status">No games match “{teamQuery.trim()}”.</p>
+      {!error && games.length > 0 && (teamQuery.trim() || evOnly) && filteredGames.length === 0 && (
+        <p className="sop-exp-status">
+          {evOnly ? 'No +EV bets with current filters.' : `No games match “${teamQuery.trim()}”.`}
+        </p>
       )}
 
       {!error && games.length === 0 && (
-        <p className="sop-exp-status">No World Cup games found on DraftKings.</p>
+        <p className="sop-exp-status">No World Cup games on the schedule.</p>
       )}
 
       <footer className="sop-exp-footer">
-        Auto-refreshes every {REFRESH_MS / 1000}s · default no-goal = Total U
+        Auto-refreshes every {REFRESH_MS / 1000}s · goal odds from DK · no-goal proxies may use FanDuel
+        {eventMapUpdatedAt && (
+          <span> · event map {new Date(eventMapUpdatedAt).toLocaleDateString()}</span>
+        )}
       </footer>
     </div>
   );

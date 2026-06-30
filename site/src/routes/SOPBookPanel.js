@@ -36,6 +36,11 @@ const NO_GOAL_SOURCES = [
     short: 'Nth Goal',
     desc: 'Team to Score Nth Goal → Neither / No Goals',
   },
+  {
+    key: NO_GOAL_SOURCE_KEYS.nextGoalscorer,
+    short: 'Next Scorer',
+    desc: 'Next Goalscorer → No Goalscorer',
+  },
 ];
 
 function formatKickoff(iso) {
@@ -63,6 +68,9 @@ function noGoalLabel(sourceKey, quote) {
   }
   if (sourceKey === NO_GOAL_SOURCE_KEYS.nthGoalNeither && quote.goalNumber) {
     return quote.selection ?? `G${quote.goalNumber}`;
+  }
+  if (sourceKey === NO_GOAL_SOURCE_KEYS.nextGoalscorer) {
+    return quote.selection ?? 'No Goalscorer';
   }
   return quote.selection ?? 'No Goal';
 }

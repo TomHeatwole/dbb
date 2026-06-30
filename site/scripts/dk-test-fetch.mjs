@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Quick test: does Node fetch work with your saved DK cookies?
+ * Quick test: Nash controldata markets API (+ optional saved cookies).
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { loadDkCookieHeader } from './dk-cookie-utils.mjs';
+import { fetchWorldCupGoalMethodOdds } from '../api/draftkings-goal-method.mjs';
 
 const SITE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ENV_LOCAL = path.join(SITE_DIR, '.env.local');
 
-// Load .env.local (same pattern as chat-dev-server.js)
 try {
   const envContent = fs.readFileSync(ENV_LOCAL, 'utf8');
   for (const line of envContent.split('\n')) {
@@ -24,27 +24,35 @@ try {
   }
 } catch (_) {}
 
-const cookie = loadDkCookieHeader();
+const eventId = process.argv[2] || '34326921';
+const subId = process.argv[3] || '6541';
+const filter = `$filter=eventId eq '${eventId}' AND clientMetadata/subCategoryId eq '${subId}' AND tags/all(t: t ne 'SportcastBetBuilder')`;
 const url =
-  'https://sportsbook.draftkings.com/sites/US-SB/api/v5/eventgroups/209533?format=json';
+  'https://sportsbook-nash.draftkings.com/sites/US-NY-SB/api/sportscontent/controldata/event/eventSubcategory/v1/markets?' +
+  new URLSearchParams({
+    isBatchable: 'false',
+    templateVars: `${eventId},${subId}`,
+    marketsQuery: filter,
+    entity: 'markets',
+  });
 
-if (!cookie) {
-  // eslint-disable-next-line no-console
-  console.error('No DK_COOKIE found. Run: npm run dk:login');
-  process.exit(1);
-}
-
+const cookie = loadDkCookieHeader();
 // eslint-disable-next-line no-console
-console.log(`Testing with cookie (${cookie.length} chars)…\n${url}\n`);
+console.log(`Direct markets test (cookie: ${cookie ? 'yes' : 'no'})\n${url}\n`);
 
 const res = await fetch(url, {
   headers: {
     Accept: 'application/json',
-    'User-Agent':
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    Referer: 'https://sportsbook.draftkings.com/leagues/soccer/fifa-world-cup',
     Origin: 'https://sportsbook.draftkings.com',
-    Cookie: cookie,
+    Referer: `https://sportsbook.draftkings.com/event/ivory-coast-vs-norway/${eventId}`,
+    'User-Agent':
+      'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36',
+    'x-client-name': 'web',
+    'x-client-page': 'event',
+    'x-client-version': '1.14.0',
+    'x-pe-ep': 'SB',
+    'x-pe-loc': 'US-NY',
+    ...(cookie ? { Cookie: cookie } : {}),
   },
 });
 
@@ -54,11 +62,26 @@ console.log('Status:', res.status);
 
 if (res.ok) {
   const data = JSON.parse(text);
-  const events = data?.eventGroup?.events ?? [];
   // eslint-disable-next-line no-console
-  console.log('Events:', events.length);
-  events.slice(0, 5).forEach((e) => console.log(' -', e.name));
+  console.log('Market:', data.markets?.[0]?.name);
+  for (const s of data.selections ?? []) {
+    // eslint-disable-next-line no-console
+    console.log(`  ${s.label}: ${s.displayOdds?.american}`);
+  }
 } else {
   // eslint-disable-next-line no-console
   console.log(text.slice(0, 300));
+}
+
+// eslint-disable-next-line no-console
+console.log('\n--- Full scraper ---');
+const all = await fetchWorldCupGoalMethodOdds();
+// eslint-disable-next-line no-console
+console.log('games:', all.games.length);
+const withGoal = all.games.filter((g) => g.goalTypes);
+// eslint-disable-next-line no-console
+console.log('with DK goal types:', withGoal.length);
+if (withGoal[0]) {
+  // eslint-disable-next-line no-console
+  console.log('sample:', withGoal[0].name, withGoal[0].goalTypes);
 }

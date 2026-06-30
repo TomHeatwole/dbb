@@ -125,6 +125,7 @@ export const NO_GOAL_SOURCE_KEYS = {
   correctScore: 'correctScore',
   totalGoalsUnder: 'totalGoalsUnder',
   nthGoalNeither: 'nthGoalNeither',
+  nextGoalscorer: 'nextGoalscorer',
 };
 
 export const DEFAULT_NO_GOAL_SOURCE = NO_GOAL_SOURCE_KEYS.totalGoalsUnder;
