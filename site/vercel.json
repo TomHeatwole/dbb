@@ -9,6 +9,9 @@
     },
     "api/fanduel-sop.mjs": {
       "maxDuration": 30
+    },
+    "api/draftkings-goal-method.mjs": {
+      "maxDuration": 30
     }
   }
 }

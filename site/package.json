@@ -18,6 +18,8 @@
   "scripts": {
     "start": "react-scripts start",
     "api": "node chat-dev-server.js",
+    "dk:login": "node scripts/dk-login.mjs",
+    "dk:test-fetch": "node scripts/dk-test-fetch.mjs",
     "build": "react-scripts build",
     "serve": "node server.js",
     "start:prod": "npm run build && npm run serve",
@@ -29,6 +31,9 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
   },
   "browserslist": {
     "production": [

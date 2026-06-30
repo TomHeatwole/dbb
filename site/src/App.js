@@ -32,7 +32,8 @@ import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
 import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
-import SOPPage from './routes/SOPPage';
+import SOPPage, { SOP2Page } from './routes/SOPPage';
+import DKPage from './routes/DKPage';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
@@ -84,7 +85,10 @@ function AppInner() {
   const location = useLocation();
   const isHomeRoute = location.pathname === '/oldhome/';
   const pathUpper = location.pathname.toUpperCase();
-  const isSopRoute = pathUpper === '/SOP' || pathUpper.startsWith('/SOP/');
+  const isSopRoute =
+    pathUpper === '/SOP' || pathUpper.startsWith('/SOP/')
+    || pathUpper === '/SOP2' || pathUpper.startsWith('/SOP2/')
+    || pathUpper === '/DK' || pathUpper.startsWith('/DK/');
   
   // Determine main content class based on viewport mode
   let mainClassName = 'main-content-shared';
@@ -138,7 +142,10 @@ function AppInner() {
       <Route path="/teams-2" element={<Teams2Page />} />
       <Route path="/teams-2/:id" element={<Teams2Page />} />
       <Route path="/SOP/*" element={<SOPPage />} />
+      <Route path="/SOP2/*" element={<SOP2Page />} />
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
+      <Route path="/dk/*" element={<DKPage />} />
+      <Route path="/DK/*" element={<DKPage />} />
       
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>

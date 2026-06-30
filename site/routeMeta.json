@@ -39,6 +39,16 @@
     "ogDescription": "SHOT OPEN PLAY",
     "ogImage": "/data/sop.jpeg"
   },
+  "/SOP2": {
+    "ogTitle": "SHOT OPEN PLAY",
+    "ogDescription": "SHOT OPEN PLAY",
+    "ogImage": "/data/sop.jpeg"
+  },
+  "/dk": {
+    "ogTitle": "DK First Goal Method",
+    "ogDescription": "DraftKings World Cup First Goal Method odds scanner",
+    "ogImage": "/data/sop.jpeg"
+  },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",
     "ogDescription": "",

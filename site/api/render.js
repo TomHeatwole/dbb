@@ -44,7 +44,10 @@ function pickMetaForPath(routeMeta, pathOnly) {
     if (key === "*") {
       continue;
     }
-    if (pathOnly === key || pathOnly.startsWith(key)) {
+    if (
+      pathOnly === key
+      || (pathOnly.startsWith(key) && (pathOnly.length === key.length || pathOnly[key.length] === '/'))
+    ) {
       if (key.length > bestLen) {
         bestLen = key.length;
         bestConfig = routeMeta[key];

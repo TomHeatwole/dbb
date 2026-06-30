@@ -56,18 +56,18 @@ function SopCollageGrid() {
   );
 }
 
-function SOPTabBar() {
+function SOPTabBar({ basePath }) {
   return (
     <nav className="sop-tabs" aria-label="SOP mode">
       <NavLink
-        to="/SOP"
+        to={basePath}
         end
         className={({ isActive }) => `sop-tab${isActive ? ' sop-tab--active' : ''}`}
       >
         Book
       </NavLink>
       <NavLink
-        to="/SOP/manual"
+        to={`${basePath}/manual`}
         className={({ isActive }) => `sop-tab${isActive ? ' sop-tab--active' : ''}`}
       >
         Manual
@@ -98,13 +98,15 @@ function SOPBootLoader({ phase, loadingProgress, msgIndex, bookLoaded }) {
   );
 }
 
-function SOPPage() {
+export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
   const location = useLocation();
-  const isManual = location.pathname.toLowerCase().endsWith('/manual');
+  const manualSuffix = `${basePath}/manual`;
+  const isManual = location.pathname.toLowerCase() === manualSuffix.toLowerCase()
+    || location.pathname.toLowerCase().endsWith('/manual');
 
-  const [shellReady, setShellReady] = useState(false);
-  const [vibesPhase, setVibesPhase] = useState('loading');
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [shellReady, setShellReady] = useState(skipBootLoader);
+  const [vibesPhase, setVibesPhase] = useState(skipBootLoader ? 'done' : 'loading');
+  const [loadingProgress, setLoadingProgress] = useState(skipBootLoader ? 1 : 0);
   const [msgIndex, setMsgIndex] = useState(0);
   const [bookLoaded, setBookLoaded] = useState(false);
   const [games, setGames] = useState([]);
@@ -143,6 +145,8 @@ function SOPPage() {
   }, [shellReady, refreshBook]);
 
   useEffect(() => {
+    if (skipBootLoader) return undefined;
+
     let raf = 0;
     const start = performance.now();
 
@@ -162,23 +166,24 @@ function SOPPage() {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [skipBootLoader]);
 
   useEffect(() => {
-    if (vibesPhase !== 'loading') return undefined;
+    if (skipBootLoader || vibesPhase !== 'loading') return undefined;
 
     const id = window.setInterval(() => {
       setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
     }, 1400);
 
     return () => clearInterval(id);
-  }, [vibesPhase]);
+  }, [vibesPhase, skipBootLoader]);
 
   useEffect(() => {
+    if (skipBootLoader) return;
     if (vibesPhase === 'done' && bookLoaded) {
       setShellReady(true);
     }
-  }, [vibesPhase, bookLoaded]);
+  }, [vibesPhase, bookLoaded, skipBootLoader]);
 
   return (
     <>
@@ -187,7 +192,7 @@ function SOPPage() {
       <div className="sop-collage-frame">
         <SopCollageGrid />
 
-        {!shellReady && (
+        {!skipBootLoader && !shellReady && (
           <SOPBootLoader
             phase={vibesPhase}
             loadingProgress={loadingProgress}
@@ -196,14 +201,14 @@ function SOPPage() {
           />
         )}
 
-        {shellReady && (
+        {(skipBootLoader || shellReady) && (
           <div className={`sop-page${isManual ? '' : ' sop-page--book'}`}>
             <div className="sop-pitch-lines" aria-hidden="true" />
             <div className="sop-spotlight sop-spotlight--left" aria-hidden="true" />
             <div className="sop-spotlight sop-spotlight--right" aria-hidden="true" />
             <div className="sop-scanlines" aria-hidden="true" />
 
-            <SOPTabBar />
+            <SOPTabBar basePath={basePath} />
 
             <Routes>
               <Route
@@ -219,13 +224,21 @@ function SOPPage() {
                 }
               />
               <Route path="manual" element={<SOPManualPanel />} />
-              <Route path="*" element={<Navigate to="/SOP" replace />} />
+              <Route path="*" element={<Navigate to={basePath} replace />} />
             </Routes>
           </div>
         )}
       </div>
     </>
   );
+}
+
+function SOPPage() {
+  return <SOPPageShell basePath="/SOP" skipBootLoader={false} />;
+}
+
+export function SOP2Page() {
+  return <SOPPageShell basePath="/SOP2" skipBootLoader />;
 }
 
 export default SOPPage;
