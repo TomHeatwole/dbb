@@ -287,10 +287,8 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
                           <div className="sop-exp-goal-edge">
                             {profitable && edge != null ? (
                               <span className="sop-exp-edge-plus">+{edge.toFixed(1)}% edge</span>
-                            ) : row.breakevenAmerican != null ? (
-                              <span className="sop-exp-edge-need">
-                                need {formatAmericanOdds(row.breakevenAmerican)}+
-                              </span>
+                            ) : edge != null ? (
+                              <span className="sop-exp-edge-minus">{edge.toFixed(1)}%</span>
                             ) : (
                               '—'
                             )}

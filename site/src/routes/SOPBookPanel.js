@@ -104,10 +104,34 @@ function collectTeamNames(games) {
   return [...names].sort((a, b) => a.localeCompare(b));
 }
 
-function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
-  const [expanded, setExpanded] = useState(true);
+function shouldShowDkNoGoal(game) {
+  if (!game.dk) return false;
+  // Keep DK no-goal row during live when this fixture is mapped on DraftKings.
+  if (game.inPlay) {
+    return game.dk.errorCode !== 'event_not_found';
+  }
+  return true;
+}
 
-  const activeNoGoal = game.noGoalMarkets?.[selectedNoGoalSource];
+function quoteForNoGoalPick(game, sourceKey, book) {
+  if (book === 'dk') return game.dk?.noGoalMarkets?.[sourceKey];
+  return game.noGoalMarkets?.[sourceKey];
+}
+
+function noGoalPickHasOdds(game, pick) {
+  if (!pick?.sourceKey || !pick?.book) return false;
+  return quoteForNoGoalPick(game, pick.sourceKey, pick.book)?.american != null;
+}
+
+function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
+  const [expanded, setExpanded] = useState(true);
+  const showDkGoals = !game.inPlay && Boolean(game.dk);
+  const showDkNoGoal = shouldShowDkNoGoal(game);
+
+  const selectedSourceKey = selectedNoGoalPick?.sourceKey;
+  const selectedBook = selectedNoGoalPick?.book ?? 'fd';
+
+  const activeNoGoal = quoteForNoGoalPick(game, selectedSourceKey, selectedBook);
   const noGoalAmerican = activeNoGoal?.american ?? null;
 
   const model = useMemo(
@@ -119,21 +143,61 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
     if (!model) return [];
     return GOAL_TYPE_META.map(({ key, label, fdRunner }) => {
       const fdAmerican = game.goalTypes?.[key]?.american ?? null;
+      const dkAmerican = showDkGoals ? game.dk?.goalTypes?.[key]?.american ?? null : null;
       const breakeven = model[key];
-      const analysis = analyzeAgainstBreakeven(fdAmerican, breakeven?.american);
+      const fdAnalysis = analyzeAgainstBreakeven(fdAmerican, breakeven?.american);
+      const dkAnalysis = showDkGoals
+        ? analyzeAgainstBreakeven(dkAmerican, breakeven?.american)
+        : null;
+
+      const fdProfitable = Boolean(fdAnalysis?.profitable);
+      const dkProfitable = Boolean(dkAnalysis?.profitable);
+      const fdEdge = fdAnalysis?.edgePoints ?? -Infinity;
+      const dkEdge = dkAnalysis?.edgePoints ?? -Infinity;
+
+      let highlightFd = false;
+      let highlightDk = false;
+      if (fdProfitable && dkProfitable) {
+        if (fdEdge >= dkEdge) highlightFd = true;
+        else highlightDk = true;
+      } else if (fdProfitable) {
+        highlightFd = true;
+      } else if (dkProfitable) {
+        highlightDk = true;
+      }
+
+      const bestEdge = highlightFd ? fdEdge : highlightDk ? dkEdge : null;
+
+      const edgeCandidates = [];
+      if (fdAmerican != null && fdAnalysis?.edgePoints != null) {
+        edgeCandidates.push({ edge: fdAnalysis.edgePoints, book: 'fd' });
+      }
+      if (dkAmerican != null && dkAnalysis?.edgePoints != null) {
+        edgeCandidates.push({ edge: dkAnalysis.edgePoints, book: 'dk' });
+      }
+      const displayEdge = edgeCandidates.length
+        ? edgeCandidates.reduce((best, cur) => (cur.edge > best.edge ? cur : best))
+        : null;
+
       return {
         key,
         label,
         fdRunner,
         fdAmerican,
+        dkAmerican,
         breakevenAmerican: breakeven?.american ?? null,
         breakevenImplied: breakeven?.implied ?? null,
-        analysis,
+        fdAnalysis,
+        dkAnalysis,
+        highlightFd,
+        highlightDk,
+        bestEdge,
+        displayEdge,
       };
     });
-  }, [game.goalTypes, model]);
+  }, [game.goalTypes, game.dk?.goalTypes, model, showDkGoals]);
 
-  const evCount = goalAnalyses.filter((row) => row.analysis?.profitable).length;
+  const evCount = goalAnalyses.filter((row) => row.highlightFd || row.highlightDk).length;
 
   return (
     <article className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}>
@@ -170,29 +234,67 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
             <div className="sop-exp-no-goal-grid">
               {NO_GOAL_SOURCES.map(({ key, short, desc }) => {
                 const quote = game.noGoalMarkets?.[key];
-                const selected = selectedNoGoalSource === key;
+                const dkQuote = game.dk?.noGoalMarkets?.[key];
+                const fdSelected = selectedSourceKey === key && selectedBook === 'fd';
+                const dkSelected = selectedSourceKey === key && selectedBook === 'dk';
                 const hasOdds = quote?.american != null;
+                const hasDkOdds = dkQuote?.american != null;
+                const pickLabel = noGoalLabel(key, quote);
+                const dkPickLabel = noGoalLabel(key, dkQuote);
                 return (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`sop-exp-no-goal-btn${selected ? ' sop-exp-no-goal-btn--selected' : ''}${!hasOdds ? ' sop-exp-no-goal-btn--missing' : ''}`}
-                    onClick={() => onSelectNoGoalSource(game.eventId, key)}
-                    disabled={!hasOdds}
-                    title={desc}
-                  >
-                    <span className="sop-exp-no-goal-short">{short}</span>
-                    <span className="sop-exp-no-goal-pick">{noGoalLabel(key, quote)}</span>
-                    <span className="sop-exp-no-goal-odds">
-                      {hasOdds ? formatAmericanOdds(quote.american) : '—'}
-                    </span>
-                  </button>
+                  <div key={key} className="sop-exp-no-goal-col">
+                    <div className="sop-exp-no-goal-col-head">
+                      <span className="sop-exp-no-goal-short" title={desc}>
+                        {short}
+                      </span>
+                      {pickLabel !== '—' && (
+                        <span className="sop-exp-no-goal-pick">{pickLabel}</span>
+                      )}
+                      {hasDkOdds && dkPickLabel !== '—' && dkPickLabel !== pickLabel && (
+                        <span className="sop-exp-no-goal-pick sop-exp-no-goal-pick--dk">
+                          DK · {dkPickLabel}
+                        </span>
+                      )}
+                    </div>
+                    <div className="sop-exp-no-goal-stack">
+                      <div className="sop-exp-no-goal-book">
+                        <span className="sop-exp-book-label sop-exp-book-label--fd">FD</span>
+                        <button
+                          type="button"
+                          className={`sop-exp-odds-box sop-exp-odds-box--fd${fdSelected ? ' sop-exp-odds-box--selected' : ''}${!hasOdds ? ' sop-exp-odds-box--missing' : ''}`}
+                          onClick={() => onSelectNoGoalPick(game.eventId, key, 'fd')}
+                          disabled={!hasOdds}
+                          title={desc}
+                        >
+                          <span className="sop-exp-odds-box-val">
+                            {hasOdds ? formatAmericanOdds(quote.american) : '—'}
+                          </span>
+                        </button>
+                      </div>
+                      {showDkNoGoal && (
+                        <div className="sop-exp-no-goal-book">
+                          <span className="sop-exp-book-label sop-exp-book-label--dk">DK</span>
+                          <button
+                            type="button"
+                            className={`sop-exp-odds-box sop-exp-odds-box--dk${dkSelected ? ' sop-exp-odds-box--selected' : ''}${!hasDkOdds ? ' sop-exp-odds-box--missing' : ''}`}
+                            onClick={() => onSelectNoGoalPick(game.eventId, key, 'dk')}
+                            disabled={!hasDkOdds}
+                            title={hasDkOdds ? `DraftKings · ${desc}` : 'DraftKings — no line'}
+                          >
+                            <span className="sop-exp-odds-box-val">
+                              {hasDkOdds ? formatAmericanOdds(dkQuote.american) : '—'}
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
             </div>
             {activeNoGoal?.market && (
               <div className="sop-exp-no-goal-detail">
-                Using {activeNoGoal.market}
+                Using {selectedBook === 'dk' ? 'DK' : 'FD'} · {activeNoGoal.market}
                 {activeNoGoal.selection ? ` · ${activeNoGoal.selection}` : ''}
                 {model && (
                   <span>
@@ -211,20 +313,35 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
             )}
             {model && (
               <ul className="sop-exp-goal-list">
-                {goalAnalyses.map((row) => {
-                  const profitable = row.analysis?.profitable;
-                  const edge = row.analysis?.edgePoints;
-                  return (
+                {goalAnalyses.map((row) => (
                     <li
                       key={row.key}
-                      className={`sop-exp-goal-row${profitable ? ' sop-exp-goal-row--ev' : ''}`}
+                      className={`sop-exp-goal-row${showDkGoals ? ' sop-exp-goal-row--dual' : ''}`}
                     >
                       <div className="sop-exp-goal-label">{row.label}</div>
-                      <div className="sop-exp-goal-fd">
-                        <span className="sop-exp-goal-fd-val">
-                          {row.fdAmerican != null ? formatAmericanOdds(row.fdAmerican) : '—'}
-                        </span>
-                        <span className="sop-exp-goal-fd-tag">FD</span>
+                      <div
+                        className={
+                          showDkGoals ? 'sop-exp-goal-books-pair' : 'sop-exp-goal-books-single'
+                        }
+                      >
+                        <div
+                          className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--fd${row.highlightFd ? ' sop-exp-goal-odds-box--ev' : ''}`}
+                        >
+                          <span className="sop-exp-goal-odds-book">FD</span>
+                          <span className="sop-exp-goal-odds-val">
+                            {row.fdAmerican != null ? formatAmericanOdds(row.fdAmerican) : '—'}
+                          </span>
+                        </div>
+                        {showDkGoals && (
+                          <div
+                            className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--dk${row.highlightDk ? ' sop-exp-goal-odds-box--ev' : ''}`}
+                          >
+                            <span className="sop-exp-goal-odds-book">DK</span>
+                            <span className="sop-exp-goal-odds-val">
+                              {row.dkAmerican != null ? formatAmericanOdds(row.dkAmerican) : '—'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="sop-exp-goal-breakeven">
                         {row.breakevenAmerican != null ? (
@@ -237,19 +354,36 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
                         )}
                       </div>
                       <div className="sop-exp-goal-edge">
-                        {profitable && edge != null ? (
-                          <span className="sop-exp-edge-plus">+{edge.toFixed(1)}% edge</span>
-                        ) : row.breakevenAmerican != null ? (
-                          <span className="sop-exp-edge-need">
-                            need {formatAmericanOdds(row.breakevenAmerican)}+
+                        {(row.highlightFd || row.highlightDk) && row.bestEdge != null ? (
+                          <span className="sop-exp-edge-plus">
+                            +{row.bestEdge.toFixed(1)}% edge
+                            {showDkGoals && (
+                              <span
+                                className={`sop-exp-edge-book${row.highlightDk ? ' sop-exp-edge-book--dk' : ''}`}
+                              >
+                                {' '}
+                                {row.highlightDk ? 'DK' : 'FD'}
+                              </span>
+                            )}
+                          </span>
+                        ) : row.displayEdge != null ? (
+                          <span className="sop-exp-edge-minus">
+                            {row.displayEdge.edge.toFixed(1)}%
+                            {showDkGoals && (
+                              <span
+                                className={`sop-exp-edge-book${row.displayEdge.book === 'dk' ? ' sop-exp-edge-book--dk' : ''}`}
+                              >
+                                {' '}
+                                {row.displayEdge.book === 'dk' ? 'DK' : 'FD'}
+                              </span>
+                            )}
                           </span>
                         ) : (
                           '—'
                         )}
                       </div>
                     </li>
-                  );
-                })}
+                  ))}
               </ul>
             )}
           </section>
@@ -259,8 +393,8 @@ function GameCard({ game, selectedNoGoalSource, onSelectNoGoalSource }) {
   );
 }
 
-function SOPBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
-  const [noGoalSourceByEvent, setNoGoalSourceByEvent] = useState({});
+function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, onRefresh }) {
+  const [noGoalPickByEvent, setNoGoalPickByEvent] = useState({});
   const [teamQuery, setTeamQuery] = useState('');
 
   const teamNames = useMemo(() => collectTeamNames(games), [games]);
@@ -270,23 +404,36 @@ function SOPBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
     return games.filter((g) => gameMatchesQuery(g, teamQuery));
   }, [games, teamQuery]);
 
-  const handleSelectNoGoalSource = useCallback((eventId, sourceKey) => {
-    setNoGoalSourceByEvent((prev) => ({ ...prev, [eventId]: sourceKey }));
+  const handleSelectNoGoalPick = useCallback((eventId, sourceKey, book) => {
+    setNoGoalPickByEvent((prev) => ({ ...prev, [eventId]: { sourceKey, book } }));
   }, []);
 
-  const getNoGoalSource = useCallback(
+  const getNoGoalPick = useCallback(
     (game) => {
-      const picked = noGoalSourceByEvent[game.eventId];
-      if (picked && game.noGoalMarkets?.[picked]?.american != null) return picked;
+      const picked = noGoalPickByEvent[game.eventId];
+      if (noGoalPickHasOdds(game, picked)) return picked;
+
       if (game.noGoalMarkets?.[DEFAULT_NO_GOAL_SOURCE]?.american != null) {
-        return DEFAULT_NO_GOAL_SOURCE;
+        return { sourceKey: DEFAULT_NO_GOAL_SOURCE, book: 'fd' };
       }
-      const fallback = NO_GOAL_SOURCES.find(
+
+      const fdFallback = NO_GOAL_SOURCES.find(
         (s) => game.noGoalMarkets?.[s.key]?.american != null,
       );
-      return fallback?.key ?? DEFAULT_NO_GOAL_SOURCE;
+      if (fdFallback) {
+        return { sourceKey: fdFallback.key, book: 'fd' };
+      }
+
+      const dkFallback = NO_GOAL_SOURCES.find(
+        (s) => game.dk?.noGoalMarkets?.[s.key]?.american != null,
+      );
+      if (dkFallback) {
+        return { sourceKey: dkFallback.key, book: 'dk' };
+      }
+
+      return { sourceKey: DEFAULT_NO_GOAL_SOURCE, book: 'fd' };
     },
-    [noGoalSourceByEvent],
+    [noGoalPickByEvent],
   );
 
   return (
@@ -294,7 +441,7 @@ function SOPBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">SOP +EV Scanner</h1>
         <p className="sop-exp-subtitle">
-          FIFA World Cup · FanDuel live
+          FIFA World Cup · FanDuel + DraftKings
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -303,6 +450,12 @@ function SOPBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
           )}
         </p>
       </header>
+
+      {dkNotice && (
+        <p className="sop-exp-dk-notice" role="status">
+          {dkNotice}
+        </p>
+      )}
 
       <div className="sop-exp-toolbar">
         <button
@@ -346,8 +499,8 @@ function SOPBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
             <GameCard
               key={g.eventId}
               game={g}
-              selectedNoGoalSource={getNoGoalSource(g)}
-              onSelectNoGoalSource={handleSelectNoGoalSource}
+              selectedNoGoalPick={getNoGoalPick(g)}
+              onSelectNoGoalPick={handleSelectNoGoalPick}
             />
           ))}
         </div>
@@ -362,7 +515,7 @@ function SOPBookPanel({ games, fetchedAt, error, refreshing, onRefresh }) {
       )}
 
       <footer className="sop-exp-footer">
-        Auto-refreshes every {REFRESH_MS / 1000}s · default no-goal = Total U
+        Auto-refreshes every {REFRESH_MS / 1000}s · default no-goal = Total U (FD) · click FD or DK to model
       </footer>
     </div>
   );

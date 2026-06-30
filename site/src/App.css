@@ -14713,47 +14713,150 @@ body.modal-open {
 .sop-exp-no-goal-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.25rem;
-}
-
-.sop-exp-no-goal-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.08rem;
-  min-width: 0;
-  padding: 0.35rem 0.25rem;
-  border-radius: 0.55rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  gap: 0.35rem;
 }
 
 @media (min-width: 520px) {
   .sop-exp-no-goal-grid {
-    gap: 0.45rem;
-  }
-
-  .sop-exp-no-goal-btn {
-    gap: 0.15rem;
-    padding: 0.55rem 0.6rem;
+    gap: 0.5rem;
   }
 }
 
-.sop-exp-no-goal-btn:hover:not(:disabled) {
+.sop-exp-no-goal-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.sop-exp-no-goal-col-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.06rem;
+  min-width: 0;
+}
+
+.sop-exp-no-goal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.sop-exp-no-goal-book,
+.sop-exp-goal-book {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.sop-exp-book-label {
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1;
+}
+
+@media (min-width: 520px) {
+  .sop-exp-book-label {
+    font-size: 0.55rem;
+  }
+}
+
+.sop-exp-book-label--fd {
+  color: rgba(255, 224, 138, 0.8);
+}
+
+.sop-exp-book-label--dk {
+  color: rgba(158, 200, 255, 0.9);
+}
+
+.sop-exp-odds-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.35rem 0.3rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+@media (min-width: 520px) {
+  .sop-exp-odds-box {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.35rem;
+  }
+}
+
+.sop-exp-odds-box--static {
+  cursor: default;
+}
+
+.sop-exp-odds-box-val {
+  font-size: 0.72rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+@media (min-width: 520px) {
+  .sop-exp-odds-box-val {
+    font-size: 0.88rem;
+  }
+}
+
+.sop-exp-odds-box:hover:not(:disabled):not(.sop-exp-odds-box--static) {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.sop-exp-no-goal-btn--selected {
+.sop-exp-odds-box--fd.sop-exp-odds-box--selected {
   border-color: #ffe08a;
   background: rgba(255, 224, 138, 0.12);
   box-shadow: 0 0 0 1px rgba(255, 224, 138, 0.35);
 }
 
-.sop-exp-no-goal-btn--missing {
+.sop-exp-odds-box--fd.sop-exp-odds-box--selected .sop-exp-odds-box-val {
+  color: #ffe08a;
+}
+
+.sop-exp-odds-box--dk {
+  border-color: rgba(120, 170, 255, 0.3);
+  background: rgba(80, 140, 255, 0.1);
+}
+
+.sop-exp-odds-box--dk .sop-exp-odds-box-val {
+  color: #9ec8ff;
+}
+
+.sop-exp-odds-box--dk:hover:not(:disabled) {
+  background: rgba(80, 140, 255, 0.16);
+  border-color: rgba(140, 185, 255, 0.45);
+}
+
+.sop-exp-odds-box--dk.sop-exp-odds-box--selected {
+  border-color: rgba(140, 185, 255, 0.75);
+  background: rgba(80, 140, 255, 0.2);
+  box-shadow: 0 0 0 1px rgba(140, 185, 255, 0.4);
+}
+
+.sop-exp-odds-box--dk.sop-exp-odds-box--selected .sop-exp-odds-box-val {
+  color: #b8d8ff;
+}
+
+.sop-exp-no-goal-pick--dk {
+  color: rgba(158, 200, 255, 0.75);
+}
+
+.sop-exp-odds-box--missing {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -14778,18 +14881,11 @@ body.modal-open {
 
 .sop-exp-no-goal-pick {
   font-size: 0.52rem;
-  color: rgba(220, 240, 225, 0.8);
+  color: rgba(220, 240, 225, 0.65);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sop-exp-no-goal-odds {
-  font-size: 0.72rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: #fff;
 }
 
 @media (min-width: 520px) {
@@ -14805,16 +14901,18 @@ body.modal-open {
   }
 
   .sop-exp-no-goal-pick {
-    font-size: 0.72rem;
-  }
-
-  .sop-exp-no-goal-odds {
-    font-size: 1rem;
+    font-size: 0.68rem;
   }
 }
 
-.sop-exp-no-goal-btn--selected .sop-exp-no-goal-odds {
-  color: #ffe08a;
+.sop-exp-dk-notice {
+  margin: 0 0 0.85rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+  color: rgba(180, 215, 255, 0.92);
+  background: rgba(80, 140, 255, 0.1);
+  border: 1px solid rgba(120, 170, 255, 0.28);
 }
 
 .sop-exp-no-goal-detail {
@@ -14846,10 +14944,103 @@ body.modal-open {
   font-variant-numeric: tabular-nums;
 }
 
-.sop-exp-goal-row--ev {
-  border-color: rgba(255, 224, 138, 0.55);
-  background: linear-gradient(90deg, rgba(255, 224, 138, 0.18), rgba(0, 0, 0, 0.22));
-  box-shadow: inset 0 0 0 1px rgba(255, 224, 138, 0.2);
+.sop-exp-goal-row--dual {
+  grid-template-columns: 3.5rem minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.sop-exp-goal-books-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  align-items: stretch;
+}
+
+.sop-exp-goal-books-single {
+  display: block;
+}
+
+.sop-exp-goal-odds-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.35rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.sop-exp-goal-odds-box--fd {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.sop-exp-goal-odds-box--dk {
+  border-color: rgba(120, 170, 255, 0.28);
+  background: rgba(40, 70, 120, 0.22);
+}
+
+.sop-exp-goal-odds-box--fd.sop-exp-goal-odds-box--ev {
+  border-color: rgba(255, 224, 138, 0.65);
+  background: linear-gradient(180deg, rgba(255, 224, 138, 0.22), rgba(0, 0, 0, 0.28));
+  box-shadow: inset 0 0 0 1px rgba(255, 224, 138, 0.25);
+}
+
+.sop-exp-goal-odds-box--dk.sop-exp-goal-odds-box--ev {
+  border-color: rgba(255, 224, 138, 0.75);
+  background: linear-gradient(180deg, rgba(255, 224, 138, 0.2), rgba(40, 70, 120, 0.3));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 224, 138, 0.3),
+    0 0 10px rgba(255, 224, 138, 0.22);
+}
+
+.sop-exp-goal-odds-book {
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.sop-exp-goal-odds-box--fd .sop-exp-goal-odds-book {
+  color: rgba(255, 224, 138, 0.75);
+}
+
+.sop-exp-goal-odds-box--dk .sop-exp-goal-odds-book {
+  color: rgba(158, 200, 255, 0.85);
+}
+
+.sop-exp-goal-odds-val {
+  font-size: 0.82rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.sop-exp-goal-odds-box--fd.sop-exp-goal-odds-box--ev .sop-exp-goal-odds-val {
+  color: #ffe08a;
+}
+
+.sop-exp-goal-odds-box--dk .sop-exp-goal-odds-val {
+  color: #9ec8ff;
+}
+
+.sop-exp-goal-odds-box--dk.sop-exp-goal-odds-box--ev .sop-exp-goal-odds-val {
+  color: #9ec8ff;
+  text-shadow: 0 0 12px rgba(120, 170, 255, 0.45);
+}
+
+.sop-exp-goal-odds-box--dk.sop-exp-goal-odds-box--ev .sop-exp-goal-odds-book {
+  color: rgba(158, 200, 255, 0.9);
+}
+
+@media (min-width: 520px) {
+  .sop-exp-goal-odds-val {
+    font-size: 0.95rem;
+  }
 }
 
 .sop-exp-goal-label {
@@ -14858,34 +15049,18 @@ body.modal-open {
   color: rgba(230, 255, 240, 0.85);
 }
 
-.sop-exp-goal-fd {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-}
-
-.sop-exp-goal-fd-val {
-  font-size: 0.95rem;
-  font-weight: 800;
-}
-
-.sop-exp-goal-row--ev .sop-exp-goal-fd-val {
-  color: #ffe08a;
-}
-
-.sop-exp-goal-fd-tag,
-.sop-exp-goal-be-tag {
-  font-size: 0.58rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(200, 220, 210, 0.5);
-}
-
 .sop-exp-goal-breakeven {
   display: flex;
   align-items: baseline;
   gap: 0.35rem;
   color: rgba(210, 230, 215, 0.75);
+}
+
+.sop-exp-goal-be-tag {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(200, 220, 210, 0.5);
 }
 
 .sop-exp-goal-edge {
@@ -14897,10 +15072,23 @@ body.modal-open {
   color: #ffe08a;
 }
 
-.sop-exp-edge-need {
+.sop-exp-edge-book {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.75);
+}
+
+.sop-exp-edge-book--dk {
+  color: #9ec8ff;
+}
+
+.sop-exp-edge-minus {
   color: rgba(200, 220, 210, 0.55);
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 480px) {
@@ -14909,7 +15097,16 @@ body.modal-open {
     grid-template-rows: auto auto;
   }
 
+  .sop-exp-goal-row--dual {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .sop-exp-goal-label {
+    grid-column: 1 / -1;
+  }
+
+  .sop-exp-goal-books-pair,
+  .sop-exp-goal-books-single {
     grid-column: 1 / -1;
   }
 

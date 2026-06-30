@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const { URL } = require('url');
 
 // Load .env.local (best-effort)
 try {
@@ -55,6 +56,8 @@ const server = http.createServer(async (req, res) => {
     const runHandler = async (body) => {
       try {
         req.body = body;
+        const parsed = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+        req.query = Object.fromEntries(parsed.searchParams);
         const { default: handler } = await import(`./api/${handlerName}.mjs?v=${Date.now()}`);
         await handler(req, res);
       } catch (err) {

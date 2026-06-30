@@ -9,6 +9,7 @@ import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
 import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
 import SOPBookPanel from './SOPBookPanel';
 import SOPManualPanel from './SOPManualPanel';
+import { dkGamesLoaded, mergeDkIntoFdGames } from '../sop/mergeDkGames';
 
 const OG_TITLE = 'SHOT OPEN PLAY';
 const OG_DESCRIPTION = 'SHOT OPEN PLAY';
@@ -112,20 +113,43 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
   const [games, setGames] = useState([]);
   const [fetchedAt, setFetchedAt] = useState(null);
   const [bookError, setBookError] = useState(null);
+  const [dkNotice, setDkNotice] = useState(null);
   const [bookRefreshing, setBookRefreshing] = useState(false);
 
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
     if (manual) setBookRefreshing(true);
     try {
-      const res = await fetch('/api/fanduel-sop');
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `HTTP ${res.status}`);
+      const [fdRes, dkRes] = await Promise.all([
+        fetch('/api/fanduel-sop'),
+        fetch('/api/draftkings-goal-method?all=1').catch(() => null),
+      ]);
+
+      if (!fdRes.ok) {
+        const body = await fdRes.json().catch(() => ({}));
+        throw new Error(body.error || `HTTP ${fdRes.status}`);
       }
-      const data = await res.json();
-      setGames(data.games ?? []);
-      setFetchedAt(data.fetchedAt ?? null);
+
+      const fdData = await fdRes.json();
+      let dkData = null;
+      if (dkRes?.ok) {
+        try {
+          dkData = await dkRes.json();
+        } catch (_) {
+          dkData = null;
+        }
+      }
+
+      setGames(mergeDkIntoFdGames(fdData.games ?? [], dkData));
+      setFetchedAt(fdData.fetchedAt ?? null);
       setBookError(null);
+
+      if (!dkData) {
+        setDkNotice('DraftKings odds unavailable — showing FanDuel only.');
+      } else if (!dkGamesLoaded(dkData)) {
+        setDkNotice('DraftKings odds unavailable — showing FanDuel only.');
+      } else {
+        setDkNotice(null);
+      }
     } catch (err) {
       setBookError(err.message || 'Failed to load odds');
     } finally {
@@ -218,6 +242,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
                     games={games}
                     fetchedAt={fetchedAt}
                     error={bookError}
+                    dkNotice={dkNotice}
                     refreshing={bookRefreshing}
                     onRefresh={() => refreshBook({ manual: true })}
                   />

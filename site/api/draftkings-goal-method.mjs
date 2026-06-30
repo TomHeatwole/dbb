@@ -22,6 +22,10 @@ const DK_COOKIE_FILE = path.join(SITE_DIR, '.dk-cookies.json');
 const DK_EVENT_MAP_FILE = path.join(SITE_DIR, 'api', 'dk-wc-event-map.json');
 const WC_LEAGUE_ID = '209533';
 const FIRST_GOAL_METHOD_SUBCATEGORY_ID = '6541';
+/** Live: "Next Goal (90 Mins)" — e.g. No 3rd Goal */
+const NEXT_GOAL_LIVE_SUBCATEGORY_ID = '6007';
+/** Live: alternate totals ladder */
+const TOTAL_GOALS_LIVE_SUBCATEGORY_ID = '13171';
 
 const DK_PE_LOC = (() => {
   const raw = (process.env.DK_PE_LOC || 'US-NY').trim().toUpperCase();
@@ -253,25 +257,163 @@ function extractNoGoalFromGoalMethod(market, selections, score, teams, inPlay) {
   };
 }
 
-async function fetchFirstGoalMethodBundle(eventId, eventMeta = {}) {
-  const payload = await nashFetch(marketsUrl(eventId, FIRST_GOAL_METHOD_SUBCATEGORY_ID), {
+function ordinalSuffix(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return 'th';
+  const v = num % 100;
+  return ['th', 'st', 'nd', 'rd'][v > 10 && v < 14 ? 0 : num % 10] || 'th';
+}
+
+function findNoNthGoalQuote(selections, goalNumber) {
+  const list = Array.isArray(selections) ? selections : [];
+  const ordinal = `${goalNumber}${ordinalSuffix(goalNumber)}`;
+  const candidates = [
+    `No ${ordinal} Goal`,
+    `No ${goalNumber} Goal`,
+    'No Goal',
+    'No Goals',
+    'Neither',
+  ];
+  const byName = findSelectionQuote(list, candidates);
+  if (byName?.american != null) return byName;
+
+  const regex = new RegExp(`no\\s+${goalNumber}(?:${ordinalSuffix(goalNumber)})?\\s+goal`, 'i');
+  const match = list.find((s) => regex.test(String(s.label ?? '')));
+  return match ? selectionQuote(match) : null;
+}
+
+function extractNoGoalFromNextGoalLive(markets, selections, score) {
+  const totalGoals = score.home + score.away;
+  const goalNumber = totalGoals + 1;
+  const market =
+    (markets ?? []).find((m) => new RegExp(`${goalNumber}(?:${ordinalSuffix(goalNumber)})?\\s+goal`, 'i').test(m.name ?? ''))
+    ?? (markets ?? []).find((m) => /next goal/i.test(m.name ?? ''))
+    ?? markets?.[0]
+    ?? null;
+  if (!market) return null;
+
+  const marketSelections = selections.filter((s) => s.marketId === market.id);
+  const quote = findNoNthGoalQuote(marketSelections, goalNumber);
+  if (!quote || quote.american == null) return null;
+
+  return {
+    market: market.name ?? `Next Goal (${goalNumber})`,
+    selection: quote?.runnerName ?? `No ${goalNumber}${ordinalSuffix(goalNumber)} Goal`,
+    ...quote,
+  };
+}
+
+function extractTotalGoalsUnderLive(markets, selections, score) {
+  const totalGoals = score.home + score.away;
+  const underLine = totalGoals + 0.5;
+  const lineStr = String(underLine);
+
+  for (const market of markets ?? []) {
+    const marketSelections = selections.filter((s) => s.marketId === market.id);
+    const under = marketSelections.find((s) => {
+      const label = String(s.label ?? '').toLowerCase();
+      if (!label.startsWith('under')) return false;
+      const points = s.points ?? s.line ?? market.points ?? market.line;
+      if (points != null && Number(points) === underLine) return true;
+      return label.includes(lineStr);
+    });
+    if (under) {
+      return {
+        market: market.name ?? 'Total Goals',
+        selection: `Under ${underLine}`,
+        line: underLine,
+        totalGoals,
+        ...selectionQuote(under),
+      };
+    }
+  }
+  return null;
+}
+
+async function fetchSubcategoryMarkets(eventId, subcategoryId, seoSlug) {
+  const payload = await nashFetch(marketsUrl(eventId, subcategoryId), {
     headerOpts: {
       page: 'event',
-      referer: `https://sportsbook.draftkings.com/event/${eventMeta.seoSlug ?? 'world-cup'}/${eventId}`,
+      referer: `https://sportsbook.draftkings.com/event/${seoSlug}/${eventId}`,
     },
   });
+  return {
+    markets: payload.markets ?? [],
+    selections: payload.selections ?? [],
+  };
+}
 
-  const market =
-    (payload.markets ?? []).find((m) => /goal method/i.test(m.name ?? '')) ?? payload.markets?.[0] ?? null;
-  const selections = (payload.selections ?? []).filter((s) => s.marketId === market?.id);
+async function fetchLiveDkBundle(eventId, eventMeta = {}) {
+  const seoSlug = eventMeta.seoSlug ?? 'world-cup';
+  const teams = eventMeta.teams ?? { home: null, away: null };
+  const score = eventMeta.score ?? { home: 0, away: 0 };
+  const base = extractNoGoalFromGoalMethod(null, [], score, teams, true);
 
+  let nextGoalMethod = null;
+  let totalGoalsUnder = null;
+  let marketName = null;
+
+  try {
+    const nextGoal = await fetchSubcategoryMarkets(
+      eventId,
+      NEXT_GOAL_LIVE_SUBCATEGORY_ID,
+      seoSlug,
+    );
+    nextGoalMethod = extractNoGoalFromNextGoalLive(
+      nextGoal.markets,
+      nextGoal.selections,
+      score,
+    );
+    if (nextGoalMethod?.american != null) {
+      marketName = nextGoalMethod.market;
+    }
+  } catch (_) {}
+
+  try {
+    const totals = await fetchSubcategoryMarkets(
+      eventId,
+      TOTAL_GOALS_LIVE_SUBCATEGORY_ID,
+      seoSlug,
+    );
+    totalGoalsUnder = extractTotalGoalsUnderLive(totals.markets, totals.selections, score);
+  } catch (_) {}
+
+  const noGoalMarkets = {
+    ...base,
+    ...(nextGoalMethod?.american != null ? { nextGoalMethod } : {}),
+    ...(totalGoalsUnder?.american != null ? { totalGoalsUnder } : {}),
+  };
+
+  return {
+    goalTypes: null,
+    noGoalMarkets,
+    marketName,
+  };
+}
+
+async function fetchFirstGoalMethodBundle(eventId, eventMeta = {}) {
+  const seoSlug = eventMeta.seoSlug ?? 'world-cup';
   const teams = eventMeta.teams ?? { home: null, away: null };
   const score = eventMeta.score ?? { home: 0, away: 0 };
   const inPlay = Boolean(eventMeta.inPlay);
 
+  if (inPlay) {
+    return fetchLiveDkBundle(eventId, { seoSlug, teams, score });
+  }
+
+  const { markets, selections } = await fetchSubcategoryMarkets(
+    eventId,
+    FIRST_GOAL_METHOD_SUBCATEGORY_ID,
+    seoSlug,
+  );
+
+  const market =
+    markets.find((m) => /goal method/i.test(m.name ?? '')) ?? markets[0] ?? null;
+  const marketSelections = selections.filter((s) => s.marketId === market?.id);
+
   return {
-    goalTypes: extractGoalTypes(selections),
-    noGoalMarkets: extractNoGoalFromGoalMethod(market, selections, score, teams, inPlay),
+    goalTypes: extractGoalTypes(marketSelections),
+    noGoalMarkets: extractNoGoalFromGoalMethod(market, marketSelections, score, teams, inPlay),
     marketName: market?.name ?? null,
   };
 }
@@ -493,21 +635,13 @@ async function fetchOneDkGame(fdGame, slugToId) {
       inPlay: fdGame.inPlay,
     });
 
-    const noGoalMarkets = {
-      ...bundle.noGoalMarkets,
-      correctScore: fdGame.noGoalMarkets?.correctScore ?? bundle.noGoalMarkets.correctScore,
-      totalGoalsUnder: fdGame.noGoalMarkets?.totalGoalsUnder ?? bundle.noGoalMarkets.totalGoalsUnder,
-      nthGoalNeither: fdGame.noGoalMarkets?.nthGoalNeither ?? bundle.noGoalMarkets.nthGoalNeither,
-      nextGoalscorer: fdGame.noGoalMarkets?.nextGoalscorer ?? bundle.noGoalMarkets.nextGoalscorer,
-    };
-
     return {
       ...base,
       eventId: dkEventId,
       dkEventId,
       marketName: bundle.marketName,
       goalTypes: bundle.goalTypes,
-      noGoalMarkets,
+      noGoalMarkets: bundle.noGoalMarkets,
       noGoalProxySources: noGoalProxySources(bundle, fdGame),
     };
   } catch (err) {
@@ -520,17 +654,19 @@ async function fetchOneDkGame(fdGame, slugToId) {
   }
 }
 
-export async function fetchWorldCupGoalMethodOdds() {
+export async function fetchWorldCupGoalMethodOdds({ upcomingOnly = true } = {}) {
   const fdPayload = await fetchFanDuelGames();
-  const upcomingGames = fdPayload.games.filter(isUpcomingGame);
+  const scheduleGames = upcomingOnly
+    ? fdPayload.games.filter(isUpcomingGame)
+    : fdPayload.games;
   let slugToId = await discoverDkEventsFromLeaguePage();
 
-  const missingGames = upcomingGames.filter((g) => !resolveDkEventIdSync(g, slugToId));
+  const missingGames = scheduleGames.filter((g) => !resolveDkEventIdSync(g, slugToId));
   if (missingGames.length && process.env.DK_PROBE_EVENTS === '1') {
     slugToId = await probeMissingDkEvents(missingGames, slugToId);
   }
 
-  let results = await mapPool(upcomingGames, DK_FETCH_CONCURRENCY, (fdGame) =>
+  let results = await mapPool(scheduleGames, DK_FETCH_CONCURRENCY, (fdGame) =>
     fetchOneDkGame(fdGame, slugToId),
   );
 
@@ -541,7 +677,7 @@ export async function fetchWorldCupGoalMethodOdds() {
   if (blockedIndexes.length) {
     await sleep(1200);
     for (const index of blockedIndexes) {
-      const retry = await fetchOneDkGame(upcomingGames[index], slugToId);
+      const retry = await fetchOneDkGame(scheduleGames[index], slugToId);
       if (retry.goalTypes) results[index] = retry;
       await sleep(300);
     }
@@ -594,7 +730,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchWorldCupGoalMethodOdds();
+    const upcomingOnly = req.query?.all !== '1' && req.query?.all !== 'true';
+    const data = await fetchWorldCupGoalMethodOdds({ upcomingOnly });
     res.setHeader('Cache-Control', 'public, max-age=15');
     return res.status(200).json(data);
   } catch (err) {
