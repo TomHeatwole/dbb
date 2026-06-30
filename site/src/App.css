@@ -15082,6 +15082,10 @@ body.modal-open {
 }
 
 .sop-exp-goal-edge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
   text-align: right;
   font-weight: 700;
 }
@@ -15109,6 +15113,179 @@ body.modal-open {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── SOP Kelly Criterion ─────────────────────────────────────────────────── */
+
+.sop-kelly-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.55rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 224, 138, 0.22);
+}
+
+.sop-kelly-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sop-kelly-toggle-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.9);
+}
+
+.sop-kelly-switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.sop-kelly-switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sop-kelly-switch-track {
+  display: block;
+  width: 2.5rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sop-kelly-switch-thumb {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  margin: 0.12rem;
+  border-radius: 50%;
+  background: rgba(230, 255, 240, 0.85);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.sop-kelly-switch-input:checked + .sop-kelly-switch-track {
+  background: rgba(255, 224, 138, 0.35);
+  border-color: rgba(255, 224, 138, 0.65);
+}
+
+.sop-kelly-switch-input:checked + .sop-kelly-switch-track .sop-kelly-switch-thumb {
+  transform: translateX(1.1rem);
+  background: #ffe08a;
+}
+
+.sop-kelly-switch-input:focus-visible + .sop-kelly-switch-track {
+  box-shadow: 0 0 0 2px rgba(255, 224, 138, 0.35);
+}
+
+.sop-kelly-budget {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.sop-kelly-budget-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.7);
+}
+
+.sop-kelly-budget-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.sop-kelly-budget-prefix {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 224, 138, 0.75);
+}
+
+.sop-kelly-budget-input {
+  width: 5.5rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.sop-kelly-budget-wrap:focus-within {
+  border-color: #ffe08a;
+  box-shadow: 0 0 0 2px rgba(255, 224, 138, 0.2);
+}
+
+.sop-kelly-fraction {
+  flex: 1 1 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.sop-kelly-fraction-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.7);
+}
+
+.sop-kelly-fraction-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.sop-kelly-fraction-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 0.35rem;
+  accent-color: #ffe08a;
+  cursor: pointer;
+}
+
+.sop-kelly-fraction-value {
+  flex: 0 0 auto;
+  min-width: 5.25rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: rgba(230, 255, 240, 0.9);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sop-kelly-stake {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #9ef0c0;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 480px) {
   .sop-exp-goal-row {
     grid-template-columns: 1fr 1fr;
@@ -15131,5 +15308,6 @@ body.modal-open {
   .sop-exp-goal-edge {
     grid-column: 1 / -1;
     text-align: left;
+    align-items: flex-start;
   }
 }

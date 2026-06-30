@@ -112,6 +112,54 @@ export function analyzeAgainstBreakeven(fdAmerican, breakevenAmerican) {
   };
 }
 
+/** Net profit per $1 staked (decimal odds minus 1). */
+export function americanToNetOdds(american) {
+  if (!Number.isFinite(american) || american === 0) return null;
+  if (american > 0) return american / 100;
+  return 100 / Math.abs(american);
+}
+
+/**
+ * Kelly fraction of bankroll for a single wager.
+ * @param {number} winProb — true win probability (0–1)
+ * @param {number} offeredAmerican — offered American odds
+ * @returns {number | null} fraction in (0, 1], or null if not +EV
+ */
+export function computeKellyFraction(winProb, offeredAmerican) {
+  if (!Number.isFinite(winProb) || winProb <= 0 || winProb >= 1) return null;
+  const netOdds = americanToNetOdds(offeredAmerican);
+  if (netOdds == null || netOdds <= 0) return null;
+
+  const loseProb = 1 - winProb;
+  const fraction = (netOdds * winProb - loseProb) / netOdds;
+  if (!Number.isFinite(fraction) || fraction <= 0) return null;
+  return Math.min(fraction, 1);
+}
+
+/** Recommended stake in dollars from Kelly Criterion. */
+export function computeKellyStake({ winProb, offeredAmerican, bankroll, kellyFraction = 1 }) {
+  const fraction = computeKellyFraction(winProb, offeredAmerican);
+  if (fraction == null || !Number.isFinite(bankroll) || bankroll <= 0) return null;
+  const scale =
+    Number.isFinite(kellyFraction) && kellyFraction > 0 && kellyFraction <= 1
+      ? kellyFraction
+      : 1;
+  return fraction * scale * bankroll;
+}
+
+export function formatKellyFractionLabel(kellyFraction) {
+  if (!Number.isFinite(kellyFraction)) return '100% Kelly';
+  const pct = Math.max(1, Math.min(100, Math.round(kellyFraction * 100)));
+  return `${pct}% Kelly`;
+}
+
+export function formatKellyStake(amount) {
+  if (amount == null || !Number.isFinite(amount) || amount <= 0) return null;
+  if (amount >= 100) return `$${Math.round(amount).toLocaleString()}`;
+  if (amount >= 10) return `$${Math.round(amount)}`;
+  return `$${amount.toFixed(2)}`;
+}
+
 export const GOAL_TYPE_META = [
   { key: 'sop', label: 'SOP', fdRunner: 'Shot Open Play' },
   { key: 'header', label: 'HEADER', fdRunner: 'Header' },

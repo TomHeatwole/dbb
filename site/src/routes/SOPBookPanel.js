@@ -6,11 +6,15 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   analyzeAgainstBreakeven,
   computeBreakevenOdds,
+  computeKellyStake,
   DEFAULT_NO_GOAL_SOURCE,
   formatAmericanOdds,
+  formatKellyFractionLabel,
+  formatKellyStake,
   GOAL_TYPE_META,
   NO_GOAL_SOURCE_KEYS,
 } from '../sop/sopModel';
+import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'sop-book-team-search';
@@ -118,7 +122,80 @@ function noGoalPickHasOdds(game, pick) {
   return quoteForNoGoalPick(game, pick.sourceKey, pick.book)?.american != null;
 }
 
-function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
+function SOPKellyControls({
+  enabled,
+  onEnabledChange,
+  budgetInput,
+  onBudgetInputChange,
+  onBudgetCommit,
+  kellyFraction,
+  onKellyFractionChange,
+}) {
+  return (
+    <section className="sop-kelly-panel" aria-label="Kelly Criterion sizing">
+      <label className="sop-kelly-toggle">
+        <span className="sop-kelly-toggle-label">Show Kelly Criterion</span>
+        <span className="sop-kelly-switch">
+          <input
+            type="checkbox"
+            className="sop-kelly-switch-input"
+            checked={enabled}
+            onChange={(e) => onEnabledChange(e.target.checked)}
+          />
+          <span className="sop-kelly-switch-track" aria-hidden="true">
+            <span className="sop-kelly-switch-thumb" />
+          </span>
+        </span>
+      </label>
+      {enabled && (
+        <>
+          <label className="sop-kelly-budget">
+            <span className="sop-kelly-budget-label">Budget</span>
+            <span className="sop-kelly-budget-wrap">
+              <span className="sop-kelly-budget-prefix" aria-hidden="true">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                className="sop-kelly-budget-input"
+                value={budgetInput}
+                onChange={(e) => onBudgetInputChange(e.target.value)}
+                onBlur={(e) => onBudgetCommit(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onBudgetCommit(e.currentTarget.value);
+                    e.currentTarget.blur();
+                  }
+                }}
+                autoComplete="off"
+              />
+            </span>
+          </label>
+          <div className="sop-kelly-fraction">
+            <label className="sop-kelly-fraction-label" htmlFor="sop-kelly-fraction">
+              Kelly sizing
+            </label>
+            <div className="sop-kelly-fraction-row">
+              <input
+                id="sop-kelly-fraction"
+                type="range"
+                className="sop-kelly-fraction-slider"
+                min={MIN_KELLY_FRACTION}
+                max={DEFAULT_KELLY_FRACTION}
+                step={0.01}
+                value={kellyFraction}
+                onChange={(e) => onKellyFractionChange(Number(e.target.value))}
+              />
+              <span className="sop-kelly-fraction-value">{formatKellyFractionLabel(kellyFraction)}</span>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, kellyBudget, kellyFraction }) {
   const [expanded, setExpanded] = useState(true);
   const showDkGoals = !game.inPlay && Boolean(game.dk);
   const showDkNoGoal = shouldShowDkNoGoal(game);
@@ -162,6 +239,21 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
       }
 
       const bestEdge = highlightFd ? fdEdge : highlightDk ? dkEdge : null;
+      const kellyOfferedAmerican = highlightFd
+        ? fdAmerican
+        : highlightDk
+          ? dkAmerican
+          : null;
+      const kellyWinProb = breakeven?.implied != null ? breakeven.implied / 100 : null;
+      const kellyStake =
+        kellyEnabled && (highlightFd || highlightDk) && kellyWinProb != null && kellyOfferedAmerican != null
+          ? computeKellyStake({
+              winProb: kellyWinProb,
+              offeredAmerican: kellyOfferedAmerican,
+              bankroll: kellyBudget,
+              kellyFraction,
+            })
+          : null;
 
       const edgeCandidates = [];
       if (fdAmerican != null && fdAnalysis?.edgePoints != null) {
@@ -188,9 +280,10 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
         highlightDk,
         bestEdge,
         displayEdge,
+        kellyStake,
       };
     });
-  }, [game.goalTypes, game.dk?.goalTypes, model, showDkGoals]);
+  }, [game.goalTypes, game.dk?.goalTypes, kellyBudget, kellyEnabled, kellyFraction, model, showDkGoals]);
 
   const evCount = goalAnalyses.filter((row) => row.highlightFd || row.highlightDk).length;
 
@@ -358,17 +451,27 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
                       </div>
                       <div className="sop-exp-goal-edge">
                         {(row.highlightFd || row.highlightDk) && row.bestEdge != null ? (
-                          <span className="sop-exp-edge-plus">
-                            +{row.bestEdge.toFixed(1)}% edge
-                            {showDkGoals && (
+                          <>
+                            <span className="sop-exp-edge-plus">
+                              +{row.bestEdge.toFixed(1)}% edge
+                              {showDkGoals && (
+                                <span
+                                  className={`sop-exp-edge-book${row.highlightDk ? ' sop-exp-edge-book--dk' : ''}`}
+                                >
+                                  {' '}
+                                  {row.highlightDk ? 'DK' : 'FD'}
+                                </span>
+                              )}
+                            </span>
+                            {kellyEnabled && row.kellyStake != null && (
                               <span
-                                className={`sop-exp-edge-book${row.highlightDk ? ' sop-exp-edge-book--dk' : ''}`}
+                                className="sop-kelly-stake"
+                                title={`${formatKellyFractionLabel(kellyFraction)} stake`}
                               >
-                                {' '}
-                                {row.highlightDk ? 'DK' : 'FD'}
+                                Kelly Bet Size: {formatKellyStake(row.kellyStake)}
                               </span>
                             )}
-                          </span>
+                          </>
                         ) : row.displayEdge != null ? (
                           <span className="sop-exp-edge-minus">
                             {row.displayEdge.edge.toFixed(1)}%
@@ -399,6 +502,16 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
 function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, onRefresh }) {
   const [noGoalPickByEvent, setNoGoalPickByEvent] = useState({});
   const [teamQuery, setTeamQuery] = useState('');
+  const {
+    enabled: kellyEnabled,
+    setEnabled: setKellyEnabled,
+    budget: kellyBudget,
+    budgetInput: kellyBudgetInput,
+    setBudgetInput: setKellyBudgetInput,
+    commitBudget: commitKellyBudget,
+    kellyFraction,
+    setKellyFraction,
+  } = useSOPKellySettings();
 
   const teamNames = useMemo(() => collectTeamNames(games), [games]);
 
@@ -460,6 +573,16 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, onRefresh
         </p>
       )}
 
+      <SOPKellyControls
+        enabled={kellyEnabled}
+        onEnabledChange={setKellyEnabled}
+        budgetInput={kellyBudgetInput}
+        onBudgetInputChange={setKellyBudgetInput}
+        onBudgetCommit={commitKellyBudget}
+        kellyFraction={kellyFraction}
+        onKellyFractionChange={setKellyFraction}
+      />
+
       <div className="sop-exp-toolbar">
         <button
           type="button"
@@ -504,6 +627,9 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, onRefresh
               game={g}
               selectedNoGoalPick={getNoGoalPick(g)}
               onSelectNoGoalPick={handleSelectNoGoalPick}
+              kellyEnabled={kellyEnabled}
+              kellyBudget={kellyBudget}
+              kellyFraction={kellyFraction}
             />
           ))}
         </div>
