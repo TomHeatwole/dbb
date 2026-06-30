@@ -31,7 +31,7 @@ export function probToAmerican(prob) {
 export function formatAmericanOdds(american) {
   if (!Number.isFinite(american)) return '—';
   const rounded = Math.round(american * 10) / 10;
-  if (rounded >= 0) return String(rounded);
+  if (rounded > 0) return `+${rounded}`;
   return String(rounded);
 }
 
