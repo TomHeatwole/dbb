@@ -45,10 +45,12 @@ function DKPage() {
   const [eventMapUpdatedAt, setEventMapUpdatedAt] = useState(null);
   const [fetchedAt, setFetchedAt] = useState(null);
   const [bookError, setBookError] = useState(null);
+  const [bookLoading, setBookLoading] = useState(true);
   const [bookRefreshing, setBookRefreshing] = useState(false);
 
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
     if (manual) setBookRefreshing(true);
+    else setBookLoading(true);
     try {
       const res = await fetch('/api/draftkings-goal-method');
       if (!res.ok) {
@@ -64,6 +66,7 @@ function DKPage() {
     } catch (err) {
       setBookError(err.message || 'Failed to load odds');
     } finally {
+      setBookLoading(false);
       if (manual) setBookRefreshing(false);
     }
   }, []);
@@ -96,6 +99,7 @@ function DKPage() {
             eventMapUpdatedAt={eventMapUpdatedAt}
             fetchedAt={fetchedAt}
             error={bookError}
+            loading={bookLoading}
             refreshing={bookRefreshing}
             onRefresh={() => refreshBook({ manual: true })}
           />

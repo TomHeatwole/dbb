@@ -283,9 +283,10 @@ function loadStaticDkEventMap() {
   return map;
 }
 
-function dkEventUrl(seoSlug, eventId) {
-  if (!seoSlug || !eventId) return null;
-  return `https://sportsbook.draftkings.com/event/${seoSlug}/${eventId}?category=all-odds&subcategory=first-goal-method`;
+function isUpcomingGame(game) {
+  if (game.inPlay) return false;
+  if (!game.openDate) return true;
+  return new Date(game.openDate) > new Date();
 }
 
 function noGoalProxySources(bundle, fdGame) {
@@ -431,15 +432,16 @@ async function resolveDkEventId(fdGame, slugToId) {
 
 export async function fetchWorldCupGoalMethodOdds() {
   const fdPayload = await fetchFanDuelGames();
+  const upcomingGames = fdPayload.games.filter(isUpcomingGame);
   let slugToId = await discoverDkEventsFromLeaguePage();
 
-  const missingGames = fdPayload.games.filter((g) => !resolveDkEventIdSync(g, slugToId));
-  if (missingGames.length) {
+  const missingGames = upcomingGames.filter((g) => !resolveDkEventIdSync(g, slugToId));
+  if (missingGames.length && process.env.DK_PROBE_EVENTS === '1') {
     slugToId = await probeMissingDkEvents(missingGames, slugToId);
   }
 
   const results = await Promise.all(
-    fdPayload.games.map(async (fdGame) => {
+    upcomingGames.map(async (fdGame) => {
       const base = {
         eventId: fdGame.eventId,
         name: fdGame.name,
@@ -456,7 +458,6 @@ export async function fetchWorldCupGoalMethodOdds() {
           return {
             ...base,
             dkEventId: null,
-            dkEventUrl: null,
             error: 'DraftKings event ID not found for this match',
             errorCode: 'event_not_found',
           };
@@ -489,7 +490,6 @@ export async function fetchWorldCupGoalMethodOdds() {
           ...base,
           eventId: dkEventId,
           dkEventId,
-          dkEventUrl: dkEventUrl(dkMeta.seoSlug, dkEventId),
           marketName: bundle.marketName,
           goalTypes: bundle.goalTypes,
           noGoalMarkets,

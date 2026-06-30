@@ -14508,26 +14508,6 @@ body.modal-open {
   border-color: rgba(255, 224, 138, 0.35);
 }
 
-.sop-exp-dk-link {
-  flex-shrink: 0;
-  align-self: center;
-  margin-right: 0.75rem;
-  padding: 0.35rem 0.55rem;
-  border-radius: 0.4rem;
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: #1a1a1a;
-  background: #ffe08a;
-  transition: opacity 0.15s;
-}
-
-.sop-exp-dk-link:hover {
-  opacity: 0.88;
-}
-
 .sop-exp-title {
   margin: 0;
   font-size: clamp(1.35rem, 4vw, 1.85rem);
@@ -14636,13 +14616,7 @@ body.modal-open {
 }
 
 .sop-exp-game-header {
-  display: flex;
-  align-items: stretch;
   margin-bottom: 0;
-}
-
-.sop-exp-game-header .sop-exp-game-toggle {
-  flex: 1;
 }
 
 .sop-exp-game-toggle {
@@ -14738,22 +14712,17 @@ body.modal-open {
 
 .sop-exp-no-goal-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
-@media (min-width: 520px) {
-  .sop-exp-no-goal-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.25rem;
 }
 
 .sop-exp-no-goal-btn {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
-  padding: 0.55rem 0.6rem;
+  gap: 0.08rem;
+  min-width: 0;
+  padding: 0.35rem 0.25rem;
   border-radius: 0.55rem;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.06);
@@ -14761,6 +14730,17 @@ body.modal-open {
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+@media (min-width: 520px) {
+  .sop-exp-no-goal-grid {
+    gap: 0.45rem;
+  }
+
+  .sop-exp-no-goal-btn {
+    gap: 0.15rem;
+    padding: 0.55rem 0.6rem;
+  }
 }
 
 .sop-exp-no-goal-btn:hover:not(:disabled) {
@@ -14779,23 +14759,58 @@ body.modal-open {
 }
 
 .sop-exp-no-goal-short {
-  font-size: 0.62rem;
+  font-size: 0.48rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: rgba(230, 255, 240, 0.65);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sop-exp-no-goal-short .sop-exp-proxy-tag {
+  margin-left: 0.12rem;
+  padding: 0.02rem 0.15rem;
+  font-size: 0.38rem;
 }
 
 .sop-exp-no-goal-pick {
-  font-size: 0.72rem;
+  font-size: 0.52rem;
   color: rgba(220, 240, 225, 0.8);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sop-exp-no-goal-odds {
-  font-size: 1rem;
+  font-size: 0.72rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   color: #fff;
+}
+
+@media (min-width: 520px) {
+  .sop-exp-no-goal-short {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+  }
+
+  .sop-exp-no-goal-short .sop-exp-proxy-tag {
+    margin-left: 0.35rem;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.55rem;
+  }
+
+  .sop-exp-no-goal-pick {
+    font-size: 0.72rem;
+  }
+
+  .sop-exp-no-goal-odds {
+    font-size: 1rem;
+  }
 }
 
 .sop-exp-no-goal-btn--selected .sop-exp-no-goal-odds {
