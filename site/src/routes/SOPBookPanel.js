@@ -105,12 +105,7 @@ function collectTeamNames(games) {
 }
 
 function shouldShowDkNoGoal(game) {
-  if (!game.dk) return false;
-  // Keep DK no-goal row during live when this fixture is mapped on DraftKings.
-  if (game.inPlay) {
-    return game.dk.errorCode !== 'event_not_found';
-  }
-  return true;
+  return Boolean(game.dk);
 }
 
 function quoteForNoGoalPick(game, sourceKey, book) {
@@ -231,7 +226,7 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
         <div className="sop-exp-game-body">
           <section className="sop-exp-no-goal">
             <div className="sop-exp-section-label">No Goal proxy</div>
-            <div className="sop-exp-no-goal-grid">
+            <div className={`sop-exp-no-goal-grid${showDkNoGoal ? ' sop-exp-no-goal-grid--dk' : ''}`}>
               {NO_GOAL_SOURCES.map(({ key, short, desc }) => {
                 const quote = game.noGoalMarkets?.[key];
                 const dkQuote = game.dk?.noGoalMarkets?.[key];
@@ -241,18 +236,22 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
                 const hasDkOdds = dkQuote?.american != null;
                 const pickLabel = noGoalLabel(key, quote);
                 const dkPickLabel = noGoalLabel(key, dkQuote);
+                const showDkPickLine =
+                  showDkNoGoal && hasDkOdds && dkPickLabel !== '—' && dkPickLabel !== pickLabel;
                 return (
                   <div key={key} className="sop-exp-no-goal-col">
                     <div className="sop-exp-no-goal-col-head">
                       <span className="sop-exp-no-goal-short" title={desc}>
                         {short}
                       </span>
-                      {pickLabel !== '—' && (
-                        <span className="sop-exp-no-goal-pick">{pickLabel}</span>
-                      )}
-                      {hasDkOdds && dkPickLabel !== '—' && dkPickLabel !== pickLabel && (
-                        <span className="sop-exp-no-goal-pick sop-exp-no-goal-pick--dk">
-                          DK · {dkPickLabel}
+                      <span className="sop-exp-no-goal-pick">
+                        {pickLabel !== '—' ? pickLabel : '\u00a0'}
+                      </span>
+                      {showDkNoGoal && (
+                        <span
+                          className={`sop-exp-no-goal-pick sop-exp-no-goal-pick--dk${showDkPickLine ? '' : ' sop-exp-no-goal-pick--empty'}`}
+                        >
+                          {showDkPickLine ? `DK · ${dkPickLabel}` : '\u00a0'}
                         </span>
                       )}
                     </div>
@@ -279,7 +278,11 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick }) {
                             className={`sop-exp-odds-box sop-exp-odds-box--dk${dkSelected ? ' sop-exp-odds-box--selected' : ''}${!hasDkOdds ? ' sop-exp-odds-box--missing' : ''}`}
                             onClick={() => onSelectNoGoalPick(game.eventId, key, 'dk')}
                             disabled={!hasDkOdds}
-                            title={hasDkOdds ? `DraftKings · ${desc}` : 'DraftKings — no line'}
+                            title={
+                              hasDkOdds
+                                ? `DraftKings · ${desc}${dkPickLabel !== '—' ? ` · ${dkPickLabel}` : ''}`
+                                : 'DraftKings — no line'
+                            }
                           >
                             <span className="sop-exp-odds-box-val">
                               {hasDkOdds ? formatAmericanOdds(dkQuote.american) : '—'}

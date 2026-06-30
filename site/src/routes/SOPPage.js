@@ -9,7 +9,36 @@ import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
 import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
 import SOPBookPanel from './SOPBookPanel';
 import SOPManualPanel from './SOPManualPanel';
-import { dkGamesLoaded, mergeDkIntoFdGames } from '../sop/mergeDkGames';
+import { mergeDkIntoFdGames } from '../sop/mergeDkGames';
+
+async function fetchDkOddsForSop({ retries = 2 } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const res = await fetch('/api/draftkings-goal-method?all=1');
+      if (!res.ok) {
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+          continue;
+        }
+        return null;
+      }
+      const data = await res.json();
+      if (data?.games?.length) return data;
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        continue;
+      }
+      return data;
+    } catch {
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
+}
 
 const OG_TITLE = 'SHOT OPEN PLAY';
 const OG_DESCRIPTION = 'SHOT OPEN PLAY';
@@ -119,9 +148,9 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
     if (manual) setBookRefreshing(true);
     try {
-      const [fdRes, dkRes] = await Promise.all([
+      const [fdRes, dkData] = await Promise.all([
         fetch('/api/fanduel-sop'),
-        fetch('/api/draftkings-goal-method?all=1').catch(() => null),
+        fetchDkOddsForSop(),
       ]);
 
       if (!fdRes.ok) {
@@ -130,22 +159,14 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
       }
 
       const fdData = await fdRes.json();
-      let dkData = null;
-      if (dkRes?.ok) {
-        try {
-          dkData = await dkRes.json();
-        } catch (_) {
-          dkData = null;
-        }
-      }
+      const mergedGames = mergeDkIntoFdGames(fdData.games ?? [], dkData);
 
-      setGames(mergeDkIntoFdGames(fdData.games ?? [], dkData));
+      setGames(mergedGames);
       setFetchedAt(fdData.fetchedAt ?? null);
       setBookError(null);
 
-      if (!dkData) {
-        setDkNotice('DraftKings odds unavailable — showing FanDuel only.');
-      } else if (!dkGamesLoaded(dkData)) {
+      const hasMergedDk = mergedGames.some((g) => g.dk);
+      if (!dkData || !hasMergedDk) {
         setDkNotice('DraftKings odds unavailable — showing FanDuel only.');
       } else {
         setDkNotice(null);
