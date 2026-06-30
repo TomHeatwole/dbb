@@ -440,7 +440,7 @@ function DKBookPanel({ games, stats, eventMapUpdatedAt, fetchedAt, error, loadin
         <p className="sop-exp-status sop-exp-status--info">
           {summary.withEventId} DraftKings matches found but odds could not be loaded
           {summary.missingEventId > 0 ? ` (${summary.missingEventId} still unmatched)` : ''}.
-          This often happens when DraftKings blocks the server IP — try Refresh.
+          Akamai may be rate-limiting — retrying automatically, or hit Refresh.
         </p>
       )}
 

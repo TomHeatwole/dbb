@@ -2,7 +2,7 @@
  * DKPage — DraftKings World Cup First Goal Method odds (SOP-style scanner).
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import PageMeta from '../PageMeta';
 import DKBookPanel from './DKBookPanel';
 
@@ -47,8 +47,10 @@ function DKPage() {
   const [bookError, setBookError] = useState(null);
   const [bookLoading, setBookLoading] = useState(true);
   const [bookRefreshing, setBookRefreshing] = useState(false);
+  const autoRetriedRef = useRef(false);
 
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
+    if (manual) autoRetriedRef.current = false;
     if (manual) setBookRefreshing(true);
     else setBookLoading(true);
     try {
@@ -79,6 +81,17 @@ function DKPage() {
     const id = window.setInterval(refreshBook, BOOK_REFRESH_MS);
     return () => window.clearInterval(id);
   }, [refreshBook]);
+
+  // One silent retry when Akamai blocks every matched game on first load.
+  useEffect(() => {
+    if (bookLoading || bookError || autoRetriedRef.current) return;
+    if (stats?.withOdds === 0 && stats?.withEventId > 0) {
+      autoRetriedRef.current = true;
+      const t = window.setTimeout(() => refreshBook(), 3000);
+      return () => window.clearTimeout(t);
+    }
+    return undefined;
+  }, [stats, bookLoading, bookError, refreshBook]);
 
   return (
     <>

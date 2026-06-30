@@ -23,9 +23,15 @@ const DK_EVENT_MAP_FILE = path.join(SITE_DIR, 'api', 'dk-wc-event-map.json');
 const WC_LEAGUE_ID = '209533';
 const FIRST_GOAL_METHOD_SUBCATEGORY_ID = '6541';
 
-const DK_PE_LOC = process.env.DK_PE_LOC || 'US-NY';
-const DK_SITE = process.env.DK_SITE || `US-${DK_PE_LOC}-SB`;
+const DK_PE_LOC = (() => {
+  const raw = (process.env.DK_PE_LOC || 'US-NY').trim().toUpperCase();
+  return raw.startsWith('US-') ? raw : `US-${raw}`;
+})();
+const DK_SITE = process.env.DK_SITE || `${DK_PE_LOC}-SB`;
 const DK_NASH_BASE = `https://sportsbook-nash.draftkings.com/sites/${DK_SITE}/api`;
+const DK_FETCH_CONCURRENCY = Number(process.env.DK_FETCH_CONCURRENCY || 4);
+const DK_FETCH_RETRIES = Number(process.env.DK_FETCH_RETRIES || 2);
+const DK_FETCH_RETRY_MS = Number(process.env.DK_FETCH_RETRY_MS || 800);
 
 const GOAL_TYPE_SELECTIONS = {
   sop: ['Shot', 'Shot Open Play', 'Open Play', 'Shot - Open Play'],
@@ -83,6 +89,27 @@ function loadDkCookieHeader() {
   return null;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function mapPool(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await fn(items[index], index);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
 function nashHeaders({ page = 'event', referer = 'https://sportsbook.draftkings.com/leagues/soccer/fifa-world-cup' } = {}) {
   const headers = {
     Accept: 'application/json, text/plain, */*',
@@ -106,11 +133,18 @@ function nashHeaders({ page = 'event', referer = 'https://sportsbook.draftkings.
   return headers;
 }
 
-async function nashFetch(url, options = {}) {
+async function nashFetch(url, options = {}, attempt = 0) {
   const res = await fetch(url, {
     ...options,
     headers: { ...nashHeaders(options.headerOpts), ...options.headers },
   });
+
+  if (res.status === 403 && attempt < DK_FETCH_RETRIES - 1) {
+    const backoff = DK_FETCH_RETRY_MS * (attempt + 1) + Math.floor(Math.random() * 200);
+    await sleep(backoff);
+    return nashFetch(url, options, attempt + 1);
+  }
+
   if (!res.ok) {
     const snippet = await res.text().catch(() => '');
     const blocked = res.status === 403 || /access denied/i.test(snippet);
@@ -430,6 +464,62 @@ async function resolveDkEventId(fdGame, slugToId) {
   return resolveDkEventIdSync(fdGame, slugToId);
 }
 
+async function fetchOneDkGame(fdGame, slugToId) {
+  const base = {
+    eventId: fdGame.eventId,
+    name: fdGame.name,
+    openDate: fdGame.openDate,
+    inPlay: fdGame.inPlay,
+    score: fdGame.score,
+    scoreDisplay: fdGame.scoreDisplay,
+    teams: fdGame.teams,
+  };
+
+  try {
+    const dkEventId = await resolveDkEventId(fdGame, slugToId);
+    if (!dkEventId) {
+      return {
+        ...base,
+        dkEventId: null,
+        error: 'DraftKings event ID not found for this match',
+        errorCode: 'event_not_found',
+      };
+    }
+
+    const bundle = await fetchFirstGoalMethodBundle(dkEventId, {
+      seoSlug: fdNameToSlug(fdGame.name),
+      teams: fdGame.teams,
+      score: fdGame.score,
+      inPlay: fdGame.inPlay,
+    });
+
+    const noGoalMarkets = {
+      ...bundle.noGoalMarkets,
+      correctScore: fdGame.noGoalMarkets?.correctScore ?? bundle.noGoalMarkets.correctScore,
+      totalGoalsUnder: fdGame.noGoalMarkets?.totalGoalsUnder ?? bundle.noGoalMarkets.totalGoalsUnder,
+      nthGoalNeither: fdGame.noGoalMarkets?.nthGoalNeither ?? bundle.noGoalMarkets.nthGoalNeither,
+      nextGoalscorer: fdGame.noGoalMarkets?.nextGoalscorer ?? bundle.noGoalMarkets.nextGoalscorer,
+    };
+
+    return {
+      ...base,
+      eventId: dkEventId,
+      dkEventId,
+      marketName: bundle.marketName,
+      goalTypes: bundle.goalTypes,
+      noGoalMarkets,
+      noGoalProxySources: noGoalProxySources(bundle, fdGame),
+    };
+  } catch (err) {
+    return {
+      ...base,
+      dkEventId: resolveDkEventIdSync(fdGame, slugToId),
+      error: friendlyGameError(err.message),
+      errorCode: /403|akamai|access denied/i.test(err.message) ? 'markets_blocked' : 'markets_error',
+    };
+  }
+}
+
 export async function fetchWorldCupGoalMethodOdds() {
   const fdPayload = await fetchFanDuelGames();
   const upcomingGames = fdPayload.games.filter(isUpcomingGame);
@@ -440,71 +530,22 @@ export async function fetchWorldCupGoalMethodOdds() {
     slugToId = await probeMissingDkEvents(missingGames, slugToId);
   }
 
-  const results = await Promise.all(
-    upcomingGames.map(async (fdGame) => {
-      const base = {
-        eventId: fdGame.eventId,
-        name: fdGame.name,
-        openDate: fdGame.openDate,
-        inPlay: fdGame.inPlay,
-        score: fdGame.score,
-        scoreDisplay: fdGame.scoreDisplay,
-        teams: fdGame.teams,
-      };
-
-      try {
-        const dkEventId = await resolveDkEventId(fdGame, slugToId);
-        if (!dkEventId) {
-          return {
-            ...base,
-            dkEventId: null,
-            error: 'DraftKings event ID not found for this match',
-            errorCode: 'event_not_found',
-          };
-        }
-
-        const dkMeta = (await fetchDkEventMeta(dkEventId).catch(() => null)) ?? {
-          eventId: dkEventId,
-          seoSlug: fdNameToSlug(fdGame.name),
-          teams: fdGame.teams,
-          score: fdGame.score,
-          inPlay: fdGame.inPlay,
-        };
-
-        const bundle = await fetchFirstGoalMethodBundle(dkEventId, {
-          ...dkMeta,
-          teams: fdGame.teams,
-          score: fdGame.score,
-          inPlay: fdGame.inPlay,
-        });
-
-        const noGoalMarkets = {
-          ...bundle.noGoalMarkets,
-          correctScore: fdGame.noGoalMarkets?.correctScore ?? bundle.noGoalMarkets.correctScore,
-          totalGoalsUnder: fdGame.noGoalMarkets?.totalGoalsUnder ?? bundle.noGoalMarkets.totalGoalsUnder,
-          nthGoalNeither: fdGame.noGoalMarkets?.nthGoalNeither ?? bundle.noGoalMarkets.nthGoalNeither,
-          nextGoalscorer: fdGame.noGoalMarkets?.nextGoalscorer ?? bundle.noGoalMarkets.nextGoalscorer,
-        };
-
-        return {
-          ...base,
-          eventId: dkEventId,
-          dkEventId,
-          marketName: bundle.marketName,
-          goalTypes: bundle.goalTypes,
-          noGoalMarkets,
-          noGoalProxySources: noGoalProxySources(bundle, fdGame),
-        };
-      } catch (err) {
-        return {
-          ...base,
-          dkEventId: resolveDkEventIdSync(fdGame, slugToId),
-          error: friendlyGameError(err.message),
-          errorCode: /403|akamai|access denied/i.test(err.message) ? 'markets_blocked' : 'markets_error',
-        };
-      }
-    }),
+  let results = await mapPool(upcomingGames, DK_FETCH_CONCURRENCY, (fdGame) =>
+    fetchOneDkGame(fdGame, slugToId),
   );
+
+  const blockedIndexes = results
+    .map((result, index) => (result.errorCode === 'markets_blocked' ? index : -1))
+    .filter((index) => index >= 0);
+
+  if (blockedIndexes.length) {
+    await sleep(1200);
+    for (const index of blockedIndexes) {
+      const retry = await fetchOneDkGame(upcomingGames[index], slugToId);
+      if (retry.goalTypes) results[index] = retry;
+      await sleep(300);
+    }
+  }
 
   results.sort((a, b) => {
     if (!a.openDate) return 1;
