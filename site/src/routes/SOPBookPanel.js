@@ -3,6 +3,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
+import LoadingState from '../LoadingState';
 import {
   analyzeAgainstBreakeven,
   computeBreakevenOdds,
@@ -499,7 +500,7 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
   );
 }
 
-function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, onRefresh }) {
+function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading = false, onRefresh }) {
   const [noGoalPickByEvent, setNoGoalPickByEvent] = useState({});
   const [teamQuery, setTeamQuery] = useState('');
   const {
@@ -551,6 +552,16 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, onRefresh
     },
     [noGoalPickByEvent],
   );
+
+  if (loading) {
+    return (
+      <LoadingState
+        label="Loading World Cup odds…"
+        ariaLabel="Loading World Cup odds"
+        className="sop-book-loading"
+      />
+    );
+  }
 
   return (
     <div className="sop-exp-content">

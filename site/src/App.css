@@ -14311,6 +14311,28 @@ body.modal-open {
   width: 100%;
 }
 
+.sop-book-loading {
+  position: relative;
+  z-index: 1;
+  min-height: 60vh;
+  padding: 4rem 0;
+}
+
+.sop-book-loading .spinner {
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: rgba(255, 255, 255, 0.85);
+}
+
+.sop-book-loading .loading-text {
+  color: rgba(230, 255, 240, 0.9);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.sop-book-loading .loading-logo {
+  opacity: 0.75;
+}
+
 .sop-exp-page {
   width: 100%;
   max-width: 720px;

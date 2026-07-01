@@ -265,6 +265,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
                     error={bookError}
                     dkNotice={dkNotice}
                     refreshing={bookRefreshing}
+                    loading={skipBootLoader && !bookLoaded}
                     onRefresh={() => refreshBook({ manual: true })}
                   />
                 }
