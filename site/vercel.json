@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/chat.mjs": {
-      "includeFiles": "public/data/**",
+      "includeFiles": "public/data/**,lib/mcp/**",
       "maxDuration": 60
     },
     "api/search.mjs": {
@@ -11,10 +11,12 @@
       "maxDuration": 30
     },
     "api/draftkings-goal-method.mjs": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "src/sop/sopModel.js"
     },
     "api/kalshi-sop.mjs": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "src/sop/sopModel.js"
     }
   }
 }

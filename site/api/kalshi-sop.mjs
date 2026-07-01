@@ -13,6 +13,12 @@ const WC_SERIES = {
   score: 'KXWCSCORE',
 };
 
+const KALSHI_MIN_INTERVAL_MS = Number(process.env.KALSHI_MIN_INTERVAL_MS || 300);
+const KALSHI_RESPONSE_CACHE_MS = Number(process.env.KALSHI_RESPONSE_CACHE_MS || 30_000);
+const KALSHI_EVENTS_CACHE_MS = Number(process.env.KALSHI_EVENTS_CACHE_MS || 5 * 60_000);
+const KALSHI_MARKETS_CACHE_MS = Number(process.env.KALSHI_MARKETS_CACHE_MS || 30_000);
+const KALSHI_MAX_RETRIES = Number(process.env.KALSHI_MAX_RETRIES || 6);
+
 const TEAM_ALIASES = {
   'congo dr': 'dr congo',
   'democratic republic of the congo': 'dr congo',
@@ -29,6 +35,14 @@ const TEAM_ALIASES = {
   'u.s.a.': 'united states',
   'bosnia and herzegovina': 'bosnia',
 };
+
+/** Serialize Kalshi HTTP calls with spacing to avoid 429 bursts. */
+let kalshiQueue = Promise.resolve();
+let lastKalshiRequestAt = 0;
+
+const eventsCache = new Map();
+const marketsCache = new Map();
+let responseCache = { key: null, at: 0, data: null, inflight: null };
 
 function normalizeTeamName(name) {
   let s = String(name ?? '')
@@ -67,20 +81,62 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function kalshiFetch(path, attempt = 0) {
-  const res = await fetch(`${KALSHI_BASE}${path}`);
-  if (res.status === 429 && attempt < 4) {
-    await sleep(400 * (attempt + 1));
-    return kalshiFetch(path, attempt + 1);
+function readCacheEntry(map, key, maxAgeMs) {
+  const entry = map.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.at > maxAgeMs) {
+    map.delete(key);
+    return null;
   }
-  if (!res.ok) {
-    const snippet = await res.text().catch(() => '');
-    throw new Error(`Kalshi ${path} returned ${res.status}${snippet ? `: ${snippet.slice(0, 120)}` : ''}`);
-  }
-  return res.json();
+  return entry.value;
+}
+
+function writeCacheEntry(map, key, value) {
+  map.set(key, { at: Date.now(), value });
+}
+
+function enqueueKalshi(task) {
+  const run = kalshiQueue.then(task, task);
+  kalshiQueue = run.catch(() => {});
+  return run;
+}
+
+async function kalshiFetch(path) {
+  return enqueueKalshi(async () => {
+    for (let attempt = 0; attempt <= KALSHI_MAX_RETRIES; attempt += 1) {
+      const wait = KALSHI_MIN_INTERVAL_MS - (Date.now() - lastKalshiRequestAt);
+      if (wait > 0) await sleep(wait);
+
+      lastKalshiRequestAt = Date.now();
+      const res = await fetch(`${KALSHI_BASE}${path}`);
+
+      if (res.status === 429 && attempt < KALSHI_MAX_RETRIES) {
+        const retryAfterSec = Number(res.headers.get('retry-after'));
+        const backoff = Number.isFinite(retryAfterSec) && retryAfterSec > 0
+          ? retryAfterSec * 1000
+          : 600 * (2 ** attempt) + Math.floor(Math.random() * 250);
+        await sleep(backoff);
+        continue;
+      }
+
+      if (!res.ok) {
+        const snippet = await res.text().catch(() => '');
+        throw new Error(
+          `Kalshi ${path} returned ${res.status}${snippet ? `: ${snippet.slice(0, 120)}` : ''}`,
+        );
+      }
+
+      return res.json();
+    }
+
+    throw new Error(`Kalshi ${path} failed after ${KALSHI_MAX_RETRIES + 1} attempts`);
+  });
 }
 
 async function fetchAllKalshiEvents(seriesTicker) {
+  const cached = readCacheEntry(eventsCache, seriesTicker, KALSHI_EVENTS_CACHE_MS);
+  if (cached) return cached;
+
   const events = [];
   let cursor = null;
 
@@ -93,32 +149,25 @@ async function fetchAllKalshiEvents(seriesTicker) {
     if (!cursor || !(payload.events ?? []).length) break;
   } while (cursor);
 
+  writeCacheEntry(eventsCache, seriesTicker, events);
   return events;
 }
 
-async function fetchAllKalshiMarkets(seriesTicker) {
-  const markets = [];
-  let cursor = null;
+async function fetchMarketsForEvent(eventTicker) {
+  const cached = readCacheEntry(marketsCache, eventTicker, KALSHI_MARKETS_CACHE_MS);
+  if (cached) return cached;
 
-  do {
-    const qs = new URLSearchParams({ series_ticker: seriesTicker, limit: '200' });
-    if (cursor) qs.set('cursor', cursor);
-    const payload = await kalshiFetch(`/markets?${qs}`);
-    markets.push(...(payload.markets ?? []));
-    cursor = payload.cursor || null;
-    if (!cursor || !(payload.markets ?? []).length) break;
-  } while (cursor);
-
+  const qs = new URLSearchParams({ event_ticker: eventTicker, limit: '100' });
+  const payload = await kalshiFetch(`/markets?${qs}`);
+  const markets = payload.markets ?? [];
+  writeCacheEntry(marketsCache, eventTicker, markets);
   return markets;
 }
 
-function groupMarketsByEvent(markets) {
+async function loadMarketsForTickers(tickers) {
   const byEvent = new Map();
-  for (const market of markets) {
-    const key = market.event_ticker;
-    if (!key) continue;
-    if (!byEvent.has(key)) byEvent.set(key, []);
-    byEvent.get(key).push(market);
+  for (const ticker of tickers) {
+    byEvent.set(ticker, await fetchMarketsForEvent(ticker));
   }
   return byEvent;
 }
@@ -216,6 +265,22 @@ function klshHasNoGoalData(noGoalMarkets) {
   return Object.values(noGoalMarkets).some((q) => q?.american != null);
 }
 
+function collectNeededEventTickers(scheduleGames, totalEventIndex, scoreEventIndex) {
+  const totalTickers = new Set();
+  const scoreTickers = new Set();
+
+  for (const fdGame of scheduleGames) {
+    const fixtureKey = fixtureKeyFromFdName(fdGame.name);
+    if (!fixtureKey) continue;
+    const totalEvent = totalEventIndex.get(fixtureKey);
+    const scoreEvent = scoreEventIndex.get(fixtureKey);
+    if (totalEvent?.event_ticker) totalTickers.add(totalEvent.event_ticker);
+    if (scoreEvent?.event_ticker) scoreTickers.add(scoreEvent.event_ticker);
+  }
+
+  return { totalTickers, scoreTickers };
+}
+
 function fetchOneKalshiGame(fdGame, totalEventIndex, scoreEventIndex, totalByEvent, scoreByEvent) {
   const base = {
     eventId: fdGame.eventId,
@@ -267,7 +332,7 @@ function fetchOneKalshiGame(fdGame, totalEventIndex, scoreEventIndex, totalByEve
   };
 }
 
-export async function fetchWorldCupKalshiOdds({ upcomingOnly = true } = {}) {
+async function fetchWorldCupKalshiOddsInner({ upcomingOnly = true } = {}) {
   const fdPayload = await fetchFanDuelGames();
   const scheduleGames = upcomingOnly
     ? fdPayload.games.filter(isUpcomingGame)
@@ -275,13 +340,17 @@ export async function fetchWorldCupKalshiOdds({ upcomingOnly = true } = {}) {
 
   const totalEvents = await fetchAllKalshiEvents(WC_SERIES.total);
   const scoreEvents = await fetchAllKalshiEvents(WC_SERIES.score);
-  const totalMarkets = await fetchAllKalshiMarkets(WC_SERIES.total);
-  const scoreMarkets = await fetchAllKalshiMarkets(WC_SERIES.score);
 
   const totalEventIndex = buildKalshiEventIndex(totalEvents);
   const scoreEventIndex = buildKalshiEventIndex(scoreEvents);
-  const totalByEvent = groupMarketsByEvent(totalMarkets);
-  const scoreByEvent = groupMarketsByEvent(scoreMarkets);
+  const { totalTickers, scoreTickers } = collectNeededEventTickers(
+    scheduleGames,
+    totalEventIndex,
+    scoreEventIndex,
+  );
+
+  const totalByEvent = await loadMarketsForTickers(totalTickers);
+  const scoreByEvent = await loadMarketsForTickers(scoreTickers);
 
   const results = scheduleGames.map((fdGame) =>
     fetchOneKalshiGame(fdGame, totalEventIndex, scoreEventIndex, totalByEvent, scoreByEvent),
@@ -301,10 +370,44 @@ export async function fetchWorldCupKalshiOdds({ upcomingOnly = true } = {}) {
       total: results.length,
       totalEvents: totalEvents.length,
       scoreEvents: scoreEvents.length,
+      marketFetches: totalTickers.size + scoreTickers.size,
       withOdds,
     },
     games: results,
   };
+}
+
+export async function fetchWorldCupKalshiOdds(options = {}) {
+  const cacheKey = options.upcomingOnly === false ? 'all' : 'upcoming';
+  const now = Date.now();
+
+  if (responseCache.key === cacheKey && now - responseCache.at < KALSHI_RESPONSE_CACHE_MS) {
+    return responseCache.data;
+  }
+
+  if (responseCache.inflight?.key === cacheKey) {
+    return responseCache.inflight.promise;
+  }
+
+  const promise = fetchWorldCupKalshiOddsInner(options);
+  responseCache.inflight = { key: cacheKey, promise };
+
+  try {
+    const data = await promise;
+    responseCache = { key: cacheKey, at: Date.now(), data, inflight: null };
+    return data;
+  } catch (err) {
+    responseCache.inflight = null;
+    if (responseCache.key === cacheKey && responseCache.data) {
+      return {
+        ...responseCache.data,
+        fetchedAt: responseCache.data.fetchedAt,
+        stale: true,
+        staleError: err.message,
+      };
+    }
+    throw err;
+  }
 }
 
 export default async function handler(req, res) {

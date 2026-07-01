@@ -4,7 +4,7 @@ import {
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
   runScenario, getPlayerStats, getHistoricalResults,
-} from './mcp/tools.mjs';
+} from '../lib/mcp/tools.mjs';
 
 const GEMINI_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
