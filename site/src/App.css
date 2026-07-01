@@ -15174,6 +15174,7 @@ body.modal-open {
 
 /* ── SOP Kelly Criterion ─────────────────────────────────────────────────── */
 
+.sop-book-settings,
 .sop-kelly-panel {
   display: flex;
   flex-wrap: wrap;
@@ -15184,6 +15185,10 @@ body.modal-open {
   border-radius: 0.55rem;
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid rgba(255, 224, 138, 0.22);
+}
+
+.sop-book-settings .sop-kelly-toggle {
+  flex: 1 1 14rem;
 }
 
 .sop-kelly-toggle {

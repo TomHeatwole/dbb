@@ -16,6 +16,8 @@ import {
   NO_GOAL_SOURCE_KEYS,
 } from '../sop/sopModel';
 import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
+import { useSOPLongestNoGoal } from '../sop/useSOPLongestNoGoal';
+import { findLongestNoGoalPick } from '../sop/longestNoGoalPick';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'sop-book-team-search';
@@ -134,6 +136,46 @@ function noGoalPickHasOdds(game, pick) {
   return quoteForNoGoalPick(game, pick.sourceKey, pick.book)?.american != null;
 }
 
+function SOPBookSettings({
+  longestNoGoalEnabled,
+  onLongestNoGoalChange,
+  kellyEnabled,
+  onKellyEnabledChange,
+  budgetInput,
+  onBudgetInputChange,
+  onBudgetCommit,
+  kellyFraction,
+  onKellyFractionChange,
+}) {
+  return (
+    <section className="sop-book-settings" aria-label="Scanner settings">
+      <label className="sop-kelly-toggle">
+        <span className="sop-kelly-toggle-label">Always use longest No Goal proxy</span>
+        <span className="sop-kelly-switch">
+          <input
+            type="checkbox"
+            className="sop-kelly-switch-input"
+            checked={longestNoGoalEnabled}
+            onChange={(e) => onLongestNoGoalChange(e.target.checked)}
+          />
+          <span className="sop-kelly-switch-track" aria-hidden="true">
+            <span className="sop-kelly-switch-thumb" />
+          </span>
+        </span>
+      </label>
+      <SOPKellyControls
+        enabled={kellyEnabled}
+        onEnabledChange={onKellyEnabledChange}
+        budgetInput={budgetInput}
+        onBudgetInputChange={onBudgetInputChange}
+        onBudgetCommit={onBudgetCommit}
+        kellyFraction={kellyFraction}
+        onKellyFractionChange={onKellyFractionChange}
+      />
+    </section>
+  );
+}
+
 function SOPKellyControls({
   enabled,
   onEnabledChange,
@@ -144,7 +186,7 @@ function SOPKellyControls({
   onKellyFractionChange,
 }) {
   return (
-    <section className="sop-kelly-panel" aria-label="Kelly Criterion sizing">
+    <>
       <label className="sop-kelly-toggle">
         <span className="sop-kelly-toggle-label">Show Kelly Criterion</span>
         <span className="sop-kelly-switch">
@@ -203,11 +245,19 @@ function SOPKellyControls({
           </div>
         </>
       )}
-    </section>
+    </>
   );
 }
 
-function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, kellyBudget, kellyFraction }) {
+function GameCard({
+  game,
+  selectedNoGoalPick,
+  onSelectNoGoalPick,
+  lockNoGoalPick,
+  kellyEnabled,
+  kellyBudget,
+  kellyFraction,
+}) {
   const [expanded, setExpanded] = useState(true);
   const showDkGoals = !game.inPlay && Boolean(game.dk);
   const showDkNoGoal = shouldShowDkNoGoal(game);
@@ -384,7 +434,7 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
                           type="button"
                           className={`sop-exp-odds-box sop-exp-odds-box--fd${fdSelected ? ' sop-exp-odds-box--selected' : ''}${!hasOdds ? ' sop-exp-odds-box--missing' : ''}`}
                           onClick={() => onSelectNoGoalPick(game.eventId, key, 'fd')}
-                          disabled={!hasOdds}
+                          disabled={!hasOdds || lockNoGoalPick}
                           title={desc}
                         >
                           <span className="sop-exp-odds-box-val">
@@ -399,7 +449,7 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
                             type="button"
                             className={`sop-exp-odds-box sop-exp-odds-box--dk${dkSelected ? ' sop-exp-odds-box--selected' : ''}${!hasDkOdds ? ' sop-exp-odds-box--missing' : ''}`}
                             onClick={() => onSelectNoGoalPick(game.eventId, key, 'dk')}
-                            disabled={!hasDkOdds}
+                            disabled={!hasDkOdds || lockNoGoalPick}
                             title={
                               hasDkOdds
                                 ? `DraftKings · ${desc}${dkPickLabel !== '—' ? ` · ${dkPickLabel}` : ''}`
@@ -419,7 +469,7 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
                             type="button"
                             className={`sop-exp-odds-box sop-exp-odds-box--klsh${klshSelected ? ' sop-exp-odds-box--selected' : ''}${!hasKlshOdds ? ' sop-exp-odds-box--missing' : ''}`}
                             onClick={() => onSelectNoGoalPick(game.eventId, key, 'klsh')}
-                            disabled={!hasKlshOdds}
+                            disabled={!hasKlshOdds || lockNoGoalPick}
                             title={
                               hasKlshOdds
                                 ? `Kalshi · ${desc}${klshPickLabel !== '—' ? ` · ${klshPickLabel}` : ''}`
@@ -561,6 +611,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
     kellyFraction,
     setKellyFraction,
   } = useSOPKellySettings();
+  const { enabled: longestNoGoalEnabled, setEnabled: setLongestNoGoalEnabled } = useSOPLongestNoGoal();
 
   const teamNames = useMemo(() => collectTeamNames(games), [games]);
 
@@ -575,6 +626,10 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
 
   const getNoGoalPick = useCallback(
     (game) => {
+      if (longestNoGoalEnabled) {
+        return findLongestNoGoalPick(game);
+      }
+
       const picked = noGoalPickByEvent[game.eventId];
       if (noGoalPickHasOdds(game, picked)) return picked;
 
@@ -605,7 +660,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
 
       return { sourceKey: DEFAULT_NO_GOAL_SOURCE, book: 'fd' };
     },
-    [noGoalPickByEvent],
+    [longestNoGoalEnabled, noGoalPickByEvent],
   );
 
   if (loading) {
@@ -639,9 +694,11 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
         </p>
       )}
 
-      <SOPKellyControls
-        enabled={kellyEnabled}
-        onEnabledChange={setKellyEnabled}
+      <SOPBookSettings
+        longestNoGoalEnabled={longestNoGoalEnabled}
+        onLongestNoGoalChange={setLongestNoGoalEnabled}
+        kellyEnabled={kellyEnabled}
+        onKellyEnabledChange={setKellyEnabled}
         budgetInput={kellyBudgetInput}
         onBudgetInputChange={setKellyBudgetInput}
         onBudgetCommit={commitKellyBudget}
@@ -693,6 +750,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
               game={g}
               selectedNoGoalPick={getNoGoalPick(g)}
               onSelectNoGoalPick={handleSelectNoGoalPick}
+              lockNoGoalPick={longestNoGoalEnabled}
               kellyEnabled={kellyEnabled}
               kellyBudget={kellyBudget}
               kellyFraction={kellyFraction}
@@ -710,7 +768,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       )}
 
       <footer className="sop-exp-footer">
-        Auto-refreshes every {REFRESH_MS / 1000}s · default no-goal = Total U (FD) · click FD, DK, or KLSH to model
+        Auto-refreshes every {REFRESH_MS / 1000}s · default no-goal = Total U (FD) · longest proxy opt-in at top · click FD, DK, or KLSH to model
       </footer>
     </div>
   );
