@@ -113,8 +113,19 @@ function shouldShowDkNoGoal(game) {
   return Boolean(game.dk);
 }
 
+function shouldShowKlshNoGoal(game) {
+  return Boolean(game.klsh);
+}
+
+function bookLabel(book) {
+  if (book === 'dk') return 'DK';
+  if (book === 'klsh') return 'KLSH';
+  return 'FD';
+}
+
 function quoteForNoGoalPick(game, sourceKey, book) {
   if (book === 'dk') return game.dk?.noGoalMarkets?.[sourceKey];
+  if (book === 'klsh') return game.klsh?.noGoalMarkets?.[sourceKey];
   return game.noGoalMarkets?.[sourceKey];
 }
 
@@ -200,6 +211,8 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
   const [expanded, setExpanded] = useState(true);
   const showDkGoals = !game.inPlay && Boolean(game.dk);
   const showDkNoGoal = shouldShowDkNoGoal(game);
+  const showKlshNoGoal = shouldShowKlshNoGoal(game);
+  const extraBookCount = (showDkNoGoal ? 1 : 0) + (showKlshNoGoal ? 1 : 0);
 
   const selectedSourceKey = selectedNoGoalPick?.sourceKey;
   const selectedBook = selectedNoGoalPick?.book ?? 'fd';
@@ -320,18 +333,26 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
         <div className="sop-exp-game-body">
           <section className="sop-exp-no-goal">
             <div className="sop-exp-section-label">No Goal proxy</div>
-            <div className={`sop-exp-no-goal-grid${showDkNoGoal ? ' sop-exp-no-goal-grid--dk' : ''}`}>
+            <div
+              className={`sop-exp-no-goal-grid${extraBookCount ? ' sop-exp-no-goal-grid--multi' : ''}${extraBookCount > 1 ? ' sop-exp-no-goal-grid--klsh' : ''}`}
+            >
               {NO_GOAL_SOURCES.map(({ key, short, desc }) => {
                 const quote = game.noGoalMarkets?.[key];
                 const dkQuote = game.dk?.noGoalMarkets?.[key];
+                const klshQuote = game.klsh?.noGoalMarkets?.[key];
                 const fdSelected = selectedSourceKey === key && selectedBook === 'fd';
                 const dkSelected = selectedSourceKey === key && selectedBook === 'dk';
+                const klshSelected = selectedSourceKey === key && selectedBook === 'klsh';
                 const hasOdds = quote?.american != null;
                 const hasDkOdds = dkQuote?.american != null;
+                const hasKlshOdds = klshQuote?.american != null;
                 const pickLabel = noGoalLabel(key, quote);
                 const dkPickLabel = noGoalLabel(key, dkQuote);
+                const klshPickLabel = noGoalLabel(key, klshQuote);
                 const showDkPickLine =
                   showDkNoGoal && hasDkOdds && dkPickLabel !== '—' && dkPickLabel !== pickLabel;
+                const showKlshPickLine =
+                  showKlshNoGoal && hasKlshOdds && klshPickLabel !== '—' && klshPickLabel !== pickLabel;
                 return (
                   <div key={key} className="sop-exp-no-goal-col">
                     <div className="sop-exp-no-goal-col-head">
@@ -346,6 +367,13 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
                           className={`sop-exp-no-goal-pick sop-exp-no-goal-pick--dk${showDkPickLine ? '' : ' sop-exp-no-goal-pick--empty'}`}
                         >
                           {showDkPickLine ? `DK · ${dkPickLabel}` : '\u00a0'}
+                        </span>
+                      )}
+                      {showKlshNoGoal && (
+                        <span
+                          className={`sop-exp-no-goal-pick sop-exp-no-goal-pick--klsh${showKlshPickLine ? '' : ' sop-exp-no-goal-pick--empty'}`}
+                        >
+                          {showKlshPickLine ? `KLSH · ${klshPickLabel}` : '\u00a0'}
                         </span>
                       )}
                     </div>
@@ -384,6 +412,26 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
                           </button>
                         </div>
                       )}
+                      {showKlshNoGoal && (
+                        <div className="sop-exp-no-goal-book">
+                          <span className="sop-exp-book-label sop-exp-book-label--klsh">KLSH</span>
+                          <button
+                            type="button"
+                            className={`sop-exp-odds-box sop-exp-odds-box--klsh${klshSelected ? ' sop-exp-odds-box--selected' : ''}${!hasKlshOdds ? ' sop-exp-odds-box--missing' : ''}`}
+                            onClick={() => onSelectNoGoalPick(game.eventId, key, 'klsh')}
+                            disabled={!hasKlshOdds}
+                            title={
+                              hasKlshOdds
+                                ? `Kalshi · ${desc}${klshPickLabel !== '—' ? ` · ${klshPickLabel}` : ''}`
+                                : 'Kalshi — no line'
+                            }
+                          >
+                            <span className="sop-exp-odds-box-val">
+                              {hasKlshOdds ? formatAmericanOdds(klshQuote.american) : '—'}
+                            </span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -391,7 +439,7 @@ function GameCard({ game, selectedNoGoalPick, onSelectNoGoalPick, kellyEnabled, 
             </div>
             {activeNoGoal?.market && (
               <div className="sop-exp-no-goal-detail">
-                Using {selectedBook === 'dk' ? 'DK' : 'FD'} · {activeNoGoal.market}
+                Using {bookLabel(selectedBook)} · {activeNoGoal.market}
                 {activeNoGoal.selection ? ` · ${activeNoGoal.selection}` : ''}
                 {model && (
                   <span>
@@ -548,6 +596,13 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
         return { sourceKey: dkFallback.key, book: 'dk' };
       }
 
+      const klshFallback = NO_GOAL_SOURCES.find(
+        (s) => game.klsh?.noGoalMarkets?.[s.key]?.american != null,
+      );
+      if (klshFallback) {
+        return { sourceKey: klshFallback.key, book: 'klsh' };
+      }
+
       return { sourceKey: DEFAULT_NO_GOAL_SOURCE, book: 'fd' };
     },
     [noGoalPickByEvent],
@@ -568,7 +623,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">SOP +EV Scanner</h1>
         <p className="sop-exp-subtitle">
-          FIFA World Cup · FanDuel + DraftKings
+          FIFA World Cup · FanDuel + DraftKings + Kalshi
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -655,7 +710,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       )}
 
       <footer className="sop-exp-footer">
-        Auto-refreshes every {REFRESH_MS / 1000}s · default no-goal = Total U (FD) · click FD or DK to model
+        Auto-refreshes every {REFRESH_MS / 1000}s · default no-goal = Total U (FD) · click FD, DK, or KLSH to model
       </footer>
     </div>
   );

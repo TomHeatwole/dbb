@@ -14760,8 +14760,12 @@ body.modal-open {
   min-height: 2rem;
 }
 
-.sop-exp-no-goal-grid--dk .sop-exp-no-goal-col-head {
+.sop-exp-no-goal-grid--multi .sop-exp-no-goal-col-head {
   min-height: 2.85rem;
+}
+
+.sop-exp-no-goal-grid--klsh .sop-exp-no-goal-col-head {
+  min-height: 3.65rem;
 }
 
 .sop-exp-no-goal-stack {
@@ -14772,6 +14776,11 @@ body.modal-open {
 
 .sop-exp-no-goal-pick--dk {
   color: rgba(158, 200, 255, 0.75);
+  min-height: 0.95rem;
+}
+
+.sop-exp-no-goal-pick--klsh {
+  color: rgba(180, 255, 210, 0.78);
   min-height: 0.95rem;
 }
 
@@ -14810,6 +14819,10 @@ body.modal-open {
 
 .sop-exp-book-label--dk {
   color: rgba(158, 200, 255, 0.9);
+}
+
+.sop-exp-book-label--klsh {
+  color: rgba(140, 255, 190, 0.92);
 }
 
 .sop-exp-odds-box {
@@ -14888,6 +14901,30 @@ body.modal-open {
 
 .sop-exp-odds-box--dk.sop-exp-odds-box--selected .sop-exp-odds-box-val {
   color: #b8d8ff;
+}
+
+.sop-exp-odds-box--klsh {
+  border-color: rgba(100, 230, 160, 0.35);
+  background: rgba(60, 180, 120, 0.12);
+}
+
+.sop-exp-odds-box--klsh .sop-exp-odds-box-val {
+  color: #9ef0c4;
+}
+
+.sop-exp-odds-box--klsh:hover:not(:disabled) {
+  background: rgba(60, 180, 120, 0.18);
+  border-color: rgba(120, 240, 180, 0.5);
+}
+
+.sop-exp-odds-box--klsh.sop-exp-odds-box--selected {
+  border-color: rgba(120, 240, 180, 0.75);
+  background: rgba(60, 180, 120, 0.22);
+  box-shadow: 0 0 0 1px rgba(120, 240, 180, 0.4);
+}
+
+.sop-exp-odds-box--klsh.sop-exp-odds-box--selected .sop-exp-odds-box-val {
+  color: #b8ffd8;
 }
 
 .sop-exp-odds-box--missing {

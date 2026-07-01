@@ -10,6 +10,36 @@ import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
 import SOPBookPanel from './SOPBookPanel';
 import SOPManualPanel from './SOPManualPanel';
 import { mergeDkIntoFdGames } from '../sop/mergeDkGames';
+import { mergeKalshiIntoFdGames } from '../sop/mergeKalshiGames';
+
+async function fetchKalshiOddsForSop({ retries = 2 } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const res = await fetch('/api/kalshi-sop?all=1');
+      if (!res.ok) {
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+          continue;
+        }
+        return null;
+      }
+      const data = await res.json();
+      if (data?.games?.length) return data;
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        continue;
+      }
+      return data;
+    } catch {
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
+}
 
 async function fetchDkOddsForSop({ retries = 2 } = {}) {
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -148,9 +178,10 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
     if (manual) setBookRefreshing(true);
     try {
-      const [fdRes, dkData] = await Promise.all([
+      const [fdRes, dkData, kalshiData] = await Promise.all([
         fetch('/api/fanduel-sop'),
         fetchDkOddsForSop(),
+        fetchKalshiOddsForSop(),
       ]);
 
       if (!fdRes.ok) {
@@ -159,7 +190,10 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
       }
 
       const fdData = await fdRes.json();
-      const mergedGames = mergeDkIntoFdGames(fdData.games ?? [], dkData);
+      const mergedGames = mergeKalshiIntoFdGames(
+        mergeDkIntoFdGames(fdData.games ?? [], dkData),
+        kalshiData,
+      );
 
       setGames(mergedGames);
       setFetchedAt(fdData.fetchedAt ?? null);

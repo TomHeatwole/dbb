@@ -12,6 +12,9 @@
     },
     "api/draftkings-goal-method.mjs": {
       "maxDuration": 30
+    },
+    "api/kalshi-sop.mjs": {
+      "maxDuration": 30
     }
   }
 }

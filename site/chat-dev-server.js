@@ -45,6 +45,7 @@ const server = http.createServer(async (req, res) => {
   const getHandlers = {
     '/api/fanduel-sop': 'fanduel-sop',
     '/api/draftkings-goal-method': 'draftkings-goal-method',
+    '/api/kalshi-sop': 'kalshi-sop',
   };
 
   const handlerName =
