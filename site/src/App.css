@@ -9131,6 +9131,73 @@ body.modal-open {
   font-variant-numeric: tabular-nums;
 }
 
+.simulator-team-detail-section--slots {
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid rgba(120, 130, 200, 0.18);
+}
+
+.simulator-team-detail-section--slots > .simulator-team-detail-subtitle {
+  margin-bottom: 0.85rem;
+}
+
+.simulator-slot-tbl {
+  margin-top: 0.65rem;
+}
+
+.simulator-slot-expanded {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 0.35rem 0 0.25rem;
+}
+
+.simulator-slot-expanded-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(180, 185, 230, 0.85);
+  margin-bottom: 0.35rem;
+}
+
+.simulator-slot-hist-stats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.15rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(120, 130, 200, 0.12);
+}
+
+.simulator-slot-hist-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.simulator-slot-hist-stat-label {
+  font-size: 0.72rem;
+  color: rgba(150, 155, 200, 0.7);
+}
+
+.simulator-slot-hist-stat-val {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(210, 215, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .simulator-slot-expanded {
+    grid-template-columns: 1fr;
+  }
+
+  .simulator-slot-hist-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .simulator-hist-chart--continuous {
   position: relative;
 }

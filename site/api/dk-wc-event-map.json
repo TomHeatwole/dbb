@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-06-30T05:20:12.675Z",
+  "fetchedAt": "2026-07-03T03:19:45.844Z",
   "leagueId": "209533",
   "events": [
     {
@@ -54,7 +54,7 @@
       "eventId": "34331120",
       "name": "Switzerland vs Algeria",
       "slug": "switzerland-vs-algeria",
-      "openDate": "2026-07-03T03:00:00.0000000Z"
+      "openDate": "2026-07-03T03:10:00.0000000Z"
     },
     {
       "eventId": "34328095",
@@ -73,6 +73,42 @@
       "name": "Colombia vs Ghana",
       "slug": "colombia-vs-ghana",
       "openDate": "2026-07-04T01:30:00.0000000Z"
+    },
+    {
+      "eventId": "34339353",
+      "name": "Canada vs Morocco",
+      "slug": "canada-vs-morocco",
+      "openDate": "2026-07-04T17:00:00.0000000Z"
+    },
+    {
+      "eventId": "34342726",
+      "name": "Paraguay vs France",
+      "slug": "paraguay-vs-france",
+      "openDate": "2026-07-04T21:00:00.0000000Z"
+    },
+    {
+      "eventId": "34342332",
+      "name": "Brazil vs Norway",
+      "slug": "brazil-vs-norway",
+      "openDate": "2026-07-05T20:00:00.0000000Z"
+    },
+    {
+      "eventId": "34345776",
+      "name": "Mexico vs England",
+      "slug": "mexico-vs-england",
+      "openDate": "2026-07-06T00:00:00.0000000Z"
+    },
+    {
+      "eventId": "34349998",
+      "name": "Portugal vs Spain",
+      "slug": "portugal-vs-spain",
+      "openDate": "2026-07-06T19:00:00.0000000Z"
+    },
+    {
+      "eventId": "34346430",
+      "name": "USA vs Belgium",
+      "slug": "usa-vs-belgium",
+      "openDate": "2026-07-07T00:00:00.0000000Z"
     }
   ]
 }

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { buildFutureScenario2EvalUrl } from './scenarioEncoding';
 import { percentileColor } from './luckMetrics';
 import SimulatorHistogramChart from './SimulatorHistogramChart';
+import SimulatorPositionSlotPanel from './SimulatorPositionSlotPanel';
 import {
   buildTeamFinishChartData,
   buildScoreHistogramChartData,
@@ -101,6 +102,7 @@ function SimulatorTeamDetail({
   teamsForGrid,
   teamFinishBuckets,
   teamScoreHistograms,
+  teamSlotHistograms,
   originalRosters,
   scenarioRosters,
   seasonYear,
@@ -142,6 +144,7 @@ function SimulatorTeamDetail({
   if (!buckets || buckets.every((b) => b.count === 0)) return null;
 
   const showOutcomeLinks = simSamplesAvailable;
+  const totalTeams = (teamsForGrid || []).length || 10;
 
   return (
     <div className="simulator-team-detail">
@@ -202,6 +205,13 @@ function SimulatorTeamDetail({
           />
         </div>
       </div>
+
+      <SimulatorPositionSlotPanel
+        teamSlotHistograms={teamSlotHistograms}
+        rosterId={rosterId}
+        iterations={iterations}
+        totalTeams={totalTeams}
+      />
 
       {showOutcomeLinks && (
         <div className="simulator-team-detail-section simulator-team-detail-section--outcomes">

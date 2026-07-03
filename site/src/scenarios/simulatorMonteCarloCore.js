@@ -9,10 +9,14 @@ import { buildOutcomePool, percentileToOutcomeIndex } from './outcomeDistributio
 import { buildSleeperBasePoints } from './sleeperScoring';
 import { computeLuckFromRolls } from './luckMetrics';
 import { scoreAllRostersFast, buildPlayerPositionsMap } from './simulatorLineup';
+import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import {
   createTeamScoreHistograms,
   accumulateTeamScoreHistograms,
   serializeTeamScoreHistograms,
+  createTeamSlotHistograms,
+  accumulateTeamSlotHistograms,
+  serializeTeamSlotHistograms,
 } from './simulatorHistograms';
 
 const NUM_WEEKS = 17;
@@ -229,7 +233,7 @@ function recordTeamFinishSample(buckets, rosterId, simIndex, rolls, teamResult) 
 
 function scoreRostersFromWeekly(ctx, rosters, lightweight) {
   const { weekBuffers, seasonTotals, playerPositions, rolls, hwangAdpRankMap, pools } = ctx;
-  const { regTotals, ploffTotals } = scoreAllRostersFast(
+  const { regTotals, ploffTotals, slotReg, slotPloff } = scoreAllRostersFast(
     rosters,
     weekBuffers,
     playerPositions,
@@ -239,7 +243,7 @@ function scoreRostersFromWeekly(ctx, rosters, lightweight) {
   const champion = standings.find((r) => r.place === 1) || null;
 
   if (lightweight) {
-    return { champion, standings, regTotals, ploffTotals };
+    return { champion, standings, regTotals, ploffTotals, slotReg, slotPloff };
   }
 
   const teamResults = {};
@@ -262,7 +266,7 @@ function scoreRostersFromWeekly(ctx, rosters, lightweight) {
     };
   }
 
-  return { champion, standings, regTotals, ploffTotals, teamResults };
+  return { champion, standings, regTotals, ploffTotals, slotReg, slotPloff, teamResults };
 }
 
 function buildResultsFromStats(stats, iterations, rosterIds) {
@@ -359,11 +363,13 @@ export function prepareSimulatorContext({
 }
 
 export function createSimulationState(ctx, lightweight) {
+  const slotNames = STARTER_POSITION_NAMES || [];
   return {
     stats: emptyStats(ctx.rosterIds),
     baselineStats: ctx.baselineRosters ? emptyStats(ctx.rosterIds) : null,
     teamFinishBuckets: createTeamFinishBuckets(ctx.rosterIds),
     teamScoreHistograms: createTeamScoreHistograms(ctx.rosterIds),
+    teamSlotHistograms: createTeamSlotHistograms(ctx.rosterIds, slotNames),
     keepSimSamples: !lightweight,
     completed: 0,
   };
@@ -378,7 +384,7 @@ export function runSimulationIterations(ctx, state, {
   totalIterations,
 }) {
   const {
-    stats, baselineStats, teamFinishBuckets, teamScoreHistograms, keepSimSamples,
+    stats, baselineStats, teamFinishBuckets, teamScoreHistograms, teamSlotHistograms, keepSimSamples,
   } = state;
   const reportEvery = progressInterval
     ?? (lightweight
@@ -409,6 +415,13 @@ export function runSimulationIterations(ctx, state, {
       teamScoreHistograms,
       scenarioOutcome.regTotals,
       scenarioOutcome.ploffTotals,
+      ctx.rosterIds,
+    );
+
+    accumulateTeamSlotHistograms(
+      teamSlotHistograms,
+      scenarioOutcome.slotReg,
+      scenarioOutcome.slotPloff,
       ctx.rosterIds,
     );
 
@@ -461,7 +474,7 @@ export function runSimulationIterations(ctx, state, {
 }
 
 export function finalizeSimulationState(state, iterations, rosterIds) {
-  const { stats, baselineStats, teamFinishBuckets, teamScoreHistograms } = state;
+  const { stats, baselineStats, teamFinishBuckets, teamScoreHistograms, teamSlotHistograms } = state;
   const results = buildResultsFromStats(stats, iterations, rosterIds);
   const baselineResults = baselineStats
     ? buildResultsFromStats(baselineStats, iterations, rosterIds)
@@ -476,6 +489,7 @@ export function finalizeSimulationState(state, iterations, rosterIds) {
     resultDeltas,
     teamFinishBuckets,
     teamScoreHistograms: serializeTeamScoreHistograms(teamScoreHistograms),
+    teamSlotHistograms: serializeTeamSlotHistograms(teamSlotHistograms),
   };
 }
 

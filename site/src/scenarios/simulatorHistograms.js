@@ -237,3 +237,186 @@ export function buildTeamFinishChartData(buckets, iterations) {
     isPlayoff: i < 4,
   }));
 }
+
+/** Slot score histogram bucket config (per lineup position). */
+export const SLOT_SCORE_BUCKET_WIDTH = 10;
+
+export const SLOT_SCORE_BIN_ORIGIN = {
+  reg: 80,
+  playoff: 0,
+  total: 80,
+};
+
+export const SLOT_SCORE_BIN_COUNT = {
+  reg: 45,     // 80–530
+  playoff: 40, // 0–400
+  total: 55,   // 80–630
+};
+
+function createSlotScoreHistogram(metric) {
+  return {
+    origin: SLOT_SCORE_BIN_ORIGIN[metric],
+    width: SLOT_SCORE_BUCKET_WIDTH,
+    bins: new Uint32Array(SLOT_SCORE_BIN_COUNT[metric]),
+    sum: 0,
+    sumSq: 0,
+    count: 0,
+  };
+}
+
+function createRankHistogram() {
+  return {
+    bins: new Uint32Array(10),
+    sum: 0,
+    count: 0,
+  };
+}
+
+function createSlotRangeHistograms() {
+  return {
+    reg: { score: createSlotScoreHistogram('reg'), rank: createRankHistogram() },
+    playoff: { score: createSlotScoreHistogram('playoff'), rank: createRankHistogram() },
+    total: { score: createSlotScoreHistogram('total'), rank: createRankHistogram() },
+  };
+}
+
+/** Per-team, per-lineup-slot score + league-rank histograms. */
+export function createTeamSlotHistograms(rosterIds, slotNames) {
+  const histograms = {};
+  const names = slotNames || [];
+  for (const rid of rosterIds) {
+    histograms[rid] = {
+      slots: names.map((pos, idx) => ({
+        pos,
+        idx,
+        ...createSlotRangeHistograms(),
+      })),
+    };
+  }
+  return histograms;
+}
+
+function recordRankValue(hist, place) {
+  const idx = place - 1;
+  if (idx < 0 || idx >= hist.bins.length) return;
+  hist.bins[idx] += 1;
+  hist.sum += place;
+  hist.count += 1;
+}
+
+const SLOT_RANGES = ['reg', 'playoff', 'total'];
+
+function slotTotalForRange(slotReg, slotPloff, si, range) {
+  const reg = slotReg?.[si] ?? 0;
+  const ploff = slotPloff?.[si] ?? 0;
+  if (range === 'reg') return reg;
+  if (range === 'playoff') return ploff;
+  return reg + ploff;
+}
+
+/** Record per-slot score and league rank for one simulation iteration. */
+export function accumulateTeamSlotHistograms(histograms, slotReg, slotPloff, rosterIds) {
+  const firstTeam = histograms[rosterIds[0]] ?? histograms[String(rosterIds[0])];
+  const numSlots = firstTeam?.slots?.length ?? 0;
+  if (numSlots === 0) return;
+
+  for (const range of SLOT_RANGES) {
+    for (let si = 0; si < numSlots; si++) {
+      const teamTotals = rosterIds.map((rid) => {
+        const regSlots = slotReg[rid] ?? slotReg[String(rid)];
+        const ploffSlots = slotPloff[rid] ?? slotPloff[String(rid)];
+        const total = slotTotalForRange(regSlots, ploffSlots, si, range);
+        return { rid, total };
+      });
+
+      teamTotals.sort((a, b) => b.total - a.total);
+
+      teamTotals.forEach((entry, rankIdx) => {
+        const team = histograms[entry.rid] ?? histograms[String(entry.rid)];
+        const slot = team?.slots?.[si];
+        if (!slot) return;
+        recordScoreValue(slot[range].score, entry.total);
+        recordRankValue(slot[range].rank, rankIdx + 1);
+      });
+    }
+  }
+}
+
+export function serializeTeamSlotHistograms(histograms) {
+  const out = {};
+  for (const [rid, team] of Object.entries(histograms || {})) {
+    out[rid] = {
+      slots: (team.slots || []).map((slot) => ({
+        pos: slot.pos,
+        idx: slot.idx,
+        reg: {
+          score: serializeScoreHist(slot.reg.score),
+          rank: serializeRankHist(slot.reg.rank),
+        },
+        playoff: {
+          score: serializeScoreHist(slot.playoff.score),
+          rank: serializeRankHist(slot.playoff.rank),
+        },
+        total: {
+          score: serializeScoreHist(slot.total.score),
+          rank: serializeRankHist(slot.total.rank),
+        },
+      })),
+    };
+  }
+  return out;
+}
+
+function serializeScoreHist(hist) {
+  return {
+    origin: hist.origin,
+    width: hist.width,
+    bins: Array.from(hist.bins),
+    sum: hist.sum,
+    sumSq: hist.sumSq,
+    count: hist.count,
+  };
+}
+
+function serializeRankHist(hist) {
+  return {
+    bins: Array.from(hist.bins),
+    sum: hist.sum,
+    count: hist.count,
+  };
+}
+
+function rankHistogramTotal(hist) {
+  if (hist?.count > 0) return hist.count;
+  return (hist?.bins || []).reduce((s, c) => s + c, 0);
+}
+
+/** Average slot score from histogram running sums. */
+export function computeSlotScoreAverage(hist) {
+  if (!hist || hist.count <= 0) return null;
+  return hist.sum / hist.count;
+}
+
+/** Average league rank at a slot (e.g. 6.3 among 10 teams). */
+export function computeSlotRankAverage(hist) {
+  const total = rankHistogramTotal(hist);
+  if (!hist || total <= 0) return null;
+  if (hist.sum > 0 && hist.count > 0) return hist.sum / hist.count;
+  let sum = 0;
+  for (let i = 0; i < hist.bins.length; i++) sum += (i + 1) * hist.bins[i];
+  return sum / total;
+}
+
+/** Slot league-rank distribution (1st–10th) bar chart rows. */
+export function buildSlotRankChartData(rankHist, iterations) {
+  if (!rankHist?.bins?.length) return [];
+  const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+
+  return rankHist.bins.map((count, i) => ({
+    label: ordinals[i] || `${i + 1}th`,
+    place: i + 1,
+    count,
+    pct: iterations > 0 ? (count / iterations) * 100 : 0,
+    isPlayoff: i < 3,
+  }));
+}

@@ -53,15 +53,25 @@ function sortByPointsDesc(players, seasonTotals) {
   });
 }
 
+function slotBucketForName(name) {
+  if (/^QB\d+$/i.test(name) || name === 'QB1') return 'QB';
+  if (/^RB\d+$/i.test(name)) return 'RB';
+  if (/^WR\d+$/i.test(name)) return 'WR';
+  if (/^TE\d+$/i.test(name) || name === 'TE1') return 'TE';
+  if (/^SUPER$/i.test(name) || /^SUPER\d+$/i.test(name)) return 'SUPER';
+  if (/^FLEX\d+$/i.test(name)) return 'FLEX';
+  return null;
+}
+
 /**
- * Optimal starter total for one team/week.
+ * Optimal starters for one team/week — points per STARTER_POSITION_NAMES slot.
  *
- * @param {string[]} playerList
- * @param {Object} weekPts  { [playerId]: number }
- * @param {Object} playerPositions  { [playerId]: string|null }
- * @param {Object} seasonTotals  { [playerId]: number }
+ * @returns {number[]}
  */
-export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositions, seasonTotals) {
+export function computeOptimalWeekStarters(playerList, weekPts, playerPositions, seasonTotals) {
+  const slotNames = STARTER_POSITION_NAMES || [];
+  const empty = () => new Array(slotNames.length).fill(0);
+
   const combined = [];
   for (let i = 0; i < playerList.length; i++) {
     const id = playerList[i];
@@ -72,7 +82,7 @@ export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositi
       position: playerPositions[id] || null,
     });
   }
-  if (combined.length === 0) return 0;
+  if (combined.length === 0) return empty();
 
   const counts = getPositionCounts();
   const usedIds = new Set();
@@ -94,23 +104,28 @@ export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositi
   sortByPointsDesc(wrs, seasonTotals);
   sortByPointsDesc(tes, seasonTotals);
 
-  let starterTotal = 0;
+  const selectedQB = [];
+  const selectedRB = [];
+  const selectedWR = [];
+  const selectedTE = [];
+  const selectedFLEX = [];
+  const selectedSUPER = [];
 
-  function takeTop(list, n) {
+  function takeTop(list, n, bucket) {
     let taken = 0;
     for (let i = 0; i < list.length && taken < n; i++) {
       const p = list[i];
       if (usedIds.has(p.id)) continue;
       usedIds.add(p.id);
-      starterTotal += p.pts;
+      bucket.push(p);
       taken += 1;
     }
   }
 
-  takeTop(qbs, counts.QB);
-  takeTop(rbs, counts.RB);
-  takeTop(wrs, counts.WR);
-  takeTop(tes, counts.TE);
+  takeTop(qbs, counts.QB, selectedQB);
+  takeTop(rbs, counts.RB, selectedRB);
+  takeTop(wrs, counts.WR, selectedWR);
+  takeTop(tes, counts.TE, selectedTE);
 
   const remaining = [];
   for (let i = 0; i < combined.length; i++) {
@@ -125,7 +140,7 @@ export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositi
       const p = remaining[i];
       if (usedIds.has(p.id) || !isEligibleForFlex(p.position)) continue;
       usedIds.add(p.id);
-      starterTotal += p.pts;
+      selectedFLEX.push(p);
       flexLeft -= 1;
     }
   }
@@ -136,40 +151,94 @@ export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositi
       const p = combined[i];
       if (usedIds.has(p.id) || !isEligibleForSuper(p.position)) continue;
       usedIds.add(p.id);
-      starterTotal += p.pts;
+      selectedSUPER.push(p);
       superLeft -= 1;
     }
   }
 
-  return starterTotal;
+  const buckets = {
+    QB: sortByPointsDesc([...selectedQB], seasonTotals),
+    RB: sortByPointsDesc([...selectedRB], seasonTotals),
+    WR: sortByPointsDesc([...selectedWR], seasonTotals),
+    TE: sortByPointsDesc([...selectedTE], seasonTotals),
+    FLEX: sortByPointsDesc([...selectedFLEX], seasonTotals),
+    SUPER: sortByPointsDesc([...selectedSUPER], seasonTotals),
+  };
+
+  const consumed = new Set();
+  function popNext(bucketName) {
+    const list = buckets[bucketName] || [];
+    while (list.length > 0) {
+      const p = list.shift();
+      if (!consumed.has(p.id)) {
+        consumed.add(p.id);
+        return p;
+      }
+    }
+    return null;
+  }
+
+  const slotPts = new Array(slotNames.length).fill(0);
+  for (let i = 0; i < slotNames.length; i++) {
+    const bucketName = slotBucketForName(slotNames[i]);
+    const p = bucketName ? popNext(bucketName) : null;
+    slotPts[i] = p ? p.pts : 0;
+  }
+
+  return slotPts;
 }
 
 /**
- * Score all rosters in one pass — reg + playoff totals without storing weekly breakdowns.
+ * Optimal starter total for one team/week.
+ */
+export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositions, seasonTotals) {
+  const slotPts = computeOptimalWeekStarters(playerList, weekPts, playerPositions, seasonTotals);
+  let total = 0;
+  for (let i = 0; i < slotPts.length; i++) total += slotPts[i];
+  return total;
+}
+
+/**
+ * Score all rosters in one pass — reg + playoff totals and per-slot season sums.
  */
 export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seasonTotals) {
   const regTotals = {};
   const ploffTotals = {};
+  const slotReg = {};
+  const slotPloff = {};
+  const numSlots = (STARTER_POSITION_NAMES || []).length;
 
   for (const rid in rosters) {
     const playerList = rosters[rid] || [];
     let reg = 0;
     let ploff = 0;
+    const regSlots = new Float32Array(numSlots);
+    const ploffSlots = new Float32Array(numSlots);
+
     for (let wi = 0; wi < NUM_WEEKS; wi++) {
-      const starterTotal = computeOptimalWeekStarterTotal(
+      const slotPts = computeOptimalWeekStarters(
         playerList,
         weekBuffers[wi],
         playerPositions,
         seasonTotals,
       );
-      if (wi < REG_SEASON_WEEKS) reg += starterTotal;
-      else ploff += starterTotal;
+      let weekTotal = 0;
+      for (let si = 0; si < numSlots; si++) {
+        weekTotal += slotPts[si];
+        if (wi < REG_SEASON_WEEKS) regSlots[si] += slotPts[si];
+        else ploffSlots[si] += slotPts[si];
+      }
+      if (wi < REG_SEASON_WEEKS) reg += weekTotal;
+      else ploff += weekTotal;
     }
+
     regTotals[rid] = Math.round(reg * 10) / 10;
     ploffTotals[rid] = Math.round(ploff * 10) / 10;
+    slotReg[rid] = Array.from(regSlots, (v) => Math.round(v * 10) / 10);
+    slotPloff[rid] = Array.from(ploffSlots, (v) => Math.round(v * 10) / 10);
   }
 
-  return { regTotals, ploffTotals };
+  return { regTotals, ploffTotals, slotReg, slotPloff };
 }
 
 /**

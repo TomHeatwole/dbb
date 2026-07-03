@@ -70,6 +70,15 @@ function labelMatches(label, candidates) {
   return candidates.some((c) => target === normalizeLabel(c));
 }
 
+const TEAM_SLUG_ALIASES = {
+  usa: 'usa',
+  'united-states': 'usa',
+  us: 'usa',
+  'dr-congo': 'dr-congo',
+  'ivory-coast': 'ivory-coast',
+  'cape-verde': 'cape-verde',
+};
+
 function fdNameToSlug(name) {
   return String(name)
     .toLowerCase()
@@ -77,6 +86,30 @@ function fdNameToSlug(name) {
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+function normalizeTeamSlug(team) {
+  const slug = fdNameToSlug(team);
+  return TEAM_SLUG_ALIASES[slug] ?? slug;
+}
+
+function fixtureTeamKey(name) {
+  const parts = String(name ?? '')
+    .split(/\s+v\s+/i)
+    .map((team) => normalizeTeamSlug(team))
+    .filter(Boolean)
+    .sort();
+  return parts.length === 2 ? parts.join('|') : null;
+}
+
+function slugTeamKey(slug) {
+  const normalized = String(slug ?? '').replace(/-v-/g, '-vs-');
+  const parts = normalized
+    .split('-vs-')
+    .map((team) => normalizeTeamSlug(team))
+    .filter(Boolean)
+    .sort();
+  return parts.length === 2 ? parts.join('|') : null;
 }
 
 function loadDkCookieHeader() {
@@ -508,11 +541,15 @@ function saveStaticDkEventMap(events) {
   fs.writeFileSync(DK_EVENT_MAP_FILE, `${JSON.stringify(payload, null, 2)}\n`);
 }
 
-async function fetchDkEventMetaQuiet(eventId) {
+async function fetchDkEventMetaQuiet(eventId, attempt = 0) {
   const qs = new URLSearchParams({ eventIds: eventId });
   const res = await fetch(`${DK_NASH_BASE}/sportscontent/pagedata/event/v1/events?${qs}`, {
     headers: nashHeaders({ page: 'league' }),
   });
+  if (res.status === 403 && attempt < DK_FETCH_RETRIES - 1) {
+    await sleep(DK_FETCH_RETRY_MS * (attempt + 1) + Math.floor(Math.random() * 200));
+    return fetchDkEventMetaQuiet(eventId, attempt + 1);
+  }
   if (!res.ok) return null;
   const event = (await res.json()).events?.[0];
   if (!event || String(event.leagueId) !== WC_LEAGUE_ID) return null;
@@ -528,20 +565,22 @@ async function probeMissingDkEvents(missingGames, slugToId) {
   if (!missingGames.length) return slugToId;
 
   const knownIds = [...slugToId.values()].map(Number).filter(Number.isFinite);
+  const probeEndPad = Number(process.env.DK_PROBE_END_PAD || 25000);
   const start = knownIds.length
     ? Math.min(...knownIds) - 2500
     : Number(process.env.DK_SCAN_START || 34322000);
-  const end = knownIds.length
-    ? Math.max(...knownIds) + 2500
-    : Number(process.env.DK_SCAN_END || 34332000);
-  const concurrency = Number(process.env.DK_SCAN_CONCURRENCY || 15);
-  const deadline = Date.now() + Number(process.env.DK_PROBE_TIMEOUT_MS || 25000);
+  const end = Math.max(
+    Number(process.env.DK_SCAN_END || 34350000),
+    knownIds.length ? Math.max(...knownIds) + probeEndPad : 0,
+  );
+  const concurrency = Number(process.env.DK_SCAN_CONCURRENCY || 12);
+  const deadline = Date.now() + Number(process.env.DK_PROBE_TIMEOUT_MS || 45000);
 
-  const neededSlugs = new Set(missingGames.map((g) => fdNameToSlug(g.name)));
+  const neededKeys = new Set(missingGames.map((g) => fixtureTeamKey(g.name)).filter(Boolean));
   const discovered = [];
 
   for (let base = start; base < end && Date.now() < deadline; base += concurrency) {
-    if (neededSlugs.size === 0) break;
+    if (neededKeys.size === 0) break;
 
     const ids = Array.from({ length: Math.min(concurrency, end - base) }, (_, i) => base + i);
     const results = await Promise.all(ids.map((id) => fetchDkEventMetaQuiet(id)));
@@ -549,7 +588,8 @@ async function probeMissingDkEvents(missingGames, slugToId) {
       if (!event?.slug) continue;
       slugToId.set(event.slug, event.eventId);
       discovered.push(event);
-      neededSlugs.delete(event.slug);
+      neededKeys.delete(slugTeamKey(event.slug));
+      neededKeys.delete(fixtureTeamKey(event.name));
     }
   }
 
@@ -594,9 +634,13 @@ function resolveDkEventIdSync(fdGame, slugToId) {
   const slug = fdNameToSlug(fdGame.name);
   if (slugToId.has(slug)) return slugToId.get(slug);
 
+  const gameKey = fixtureTeamKey(fdGame.name);
+
   // Fuzzy: ivory-coast-vs-norway vs ivory-coast-v-norway slug variants
   for (const [mapSlug, eventId] of slugToId.entries()) {
-    if (mapSlug.replace(/-v-/g, '-vs-') === slug.replace(/-v-/g, '-vs-')) return eventId;
+    const normalized = mapSlug.replace(/-v-/g, '-vs-');
+    if (normalized === slug.replace(/-v-/g, '-vs-')) return eventId;
+    if (gameKey && slugTeamKey(mapSlug) === gameKey) return eventId;
   }
 
   return null;
@@ -662,7 +706,7 @@ export async function fetchWorldCupGoalMethodOdds({ upcomingOnly = true } = {}) 
   let slugToId = await discoverDkEventsFromLeaguePage();
 
   const missingGames = scheduleGames.filter((g) => !resolveDkEventIdSync(g, slugToId));
-  if (missingGames.length && process.env.DK_PROBE_EVENTS === '1') {
+  if (missingGames.length && process.env.DK_PROBE_EVENTS !== '0') {
     slugToId = await probeMissingDkEvents(missingGames, slugToId);
   }
 

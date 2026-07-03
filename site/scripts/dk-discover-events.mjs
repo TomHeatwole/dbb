@@ -19,7 +19,7 @@ const DK_PE_LOC = process.env.DK_PE_LOC || 'US-NY';
 const NASH_BASE = `https://sportsbook-nash.draftkings.com/sites/US-${DK_PE_LOC}-SB/api`;
 
 const DEFAULT_START = Number(process.env.DK_SCAN_START || 34322000);
-const DEFAULT_END = Number(process.env.DK_SCAN_END || 34332000);
+const DEFAULT_END = Number(process.env.DK_SCAN_END || 34350000);
 const CONCURRENCY = Number(process.env.DK_SCAN_CONCURRENCY || 20);
 
 function parseArgs() {

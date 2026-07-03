@@ -44,6 +44,7 @@ function SimulatorRunPage() {
   const [resultDeltas, setResultDeltas] = useState(null);
   const [teamFinishBuckets, setTeamFinishBuckets] = useState(null);
   const [teamScoreHistograms, setTeamScoreHistograms] = useState(null);
+  const [teamSlotHistograms, setTeamSlotHistograms] = useState(null);
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [teamsForGrid, setTeamsForGrid] = useState([]);
   const [originalRosters, setOriginalRosters] = useState({});
@@ -130,6 +131,7 @@ function SimulatorRunPage() {
           resultDeltas,
           teamFinishBuckets: finishBuckets,
           teamScoreHistograms: scoreHists,
+          teamSlotHistograms: slotHists,
         } = await runMonteCarloSimulation(
           ctx,
           players,
@@ -147,6 +149,7 @@ function SimulatorRunPage() {
           setResultDeltas(resultDeltas);
           setTeamFinishBuckets(finishBuckets);
           setTeamScoreHistograms(scoreHists);
+          setTeamSlotHistograms(slotHists);
           setSimProgress(1);
           setPhase('celebrating');
           await new Promise((resolve) => {
@@ -249,6 +252,7 @@ function SimulatorRunPage() {
                 teamsForGrid={teamsForGrid}
                 teamFinishBuckets={teamFinishBuckets}
                 teamScoreHistograms={teamScoreHistograms}
+                teamSlotHistograms={teamSlotHistograms}
                 originalRosters={originalRosters}
                 scenarioRosters={scenarioRosters}
                 seasonYear={scenarioSeason}
@@ -257,7 +261,7 @@ function SimulatorRunPage() {
               />
             ) : (
               <div className="scenario-eval-team-stats-placeholder">
-                Click a team above to see finish and score distributions
+                Click a team above to see finish, score, and lineup position distributions
               </div>
             )}
           </div>
