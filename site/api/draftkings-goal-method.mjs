@@ -34,8 +34,10 @@ const DK_PE_LOC = (() => {
 const DK_SITE = process.env.DK_SITE || `${DK_PE_LOC}-SB`;
 const DK_NASH_BASE = `https://sportsbook-nash.draftkings.com/sites/${DK_SITE}/api`;
 const DK_FETCH_CONCURRENCY = Number(process.env.DK_FETCH_CONCURRENCY || 4);
-const DK_FETCH_RETRIES = Number(process.env.DK_FETCH_RETRIES || 2);
-const DK_FETCH_RETRY_MS = Number(process.env.DK_FETCH_RETRY_MS || 800);
+const DK_FETCH_RETRIES = Number(process.env.DK_FETCH_RETRIES || 1);
+const DK_FETCH_RETRY_MS = Number(process.env.DK_FETCH_RETRY_MS || 400);
+/** Whole handler budget — return partial/empty rather than hang SOP. */
+const DK_HANDLER_TIMEOUT_MS = Number(process.env.DK_HANDLER_TIMEOUT_MS || 2000);
 
 const GOAL_TYPE_SELECTIONS = {
   sop: ['Shot', 'Shot Open Play', 'Open Play', 'Shot - Open Play'],
@@ -493,7 +495,8 @@ function loadStaticDkEventMap() {
 }
 
 function isUpcomingGame(game) {
-  if (game.inPlay) return false;
+  // Include live matches; only drop fixtures that have already kicked off and finished.
+  if (game.inPlay) return true;
   if (!game.openDate) return true;
   return new Date(game.openDate) > new Date();
 }
@@ -574,7 +577,8 @@ async function probeMissingDkEvents(missingGames, slugToId) {
     knownIds.length ? Math.max(...knownIds) + probeEndPad : 0,
   );
   const concurrency = Number(process.env.DK_SCAN_CONCURRENCY || 12);
-  const deadline = Date.now() + Number(process.env.DK_PROBE_TIMEOUT_MS || 45000);
+  // Keep this short — a missing event must not hang /SOP for tens of seconds.
+  const deadline = Date.now() + Number(process.env.DK_PROBE_TIMEOUT_MS || 5000);
 
   const neededKeys = new Set(missingGames.map((g) => fixtureTeamKey(g.name)).filter(Boolean));
   const discovered = [];
@@ -698,59 +702,98 @@ async function fetchOneDkGame(fdGame, slugToId) {
   }
 }
 
-export async function fetchWorldCupGoalMethodOdds({ upcomingOnly = true } = {}) {
-  const fdPayload = await fetchFanDuelGames();
-  const scheduleGames = upcomingOnly
-    ? fdPayload.games.filter(isUpcomingGame)
-    : fdPayload.games;
-  let slugToId = await discoverDkEventsFromLeaguePage();
+function emptyDkPayload({ timedOut = false, error = null } = {}) {
+  const mapMeta = loadStaticDkEventMapMeta();
+  return {
+    fetchedAt: new Date().toISOString(),
+    eventMapUpdatedAt: mapMeta.fetchedAt ?? null,
+    timedOut,
+    error,
+    stats: {
+      total: 0,
+      withEventId: 0,
+      withOdds: 0,
+      missingEventId: 0,
+      totalEvBets: 0,
+    },
+    games: [],
+  };
+}
 
-  const missingGames = scheduleGames.filter((g) => !resolveDkEventIdSync(g, slugToId));
-  if (missingGames.length && process.env.DK_PROBE_EVENTS !== '0') {
-    slugToId = await probeMissingDkEvents(missingGames, slugToId);
-  }
-
-  let results = await mapPool(scheduleGames, DK_FETCH_CONCURRENCY, (fdGame) =>
-    fetchOneDkGame(fdGame, slugToId),
-  );
-
-  const blockedIndexes = results
-    .map((result, index) => (result.errorCode === 'markets_blocked' ? index : -1))
-    .filter((index) => index >= 0);
-
-  if (blockedIndexes.length) {
-    await sleep(1200);
-    for (const index of blockedIndexes) {
-      const retry = await fetchOneDkGame(scheduleGames[index], slugToId);
-      if (retry.goalTypes) results[index] = retry;
-      await sleep(300);
-    }
-  }
-
-  results.sort((a, b) => {
+function buildDkPayload(results, { timedOut = false } = {}) {
+  const sorted = [...results].sort((a, b) => {
     if (!a.openDate) return 1;
     if (!b.openDate) return -1;
     return new Date(a.openDate) - new Date(b.openDate);
   });
 
-  const withOdds = results.filter((g) => g.goalTypes).length;
-  const withEventId = results.filter((g) => g.dkEventId).length;
-  const evPlus = results.reduce((sum, g) => sum + countGameEvBets(g), 0);
-
+  const withOdds = sorted.filter((g) => g.goalTypes).length;
+  const withEventId = sorted.filter((g) => g.dkEventId).length;
+  const evPlus = sorted.reduce((sum, g) => sum + countGameEvBets(g), 0);
   const mapMeta = loadStaticDkEventMapMeta();
 
   return {
     fetchedAt: new Date().toISOString(),
     eventMapUpdatedAt: mapMeta.fetchedAt ?? null,
+    timedOut,
     stats: {
-      total: results.length,
+      total: sorted.length,
       withEventId,
       withOdds,
-      missingEventId: results.length - withEventId,
+      missingEventId: sorted.length - withEventId,
       totalEvBets: evPlus,
     },
-    games: results,
+    games: sorted,
   };
+}
+
+export async function fetchWorldCupGoalMethodOdds({
+  upcomingOnly = true,
+  timeoutMs = DK_HANDLER_TIMEOUT_MS,
+} = {}) {
+  const deadline = Date.now() + timeoutMs;
+  const remaining = () => Math.max(0, deadline - Date.now());
+
+  const fdPayload = await fetchFanDuelGames();
+  if (remaining() <= 0) return emptyDkPayload({ timedOut: true });
+
+  const scheduleGames = upcomingOnly
+    ? fdPayload.games.filter(isUpcomingGame)
+    : fdPayload.games;
+  let slugToId = await discoverDkEventsFromLeaguePage();
+  if (remaining() <= 0) return emptyDkPayload({ timedOut: true });
+
+  // Probe is optional and slow — only run when explicitly enabled and we have budget.
+  const missingGames = scheduleGames.filter((g) => !resolveDkEventIdSync(g, slugToId));
+  if (
+    missingGames.length
+    && process.env.DK_PROBE_EVENTS === '1'
+    && remaining() > 500
+  ) {
+    slugToId = await probeMissingDkEvents(missingGames, slugToId);
+  }
+
+  if (remaining() <= 0) return emptyDkPayload({ timedOut: true });
+
+  const results = await mapPool(scheduleGames, DK_FETCH_CONCURRENCY, async (fdGame) => {
+    if (remaining() <= 0) {
+      return {
+        eventId: fdGame.eventId,
+        name: fdGame.name,
+        openDate: fdGame.openDate,
+        inPlay: fdGame.inPlay,
+        score: fdGame.score,
+        scoreDisplay: fdGame.scoreDisplay,
+        teams: fdGame.teams,
+        dkEventId: resolveDkEventIdSync(fdGame, slugToId),
+        error: 'DraftKings timed out',
+        errorCode: 'timed_out',
+      };
+    }
+    return fetchOneDkGame(fdGame, slugToId);
+  });
+
+  return buildDkPayload(results, { timedOut: remaining() <= 0 });
 }
 
 function countGameEvBets(game) {
@@ -775,12 +818,19 @@ export default async function handler(req, res) {
 
   try {
     const upcomingOnly = req.query?.all !== '1' && req.query?.all !== 'true';
-    const data = await fetchWorldCupGoalMethodOdds({ upcomingOnly });
+    const data = await Promise.race([
+      fetchWorldCupGoalMethodOdds({ upcomingOnly }),
+      sleep(DK_HANDLER_TIMEOUT_MS + 250).then(() =>
+        emptyDkPayload({ timedOut: true, error: 'DraftKings timed out' }),
+      ),
+    ]);
     res.setHeader('Cache-Control', 'public, max-age=15');
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[draftkings-goal-method]', err);
-    return res.status(502).json({ error: err.message || 'DraftKings fetch failed' });
+    return res.status(200).json(
+      emptyDkPayload({ timedOut: true, error: err.message || 'DraftKings fetch failed' }),
+    );
   }
 }

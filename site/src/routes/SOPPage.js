@@ -12,62 +12,30 @@ import SOPManualPanel from './SOPManualPanel';
 import { mergeDkIntoFdGames } from '../sop/mergeDkGames';
 import { mergeKalshiIntoFdGames } from '../sop/mergeKalshiGames';
 
-async function fetchKalshiOddsForSop({ retries = 2 } = {}) {
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    try {
-      const res = await fetch('/api/kalshi-sop?all=1');
-      if (!res.ok) {
-        if (attempt < retries) {
-          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
-          continue;
-        }
-        return null;
-      }
-      const data = await res.json();
-      if (data?.games?.length) return data;
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        continue;
-      }
-      return data;
-    } catch {
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        continue;
-      }
-      return null;
-    }
+/** DK is flaky (Akamai / missing event map). Bail fast and render FanDuel. */
+const DK_CLIENT_TIMEOUT_MS = 2000;
+const KALSHI_CLIENT_TIMEOUT_MS = 8000;
+
+async function fetchJsonWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
   }
-  return null;
 }
 
-async function fetchDkOddsForSop({ retries = 2 } = {}) {
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    try {
-      const res = await fetch('/api/draftkings-goal-method?all=1');
-      if (!res.ok) {
-        if (attempt < retries) {
-          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
-          continue;
-        }
-        return null;
-      }
-      const data = await res.json();
-      if (data?.games?.length) return data;
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        continue;
-      }
-      return data;
-    } catch {
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        continue;
-      }
-      return null;
-    }
-  }
-  return null;
+async function fetchKalshiOddsForSop() {
+  return fetchJsonWithTimeout('/api/kalshi-sop', KALSHI_CLIENT_TIMEOUT_MS);
+}
+
+async function fetchDkOddsForSop() {
+  return fetchJsonWithTimeout('/api/draftkings-goal-method', DK_CLIENT_TIMEOUT_MS);
 }
 
 const OG_TITLE = 'SHOT OPEN PLAY';
@@ -177,40 +145,59 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
 
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
     if (manual) setBookRefreshing(true);
-    try {
-      const [fdRes, dkData, kalshiData] = await Promise.all([
-        fetch('/api/fanduel-sop'),
-        fetchDkOddsForSop(),
-        fetchKalshiOddsForSop(),
-      ]);
 
+    // FanDuel is fast (~200ms). Show it immediately; merge DK/Kalshi as they finish
+    // so a slow DraftKings probe/Akamai block cannot hang the whole page.
+    let fdGames = [];
+    try {
+      const fdRes = await fetch('/api/fanduel-sop');
       if (!fdRes.ok) {
         const body = await fdRes.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${fdRes.status}`);
       }
 
       const fdData = await fdRes.json();
-      const mergedGames = mergeKalshiIntoFdGames(
-        mergeDkIntoFdGames(fdData.games ?? [], dkData),
-        kalshiData,
-      );
-
-      setGames(mergedGames);
+      fdGames = fdData.games ?? [];
+      setGames(fdGames.map((game) => ({ ...game, dk: null, klsh: null })));
       setFetchedAt(fdData.fetchedAt ?? null);
       setBookError(null);
-
-      const hasMergedDk = mergedGames.some((g) => g.dk);
-      if (!dkData || !hasMergedDk) {
-        setDkNotice('DraftKings odds unavailable — showing FanDuel only.');
-      } else {
-        setDkNotice(null);
-      }
+      setBookLoaded(true);
     } catch (err) {
       setBookError(err.message || 'Failed to load odds');
-    } finally {
       setBookLoaded(true);
       if (manual) setBookRefreshing(false);
+      return;
     }
+
+    let dkData = null;
+    let kalshiData = null;
+
+    const applyMerges = () => {
+      setGames(
+        mergeKalshiIntoFdGames(mergeDkIntoFdGames(fdGames, dkData), kalshiData),
+      );
+    };
+
+    await Promise.all([
+      fetchDkOddsForSop().then((data) => {
+        dkData = data;
+        applyMerges();
+        const hasMergedDk = (data?.games ?? []).some(
+          (g) => g.goalTypes || g.noGoalMarkets,
+        );
+        if (!data || !hasMergedDk) {
+          setDkNotice('DraftKings odds unavailable — showing FanDuel only.');
+        } else {
+          setDkNotice(null);
+        }
+      }),
+      fetchKalshiOddsForSop().then((data) => {
+        kalshiData = data;
+        applyMerges();
+      }),
+    ]);
+
+    if (manual) setBookRefreshing(false);
   }, []);
 
   useEffect(() => {

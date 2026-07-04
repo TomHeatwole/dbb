@@ -255,7 +255,8 @@ function buildKalshiEventIndex(events) {
 }
 
 function isUpcomingGame(game) {
-  if (game.inPlay) return false;
+  // Include live matches; only drop fixtures that have already kicked off and finished.
+  if (game.inPlay) return true;
   if (!game.openDate) return true;
   return new Date(game.openDate) > new Date();
 }
