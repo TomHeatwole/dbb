@@ -21,6 +21,7 @@
     "dk:login": "node scripts/dk-login.mjs",
     "dk:test-fetch": "node scripts/dk-test-fetch.mjs",
     "dk:discover-events": "node scripts/dk-discover-events.mjs",
+    "b365:probe": "node scripts/bet365-probe.mjs",
     "build": "react-scripts build",
     "serve": "node server.js",
     "start:prod": "npm run build && npm run serve",
