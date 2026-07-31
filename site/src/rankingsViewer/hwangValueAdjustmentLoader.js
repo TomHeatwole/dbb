@@ -23,7 +23,7 @@ function computePosRanks(rows) {
 }
 
 /**
- * Load KTC SF TE+ values with a position multiplier from a tunable CSV.
+ * Load KTC SF TE+ values with position multipliers from hwangPositionCoefficients.js.
  *
  * @param {'market' | 'true'} adjustmentKey
  */

@@ -1,5 +1,7 @@
 /**
- * Tunable position multipliers applied to stitched KTC SF TE+ values.
+ * Tunable position multipliers applied to KTC / Competitor / Rebuild bases.
+ *
+ * Coefficient numbers live in hwangPositionCoefficients.js — edit there only.
  */
 
 import { normalisePlayerName, findBestPlayerMatch } from '../utils/playerNameMatcher';
@@ -7,15 +9,25 @@ import {
   assignPosValueRanks,
   assignOverallValueRanks,
 } from './RedraftValueLookup';
+import {
+  HWANG_COEFFICIENT_LABELS,
+  HWANG_COMPOSITE_COEFFICIENT_KEY,
+  getHwangCoefficientMap,
+} from './hwangPositionCoefficients';
+
+export {
+  HWANG_POSITION_COEFFICIENTS,
+  HWANG_COEFFICIENT_LABELS,
+  HWANG_COMPOSITE_COEFFICIENT_KEY,
+  getHwangCoefficientMap,
+} from './hwangPositionCoefficients';
 
 export const HWANG_VALUE_ADJUSTMENTS = {
   market: {
-    label: 'Hwang Market Value Adjusted KTC',
-    csv: '/data/hwang_market_value_adjustment.csv',
+    label: HWANG_COEFFICIENT_LABELS.market,
   },
   true: {
-    label: 'Hwang True Value Adjusted KTC',
-    csv: '/data/hwang_true_value_adjustment.csv',
+    label: HWANG_COEFFICIENT_LABELS.true,
   },
 };
 
@@ -23,40 +35,33 @@ export const HWANG_VALUE_ADJUSTMENTS = {
 const multiplierCache = new Map();
 
 export async function loadHwangPositionMultipliers(adjustmentKey) {
-  const cfg = HWANG_VALUE_ADJUSTMENTS[adjustmentKey];
-  if (!cfg) throw new Error(`Unknown Hwang value adjustment: ${adjustmentKey}`);
-
-  if (multiplierCache.has(cfg.csv)) return multiplierCache.get(cfg.csv);
-
-  const res = await fetch(cfg.csv);
-  if (!res.ok) throw new Error(`Failed to fetch ${cfg.csv}`);
-  const text = await res.text();
-
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) {
-    const empty = new Map();
-    multiplierCache.set(cfg.csv, empty);
-    return empty;
+  if (!HWANG_VALUE_ADJUSTMENTS[adjustmentKey]) {
+    throw new Error(`Unknown Hwang value adjustment: ${adjustmentKey}`);
   }
 
-  const headers = lines[0].split(',').map((h) => h.trim());
-  const posIdx = headers.indexOf('position');
-  const multIdx = headers.indexOf('multiplier');
-  if (posIdx === -1 || multIdx === -1) {
-    throw new Error(`Invalid adjustment CSV (need position,multiplier): ${cfg.csv}`);
+  if (multiplierCache.has(adjustmentKey)) return multiplierCache.get(adjustmentKey);
+
+  const multipliers = getHwangCoefficientMap(adjustmentKey);
+  if (!multipliers) {
+    throw new Error(`Missing Hwang coefficients for: ${adjustmentKey}`);
   }
 
-  const multipliers = new Map();
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',');
-    const position = (cols[posIdx] || '').trim().toUpperCase();
-    const multiplier = parseFloat((cols[multIdx] || '').trim());
-    if (!position || !Number.isFinite(multiplier)) continue;
-    multipliers.set(position, multiplier);
-  }
-
-  multiplierCache.set(cfg.csv, multipliers);
+  multiplierCache.set(adjustmentKey, multipliers);
   return multipliers;
+}
+
+/** Sync accessor — same maps as loadHwangPositionMultipliers. */
+export function getHwangPositionMultipliers(adjustmentKey) {
+  if (multiplierCache.has(adjustmentKey)) return multiplierCache.get(adjustmentKey);
+  const multipliers = getHwangCoefficientMap(adjustmentKey);
+  if (!multipliers) return null;
+  multiplierCache.set(adjustmentKey, multipliers);
+  return multipliers;
+}
+
+/** Multipliers used for Hwang-Adjusted Competitor / Rebuild. */
+export function getHwangCompositeMultipliers() {
+  return getHwangPositionMultipliers(HWANG_COMPOSITE_COEFFICIENT_KEY);
 }
 
 /** Stitched SF TE+ baseline: TE uses TE+ column, other positions use SF 2QB. */
@@ -94,20 +99,42 @@ export function lookupKtcMapEntry(playerName, ktcMap, hints = {}) {
  * Returns { byName: Map<normName, entry>, rows }.
  */
 export function buildHwangAdjustedLookup(ktcMap, multipliers) {
+  return buildHwangAdjustedFromEntries(
+    Array.from(ktcMap.values()),
+    multipliers,
+    (entry) => getStitchedKtcTepSfValue(entry),
+    { teamKey: 'nflTeam' },
+  );
+}
+
+/**
+ * Apply Hwang position multipliers to an arbitrary list of valued entries,
+ * then assign overall / positional ranks.
+ *
+ * @param {object[]} entries
+ * @param {Map<string, number>} multipliers
+ * @param {(entry: object) => number|null|undefined} getBaseValue
+ * @param {{ teamKey?: string }} [opts]
+ */
+export function buildHwangAdjustedFromEntries(entries, multipliers, getBaseValue, opts = {}) {
+  const teamKey = opts.teamKey || 'nflTeam';
   const rows = [];
 
-  for (const entry of ktcMap.values()) {
-    const baseValue = getStitchedKtcTepSfValue(entry);
-    if (baseValue == null) continue;
+  for (const entry of entries || []) {
+    const baseValue = getBaseValue(entry);
+    if (baseValue == null || !Number.isFinite(baseValue) || baseValue <= 0) continue;
 
     const value = applyHwangKtcAdjustment(baseValue, entry.position, multipliers);
     if (value == null) continue;
 
+    const name = entry.name;
+    if (!name) continue;
+
     rows.push({
-      name: entry.name,
-      normName: normalisePlayerName(entry.name),
+      name,
+      normName: normalisePlayerName(name),
       position: entry.position,
-      nflTeam: entry.nflTeam,
+      nflTeam: entry[teamKey] || entry.nflTeam || entry.team || '',
       ktcValue: baseValue,
       value,
       overallRank: null,

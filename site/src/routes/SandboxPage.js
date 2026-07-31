@@ -12,6 +12,7 @@ import KtcRankCompare from '../ktcRankCompare/KtcRankCompare';
 import RedraftValueIndex from '../redraftValueIndex/RedraftValueIndex';
 import PosValueCompare from '../posValueCompare/PosValueCompare';
 import HistoricalKtcRanks from '../historicalKtcRanks/HistoricalKtcRanks';
+import TradeCalculator from '../tradeCalculator/TradeCalculator';
 
 const FEATURES = [
   {
@@ -43,6 +44,12 @@ const FEATURES = [
     label: 'Rankings Viewer',
     description: 'Browse ADP, KTC, FantasyCalc, FFB, and FantasyPros rankings by year or date.',
     component: <RankingsViewer />,
+  },
+  {
+    id: 'TRADE_CALCULATOR',
+    label: 'Trade Calculator',
+    description: 'Sandbox trade comparer — pick players on each side and total ranking values.',
+    component: <TradeCalculator />,
   },
   {
     id: 'PLAYER_SEARCH',
