@@ -43,7 +43,7 @@ Aaron Rodgers,0,235,aaron-rodgers-235,96,Aaron Rodgers,QB,PIT,exact,exact
 Adam Thielen,0,,,1689,Adam Thielen,WR,,no_ktc,exact
 Adam Trautman,0,,,6869,Adam Trautman,TE,DEN,no_ktc,exact
 Adonai Mitchell,0,1597,adonai-mitchell-1597,11625,Adonai Mitchell,WR,NYJ,exact,exact
-Aidan O'Connell,0,1412,aidan-o-connell-1412,10866,Aidan O'Connell,QB,LVR,exact,exact
+Aidan O'Connell,0,,,10866,Aidan O'Connell,QB,LV,no_ktc,exact
 Albert Okwuegbunam,0,,,6843,Albert Okwuegbunam,TE,LV,no_ktc,exact
 Alec Pierce,0,1285,alec-pierce-1285,8142,Alec Pierce,WR,IND,exact,exact
 Alexander Mattison,0,326,alexander-mattison-326,5987,Alexander Mattison,RB,MIA,exact,exact
@@ -164,9 +164,9 @@ Derius Davis,0,1473,derius-davis-1473,10234,Derius Davis,WR,LAC,exact,exact
 Derrick Henry,0,296,derrick-henry-296,3198,Derrick Henry,RB,BAL,exact,exact
 Deshaun Watson,0,261,deshaun-watson-261,4017,Deshaun Watson,QB,CLE,exact,exact
 Desmond Ridder,0,,,8159,Desmond Ridder,QB,,no_ktc,exact
-Deuce Vaughn,0,,,9505,Deuce Vaughn,RB,,no_ktc,exact
-Deven Thompkins,0,,,8253,Deven Thompkins,WR,BUF,no_ktc,exact
-Devin Duvernay,0,,,6847,Devin Duvernay,WR,ARI,no_ktc,exact
+Deuce Vaughn,0,1391,deuce-vaughn-1391,9505,Deuce Vaughn,RB,FA,exact,exact
+Deven Thompkins,0,,,8253,Deven Thompkins,WR,LV,no_ktc,exact
+Devin Duvernay,0,560,devin-duvernay-560,6847,Devin Duvernay,WR,ARI,exact,exact
 Devin Singletary,0,238,devin-singletary-238,6130,Devin Singletary,RB,NYG,exact,exact
 Devontez Walker,0,1592,devontez-walker-1592,11629,Devontez Walker,WR,BAL,exact,exact
 Diontae Johnson,0,,,5937,Diontae Johnson,WR,,no_ktc,exact
@@ -205,7 +205,7 @@ Gerald Everett,0,,,4089,Gerald Everett,TE,,no_ktc,exact
 Greg Dortch,0,10,greg-dortch-10,5970,Greg Dortch,WR,DET,exact,exact
 Greg Dulcich,0,1256,greg-dulcich-1256,8172,Greg Dulcich,TE,MIA,exact,exact
 Gus Edwards,0,,,5248,Gus Edwards,RB,,no_ktc,exact
-Harrison Bryant,0,752,harrison-bryant-752,6850,Harrison Bryant,TE,FA,exact,exact
+Harrison Bryant,0,,,6850,Harrison Bryant,TE,,no_ktc,exact
 Hassan Haskins,0,1191,hassan-haskins-1191,8123,Hassan Haskins,RB,LAC,exact,exact
 Hayden Hurst,0,,,4973,Hayden Hurst,TE,,no_ktc,exact
 Hendon Hooker,0,,,9998,Hendon Hooker,QB,TEN,no_ktc,exact
@@ -265,16 +265,16 @@ Jaylen Warren,0,1201,jaylen-warren-1201,8228,Jaylen Warren,RB,PIT,exact,exact
 Jaylen Wright,0,1581,jaylen-wright-1581,11643,Jaylen Wright,RB,MIA,exact,exact
 Jeffery Wilson,0,,,5284,Jeff Wilson,RB,,no_ktc,alias
 Jelani Woods,0,,,8219,Jelani Woods,TE,NYJ,no_ktc,exact
-Jeremy Ruckert,0,1255,jeremy-ruckert-1255,8145,Jeremy Ruckert,TE,NYJ,exact,exact
+Jeremy Ruckert,0,,,8145,Jeremy Ruckert,TE,NYJ,no_ktc,exact
 Jerick McKinnon,0,,,2161,Jerick McKinnon,RB,,no_ktc,exact
-Jermaine Burton,0,1603,jermaine-burton-1603,11640,Jermaine Burton,WR,FA,exact,exact
+Jermaine Burton,0,,,11640,Jermaine Burton,WR,,no_ktc,exact
 Jerome Ford,0,1229,jerome-ford-1229,8143,Jerome Ford,RB,WAS,exact,exact
 Jerry Jeudy,0,545,jerry-jeudy-545,6783,Jerry Jeudy,WR,CLE,exact,exact
 Jimmy Garoppolo,0,,,1837,Jimmy Garoppolo,QB,,no_ktc,exact
 Joe Burrow,0,601,joe-burrow-601,6770,Joe Burrow,QB,CIN,exact,exact
 Joe Flacco,0,722,joe-flacco-722,19,Joe Flacco,QB,CIN,exact,exact
 Joe Milton,0,1556,joe-milton-1556,11557,Joe Milton,QB,DAL,exact,exact
-Joe Mixon,0,273,joe-mixon-273,4018,Joe Mixon,RB,FA,exact,exact
+Joe Mixon,0,,,4018,Joe Mixon,RB,,no_ktc,exact
 John Bates,0,,,7716,John Bates,TE,WAS,no_ktc,exact
 John Metchie,0,1276,john-metchie-1276,8147,John Metchie,WR,CAR,exact,exact
 Johnny Wilson,0,1596,johnny-wilson-1596,11636,Johnny Wilson,WR,PHI,exact,exact
@@ -289,7 +289,7 @@ Jordan Travis,0,,,11567,Jordan Travis,QB,,no_ktc,exact
 Josh Allen,0,365,josh-allen-365,4984,Josh Allen,QB,BUF,exact,exact
 Josh Downs,0,1440,josh-downs-1440,9500,Josh Downs,WR,IND,exact,exact
 Josh Jacobs,0,303,josh-jacobs-303,5850,Josh Jacobs,RB,GBP,exact,exact
-Josh Oliver,0,7,josh-oliver-7,5973,Josh Oliver,TE,MIN,exact,exact
+Josh Oliver,0,,,5973,Josh Oliver,TE,MIN,no_ktc,exact
 Josh Palmer,0,,,7670,Joshua Palmer,WR,BUF,no_ktc,alias
 Josh Reynolds,0,,,4171,Josh Reynolds,WR,,no_ktc,exact
 Joshua Dobbs,0,,,4179,Joshua Dobbs,QB,,no_ktc,exact
@@ -318,13 +318,13 @@ Keenan Allen,0,265,keenan-allen-265,1479,Keenan Allen,WR,FA,exact,exact
 Kendre Miller,0,1386,kendre-miller-1386,9757,Kendre Miller,RB,NOS,exact,exact
 Kendrick Bourne,0,153,kendrick-bourne-153,4454,Kendrick Bourne,WR,ARI,exact,exact
 Kene Nwangwu,0,,,7720,Kene Nwangwu,RB,NYJ,no_ktc,exact
-Kenneth Gainwell,0,1032,kenneth-gainwell-1032,7567,Kenneth Gainwell,RB,TBB,exact,exact
+Kenneth Gainwell,0,1032,kenneth-gainwell-1032,,,RB,TBB,exact,no_match
 Kenneth Walker III,0,1227,kenneth-walker-iii-1227,8151,Kenneth Walker,RB,KCC,exact,normalised
-Kenny McIntosh,0,1385,kenny-mcintosh-1385,10216,Kenny McIntosh,RB,SEA,exact,exact
+Kenny McIntosh,0,1385,kenny-mcintosh-1385,10216,Kenny McIntosh,RB,FA,exact,exact
 Kenny Pickett,0,1208,kenny-pickett-1208,8160,Kenny Pickett,QB,CAR,exact,exact
 Keon Coleman,0,1588,keon-coleman-1588,11637,Keon Coleman,WR,BUF,exact,exact
 Kevin Harris,0,,,8174,Kevin Harris,RB,,no_ktc,exact
-Khalil Herbert,0,,,7608,Khalil Herbert,RB,,no_ktc,exact
+Khalil Herbert,0,994,khalil-herbert-994,7608,Khalil Herbert,RB,NYJ,exact,exact
 Khalil Shakir,0,1278,khalil-shakir-1278,8134,Khalil Shakir,WR,BUF,exact,exact
 Kirk Cousins,0,396,kirk-cousins-396,1166,Kirk Cousins,QB,LVR,exact,exact
 Kyle Philips,0,,,8171,Kyle Philips,WR,,no_ktc,exact
@@ -371,7 +371,7 @@ Mike Evans,0,275,mike-evans-275,2216,Mike Evans,WR,SFO,exact,exact
 Mike Gesicki,0,330,mike-gesicki-330,4993,Mike Gesicki,TE,CIN,exact,exact
 Mike White,0,,,5089,Mike White,QB,,no_ktc,exact
 Mike Williams,0,,,4068,Mike Williams,WR,,no_ktc,alias
-Miles Sanders,0,,,6151,Miles Sanders,RB,,no_ktc,exact
+Miles Sanders,0,222,miles-sanders-222,6151,Miles Sanders,RB,FA,exact,exact
 Mitchell Trubisky,0,,,3976,Mitchell Trubisky,QB,TEN,no_ktc,exact
 Mo Alie-Cox,0,,,4054,Mo Alie-Cox,TE,IND,no_ktc,exact
 Myles Gaskin,0,,,5980,Myles Gaskin,RB,,no_ktc,exact
@@ -442,7 +442,7 @@ Teagan Quitoriano,0,,,8227,Teagan Quitoriano,TE,ARI,no_ktc,exact
 Tee Higgins,0,543,tee-higgins-543,6801,Tee Higgins,WR,CIN,exact,exact
 Terrace Marshall,0,,,7565,Terrace Marshall,WR,MIA,no_ktc,exact
 Terry McLaurin,0,328,terry-mclaurin-328,5927,Terry McLaurin,WR,WAS,exact,exact
-Tim Patrick,0,,,4351,Tim Patrick,WR,NYJ,no_ktc,exact
+Tim Patrick,0,206,tim-patrick-206,4351,Tim Patrick,WR,NYJ,exact,exact
 Tommy DeVito,0,,,11292,Tommy DeVito,QB,NE,no_ktc,exact
 Tommy Tremble,0,1054,tommy-tremble-1054,7694,Tommy Tremble,TE,CAR,exact,exact
 Tony Pollard,0,344,tony-pollard-344,5967,Tony Pollard,RB,TEN,exact,exact
@@ -491,7 +491,7 @@ Xavier Hutchinson,0,1454,xavier-hutchinson-1454,10218,Xavier Hutchinson,WR,HOU,e
 Xavier Legette,0,1610,xavier-legette-1610,11626,Xavier Legette,WR,CAR,exact,exact
 Xavier Worthy,0,1591,xavier-worthy-1591,11624,Xavier Worthy,WR,KCC,exact,exact
 Zach Charbonnet,0,1384,zach-charbonnet-1384,9753,Zach Charbonnet,RB,SEA,exact,exact
-Zach Ertz,0,305,zach-ertz-305,1339,Zach Ertz,TE,FA,exact,exact
+Zach Ertz,0,,,1339,Zach Ertz,TE,,no_ktc,exact
 Zach Evans,0,,,9222,Zach Evans,RB,,no_ktc,exact
 Zach Wilson,0,1016,zach-wilson-1016,7538,Zach Wilson,QB,NOS,exact,exact
 Zack Moss,0,,,6845,Zack Moss,RB,,no_ktc,exact
