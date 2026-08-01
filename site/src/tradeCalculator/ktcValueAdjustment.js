@@ -73,6 +73,10 @@ export function findPlayerValueForRawGap(
 /**
  * Evaluate a two-sided trade with KTC-style raw scoring + displayed adjustment.
  *
+ * Value Adjustment is only shown when asset counts differ AND the side that
+ * holds the best asset is receiving fewer pieces than the other side
+ * (stud consolidation vs a larger package). Even 1-for-1 / 2-for-2 → no VA.
+ *
  * @param {number[]} teamA ordinary values Team A receives
  * @param {number[]} teamB ordinary values Team B receives
  * @param {number} [highestValueOverall]
@@ -100,6 +104,7 @@ export function evaluateKtcStyleTrade(
     adjustedTotalB: 0,
     rawWinner: null, // 'A' | 'B' | null
     isEven: true,
+    appliesAdjustment: false,
   };
 
   if (allValues.length === 0) return empty;
@@ -107,6 +112,8 @@ export function evaluateKtcStyleTrade(
   const tradeMax = Math.max(...allValues);
   const ordinaryA = valuesA.reduce((sum, v) => sum + v, 0);
   const ordinaryB = valuesB.reduce((sum, v) => sum + v, 0);
+  const countA = valuesA.length;
+  const countB = valuesB.length;
 
   const rawA = valuesA.reduce(
     (sum, value) => sum + rawTradeValue(value, tradeMax, highestValueOverall),
@@ -117,22 +124,45 @@ export function evaluateKtcStyleTrade(
     0,
   );
 
-  if (Math.abs(rawA - rawB) < 0.5) {
-    return {
-      ...empty,
-      ordinaryA,
-      ordinaryB,
-      rawA,
-      rawB,
-      tradeMax,
-      adjustedTotalA: ordinaryA,
-      adjustedTotalB: ordinaryB,
-      isEven: true,
-      rawWinner: null,
-    };
+  const rawWinner = Math.abs(rawA - rawB) < 0.5
+    ? null
+    : (rawA > rawB ? 'A' : 'B');
+
+  const base = {
+    ...empty,
+    ordinaryA,
+    ordinaryB,
+    rawA,
+    rawB,
+    tradeMax,
+    adjustedTotalA: ordinaryA,
+    adjustedTotalB: ordinaryB,
+    rawWinner,
+    isEven: rawWinner == null,
+  };
+
+  // No VA for even-count packages (1-for-1, 2-for-2, …).
+  if (countA === countB) {
+    return base;
   }
 
-  const aIsRawWinner = rawA > rawB;
+  const maxA = countA ? Math.max(...valuesA) : 0;
+  const maxB = countB ? Math.max(...valuesB) : 0;
+  // Side holding the single best asset in the trade.
+  const studSide = maxA >= maxB ? 'A' : 'B';
+  const studCount = studSide === 'A' ? countA : countB;
+  const otherCount = studSide === 'A' ? countB : countA;
+
+  // Only when the stud side is consolidating into fewer assets than it gives up.
+  if (studCount >= otherCount) {
+    return base;
+  }
+
+  if (rawWinner == null) {
+    return base;
+  }
+
+  const aIsRawWinner = rawWinner === 'A';
   const rawGap = Math.abs(rawA - rawB);
   const playerToEven = findPlayerValueForRawGap(
     rawGap,
@@ -144,24 +174,17 @@ export function evaluateKtcStyleTrade(
   const hypotheticalB = ordinaryB + (aIsRawWinner ? playerToEven : 0);
   const displayedAdjustment = Math.abs(hypotheticalA - hypotheticalB);
 
-  // Presentation: add adjustment onto the side with the lower ordinary total
-  // (matching the reverse-engineered display convention).
-  const adjustmentForA = ordinaryA < ordinaryB ? displayedAdjustment : 0;
-  const adjustmentForB = ordinaryB < ordinaryA ? displayedAdjustment : 0;
+  const adjustmentForA = studSide === 'A' ? displayedAdjustment : 0;
+  const adjustmentForB = studSide === 'B' ? displayedAdjustment : 0;
 
   return {
-    version: KTC_VALUE_ADJUSTMENT_VERSION,
-    ordinaryA,
-    ordinaryB,
-    rawA,
-    rawB,
-    tradeMax,
+    ...base,
     playerToEven,
     adjustmentForA,
     adjustmentForB,
     adjustedTotalA: ordinaryA + adjustmentForA,
     adjustedTotalB: ordinaryB + adjustmentForB,
-    rawWinner: aIsRawWinner ? 'A' : 'B',
+    appliesAdjustment: displayedAdjustment > 0,
     isEven: false,
   };
 }

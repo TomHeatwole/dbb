@@ -37,7 +37,7 @@ import {
   formatPickLabel,
 } from '../trades/TradeComponents';
 import { evaluateKtcStyleTrade } from './ktcValueAdjustment';
-import { CURRENT_YEAR } from '../utils/DateHelper';
+import { CURRENT_YEAR, getFuturePickSeasonRange } from '../utils/DateHelper';
 import { LEAGUE_ID, PREVIOUS_YEARS } from '../utils/global_constants';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PositionBadge from '../PositionBadge';
@@ -47,7 +47,29 @@ const ADDABLE_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
 const EVEN_THRESHOLD = 0.1; // within 10% → even coloring
 const ALL_YEARS = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)]
   .sort((a, b) => Number(b) - Number(a));
+const ROUND_ORDINAL = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th' };
 
+function buildPickCatalog() {
+  // Offer next 3 draft years × rounds 1–4 (mid-tier KTC values).
+  const { minSeason, maxSeason } = getFuturePickSeasonRange(false);
+  const picks = [];
+  for (let season = minSeason; season <= maxSeason; season++) {
+    for (let round = 1; round <= 4; round++) {
+      const label = `${season} ${ROUND_ORDINAL[round] || `${round}th`}`;
+      picks.push({
+        type: 'pick',
+        season: String(season),
+        round,
+        label,
+        value: getPickKtcValue(season, round, CURRENT_YEAR),
+      });
+    }
+  }
+  return picks;
+}
+
+const PICK_CATALOG = buildPickCatalog();
+let pickKeySeq = 0;
 function getLeagueId(year) {
   if (String(year) === String(CURRENT_YEAR)) return LEAGUE_ID;
   return PREVIOUS_YEARS[String(year)] || null;
@@ -195,20 +217,21 @@ function PlayerSide({
   valueAdjustment,
   total,
   formatValue,
+  locked,
   onRemovePlayer,
   onRemovePick,
   searchQuery,
   onSearchChange,
   showDropdown,
   onShowDropdown,
-  dropdownPlayers,
-  onSelectPlayer,
+  dropdownItems,
+  onSelectItem,
   searchWrapperRef,
 }) {
   const hasAssets = players.length > 0 || picks.length > 0 || (valueAdjustment > 0);
 
   return (
-    <div className="trade-calc-side">
+    <div className={'trade-calc-side' + (locked ? ' trade-calc-side--locked' : '')}>
       <div className="trade-calc-side-header">
         <span className="trade-calc-side-title">{title}</span>
         <span className="trade-calc-side-total">{total.toLocaleString()}</span>
@@ -216,7 +239,9 @@ function PlayerSide({
 
       <div className="trade-calc-player-list">
         {!hasAssets && (
-          <div className="trade-calc-empty">Search and add players</div>
+          <div className="trade-calc-empty">
+            {locked ? 'No assets' : 'Search players or picks'}
+          </div>
         )}
         {players.map((p) => (
           <div key={p.pid} className="trade-calc-player-row">
@@ -235,14 +260,16 @@ function PlayerSide({
             <span className={`trade-calc-player-value${p.value > 0 ? '' : ' trade-calc-player-value--none'}`}>
               {formatValue(p.value, p)}
             </span>
-            <button
-              type="button"
-              className="trade-calc-remove-btn"
-              onClick={() => onRemovePlayer(p.pid)}
-              title={`Remove ${p.name}`}
-            >
-              ×
-            </button>
+            {!locked && (
+              <button
+                type="button"
+                className="trade-calc-remove-btn"
+                onClick={() => onRemovePlayer(p.pid)}
+                title={`Remove ${p.name}`}
+              >
+                ×
+              </button>
+            )}
           </div>
         ))}
         {picks.map((pick) => (
@@ -259,14 +286,16 @@ function PlayerSide({
             <span className={`trade-calc-player-value${pick.value > 0 ? '' : ' trade-calc-player-value--none'}`}>
               {formatKtcValue(pick.value)}
             </span>
-            <button
-              type="button"
-              className="trade-calc-remove-btn"
-              onClick={() => onRemovePick(pick.key)}
-              title={`Remove ${pick.label}`}
-            >
-              ×
-            </button>
+            {!locked && (
+              <button
+                type="button"
+                className="trade-calc-remove-btn"
+                onClick={() => onRemovePick(pick.key)}
+                title={`Remove ${pick.label}`}
+              >
+                ×
+              </button>
+            )}
           </div>
         ))}
         {valueAdjustment > 0 && (
@@ -283,51 +312,76 @@ function PlayerSide({
             <span className="trade-calc-player-value trade-calc-adj-asset-value">
               {valueAdjustment.toLocaleString()}
             </span>
-            <span className="trade-calc-remove-btn trade-calc-remove-btn--spacer" aria-hidden="true" />
+            {!locked && (
+              <span className="trade-calc-remove-btn trade-calc-remove-btn--spacer" aria-hidden="true" />
+            )}
           </div>
         )}
       </div>
 
-      <div className="trade-calc-search-wrapper" ref={searchWrapperRef}>
-        <input
-          type="text"
-          className="trade-calc-search-input"
-          placeholder="Search players…"
-          value={searchQuery}
-          onChange={(e) => {
-            onSearchChange(e.target.value);
-            onShowDropdown(true);
-          }}
-          onFocus={() => onShowDropdown(true)}
-        />
-        {showDropdown && dropdownPlayers.length > 0 && (
-          <div className="trade-calc-dropdown">
-            {dropdownPlayers.map((p) => (
-              <button
-                key={p.player_id}
-                type="button"
-                className="trade-calc-dropdown-item"
-                onClick={() => onSelectPlayer(p)}
-              >
-                <img
-                  src={getPlayerLogoUrl(p.espn_photo_url)}
-                  alt={p.name}
-                  className="trade-calc-player-avatar"
-                />
-                <div className="trade-calc-player-info">
-                  <span className="trade-calc-player-name">{p.name}</span>
-                  <div className="trade-calc-player-meta">
-                    {p.position && <PositionBadge position={p.position} />}
-                    {(p.team || p.team_abbr) && (
-                      <span className="trade-calc-player-team">{p.team || p.team_abbr}</span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {!locked && (
+        <div className="trade-calc-search-wrapper" ref={searchWrapperRef}>
+          <input
+            type="text"
+            className="trade-calc-search-input"
+            placeholder="Search players or picks…"
+            value={searchQuery}
+            onChange={(e) => {
+              onSearchChange(e.target.value);
+              onShowDropdown(true);
+            }}
+            onFocus={() => onShowDropdown(true)}
+          />
+          {showDropdown && dropdownItems.length > 0 && (
+            <div className="trade-calc-dropdown">
+              {dropdownItems.map((item) => (
+                item.type === 'pick' ? (
+                  <button
+                    key={`pick-${item.season}-${item.round}`}
+                    type="button"
+                    className="trade-calc-dropdown-item"
+                    onClick={() => onSelectItem(item)}
+                  >
+                    <div className="trade-calc-pick-icon">
+                      <span>{item.round}</span>
+                    </div>
+                    <div className="trade-calc-player-info">
+                      <span className="trade-calc-player-name">{item.label}</span>
+                      <div className="trade-calc-player-meta">
+                        <span className="trade-calc-player-team">
+                          Draft pick · {item.value.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ) : (
+                  <button
+                    key={item.player_id}
+                    type="button"
+                    className="trade-calc-dropdown-item"
+                    onClick={() => onSelectItem(item)}
+                  >
+                    <img
+                      src={getPlayerLogoUrl(item.espn_photo_url)}
+                      alt={item.name}
+                      className="trade-calc-player-avatar"
+                    />
+                    <div className="trade-calc-player-info">
+                      <span className="trade-calc-player-name">{item.name}</span>
+                      <div className="trade-calc-player-meta">
+                        {item.position && <PositionBadge position={item.position} />}
+                        {(item.team || item.team_abbr) && (
+                          <span className="trade-calc-player-team">{item.team || item.team_abbr}</span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                )
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -357,6 +411,7 @@ function TradeCalculator() {
   const [leftTitle, setLeftTitle] = useState('Side A');
   const [rightTitle, setRightTitle] = useState('Side B');
   const [selectedTradeId, setSelectedTradeId] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
 
   const [leftQuery, setLeftQuery] = useState('');
   const [rightQuery, setRightQuery] = useState('');
@@ -699,55 +754,108 @@ function TradeCalculator() {
     return formatKtcValue(value);
   }, [valueSource]);
 
-  const filterPlayers = useCallback((query, excludeIds) => {
-    if (!playersData || !query.trim()) return [];
-    const q = query.toLowerCase().trim();
+  const filterDropdownItems = useCallback((query, excludeIds) => {
+    const q = (query || '').toLowerCase().trim();
     const exclude = new Set(excludeIds);
-    const matches = [];
+    const items = [];
 
-    for (const playerId in playersData) {
-      if (exclude.has(playerId)) continue;
-      const player = playersData[playerId];
-      const pos = (player.position || '').toUpperCase();
-      if (pos && !ADDABLE_POSITIONS.has(pos)) continue;
+    const pickQuery = !q
+      || q.includes('pick')
+      || q.includes('draft')
+      || /\d{4}/.test(q)
+      || /[1-4](st|nd|rd|th)/.test(q)
+      || /^r?[1-4]$/.test(q);
 
-      const firstName = (player.first_name || '').toLowerCase();
-      const lastName = (player.last_name || '').toLowerCase();
-      const fullName = (player.full_name || '').toLowerCase();
-      if (!firstName.includes(q) && !lastName.includes(q) && !fullName.includes(q)) continue;
-
-      const info = getPlayerInfo(playerId, playersData, playerIdMap);
-      if (info) matches.push({ ...info, player_id: playerId });
-      if (matches.length >= 20) break;
+    if (pickQuery) {
+      for (const pick of PICK_CATALOG) {
+        const label = pick.label.toLowerCase();
+        const roundWord = (ROUND_ORDINAL[pick.round] || '').toLowerCase();
+        if (
+          !q
+          || label.includes(q)
+          || pick.season.includes(q)
+          || q.includes(pick.season)
+          || roundWord.includes(q)
+          || q === String(pick.round)
+          || q === `r${pick.round}`
+          || (q.includes('pick') || q.includes('draft'))
+        ) {
+          items.push(pick);
+        }
+      }
     }
-    return matches;
+
+    if (playersData && q) {
+      for (const playerId in playersData) {
+        if (exclude.has(playerId)) continue;
+        const player = playersData[playerId];
+        const pos = (player.position || '').toUpperCase();
+        if (pos && !ADDABLE_POSITIONS.has(pos)) continue;
+
+        const firstName = (player.first_name || '').toLowerCase();
+        const lastName = (player.last_name || '').toLowerCase();
+        const fullName = (player.full_name || '').toLowerCase();
+        if (!firstName.includes(q) && !lastName.includes(q) && !fullName.includes(q)) continue;
+
+        const info = getPlayerInfo(playerId, playersData, playerIdMap);
+        if (info) items.push({ type: 'player', ...info, player_id: playerId });
+        if (items.filter((i) => i.type === 'player').length >= 20) break;
+      }
+    }
+
+    return items;
   }, [playersData, playerIdMap]);
 
-  const leftDropdownPlayers = useMemo(
-    () => filterPlayers(leftQuery, [...leftIds, ...rightIds]),
-    [filterPlayers, leftQuery, leftIds, rightIds],
+  const leftDropdownItems = useMemo(
+    () => filterDropdownItems(leftQuery, [...leftIds, ...rightIds]),
+    [filterDropdownItems, leftQuery, leftIds, rightIds],
   );
-  const rightDropdownPlayers = useMemo(
-    () => filterPlayers(rightQuery, [...leftIds, ...rightIds]),
-    [filterPlayers, rightQuery, leftIds, rightIds],
+  const rightDropdownItems = useMemo(
+    () => filterDropdownItems(rightQuery, [...leftIds, ...rightIds]),
+    [filterDropdownItems, rightQuery, leftIds, rightIds],
   );
 
-  const addLeft = (player) => {
-    const pid = player.player_id;
+  const addPickToSide = (side, pick) => {
+    const entry = {
+      key: `sandbox-pick-${Date.now()}-${++pickKeySeq}`,
+      season: pick.season,
+      round: pick.round,
+      roster_id: null,
+      label: pick.label,
+    };
+    if (side === 'left') {
+      setLeftPicks((picks) => [...picks, entry]);
+      setLeftQuery('');
+      setLeftDropdown(false);
+    } else {
+      setRightPicks((picks) => [...picks, entry]);
+      setRightQuery('');
+      setRightDropdown(false);
+    }
+  };
+
+  const addLeft = (item) => {
+    if (item?.type === 'pick') {
+      addPickToSide('left', item);
+      return;
+    }
+    const pid = item.player_id;
     if (!pid || leftIds.includes(pid) || rightIds.includes(pid)) return;
     setLeftIds((ids) => [...ids, pid]);
     setLeftQuery('');
     setLeftDropdown(false);
-    setSelectedTradeId('');
   };
 
-  const addRight = (player) => {
-    const pid = player.player_id;
+  const addRight = (item) => {
+    if (item?.type === 'pick') {
+      addPickToSide('right', item);
+      return;
+    }
+    const pid = item.player_id;
     if (!pid || leftIds.includes(pid) || rightIds.includes(pid)) return;
     setRightIds((ids) => [...ids, pid]);
     setRightQuery('');
     setRightDropdown(false);
-    setSelectedTradeId('');
   };
 
   const clearAll = () => {
@@ -760,6 +868,7 @@ function TradeCalculator() {
     setLeftTitle('Side A');
     setRightTitle('Side B');
     setSelectedTradeId('');
+    setIsLocked(false);
   };
 
   const loadPastTrade = (trade) => {
@@ -775,6 +884,18 @@ function TradeCalculator() {
     setRightQuery('');
     setLeftDropdown(false);
     setRightDropdown(false);
+    setIsLocked(true);
+  };
+
+  const editTrade = () => {
+    setIsLocked(false);
+    setLeftTitle('Side A');
+    setRightTitle('Side B');
+    setSelectedTradeId('');
+    setLeftQuery('');
+    setRightQuery('');
+    setLeftDropdown(false);
+    setRightDropdown(false);
   };
 
   if (loading) return <LoadingState label="Loading trade calculator…" />;
@@ -786,7 +907,9 @@ function TradeCalculator() {
         <div className="trade-calc-header-text">
           <span className="trade-calc-title">Trade Calculator</span>
           <span className="trade-calc-sub">
-            Compare packages — meter slides toward the preferred side
+            {isLocked
+              ? 'Viewing a league trade — locked until you edit'
+              : 'Compare packages — meter slides toward the preferred side'}
           </span>
         </div>
         <div className="trade-calc-controls">
@@ -813,9 +936,15 @@ function TradeCalculator() {
               ))}
             </select>
           </label>
-          <button type="button" className="trade-calc-clear-btn" onClick={clearAll}>
-            Clear
-          </button>
+          {isLocked ? (
+            <button type="button" className="trade-calc-edit-btn" onClick={editTrade}>
+              Edit Trade
+            </button>
+          ) : (
+            <button type="button" className="trade-calc-clear-btn" onClick={clearAll}>
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
@@ -828,7 +957,7 @@ function TradeCalculator() {
         rightScore={rightPrefScore}
       />
 
-      <div className="trade-calc-board trade-calc-board--two">
+      <div className={'trade-calc-board trade-calc-board--two' + (isLocked ? ' trade-calc-board--locked' : '')}>
         <PlayerSide
           title={leftTitle}
           players={leftPlayers}
@@ -836,20 +965,19 @@ function TradeCalculator() {
           valueAdjustment={leftAdj}
           total={leftDisplayTotal}
           formatValue={formatDisplayValue}
+          locked={isLocked}
           onRemovePlayer={(pid) => {
             setLeftIds((ids) => ids.filter((id) => id !== pid));
-            setSelectedTradeId('');
           }}
           onRemovePick={(key) => {
             setLeftPicks((picks) => picks.filter((p) => p.key !== key));
-            setSelectedTradeId('');
           }}
           searchQuery={leftQuery}
           onSearchChange={setLeftQuery}
           showDropdown={leftDropdown}
           onShowDropdown={setLeftDropdown}
-          dropdownPlayers={leftDropdownPlayers}
-          onSelectPlayer={addLeft}
+          dropdownItems={leftDropdownItems}
+          onSelectItem={addLeft}
           searchWrapperRef={leftSearchRef}
         />
 
@@ -860,20 +988,19 @@ function TradeCalculator() {
           valueAdjustment={rightAdj}
           total={rightDisplayTotal}
           formatValue={formatDisplayValue}
+          locked={isLocked}
           onRemovePlayer={(pid) => {
             setRightIds((ids) => ids.filter((id) => id !== pid));
-            setSelectedTradeId('');
           }}
           onRemovePick={(key) => {
             setRightPicks((picks) => picks.filter((p) => p.key !== key));
-            setSelectedTradeId('');
           }}
           searchQuery={rightQuery}
           onSearchChange={setRightQuery}
           showDropdown={rightDropdown}
           onShowDropdown={setRightDropdown}
-          dropdownPlayers={rightDropdownPlayers}
-          onSelectPlayer={addRight}
+          dropdownItems={rightDropdownItems}
+          onSelectItem={addRight}
           searchWrapperRef={rightSearchRef}
         />
       </div>

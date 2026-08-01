@@ -15534,6 +15534,22 @@ body.modal-open {
   color: rgba(210, 215, 255, 0.95);
 }
 
+.trade-calc-edit-btn {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: #1a1f3a;
+  background: #f0c27a;
+  border: 1px solid rgba(240, 194, 122, 0.8);
+  border-radius: 0.45rem;
+  cursor: pointer;
+}
+
+.trade-calc-edit-btn:hover {
+  background: #f5d09a;
+}
+
 .trade-calc-toggle {
   display: flex;
   align-items: center;
@@ -15731,6 +15747,20 @@ body.modal-open {
   background: rgba(25, 30, 60, 0.45);
   border: 1px solid rgba(100, 110, 180, 0.28);
   border-radius: 0.65rem;
+}
+
+.trade-calc-side--locked {
+  background: rgba(20, 24, 48, 0.55);
+  border-color: rgba(100, 110, 180, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(240, 194, 122, 0.08);
+}
+
+.trade-calc-side--locked .trade-calc-player-row:hover {
+  background: transparent;
+}
+
+.trade-calc-board--locked {
+  opacity: 0.98;
 }
 
 .trade-calc-side-header {
