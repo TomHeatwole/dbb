@@ -7,7 +7,7 @@ rank,name,team,position,tier,sleeper_id
 6,Jalen Hurts,PHI,QB,2,6904
 7,Caleb Williams,CHI,QB,2,11560
 8,Justin Herbert,LAC,QB,2,6797
-9,Trevor Lawrence,JAC,QB,3,7523
+9,Trevor Lawrence,JAC,QB,2,7523
 10,Dak Prescott,DAL,QB,3,3294
 11,Brock Purdy,SF,QB,3,8183
 12,Jaxson Dart,NYG,QB,3,12508
@@ -32,21 +32,21 @@ rank,name,team,position,tier,sleeper_id
 31,Fernando Mendoza,LV,QB,5,13269
 32,Michael Penix Jr.,ATL,QB,5,11559
 33,Kirk Cousins,LV,QB,5,1166
-34,Shedeur Sanders,CLE,QB,5,12524
-35,Deshaun Watson,CLE,QB,5,4017
+34,Deshaun Watson,CLE,QB,5,4017
+35,Shedeur Sanders,CLE,QB,5,12524
 36,J.J. McCarthy,MIN,QB,6,11565
 37,Mac Jones,SF,QB,6,7527
 38,Carson Beck,ARI,QB,6,13272
 39,Justin Fields,KC,QB,6,7591
 40,Ty Simpson,LAR,QB,6,13275
 41,Anthony Richardson Sr.,IND,QB,6,9229
-42,Marcus Mariota,WAS,QB,6,2307
-43,Joe Flacco,CIN,QB,6,19
-44,Joe Milton III,DAL,QB,6,11557
-45,Jameis Winston,NYG,QB,6,2306
+42,Joe Flacco,CIN,QB,6,19
+43,Marcus Mariota,WAS,QB,6,2307
+44,Jameis Winston,NYG,QB,6,2306
+45,Joe Milton III,DAL,QB,6,11557
 46,Quinn Ewers,MIA,QB,6,12500
-47,Gardner Minshew II,ARI,QB,7,6011
-48,Riley Leonard,IND,QB,7,12470
+47,Riley Leonard,IND,QB,7,12470
+48,Gardner Minshew II,ARI,QB,7,6011
 49,Cade Klubnik,NYJ,QB,7,13303
 50,Tyrod Taylor,GB,QB,7,827
 51,Jake Browning,TB,QB,7,6111
