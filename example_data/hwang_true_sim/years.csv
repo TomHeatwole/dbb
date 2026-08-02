@@ -1,0 +1,11 @@
+format,year,candidate_count,excluded_zero_point,pool_size,pair_count
+hwang,2021,241,19,260,578
+hwang,2022,280,20,300,1130
+hwang,2023,291,9,300,1216
+hwang,2024,286,14,300,1364
+hwang,2025,274,26,300,1201
+generic_sf,2021,241,19,260,578
+generic_sf,2022,282,18,300,1134
+generic_sf,2023,292,8,300,1220
+generic_sf,2024,286,14,300,1364
+generic_sf,2025,274,26,300,1201

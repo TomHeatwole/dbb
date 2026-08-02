@@ -1,0 +1,243 @@
+{
+  "generatedAt": "2026-08-02T02:47:49.093Z",
+  "ktcAsOf": "2026-08-02",
+  "selection": {
+    "2024": "top 6 by standings (wins, then fpts)",
+    "2025": "top 7 by standings (wins, then fpts)",
+    "2026": "all teams except Sell for Sellers, The Boomers, PUPpy Bowl, ordered by total roster KTC SF TE+ value"
+  },
+  "archetypes": [
+    {
+      "archetypeId": "2024_1",
+      "season": 2024,
+      "finishRank": 1,
+      "rankBasis": "standings",
+      "teamName": "Let James Cook",
+      "owner": "mehrj14",
+      "record": "16-2",
+      "fpts": 3030.02
+    },
+    {
+      "archetypeId": "2024_2",
+      "season": 2024,
+      "finishRank": 2,
+      "rankBasis": "standings",
+      "teamName": "Age is just a number",
+      "owner": "theyellowman",
+      "record": "15-3",
+      "fpts": 2893.99
+    },
+    {
+      "archetypeId": "2024_3",
+      "season": 2024,
+      "finishRank": 3,
+      "rankBasis": "standings",
+      "teamName": "Adam(s) and Steve(nson)",
+      "owner": "dwol11",
+      "record": "12-6",
+      "fpts": 2571.84
+    },
+    {
+      "archetypeId": "2024_4",
+      "season": 2024,
+      "finishRank": 4,
+      "rankBasis": "standings",
+      "teamName": "We Have McCaffrey at Home",
+      "owner": "davisdaniel1",
+      "record": "11-7",
+      "fpts": 2771.34
+    },
+    {
+      "archetypeId": "2024_5",
+      "season": 2024,
+      "finishRank": 5,
+      "rankBasis": "standings",
+      "teamName": "The Boomers",
+      "owner": "jheatwole",
+      "record": "11-7",
+      "fpts": 2628.14
+    },
+    {
+      "archetypeId": "2024_6",
+      "season": 2024,
+      "finishRank": 6,
+      "rankBasis": "standings",
+      "teamName": "seanjcrow",
+      "owner": "seanjcrow",
+      "record": "9-9",
+      "fpts": 2615.54
+    },
+    {
+      "archetypeId": "2025_1",
+      "season": 2025,
+      "finishRank": 1,
+      "rankBasis": "standings",
+      "teamName": "Lord Pittsy Flacco Joedy",
+      "owner": "dwol11",
+      "record": "15-3",
+      "fpts": 2733.84
+    },
+    {
+      "archetypeId": "2025_2",
+      "season": 2025,
+      "finishRank": 2,
+      "rankBasis": "standings",
+      "teamName": "seanjcrow",
+      "owner": "seanjcrow",
+      "record": "14-4",
+      "fpts": 2755.82
+    },
+    {
+      "archetypeId": "2025_3",
+      "season": 2025,
+      "finishRank": 3,
+      "rankBasis": "standings",
+      "teamName": "Drake & Bake",
+      "owner": "davisdaniel1",
+      "record": "13-5",
+      "fpts": 2888.34
+    },
+    {
+      "archetypeId": "2025_4",
+      "season": 2025,
+      "finishRank": 4,
+      "rankBasis": "standings",
+      "teamName": "The Ladds",
+      "owner": "KobeCopters",
+      "record": "12-6",
+      "fpts": 2702.46
+    },
+    {
+      "archetypeId": "2025_5",
+      "season": 2025,
+      "finishRank": 5,
+      "rankBasis": "standings",
+      "teamName": "House of Hwang",
+      "owner": "mhwang12",
+      "record": "11-7",
+      "fpts": 2694.98
+    },
+    {
+      "archetypeId": "2025_6",
+      "season": 2025,
+      "finishRank": 6,
+      "rankBasis": "standings",
+      "teamName": "aidsonballs",
+      "owner": "aidsonballs",
+      "record": "11-7",
+      "fpts": 2620.44
+    },
+    {
+      "archetypeId": "2025_7",
+      "season": 2025,
+      "finishRank": 7,
+      "rankBasis": "standings",
+      "teamName": "PUPpy Bowl",
+      "owner": "sleeperdotcom",
+      "record": "5-13",
+      "fpts": 1735.46
+    },
+    {
+      "archetypeId": "2026_1",
+      "season": 2026,
+      "finishRank": 1,
+      "rankBasis": "sim_roster_value",
+      "teamName": "The Ladds",
+      "owner": "KobeCopters",
+      "record": "0-0",
+      "fpts": 0
+    },
+    {
+      "archetypeId": "2026_2",
+      "season": 2026,
+      "finishRank": 2,
+      "rankBasis": "sim_roster_value",
+      "teamName": "seanjcrow",
+      "owner": "seanjcrow",
+      "record": "0-0",
+      "fpts": 0
+    },
+    {
+      "archetypeId": "2026_3",
+      "season": 2026,
+      "finishRank": 3,
+      "rankBasis": "sim_roster_value",
+      "teamName": "Drake & Bake",
+      "owner": "davisdaniel1",
+      "record": "0-0",
+      "fpts": 0
+    },
+    {
+      "archetypeId": "2026_4",
+      "season": 2026,
+      "finishRank": 4,
+      "rankBasis": "sim_roster_value",
+      "teamName": "Eat It While She Sleeper",
+      "owner": "GIVEDADDYASPIKE",
+      "record": "0-0",
+      "fpts": 0
+    },
+    {
+      "archetypeId": "2026_5",
+      "season": 2026,
+      "finishRank": 5,
+      "rankBasis": "sim_roster_value",
+      "teamName": "Lord Pittsy Flacco Joedy",
+      "owner": "dwol11",
+      "record": "0-0",
+      "fpts": 0
+    },
+    {
+      "archetypeId": "2026_6",
+      "season": 2026,
+      "finishRank": 6,
+      "rankBasis": "sim_roster_value",
+      "teamName": "House of Hwang",
+      "owner": "mhwang12",
+      "record": "0-0",
+      "fpts": 0
+    },
+    {
+      "archetypeId": "2026_7",
+      "season": 2026,
+      "finishRank": 7,
+      "rankBasis": "sim_roster_value",
+      "teamName": "MrZaccheaus",
+      "owner": "MrZaccheaus",
+      "record": "0-0",
+      "fpts": 0
+    }
+  ],
+  "unmatchedPlayers": [
+    "2024 Age is just a number: Brandin Cooks (WR)",
+    "2024 Age is just a number: Raheem Mostert (RB)",
+    "2024 Age is just a number: Ezekiel Elliott (RB)",
+    "2024 Age is just a number: Taysom Hill (TE)",
+    "2024 Adam(s) and Steve(nson): DeAndre Hopkins (WR)",
+    "2024 Adam(s) and Steve(nson): Adam Thielen (WR)",
+    "2024 Adam(s) and Steve(nson): Derek Carr (QB)",
+    "2024 Adam(s) and Steve(nson): Mike Williams (WR)",
+    "2024 Adam(s) and Steve(nson): Austin Ekeler (RB)",
+    "2024 Adam(s) and Steve(nson): Gabe Davis (WR)",
+    "2024 Adam(s) and Steve(nson): Antonio Gibson (RB)",
+    "2024 We Have McCaffrey at Home: Eric Gray (RB)",
+    "2024 We Have McCaffrey at Home: Jake Browning (QB)",
+    "2024 We Have McCaffrey at Home: Pierre Strong (RB)",
+    "2024 We Have McCaffrey at Home: Jelani Woods (TE)",
+    "2024 The Boomers: Joe Mixon (RB)",
+    "2024 The Boomers: Joshua Dobbs (QB)",
+    "2024 The Boomers: DJ Chark (WR)",
+    "2024 The Boomers: Diontae Johnson (WR)",
+    "2024 The Boomers: Skylar Thompson (QB)",
+    "2024 seanjcrow: Tyler Lockett (WR)",
+    "2025 Lord Pittsy Flacco Joedy: DeAndre Hopkins (WR)",
+    "2025 Lord Pittsy Flacco Joedy: Adam Thielen (WR)",
+    "2025 Lord Pittsy Flacco Joedy: Joe Mixon (RB)",
+    "2025 Lord Pittsy Flacco Joedy: Austin Ekeler (RB)",
+    "2025 Lord Pittsy Flacco Joedy: Nick Chubb (RB)",
+    "2025 House of Hwang: Taysom Hill (TE)",
+    "2025 aidsonballs: Zach Ertz (TE)",
+    "2026 Eat It While She Sleeper: Kenny Gainwell (RB)",
+    "2026 MrZaccheaus: Odell Beckham (WR)"
+  ]
+}

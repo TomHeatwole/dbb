@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-// Load .env file if present (no-op if the file doesn't exist)
-import 'dotenv/config';
+// Load .env file if present (no-op if the file doesn't exist).
+// Must be the first import so env vars exist before src/config.js evaluates.
+import './env.js';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -15,7 +16,6 @@ import {
   getTeamScores,
   searchPlayer,
   comparePlayers,
-  evaluateTrade,
   getKtcRankings,
   getFantasyCalcRankings,
   getTrendingPlayers,
@@ -28,6 +28,18 @@ import {
   simulateRosterChange,
   getHistoricalResults,
 } from './src/tools.js';
+
+// Hwang value engine + season simulator — shared with the site's HwangAI tools
+// (single implementation in site/lib/mcp; DATA_DIR resolves module-relative).
+import {
+  evaluateTrade,
+  getPlayerValueBreakdown,
+  getTeamValueSummary,
+  getSeasonOdds,
+  simulateRosterChangeOdds,
+  lookupDraftPick,
+  getPlayerStats,
+} from '../site/lib/mcp/tools.mjs';
 
 // ── Server setup ──────────────────────────────────────────────────────────────
 
@@ -115,7 +127,7 @@ server.tool(
 
 server.tool(
   'evaluate_trade',
-  'Evaluate a trade using KTC SF TE+ dynasty values. Provide lists of what you give and receive.',
+  'Evaluate a trade with the Hwang value engine. Returns per-asset values in the chosen value model, a consolidation Value Adjustment for uneven packages, a verdict, and totals across all major value models (KTC TE+, Hwang Market, Hwang True, Competitor Adj, Rebuild Adj).',
   {
     giving: z
       .array(z.string())
@@ -125,8 +137,96 @@ server.tool(
       .array(z.string())
       .min(1)
       .describe('Player names (and/or pick descriptions) you are receiving'),
+    value_source: z
+      .enum([
+        'ktc_sf', 'ktc_sf_tep', 'hwang_market_value', 'hwang_true_value',
+        'competitor_adjusted', 'rebuilder_adjusted',
+        'hwang_competitor_adjusted', 'hwang_rebuilder_adjusted',
+        'fantasycalc', 'ffb',
+      ])
+      .optional()
+      .describe('Primary value model (default hwang_true_value). Use competitor_adjusted for a win-now team, rebuilder_adjusted for a rebuild.'),
   },
-  wrapTool(({ giving, receiving }) => evaluateTrade(giving, receiving))
+  wrapTool(({ giving, receiving, value_source }) => evaluateTrade(giving, receiving, value_source))
+);
+
+server.tool(
+  'get_player_value',
+  "Get one player's value across ALL value models at once (KTC SF/TE+, Hwang Market, Hwang True, Competitor/Rebuild adjusted, FantasyCalc, FFB) with positional and overall ranks, age, and 30-day market trend.",
+  { name: z.string().describe('Player name e.g. "Brock Bowers"') },
+  wrapTool(({ name }) => getPlayerValueBreakdown(name))
+);
+
+server.tool(
+  'get_team_value_summary',
+  'Roster construction report for a team: total value across models, league value rank, positional value breakdown with top assets and ages, value-weighted roster age, and a competitor-vs-rebuild timeline lean. Includes a league-wide value board.',
+  { team: z.string().describe('Team name, owner name, or roster ID') },
+  wrapTool(({ team }) => getTeamValueSummary(team))
+);
+
+server.tool(
+  'get_season_odds',
+  'Monte Carlo simulation of the upcoming/current season with real rosters: rolls each player\'s season outcome from historical seasons of similar-ADP players, scores optimal best-ball lineups for all 17 weeks, and returns title/playoff/top-3 odds, average finish, and average points for every team.',
+  {
+    iterations: z
+      .number()
+      .int()
+      .min(250)
+      .max(3000)
+      .optional()
+      .describe('Number of simulation runs (default 1000)'),
+  },
+  wrapTool(({ iterations }) => getSeasonOdds(iterations))
+);
+
+server.tool(
+  'simulate_roster_change_odds',
+  'Simulate how hypothetical roster changes for the UPCOMING season shift each team\'s title and playoff odds vs the baseline (paired rolls isolate the change). For a trade, express BOTH sides: add players to the receiving team and drop them from the sending team.',
+  {
+    changes: z
+      .array(
+        z.object({
+          team: z.string().describe('Team or owner name whose roster to modify'),
+          add: z.array(z.string()).optional().describe('Player names to add to this team'),
+          drop: z.array(z.string()).optional().describe('Player names to drop from this team'),
+        })
+      )
+      .min(1)
+      .describe('List of roster changes to simulate'),
+    iterations: z
+      .number()
+      .int()
+      .min(250)
+      .max(3000)
+      .optional()
+      .describe('Number of simulation runs (default 1000)'),
+  },
+  wrapTool(({ changes, iterations }) => simulateRosterChangeOdds({ changes, iterations }))
+);
+
+server.tool(
+  'lookup_draft_pick',
+  'Look up the KTC dynasty value of a draft pick by year and round. Returns all three tiers (Early/Mid/Late) when no tier is specified, along with how many years until the draft.',
+  {
+    name: z
+      .string()
+      .describe('Pick description e.g. "2027 1st", "2027 early first", "2028 2nd round"'),
+  },
+  wrapTool(({ name }) => lookupDraftPick(name))
+);
+
+server.tool(
+  'get_player_stats',
+  "Get a player's NFL regular season stats (passing, rushing, receiving) and fantasy points for a given season (2005–2025). Fantasy points are standard 0-PPR; TE stats also show TEP-adjusted totals.",
+  {
+    name: z.string().describe('Player full name e.g. "Justin Jefferson"'),
+    season: z
+      .number()
+      .int()
+      .optional()
+      .describe('NFL season year e.g. 2024, 2025. Omit for most recent complete season.'),
+  },
+  wrapTool(({ name, season }) => getPlayerStats(name, season))
 );
 
 server.tool(

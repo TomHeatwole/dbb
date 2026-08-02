@@ -2,7 +2,7 @@
   "dataset_id": "final_ktc_comp_adj_top300_empty_roster",
   "value_dataset": "comp_adj",
   "comparisons_csv": "final_ktc_comp_adj_top300_empty_roster_pos_value_compare.csv",
-  "generated_at": "2026-06-21T03:23:13.365Z",
+  "generated_at": "2026-08-02T02:03:39.553Z",
   "years": [
     2021,
     2022,
@@ -17,47 +17,47 @@
   "base_roster_size": 0,
   "hvorp_method": "empty_roster_optimal_lineup (season points)",
   "pct_method": "symmetric per pair; summary weighted by abs(delta)",
-  "total_comparisons": 9460,
-  "avg_delta_overall": 17.2,
-  "avg_pct_delta_overall": 30,
+  "total_comparisons": 11638,
+  "avg_delta_overall": 10.7,
+  "avg_pct_delta_overall": 17.3,
   "seasons": [
     {
       "season": 2021,
       "valuePlayers": 221,
       "playersEvaluated": 209,
-      "totalComparisons": 1220,
-      "avgDeltaOverall": 15.4,
-      "avgPctDeltaOverall": 24.3,
+      "totalComparisons": 1428,
+      "avgDeltaOverall": 13.4,
+      "avgPctDeltaOverall": 24.6,
       "byPair": {
         "QB_vs_RB": {
-          "count": 89,
-          "avgDelta": 30.7,
-          "avgPctDelta": 29.4
+          "count": 60,
+          "avgDelta": 43,
+          "avgPctDelta": 27.2
         },
         "QB_vs_WR": {
-          "count": 185,
-          "avgDelta": 37.5,
-          "avgPctDelta": 45.2
+          "count": 123,
+          "avgDelta": 44,
+          "avgPctDelta": 47.4
         },
         "QB_vs_TE": {
-          "count": 113,
-          "avgDelta": 34,
-          "avgPctDelta": 37.2
+          "count": 73,
+          "avgDelta": 24.4,
+          "avgPctDelta": 6
         },
         "RB_vs_WR": {
-          "count": 342,
-          "avgDelta": 17,
-          "avgPctDelta": 36.4
+          "count": 536,
+          "avgDelta": 7.1,
+          "avgPctDelta": 16.4
         },
         "RB_vs_TE": {
-          "count": 157,
-          "avgDelta": 1.5,
-          "avgPctDelta": -5.1
+          "count": 229,
+          "avgDelta": 13.5,
+          "avgPctDelta": 42
         },
         "WR_vs_TE": {
-          "count": 334,
-          "avgDelta": -2.3,
-          "avgPctDelta": -11.3
+          "count": 407,
+          "avgDelta": 6.1,
+          "avgPctDelta": 19.4
         }
       }
     },
@@ -65,193 +65,193 @@
       "season": 2022,
       "valuePlayers": 300,
       "playersEvaluated": 280,
-      "totalComparisons": 1835,
-      "avgDeltaOverall": 17.3,
-      "avgPctDeltaOverall": 27.6,
+      "totalComparisons": 2685,
+      "avgDeltaOverall": 7.8,
+      "avgPctDeltaOverall": 8.8,
       "byPair": {
         "QB_vs_RB": {
-          "count": 197,
-          "avgDelta": 34.4,
-          "avgPctDelta": 58.8
+          "count": 259,
+          "avgDelta": 28.6,
+          "avgPctDelta": 51.9
         },
         "QB_vs_WR": {
-          "count": 268,
-          "avgDelta": 52.2,
-          "avgPctDelta": 73.1
+          "count": 360,
+          "avgDelta": 43.1,
+          "avgPctDelta": 63.6
         },
         "QB_vs_TE": {
-          "count": 127,
-          "avgDelta": 44.8,
-          "avgPctDelta": 65.6
+          "count": 140,
+          "avgDelta": 26.7,
+          "avgPctDelta": 44.2
         },
         "RB_vs_WR": {
-          "count": 590,
-          "avgDelta": 12.2,
-          "avgPctDelta": 14.1
+          "count": 979,
+          "avgDelta": -2,
+          "avgPctDelta": -20.3
         },
         "RB_vs_TE": {
-          "count": 300,
-          "avgDelta": 3.3,
-          "avgPctDelta": -11.6
+          "count": 420,
+          "avgDelta": -4.8,
+          "avgPctDelta": -30.2
         },
         "WR_vs_TE": {
-          "count": 353,
-          "avgDelta": -8.1,
-          "avgPctDelta": -29.4
+          "count": 527,
+          "avgDelta": -3.3,
+          "avgPctDelta": -15.7
         }
       }
     },
     {
       "season": 2023,
       "valuePlayers": 300,
-      "playersEvaluated": 289,
-      "totalComparisons": 2170,
-      "avgDeltaOverall": 18.1,
-      "avgPctDeltaOverall": 31.9,
+      "playersEvaluated": 288,
+      "totalComparisons": 2555,
+      "avgDeltaOverall": 12.1,
+      "avgPctDeltaOverall": 19.3,
       "byPair": {
         "QB_vs_RB": {
-          "count": 240,
-          "avgDelta": 36.1,
-          "avgPctDelta": 52.8
+          "count": 322,
+          "avgDelta": 26.8,
+          "avgPctDelta": 43.4
         },
         "QB_vs_WR": {
-          "count": 317,
-          "avgDelta": 45.6,
-          "avgPctDelta": 64.3
+          "count": 433,
+          "avgDelta": 25.4,
+          "avgPctDelta": 36.1
         },
         "QB_vs_TE": {
-          "count": 117,
-          "avgDelta": 44.9,
-          "avgPctDelta": 54.1
+          "count": 189,
+          "avgDelta": 31.7,
+          "avgPctDelta": 44
         },
         "RB_vs_WR": {
-          "count": 762,
-          "avgDelta": 12,
-          "avgPctDelta": 22.4
+          "count": 791,
+          "avgDelta": 1.1,
+          "avgPctDelta": -8.6
         },
         "RB_vs_TE": {
-          "count": 300,
-          "avgDelta": 11.7,
-          "avgPctDelta": 17.6
+          "count": 353,
+          "avgDelta": 8.3,
+          "avgPctDelta": 12.3
         },
         "WR_vs_TE": {
-          "count": 434,
-          "avgDelta": -4.2,
-          "avgPctDelta": -17.2
+          "count": 467,
+          "avgDelta": 3,
+          "avgPctDelta": 8.7
         }
       }
     },
     {
       "season": 2024,
       "valuePlayers": 300,
-      "playersEvaluated": 293,
-      "totalComparisons": 2219,
-      "avgDeltaOverall": 18.5,
-      "avgPctDeltaOverall": 37.4,
+      "playersEvaluated": 289,
+      "totalComparisons": 2299,
+      "avgDeltaOverall": 10.4,
+      "avgPctDeltaOverall": 16.6,
       "byPair": {
         "QB_vs_RB": {
-          "count": 204,
-          "avgDelta": 41.6,
-          "avgPctDelta": 67.9
+          "count": 254,
+          "avgDelta": 10.5,
+          "avgPctDelta": 11
         },
         "QB_vs_WR": {
-          "count": 296,
-          "avgDelta": 53.9,
-          "avgPctDelta": 82.2
+          "count": 333,
+          "avgDelta": 18.4,
+          "avgPctDelta": 14.7
         },
         "QB_vs_TE": {
-          "count": 141,
-          "avgDelta": 46.5,
-          "avgPctDelta": 77.9
+          "count": 175,
+          "avgDelta": 22.8,
+          "avgPctDelta": 38.3
         },
         "RB_vs_WR": {
-          "count": 723,
-          "avgDelta": 8.9,
-          "avgPctDelta": 12.4
+          "count": 709,
+          "avgDelta": 2.5,
+          "avgPctDelta": -5.5
         },
         "RB_vs_TE": {
-          "count": 351,
-          "avgDelta": 10.2,
-          "avgPctDelta": 21.9
+          "count": 373,
+          "avgDelta": 12.6,
+          "avgPctDelta": 35.4
         },
         "WR_vs_TE": {
-          "count": 504,
-          "avgDelta": 0.3,
-          "avgPctDelta": 6.8
+          "count": 455,
+          "avgDelta": 10.3,
+          "avgPctDelta": 35.9
         }
       }
     },
     {
       "season": 2025,
       "valuePlayers": 300,
-      "playersEvaluated": 285,
-      "totalComparisons": 2016,
-      "avgDeltaOverall": 15.7,
-      "avgPctDeltaOverall": 25.5,
+      "playersEvaluated": 282,
+      "totalComparisons": 2671,
+      "avgDeltaOverall": 11.2,
+      "avgPctDeltaOverall": 20.7,
       "byPair": {
         "QB_vs_RB": {
-          "count": 197,
-          "avgDelta": 17.8,
-          "avgPctDelta": 23.1
+          "count": 238,
+          "avgDelta": 5.1,
+          "avgPctDelta": -1.3
         },
         "QB_vs_WR": {
-          "count": 294,
-          "avgDelta": 40.8,
-          "avgPctDelta": 58.3
+          "count": 390,
+          "avgDelta": 21.2,
+          "avgPctDelta": 25.2
         },
         "QB_vs_TE": {
-          "count": 120,
-          "avgDelta": 54.2,
-          "avgPctDelta": 57
+          "count": 209,
+          "avgDelta": 17.7,
+          "avgPctDelta": 23.2
         },
         "RB_vs_WR": {
-          "count": 661,
-          "avgDelta": 13,
-          "avgPctDelta": 20.6
+          "count": 716,
+          "avgDelta": 9,
+          "avgPctDelta": 11.8
         },
         "RB_vs_TE": {
-          "count": 310,
-          "avgDelta": 5.5,
-          "avgPctDelta": -2.3
+          "count": 456,
+          "avgDelta": 12.4,
+          "avgPctDelta": 25.3
         },
         "WR_vs_TE": {
-          "count": 434,
-          "avgDelta": -1.3,
-          "avgPctDelta": 1.9
+          "count": 662,
+          "avgDelta": 6.9,
+          "avgPctDelta": 36.8
         }
       }
     }
   ],
   "by_pair_all_seasons": {
     "QB_vs_RB": {
-      "count": 927,
-      "avgDelta": 32.5,
-      "avgPctDelta": 49.7
+      "count": 1133,
+      "avgDelta": 19.9,
+      "avgPctDelta": 29.2
     },
     "QB_vs_WR": {
-      "count": 1360,
-      "avgDelta": 46.6,
-      "avgPctDelta": 65.8
+      "count": 1639,
+      "avgDelta": 28.3,
+      "avgPctDelta": 37.4
     },
     "QB_vs_TE": {
-      "count": 618,
-      "avgDelta": 45,
-      "avgPctDelta": 58.2
+      "count": 786,
+      "avgDelta": 24.4,
+      "avgPctDelta": 33.2
     },
     "RB_vs_WR": {
-      "count": 3078,
-      "avgDelta": 12.1,
-      "avgPctDelta": 19.8
+      "count": 3731,
+      "avgDelta": 2.9,
+      "avgPctDelta": -3
     },
     "RB_vs_TE": {
-      "count": 1418,
-      "avgDelta": 7,
-      "avgPctDelta": 5.6
+      "count": 1831,
+      "avgDelta": 7.8,
+      "avgPctDelta": 13.9
     },
     "WR_vs_TE": {
-      "count": 2059,
-      "avgDelta": -2.8,
-      "avgPctDelta": -8.2
+      "count": 2518,
+      "avgDelta": 4.5,
+      "avgPctDelta": 17.3
     }
   }
 }

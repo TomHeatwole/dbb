@@ -65,6 +65,9 @@ export async function loadRedraftRankLookup() {
     const weightedRaw = (cols[idx('weighted_hist_avg')] || '').trim();
     const currentRaw = (cols[idx('current_ktc_at_rank')] || '').trim();
     const blendedRaw = (cols[idx('blended_lookup_value')] || '').trim();
+    const compRaw = idx('competitor_curve_value') >= 0
+      ? (cols[idx('competitor_curve_value')] || '').trim()
+      : '';
 
     map.set(lookupKey(position, rank), {
       position,
@@ -72,6 +75,7 @@ export async function loadRedraftRankLookup() {
       weighted_hist_avg: weightedRaw ? parseFloat(weightedRaw) : null,
       current_ktc_at_rank: currentRaw ? parseInt(currentRaw, 10) : null,
       blended_lookup_value: blendedRaw ? parseFloat(blendedRaw) : null,
+      competitor_curve_value: compRaw ? parseFloat(compRaw) : null,
     });
   }
 
@@ -100,6 +104,7 @@ export function interpolateRedraftLookup(lookupMap, position, effRank) {
       high: low,
       frac: 0,
       interpolated: low.blended_lookup_value,
+      interpolatedComp: low.competitor_curve_value ?? low.blended_lookup_value,
       weightedLow: low.weighted_hist_avg,
       weightedHigh: low.weighted_hist_avg,
       currentLow: low.current_ktc_at_rank,
@@ -126,6 +131,10 @@ export function interpolateRedraftLookup(lookupMap, position, effRank) {
     high,
     frac,
     interpolated: interp(low.blended_lookup_value, high.blended_lookup_value),
+    interpolatedComp: interp(
+      low.competitor_curve_value ?? low.blended_lookup_value,
+      high.competitor_curve_value ?? high.blended_lookup_value,
+    ),
     weightedLow: low.weighted_hist_avg,
     weightedHigh: high.weighted_hist_avg,
     currentLow: low.current_ktc_at_rank,

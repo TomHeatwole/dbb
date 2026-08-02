@@ -941,6 +941,9 @@ async function loadFinalKtcRedraftRankLookup(year) {
     const weightedRaw = (cols[idx('weighted_hist_avg')] || '').trim();
     const finalKtcRaw = (cols[idx('final_ktc_at_rank')] || '').trim();
     const blendedRaw = (cols[idx('blended_lookup_value')] || '').trim();
+    const compRaw = idx('competitor_curve_value') >= 0
+      ? (cols[idx('competitor_curve_value')] || '').trim()
+      : '';
 
     map.set(`${position}:${rank}`, {
       position,
@@ -948,6 +951,7 @@ async function loadFinalKtcRedraftRankLookup(year) {
       weighted_hist_avg: weightedRaw ? parseFloat(weightedRaw) : null,
       current_ktc_at_rank: finalKtcRaw ? parseInt(finalKtcRaw, 10) : null,
       blended_lookup_value: blendedRaw ? parseFloat(blendedRaw) : null,
+      competitor_curve_value: compRaw ? parseFloat(compRaw) : null,
     });
   }
 

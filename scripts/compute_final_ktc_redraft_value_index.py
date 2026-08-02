@@ -5,12 +5,13 @@ compute_final_ktc_redraft_value_index.py
 Per-season Redraft Adjusted Value using each year's preseason SF TE+ KTC board
 (final_ktc_values.csv) and that season's FantasyPros best-ball ADP.
 
-Same pipeline as compute_redraft_value_index.py (ApproachH eff rank + ApproachG
-competitor value + rebuilder adjusted), except the rank-slot lookup blends:
-  50% year-weighted historical rank averages (2021–2025)
-  50% that year's final KTC value at each positional rank
-Historical rank-slot values are inflation-scaled to each target season's own
-final KTC top-300 total (not the live 2026 board).
+Same pipeline and configuration as compute_redraft_value_index.py (ApproachH eff
+rank + ApproachG competitor value + rebuilder adjusted). The rank-slot lookup
+uses the shared blend weights (REDRAFT_HIST_WEIGHT year-weighted hist +
+REDRAFT_CURRENT_WEIGHT that year's final KTC at rank), with historical years
+inflation-scaled to each target season's own final KTC top-300 total (not the
+live 2026 board). The competitor curve tail decay and own-KTC premium retention
+also come from the shared constants.
 
 Reads:
   site/public/data/final_ktc_values.csv
@@ -42,8 +43,6 @@ OUTPUT_CSV = PROJECT_ROOT / "site/public/data/final_ktc_redraft_value_index.csv"
 LOOKUP_CSV = PROJECT_ROOT / "site/public/data/final_ktc_redraft_rank_lookup.csv"
 
 FINAL_KTC_YEARS = (2020, 2021, 2022, 2023, 2024, 2025)
-HIST_BLEND_WEIGHT = 0.50
-YEAR_KTC_BLEND_WEIGHT = 0.50
 
 
 def final_ktc_top300_sum(year: int) -> int:
@@ -56,7 +55,7 @@ def final_ktc_top300_sum(year: int) -> int:
 def compute_season_weighted_hist(
     target_year: int,
 ) -> tuple[dict[str, dict[int, float]], dict[int, float], int]:
-    """Year-weighted hist rank slots from imputed Final KTC boards (no inflation)."""
+    """Year-weighted hist rank slots, each year scaled to the target season's top-300 sum."""
     target_sum = final_ktc_top300_sum(target_year)
     return rvi.compute_weighted_historical_rank_values(target_sum=target_sum)
 
@@ -126,28 +125,6 @@ def load_final_ktc_players(year: int) -> tuple[list[dict], str]:
     return ranked, snapshot_date
 
 
-def build_season_blended_rank_lookup(
-    weighted_hist: dict[str, dict[int, float]],
-    year_by_rank: dict[str, dict[int, int]],
-) -> dict[str, dict[int, float]]:
-    blended: dict[str, dict[int, float]] = {p: {} for p in rvi.POSITIONS}
-    for pos in rvi.POSITIONS:
-        ranks = set(weighted_hist[pos]) | set(year_by_rank[pos])
-        for rank in ranks:
-            hist_val = weighted_hist[pos].get(rank)
-            year_val = year_by_rank[pos].get(rank)
-            if hist_val is not None and year_val is not None:
-                blended[pos][rank] = (
-                    HIST_BLEND_WEIGHT * hist_val
-                    + YEAR_KTC_BLEND_WEIGHT * float(year_val)
-                )
-            elif hist_val is not None:
-                blended[pos][rank] = hist_val
-            elif year_val is not None:
-                blended[pos][rank] = float(year_val)
-    return blended
-
-
 def compute_season_redraft_values(
     year: int,
     weighted_hist: dict[str, dict[int, float]],
@@ -156,7 +133,8 @@ def compute_season_redraft_values(
 ) -> tuple[list[dict], dict[str, dict[int, float]], str, int, int]:
     ktc_players, snapshot_date = load_final_ktc_players(year)
     year_by_rank = rvi.current_ktc_values_by_pos_rank(ktc_players)
-    rank_lookup = build_season_blended_rank_lookup(weighted_hist, year_by_rank)
+    rank_lookup = rvi.build_blended_rank_lookup(weighted_hist, year_by_rank)
+    comp_lookup = rvi.build_competitor_value_curve(rank_lookup)
 
     adp_by_name, adp_by_sleeper, adp_boards, _ranked_adp_rows = rvi.load_hwang_adp(year)
     adp_source = f"hwang_adjusted_positional_adp_{year}"
@@ -180,11 +158,14 @@ def compute_season_redraft_values(
         adp_eff_rank = eff_ranks_by_pos[player["position"]].get(adp["adp_stack_rank"])
         if adp_eff_rank is None:
             continue
+        # Rebuild calibration runs on the undecayed curve (comp-side-only decay).
         adjusted, _ = rvi.ApproachG(
             player["ktc_value"],
             adp_eff_rank,
             player["position"],
             rank_lookup,
+            None,
+            player["ktc_pos_rank"],
         )
         if adjusted is None or adjusted <= 0:
             continue
@@ -227,22 +208,34 @@ def compute_season_redraft_values(
 
         if adp and stack_rank is not None:
             adp_eff_rank = eff_ranks_by_pos[player["position"]].get(stack_rank)
+            rebuild_adjusted_input = None
             if adp_eff_rank is not None:
                 adjusted, index = rvi.ApproachG(
                     player["ktc_value"],
                     adp_eff_rank,
                     player["position"],
                     rank_lookup,
+                    comp_lookup,
+                    player["ktc_pos_rank"],
                 )
                 if adjusted is not None:
                     matched += 1
+                # Rebuild uses the undecayed competitor value (comp-side-only decay).
+                rebuild_adjusted_input, _ = rvi.ApproachG(
+                    player["ktc_value"],
+                    adp_eff_rank,
+                    player["position"],
+                    rank_lookup,
+                    None,
+                    player["ktc_pos_rank"],
+                )
 
-            if adjusted is not None and adjusted > 0:
+            if adjusted is not None and adjusted > 0 and rebuild_adjusted_input is not None:
                 rebuilder, rebuild_index = rvi.compute_rebuilder_adjusted(
                     player["ktc_value"],
                     player["ktc_pos_rank"],
                     adp_eff_rank,
-                    adjusted,
+                    rebuild_adjusted_input,
                     rank_lookup,
                     player["position"],
                     flip_friendliness=flip_friendliness,
@@ -261,6 +254,7 @@ def compute_season_redraft_values(
                 adp_boards,
                 eff_ranks_by_pos,
                 rank_lookup,
+                comp_lookup,
                 unranked_config,
             )
             stack_rank = unranked["stack_rank"]
@@ -330,6 +324,7 @@ def write_outputs(
         "weighted_hist_avg",
         "final_ktc_at_rank",
         "blended_lookup_value",
+        "competitor_curve_value",
     ]
 
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
@@ -360,8 +355,12 @@ def main() -> None:
         weighted_hist, inflation, target_sum = compute_season_weighted_hist(year)
         print(
             f"  hist rank slots: imputed Final KTC ({rvi.HISTORICAL_VALUES_CSV.name}), "
-            f"no inflation (reference {year} final top-300 = {target_sum:,}; "
-            f"live 2026 = {current_target_sum:,})"
+            f"each year scaled to {year} final top-300 = {target_sum:,} "
+            f"(live 2026 = {current_target_sum:,})"
+        )
+        print(
+            "  hist year multipliers: "
+            + ", ".join(f"{y}: {m:.4f}" for y, m in sorted(inflation.items()))
         )
 
         rows, rank_lookup, snapshot_date, matched, synthetic = compute_season_redraft_values(
@@ -377,6 +376,7 @@ def main() -> None:
         )
 
         year_by_rank = rvi.current_ktc_values_by_pos_rank(load_final_ktc_players(year)[0])
+        comp_lookup = rvi.build_competitor_value_curve(rank_lookup)
 
         for pos in rvi.POSITIONS:
             ranks = sorted(
@@ -394,6 +394,9 @@ def main() -> None:
                     "blended_lookup_value": round(rank_lookup[pos][rank], 2)
                     if rank in rank_lookup[pos]
                     else "",
+                    "competitor_curve_value": round(comp_lookup[pos][rank], 2)
+                    if rank in comp_lookup[pos]
+                    else "",
                 })
 
     write_outputs(all_rows, lookup_rows)
@@ -401,12 +404,17 @@ def main() -> None:
     print(f"\nWrote {len(all_rows):,} player rows → {OUTPUT_CSV}")
     print(f"Wrote {len(lookup_rows):,} rank-slot lookups → {LOOKUP_CSV}")
     print(
-        f"Lookup blend: {HIST_BLEND_WEIGHT:.0%} year-weighted hist + "
-        f"{YEAR_KTC_BLEND_WEIGHT:.0%} that season's final KTC @ rank"
+        f"Lookup blend (shared with live pipeline): {rvi.REDRAFT_HIST_WEIGHT:.0%} "
+        f"year-weighted hist + {rvi.REDRAFT_CURRENT_WEIGHT:.0%} that season's final KTC @ rank"
     )
     print(
-        "Historical inflation: each season's hist curve scaled to that season's "
+        "Historical inflation: each hist year scaled to the target season's "
         f"final KTC top-{rvi.TOP300_INFLATION_TARGET_COUNT} total (not live 2026)"
+    )
+    print(
+        f"Competitor curve: tail decay past overall top-{rvi.COMP_DECAY_PROTECT_OVERALL_SLOTS} "
+        f"slots (τ={rvi.COMP_DECAY_TAU_RANKS:g}, floor={rvi.COMP_DECAY_FLOOR_VALUE:g}), "
+        f"+{rvi.COMP_KTC_PREMIUM_RETENTION:.0%} own-KTC premium retention"
     )
 
 

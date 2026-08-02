@@ -1,5 +1,24 @@
-const GEMINI_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+// Fallback models have separate free-tier quotas — keeps search alive when
+// the primary model is rate-limited. Note grounded-search requests have their
+// own (tighter) quota per model, so brief retries on the primary matter more
+// than the fallback chain here.
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.0-flash'];
+const geminiUrlFor = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Extract Google's suggested retry delay (seconds) from a 429 error body. */
+function parseRetryDelaySeconds(errJson) {
+  const details = errJson?.error?.details || [];
+  for (const d of details) {
+    if (d['@type']?.includes('RetryInfo') && typeof d.retryDelay === 'string') {
+      const secs = parseFloat(d.retryDelay);
+      if (Number.isFinite(secs)) return secs;
+    }
+  }
+  return null;
+}
 
 function logConversation(messages, response = null) {
   const entry = {
@@ -45,22 +64,51 @@ export default async function handler(req, res) {
   }));
 
   try {
-    const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tools: [{ google_search: {} }],
-        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-        contents,
-      }),
-    });
+    const payload = {
+      tools: [{ google_search: {} }],
+      systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+      contents,
+    };
 
-    if (!geminiRes.ok) {
-      const err = await geminiRes.json().catch(() => ({}));
-      return res.status(geminiRes.status).json({ error: 'Search API error', details: err });
+    let data = null;
+    let lastStatus = 500;
+    let lastErr = {};
+    let blipRetries = 2; // budget for short rate-limit waits (maxDuration 30s)
+    let modelIdx = 0;
+    while (modelIdx < GEMINI_MODELS.length) {
+      const geminiRes = await fetch(`${geminiUrlFor(GEMINI_MODELS[modelIdx])}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (geminiRes.ok) {
+        data = await geminiRes.json();
+        break;
+      }
+      lastStatus = geminiRes.status;
+      lastErr = await geminiRes.json().catch(() => ({}));
+
+      if (geminiRes.status === 429) {
+        // Per-minute blip (phase 1 chat just burned several requests) → wait
+        const delay = parseRetryDelaySeconds(lastErr);
+        if (delay != null && delay <= 10 && blipRetries > 0) {
+          blipRetries -= 1;
+          await sleep(delay * 1000 + 250);
+          continue; // retry same model
+        }
+        modelIdx += 1; // exhausted quota → next model
+        continue;
+      }
+      if (geminiRes.status === 404) {
+        modelIdx += 1; // model unavailable to this key → next model
+        continue;
+      }
+      break; // other errors: bail
     }
 
-    const data = await geminiRes.json();
+    if (!data) {
+      return res.status(lastStatus).json({ error: 'Search API error', details: lastErr });
+    }
     const candidate = data.candidates?.[0];
     const parts = candidate?.content?.parts || [];
     const text = parts.find(p => p.text)?.text || '';

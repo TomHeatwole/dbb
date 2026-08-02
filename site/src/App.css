@@ -11233,6 +11233,7 @@ body.modal-open {
   font-size: 0.875rem;
   padding: 0.3rem 0.75rem;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
 
@@ -11259,6 +11260,8 @@ body.modal-open {
   padding: 1.1rem 1.25rem;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
+  color: inherit;
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -13870,6 +13873,420 @@ body.modal-open {
 
 .pvc-loading {
   min-height: 8rem;
+}
+
+/* ── Archetype Roster Builder ───────────────────────────────────────────── */
+
+.arb-select-narrow {
+  min-width: 6.5rem;
+}
+
+.arb-slider {
+  width: 12rem;
+  accent-color: #f4c430;
+}
+
+.arb-regen-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(100, 110, 180, 0.4);
+  background: rgba(40, 50, 90, 0.55);
+  color: #e8eaff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.arb-regen-btn:hover {
+  background: rgba(60, 70, 120, 0.65);
+}
+
+.arb-arrow-col {
+  text-align: center;
+  color: rgba(140, 150, 200, 0.65);
+  width: 2rem;
+}
+
+.arb-dropped-row td {
+  opacity: 0.45;
+}
+
+.arb-drop-tag,
+.arb-offboard-tag {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.35rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.arb-drop-tag {
+  background: rgba(240, 128, 128, 0.18);
+  color: rgba(240, 150, 150, 0.95);
+  border: 1px solid rgba(240, 128, 128, 0.35);
+}
+
+.arb-offboard-tag {
+  margin-left: 0;
+  background: rgba(140, 150, 200, 0.15);
+  color: rgba(170, 175, 220, 0.8);
+  border: 1px solid rgba(140, 150, 200, 0.3);
+}
+
+.arb-total-row td {
+  border-top: 2px solid rgba(100, 110, 180, 0.4);
+  font-weight: 600;
+}
+
+.arb-offboard-note {
+  color: rgba(170, 175, 220, 0.65);
+  margin-top: 0.5rem;
+}
+
+/* ── Hwang True Simulator ───────────────────────────────────────────────── */
+
+.hts-run-btn {
+  padding: 0.55rem 1.3rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(244, 196, 48, 0.55);
+  background: rgba(244, 196, 48, 0.15);
+  color: #f4c430;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hts-run-btn:hover {
+  background: rgba(244, 196, 48, 0.28);
+}
+
+.hts-cancel-btn {
+  display: block;
+  margin: 0.9rem auto 0;
+  padding: 0.35rem 1rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(240, 128, 128, 0.4);
+  background: rgba(240, 128, 128, 0.12);
+  color: rgba(240, 150, 150, 0.95);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.hts-progress-detail {
+  margin-top: 0.6rem;
+  text-align: center;
+  color: rgba(200, 205, 240, 0.8);
+  font-size: 0.88rem;
+  min-height: 1.2rem;
+}
+
+.hts-headline {
+  margin-bottom: 0.75rem;
+}
+
+.hts-rel {
+  font-weight: 700;
+}
+
+.hts-mult-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.hts-mult-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 5.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(100, 110, 180, 0.4);
+  background: rgba(30, 38, 72, 0.55);
+}
+
+.hts-mult-pos {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: rgba(170, 175, 220, 0.85);
+}
+
+.hts-mult-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f4c430;
+}
+
+.hts-mult-note {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(170, 175, 220, 0.75);
+}
+
+.hts-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.9rem;
+}
+
+.hts-tab {
+  padding: 0.35rem 0.9rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(100, 110, 180, 0.4);
+  background: rgba(40, 50, 90, 0.4);
+  color: rgba(210, 215, 245, 0.85);
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.hts-tab--active {
+  background: rgba(244, 196, 48, 0.18);
+  border-color: rgba(244, 196, 48, 0.55);
+  color: #f4c430;
+  font-weight: 600;
+}
+
+.hts-subheading {
+  margin: 1.1rem 0 0.6rem;
+  font-size: 0.95rem;
+  color: rgba(220, 225, 250, 0.9);
+}
+
+.hts-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.hts-roster-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(100, 110, 180, 0.35);
+  background: rgba(30, 38, 72, 0.5);
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hts-roster-card:hover {
+  border-color: rgba(244, 196, 48, 0.45);
+}
+
+.hts-roster-card--selected {
+  border-color: rgba(244, 196, 48, 0.7);
+  background: rgba(244, 196, 48, 0.08);
+}
+
+.hts-roster-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(230, 235, 255, 0.95);
+}
+
+.hts-roster-sub {
+  font-size: 0.75rem;
+  color: rgba(170, 175, 220, 0.7);
+}
+
+.hts-roster-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.hts-chip {
+  padding: 0.08rem 0.4rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(100, 110, 180, 0.3);
+  background: rgba(40, 50, 90, 0.45);
+  font-size: 0.68rem;
+  color: rgba(200, 205, 240, 0.85);
+}
+
+.hts-chip.pvc-pos {
+  border-color: rgba(120, 220, 150, 0.35);
+}
+
+.hts-chip.pvc-neg {
+  border-color: rgba(240, 128, 128, 0.35);
+}
+
+.hts-roster-detail {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(100, 110, 180, 0.3);
+}
+
+.hts-preset-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hts-preset-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(100, 110, 180, 0.4);
+  background: rgba(40, 50, 90, 0.55);
+  color: #e8eaff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.hts-preset-btn:hover {
+  background: rgba(60, 70, 120, 0.65);
+}
+
+.hts-slot-input {
+  min-width: 4.5rem;
+  width: 4.5rem;
+}
+
+.hts-arch-section {
+  margin-bottom: 1rem;
+}
+
+.hts-arch-section > .hts-preset-row {
+  margin: 0.35rem 0 0.5rem;
+}
+
+.hts-arch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.25rem 0.75rem;
+}
+
+.hts-arch-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: #d5d9f5;
+  cursor: pointer;
+}
+
+.hts-arch-option input {
+  accent-color: #7d8cff;
+  cursor: pointer;
+}
+
+.hts-run-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hts-preset-btn--active {
+  border-color: rgba(150, 165, 255, 0.85);
+  background: rgba(80, 95, 170, 0.6);
+  color: #fff;
+}
+
+.hts-format-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 62rem) {
+  .hts-format-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hts-format-editor {
+  border: 1px solid rgba(100, 110, 180, 0.3);
+  border-radius: 0.6rem;
+  padding: 0.75rem 0.9rem 0.25rem;
+  margin-bottom: 1rem;
+  background: rgba(20, 26, 55, 0.35);
+}
+
+.hts-format-grid .hts-format-editor {
+  margin-bottom: 0;
+}
+
+.hts-format-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.hts-format-summary {
+  font-size: 0.75rem;
+  color: rgba(190, 196, 235, 0.85);
+}
+
+.hts-format-editor .hts-preset-row {
+  margin-bottom: 0.6rem;
+}
+
+.hts-format-tabs {
+  margin-bottom: 1.25rem;
+}
+
+.hts-summary {
+  border-top: 1px solid rgba(100, 110, 180, 0.35);
+  padding-top: 1.25rem;
+  margin-top: 2rem;
+}
+
+.hts-summary .pvc-table-wrap {
+  margin-bottom: 1rem;
+}
+
+.hts-row-clickable {
+  cursor: pointer;
+}
+
+.hts-row-clickable:hover td {
+  background: rgba(60, 70, 120, 0.25);
+}
+
+.hts-row-selected td {
+  background: rgba(60, 70, 120, 0.35);
+}
+
+.hts-row-caret {
+  display: inline-block;
+  width: 1.1rem;
+  color: rgba(170, 175, 220, 0.7);
+}
+
+.hts-expanded-row > td {
+  padding: 0.6rem 0.9rem 1rem;
+  background: rgba(0, 0, 0, 0.22);
+  border-top: none;
+}
+
+.hts-pair-breakdown .pvc-table-wrap--scroll {
+  max-height: 24rem;
+}
+
+.hts-rerun-row {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* ── SOP — Soccer Odds Protocol ─────────────────────────────────────────── */

@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
-import PlayerSearch from '../players/PlayerSearch';
 import TrendingPlayers from '../players/TrendingPlayers';
 import HottestFreeAgents from '../players/HottestFreeAgents';
-import YoffsPage from './YoffsPage';
-import H2hPage from './h2h';
 import DynastyRosterView from '../teams/DynastyRosterView';
 import PlayerDBPage from '../playerdb/PlayerDBPage';
 import RankingsViewer from '../rankingsViewer/RankingsViewer';
 import KtcRankCompare from '../ktcRankCompare/KtcRankCompare';
-import RedraftValueIndex from '../redraftValueIndex/RedraftValueIndex';
-import PosValueCompare from '../posValueCompare/PosValueCompare';
 import HistoricalKtcRanks from '../historicalKtcRanks/HistoricalKtcRanks';
 import TradeCalculator from '../tradeCalculator/TradeCalculator';
 
@@ -28,18 +24,6 @@ const FEATURES = [
     component: <HistoricalKtcRanks />,
   },
   {
-    id: 'POS_VALUE_COMPARE',
-    label: 'Pos Value Compare',
-    description: 'Cross-position HVORP vs Final KTC or Competitor Adjusted Value (top 300, 2021–2025).',
-    component: <PosValueCompare />,
-  },
-  {
-    id: 'REDRAFT_VALUE_INDEX',
-    label: 'Redraft Value Index',
-    description: 'KTC dynasty values adjusted for redraft ADP — browse by season (2020–2025 historical, 2026 current).',
-    component: <RedraftValueIndex />,
-  },
-  {
     id: 'RANKINGS_VIEWER',
     label: 'Rankings Viewer',
     description: 'Browse ADP, KTC, FantasyCalc, FFB, and FantasyPros rankings by year or date.',
@@ -52,12 +36,6 @@ const FEATURES = [
     component: <TradeCalculator />,
   },
   {
-    id: 'PLAYER_SEARCH',
-    label: 'Player Search',
-    description: 'Search and explore player stats and dynasty values.',
-    component: <PlayerSearch />,
-  },
-  {
     id: 'TRENDING_PLAYERS',
     label: 'Trending Players',
     description: 'See which players are trending up or down in dynasty value.',
@@ -68,18 +46,6 @@ const FEATURES = [
     label: 'Hottest Free Agents',
     description: 'Top available free agents ranked by dynasty value.',
     component: <HottestFreeAgents />,
-  },
-  {
-    id: 'PLAYOFFS',
-    label: 'Playoffs',
-    description: 'Playoff bracket and matchup viewer.',
-    component: <YoffsPage inSandbox={true} />,
-  },
-  {
-    id: 'HEAD_TO_HEAD',
-    label: 'Head to Head',
-    description: 'Compare two teams head to head.',
-    component: <H2hPage inSandbox={true} />,
   },
   {
     id: 'DYNASTY_ROSTER',
@@ -119,6 +85,10 @@ function SandboxPage() {
   return (
     <InfoPageWrapper title="Sandbox" subtitle="Experimental Features">
       <div className="sandbox-menu">
+        <Link to="/valuesandbox" className="sandbox-feature-card">
+          <span className="sandbox-feature-label">Value Sandbox</span>
+          <span className="sandbox-feature-desc">Positional value research — HVORP, archetype rosters, and cross-position compares.</span>
+        </Link>
         {FEATURES.map(feature => (
           <button
             key={feature.id}

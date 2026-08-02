@@ -3,6 +3,7 @@ import PositionBadge from '../PositionBadge';
 import { formatKtcValue } from '../lookups/KtcLookup';
 import { interpolateRedraftLookup } from './redraftRankLookupLoader';
 import {
+  COMP_KTC_PREMIUM_RETENTION,
   REBUILD_GAP_SCALE,
   computeRebuilderAdjusted,
 } from './rebuilderAdjustedValue';
@@ -47,10 +48,28 @@ export function buildRedraftAdjustmentBreakdown(row, lookupMap) {
   const interp = interpolateRedraftLookup(lookupMap, position, effRank);
   if (!interp || interp.interpolated == null) return null;
 
-  const adjustedValue = value ?? Math.round(interp.interpolated);
+  const compCurveValue = interp.interpolatedComp ?? interp.interpolated;
+
+  // Own-KTC premium retention: part of (KTC value − blended lookup at KTC rank).
+  let retainedPremium = null;
+  if (row.ktcPosRank != null) {
+    const slotAtKtc = interpolateRedraftLookup(lookupMap, position, row.ktcPosRank);
+    if (slotAtKtc && slotAtKtc.interpolated != null) {
+      retainedPremium = COMP_KTC_PREMIUM_RETENTION * (ktcValue - slotAtKtc.interpolated);
+    }
+  }
+
+  const computedValue = Math.round(compCurveValue + (retainedPremium ?? 0));
+  const adjustedValue = value ?? computedValue;
   const index = redraftValueIndex ?? (adjustedValue / ktcValue);
+  // Rebuild math mirrors the backend: it runs on the undecayed competitor
+  // value (blended lookup + retained premium), not the published decayed one.
+  const undecayedComp = Math.max(
+    0,
+    Math.round(interp.interpolated + (retainedPremium ?? 0)),
+  );
   const rebuilder = computeRebuilderAdjusted(
-    { ...row, value: adjustedValue },
+    { ...row, value: undecayedComp },
     lookupMap,
   );
 
@@ -60,6 +79,8 @@ export function buildRedraftAdjustmentBreakdown(row, lookupMap) {
     effSlot: `${position}${effRank.toFixed(2)}`,
     ktcSlot: rankLabel(position, row.ktcPosRank),
     interp,
+    compCurveValue,
+    retainedPremium,
     ktcValue,
     adjustedValue,
     vsDynasty: adjustedValue - ktcValue,
@@ -104,12 +125,18 @@ function RedraftAdjustmentPanel({
     adpSlot,
     effSlot,
     interp,
+    compCurveValue,
+    retainedPremium,
     ktcValue,
     adjustedValue,
     vsDynasty,
     redraftValueIndex,
     rebuilder,
   } = breakdown;
+
+  const hasTailDecay = compCurveValue != null
+    && interp.interpolated != null
+    && Math.abs(compCurveValue - interp.interpolated) >= 1;
 
   const histPct = Math.round(lookupBlend.histWeight * 100);
   const seasonPct = Math.round(lookupBlend.seasonWeight * 100);
@@ -137,9 +164,9 @@ function RedraftAdjustmentPanel({
           value={adpSlot}
         />
         <StatBlock
-          label="Adjusted Pos ADP (ApproachH OVR–KTC correction)"
+          label="Adjusted Pos ADP (ApproachH OVR-ADP geometry)"
           value={effSlot}
-          sub="Stack rank + λ × (KTC-implied rank − stack); λ=0.40"
+          sub="Stack rank + λ × (OVR-ADP-implied rank − stack); λ=0.40"
         />
         {usesHwangAdp && row.bbAvgAdp != null && (
           <StatBlock
@@ -198,15 +225,31 @@ function RedraftAdjustmentPanel({
           sub={interpolationSub}
         />
 
+        {hasTailDecay && (
+          <StatBlock
+            label={`Competitor curve at ${effSlot} (tail decay)`}
+            value={formatKtcValue(compCurveValue)}
+            sub="Blended lookup decayed toward replacement past the overall top-100 slots"
+          />
+        )}
+
         <StatBlock
           label="Dynasty KTC value (this player)"
           value={formatKtcValue(ktcValue)}
         />
 
+        {retainedPremium != null && (
+          <StatBlock
+            label={`Own-KTC premium retained (${Math.round(COMP_KTC_PREMIUM_RETENTION * 100)}%)`}
+            value={fmtSigned(retainedPremium)}
+            sub={`${Math.round(COMP_KTC_PREMIUM_RETENTION * 100)}% × (KTC value − lookup at ${breakdown.ktcSlot})`}
+          />
+        )}
+
         <StatBlock
           label="Competitor adjusted value"
           value={formatKtcValue(adjustedValue)}
-          sub="Rounded lookup at adjusted Pos ADP"
+          sub="Competitor curve at adjusted Pos ADP + retained own-KTC premium"
         />
 
         <StatBlock
@@ -244,7 +287,7 @@ function RedraftAdjustmentPanel({
             <StatBlock
               label={`Damped redraft flip (−${(rebuilder.flipBeta * 100).toFixed(0)}% × Δ)`}
               value={fmtSigned(-Math.round(rebuilder.dampedFlip))}
-              sub={`Δ = competitor adjusted − dynasty (${fmtSigned(rebuilder.redraftDelta)}) · β↑ on gains (+depth boost on severe tax), β↓+ on cuts`}
+              sub={`Δ = undecayed competitor value − dynasty (${fmtSigned(rebuilder.redraftDelta)}) · β↑ on gains (+depth boost on severe tax), β↓+ on cuts`}
             />
             <StatBlock
               label="Rebuilder adjusted value"

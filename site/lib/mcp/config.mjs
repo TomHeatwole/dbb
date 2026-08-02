@@ -1,5 +1,8 @@
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
 
 let settings = {};
 const raw = process.env.REACT_APP_SITE_SETTINGS || process.env.SITE_SETTINGS;
@@ -27,6 +30,8 @@ function resolveDataDir() {
   const candidates = [
     join(process.cwd(), 'public', 'data'),
     join(process.cwd(), 'site', 'public', 'data'),
+    // Module-relative fallback (works when imported from outside site/, e.g. the MCP server)
+    join(MODULE_DIR, '..', '..', 'public', 'data'),
   ];
   return candidates.find(existsSync) ?? candidates[0];
 }

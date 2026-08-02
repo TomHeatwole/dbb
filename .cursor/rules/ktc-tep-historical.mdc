@@ -42,7 +42,7 @@ Raw `sf_ktc_values_historical.csv` is still used to **build** filled output and 
 
 ## Historical rank lookup (redraft)
 
-Year-weighted rank-slot averages use **Final KTC imputed snapshots** with **true positional ranks**. **No top-300 inflation multiplier.**
+Year-weighted rank-slot averages use **Final KTC imputed snapshots** with **true positional ranks**. Each historical year is **inflation-scaled so its top-300 value sum matches the target board** (live board for `compute_redraft_value_index.py`; each season's own final board for `compute_final_ktc_redraft_value_index.py`), keeping the hist component on the same scale as the current-KTC component of the blended lookup.
 
 Regenerate filled board after raw scrape updates:
 

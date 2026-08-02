@@ -1,5 +1,8 @@
 import { interpolateRedraftLookup } from './redraftRankLookupLoader';
 
+// Mirrors COMP_KTC_PREMIUM_RETENTION in scripts/compute_redraft_value_index.py.
+export const COMP_KTC_PREMIUM_RETENTION = 0.35;
+
 export const REBUILD_BETA_UP = 0.54;
 export const REBUILD_BETA_DOWN = 0.77;
 export const REBUILD_GAP_SCALE = 11;

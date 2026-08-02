@@ -12,6 +12,12 @@ import {
   buildTeamMap, getPlayerDisplayName, lookupKtc, fmt, fmtDate, findTeam,
 } from './helpers.mjs';
 import { runScenarioEval } from './scenarioEngine.mjs';
+import {
+  VALUE_SOURCES, VALUE_SOURCE_LABELS,
+  getValueLookups, lookupValueEntry, evaluateKtcStyleTrade,
+} from './values.mjs';
+import { prepareSimContext, runSeasonSim, DEFAULT_ITERATIONS } from './simEngine.mjs';
+import { loadSimulationInputs } from './simData.mjs';
 
 // ── Link helpers ─────────────────────────────────────────────────────────────
 
@@ -410,58 +416,494 @@ export async function comparePlayers(names) {
 
 // ─── Evaluate Trade ───────────────────────────────────────────────────────────
 
-export async function evaluateTrade(giving, receiving) {
-  const { map: ktcMap } = loadKtcData();
+const CROSS_CHECK_SOURCES = [
+  'ktc_sf_tep',
+  'hwang_market_value',
+  'hwang_true_value',
+  'competitor_adjusted',
+  'rebuilder_adjusted',
+];
 
-  function resolvePlayer(name) {
-    const pick = resolvePick(name, ktcMap);
-    if (pick) return pick;
-
-    const result = findPlayerByName(name);
-    if (!result) return { label: name, value: 0, found: false };
-    const displayName = getPlayerDisplayName(result.player);
-    const pos         = result.player.position || '';
-    const nflTeam     = result.player.team || '';
-    const ktc         = lookupKtc(displayName, ktcMap, { position: pos, team: nflTeam });
-    return { label: displayName, value: ktc?.ktcValue_tep || 0, found: true };
+/**
+ * Resolve one trade asset (player or pick) in a given value source.
+ * Picks are always valued off the KTC pick board regardless of source.
+ */
+function resolveAssetForSource(name, source, ktcMap) {
+  const pick = resolvePick(name, ktcMap);
+  if (pick) {
+    return { label: pick.label, value: pick.value, position: 'PICK', found: true, isPick: true };
   }
 
-  const givingSide    = giving.map(resolvePlayer);
-  const receivingSide = receiving.map(resolvePlayer);
+  const result = findPlayerByName(name);
+  if (!result) return { label: name, value: 0, position: null, found: false, isPick: false };
 
-  const givingTotal    = givingSide.reduce((s, p) => s + p.value, 0);
+  const displayName = getPlayerDisplayName(result.player);
+  const pos = result.player.position || '';
+  const entry = lookupValueEntry(displayName, source, { position: pos });
+  return {
+    label: displayName,
+    value: entry?.value || 0,
+    position: pos,
+    posRank: entry?.posRank || null,
+    found: true,
+    isPick: false,
+  };
+}
+
+// Appended to every value-heavy tool output. The model tends to quote whatever
+// labels sit next to the numbers, so the translation reminder has to live HERE,
+// not just in the system prompt.
+const VALUE_CONFIDENTIALITY_NOTE =
+  '\n⚠️ INTERNAL DATA — model names ("Hwang True", "Hwang Market", "Competitor Adjusted", ' +
+  '"Rebuild Adjusted") and their value numbers are for YOUR reasoning only. NEVER repeat them ' +
+  'to the user — not even unlabeled ("my numbers have him at 2,260" is a leak). Express internal ' +
+  'values ONLY as: a percentage vs. the public KTC number ("about 10% lower through a win-now ' +
+  'lens"), a rank/tier, or a pick equivalent. Public KTC/FantasyCalc figures ARE fine to cite ' +
+  'by name and number.';
+
+/**
+ * Evaluate a trade with the Hwang value engine.
+ *
+ * @param {string[]} giving
+ * @param {string[]} receiving
+ * @param {string} [valueSource='hwang_true_value']  One of VALUE_SOURCES.
+ */
+export async function evaluateTrade(giving, receiving, valueSource) {
+  const source = VALUE_SOURCES.includes(valueSource) ? valueSource : 'hwang_true_value';
+  const { map: ktcMap } = loadKtcData();
+  getValueLookups(); // warm cache
+
+  const givingSide = giving.map((n) => resolveAssetForSource(n, source, ktcMap));
+  const receivingSide = receiving.map((n) => resolveAssetForSource(n, source, ktcMap));
+
+  const givingTotal = givingSide.reduce((s, p) => s + p.value, 0);
   const receivingTotal = receivingSide.reduce((s, p) => s + p.value, 0);
-  const diff           = receivingTotal - givingTotal;
-  const pct            = givingTotal > 0 ? Math.round((diff / givingTotal) * 100) : 0;
+
+  // KTC-style value adjustment: consolidation credit for the stud side in
+  // uneven-count packages, judged by nonlinear raw scores.
+  const va = evaluateKtcStyleTrade(
+    givingSide.map((p) => p.value),
+    receivingSide.map((p) => p.value),
+  );
+  const adjGiving = givingTotal + (va.adjustmentForA || 0);
+  const adjReceiving = receivingTotal + (va.adjustmentForB || 0);
+  const diff = adjReceiving - adjGiving;
+  const pct = adjGiving > 0 ? Math.round((diff / adjGiving) * 100) : 0;
 
   let verdict;
-  if (Math.abs(pct) <= 5) {
+  if (va.isEven || Math.abs(pct) <= 5) {
     verdict = '⚖️  Roughly even trade';
-  } else if (diff > 0) {
-    verdict = `✅ You WIN this trade (+${fmt(Math.abs(diff))} KTC, +${pct}%)`;
+  } else if (va.rawWinner === 'B') {
+    verdict = `✅ You WIN this trade (+${fmt(Math.abs(diff))} value-adjusted, +${pct}%)`;
   } else {
-    verdict = `❌ You LOSE this trade (−${fmt(Math.abs(diff))} KTC, ${pct}%)`;
+    verdict = `❌ You LOSE this trade (−${fmt(Math.abs(diff))} value-adjusted, ${pct}%)`;
   }
 
-  const lines = ['**Trade Evaluator — KTC SF TE+ Values**\n'];
+  const lines = [`**Trade Evaluator — ${VALUE_SOURCE_LABELS[source]} Values**\n`];
 
   lines.push('**You give:**');
   for (const p of givingSide) {
-    lines.push(`  ${p.found ? `${p.label} — ${fmt(p.value)}` : `❓ ${p.label} (player not found)`}`);
+    lines.push(`  ${p.found ? `${p.label}${p.posRank ? ` (${p.position}${p.posRank})` : ''} — ${fmt(p.value)}` : `❓ ${p.label} (not found)`}`);
   }
-  lines.push(`  Total: **${fmt(givingTotal)}**\n`);
+  if (va.adjustmentForA > 0) lines.push(`  Value Adjustment (consolidation credit) — ${fmt(va.adjustmentForA)}`);
+  lines.push(`  Total: **${fmt(adjGiving)}**\n`);
 
   lines.push('**You receive:**');
   for (const p of receivingSide) {
-    lines.push(`  ${p.found ? `${p.label} — ${fmt(p.value)}` : `❓ ${p.label} (player not found)`}`);
+    lines.push(`  ${p.found ? `${p.label}${p.posRank ? ` (${p.position}${p.posRank})` : ''} — ${fmt(p.value)}` : `❓ ${p.label} (not found)`}`);
   }
-  lines.push(`  Total: **${fmt(receivingTotal)}**\n`);
+  if (va.adjustmentForB > 0) lines.push(`  Value Adjustment (consolidation credit) — ${fmt(va.adjustmentForB)}`);
+  lines.push(`  Total: **${fmt(adjReceiving)}**\n`);
 
   lines.push(verdict);
-  if (Math.abs(pct) > 5) {
-    const absDiff = Math.abs(diff).toLocaleString();
-    lines.push(`  Value difference: ${diff > 0 ? '+' : '−'}${absDiff} KTC points`);
+
+  // Cross-source totals so the verdict can be sanity-checked against other models
+  lines.push('\n**Totals across value models** (give → receive):');
+  for (const src of CROSS_CHECK_SOURCES) {
+    const g = giving.map((n) => resolveAssetForSource(n, src, ktcMap)).reduce((s, p) => s + p.value, 0);
+    const r = receiving.map((n) => resolveAssetForSource(n, src, ktcMap)).reduce((s, p) => s + p.value, 0);
+    const marker = src === source ? ' ← primary' : '';
+    const lean = g === r ? 'even' : (r > g ? 'receive side' : 'give side');
+    lines.push(`  ${VALUE_SOURCE_LABELS[src].padEnd(16)} ${fmt(g)} → ${fmt(r)}  (favors ${lean})${marker}`);
   }
+
+  lines.push('\n*Draft picks are valued off the KTC pick board in every model. Competitor/Rebuild models only make sense from one team\'s perspective — use the model matching the asking team\'s timeline.*');
+  lines.push(VALUE_CONFIDENTIALITY_NOTE);
+
+  return lines.join('\n');
+}
+
+// ─── Player Value Breakdown ───────────────────────────────────────────────────
+
+/**
+ * Full multi-model value profile for one player — the atomic unit of any
+ * value argument.
+ */
+export function getPlayerValueBreakdown(name) {
+  const result = findPlayerByName(name);
+  if (!result) {
+    return `Player "${name}" not found. Try a full name like "Justin Jefferson".`;
+  }
+
+  const { playerId, player } = result;
+  const displayName = getPlayerDisplayName(player);
+  const pos = player.position || '?';
+  const nflTeam = player.team || 'FA';
+
+  const { bySleeperId: fcById, byName: fcByName } = loadFantasyCalcData();
+  const fc = fcById.get(playerId) || fcByName.get(normalisePlayerName(displayName));
+
+  getValueLookups();
+
+  const lines = [
+    `**${displayName}** | ${pos} | ${nflTeam}${fc?.age ? ` | Age ${fc.age}` : ''}`,
+    '',
+    '**Value across all models:**',
+  ];
+
+  let anyFound = false;
+  for (const src of VALUE_SOURCES) {
+    const entry = lookupValueEntry(displayName, src, { position: pos });
+    if (!entry) continue;
+    anyFound = true;
+    const rankStr = entry.posRank ? ` — ${entry.position || pos}${entry.posRank}, #${entry.overallRank} overall` : '';
+    lines.push(`  ${VALUE_SOURCE_LABELS[src].padEnd(20)} ${fmt(entry.value)}${rankStr}`);
+  }
+  if (!anyFound) {
+    lines.push('  No value data found in any model — likely a deep bench / undrafted player.');
+  }
+
+  if (fc?.trend30day) {
+    lines.push(`\n30-day market trend: ${fc.trend30day > 0 ? '+' : ''}${fc.trend30day} (FantasyCalc)`);
+  }
+
+  lines.push('\n*Hwang Market/True apply positional multipliers to stitched KTC (TE+ for TEs, SF for others). Competitor/Rebuild reweight for win-now vs long-term timelines. Use search_player for league ownership.*');
+  lines.push(VALUE_CONFIDENTIALITY_NOTE);
+  return lines.join('\n');
+}
+
+// ─── Team Value Summary ───────────────────────────────────────────────────────
+
+async function computeRosterValueTotals(playerIds, playersData) {
+  const totals = { hwang_true_value: 0, ktc_sf_tep: 0, competitor_adjusted: 0, rebuilder_adjusted: 0 };
+  const rows = [];
+  const { bySleeperId: fcById } = loadFantasyCalcData();
+
+  for (const pid of playerIds) {
+    const p = playersData[pid];
+    if (!p) continue;
+    const name = getPlayerDisplayName(p);
+    const pos = p.position || '?';
+    const row = { name, position: pos, age: fcById.get(pid)?.age || null };
+    for (const src of Object.keys(totals)) {
+      const entry = lookupValueEntry(name, src, { position: pos });
+      row[src] = entry?.value || 0;
+      totals[src] += row[src];
+    }
+    rows.push(row);
+  }
+  return { totals, rows };
+}
+
+/**
+ * Roster construction report: value totals across models, positional breakdown,
+ * age profile, and a competitor-vs-rebuilder lean — with league-wide context.
+ */
+export async function getTeamValueSummary(teamQuery) {
+  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
+  const teamMap = buildTeamMap(rosters, users);
+  const teamInfo = findTeam(teamMap, teamQuery);
+
+  if (!teamInfo) {
+    const allTeams = Object.values(teamMap).map((t) => `"${t.teamName}" (${t.ownerName})`).join(', ');
+    return `Team not found for "${teamQuery}". Available: ${allTeams}`;
+  }
+
+  const playersData = loadPlayersData();
+  getValueLookups();
+
+  // League-wide totals for context
+  const leagueRows = [];
+  for (const [rid, info] of Object.entries(teamMap)) {
+    const { totals } = await computeRosterValueTotals(info.roster.players || [], playersData);
+    leagueRows.push({ rid: Number(rid), teamName: info.teamName, ownerName: info.ownerName, ...totals });
+  }
+  leagueRows.sort((a, b) => b.hwang_true_value - a.hwang_true_value);
+
+  const rid = teamInfo.roster.roster_id;
+  const mine = leagueRows.find((r) => r.rid === rid);
+  const myRank = leagueRows.indexOf(mine) + 1;
+
+  const { rows } = await computeRosterValueTotals(teamInfo.roster.players || [], playersData);
+
+  // Positional breakdown by Hwang True value
+  const byPos = { QB: [], RB: [], WR: [], TE: [] };
+  for (const row of rows) {
+    if (byPos[row.position]) byPos[row.position].push(row);
+  }
+
+  // Value-weighted average age
+  let ageWeightSum = 0;
+  let weightSum = 0;
+  for (const row of rows) {
+    if (row.age && row.hwang_true_value > 0) {
+      ageWeightSum += row.age * row.hwang_true_value;
+      weightSum += row.hwang_true_value;
+    }
+  }
+  const weightedAge = weightSum > 0 ? (ageWeightSum / weightSum).toFixed(1) : null;
+
+  // Competitor vs rebuilder lean
+  const comp = mine.competitor_adjusted;
+  const reb = mine.rebuilder_adjusted;
+  const leanPct = (comp + reb) > 0 ? Math.round(((comp - reb) / ((comp + reb) / 2)) * 100) : 0;
+  const leanLabel = leanPct > 5 ? 'WIN-NOW build' : leanPct < -5 ? 'REBUILD-tilted assets' : 'balanced timeline';
+
+  const lines = [
+    `**${teamLink(teamInfo.teamName, rid)}** (${teamInfo.ownerName}) — Roster Construction Report\n`,
+    `Total value rank: **#${myRank} of ${leagueRows.length}** by Hwang True value`,
+    `  Hwang True:      ${fmt(mine.hwang_true_value)}`,
+    `  KTC SF TE+:      ${fmt(mine.ktc_sf_tep)}`,
+    `  Competitor Adj:  ${fmt(mine.competitor_adjusted)}`,
+    `  Rebuild Adj:     ${fmt(mine.rebuilder_adjusted)}`,
+    `Timeline lean: **${leanLabel}** (competitor vs rebuild value: ${leanPct > 0 ? '+' : ''}${leanPct}%)`,
+    weightedAge ? `Value-weighted roster age: **${weightedAge}**` : '',
+    '',
+    '**Positional breakdown (Hwang True):**',
+  ];
+
+  for (const pos of ['QB', 'RB', 'WR', 'TE']) {
+    const group = byPos[pos].sort((a, b) => b.hwang_true_value - a.hwang_true_value);
+    const posTotal = group.reduce((s, r) => s + r.hwang_true_value, 0);
+    const top = group.slice(0, 4)
+      .filter((r) => r.hwang_true_value > 0)
+      .map((r) => `${r.name} ${fmt(r.hwang_true_value)}${r.age ? ` (${r.age})` : ''}`)
+      .join(', ');
+    lines.push(`  ${pos}: **${fmt(posTotal)}** — ${top || 'no valued assets'}`);
+  }
+
+  lines.push('', '**League value board (Hwang True):**');
+  leagueRows.forEach((r, i) => {
+    const marker = r.rid === rid ? ' ◄' : '';
+    lines.push(`  ${i + 1}. ${r.teamName} (${r.ownerName}) — ${fmt(r.hwang_true_value)}${marker}`);
+  });
+  lines.push(VALUE_CONFIDENTIALITY_NOTE);
+
+  return lines.join('\n');
+}
+
+// ─── Season Odds (Monte Carlo) ────────────────────────────────────────────────
+
+let seasonOddsCache = null; // { key, ts, output }
+const SEASON_ODDS_TTL_MS = 15 * 60 * 1000;
+
+function buildRosterMapFromSleeper(rosters) {
+  const map = {};
+  for (const r of rosters) {
+    if (r?.roster_id != null) map[Number(r.roster_id)] = [...(r.players || [])];
+  }
+  return map;
+}
+
+function formatOddsTable(results, teamMap, deltasById = null) {
+  const lines = [];
+  results.forEach((row, i) => {
+    const info = teamMap[row.rosterId] || {};
+    const name = info.teamName || `Team ${row.rosterId}`;
+    let deltaStr = '';
+    if (deltasById) {
+      const d = deltasById[row.rosterId];
+      if (d && Math.abs(d.winPctDelta) >= 0.05) {
+        deltaStr = ` (title ${d.winPctDelta > 0 ? '+' : ''}${d.winPctDelta.toFixed(1)}pp)`;
+      }
+    }
+    lines.push(
+      `  ${String(i + 1).padStart(2)}. ${name} (${info.ownerName || '?'}) — ` +
+      `title ${row.winPct.toFixed(1)}% | playoffs ${row.playoffPct.toFixed(1)}% | ` +
+      `top-3 ${row.top3Pct.toFixed(1)}% | avg finish ${row.avgFinish.toFixed(1)} | ` +
+      `avg pts ${Math.round(row.avgTotalScore).toLocaleString()}${deltaStr}`
+    );
+  });
+  return lines;
+}
+
+function countUnrankedByTeam(rosterMap, hwangAdpRankMap, playersData) {
+  const counts = {};
+  for (const [rid, pids] of Object.entries(rosterMap)) {
+    let n = 0;
+    for (const pid of pids) {
+      const pos = (playersData[pid]?.position || '').toUpperCase();
+      if (!['QB', 'RB', 'WR', 'TE'].includes(pos)) continue;
+      if (!hwangAdpRankMap[pid]) n += 1;
+    }
+    counts[rid] = n;
+  }
+  return counts;
+}
+
+/**
+ * Baseline Monte Carlo championship odds for the current season.
+ */
+export async function getSeasonOdds(iterations) {
+  const iters = Math.max(250, Math.min(3000, Math.round(Number(iterations) || DEFAULT_ITERATIONS)));
+
+  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
+  const teamMap = buildTeamMap(rosters, users);
+  const rosterMap = buildRosterMapFromSleeper(rosters);
+
+  const cacheKey = `${iters}:${JSON.stringify(rosterMap)}`;
+  if (seasonOddsCache && seasonOddsCache.key === cacheKey
+      && Date.now() - seasonOddsCache.ts < SEASON_ODDS_TTL_MS) {
+    return seasonOddsCache.output;
+  }
+
+  const inputs = await loadSimulationInputs();
+  const ctx = prepareSimContext({
+    scenarioRosters: rosterMap,
+    hwangAdpRankMap: inputs.hwangAdpRankMap,
+    catalog: inputs.catalog,
+    positionMaxRanks: inputs.positionMaxRanks,
+    basePointsByYear: inputs.basePointsByYear,
+    playersData: inputs.playersData,
+  });
+  const { results, iterations: ran } = runSeasonSim(ctx, iters);
+
+  const lines = [
+    `**${CURRENT_YEAR} Season Simulation — ${ran.toLocaleString()} Monte Carlo runs**`,
+    '*(Each run rolls a season outcome for every player from historical seasons of players drafted at a similar ADP, then scores optimal best-ball lineups for all 17 weeks. Top 4 regular-season scores make the playoffs; best weeks 15–17 total wins the title.)*',
+    '',
+  ];
+  lines.push(...formatOddsTable(results, teamMap));
+
+  const unranked = countUnrankedByTeam(rosterMap, inputs.hwangAdpRankMap, inputs.playersData);
+  const totalUnranked = Object.values(unranked).reduce((s, n) => s + n, 0);
+  if (totalUnranked > 0) {
+    lines.push('', `*Note: ${totalUnranked} rostered skill players league-wide have no draft-capital projection and contribute 0 in simulations (deep bench/undrafted types).*`);
+  }
+
+  const output = lines.join('\n');
+  seasonOddsCache = { key: cacheKey, ts: Date.now(), output };
+  return output;
+}
+
+/**
+ * Delta simulation: how do championship odds change if rosters are modified?
+ * Baseline and scenario are scored with identical player-outcome rolls each
+ * iteration, so the deltas isolate the roster change itself.
+ *
+ * @param {Object} params
+ * @param {Array}  params.changes    [{ team, add: [names], drop: [names] }]
+ * @param {number} [params.iterations]
+ */
+export async function simulateRosterChangeOdds({ changes = [], iterations }) {
+  const iters = Math.max(250, Math.min(3000, Math.round(Number(iterations) || DEFAULT_ITERATIONS)));
+
+  const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
+  const teamMap = buildTeamMap(rosters, users);
+  const baselineRosters = buildRosterMapFromSleeper(rosters);
+  const playersData = loadPlayersData();
+  const inputs = await loadSimulationInputs();
+
+  const scenarioRosters = {};
+  for (const [rid, pids] of Object.entries(baselineRosters)) scenarioRosters[rid] = [...pids];
+
+  const warnings = [];
+  const appliedChanges = [];
+  const modifiedRids = new Set();
+
+  for (const change of changes) {
+    const teamInfo = findTeam(teamMap, change.team || '');
+    if (!teamInfo) {
+      const available = Object.values(teamMap).map((t) => `"${t.teamName}"`).join(', ');
+      warnings.push(`⚠️  Team not found: "${change.team}". Available: ${available}`);
+      continue;
+    }
+    const rid = teamInfo.roster.roster_id;
+    modifiedRids.add(rid);
+    const added = [];
+    const dropped = [];
+
+    for (const playerName of (change.add || [])) {
+      const found = findPlayerByName(playerName);
+      if (!found) { warnings.push(`⚠️  Player not found: "${playerName}" — skipped.`); continue; }
+      const pid = found.playerId;
+      if (!scenarioRosters[rid].includes(pid)) scenarioRosters[rid].push(pid);
+      const displayName = getPlayerDisplayName(found.player);
+      added.push(displayName);
+      if (!inputs.hwangAdpRankMap[pid]) {
+        warnings.push(`⚠️  ${displayName} has no draft-capital projection this season — he contributes 0 points in the simulation, so his real impact is understated.`);
+      }
+    }
+    for (const playerName of (change.drop || [])) {
+      const found = findPlayerByName(playerName);
+      if (!found) { warnings.push(`⚠️  Player not found: "${playerName}" — skipped.`); continue; }
+      const pid = found.playerId;
+      scenarioRosters[rid] = scenarioRosters[rid].filter((id) => id !== pid);
+      dropped.push(getPlayerDisplayName(found.player));
+    }
+
+    const parts = [];
+    if (added.length) parts.push(`+${added.join(', +')}`);
+    if (dropped.length) parts.push(`−${dropped.join(', −')}`);
+    if (parts.length) appliedChanges.push(`  ${teamInfo.teamName} (${teamInfo.ownerName}): ${parts.join('  ')}`);
+  }
+
+  if (appliedChanges.length === 0) {
+    return ['No valid roster changes to simulate.', ...warnings].join('\n');
+  }
+
+  const ctx = prepareSimContext({
+    scenarioRosters,
+    baselineRosters,
+    hwangAdpRankMap: inputs.hwangAdpRankMap,
+    catalog: inputs.catalog,
+    positionMaxRanks: inputs.positionMaxRanks,
+    basePointsByYear: inputs.basePointsByYear,
+    playersData: inputs.playersData,
+  });
+  const { results, baselineResults, iterations: ran } = runSeasonSim(ctx, iters);
+
+  const baseById = {};
+  for (const row of (baselineResults || [])) baseById[row.rosterId] = row;
+  const deltasById = {};
+  for (const row of results) {
+    const base = baseById[row.rosterId];
+    if (!base) continue;
+    deltasById[row.rosterId] = {
+      winPctDelta: row.winPct - base.winPct,
+      playoffPctDelta: row.playoffPct - base.playoffPct,
+      avgFinishDelta: row.avgFinish - base.avgFinish,
+      avgTotalScoreDelta: row.avgTotalScore - base.avgTotalScore,
+    };
+  }
+
+  const lines = [
+    `**${CURRENT_YEAR} Season Delta Simulation — ${ran.toLocaleString()} paired Monte Carlo runs**`,
+    '*(Baseline vs modified rosters scored with identical player-outcome rolls — deltas isolate the roster change.)*',
+    '',
+    '**Changes applied:**',
+    ...appliedChanges,
+  ];
+  if (warnings.length) {
+    lines.push('', ...warnings);
+  }
+
+  lines.push('', '**Impact on modified teams:**');
+  for (const rid of modifiedRids) {
+    const info = teamMap[rid] || {};
+    const scen = results.find((r) => r.rosterId === rid);
+    const base = baseById[rid];
+    const d = deltasById[rid];
+    if (!scen || !base || !d) continue;
+    lines.push(`  **${info.teamName}** (${info.ownerName})`);
+    lines.push(`    Title odds:    ${base.winPct.toFixed(1)}% → ${scen.winPct.toFixed(1)}%  (${d.winPctDelta >= 0 ? '+' : ''}${d.winPctDelta.toFixed(1)}pp)`);
+    lines.push(`    Playoff odds:  ${base.playoffPct.toFixed(1)}% → ${scen.playoffPct.toFixed(1)}%  (${d.playoffPctDelta >= 0 ? '+' : ''}${d.playoffPctDelta.toFixed(1)}pp)`);
+    lines.push(`    Avg finish:    ${base.avgFinish.toFixed(1)} → ${scen.avgFinish.toFixed(1)}`);
+    lines.push(`    Avg total pts: ${Math.round(base.avgTotalScore).toLocaleString()} → ${Math.round(scen.avgTotalScore).toLocaleString()}  (${d.avgTotalScoreDelta >= 0 ? '+' : ''}${Math.round(d.avgTotalScoreDelta)})`);
+  }
+
+  lines.push('', '**Full odds under the modified rosters:**');
+  lines.push(...formatOddsTable(results, teamMap, deltasById));
 
   return lines.join('\n');
 }

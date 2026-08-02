@@ -77,7 +77,7 @@ function HwangAIPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/data/hwangai_system_prompt.txt')
+    fetch('/data/hwangai_system_prompt.txt', { cache: 'no-store' })
       .then(r => r.text())
       .then(text => setSystemPrompt(text.trim()))
       .catch(() => {});
@@ -97,24 +97,37 @@ function HwangAIPage() {
     setLoading(true);
     setError(null);
 
-    // Phase 1: main chat with league tools
+    // Phase 1: main chat with league tools. Long-running operations (season
+    // simulations etc.) return an interim "hang on" message plus a continuation
+    // token — show the message, keep the typing indicator up, and call back.
     let phase1Data = null;
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, systemPrompt }),
-      });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        console.error('[HwangAI] Phase 1 failed:', res.status, errBody);
-        throw new Error(`Request failed: ${res.status}`);
+      let requestBody = { messages: newMessages, systemPrompt };
+      for (let hop = 0; hop < 4; hop++) {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          console.error('[HwangAI] Phase 1 failed:', res.status, errBody);
+          throw new Error(`Request failed: ${res.status}`);
+        }
+        phase1Data = await res.json();
+        if (!phase1Data.interim || !phase1Data.continuation) {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: phase1Data.message,
+          }]);
+          break;
+        }
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: phase1Data.message,
+        }]);
+        requestBody = { messages: newMessages, systemPrompt, continuation: phase1Data.continuation };
       }
-      phase1Data = await res.json();
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: phase1Data.message,
-      }]);
     } catch (err) {
       console.error('[HwangAI] Phase 1 error:', err);
       setError('Something went wrong. Please try again.');

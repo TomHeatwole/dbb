@@ -4,12 +4,110 @@ import {
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
   runScenario, getPlayerStats, getHistoricalResults,
+  getPlayerValueBreakdown, getTeamValueSummary,
+  getSeasonOdds, simulateRosterChangeOdds,
 } from '../lib/mcp/tools.mjs';
 
-const GEMINI_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
-const GEMINI_FLASH_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+// Primary model first; fallbacks have SEPARATE free-tier quotas, so a 429 on
+// flash (rate limit or exhausted daily quota) doesn't take HwangAI down.
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.0-flash'];
+const geminiUrlFor = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+// Per-model generationConfig overrides. The Gemini 3.x lite fallback thinks
+// far too long on multi-tool conversations unless thinking is turned down.
+const MODEL_GENERATION_CONFIG = {
+  'gemini-flash-lite-latest': { thinkingConfig: { thinkingLevel: 'low' } },
+};
+
+const GEMINI_FLASH_URL = geminiUrlFor(GEMINI_MODELS[0]);
+
+// Friendly in-character response when every model is rate-limited — returned
+// as a 200 so the UI shows it as a normal chat message instead of the generic
+// "Something went wrong" error.
+const RATE_LIMITED_MESSAGE =
+  "I'm rate-limited right now — my model provider cut me off for a bit, nothing to do with your question. " +
+  'Give it a minute or two and hit me again.';
+
+/** Extract Google's suggested retry delay (seconds) from a 429 error body. */
+function parseRetryDelaySeconds(errJson) {
+  const details = errJson?.error?.details || [];
+  for (const d of details) {
+    if (d['@type']?.includes('RetryInfo') && typeof d.retryDelay === 'string') {
+      const secs = parseFloat(d.retryDelay);
+      if (Number.isFinite(secs)) return secs;
+    }
+  }
+  return null;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Per-request Gemini state: remembers which model is working across tool
+ *  rounds (so an exhausted primary isn't re-tried every round) and caps how
+ *  much time we spend sleeping on rate-limit blips. */
+function newGeminiState() {
+  return { modelIdx: 0, blipRetries: 1 };
+}
+
+/**
+ * Call Gemini with short-retry on transient rate limits and model fallback on
+ * persistent 429s (per-model quotas are independent).
+ *
+ * @returns {{ ok: true, data: object } | { ok: false, status: number, err: object, rateLimited?: boolean }}
+ */
+async function callGemini(apiKey, payload, state) {
+  let lastErr = { status: 500, err: {} };
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const model = GEMINI_MODELS[state.modelIdx];
+    const genCfg = MODEL_GENERATION_CONFIG[model];
+    const body = genCfg
+      ? { ...payload, generationConfig: { ...(payload.generationConfig || {}), ...genCfg } }
+      : payload;
+    const res = await fetch(`${geminiUrlFor(model)}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) return { ok: true, data: await res.json() };
+
+    const err = await res.json().catch(() => ({}));
+    lastErr = { status: res.status, err };
+
+    if (res.status === 429) {
+      // Brief per-minute blip → wait it out (bounded per request)
+      const delay = parseRetryDelaySeconds(err);
+      if (delay != null && delay <= 8 && state.blipRetries > 0) {
+        state.blipRetries -= 1;
+        await sleep(delay * 1000 + 250);
+        continue;
+      }
+      // Daily quota / long delay → move to the next model for the whole request
+      if (state.modelIdx < GEMINI_MODELS.length - 1) {
+        state.modelIdx += 1;
+        continue;
+      }
+      return { ok: false, ...lastErr, rateLimited: true };
+    }
+
+    // Model unavailable to this key → advance the fallback chain
+    if (res.status === 404 && state.modelIdx < GEMINI_MODELS.length - 1) {
+      state.modelIdx += 1;
+      continue;
+    }
+
+    // 5xx: one quick retry, otherwise bail
+    if (res.status >= 500 && attempt < 1) {
+      await sleep(500);
+      continue;
+    }
+    return { ok: false, ...lastErr };
+  }
+
+  return { ok: false, ...lastErr, rateLimited: lastErr.status === 429 };
+}
 
 const SIDE_QUERY_PROBABILITY = 0.25; // 1 in 4
 
@@ -149,14 +247,71 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'evaluate_trade',
-    description: 'Evaluate a trade using KTC SF TE+ values. Provide what you give and receive.',
+    description: 'Evaluate a trade with the Hwang value engine. Returns per-asset values in the chosen value model, a consolidation Value Adjustment for uneven packages, a verdict, and totals across all major value models (KTC TE+, Hwang Market, Hwang True, Competitor Adj, Rebuild Adj). ALWAYS call this before giving any trade verdict. Default model is hwang_true_value; use competitor_adjusted for a win-now team\'s perspective or rebuilder_adjusted for a rebuilding team\'s perspective.',
     parameters: {
       type: 'OBJECT',
       properties: {
         giving: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Players/picks you are giving' },
         receiving: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Players/picks you are receiving' },
+        value_source: {
+          type: 'STRING',
+          enum: ['ktc_sf', 'ktc_sf_tep', 'hwang_market_value', 'hwang_true_value', 'competitor_adjusted', 'rebuilder_adjusted', 'hwang_competitor_adjusted', 'hwang_rebuilder_adjusted', 'fantasycalc', 'ffb'],
+          description: 'Primary value model (default hwang_true_value)',
+        },
       },
       required: ['giving', 'receiving'],
+    },
+  },
+  {
+    name: 'get_player_value',
+    description: 'Get one player\'s value across ALL value models at once (KTC SF/TE+, Hwang Market, Hwang True, Competitor/Rebuild adjusted, FantasyCalc, FFB) with positional and overall ranks, age, and 30-day market trend. This is the atomic unit of any value opinion — call it before ranking, tiering, or valuing any player.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { name: { type: 'STRING', description: 'Player name e.g. "Brock Bowers"' } },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'get_team_value_summary',
+    description: 'Roster construction report for a team: total value across models, league value rank, positional value breakdown with top assets and ages, value-weighted roster age, and a competitor-vs-rebuild timeline lean. Includes a league-wide value board for context. Call this before advising any team on strategy, compete/rebuild decisions, or what they need.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { team: { type: 'STRING', description: 'Team name, owner name, or roster ID' } },
+      required: ['team'],
+    },
+  },
+  {
+    name: 'get_season_odds',
+    description: 'Run a Monte Carlo simulation of the upcoming/current season with the real rosters: rolls each player\'s season outcome from historical seasons of players drafted at a similar ADP, scores optimal best-ball lineups for all 17 weeks, and returns title odds, playoff odds, top-3 odds, average finish, and average points for every team. Call this before making ANY claim about a team\'s chances, projections, or outlook this season.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        iterations: { type: 'INTEGER', description: 'Number of simulation runs (default 1000, max 3000)' },
+      },
+    },
+  },
+  {
+    name: 'simulate_roster_change_odds',
+    description: 'Simulate how hypothetical roster changes for the UPCOMING/current season shift each team\'s title and playoff odds vs the baseline. Both roster sets are scored with identical player-outcome rolls, so the deltas isolate the change. Use this to quantify a proposed trade\'s real impact ("this trade moves you from 10% to 17% title odds"), or to test how much a team needs to improve. For a trade, express BOTH sides: add players to the receiving team and drop them from the sending team.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        changes: {
+          type: 'ARRAY',
+          description: 'List of roster changes to simulate',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              team: { type: 'STRING', description: 'Team or owner name whose roster to modify' },
+              add: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Player names to add to this team' },
+              drop: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Player names to drop from this team' },
+            },
+            required: ['team'],
+          },
+        },
+        iterations: { type: 'INTEGER', description: 'Number of simulation runs (default 1000, max 3000)' },
+      },
+      required: ['changes'],
     },
   },
   {
@@ -284,7 +439,12 @@ async function executeTool(name, args) {
       case 'search_player':          return await searchPlayer(args.name);
       case 'get_player_stats':       return getPlayerStats(args.name, args.season);
       case 'compare_players':        return await comparePlayers(args.names);
-      case 'evaluate_trade':         return await evaluateTrade(args.giving, args.receiving);
+      case 'evaluate_trade':         return await evaluateTrade(args.giving, args.receiving, args.value_source);
+      case 'get_player_value':       return getPlayerValueBreakdown(args.name);
+      case 'get_team_value_summary': return await getTeamValueSummary(args.team);
+      case 'get_season_odds':        return await getSeasonOdds(args.iterations);
+      case 'simulate_roster_change_odds':
+        return await simulateRosterChangeOdds({ changes: args.changes, iterations: args.iterations });
       case 'lookup_draft_pick':      return lookupDraftPick(args.name);
       case 'get_ktc_rankings':       return getKtcRankings(args.position, args.top_n);
       case 'get_fantasycalc_rankings': return getFantasyCalcRankings(args.position, args.top_n);
@@ -347,6 +507,53 @@ async function fetchChineseCharacters(apiKey) {
   }
 }
 
+// ── Internal-model leak sanitizer ─────────────────────────────────────────────
+
+// Internal value-model names must never reach users. Prompt rules and tool-
+// output reminders reduce leaks but can't guarantee zero, so the final response
+// is regex-checked and rewritten by a second model call when a leak slips out.
+const INTERNAL_MODEL_LEAK_RE =
+  /hwang\s+(?:true|market)|competitor[-\s]?adjusted|rebuild(?:er)?[-\s]?adjusted|value\s+engine|house\s+(?:model|valuation)|internal\s+(?:model|numbers?|valuation)/i;
+
+const SANITIZE_INSTRUCTION = `You are a copy editor for HwangAI, a dynasty fantasy football AI. \
+The chat response below accidentally leaks internal methodology that users must never see. \
+Rewrite it with these rules:
+- REMOVE internal model names and aliases: "Hwang True", "Hwang Market", "Competitor Adjusted", "Rebuild(er) Adjusted", "value engine", "house model", "internal model/numbers". Replace with plain language: "my numbers", "through a win-now lens", "viewed purely as a future asset", "how we value him in this league's format".
+- REMOVE raw internal value totals attributed to those models (e.g. "6,841 in value"). Express them as a percentage gap, a position/overall rank, or a draft-pick equivalent instead.
+- KEEP everything else exactly as it was: tone, verdicts, structure, markdown links, KTC/FantasyCalc figures (public — fine to cite), ADP, odds percentages, player stats, and the <!--search--> marker if present.
+Output ONLY the rewritten response, nothing else.`;
+
+async function sanitizeInternalLeaks(text, apiKey, state) {
+  if (!text || !INTERNAL_MODEL_LEAK_RE.test(text)) return text;
+  const result = await callGemini(apiKey, {
+    systemInstruction: { parts: [{ text: SANITIZE_INSTRUCTION }] },
+    contents: [{ role: 'user', parts: [{ text }] }],
+  }, state);
+  if (!result.ok) return text; // fail open — better a leak than an error
+  const rewritten = result.data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text?.trim();
+  return rewritten || text;
+}
+
+// ── Long-running tool interim messages ────────────────────────────────────────
+
+// Tools that run Monte Carlo simulations or heavy historical recomputes. When
+// the model requests one, we return an interim "hang on" message plus a
+// continuation token instead of blocking; the frontend shows the message,
+// keeps the typing indicator up, and immediately calls back to finish.
+const SLOW_TOOLS = new Set(['get_season_odds', 'simulate_roster_change_odds', 'run_scenario']);
+
+// Guards against interim ping-pong if the model keeps chaining slow tools.
+const MAX_CONTINUATIONS = 3;
+
+const INTERIM_MESSAGES = [
+  'Hang on — I gotta crunch the numbers on this one. Give me a few seconds.',
+  'One sec, firing up the simulation engine. This takes a moment.',
+  'Hold tight — running the sims now. Real analysis takes real compute.',
+];
+
+const pickInterimMessage = () =>
+  INTERIM_MESSAGES[Math.floor(Math.random() * INTERIM_MESSAGES.length)];
+
 // ── Logging ───────────────────────────────────────────────────────────────────
 
 function logConversation(messages, response = null) {
@@ -372,10 +579,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
 
-  const { messages, systemPrompt } = body || {};
+  const { messages, systemPrompt, continuation } = body || {};
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Invalid messages' });
   }
+  const continuationDepth = Number(continuation?.depth) || 0;
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -388,19 +596,53 @@ export default async function handler(req, res) {
     ? fetchChineseCharacters(apiKey)
     : Promise.resolve(null);
 
-  // Build the conversation history for Gemini, merging consecutive same-role turns
-  // (Phase 2 search responses create back-to-back assistant messages that violate
-  // Gemini's strict alternating-role requirement)
-  let contents = [];
-  for (const m of messages) {
-    const role = m.role === 'assistant' ? 'model' : 'user';
-    const text = m.content || '';
-    if (!text) continue;
-    const prev = contents[contents.length - 1];
-    if (prev && prev.role === role) {
-      prev.parts.push({ text });
-    } else {
-      contents.push({ role, parts: [{ text }] });
+  // Execute the tools requested in a model turn's functionCall parts and
+  // return the functionResponse turn to append to the conversation.
+  async function runToolCalls(functionCallParts) {
+    const toolResults = await Promise.all(
+      functionCallParts.map(async ({ functionCall: { name, args } }) => ({
+        name,
+        result: await executeTool(name, args || {}),
+      }))
+    );
+    return {
+      role: 'user',
+      parts: toolResults.map(({ name, result }) => ({
+        functionResponse: {
+          name,
+          response: { result: typeof result === 'string' ? result : JSON.stringify(result) },
+        },
+      })),
+    };
+  }
+
+  let contents;
+  if (Array.isArray(continuation?.contents) && continuation.contents.length > 0) {
+    // Resuming after an interim "hang on" response: the last turn is the
+    // model's pending function call(s) — execute them now, then continue.
+    contents = continuation.contents;
+    const last = contents[contents.length - 1];
+    const pendingCalls = last?.role === 'model'
+      ? (last.parts || []).filter(p => p.functionCall)
+      : [];
+    if (pendingCalls.length > 0) {
+      contents.push(await runToolCalls(pendingCalls));
+    }
+  } else {
+    // Build the conversation history for Gemini, merging consecutive same-role turns
+    // (Phase 2 search responses create back-to-back assistant messages that violate
+    // Gemini's strict alternating-role requirement)
+    contents = [];
+    for (const m of messages) {
+      const role = m.role === 'assistant' ? 'model' : 'user';
+      const text = m.content || '';
+      if (!text) continue;
+      const prev = contents[contents.length - 1];
+      if (prev && prev.role === role) {
+        prev.parts.push({ text });
+      } else {
+        contents.push({ role, parts: [{ text }] });
+      }
     }
   }
 
@@ -411,20 +653,22 @@ export default async function handler(req, res) {
     ...(systemPrompt ? { systemInstruction: { parts: [{ text: systemPrompt }] } } : {}),
   };
 
-  // Tool-calling loop (max 5 rounds to prevent runaway loops)
-  for (let round = 0; round < 5; round++) {
-    const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...requestBase, contents }),
-    });
+  // Tool-calling loop (max 10 rounds — multi-step value/simulation playbooks
+  // chain several tools; the cap only guards against runaway loops)
+  const geminiState = newGeminiState();
+  for (let round = 0; round < 10; round++) {
+    const geminiRes = await callGemini(apiKey, { ...requestBase, contents }, geminiState);
 
     if (!geminiRes.ok) {
-      const err = await geminiRes.json().catch(() => ({}));
-      return res.status(geminiRes.status).json({ error: 'Gemini API error', details: err });
+      if (geminiRes.rateLimited) {
+        // Degrade gracefully: a normal chat message instead of a UI error
+        logConversation(messages, RATE_LIMITED_MESSAGE);
+        return res.status(200).json({ message: RATE_LIMITED_MESSAGE, needsSearch: false });
+      }
+      return res.status(geminiRes.status).json({ error: 'Gemini API error', details: geminiRes.err });
     }
 
-    const data = await geminiRes.json();
+    const { data } = geminiRes;
     const candidate = data.candidates?.[0];
     const parts = candidate?.content?.parts || [];
 
@@ -439,6 +683,7 @@ export default async function handler(req, res) {
         RESPONSE_SEARCH_PHRASES.some(re => re.test(text)) ||
         questionNeedsSearch(messages);
       text = text.replace(/<!--search-->/g, '').trim();
+      text = await sanitizeInternalLeaks(text, apiKey, geminiState);
       const sideResult = await sideQueryPromise;
       if (sideResult) {
         text += `\n\n---\n\n${sideResult}`;
@@ -447,25 +692,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: text, needsSearch });
     }
 
-    // Execute all requested tools (potentially in parallel)
-    const toolResults = await Promise.all(
-      functionCalls.map(async ({ functionCall: { name, args } }) => ({
-        name,
-        result: await executeTool(name, args || {}),
-      }))
-    );
+    // Append model's function call turn verbatim (Gemini 3.x models require
+    // thoughtSignature to be echoed back on functionCall parts)
+    contents.push({ role: 'model', parts });
 
-    // Append model's function call turn and tool results to conversation
-    contents.push({ role: 'model', parts: functionCalls.map(p => ({ functionCall: p.functionCall })) });
-    contents.push({
-      role: 'user',
-      parts: toolResults.map(({ name, result }) => ({
-        functionResponse: {
-          name,
-          response: { result: typeof result === 'string' ? result : JSON.stringify(result) },
-        },
-      })),
-    });
+    // Slow tool requested → hand an interim "hang on" message back to the UI
+    // along with the conversation state; the frontend calls back immediately
+    // and we execute the pending tools on the continuation request.
+    const wantsSlowTool = functionCalls.some(p => SLOW_TOOLS.has(p.functionCall.name));
+    if (wantsSlowTool && continuationDepth < MAX_CONTINUATIONS) {
+      const interimText = parts.find(p => p.text)?.text?.trim() || pickInterimMessage();
+      return res.status(200).json({
+        interim: true,
+        message: interimText,
+        continuation: { contents, depth: continuationDepth + 1 },
+      });
+    }
+
+    // Execute all requested tools (potentially in parallel) and append results
+    contents.push(await runToolCalls(functionCalls));
   }
 
   // Fallback if we hit the loop limit without a text response

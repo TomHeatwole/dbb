@@ -555,6 +555,29 @@ function DynastyRosterView() {
     return indices;
   }, [teams, teamKtcTepBaselines, teamPlayerAdjustedTotals, valueSource]);
 
+  // Comp/rebuild values are not league-conserving vs dynasty KTC (the comp tail
+  // decay strips future-only value), so raw index deltas skew negative for every
+  // team. Displayed percentages are therefore relative to the league median index.
+  const teamRedraftMedianIndex = useMemo(() => {
+    const values = Object.values(teamRedraftIndices)
+      .filter((v) => v != null && Number.isFinite(v))
+      .sort((a, b) => a - b);
+    if (!values.length) return null;
+    const mid = Math.floor(values.length / 2);
+    return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+  }, [teamRedraftIndices]);
+
+  const teamRedraftRelIndices = useMemo(() => {
+    if (teamRedraftMedianIndex == null || teamRedraftMedianIndex <= 0) return {};
+    const rel = {};
+    for (const [rosterId, index] of Object.entries(teamRedraftIndices)) {
+      rel[rosterId] = index != null
+        ? Math.round((index / teamRedraftMedianIndex) * 10000) / 10000
+        : null;
+    }
+    return rel;
+  }, [teamRedraftIndices, teamRedraftMedianIndex]);
+
   const isRedraftValueSource = REDRAFT_VALUE_SOURCES.has(valueSource);
 
   // Teams sorted by total KTC descending
@@ -705,6 +728,7 @@ function DynastyRosterView() {
   ]);
 
   const selectedTeamIndex = selectedId != null ? teamRedraftIndices[selectedId] : null;
+  const selectedTeamRelIndex = selectedId != null ? teamRedraftRelIndices[selectedId] : null;
   const redraftHwangAdp = redraftUsesHwangAdp(redraftData?.adpSource);
   const selectedIndexLabel = valueSource === 'competitor_adjusted'
     ? 'Comp Index'
@@ -864,9 +888,12 @@ function DynastyRosterView() {
                 {total != null && total > 0 && (
                   <div className="dynasty-card-values">
                     <span className="dynasty-card-total">{total.toLocaleString()}</span>
-                    {isRedraftValueSource && teamRedraftIndices[team.rosterId] != null && (
-                      <span className={indexClassName(teamRedraftIndices[team.rosterId])}>
-                        {formatIndexDeltaPct(teamRedraftIndices[team.rosterId])}
+                    {isRedraftValueSource && teamRedraftRelIndices[team.rosterId] != null && (
+                      <span
+                        className={indexClassName(teamRedraftRelIndices[team.rosterId])}
+                        title="vs league median"
+                      >
+                        {formatIndexDeltaPct(teamRedraftRelIndices[team.rosterId])}
                       </span>
                     )}
                   </div>
@@ -891,12 +918,15 @@ function DynastyRosterView() {
             <span className="dynasty-roster-team-name">{selectedTeam.teamName}</span>
             <span className="dynasty-roster-total-label">{VALUE_SOURCE_TOTAL_LABEL[valueSource]}</span>
             <span className="dynasty-roster-total-value">{selectedTotal.toLocaleString()}</span>
-            {isRedraftValueSource && selectedTeamIndex != null && selectedIndexLabel && (
+            {isRedraftValueSource && selectedTeamRelIndex != null && selectedIndexLabel && (
               <>
                 <span className="dynasty-roster-total-label">{selectedIndexLabel}</span>
-                <span className={indexClassName(selectedTeamIndex)}>
-                  {formatIndexDeltaPct(selectedTeamIndex)}
-                  <span className="dynasty-index-mult"> ({formatRedraftIndex(selectedTeamIndex)})</span>
+                <span
+                  className={indexClassName(selectedTeamRelIndex)}
+                  title="Percentage vs league median; multiplier is roster total ÷ KTC TE+ baseline"
+                >
+                  {formatIndexDeltaPct(selectedTeamRelIndex)}
+                  <span className="dynasty-index-mult"> vs median ({formatRedraftIndex(selectedTeamIndex)})</span>
                 </span>
               </>
             )}
