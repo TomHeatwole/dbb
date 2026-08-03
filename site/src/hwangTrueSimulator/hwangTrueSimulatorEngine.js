@@ -105,7 +105,7 @@ export function matchupCombos() {
 function emptyMatchups() {
   const out = {};
   for (const combo of matchupCombos()) {
-    out[combo.pairKey] = { ...combo, count: 0, totalA: 0, totalB: 0 };
+    out[combo.pairKey] = { ...combo, count: 0, weightSum: 0, totalA: 0, totalB: 0 };
   }
   return out;
 }
@@ -113,6 +113,7 @@ function emptyMatchups() {
 function accumulateMatchups(target, source) {
   for (const [key, m] of Object.entries(source)) {
     target[key].count += m.count;
+    target[key].weightSum += m.weightSum;
     target[key].totalA += m.totalA;
     target[key].totalB += m.totalB;
   }
@@ -123,6 +124,7 @@ function finalizeMatchups(matchups) {
   for (const [key, m] of Object.entries(matchups)) {
     out[key] = {
       ...m,
+      weightSum: Math.round(m.weightSum * 100) / 100,
       totalA: Math.round(m.totalA * 10) / 10,
       totalB: Math.round(m.totalB * 10) / 10,
       relDiffPct: m.count > 0 ? hvorpPctDelta(m.totalA, m.totalB) : null,
@@ -151,20 +153,28 @@ function solve3(A, b) {
 }
 
 /**
- * QB-grounded multipliers solved over the full comparison network:
+ * Position multipliers solved over the full comparison network:
  * every matchup (QB vs RB, …, WR vs TE) contributes the equation
- * log(m_B) − log(m_A) = log(totalB / totalA), weighted by its pair count,
- * with QB pinned at 1. Weighted least squares in log space uses the direct
+ * log(m_B) − log(m_A) = log(totalB / totalA), weighted by its accumulated
+ * pair weight. Weighted least squares in log space uses the direct
  * RB↔WR↔TE comparisons too — not just the QB-anchored ones.
+ *
+ * The pair data only identifies differences between positions, so a gauge
+ * is needed:
+ *   grounding='qb'    pin QB at exactly 1.0 (multipliers read "vs QB")
+ *   grounding='mean'  the geometric mean of all four positions is 1.0
+ *                     (multipliers read "vs the average same-priced player";
+ *                     QB gets its own multiplier and its noise no longer
+ *                     leaks into the other three)
  */
-function computeMultipliersFromTotals(matchups) {
+export function computeMultipliersFromTotals(matchups, grounding = 'mean') {
   const idx = { RB: 0, WR: 1, TE: 2 };
   const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   const b = [0, 0, 0];
   for (const m of Object.values(matchups)) {
     if (!m || m.count === 0 || m.totalA <= 0 || m.totalB <= 0) continue;
     const r = Math.log(m.totalB / m.totalA);
-    const w = m.count;
+    const w = m.weightSum > 0 ? m.weightSum : m.count;
     const terms = [];
     if (idx[m.posB] !== undefined) terms.push([idx[m.posB], 1]);
     if (idx[m.posA] !== undefined) terms.push([idx[m.posA], -1]);
@@ -174,10 +184,16 @@ function computeMultipliersFromTotals(matchups) {
     }
   }
   const x = solve3(A, b);
-  const byPosition = { QB: 1 };
-  for (const pos of ['RB', 'WR', 'TE']) {
-    const v = x ? Math.exp(x[idx[pos]]) : null;
-    byPosition[pos] = v != null && Number.isFinite(v) ? Math.round(v * 1000) / 1000 : null;
+  if (!x) return { QB: null, RB: null, WR: null, TE: null };
+  const logs = { QB: 0, RB: x[0], WR: x[1], TE: x[2] };
+  if (grounding === 'mean') {
+    const mean = (logs.QB + logs.RB + logs.WR + logs.TE) / 4;
+    for (const pos of Object.keys(logs)) logs[pos] -= mean;
+  }
+  const byPosition = {};
+  for (const pos of ['QB', 'RB', 'WR', 'TE']) {
+    const v = Math.exp(logs[pos]);
+    byPosition[pos] = Number.isFinite(v) ? Math.round(v * 1000) / 1000 : null;
   }
   return byPosition;
 }
@@ -460,6 +476,11 @@ function buildYearCandidates(finalKtcRows, year, ptsById) {
  * @param {Array}    opts.archetypeIds        subset of archetype ids to run (null = all)
  * @param {string}   opts.valueBasis          'ktc' (Final KTC) or 'comp' (competitor-adjusted):
  *                                            drives archetype ranks, season boards, and pairing
+ * @param {string}   opts.grounding           'mean' (default; multipliers vs the average
+ *                                            same-priced player) or 'qb' (pin QB = 1.0)
+ * @param {boolean}  opts.valueWeightPairs    weight each pair's contribution by its mid value
+ * @param {boolean}  opts.pointsWeightBuilds  weight each build's contribution by its base-roster
+ *                                            season optimal total (better teams count more)
  * @param {Function} opts.onProgress          ({ fraction, label }) => void
  * @param {Function} opts.isCancelled         () => boolean
  */
@@ -472,6 +493,9 @@ export async function runHwangTrueSimulation({
   tePremium = 0.5,
   archetypeIds = null,
   valueBasis = 'ktc',
+  grounding = 'mean',
+  valueWeightPairs = true,
+  pointsWeightBuilds = true,
   onProgress = () => {},
   isCancelled = () => false,
 } = {}) {
@@ -541,9 +565,10 @@ export async function runHwangTrueSimulation({
       const dropIndex = findDropSlotIndex(archetype.slots);
 
       const archMatchups = emptyMatchups();
-      const hvorpSums = new Map(); // pid → { sum, n }
+      const hvorpSums = new Map(); // pid → { sum, n, wSum, w }
       const buildRecords = [];
       let totalKtcSum = 0;
+      let baseTotalSum = 0;
 
       for (let b = 0; b < builds; b += 1) {
         if (isCancelled()) throw new Error('cancelled');
@@ -604,10 +629,18 @@ export async function runHwangTrueSimulation({
           }
         }
 
+        // Season-long optimal total of the base roster: the build's strength,
+        // used as its contribution weight when pointsWeightBuilds is on.
+        const seasonBaseTotal = baseTotals.reduce((s, v) => s + v, 0);
+        baseTotalSum += seasonBaseTotal;
+        const buildW = pointsWeightBuilds ? seasonBaseTotal / 2500 : 1;
+
         for (const [pid, value] of hvorpById.entries()) {
-          const agg = hvorpSums.get(pid) || { sum: 0, n: 0 };
+          const agg = hvorpSums.get(pid) || { sum: 0, n: 0, wSum: 0, w: 0 };
           agg.sum += value;
           agg.n += 1;
+          agg.wSum += value * buildW;
+          agg.w += buildW;
           hvorpSums.set(pid, agg);
         }
 
@@ -616,10 +649,15 @@ export async function runHwangTrueSimulation({
           const hvorpA = hvorpById.get(pair.a.playerId);
           const hvorpB = hvorpById.get(pair.b.playerId);
           if (hvorpA == null || hvorpB == null) continue;
+          const valueW = valueWeightPairs
+            ? ((pair.a.value + pair.b.value) / 2) / 5000
+            : 1;
+          const w = valueW * buildW;
           const m = buildMatchups[pair.pairKey];
           m.count += 1;
-          m.totalA += hvorpA;
-          m.totalB += hvorpB;
+          m.weightSum += w;
+          m.totalA += w * hvorpA;
+          m.totalB += w * hvorpB;
         }
         accumulateMatchups(archMatchups, buildMatchups);
         accumulateMatchups(yearMatchups, buildMatchups);
@@ -643,8 +681,12 @@ export async function runHwangTrueSimulation({
       }
 
       const hvorpAvgById = {};
+      const hvorpWeightedAvgById = {};
       for (const [pid, agg] of hvorpSums.entries()) {
         hvorpAvgById[pid] = Math.round((agg.sum / agg.n) * 10) / 10;
+        hvorpWeightedAvgById[pid] = agg.w > 0
+          ? Math.round((agg.wSum / agg.w) * 10) / 10
+          : null;
       }
 
       archetypeResults.push({
@@ -655,8 +697,10 @@ export async function runHwangTrueSimulation({
         year,
         buildCount: builds,
         avgTotalKtc: Math.round(totalKtcSum / builds),
+        avgBaseTotal: Math.round(baseTotalSum / builds),
         matchups: finalizeMatchups(archMatchups),
         hvorpAvgById,
+        hvorpWeightedAvgById,
         builds: buildRecords,
       });
     }
@@ -695,13 +739,16 @@ export async function runHwangTrueSimulation({
       ppr,
       tePremium,
       valueBasis,
+      grounding,
+      valueWeightPairs,
+      pointsWeightBuilds,
       archetypeCount: archetypes.length,
       ktcAsOf: meta?.ktcAsOf || null,
       hvorpMethod: 'roster-context optimal starter totals (17 weeks, add-on / leave-one-out)',
     },
     overall: {
       matchups: finalOverall,
-      multipliers: computeMultipliersFromTotals(finalOverall),
+      multipliers: computeMultipliersFromTotals(finalOverall, grounding),
     },
     years: yearResults,
   };

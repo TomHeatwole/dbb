@@ -5,8 +5,12 @@
  *   value basis  × format
  *   {ktc, comp}  × {hwang, regular}
  * with identical roster-build seeds within each basis, and dumps 100% of the
- * results to CSVs under example_data/hwang_true_sim_200/ for offline analytics.
- * Every CSV carries a value_basis column.
+ * results to CSVs under example_data/hwang_true_sim_200_v3/ for offline
+ * analytics. Every CSV carries a value_basis column.
+ *
+ * v3 model: pair contributions are weighted by pair value and build strength
+ * (base-roster season optimal total), and reported multipliers are
+ * mean-grounded (geometric mean of the four positions = 1.0).
  *
  * Formats:
  *   hwang    1QB/3RB/3WR/1TE/2FLEX/1SF · 0 PPR · TE +0.5
@@ -20,7 +24,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT_DIR = path.join(ROOT, 'example_data', 'hwang_true_sim_200');
+const OUT_DIR = path.join(ROOT, 'example_data', 'hwang_true_sim_200_v3');
 const SEED = Number(process.argv[2]) || 1;
 const BUILDS = Number(process.argv[3]) || 200;
 const JITTER = 10;
@@ -119,12 +123,14 @@ writeCsv(
   'config.csv',
   ['value_basis', 'format', 'qb', 'rb', 'wr', 'te', 'flex', 'superflex', 'ppr', 'te_premium',
     'builds_per_archetype', 'jitter_pct', 'seed', 'years', 'archetype_count',
+    'grounding', 'value_weight_pairs', 'points_weight_builds',
     'pair_tolerance_pct', 'top_rank', 'ktc_as_of', 'hvorp_method'],
   runs.map(({ basis, format, results }) => {
     const c = results.config;
     return [basis, format.name, c.slotCounts.QB, c.slotCounts.RB, c.slotCounts.WR, c.slotCounts.TE,
       c.slotCounts.FLEX, c.slotCounts.SUPER, c.ppr, c.tePremium,
       c.buildsPerArchetype, c.jitterPct, c.seed, c.years.join('|'), c.archetypeCount,
+      c.grounding, c.valueWeightPairs ? 1 : 0, c.pointsWeightBuilds ? 1 : 0,
       c.tolerancePct, c.topKtcRank, c.ktcAsOf, c.hvorpMethod];
   }),
 );
@@ -142,7 +148,7 @@ for (const { basis, format, results } of runs) {
   const push = (scope, year, archetypeId, matchups) => {
     for (const m of Object.values(matchups)) {
       matchupRows.push([basis, format.name, scope, year, archetypeId, m.pairKey, m.posA, m.posB,
-        m.count, m.totalA, m.totalB, m.relDiffPct]);
+        m.count, m.weightSum, m.totalA, m.totalB, m.relDiffPct]);
     }
   };
   push('overall', '', '', results.overall.matchups);
@@ -154,7 +160,7 @@ for (const { basis, format, results } of runs) {
 writeCsv(
   'matchups.csv',
   ['value_basis', 'format', 'scope', 'year', 'archetype_id', 'pair_key', 'pos_a', 'pos_b',
-    'pair_plugs', 'total_hvorp_a', 'total_hvorp_b', 'rel_diff_pct'],
+    'pair_plugs', 'weight_sum', 'total_hvorp_a', 'total_hvorp_b', 'rel_diff_pct'],
   matchupRows,
 );
 
@@ -179,14 +185,16 @@ for (const { basis, format, results } of runs) {
   for (const y of results.years) {
     for (const a of y.archetypes) {
       for (const [pid, avg] of Object.entries(a.hvorpAvgById)) {
-        hvorpRows.push([basis, format.name, y.year, a.archetypeId, pid, avg, a.buildCount]);
+        hvorpRows.push([basis, format.name, y.year, a.archetypeId, pid, avg,
+          a.hvorpWeightedAvgById[pid], a.buildCount, a.avgBaseTotal]);
       }
     }
   }
 }
 writeCsv(
   'archetype_player_hvorp.csv',
-  ['value_basis', 'format', 'year', 'archetype_id', 'player_id', 'avg_hvorp', 'build_count'],
+  ['value_basis', 'format', 'year', 'archetype_id', 'player_id', 'avg_hvorp',
+    'avg_hvorp_weighted', 'build_count', 'avg_base_total'],
   hvorpRows,
 );
 
@@ -214,7 +222,7 @@ writeCsv(
 
 // ── Sanity summary ────────────────────────────────────────────────────────────
 
-console.log('\n=== Multipliers (QB-grounded, full comparison network) ===');
+console.log('\n=== Multipliers (mean-grounded, weighted, full comparison network) ===');
 for (const { basis, format, results } of runs) {
   console.log(`${basis} / ${format.name}:`, results.overall.multipliers);
 }

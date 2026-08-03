@@ -250,7 +250,8 @@ function PairBreakdown({ matchup, yearData, archetype }) {
   );
 }
 
-function MultiplierStrip({ multipliers }) {
+function MultiplierStrip({ multipliers, grounding }) {
+  const isQb = grounding === 'qb';
   return (
     <div className="hts-mult-strip">
       {['QB', 'RB', 'WR', 'TE'].map((pos) => (
@@ -262,9 +263,12 @@ function MultiplierStrip({ multipliers }) {
         </div>
       ))}
       <p className="hts-mult-note">
-        QB-grounded value multipliers solved across the full comparison network — all six
-        matchups (including the direct RB/WR/TE pairs) via pair-count-weighted least squares
-        in log space. Below 1.0× = fewer starter points than QB at the same KTC price.
+        Value multipliers solved across the full comparison network — all six matchups
+        (including the direct RB/WR/TE pairs) via weighted least squares in log space.
+        Pair contributions are weighted by pair value and by build strength (season points).
+        {isQb
+          ? ' Grounded on QB = 1.0×: below 1.0× = fewer starter points than QB at the same price.'
+          : ' Mean-grounded: 1.0× = the average same-priced player across all four positions.'}
       </p>
     </div>
   );
@@ -497,7 +501,7 @@ function SingleRunView({ results }) {
           (top {cfg.topKtcRank}) · HVORP = true roster-context marginal starter points.
         </p>
       </div>
-      <MultiplierStrip multipliers={results.overall.multipliers} />
+      <MultiplierStrip multipliers={results.overall.multipliers} grounding={cfg.grounding} />
       <MatchupTable
         matchups={results.overall.matchups}
         title="All seasons, all rosters combined"
@@ -514,6 +518,7 @@ function ComparisonSummary({ runs, formats }) {
   const [runA, runB] = runs;
   const [nameA, nameB] = formats.map(formatName);
   const combos = matchupCombos();
+  const isQbGrounded = runA.config.grounding === 'qb';
 
   const rows = ['QB', 'RB', 'WR', 'TE'].map((pos) => {
     const multA = runA.overall.multipliers[pos];
@@ -533,10 +538,11 @@ function ComparisonSummary({ runs, formats }) {
     };
   }).sort((a, b) => Math.abs(b.swing ?? 0) - Math.abs(a.swing ?? 0));
 
-  const gains = rows.filter((r) => r.pos !== 'QB' && r.factor != null && r.factor >= 1.05);
-  const losses = rows.filter((r) => r.pos !== 'QB' && r.factor != null && r.factor <= 0.95);
-  const neutral = rows.filter(
-    (r) => r.pos !== 'QB' && r.factor != null && r.factor > 0.95 && r.factor < 1.05,
+  const comparable = isQbGrounded ? rows.filter((r) => r.pos !== 'QB') : rows;
+  const gains = comparable.filter((r) => r.factor != null && r.factor >= 1.05);
+  const losses = comparable.filter((r) => r.factor != null && r.factor <= 0.95);
+  const neutral = comparable.filter(
+    (r) => r.factor != null && r.factor > 0.95 && r.factor < 1.05,
   );
   const describe = (list) => list
     .map((r) => `${r.pos} ${r.factor >= 1 ? '+' : ''}${((r.factor - 1) * 100).toFixed(0)}%`)
@@ -600,7 +606,7 @@ function ComparisonSummary({ runs, formats }) {
         </table>
       </div>
       <p className="pvc-section-desc">
-        Relative to {nameB} (grounded on QB):
+        Relative to {nameB} ({isQbGrounded ? 'grounded on QB' : 'mean-grounded'}):
         {gains.length > 0 && ` ${nameA} boosts ${describe(gains)}.`}
         {losses.length > 0 && ` ${nameA} suppresses ${describe(losses)}.`}
         {neutral.length > 0 && ` ${describe(neutral)} price${neutral.length === 1 ? 's' : ''} roughly the same in both formats.`}
@@ -696,6 +702,7 @@ function HwangTrueSimulator() {
   ]);
   const [buildsPerArchetype, setBuildsPerArchetype] = useState(DEFAULT_BUILDS_PER_ARCHETYPE);
   const [valueBasis, setValueBasis] = useState('ktc');
+  const [qbGrounding, setQbGrounding] = useState(false);
   const [jitterPct, setJitterPct] = useState(DEFAULT_JITTER_PCT);
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000) + 1);
   const [archetypeOptions, setArchetypeOptions] = useState([]);
@@ -748,6 +755,7 @@ function HwangTrueSimulator() {
             tePremium: activeFormats[i].tePremium,
             archetypeIds: allSelected ? null : Array.from(selectedArchetypes),
             valueBasis,
+            grounding: qbGrounding ? 'qb' : 'mean',
           },
           (p) => setProgress({
             ...p,
@@ -947,6 +955,17 @@ function HwangTrueSimulator() {
           >
             <option value="ktc">Final KTC</option>
             <option value="comp">Competitor Adjusted</option>
+          </select>
+        </label>
+        <label className="pvc-field">
+          <span className="pvc-label">Multiplier grounding</span>
+          <select
+            className="pvc-select"
+            value={qbGrounding ? 'qb' : 'mean'}
+            onChange={(e) => setQbGrounding(e.target.value === 'qb')}
+          >
+            <option value="mean">Mean (avg position = 1.0)</option>
+            <option value="qb">QB = 1.0</option>
           </select>
         </label>
         <label className="pvc-field">
