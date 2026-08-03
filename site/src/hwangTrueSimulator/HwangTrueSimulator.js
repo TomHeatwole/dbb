@@ -7,10 +7,35 @@ import {
   loadArchetypeOptions,
   matchupCombos,
   PAIR_TOLERANCE_PCT,
-  runHwangTrueSimulation,
   SIM_YEARS,
   SLOT_COUNTS,
 } from './hwangTrueSimulatorEngine';
+
+/**
+ * Runs one simulation in a dedicated Web Worker so long runs keep full speed
+ * when the tab is backgrounded (main-thread timers get throttled to ≥1s).
+ */
+function runSimulationInWorker(options, onProgress, workerRef) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./hwangTrueSimWorker.js', import.meta.url));
+    workerRef.current = worker;
+    const cleanup = () => {
+      worker.terminate();
+      if (workerRef.current === worker) workerRef.current = null;
+    };
+    worker.onmessage = (event) => {
+      const { type } = event.data || {};
+      if (type === 'progress') onProgress(event.data.progress);
+      else if (type === 'done') { cleanup(); resolve(event.data.results); }
+      else if (type === 'error') { cleanup(); reject(new Error(event.data.message)); }
+    };
+    worker.onerror = (err) => {
+      cleanup();
+      reject(new Error(err?.message || 'Simulation worker crashed'));
+    };
+    worker.postMessage({ type: 'run', options });
+  });
+}
 
 const SLOT_ORDER = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'SUPER'];
 const MAX_PAIR_ROWS = 400;
@@ -237,8 +262,9 @@ function MultiplierStrip({ multipliers }) {
         </div>
       ))}
       <p className="hts-mult-note">
-        QB-grounded value multipliers from total roster HVORP in QB-vs-position pair plugs.
-        Below 1.0× = that position returned fewer starter points than QB at the same KTC price.
+        QB-grounded value multipliers solved across the full comparison network — all six
+        matchups (including the direct RB/WR/TE pairs) via pair-count-weighted least squares
+        in log space. Below 1.0× = fewer starter points than QB at the same KTC price.
       </p>
     </div>
   );
@@ -673,8 +699,12 @@ function HwangTrueSimulator() {
   const [archetypeOptions, setArchetypeOptions] = useState([]);
   const [selectedArchetypes, setSelectedArchetypes] = useState(null); // null until options load
   const cancelledRef = useRef(false);
+  const workerRef = useRef(null);
 
-  useEffect(() => () => { cancelledRef.current = true; }, []);
+  useEffect(() => () => {
+    cancelledRef.current = true;
+    if (workerRef.current) workerRef.current.terminate();
+  }, []);
 
   useEffect(() => {
     let stale = false;
@@ -701,25 +731,28 @@ function HwangTrueSimulator() {
         || selectedArchetypes.size === archetypeOptions.length;
       const results = [];
       for (let i = 0; i < activeFormats.length; i += 1) {
+        if (cancelledRef.current) throw new Error('cancelled');
         const prefix = activeFormats.length > 1
           ? `[${i + 1}/${activeFormats.length} ${formatName(activeFormats[i])}] `
           : '';
         // eslint-disable-next-line no-await-in-loop
-        const out = await runHwangTrueSimulation({
-          jitterPct,
-          seed,
-          buildsPerArchetype,
-          slotCounts: { ...activeFormats[i].slots },
-          ppr: activeFormats[i].ppr,
-          tePremium: activeFormats[i].tePremium,
-          archetypeIds: allSelected ? null : Array.from(selectedArchetypes),
-          onProgress: (p) => setProgress({
+        const out = await runSimulationInWorker(
+          {
+            jitterPct,
+            seed,
+            buildsPerArchetype,
+            slotCounts: { ...activeFormats[i].slots },
+            ppr: activeFormats[i].ppr,
+            tePremium: activeFormats[i].tePremium,
+            archetypeIds: allSelected ? null : Array.from(selectedArchetypes),
+          },
+          (p) => setProgress({
             ...p,
             fraction: (i + p.fraction) / activeFormats.length,
             label: prefix + p.label,
           }),
-          isCancelled: () => cancelledRef.current,
-        });
+          workerRef,
+        );
         results.push(out);
       }
       setRuns(results);
@@ -750,7 +783,14 @@ function HwangTrueSimulator() {
         {phase === 'running' && (
           <button
             className="hts-cancel-btn"
-            onClick={() => { cancelledRef.current = true; }}
+            onClick={() => {
+              cancelledRef.current = true;
+              if (workerRef.current) {
+                workerRef.current.terminate();
+                workerRef.current = null;
+              }
+              setPhase('idle');
+            }}
           >
             Cancel
           </button>

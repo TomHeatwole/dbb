@@ -131,14 +131,53 @@ function finalizeMatchups(matchups) {
   return out;
 }
 
-/** QB-grounded multipliers from total HVORP in QB-vs-pos matchups. */
+/** Solve a 3×3 linear system by Gaussian elimination with partial pivoting. */
+function solve3(A, b) {
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let i = 0; i < 3; i += 1) {
+    let pivot = i;
+    for (let r = i + 1; r < 3; r += 1) {
+      if (Math.abs(M[r][i]) > Math.abs(M[pivot][i])) pivot = r;
+    }
+    [M[i], M[pivot]] = [M[pivot], M[i]];
+    if (Math.abs(M[i][i]) < 1e-12) return null;
+    for (let r = 0; r < 3; r += 1) {
+      if (r === i) continue;
+      const f = M[r][i] / M[i][i];
+      for (let c = i; c < 4; c += 1) M[r][c] -= f * M[i][c];
+    }
+  }
+  return [M[0][3] / M[0][0], M[1][3] / M[1][1], M[2][3] / M[2][2]];
+}
+
+/**
+ * QB-grounded multipliers solved over the full comparison network:
+ * every matchup (QB vs RB, …, WR vs TE) contributes the equation
+ * log(m_B) − log(m_A) = log(totalB / totalA), weighted by its pair count,
+ * with QB pinned at 1. Weighted least squares in log space uses the direct
+ * RB↔WR↔TE comparisons too — not just the QB-anchored ones.
+ */
 function computeMultipliersFromTotals(matchups) {
+  const idx = { RB: 0, WR: 1, TE: 2 };
+  const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  const b = [0, 0, 0];
+  for (const m of Object.values(matchups)) {
+    if (!m || m.count === 0 || m.totalA <= 0 || m.totalB <= 0) continue;
+    const r = Math.log(m.totalB / m.totalA);
+    const w = m.count;
+    const terms = [];
+    if (idx[m.posB] !== undefined) terms.push([idx[m.posB], 1]);
+    if (idx[m.posA] !== undefined) terms.push([idx[m.posA], -1]);
+    for (const [i, si] of terms) {
+      b[i] += w * si * r;
+      for (const [j, sj] of terms) A[i][j] += w * si * sj;
+    }
+  }
+  const x = solve3(A, b);
   const byPosition = { QB: 1 };
   for (const pos of ['RB', 'WR', 'TE']) {
-    const m = matchups[`QB_vs_${pos}`];
-    byPosition[pos] = m && m.totalA > 0
-      ? Math.round((m.totalB / m.totalA) * 1000) / 1000
-      : null;
+    const v = x ? Math.exp(x[idx[pos]]) : null;
+    byPosition[pos] = v != null && Number.isFinite(v) ? Math.round(v * 1000) / 1000 : null;
   }
   return byPosition;
 }
@@ -416,11 +455,12 @@ export async function runHwangTrueSimulation({
   const builds = jitterPct > 0 ? Math.max(1, buildsPerArchetype) : 1;
 
   const totalUnits = SIM_YEARS.length * (NUM_WEEKS + archetypes.length * builds);
-  let unitsDone = 0;
+  // Object so loop callbacks can safely mutate without no-loop-func.
+  const progress = { unitsDone: 0 };
   const report = (offset, label) => {
     onProgress({
-      fraction: Math.min((unitsDone + offset) / totalUnits, 1),
-      unitsDone: Math.min(Math.round(unitsDone + offset), totalUnits),
+      fraction: Math.min((progress.unitsDone + offset) / totalUnits, 1),
+      unitsDone: Math.min(Math.round(progress.unitsDone + offset), totalUnits),
       totalUnits,
       label,
     });
@@ -444,7 +484,7 @@ export async function runHwangTrueSimulation({
     }
     report(0, `${year}: fetching weekly stats…`);
     const ptsById = await buildYearWeeklyPoints(year, positionsById, scoringConfig, (week) => {
-      unitsDone += 1;
+      progress.unitsDone += 1;
       report(0, `${year}: fetching weekly stats — week ${week}/${NUM_WEEKS}`);
     });
     clearStatsCache();
@@ -565,7 +605,7 @@ export async function runHwangTrueSimulation({
           });
         }
 
-        unitsDone += 1;
+        progress.unitsDone += 1;
         report(0, `${year}: ${archetype.label}${buildLabel} — done`);
       }
 

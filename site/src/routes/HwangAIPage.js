@@ -114,19 +114,18 @@ function HwangAIPage() {
           console.error('[HwangAI] Phase 1 failed:', res.status, errBody);
           throw new Error(`Request failed: ${res.status}`);
         }
-        phase1Data = await res.json();
-        if (!phase1Data.interim || !phase1Data.continuation) {
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: phase1Data.message,
-          }]);
+        const data = await res.json();
+        phase1Data = data;
+        const assistantMessage = {
+          role: 'assistant',
+          content: data.message,
+        };
+        if (!data.interim || !data.continuation) {
+          setMessages(prev => [...prev, assistantMessage]);
           break;
         }
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: phase1Data.message,
-        }]);
-        requestBody = { messages: newMessages, systemPrompt, continuation: phase1Data.continuation };
+        setMessages(prev => [...prev, assistantMessage]);
+        requestBody = { messages: newMessages, systemPrompt, continuation: data.continuation };
       }
     } catch (err) {
       console.error('[HwangAI] Phase 1 error:', err);

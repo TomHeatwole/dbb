@@ -22,7 +22,7 @@ import { loadKtcData, loadFantasyCalcData, loadFfbData } from './dataLoader.mjs'
 
 export const HWANG_POSITION_COEFFICIENTS = {
   market: { QB: 1.0, RB: 1.12, WR: 0.96, TE: 1.0 },
-  true:   { QB: 1.0, RB: 1.2,  WR: 0.9,  TE: 1.1 },
+  true:   { QB: 1.0, RB: 1.063, WR: 0.830, TE: 0.877 },
 };
 
 /** Which coefficient set powers Hwang-Adjusted Competitor / Rebuild values. */

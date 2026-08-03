@@ -18,9 +18,9 @@ export const HWANG_POSITION_COEFFICIENTS = {
   },
   true: {
     QB: 1.0,
-    RB: 1.2,
-    WR: 0.9,
-    TE: 1.1,
+    RB: 1.063,
+    WR: 0.830,
+    TE: 0.877,
   },
 };
 
