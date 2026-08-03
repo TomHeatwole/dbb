@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-03T15:18:19.532Z",
-  "ktcAsOf": "2026-08-02",
+  "generatedAt": "2026-08-03T22:29:52.042Z",
+  "ktcAsOf": "2026-08-04",
   "selection": {
     "2024": "top 6 by standings (wins, then fpts)",
     "2025": "top by standings (wins, then fpts), excluding tankers: PUPpy Bowl, The Boomers, Eat It While She Sleeper, Sell for Sellers",
@@ -152,8 +152,8 @@
       "season": 2026,
       "finishRank": 3,
       "rankBasis": "sim_roster_value",
-      "teamName": "Drake & Bake",
-      "owner": "davisdaniel1",
+      "teamName": "Eat It While She Sleeper",
+      "owner": "GIVEDADDYASPIKE",
       "record": "0-0",
       "fpts": 0
     },
@@ -162,8 +162,8 @@
       "season": 2026,
       "finishRank": 4,
       "rankBasis": "sim_roster_value",
-      "teamName": "Eat It While She Sleeper",
-      "owner": "GIVEDADDYASPIKE",
+      "teamName": "Drake & Bake",
+      "owner": "davisdaniel1",
       "record": "0-0",
       "fpts": 0
     },
@@ -220,6 +220,7 @@
     "2024 The Boomers: Diontae Johnson (WR)",
     "2024 The Boomers: Skylar Thompson (QB)",
     "2024 seanjcrow: Tyler Lockett (WR)",
+    "2024 seanjcrow: Khalil Herbert (RB)",
     "2025 Lord Pittsy Flacco Joedy: DeAndre Hopkins (WR)",
     "2025 Lord Pittsy Flacco Joedy: Adam Thielen (WR)",
     "2025 Lord Pittsy Flacco Joedy: Joe Mixon (RB)",

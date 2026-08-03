@@ -7,6 +7,7 @@ import {
   loadHwangPositionMultipliers,
   applyHwangKtcAdjustment,
   formatMultiplierSummary,
+  hwangMultiplierAt,
 } from '../lookups/HwangValueAdjustmentLookup';
 import { assignPosValueRanks, assignOverallValueRanks } from '../lookups/RedraftValueLookup';
 
@@ -66,7 +67,7 @@ export async function loadHwangAdjustedKtcRankings(adjustmentKey) {
       team: (cols[idx('team')] || '').trim(),
       value,
       ktcValue,
-      multiplier: multipliers.get(pos) ?? 1,
+      multiplier: Math.round(hwangMultiplierAt(multipliers.get(pos), ktcValue) * 1000) / 1000,
       rank: null,
       posRank: null,
       sleeperId: '',

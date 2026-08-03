@@ -17,14 +17,16 @@
  *   regular  1QB/2RB/3WR/1TE/1FLEX/1SF · 0.5 PPR · TE +0.5
  *
  * Usage (tsx handles the engine's CRA-style extensionless imports):
- *   npx tsx scripts/run_hwang_true_sim_example.mjs [seed] [builds]
+ *   npx tsx scripts/run_hwang_true_sim_example.mjs [seed] [builds] [outDir]
  */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT_DIR = path.join(ROOT, 'example_data', 'hwang_true_sim_200_v3');
+const OUT_DIR = process.argv[4]
+  ? path.resolve(process.argv[4])
+  : path.join(ROOT, 'example_data', 'hwang_true_sim_200_v3');
 const SEED = Number(process.argv[2]) || 1;
 const BUILDS = Number(process.argv[3]) || 200;
 const JITTER = 10;

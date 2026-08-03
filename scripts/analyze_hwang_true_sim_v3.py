@@ -19,11 +19,12 @@ Reads example_data/hwang_true_sim_200_v3/ and produces, per value basis:
 
 Figures land in example_data/hwang_true_sim_200_v3/analysis/.
 
-Usage: /tmp/dbb_venv/bin/python scripts/analyze_hwang_true_sim_v3.py
+Usage: /tmp/dbb_venv/bin/python scripts/analyze_hwang_true_sim_v3.py [dataDir]
 """
 import csv
 import math
 import os
+import sys
 from collections import defaultdict
 
 import numpy as np
@@ -32,7 +33,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-DATA = os.path.join(ROOT, 'example_data', 'hwang_true_sim_200_v3')
+DATA = (os.path.abspath(sys.argv[1]) if len(sys.argv) > 1
+        else os.path.join(ROOT, 'example_data', 'hwang_true_sim_200_v3'))
 OUT = os.path.join(DATA, 'analysis')
 os.makedirs(OUT, exist_ok=True)
 

@@ -1,78 +1,78 @@
 archetype_id,season,finish_rank,rank_basis,team_name,owner,roster_id,wins,losses,fpts,sleeper_id,player_name,sleeper_position,nfl_team,ktc_name,position,ktc_value,ktc_overall_rank,ktc_pos_rank,comp_adj_value,comp_adj_overall_rank,comp_adj_pos_rank
 2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,9509,Bijan Robinson,RB,ATL,Bijan Robinson,RB,9999,1,1,9669,4,2
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8138,James Cook,RB,BUF,James Cook,RB,6119,34,8,6640,26,6
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8155,Breece Hall,RB,NYJ,Breece Hall,RB,5278,57,14,5308,54,14
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11631,Brian Thomas,WR,JAX,Brian Thomas Jr.,WR,4869,73,27,4227,83,31
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,3163,Jared Goff,QB,DET,Jared Goff,QB,4685,80,19,5469,49,15
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8138,James Cook,RB,BUF,James Cook,RB,6137,33,8,6640,26,6
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8155,Breece Hall,RB,NYJ,Breece Hall,RB,5288,56,13,5308,54,14
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11631,Brian Thomas,WR,JAX,Brian Thomas Jr.,WR,4810,75,27,4227,83,31
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,3163,Jared Goff,QB,DET,Jared Goff,QB,4748,78,19,5469,49,15
 2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,3198,Derrick Henry,RB,BAL,Derrick Henry,RB,4199,91,23,5494,48,12
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,5849,Kyler Murray,QB,MIN,Kyler Murray,QB,3967,96,24,5123,59,17
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8167,Christian Watson,WR,GB,Christian Watson,WR,3936,99,31,4774,73,29
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4217,George Kittle,TE,SF,George Kittle,TE,3816,104,12,4327,80,9
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,7594,Chuba Hubbard,RB,CAR,Chuba Hubbard,RB,3189,145,33,3590,108,27
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,5045,Courtland Sutton,WR,DEN,Courtland Sutton,WR,3075,151,54,3794,98,37
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4037,Chris Godwin,WR,TB,Chris Godwin,WR,2956,167,61,3587,109,41
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8111,Cade Otton,TE,TB,Cade Otton,TE,2676,190,31,2221,159,26
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,9482,Michael Mayer,TE,LV,Michael Mayer,TE,2520,223,37,1232,203,39
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11637,Keon Coleman,WR,BUF,Keon Coleman,WR,2370,236,88,598,268,94
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8205,Isiah Pacheco,RB,DET,Isiah Pacheco,RB,2236,252,62,1811,176,47
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11643,Jaylen Wright,RB,MIA,Jaylen Wright,RB,2215,256,63,679,259,72
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,1373,Geno Smith,QB,NYJ,Geno Smith,QB,2205,258,37,2784,138,30
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4082,Curtis Samuel,WR,,Deebo Samuel,WR,2047,279,97,1541,185,65
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,7571,Rashod Bateman,WR,BAL,Rashod Bateman,WR,2018,284,99,722,255,89
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8225,Daniel Bellinger,TE,TEN,Daniel Bellinger,TE,1741,316,53,592,271,54
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4039,Cooper Kupp,WR,SEA,Cooper Kupp,WR,1694,325,115,920,235,81
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11834,Devaughn Vele,WR,NO,Devaughn Vele,WR,1360,377,137,491,298,103
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,6130,Devin Singletary,RB,NYG,Devin Singletary,RB,1193,408,102,281,385,106
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,7596,Elijah Moore,WR,PHI,Elijah Moore,WR,1158,415,153,260,403,151
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,9999,Will Levis,QB,TEN,Will Levis,QB,1076,428,60,338,349,62
-2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8162,Sam Howell,QB,DAL,Sam Howell,QB,983,445,64,1462,192,38
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,7564,Ja'Marr Chase,WR,CIN,Ja'Marr Chase,WR,9995,2,1,9962,3,1
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,4046,Patrick Mahomes,QB,KC,Patrick Mahomes,QB,6366,28,8,5768,41,13
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,8150,Kyren Williams,RB,LAR,Kyren Williams,RB,4961,67,16,5011,65,16
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,3294,Dak Prescott,QB,DAL,Dak Prescott,QB,4900,71,17,6797,24,8
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11584,Bucky Irving,RB,TB,Bucky Irving,RB,4717,79,19,4213,84,22
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5850,Josh Jacobs,RB,GB,Josh Jacobs,RB,4064,92,24,4771,74,18
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5870,Daniel Jones,QB,IND,Daniel Jones,QB,3938,98,25,3909,92,24
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,2309,Amari Cooper,WR,,Omar Cooper Jr.,WR,3514,119,40,1980,168,60
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5846,DK Metcalf,WR,PIT,DK Metcalf,WR,3458,122,42,3877,95,35
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5892,David Montgomery,RB,HOU,David Montgomery,RB,3455,124,28,4554,78,20
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,2216,Mike Evans,WR,SF,Mike Evans,WR,3351,136,50,5095,61,23
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,1466,Travis Kelce,TE,KC,Travis Kelce,TE,3051,155,24,4121,88,10
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11618,Jalen McMillan,WR,TB,Jalen McMillan,WR,3027,158,55,2108,163,58
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,8408,Jordan Mason,RB,MIN,Jordan Mason,RB,2721,187,45,2272,156,41
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11655,Tyrone Tracy,RB,NYG,Tyrone Tracy,RB,2623,199,47,2085,164,43
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11627,Troy Franklin,WR,DEN,Troy Franklin,WR,2529,221,78,829,241,84
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,6783,Jerry Jeudy,WR,CLE,Jerry Jeudy,WR,2518,224,80,1209,207,72
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,6865,Colby Parkinson,TE,LAR,Colby Parkinson,TE,2328,243,42,1807,177,32
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,7090,Darnell Mooney,WR,NYG,Darnell Mooney,WR,1964,288,101,1026,223,78
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11435,Emanuel Wilson,RB,SEA,Emanuel Wilson,RB,1894,299,76,749,249,70
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,4137,James Conner,RB,ARI,James Conner,RB,1732,319,79,726,254,71
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,3321,Tyreek Hill,WR,,Tyreek Hill,WR,1497,357,127,628,263,91
-2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11623,Jordan Whittington,WR,LAR,Jordan Whittington,WR,1412,369,132,438,309,108
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,5849,Kyler Murray,QB,MIN,Kyler Murray,QB,3937,96,24,5123,59,17
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8167,Christian Watson,WR,GB,Christian Watson,WR,3918,97,31,4774,73,29
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4217,George Kittle,TE,SF,George Kittle,TE,3836,105,12,4327,80,9
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,7594,Chuba Hubbard,RB,CAR,Chuba Hubbard,RB,3169,146,33,3590,108,27
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,5045,Courtland Sutton,WR,DEN,Courtland Sutton,WR,3078,152,54,3794,98,37
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4037,Chris Godwin,WR,TB,Chris Godwin,WR,2953,166,60,3587,109,41
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8111,Cade Otton,TE,TB,Cade Otton,TE,2685,190,30,2221,159,26
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,9482,Michael Mayer,TE,LV,Michael Mayer,TE,2489,227,38,1232,203,39
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11637,Keon Coleman,WR,BUF,Keon Coleman,WR,2347,238,88,598,268,94
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4082,Curtis Samuel,WR,,Deebo Samuel,WR,2303,245,90,1541,185,65
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8205,Isiah Pacheco,RB,DET,Isiah Pacheco,RB,2270,248,59,1811,176,47
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11643,Jaylen Wright,RB,MIA,Jaylen Wright,RB,2230,254,63,679,259,72
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,1373,Geno Smith,QB,NYJ,Geno Smith,QB,2223,255,36,2784,138,30
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,7571,Rashod Bateman,WR,BAL,Rashod Bateman,WR,2039,281,98,722,255,89
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8225,Daniel Bellinger,TE,TEN,Daniel Bellinger,TE,1721,320,53,592,271,54
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,4039,Cooper Kupp,WR,SEA,Cooper Kupp,WR,1710,322,115,920,235,81
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,11834,Devaughn Vele,WR,NO,Devaughn Vele,WR,1364,376,136,491,298,103
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,7596,Elijah Moore,WR,PHI,Elijah Moore,WR,1183,409,150,260,403,151
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,6130,Devin Singletary,RB,NYG,Devin Singletary,RB,1179,411,102,281,385,106
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,9999,Will Levis,QB,TEN,Will Levis,QB,1086,425,59,338,349,62
+2024_1,2024,1,standings,Let James Cook,mehrj14,2,16,2,3030.02,8162,Sam Howell,QB,DAL,Sam Howell,QB,999,442,63,1462,192,38
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,7564,Ja'Marr Chase,WR,CIN,Ja'Marr Chase,WR,9975,4,1,9962,3,1
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,4046,Patrick Mahomes,QB,KC,Patrick Mahomes,QB,6307,29,8,5768,41,13
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,8150,Kyren Williams,RB,LAR,Kyren Williams,RB,4990,67,16,5011,65,16
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,3294,Dak Prescott,QB,DAL,Dak Prescott,QB,4947,70,17,6797,24,8
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11584,Bucky Irving,RB,TB,Bucky Irving,RB,4682,81,19,4213,84,22
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5850,Josh Jacobs,RB,GB,Josh Jacobs,RB,4067,92,24,4771,74,18
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5870,Daniel Jones,QB,IND,Daniel Jones,QB,3882,99,25,3909,92,24
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,2309,Amari Cooper,WR,,Omar Cooper Jr.,WR,3525,117,40,1980,168,60
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5846,DK Metcalf,WR,PIT,DK Metcalf,WR,3466,123,43,3877,95,35
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,5892,David Montgomery,RB,HOU,David Montgomery,RB,3462,125,29,4554,78,20
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,2216,Mike Evans,WR,SF,Mike Evans,WR,3396,132,47,5095,61,23
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,1466,Travis Kelce,TE,KC,Travis Kelce,TE,3035,157,24,4121,88,10
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11618,Jalen McMillan,WR,TB,Jalen McMillan,WR,3016,160,56,2108,163,58
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,8408,Jordan Mason,RB,MIN,Jordan Mason,RB,2737,183,44,2272,156,41
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11655,Tyrone Tracy,RB,NYG,Tyrone Tracy,RB,2606,206,50,2085,164,43
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,6783,Jerry Jeudy,WR,CLE,Jerry Jeudy,WR,2530,223,80,1209,207,72
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11627,Troy Franklin,WR,DEN,Troy Franklin,WR,2502,225,81,829,241,84
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,6865,Colby Parkinson,TE,LAR,Colby Parkinson,TE,2318,244,42,1807,177,32
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,7090,Darnell Mooney,WR,NYG,Darnell Mooney,WR,1942,292,103,1026,223,78
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11435,Emanuel Wilson,RB,SEA,Emanuel Wilson,RB,1840,305,77,749,249,70
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,4137,James Conner,RB,ARI,James Conner,RB,1708,324,80,726,254,71
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,3321,Tyreek Hill,WR,,Tyreek Hill,WR,1428,366,131,628,263,91
+2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,11623,Jordan Whittington,WR,LAR,Jordan Whittington,WR,1427,367,132,438,309,108
 2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,2197,Brandin Cooks,WR,,,WR,,,,,,
 2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,2749,Raheem Mostert,RB,,,RB,,,,,,
 2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,3164,Ezekiel Elliott,RB,,,RB,,,,,,
 2024_2,2024,2,standings,Age is just a number,theyellowman,5,15,3,2893.99,4381,Taysom Hill,TE,,,TE,,,,,,
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,11566,Jayden Daniels,QB,WAS,Jayden Daniels,QB,7564,15,5,7984,13,5
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6904,Jalen Hurts,QB,PHI,Jalen Hurts,QB,6153,32,11,7391,17,7
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,8151,Kenneth Walker,RB,KC,Kenneth Walker III,RB,5656,39,9,5741,42,10
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,7525,DeVonta Smith,WR,PHI,DeVonta Smith,WR,5444,49,18,6275,32,11
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,4034,Christian McCaffrey,RB,SF,Christian McCaffrey,RB,5281,56,13,7112,21,5
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5859,A.J. Brown,WR,NE,A.J. Brown,WR,5031,63,21,6989,22,8
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,7553,Kyle Pitts,TE,ATL,Kyle Pitts,TE,4981,66,8,5085,62,7
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6790,D'Andre Swift,RB,CHI,D'Andre Swift,RB,3693,110,25,4202,86,23
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,2133,Davante Adams,WR,LAR,Davante Adams,WR,3415,127,44,4995,66,26
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5844,T.J. Hockenson,TE,MIN,T.J. Hockenson,TE,3073,152,21,2688,139,22
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,7611,Rhamondre Stevenson,RB,NE,Rhamondre Stevenson,RB,3042,157,36,3461,113,29
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6806,J.K. Dobbins,RB,DEN,J.K. Dobbins,RB,3007,163,38,2790,136,36
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,8676,Rashid Shaheed,WR,SEA,Rashid Shaheed,WR,2791,177,64,2208,160,57
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,3257,Jacoby Brissett,QB,ARI,Jacoby Brissett,QB,2619,201,33,2864,134,29
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,8154,Brian Robinson,RB,ATL,Brian Robinson,RB,2368,237,55,1482,191,52
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,4066,Evan Engram,TE,DEN,Evan Engram,TE,2136,264,46,1639,183,34
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,4950,Christian Kirk,WR,SF,Christian Kirk,WR,1818,308,109,747,250,86
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5248,Gus Edwards,RB,,Donovan Edwards,RB,1150,416,103,270,396,111
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6011,Gardner Minshew,QB,ARI,Gardner Minshew,QB,1140,419,58,1625,184,37
-2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5133,Tyler Conklin,TE,DET,Tyler Conklin,TE,830,477,71,587,273,55
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,11566,Jayden Daniels,QB,WAS,Jayden Daniels,QB,7524,15,5,7984,13,5
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6904,Jalen Hurts,QB,PHI,Jalen Hurts,QB,6134,34,11,7391,17,7
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,8151,Kenneth Walker,RB,KC,Kenneth Walker III,RB,5625,40,9,5741,42,10
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,7525,DeVonta Smith,WR,PHI,DeVonta Smith,WR,5483,48,17,6275,32,11
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,4034,Christian McCaffrey,RB,SF,Christian McCaffrey,RB,5268,57,14,7112,21,5
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,7553,Kyle Pitts,TE,ATL,Kyle Pitts,TE,5063,62,8,5085,62,7
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5859,A.J. Brown,WR,NE,A.J. Brown,WR,4994,66,23,6989,22,8
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6790,D'Andre Swift,RB,CHI,D'Andre Swift,RB,3685,109,25,4202,86,23
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,2133,Davante Adams,WR,LAR,Davante Adams,WR,3399,131,46,4995,66,26
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5844,T.J. Hockenson,TE,MIN,T.J. Hockenson,TE,3040,155,23,2688,139,22
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6806,J.K. Dobbins,RB,DEN,J.K. Dobbins,RB,3039,156,36,2790,136,36
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,7611,Rhamondre Stevenson,RB,NE,Rhamondre Stevenson,RB,3011,161,38,3461,113,29
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,8676,Rashid Shaheed,WR,SEA,Rashid Shaheed,WR,2859,172,63,2208,160,57
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,3257,Jacoby Brissett,QB,ARI,Jacoby Brissett,QB,2654,192,31,2864,134,29
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,8154,Brian Robinson,RB,ATL,Brian Robinson,RB,2409,232,55,1482,191,52
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,4066,Evan Engram,TE,DEN,Evan Engram,TE,2126,265,46,1639,183,34
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,4950,Christian Kirk,WR,SF,Christian Kirk,WR,1817,308,109,747,250,86
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5248,Gus Edwards,RB,,Donovan Edwards,RB,1169,414,103,270,396,111
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6011,Gardner Minshew,QB,ARI,Gardner Minshew,QB,1128,422,58,1625,184,37
+2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,5133,Tyler Conklin,TE,DET,Tyler Conklin,TE,831,470,71,587,273,55
 2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,1426,DeAndre Hopkins,WR,,,WR,,,,,,
 2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,1689,Adam Thielen,WR,,,WR,,,,,,
 2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,2028,Derek Carr,QB,,,QB,,,,,,
@@ -80,435 +80,435 @@ archetype_id,season,finish_rank,rank_basis,team_name,owner,roster_id,wins,losses
 2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,4663,Austin Ekeler,RB,,,RB,,,,,,
 2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6943,Gabe Davis,WR,,,WR,,,,,,
 2024_3,2024,3,standings,Adam(s) and Steve(nson),dwol11,8,12,6,2571.84,6945,Antonio Gibson,RB,,,RB,,,,,,
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4881,Lamar Jackson,QB,BAL,Lamar Jackson,QB,7620,12,4,9129,6,2
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,9226,De'Von Achane,RB,MIA,De'Von Achane,RB,6848,25,6,5824,37,9
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6813,Jonathan Taylor,RB,IND,Jonathan Taylor,RB,6130,33,7,7806,15,3
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,7569,Nico Collins,WR,HOU,Nico Collins,WR,5543,45,15,6658,25,9
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6804,Jordan Love,QB,GB,Jordan Love,QB,5439,50,14,4943,67,18
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,10229,Rashee Rice,WR,KC,Rashee Rice,WR,4958,68,24,6142,35,12
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6801,Tee Higgins,WR,CIN,Tee Higgins,WR,4950,69,25,5705,43,16
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4892,Baker Mayfield,QB,TB,Baker Mayfield,QB,4683,81,20,4792,72,19
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,10222,Jayden Reed,WR,GB,Jayden Reed,WR,3371,135,49,3661,104,39
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5022,Dallas Goedert,TE,PHI,Dallas Goedert,TE,3056,154,23,3631,107,14
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,8121,Romeo Doubs,WR,NE,Romeo Doubs,WR,3012,162,58,3018,128,49
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5947,Jakobi Meyers,WR,JAX,Jakobi Meyers,WR,2991,164,59,3141,126,48
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5967,Tony Pollard,RB,TEN,Tony Pollard,RB,2802,175,41,3379,114,30
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4033,David Njoku,TE,LAC,David Njoku,TE,2612,204,34,2134,162,28
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4199,Aaron Jones,RB,MIN,Aaron Jones,RB,2351,241,56,2573,145,39
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,9481,Luke Musgrave,TE,GB,Luke Musgrave,TE,2115,269,47,803,244,49
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5872,Deebo Samuel,WR,SF,Deebo Samuel,WR,2047,279,97,1541,185,65
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,10226,Andrei Iosivas,WR,CIN,Andrei Iosivas,WR,1660,329,117,343,343,124
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,11650,Luke McCaffrey,WR,WAS,Luke McCaffrey,WR,1628,334,119,407,320,113
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,11651,Isaac Guerendo,RB,SF,Isaac Guerendo,RB,1421,367,91,364,332,91
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,11439,Jaleel McLaughlin,RB,DEN,Jaleel McLaughlin,RB,1306,385,96,548,284,78
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6845,Zack Moss,RB,,Le'Veon Moss,RB,911,456,117,250,425,120
-2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,3286,Demarcus Robinson,WR,SF,Demarcus Robinson,WR,786,484,177,217,441,177
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4881,Lamar Jackson,QB,BAL,Lamar Jackson,QB,7545,14,4,9129,6,2
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,9226,De'Von Achane,RB,MIA,De'Von Achane,RB,6829,25,6,5824,37,9
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6813,Jonathan Taylor,RB,IND,Jonathan Taylor,RB,6190,32,7,7806,15,3
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,7569,Nico Collins,WR,HOU,Nico Collins,WR,5556,44,15,6658,25,9
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6804,Jordan Love,QB,GB,Jordan Love,QB,5434,50,14,4943,67,18
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,10229,Rashee Rice,WR,KC,Rashee Rice,WR,4968,68,24,6142,35,12
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6801,Tee Higgins,WR,CIN,Tee Higgins,WR,4964,69,25,5705,43,16
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4892,Baker Mayfield,QB,TB,Baker Mayfield,QB,4664,82,21,4792,72,19
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,10222,Jayden Reed,WR,GB,Jayden Reed,WR,3367,134,49,3661,104,39
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5022,Dallas Goedert,TE,PHI,Dallas Goedert,TE,3050,154,22,3631,107,14
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5947,Jakobi Meyers,WR,JAX,Jakobi Meyers,WR,3009,162,57,3141,126,48
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,8121,Romeo Doubs,WR,NE,Romeo Doubs,WR,3006,163,58,3018,128,49
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5967,Tony Pollard,RB,TEN,Tony Pollard,RB,2827,174,41,3379,114,30
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4033,David Njoku,TE,LAC,David Njoku,TE,2633,197,32,2134,162,28
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,4199,Aaron Jones,RB,MIN,Aaron Jones,RB,2331,240,56,2573,145,39
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,5872,Deebo Samuel,WR,SF,Deebo Samuel,WR,2303,245,90,1541,185,65
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,9481,Luke Musgrave,TE,GB,Luke Musgrave,TE,2091,270,47,803,244,49
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,10226,Andrei Iosivas,WR,CIN,Andrei Iosivas,WR,1647,330,119,343,343,124
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,11650,Luke McCaffrey,WR,WAS,Luke McCaffrey,WR,1614,338,122,407,320,113
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,11651,Isaac Guerendo,RB,SF,Isaac Guerendo,RB,1373,375,93,364,332,91
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,11439,Jaleel McLaughlin,RB,DEN,Jaleel McLaughlin,RB,1274,393,97,548,284,78
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6845,Zack Moss,RB,,Le'Veon Moss,RB,905,456,116,250,425,120
+2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,3286,Demarcus Robinson,WR,SF,Demarcus Robinson,WR,779,484,177,217,441,177
 2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,10223,Eric Gray,RB,NYG,,RB,,,,,,
 2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,6111,Jake Browning,QB,TB,,QB,,,,,,
 2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,8116,Pierre Strong,RB,GB,,RB,,,,,,
 2024_4,2024,4,standings,We Have McCaffrey at Home,davisdaniel1,6,11,7,2771.34,8219,Jelani Woods,TE,NYJ,,TE,,,,,,
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,6794,Justin Jefferson,WR,MIN,Justin Jefferson,WR,7586,14,5,7381,18,6
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,6786,CeeDee Lamb,WR,DAL,CeeDee Lamb,WR,7139,19,7,7869,14,5
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8112,Drake London,WR,ATL,Drake London,WR,6996,24,8,7283,20,7
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8183,Brock Purdy,QB,SF,Brock Purdy,QB,5856,38,13,5627,44,14
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4866,Saquon Barkley,RB,PHI,Saquon Barkley,RB,5053,62,15,6408,31,7
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4943,Sam Darnold,QB,SEA,Sam Darnold,QB,4364,88,22,4313,82,22
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8110,Jake Ferguson,TE,DAL,Jake Ferguson,TE,3652,111,14,3772,100,13
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8210,Chig Okonkwo,TE,WAS,Chigoziem Okonkwo,TE,3216,141,18,3318,119,16
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,7021,Rico Dowdle,RB,PIT,Rico Dowdle,RB,3088,150,35,3217,123,32
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8136,Rachaad White,RB,WAS,Rachaad White,RB,2788,178,42,2615,143,38
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,7591,Justin Fields,QB,KC,Justin Fields,QB,1975,287,40,937,233,44
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4017,Deshaun Watson,QB,CLE,Deshaun Watson,QB,1959,289,41,2537,146,32
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,5857,Noah Fant,TE,NO,Noah Fant,TE,1791,309,51,355,336,65
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11599,Cade Stover,TE,HOU,Cade Stover,TE,1706,323,54,571,278,56
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,5995,Justice Hill,RB,BAL,Justice Hill,RB,1464,364,90,752,248,69
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,5848,Marquise Brown,WR,PHI,Marquise Brown,WR,1456,365,130,368,331,118
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11629,Devontez Walker,WR,BAL,Devontez Walker,WR,1395,370,133,543,286,100
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11617,Malachi Corley,WR,CLE,Malachi Corley,WR,1254,396,143,257,410,157
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,7528,Najee Harris,RB,,Najee Harris,RB,1134,420,104,397,324,90
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8129,Dameon Pierce,RB,PHI,Dameon Pierce,RB,1029,434,107,259,405,113
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,1234,Russell Wilson,QB,,Zach Wilson,QB,903,458,65,300,374,68
-2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11636,Johnny Wilson,WR,PHI,Johnny Wilson,WR,764,489,178,221,438,175
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,6794,Justin Jefferson,WR,MIN,Justin Jefferson,WR,7546,13,5,7381,18,6
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,6786,CeeDee Lamb,WR,DAL,CeeDee Lamb,WR,7174,19,7,7869,14,5
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8112,Drake London,WR,ATL,Drake London,WR,6962,24,8,7283,20,7
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8183,Brock Purdy,QB,SF,Brock Purdy,QB,5804,38,13,5627,44,14
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4866,Saquon Barkley,RB,PHI,Saquon Barkley,RB,5047,63,15,6408,31,7
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4943,Sam Darnold,QB,SEA,Sam Darnold,QB,4377,87,22,4313,82,22
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8110,Jake Ferguson,TE,DAL,Jake Ferguson,TE,3643,111,14,3772,100,13
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8210,Chig Okonkwo,TE,WAS,Chigoziem Okonkwo,TE,3206,141,18,3318,119,16
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,7021,Rico Dowdle,RB,PIT,Rico Dowdle,RB,3131,149,34,3217,123,32
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8136,Rachaad White,RB,WAS,Rachaad White,RB,2824,175,42,2615,143,38
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4017,Deshaun Watson,QB,CLE,Deshaun Watson,QB,1929,294,41,2537,146,32
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,7591,Justin Fields,QB,KC,Justin Fields,QB,1914,298,42,937,233,44
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,5857,Noah Fant,TE,NO,Noah Fant,TE,1760,313,52,355,336,65
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11599,Cade Stover,TE,HOU,Cade Stover,TE,1708,322,54,571,278,56
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,5995,Justice Hill,RB,BAL,Justice Hill,RB,1461,363,90,752,248,69
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,5848,Marquise Brown,WR,PHI,Marquise Brown,WR,1460,364,130,368,331,118
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11629,Devontez Walker,WR,BAL,Devontez Walker,WR,1420,368,133,543,286,100
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11617,Malachi Corley,WR,CLE,Malachi Corley,WR,1255,398,144,257,410,157
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,7528,Najee Harris,RB,,Najee Harris,RB,1133,420,104,397,324,90
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8129,Dameon Pierce,RB,PHI,Dameon Pierce,RB,1006,439,108,259,405,113
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,1234,Russell Wilson,QB,,Zach Wilson,QB,882,460,65,300,374,68
+2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,11636,Johnny Wilson,WR,PHI,Johnny Wilson,WR,763,491,179,221,438,175
 2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4018,Joe Mixon,RB,,,RB,,,,,,
 2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4179,Joshua Dobbs,QB,,,QB,,,,,,
 2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,4951,DJ Chark,WR,,,WR,,,,,,
 2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,5937,Diontae Johnson,WR,,,WR,,,,,,
 2024_5,2024,5,standings,The Boomers,jheatwole,3,11,7,2628.14,8206,Skylar Thompson,QB,BAL,,QB,,,,,,
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9221,Jahmyr Gibbs,RB,DET,Jahmyr Gibbs,RB,9992,3,2,9999,1,1
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4984,Josh Allen,QB,BUF,Josh Allen,QB,9983,4,1,9987,2,1
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9488,Jaxon Smith-Njigba,WR,SEA,Jaxon Smith-Njigba,WR,9332,5,2,8913,8,3
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9224,Chase Brown,RB,CIN,Chase Brown,RB,5332,54,12,5609,46,11
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,7543,Travis Etienne,RB,NO,Travis Etienne,RB,4412,87,21,5166,58,15
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,421,Matthew Stafford,QB,LAR,Matthew Stafford,QB,3869,102,26,6264,33,11
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,8131,Isaiah Likely,TE,NYG,Isaiah Likely,TE,3826,103,11,3795,97,12
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,10232,Michael Wilson,WR,ARI,Michael Wilson,WR,3716,109,35,3345,117,45
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4983,DJ Moore,WR,BUF,D.J. Moore,WR,3547,115,36,4824,70,27
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,5927,Terry McLaurin,WR,WAS,Terry McLaurin,WR,3533,116,38,5062,63,24
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11586,Blake Corum,RB,LAR,Blake Corum,RB,3455,123,29,2919,131,35
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,5012,Mark Andrews,TE,BAL,Mark Andrews,TE,3198,141,19,3544,111,15
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,8134,Khalil Shakir,WR,BUF,Khalil Shakir,WR,2866,172,63,2482,148,54
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9511,Keaton Mitchell,RB,LAC,Keaton Mitchell,RB,2577,211,50,2065,165,44
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11610,Malik Washington,WR,MIA,Malik Washington,WR,2568,215,77,987,226,79
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,5001,Dalton Schultz,TE,HOU,Dalton Schultz,TE,2566,218,36,2649,142,23
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11600,Ja'Tavion Sanders,TE,CAR,Ja'Tavion Sanders,TE,2345,242,41,1023,224,44
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4035,Alvin Kamara,RB,NO,Alvin Kamara,RB,2070,273,70,1224,206,56
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,96,Aaron Rodgers,QB,PIT,Aaron Rodgers,QB,1899,297,43,3634,106,27
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,6803,Brandon Aiyuk,WR,SF,Brandon Aiyuk,WR,1550,347,124,954,230,80
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11562,Spencer Rattler,QB,NO,Spencer Rattler,QB,1443,366,50,1187,209,40
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9497,Jalin Hyatt,WR,NYG,Jalin Hyatt,WR,1267,394,142,248,427,167
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,6151,Miles Sanders,RB,,Raheim Sanders,RB,1201,406,101,275,389,108
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,1479,Keenan Allen,WR,,Keenan Allen,WR,1178,411,150,427,312,109
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4080,Zay Jones,WR,,Zay Jones,WR,497,539,187,178,462,190
-2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,7608,Khalil Herbert,RB,,Khalil Herbert,RB,485,545,131,182,459,131
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9221,Jahmyr Gibbs,RB,DET,Jahmyr Gibbs,RB,9999,2,2,9999,1,1
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4984,Josh Allen,QB,BUF,Josh Allen,QB,9992,3,1,9987,2,1
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9488,Jaxon Smith-Njigba,WR,SEA,Jaxon Smith-Njigba,WR,9314,5,2,8913,8,3
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9224,Chase Brown,RB,CIN,Chase Brown,RB,5391,51,11,5609,46,11
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,7543,Travis Etienne,RB,NO,Travis Etienne,RB,4357,88,21,5166,58,15
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,421,Matthew Stafford,QB,LAR,Matthew Stafford,QB,3868,102,26,6264,33,11
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,8131,Isaiah Likely,TE,NYG,Isaiah Likely,TE,3859,104,11,3795,97,12
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,10232,Michael Wilson,WR,ARI,Michael Wilson,WR,3729,108,35,3345,117,45
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4983,DJ Moore,WR,BUF,D.J. Moore,WR,3568,114,37,4824,70,27
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,5927,Terry McLaurin,WR,WAS,Terry McLaurin,WR,3538,115,38,5062,63,24
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11586,Blake Corum,RB,LAR,Blake Corum,RB,3477,122,28,2919,131,35
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,5012,Mark Andrews,TE,BAL,Mark Andrews,TE,3159,148,20,3544,111,15
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,8134,Khalil Shakir,WR,BUF,Khalil Shakir,WR,2889,171,62,2482,148,54
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9511,Keaton Mitchell,RB,LAC,Keaton Mitchell,RB,2606,207,49,2065,165,44
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11610,Malik Washington,WR,MIA,Malik Washington,WR,2564,216,77,987,226,79
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,5001,Dalton Schultz,TE,HOU,Dalton Schultz,TE,2544,219,36,2649,142,23
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11600,Ja'Tavion Sanders,TE,CAR,Ja'Tavion Sanders,TE,2329,241,41,1023,224,44
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4035,Alvin Kamara,RB,NO,Alvin Kamara,RB,2047,278,69,1224,206,56
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,96,Aaron Rodgers,QB,PIT,Aaron Rodgers,QB,1956,288,40,3634,106,27
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,6803,Brandon Aiyuk,WR,SF,Brandon Aiyuk,WR,1502,355,126,954,230,80
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,11562,Spencer Rattler,QB,NO,Spencer Rattler,QB,1405,370,50,1187,209,40
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,9497,Jalin Hyatt,WR,NYG,Jalin Hyatt,WR,1279,392,142,248,427,167
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,6151,Miles Sanders,RB,,Raheim Sanders,RB,1181,410,101,275,389,108
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,1479,Keenan Allen,WR,,Keenan Allen,WR,1161,416,153,427,312,109
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,4080,Zay Jones,WR,,Zay Jones,WR,485,542,188,178,462,190
 2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,2374,Tyler Lockett,WR,,,WR,,,,,,
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,7547,Amon-Ra St. Brown,WR,DET,Amon-Ra St. Brown,WR,7867,10,4,8003,12,4
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6770,Joe Burrow,QB,CIN,Joe Burrow,QB,7421,17,6,8538,9,3
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6904,Jalen Hurts,QB,PHI,Jalen Hurts,QB,6153,32,11,7391,17,7
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8138,James Cook,RB,BUF,James Cook,RB,6119,34,8,6640,26,6
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8151,Kenneth Walker,RB,KC,Kenneth Walker III,RB,5656,39,9,5741,42,10
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,7525,DeVonta Smith,WR,PHI,DeVonta Smith,WR,5444,49,18,6275,32,11
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4034,Christian McCaffrey,RB,SF,Christian McCaffrey,RB,5281,56,13,7112,21,5
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8155,Breece Hall,RB,NYJ,Breece Hall,RB,5278,57,14,5308,54,14
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,5859,A.J. Brown,WR,NE,A.J. Brown,WR,5031,63,21,6989,22,8
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,7553,Kyle Pitts,TE,ATL,Kyle Pitts,TE,4981,66,8,5085,62,7
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6790,D'Andre Swift,RB,CHI,D'Andre Swift,RB,3693,110,25,4202,86,23
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,5844,T.J. Hockenson,TE,MIN,T.J. Hockenson,TE,3073,152,21,2688,139,22
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6806,J.K. Dobbins,RB,DEN,J.K. Dobbins,RB,3007,163,38,2790,136,36
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8676,Rashid Shaheed,WR,SEA,Rashid Shaheed,WR,2791,177,64,2208,160,57
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,12492,Pat Bryant,WR,DEN,Pat Bryant,WR,2518,225,81,887,237,82
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8154,Brian Robinson,RB,ATL,Brian Robinson,RB,2368,237,55,1482,191,52
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,1373,Geno Smith,QB,NYJ,Geno Smith,QB,2205,258,37,2784,138,30
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4066,Evan Engram,TE,DEN,Evan Engram,TE,2136,264,46,1639,183,34
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4950,Christian Kirk,WR,SF,Christian Kirk,WR,1818,308,109,747,250,86
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6149,Darius Slayton,WR,NYG,Darius Slayton,WR,1558,344,123,344,342,123
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,1479,Keenan Allen,WR,,Keenan Allen,WR,1178,411,150,427,312,109
-2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,19,Joe Flacco,QB,CIN,Joe Flacco,QB,1014,438,62,550,283,51
+2024_6,2024,6,standings,seanjcrow,seanjcrow,4,9,9,2615.54,7608,Khalil Herbert,RB,SF,,RB,,,,182,459,131
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,7547,Amon-Ra St. Brown,WR,DET,Amon-Ra St. Brown,WR,7898,10,4,8003,12,4
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6770,Joe Burrow,QB,CIN,Joe Burrow,QB,7401,17,6,8538,9,3
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8138,James Cook,RB,BUF,James Cook,RB,6137,33,8,6640,26,6
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6904,Jalen Hurts,QB,PHI,Jalen Hurts,QB,6134,34,11,7391,17,7
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8151,Kenneth Walker,RB,KC,Kenneth Walker III,RB,5625,40,9,5741,42,10
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,7525,DeVonta Smith,WR,PHI,DeVonta Smith,WR,5483,48,17,6275,32,11
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8155,Breece Hall,RB,NYJ,Breece Hall,RB,5288,56,13,5308,54,14
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4034,Christian McCaffrey,RB,SF,Christian McCaffrey,RB,5268,57,14,7112,21,5
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,7553,Kyle Pitts,TE,ATL,Kyle Pitts,TE,5063,62,8,5085,62,7
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,5859,A.J. Brown,WR,NE,A.J. Brown,WR,4994,66,23,6989,22,8
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6790,D'Andre Swift,RB,CHI,D'Andre Swift,RB,3685,109,25,4202,86,23
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,5844,T.J. Hockenson,TE,MIN,T.J. Hockenson,TE,3040,155,23,2688,139,22
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6806,J.K. Dobbins,RB,DEN,J.K. Dobbins,RB,3039,156,36,2790,136,36
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8676,Rashid Shaheed,WR,SEA,Rashid Shaheed,WR,2859,172,63,2208,160,57
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,12492,Pat Bryant,WR,DEN,Pat Bryant,WR,2477,228,82,887,237,82
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,8154,Brian Robinson,RB,ATL,Brian Robinson,RB,2409,232,55,1482,191,52
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,1373,Geno Smith,QB,NYJ,Geno Smith,QB,2223,255,36,2784,138,30
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4066,Evan Engram,TE,DEN,Evan Engram,TE,2126,265,46,1639,183,34
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4950,Christian Kirk,WR,SF,Christian Kirk,WR,1817,308,109,747,250,86
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,6149,Darius Slayton,WR,NYG,Darius Slayton,WR,1535,349,125,344,342,123
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,1479,Keenan Allen,WR,,Keenan Allen,WR,1161,416,153,427,312,109
+2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,19,Joe Flacco,QB,CIN,Joe Flacco,QB,960,448,64,550,283,51
 2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,1426,DeAndre Hopkins,WR,,,WR,,,,,,
 2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,1689,Adam Thielen,WR,,,WR,,,,,,
 2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4018,Joe Mixon,RB,,,RB,,,,,,
 2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4663,Austin Ekeler,RB,,,RB,,,,,,
 2025_1,2025,1,standings,Lord Pittsy Flacco Joedy,dwol11,8,15,3,2733.84,4988,Nick Chubb,RB,,,RB,,,,,,
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9221,Jahmyr Gibbs,RB,DET,Jahmyr Gibbs,RB,9992,3,2,9999,1,1
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,4984,Josh Allen,QB,BUF,Josh Allen,QB,9983,4,1,9987,2,1
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9488,Jaxon Smith-Njigba,WR,SEA,Jaxon Smith-Njigba,WR,9332,5,2,8913,8,3
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12508,Jaxson Dart,QB,NYG,Jaxson Dart,QB,6256,30,9,6193,34,12
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12506,Harold Fannin,TE,CLE,Harold Fannin,TE,5340,52,6,5303,55,6
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9224,Chase Brown,RB,CIN,Chase Brown,RB,5332,54,12,5609,46,11
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12545,Tyler Shough,QB,NO,Tyler Shough,QB,4792,75,18,4711,75,20
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12481,Cam Skattebo,RB,NYG,Cam Skattebo,RB,4739,78,18,4667,76,19
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,7543,Travis Etienne,RB,NO,Travis Etienne,RB,4412,87,21,5166,58,15
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,8131,Isaiah Likely,TE,NYG,Isaiah Likely,TE,3826,103,11,3795,97,12
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,10232,Michael Wilson,WR,ARI,Michael Wilson,WR,3716,109,35,3345,117,45
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,4983,DJ Moore,WR,BUF,D.J. Moore,WR,3547,115,36,4824,70,27
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,5927,Terry McLaurin,WR,WAS,Terry McLaurin,WR,3533,116,38,5062,63,24
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11586,Blake Corum,RB,LAR,Blake Corum,RB,3455,123,29,2919,131,35
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12530,Travis Hunter,WR,JAX,Travis Hunter,WR,3386,133,47,1482,190,67
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,10222,Jayden Reed,WR,GB,Jayden Reed,WR,3371,135,49,3661,104,39
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,5012,Mark Andrews,TE,BAL,Mark Andrews,TE,3198,141,19,3544,111,15
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,8134,Khalil Shakir,WR,BUF,Khalil Shakir,WR,2866,172,63,2482,148,54
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9511,Keaton Mitchell,RB,LAC,Keaton Mitchell,RB,2577,211,50,2065,165,44
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11610,Malik Washington,WR,MIA,Malik Washington,WR,2568,215,77,987,226,79
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11600,Ja'Tavion Sanders,TE,CAR,Ja'Tavion Sanders,TE,2345,242,41,1023,224,44
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,4035,Alvin Kamara,RB,NO,Alvin Kamara,RB,2070,273,70,1224,206,56
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12503,Isaiah Bond,WR,CLE,Isaiah Bond,WR,2051,276,95,312,365,130
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,96,Aaron Rodgers,QB,PIT,Aaron Rodgers,QB,1899,297,43,3634,106,27
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9501,DeMario Douglas,WR,NE,Demario Douglas,WR,1892,300,105,322,361,127
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,6803,Brandon Aiyuk,WR,SF,Brandon Aiyuk,WR,1550,347,124,954,230,80
-2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11562,Spencer Rattler,QB,NO,Spencer Rattler,QB,1443,366,50,1187,209,40
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,8130,Trey McBride,TE,ARI,Trey McBride,TE,8140,9,2,8362,10,2
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4881,Lamar Jackson,QB,BAL,Lamar Jackson,QB,7620,12,4,9129,6,2
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,8112,Drake London,WR,ATL,Drake London,WR,6996,24,8,7283,20,7
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,9226,De'Von Achane,RB,MIA,De'Von Achane,RB,6848,25,6,5824,37,9
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,7569,Nico Collins,WR,HOU,Nico Collins,WR,5543,45,15,6658,25,9
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,6801,Tee Higgins,WR,CIN,Tee Higgins,WR,4950,69,25,5705,43,16
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,11584,Bucky Irving,RB,TB,Bucky Irving,RB,4717,79,19,4213,84,22
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4892,Baker Mayfield,QB,TB,Baker Mayfield,QB,4683,81,20,4792,72,19
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,7588,Javonte Williams,RB,DAL,Javonte Williams,RB,4611,84,20,4885,69,17
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12493,Oronde Gadsden,TE,LAC,Oronde Gadsden,TE,3976,94,10,3200,124,17
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,421,Matthew Stafford,QB,LAR,Matthew Stafford,QB,3869,102,26,6264,33,11
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12489,RJ Harvey,RB,DEN,RJ Harvey,RB,3408,128,30,3341,118,31
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12533,Jacory Croskey-Merritt,RB,WAS,Jacory Croskey-Merritt,RB,3020,161,37,2374,152,40
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,5947,Jakobi Meyers,WR,JAX,Jakobi Meyers,WR,2991,164,59,3141,126,48
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,5967,Tony Pollard,RB,TEN,Tony Pollard,RB,2802,175,41,3379,114,30
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,3214,Hunter Henry,TE,NE,Hunter Henry,TE,2763,179,26,2789,137,21
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12536,Jaylin Noel,WR,HOU,Jaylin Noel,WR,2662,193,67,742,252,87
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4033,David Njoku,TE,LAC,David Njoku,TE,2612,204,34,2134,162,28
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,7049,Jauan Jennings,WR,MIN,Jauan Jennings,WR,2407,234,86,1942,169,61
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4199,Aaron Jones,RB,MIN,Aaron Jones,RB,2351,241,56,2573,145,39
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,2449,Stefon Diggs,WR,,Stefon Diggs,WR,2134,265,91,2342,154,56
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,5872,Deebo Samuel,WR,SF,Deebo Samuel,WR,2047,279,97,1541,185,65
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,11575,Ray Davis,RB,BUF,Ray Davis,RB,1915,294,74,1043,221,60
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12541,Dont'e Thornton,WR,LV,Dont'e Thornton,WR,1913,295,103,312,366,131
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4981,Calvin Ridley,WR,TEN,Calvin Ridley,WR,1783,311,110,1046,219,76
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,10226,Andrei Iosivas,WR,CIN,Andrei Iosivas,WR,1660,329,117,343,343,124
-2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,11651,Isaac Guerendo,RB,SF,Isaac Guerendo,RB,1421,367,91,364,332,91
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11564,Drake Maye,QB,NE,Drake Maye,QB,9254,6,2,8223,11,4
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12527,Ashton Jeanty,RB,LV,Ashton Jeanty,RB,7604,13,3,7329,19,4
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11632,Malik Nabers,WR,NYG,Malik Nabers,WR,7255,18,6,5776,40,15
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12518,Tyler Warren,TE,IND,Tyler Warren,TE,6549,26,4,6524,28,4
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,7523,Trevor Lawrence,QB,JAX,Trevor Lawrence,QB,6219,31,10,6476,30,10
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8137,George Pickens,WR,DAL,George Pickens,WR,6112,35,11,6578,27,10
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11635,Ladd McConkey,WR,LAC,Ladd McConkey,WR,5588,42,13,5615,45,17
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8144,Chris Olave,WR,NO,Chris Olave,WR,5548,44,14,5814,38,13
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12529,TreVeyon Henderson,RB,NE,TreVeyon Henderson,RB,5334,53,11,4319,81,21
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,7526,Jaylen Waddle,WR,DEN,Jaylen Waddle,WR,4903,70,26,5181,57,21
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12490,Bhayshul Tuten,RB,JAX,Bhayshul Tuten,RB,4234,90,22,4042,91,24
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8142,Alec Pierce,WR,IND,Alec Pierce,WR,3902,101,33,3645,105,40
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8110,Jake Ferguson,TE,DAL,Jake Ferguson,TE,3652,111,14,3772,100,13
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,10236,Dalton Kincaid,TE,BUF,Dalton Kincaid,TE,3629,112,15,3908,93,11
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,9754,Quentin Johnston,WR,LAC,Quentin Johnston,WR,3495,121,41,3726,102,38
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,9753,Zach Charbonnet,RB,SEA,Zach Charbonnet,RB,3397,131,31,1498,189,51
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8228,Jaylen Warren,RB,PIT,Jaylen Warren,RB,3338,138,32,3549,110,28
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8210,Chig Okonkwo,TE,WAS,Chigoziem Okonkwo,TE,3216,141,18,3318,119,16
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11559,Michael Penix,QB,ATL,Michael Penix Jr.,QB,2812,173,29,2299,155,34
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11565,J.J. McCarthy,QB,MIN,J.J. McCarthy,QB,2617,202,34,1388,195,39
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,9508,Tyjae Spears,RB,TEN,Tyjae Spears,RB,2571,213,51,1655,182,49
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12504,Kaleb Johnson,RB,PIT,Kaleb Johnson,RB,2270,247,58,285,381,104
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12510,Jalen Milroe,QB,SEA,Jalen Milroe,QB,2220,255,36,1082,215,41
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11581,MarShawn Lloyd,RB,GB,MarShawn Lloyd,RB,2140,263,66,951,231,63
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12457,Jaydon Blue,RB,DAL,Jaydon Blue,RB,2131,266,67,1007,225,61
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11589,Trey Benson,RB,ARI,Trey Benson,RB,2071,272,69,303,371,101
-2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,4144,Jonnu Smith,TE,,Jonnu Smith,TE,1203,405,68,398,323,63
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,7564,Ja'Marr Chase,WR,CIN,Ja'Marr Chase,WR,9995,2,1,9962,3,1
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,4046,Patrick Mahomes,QB,KC,Patrick Mahomes,QB,6366,28,8,5768,41,13
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,6813,Jonathan Taylor,RB,IND,Jonathan Taylor,RB,6130,33,7,7806,15,3
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,9484,Tucker Kraft,TE,GB,Tucker Kraft,TE,5561,43,5,5563,47,5
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,8150,Kyren Williams,RB,LAR,Kyren Williams,RB,4961,67,16,5011,65,16
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,3294,Dak Prescott,QB,DAL,Dak Prescott,QB,4900,71,17,6797,24,8
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5850,Josh Jacobs,RB,GB,Josh Jacobs,RB,4064,92,24,4771,74,18
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5870,Daniel Jones,QB,IND,Daniel Jones,QB,3938,98,25,3909,92,24
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,2309,Amari Cooper,WR,,Omar Cooper Jr.,WR,3514,119,40,1980,168,60
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5846,DK Metcalf,WR,PIT,DK Metcalf,WR,3458,122,42,3877,95,35
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5892,David Montgomery,RB,HOU,David Montgomery,RB,3455,124,28,4554,78,20
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,2216,Mike Evans,WR,SF,Mike Evans,WR,3351,136,50,5095,61,23
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,12502,Gunnar Helm,TE,TEN,Gunnar Helm,TE,3058,153,22,2417,149,24
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,1466,Travis Kelce,TE,KC,Travis Kelce,TE,3051,155,24,4121,88,10
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,7002,Juwan Johnson,TE,NO,Juwan Johnson,TE,2752,181,27,3156,125,18
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,8408,Jordan Mason,RB,MIN,Jordan Mason,RB,2721,187,45,2272,156,41
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,6768,Tua Tagovailoa,QB,ATL,Tua Tagovailoa,QB,2672,191,30,2579,144,31
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,11655,Tyrone Tracy,RB,NYG,Tyrone Tracy,RB,2623,199,47,2085,164,43
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,11627,Troy Franklin,WR,DEN,Troy Franklin,WR,2529,221,78,829,241,84
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,6783,Jerry Jeudy,WR,CLE,Jerry Jeudy,WR,2518,224,80,1209,207,72
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,12471,DJ Giddens,RB,IND,DJ Giddens,RB,2028,283,72,428,311,86
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,7090,Darnell Mooney,WR,NYG,Darnell Mooney,WR,1964,288,101,1026,223,78
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,4137,James Conner,RB,ARI,James Conner,RB,1732,319,79,726,254,71
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,3271,Tyler Higbee,TE,LAR,Tyler Higbee,TE,1635,332,55,475,302,60
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,11569,Jarquez Hunter,RB,LAR,Jarquez Hunter,RB,1561,343,84,419,314,87
-2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,3321,Tyreek Hill,WR,,Tyreek Hill,WR,1497,357,127,628,263,91
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9221,Jahmyr Gibbs,RB,DET,Jahmyr Gibbs,RB,9999,2,2,9999,1,1
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,4984,Josh Allen,QB,BUF,Josh Allen,QB,9992,3,1,9987,2,1
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9488,Jaxon Smith-Njigba,WR,SEA,Jaxon Smith-Njigba,WR,9314,5,2,8913,8,3
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12508,Jaxson Dart,QB,NYG,Jaxson Dart,QB,6263,30,9,6193,34,12
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9224,Chase Brown,RB,CIN,Chase Brown,RB,5391,51,11,5609,46,11
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12506,Harold Fannin,TE,CLE,Harold Fannin,TE,5336,53,6,5303,55,6
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12545,Tyler Shough,QB,NO,Tyler Shough,QB,4814,74,18,4711,75,20
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12481,Cam Skattebo,RB,NYG,Cam Skattebo,RB,4789,77,18,4667,76,19
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,7543,Travis Etienne,RB,NO,Travis Etienne,RB,4357,88,21,5166,58,15
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,8131,Isaiah Likely,TE,NYG,Isaiah Likely,TE,3859,104,11,3795,97,12
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,10232,Michael Wilson,WR,ARI,Michael Wilson,WR,3729,108,35,3345,117,45
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,4983,DJ Moore,WR,BUF,D.J. Moore,WR,3568,114,37,4824,70,27
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,5927,Terry McLaurin,WR,WAS,Terry McLaurin,WR,3538,115,38,5062,63,24
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11586,Blake Corum,RB,LAR,Blake Corum,RB,3477,122,28,2919,131,35
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12530,Travis Hunter,WR,JAX,Travis Hunter,WR,3374,133,48,1482,190,67
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,10222,Jayden Reed,WR,GB,Jayden Reed,WR,3367,134,49,3661,104,39
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,5012,Mark Andrews,TE,BAL,Mark Andrews,TE,3159,148,20,3544,111,15
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,8134,Khalil Shakir,WR,BUF,Khalil Shakir,WR,2889,171,62,2482,148,54
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9511,Keaton Mitchell,RB,LAC,Keaton Mitchell,RB,2606,207,49,2065,165,44
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11610,Malik Washington,WR,MIA,Malik Washington,WR,2564,216,77,987,226,79
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11600,Ja'Tavion Sanders,TE,CAR,Ja'Tavion Sanders,TE,2329,241,41,1023,224,44
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,4035,Alvin Kamara,RB,NO,Alvin Kamara,RB,2047,278,69,1224,206,56
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,12503,Isaiah Bond,WR,CLE,Isaiah Bond,WR,2030,284,99,312,365,130
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,96,Aaron Rodgers,QB,PIT,Aaron Rodgers,QB,1956,288,40,3634,106,27
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,9501,DeMario Douglas,WR,NE,Demario Douglas,WR,1915,297,105,322,361,127
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,6803,Brandon Aiyuk,WR,SF,Brandon Aiyuk,WR,1502,355,126,954,230,80
+2025_2,2025,2,standings,seanjcrow,seanjcrow,4,14,4,2755.82,11562,Spencer Rattler,QB,NO,Spencer Rattler,QB,1405,370,50,1187,209,40
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,8130,Trey McBride,TE,ARI,Trey McBride,TE,8098,9,2,8362,10,2
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4881,Lamar Jackson,QB,BAL,Lamar Jackson,QB,7545,14,4,9129,6,2
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,8112,Drake London,WR,ATL,Drake London,WR,6962,24,8,7283,20,7
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,9226,De'Von Achane,RB,MIA,De'Von Achane,RB,6829,25,6,5824,37,9
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,7569,Nico Collins,WR,HOU,Nico Collins,WR,5556,44,15,6658,25,9
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,6801,Tee Higgins,WR,CIN,Tee Higgins,WR,4964,69,25,5705,43,16
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,11584,Bucky Irving,RB,TB,Bucky Irving,RB,4682,81,19,4213,84,22
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4892,Baker Mayfield,QB,TB,Baker Mayfield,QB,4664,82,21,4792,72,19
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,7588,Javonte Williams,RB,DAL,Javonte Williams,RB,4587,83,20,4885,69,17
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12493,Oronde Gadsden,TE,LAC,Oronde Gadsden,TE,3882,98,10,3200,124,17
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,421,Matthew Stafford,QB,LAR,Matthew Stafford,QB,3868,102,26,6264,33,11
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12489,RJ Harvey,RB,DEN,RJ Harvey,RB,3413,129,30,3341,118,31
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12533,Jacory Croskey-Merritt,RB,WAS,Jacory Croskey-Merritt,RB,3021,159,37,2374,152,40
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,5947,Jakobi Meyers,WR,JAX,Jakobi Meyers,WR,3009,162,57,3141,126,48
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,5967,Tony Pollard,RB,TEN,Tony Pollard,RB,2827,174,41,3379,114,30
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,3214,Hunter Henry,TE,NE,Hunter Henry,TE,2739,182,27,2789,137,21
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4033,David Njoku,TE,LAC,David Njoku,TE,2633,197,32,2134,162,28
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12536,Jaylin Noel,WR,HOU,Jaylin Noel,WR,2619,202,68,742,252,87
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,7049,Jauan Jennings,WR,MIN,Jauan Jennings,WR,2365,237,87,1942,169,61
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4199,Aaron Jones,RB,MIN,Aaron Jones,RB,2331,240,56,2573,145,39
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,5872,Deebo Samuel,WR,SF,Deebo Samuel,WR,2303,245,90,1541,185,65
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,2449,Stefon Diggs,WR,,Stefon Diggs,WR,2121,266,92,2342,154,56
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,11575,Ray Davis,RB,BUF,Ray Davis,RB,1937,293,75,1043,221,60
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,12541,Dont'e Thornton,WR,LV,Dont'e Thornton,WR,1928,295,104,312,366,131
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,4981,Calvin Ridley,WR,TEN,Calvin Ridley,WR,1737,316,111,1046,219,76
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,10226,Andrei Iosivas,WR,CIN,Andrei Iosivas,WR,1647,330,119,343,343,124
+2025_3,2025,3,standings,Drake & Bake,davisdaniel1,6,13,5,2888.34,11651,Isaac Guerendo,RB,SF,Isaac Guerendo,RB,1373,375,93,364,332,91
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11564,Drake Maye,QB,NE,Drake Maye,QB,9216,6,2,8223,11,4
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12527,Ashton Jeanty,RB,LV,Ashton Jeanty,RB,7586,12,3,7329,19,4
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11632,Malik Nabers,WR,NYG,Malik Nabers,WR,7332,18,6,5776,40,15
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12518,Tyler Warren,TE,IND,Tyler Warren,TE,6594,26,4,6524,28,4
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,7523,Trevor Lawrence,QB,JAX,Trevor Lawrence,QB,6246,31,10,6476,30,10
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8137,George Pickens,WR,DAL,George Pickens,WR,6106,35,11,6578,27,10
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11635,Ladd McConkey,WR,LAC,Ladd McConkey,WR,5624,41,13,5615,45,17
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8144,Chris Olave,WR,NO,Chris Olave,WR,5610,42,14,5814,38,13
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12529,TreVeyon Henderson,RB,NE,TreVeyon Henderson,RB,5313,55,12,4319,81,21
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,7526,Jaylen Waddle,WR,DEN,Jaylen Waddle,WR,4855,73,26,5181,57,21
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12490,Bhayshul Tuten,RB,JAX,Bhayshul Tuten,RB,4288,90,22,4042,91,24
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8142,Alec Pierce,WR,IND,Alec Pierce,WR,3876,100,32,3645,105,40
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8110,Jake Ferguson,TE,DAL,Jake Ferguson,TE,3643,111,14,3772,100,13
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,10236,Dalton Kincaid,TE,BUF,Dalton Kincaid,TE,3636,112,15,3908,93,11
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,9754,Quentin Johnston,WR,LAC,Quentin Johnston,WR,3514,120,42,3726,102,38
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,9753,Zach Charbonnet,RB,SEA,Zach Charbonnet,RB,3409,130,31,1498,189,51
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8228,Jaylen Warren,RB,PIT,Jaylen Warren,RB,3315,138,32,3549,110,28
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,8210,Chig Okonkwo,TE,WAS,Chigoziem Okonkwo,TE,3206,141,18,3318,119,16
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11559,Michael Penix,QB,ATL,Michael Penix Jr.,QB,2814,176,29,2299,155,34
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11565,J.J. McCarthy,QB,MIN,J.J. McCarthy,QB,2637,195,33,1388,195,39
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,9508,Tyjae Spears,RB,TEN,Tyjae Spears,RB,2571,215,52,1655,182,49
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12504,Kaleb Johnson,RB,PIT,Kaleb Johnson,RB,2246,252,61,285,381,104
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12510,Jalen Milroe,QB,SEA,Jalen Milroe,QB,2206,257,37,1082,215,41
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,12457,Jaydon Blue,RB,DAL,Jaydon Blue,RB,2152,263,67,1007,225,61
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11581,MarShawn Lloyd,RB,GB,MarShawn Lloyd,RB,2111,267,68,951,231,63
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,11589,Trey Benson,RB,ARI,Trey Benson,RB,2046,279,70,303,371,101
+2025_4,2025,4,standings,The Ladds,KobeCopters,7,12,6,2702.46,4144,Jonnu Smith,TE,,Jonnu Smith,TE,1194,407,68,398,323,63
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,7564,Ja'Marr Chase,WR,CIN,Ja'Marr Chase,WR,9975,4,1,9962,3,1
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,4046,Patrick Mahomes,QB,KC,Patrick Mahomes,QB,6307,29,8,5768,41,13
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,6813,Jonathan Taylor,RB,IND,Jonathan Taylor,RB,6190,32,7,7806,15,3
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,9484,Tucker Kraft,TE,GB,Tucker Kraft,TE,5513,47,5,5563,47,5
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,8150,Kyren Williams,RB,LAR,Kyren Williams,RB,4990,67,16,5011,65,16
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,3294,Dak Prescott,QB,DAL,Dak Prescott,QB,4947,70,17,6797,24,8
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5850,Josh Jacobs,RB,GB,Josh Jacobs,RB,4067,92,24,4771,74,18
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5870,Daniel Jones,QB,IND,Daniel Jones,QB,3882,99,25,3909,92,24
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,2309,Amari Cooper,WR,,Omar Cooper Jr.,WR,3525,117,40,1980,168,60
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5846,DK Metcalf,WR,PIT,DK Metcalf,WR,3466,123,43,3877,95,35
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,5892,David Montgomery,RB,HOU,David Montgomery,RB,3462,125,29,4554,78,20
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,2216,Mike Evans,WR,SF,Mike Evans,WR,3396,132,47,5095,61,23
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,12502,Gunnar Helm,TE,TEN,Gunnar Helm,TE,3079,151,21,2417,149,24
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,1466,Travis Kelce,TE,KC,Travis Kelce,TE,3035,157,24,4121,88,10
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,8408,Jordan Mason,RB,MIN,Jordan Mason,RB,2737,183,44,2272,156,41
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,7002,Juwan Johnson,TE,NO,Juwan Johnson,TE,2718,186,29,3156,125,18
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,6768,Tua Tagovailoa,QB,ATL,Tua Tagovailoa,QB,2696,188,30,2579,144,31
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,11655,Tyrone Tracy,RB,NYG,Tyrone Tracy,RB,2606,206,50,2085,164,43
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,6783,Jerry Jeudy,WR,CLE,Jerry Jeudy,WR,2530,223,80,1209,207,72
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,11627,Troy Franklin,WR,DEN,Troy Franklin,WR,2502,225,81,829,241,84
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,12471,DJ Giddens,RB,IND,DJ Giddens,RB,2037,282,71,428,311,86
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,7090,Darnell Mooney,WR,NYG,Darnell Mooney,WR,1942,292,103,1026,223,78
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,4137,James Conner,RB,ARI,James Conner,RB,1708,324,80,726,254,71
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,3271,Tyler Higbee,TE,LAR,Tyler Higbee,TE,1639,335,55,475,302,60
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,11569,Jarquez Hunter,RB,LAR,Jarquez Hunter,RB,1544,346,84,419,314,87
+2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,3321,Tyreek Hill,WR,,Tyreek Hill,WR,1428,366,131,628,263,91
 2025_5,2025,5,standings,House of Hwang,mhwang12,5,11,7,2694.98,4381,Taysom Hill,TE,,,TE,,,,,,
 2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,9509,Bijan Robinson,RB,ATL,Bijan Robinson,RB,9999,1,1,9669,4,2
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,6797,Justin Herbert,QB,LAC,Justin Herbert,QB,7067,21,7,6503,29,9
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4866,Saquon Barkley,RB,PHI,Saquon Barkley,RB,5053,62,15,6408,31,7
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,11631,Brian Thomas,WR,JAX,Brian Thomas Jr.,WR,4869,73,27,4227,83,31
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,3163,Jared Goff,QB,DET,Jared Goff,QB,4685,80,19,5469,49,15
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,6797,Justin Herbert,QB,LAC,Justin Herbert,QB,7098,21,7,6503,29,9
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4866,Saquon Barkley,RB,PHI,Saquon Barkley,RB,5047,63,15,6408,31,7
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,11631,Brian Thomas,WR,JAX,Brian Thomas Jr.,WR,4810,75,27,4227,83,31
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,3163,Jared Goff,QB,DET,Jared Goff,QB,4748,78,19,5469,49,15
 2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,3198,Derrick Henry,RB,BAL,Derrick Henry,RB,4199,91,23,5494,48,12
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,5849,Kyler Murray,QB,MIN,Kyler Murray,QB,3967,96,24,5123,59,17
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4217,George Kittle,TE,SF,George Kittle,TE,3816,104,12,4327,80,9
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,2133,Davante Adams,WR,LAR,Davante Adams,WR,3415,127,44,4995,66,26
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,6819,Michael Pittman,WR,PIT,Michael Pittman,WR,3383,134,48,3244,121,46
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,5045,Courtland Sutton,WR,DEN,Courtland Sutton,WR,3075,151,54,3794,98,37
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7611,Rhamondre Stevenson,RB,NE,Rhamondre Stevenson,RB,3042,157,36,3461,113,29
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4037,Chris Godwin,WR,TB,Chris Godwin,WR,2956,167,61,3587,109,41
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,8132,Tyler Allgeier,RB,ARI,Tyler Allgeier,RB,2710,188,46,1717,179,48
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,9486,Dontayvion Wicks,WR,PHI,Dontayvion Wicks,WR,2477,228,82,878,239,83
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,11637,Keon Coleman,WR,BUF,Keon Coleman,WR,2370,236,88,598,268,94
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,8205,Isiah Pacheco,RB,DET,Isiah Pacheco,RB,2236,252,62,1811,176,47
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,11643,Jaylen Wright,RB,MIA,Jaylen Wright,RB,2215,256,63,679,259,72
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7571,Rashod Bateman,WR,BAL,Rashod Bateman,WR,2018,284,99,722,255,89
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4993,Mike Gesicki,TE,CIN,Mike Gesicki,TE,1862,301,50,1540,186,35
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,5857,Noah Fant,TE,NO,Noah Fant,TE,1791,309,51,355,336,65
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4039,Cooper Kupp,WR,SEA,Cooper Kupp,WR,1694,325,115,920,235,81
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7562,Tutu Atwell,WR,MIA,Tutu Atwell,WR,1510,353,126,300,373,135
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,2306,Jameis Winston,QB,NYG,Jameis Winston,QB,1243,399,53,592,272,49
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,6271,Olamide Zaccheaus,WR,ATL,Olamide Zaccheaus,WR,1240,400,146,273,391,144
-2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7596,Elijah Moore,WR,PHI,Elijah Moore,WR,1158,415,153,260,403,151
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,5849,Kyler Murray,QB,MIN,Kyler Murray,QB,3937,96,24,5123,59,17
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4217,George Kittle,TE,SF,George Kittle,TE,3836,105,12,4327,80,9
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,2133,Davante Adams,WR,LAR,Davante Adams,WR,3399,131,46,4995,66,26
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,6819,Michael Pittman,WR,PIT,Michael Pittman,WR,3360,137,51,3244,121,46
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,5045,Courtland Sutton,WR,DEN,Courtland Sutton,WR,3078,152,54,3794,98,37
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7611,Rhamondre Stevenson,RB,NE,Rhamondre Stevenson,RB,3011,161,38,3461,113,29
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4037,Chris Godwin,WR,TB,Chris Godwin,WR,2953,166,60,3587,109,41
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,8132,Tyler Allgeier,RB,ARI,Tyler Allgeier,RB,2758,178,43,1717,179,48
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,9486,Dontayvion Wicks,WR,PHI,Dontayvion Wicks,WR,2542,220,78,878,239,83
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,11637,Keon Coleman,WR,BUF,Keon Coleman,WR,2347,238,88,598,268,94
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,8205,Isiah Pacheco,RB,DET,Isiah Pacheco,RB,2270,248,59,1811,176,47
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,11643,Jaylen Wright,RB,MIA,Jaylen Wright,RB,2230,254,63,679,259,72
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7571,Rashod Bateman,WR,BAL,Rashod Bateman,WR,2039,281,98,722,255,89
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4993,Mike Gesicki,TE,CIN,Mike Gesicki,TE,1876,301,50,1540,186,35
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,5857,Noah Fant,TE,NO,Noah Fant,TE,1760,313,52,355,336,65
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,4039,Cooper Kupp,WR,SEA,Cooper Kupp,WR,1710,322,115,920,235,81
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7562,Tutu Atwell,WR,MIA,Tutu Atwell,WR,1495,356,127,300,373,135
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,2306,Jameis Winston,QB,NYG,Jameis Winston,QB,1264,394,53,592,272,49
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,6271,Olamide Zaccheaus,WR,ATL,Olamide Zaccheaus,WR,1228,400,145,273,391,144
+2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,7596,Elijah Moore,WR,PHI,Elijah Moore,WR,1183,409,150,260,403,151
 2025_6,2025,6,standings,aidsonballs,aidsonballs,2,11,7,2620.44,1339,Zach Ertz,TE,,,TE,,,,,,
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11564,Drake Maye,QB,NE,Drake Maye,QB,9254,6,2,8223,11,4
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12527,Ashton Jeanty,RB,LV,Ashton Jeanty,RB,7604,13,3,7329,19,4
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13287,Jeremiyah Love,RB,ARI,Jeremiyah Love,RB,7452,16,4,5427,51,13
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11632,Malik Nabers,WR,NYG,Malik Nabers,WR,7255,18,6,5776,40,15
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12518,Tyler Warren,TE,IND,Tyler Warren,TE,6549,26,4,6524,28,4
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,7523,Trevor Lawrence,QB,JAX,Trevor Lawrence,QB,6219,31,10,6476,30,10
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11635,Ladd McConkey,WR,LAC,Ladd McConkey,WR,5588,42,13,5615,45,17
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,8144,Chris Olave,WR,NO,Chris Olave,WR,5548,44,14,5814,38,13
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12529,TreVeyon Henderson,RB,NE,TreVeyon Henderson,RB,5334,53,11,4319,81,21
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13281,Jordyn Tyson,WR,NO,Jordyn Tyson,WR,5307,55,19,4206,85,32
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,9997,Zay Flowers,WR,BAL,Zay Flowers,WR,4986,65,23,5789,39,14
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,7543,Travis Etienne,RB,NO,Travis Etienne,RB,4412,87,21,5166,58,15
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12490,Bhayshul Tuten,RB,JAX,Bhayshul Tuten,RB,4234,90,22,4042,91,24
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,8167,Christian Watson,WR,GB,Christian Watson,WR,3936,99,31,4774,73,29
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,9500,Josh Downs,WR,IND,Josh Downs,WR,3547,114,37,3377,115,43
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13275,Ty Simpson,QB,LAR,Ty Simpson,QB,3450,125,28,373,329,59
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12489,RJ Harvey,RB,DEN,RJ Harvey,RB,3408,128,30,3341,118,31
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,8210,Chig Okonkwo,TE,WAS,Chigoziem Okonkwo,TE,3216,141,18,3318,119,16
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,5012,Mark Andrews,TE,BAL,Mark Andrews,TE,3198,141,19,3544,111,15
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11559,Michael Penix,QB,ATL,Michael Penix Jr.,QB,2812,173,29,2299,155,34
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11565,J.J. McCarthy,QB,MIN,J.J. McCarthy,QB,2617,202,34,1388,195,39
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13421,Eli Raridon,TE,NE,Eli Raridon,TE,2616,203,33,1070,216,43
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11610,Malik Washington,WR,MIA,Malik Washington,WR,2568,215,77,987,226,79
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13272,Carson Beck,QB,ARI,Carson Beck,QB,2564,219,35,1034,222,42
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,9482,Michael Mayer,TE,LV,Michael Mayer,TE,2520,223,37,1232,203,39
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11581,MarShawn Lloyd,RB,GB,MarShawn Lloyd,RB,2140,263,66,951,231,63
-2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12457,Jaydon Blue,RB,DAL,Jaydon Blue,RB,2131,266,67,1007,225,61
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9221,Jahmyr Gibbs,RB,DET,Jahmyr Gibbs,RB,9992,3,2,9999,1,1
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,4984,Josh Allen,QB,BUF,Josh Allen,QB,9983,4,1,9987,2,1
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9488,Jaxon Smith-Njigba,WR,SEA,Jaxon Smith-Njigba,WR,9332,5,2,8913,8,3
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12508,Jaxson Dart,QB,NYG,Jaxson Dart,QB,6256,30,9,6193,34,12
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,8137,George Pickens,WR,DAL,George Pickens,WR,6112,35,11,6578,27,10
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12506,Harold Fannin,TE,CLE,Harold Fannin,TE,5340,52,6,5303,55,6
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9224,Chase Brown,RB,CIN,Chase Brown,RB,5332,54,12,5609,46,11
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12545,Tyler Shough,QB,NO,Tyler Shough,QB,4792,75,18,4711,75,20
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12481,Cam Skattebo,RB,NYG,Cam Skattebo,RB,4739,78,18,4667,76,19
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,8131,Isaiah Likely,TE,NYG,Isaiah Likely,TE,3826,103,11,3795,97,12
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,13349,Eli Stowers,TE,PHI,Eli Stowers,TE,3800,106,13,1868,172,30
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,10232,Michael Wilson,WR,ARI,Michael Wilson,WR,3716,109,35,3345,117,45
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,4983,DJ Moore,WR,BUF,D.J. Moore,WR,3547,115,36,4824,70,27
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,5927,Terry McLaurin,WR,WAS,Terry McLaurin,WR,3533,116,38,5062,63,24
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11586,Blake Corum,RB,LAR,Blake Corum,RB,3455,123,29,2919,131,35
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12530,Travis Hunter,WR,JAX,Travis Hunter,WR,3386,133,47,1482,190,67
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,10222,Jayden Reed,WR,GB,Jayden Reed,WR,3371,135,49,3661,104,39
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,8134,Khalil Shakir,WR,BUF,Khalil Shakir,WR,2866,172,63,2482,148,54
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,13285,Malachi Fields,WR,NYG,Malachi Fields,WR,2601,206,72,574,276,97
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9511,Keaton Mitchell,RB,LAC,Keaton Mitchell,RB,2577,211,50,2065,165,44
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11600,Ja'Tavion Sanders,TE,CAR,Ja'Tavion Sanders,TE,2345,242,41,1023,224,44
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,4035,Alvin Kamara,RB,NO,Alvin Kamara,RB,2070,273,70,1224,206,56
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11783,Ryan Flournoy,WR,DAL,Ryan Flournoy,WR,2013,285,100,1920,170,62
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,13303,Cade Klubnik,QB,NYJ,Cade Klubnik,QB,1935,292,42,526,290,53
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,96,Aaron Rodgers,QB,PIT,Aaron Rodgers,QB,1899,297,43,3634,106,27
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,6803,Brandon Aiyuk,WR,SF,Brandon Aiyuk,WR,1550,347,124,954,230,80
-2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11562,Spencer Rattler,QB,NO,Spencer Rattler,QB,1443,366,50,1187,209,40
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8130,Trey McBride,TE,ARI,Trey McBride,TE,8140,9,2,8362,10,2
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4881,Lamar Jackson,QB,BAL,Lamar Jackson,QB,7620,12,4,9129,6,2
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12507,Omarion Hampton,RB,LAC,Omarion Hampton,RB,7007,22,5,6104,36,8
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8112,Drake London,WR,ATL,Drake London,WR,6996,24,8,7283,20,7
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9226,De'Von Achane,RB,MIA,De'Von Achane,RB,6848,25,6,5824,37,9
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,7569,Nico Collins,WR,HOU,Nico Collins,WR,5543,45,15,6658,25,9
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,6801,Tee Higgins,WR,CIN,Tee Higgins,WR,4950,69,25,5705,43,16
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,11584,Bucky Irving,RB,TB,Bucky Irving,RB,4717,79,19,4213,84,22
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4892,Baker Mayfield,QB,TB,Baker Mayfield,QB,4683,81,20,4792,72,19
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,7588,Javonte Williams,RB,DAL,Javonte Williams,RB,4611,84,20,4885,69,17
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9756,Jordan Addison,WR,MIN,Jordan Addison,WR,3907,100,32,3539,112,42
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8142,Alec Pierce,WR,IND,Alec Pierce,WR,3902,101,33,3645,105,40
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,421,Matthew Stafford,QB,LAR,Matthew Stafford,QB,3869,102,26,6264,33,11
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8110,Jake Ferguson,TE,DAL,Jake Ferguson,TE,3652,111,14,3772,100,13
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12484,Jayden Higgins,WR,HOU,Jayden Higgins,WR,3399,130,46,2666,141,52
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12533,Jacory Croskey-Merritt,RB,WAS,Jacory Croskey-Merritt,RB,3020,161,37,2374,152,40
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,5947,Jakobi Meyers,WR,JAX,Jakobi Meyers,WR,2991,164,59,3141,126,48
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,3214,Hunter Henry,TE,NE,Hunter Henry,TE,2763,179,26,2789,137,21
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4033,David Njoku,TE,LAC,David Njoku,TE,2612,204,34,2134,162,28
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,7049,Jauan Jennings,WR,MIN,Jauan Jennings,WR,2407,234,86,1942,169,61
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4199,Aaron Jones,RB,MIN,Aaron Jones,RB,2351,241,56,2573,145,39
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12540,Chimere Dike,WR,TEN,Chimere Dike,WR,2261,248,90,574,277,98
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9506,Sean Tucker,RB,TB,Sean Tucker,RB,2260,249,59,1343,200,54
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,2449,Stefon Diggs,WR,,Stefon Diggs,WR,2134,265,91,2342,154,56
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,5872,Deebo Samuel,WR,SF,Deebo Samuel,WR,2047,279,97,1541,185,65
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9494,Marvin Mims,WR,DEN,Marvin Mims,WR,2047,278,98,266,398,147
-2026_3,2026,3,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,11575,Ray Davis,RB,BUF,Ray Davis,RB,1915,294,74,1043,221,60
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11604,Brock Bowers,TE,LV,Brock Bowers,TE,9039,7,1,8991,7,1
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11560,Caleb Williams,QB,CHI,Caleb Williams,QB,7867,11,3,7484,16,6
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,6794,Justin Jefferson,WR,MIN,Justin Jefferson,WR,7586,14,5,7381,18,6
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12526,Tetairoa McMillan,WR,CAR,Tetairoa McMillan,WR,6373,27,9,5375,53,19
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11563,Bo Nix,QB,DEN,Bo Nix,QB,6005,36,12,5399,52,16
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11631,Brian Thomas,WR,JAX,Brian Thomas Jr.,WR,4869,73,27,4227,83,31
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8148,Jameson Williams,WR,DET,Jameson Williams,WR,4762,77,29,5061,64,25
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9758,C.J. Stroud,QB,HOU,C.J. Stroud,QB,4651,82,21,4151,87,23
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,13330,Kenyon Sadiq,TE,NYJ,Kenyon Sadiq,TE,4489,86,9,2916,132,20
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9228,Bryce Young,QB,CAR,Bryce Young,QB,3968,95,23,3732,101,26
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9487,Parker Washington,WR,JAX,Parker Washington,WR,3766,107,34,3863,96,36
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8161,Malik Willis,QB,MIA,Malik Willis,QB,3735,108,27,4629,77,21
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12501,Matthew Golden,WR,GB,Matthew Golden,WR,3530,117,39,2865,133,50
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12534,Kyle Monangai,RB,CHI,Kyle Monangai,RB,3519,118,27,3058,127,33
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8126,Wan'Dale Robinson,WR,TEN,Wan'Dale Robinson,WR,3424,126,43,2493,147,53
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8228,Jaylen Warren,RB,PIT,Jaylen Warren,RB,3338,138,32,3549,110,28
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11603,AJ Barner,TE,SEA,AJ Barner,TE,3220,140,17,2396,150,25
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11638,Ricky Pearsall,WR,SF,Ricky Pearsall,WR,3020,160,57,3228,122,47
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,5967,Tony Pollard,RB,TEN,Tony Pollard,RB,2802,175,41,3379,114,30
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12474,Woody Marks,RB,HOU,Woody Marks,RB,2750,182,43,1910,171,45
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12509,Tre' Harris,WR,LAC,Tre Harris,WR,2661,194,68,1657,181,64
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9508,Tyjae Spears,RB,TEN,Tyjae Spears,RB,2571,213,51,1655,182,49
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11576,Braelon Allen,RB,NYJ,Braelon Allen,RB,2569,214,52,971,227,62
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,6826,Cole Kmet,TE,CHI,Cole Kmet,TE,2355,240,40,717,256,51
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9479,Darnell Washington,TE,PIT,Darnell Washington,TE,2281,245,43,1418,193,36
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,13414,Kaelon Black,RB,SF,Kaelon Black,RB,2104,270,68,792,245,68
-2026_4,2026,4,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,7567,Kenny Gainwell,RB,TB,,RB,,,,,,
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,7547,Amon-Ra St. Brown,WR,DET,Amon-Ra St. Brown,WR,7867,10,4,8003,12,4
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6770,Joe Burrow,QB,CIN,Joe Burrow,QB,7421,17,6,8538,9,3
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6904,Jalen Hurts,QB,PHI,Jalen Hurts,QB,6153,32,11,7391,17,7
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8138,James Cook,RB,BUF,James Cook,RB,6119,34,8,6640,26,6
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8151,Kenneth Walker,RB,KC,Kenneth Walker III,RB,5656,39,9,5741,42,10
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,7525,DeVonta Smith,WR,PHI,DeVonta Smith,WR,5444,49,18,6275,32,11
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,4034,Christian McCaffrey,RB,SF,Christian McCaffrey,RB,5281,56,13,7112,21,5
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8155,Breece Hall,RB,NYJ,Breece Hall,RB,5278,57,14,5308,54,14
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,5859,A.J. Brown,WR,NE,A.J. Brown,WR,5031,63,21,6989,22,8
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,7553,Kyle Pitts,TE,ATL,Kyle Pitts,TE,4981,66,8,5085,62,7
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6790,D'Andre Swift,RB,CHI,D'Andre Swift,RB,3693,110,25,4202,86,23
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,5844,T.J. Hockenson,TE,MIN,T.J. Hockenson,TE,3073,152,21,2688,139,22
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,11618,Jalen McMillan,WR,TB,Jalen McMillan,WR,3027,158,55,2108,163,58
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6806,J.K. Dobbins,RB,DEN,J.K. Dobbins,RB,3007,163,38,2790,136,36
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8676,Rashid Shaheed,WR,SEA,Rashid Shaheed,WR,2791,177,64,2208,160,57
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13320,Zachariah Branch,WR,ATL,Zachariah Branch,WR,2728,186,66,1208,208,73
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13278,Max Klare,TE,LAR,Max Klare,TE,2702,189,30,623,264,53
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8111,Cade Otton,TE,TB,Cade Otton,TE,2676,190,31,2221,159,26
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13317,Ted Hurst,WR,TB,Ted Hurst,WR,2601,208,73,1148,211,74
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8180,Jalen Nailor,WR,LV,Jalen Nailor,WR,2591,209,74,1991,167,59
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,10213,Tre Tucker,WR,LV,Tre Tucker,WR,2526,222,79,1819,174,63
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,12492,Pat Bryant,WR,DEN,Pat Bryant,WR,2518,225,81,887,237,82
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8154,Brian Robinson,RB,ATL,Brian Robinson,RB,2368,237,55,1482,191,52
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13400,Justin Joly,TE,DEN,Justin Joly,TE,2226,253,44,821,242,48
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,1373,Geno Smith,QB,NYJ,Geno Smith,QB,2205,258,37,2784,138,30
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,4066,Evan Engram,TE,DEN,Evan Engram,TE,2136,264,46,1639,183,34
-2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,4017,Deshaun Watson,QB,CLE,Deshaun Watson,QB,1959,289,41,2537,146,32
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,7564,Ja'Marr Chase,WR,CIN,Ja'Marr Chase,WR,9995,2,1,9962,3,1
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,4046,Patrick Mahomes,QB,KC,Patrick Mahomes,QB,6366,28,8,5768,41,13
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,6813,Jonathan Taylor,RB,IND,Jonathan Taylor,RB,6130,33,7,7806,15,3
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,9484,Tucker Kraft,TE,GB,Tucker Kraft,TE,5561,43,5,5563,47,5
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,11620,Rome Odunze,WR,CHI,Rome Odunze,WR,5227,58,20,4808,71,28
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8150,Kyren Williams,RB,LAR,Kyren Williams,RB,4961,67,16,5011,65,16
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,3294,Dak Prescott,QB,DAL,Dak Prescott,QB,4900,71,17,6797,24,8
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5850,Josh Jacobs,RB,GB,Josh Jacobs,RB,4064,92,24,4771,74,18
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5870,Daniel Jones,QB,IND,Daniel Jones,QB,3938,98,25,3909,92,24
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,9754,Quentin Johnston,WR,LAC,Quentin Johnston,WR,3495,121,41,3726,102,38
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5846,DK Metcalf,WR,PIT,DK Metcalf,WR,3458,122,42,3877,95,35
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5892,David Montgomery,RB,HOU,David Montgomery,RB,3455,124,28,4554,78,20
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,2216,Mike Evans,WR,SF,Mike Evans,WR,3351,136,50,5095,61,23
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,1466,Travis Kelce,TE,KC,Travis Kelce,TE,3051,155,24,4121,88,10
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8136,Rachaad White,RB,WAS,Rachaad White,RB,2788,178,42,2615,143,38
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,7002,Juwan Johnson,TE,NO,Juwan Johnson,TE,2752,181,27,3156,125,18
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8172,Greg Dulcich,TE,MIA,Greg Dulcich,TE,2735,184,29,2200,161,27
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8408,Jordan Mason,RB,MIN,Jordan Mason,RB,2721,187,45,2272,156,41
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,6768,Tua Tagovailoa,QB,ATL,Tua Tagovailoa,QB,2672,191,30,2579,144,31
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,11655,Tyrone Tracy,RB,NYG,Tyrone Tracy,RB,2623,199,47,2085,164,43
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,12497,Tory Horton,WR,SEA,Tory Horton,WR,2578,210,75,618,266,92
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,11627,Troy Franklin,WR,DEN,Troy Franklin,WR,2529,221,78,829,241,84
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,6783,Jerry Jeudy,WR,CLE,Jerry Jeudy,WR,2518,224,80,1209,207,72
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,7090,Darnell Mooney,WR,NYG,Darnell Mooney,WR,1964,288,101,1026,223,78
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8188,Tyquan Thornton,WR,KC,Tyquan Thornton,WR,1758,315,111,580,274,95
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,12048,George Holani,RB,SEA,George Holani,RB,1635,331,83,850,240,66
-2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,3321,Tyreek Hill,WR,,Tyreek Hill,WR,1497,357,127,628,263,91
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11564,Drake Maye,QB,NE,Drake Maye,QB,9216,6,2,8223,11,4
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12527,Ashton Jeanty,RB,LV,Ashton Jeanty,RB,7586,12,3,7329,19,4
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13287,Jeremiyah Love,RB,ARI,Jeremiyah Love,RB,7414,16,4,5427,51,13
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11632,Malik Nabers,WR,NYG,Malik Nabers,WR,7332,18,6,5776,40,15
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12518,Tyler Warren,TE,IND,Tyler Warren,TE,6594,26,4,6524,28,4
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,7523,Trevor Lawrence,QB,JAX,Trevor Lawrence,QB,6246,31,10,6476,30,10
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11635,Ladd McConkey,WR,LAC,Ladd McConkey,WR,5624,41,13,5615,45,17
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,8144,Chris Olave,WR,NO,Chris Olave,WR,5610,42,14,5814,38,13
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13281,Jordyn Tyson,WR,NO,Jordyn Tyson,WR,5329,54,19,4206,85,32
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12529,TreVeyon Henderson,RB,NE,TreVeyon Henderson,RB,5313,55,12,4319,81,21
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,9997,Zay Flowers,WR,BAL,Zay Flowers,WR,5027,64,21,5789,39,14
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,7543,Travis Etienne,RB,NO,Travis Etienne,RB,4357,88,21,5166,58,15
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12490,Bhayshul Tuten,RB,JAX,Bhayshul Tuten,RB,4288,90,22,4042,91,24
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,8167,Christian Watson,WR,GB,Christian Watson,WR,3918,97,31,4774,73,29
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,9500,Josh Downs,WR,IND,Josh Downs,WR,3534,116,39,3377,115,43
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13275,Ty Simpson,QB,LAR,Ty Simpson,QB,3442,126,28,373,329,59
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12489,RJ Harvey,RB,DEN,RJ Harvey,RB,3413,129,30,3341,118,31
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,8210,Chig Okonkwo,TE,WAS,Chigoziem Okonkwo,TE,3206,141,18,3318,119,16
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,5012,Mark Andrews,TE,BAL,Mark Andrews,TE,3159,148,20,3544,111,15
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11559,Michael Penix,QB,ATL,Michael Penix Jr.,QB,2814,176,29,2299,155,34
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11565,J.J. McCarthy,QB,MIN,J.J. McCarthy,QB,2637,195,33,1388,195,39
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13421,Eli Raridon,TE,NE,Eli Raridon,TE,2623,199,34,1070,216,43
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11610,Malik Washington,WR,MIA,Malik Washington,WR,2564,216,77,987,226,79
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,13272,Carson Beck,QB,ARI,Carson Beck,QB,2533,222,35,1034,222,42
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,9482,Michael Mayer,TE,LV,Michael Mayer,TE,2489,227,38,1232,203,39
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,12457,Jaydon Blue,RB,DAL,Jaydon Blue,RB,2152,263,67,1007,225,61
+2026_1,2026,1,sim_roster_value,The Ladds,KobeCopters,7,0,0,0.00,11581,MarShawn Lloyd,RB,GB,MarShawn Lloyd,RB,2111,267,68,951,231,63
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9221,Jahmyr Gibbs,RB,DET,Jahmyr Gibbs,RB,9999,2,2,9999,1,1
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,4984,Josh Allen,QB,BUF,Josh Allen,QB,9992,3,1,9987,2,1
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9488,Jaxon Smith-Njigba,WR,SEA,Jaxon Smith-Njigba,WR,9314,5,2,8913,8,3
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12508,Jaxson Dart,QB,NYG,Jaxson Dart,QB,6263,30,9,6193,34,12
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,8137,George Pickens,WR,DAL,George Pickens,WR,6106,35,11,6578,27,10
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9224,Chase Brown,RB,CIN,Chase Brown,RB,5391,51,11,5609,46,11
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12506,Harold Fannin,TE,CLE,Harold Fannin,TE,5336,53,6,5303,55,6
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12545,Tyler Shough,QB,NO,Tyler Shough,QB,4814,74,18,4711,75,20
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12481,Cam Skattebo,RB,NYG,Cam Skattebo,RB,4789,77,18,4667,76,19
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,8131,Isaiah Likely,TE,NYG,Isaiah Likely,TE,3859,104,11,3795,97,12
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,13349,Eli Stowers,TE,PHI,Eli Stowers,TE,3824,106,13,1868,172,30
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,10232,Michael Wilson,WR,ARI,Michael Wilson,WR,3729,108,35,3345,117,45
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,4983,DJ Moore,WR,BUF,D.J. Moore,WR,3568,114,37,4824,70,27
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,5927,Terry McLaurin,WR,WAS,Terry McLaurin,WR,3538,115,38,5062,63,24
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11586,Blake Corum,RB,LAR,Blake Corum,RB,3477,122,28,2919,131,35
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,12530,Travis Hunter,WR,JAX,Travis Hunter,WR,3374,133,48,1482,190,67
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,10222,Jayden Reed,WR,GB,Jayden Reed,WR,3367,134,49,3661,104,39
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,8134,Khalil Shakir,WR,BUF,Khalil Shakir,WR,2889,171,62,2482,148,54
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,9511,Keaton Mitchell,RB,LAC,Keaton Mitchell,RB,2606,207,49,2065,165,44
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,13285,Malachi Fields,WR,NYG,Malachi Fields,WR,2593,210,73,574,276,97
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11600,Ja'Tavion Sanders,TE,CAR,Ja'Tavion Sanders,TE,2329,241,41,1023,224,44
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,4035,Alvin Kamara,RB,NO,Alvin Kamara,RB,2047,278,69,1224,206,56
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11783,Ryan Flournoy,WR,DAL,Ryan Flournoy,WR,2001,285,100,1920,170,62
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,96,Aaron Rodgers,QB,PIT,Aaron Rodgers,QB,1956,288,40,3634,106,27
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,13303,Cade Klubnik,QB,NYJ,Cade Klubnik,QB,1913,299,43,526,290,53
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,6803,Brandon Aiyuk,WR,SF,Brandon Aiyuk,WR,1502,355,126,954,230,80
+2026_2,2026,2,sim_roster_value,seanjcrow,seanjcrow,4,0,0,0.00,11562,Spencer Rattler,QB,NO,Spencer Rattler,QB,1405,370,50,1187,209,40
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11604,Brock Bowers,TE,LV,Brock Bowers,TE,9071,7,1,8991,7,1
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11560,Caleb Williams,QB,CHI,Caleb Williams,QB,7898,11,3,7484,16,6
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,6794,Justin Jefferson,WR,MIN,Justin Jefferson,WR,7546,13,5,7381,18,6
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12526,Tetairoa McMillan,WR,CAR,Tetairoa McMillan,WR,6356,27,9,5375,53,19
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11563,Bo Nix,QB,DEN,Bo Nix,QB,5929,37,12,5399,52,16
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,13286,Jadarian Price,RB,SEA,Jadarian Price,RB,4855,72,17,3716,103,26
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11631,Brian Thomas,WR,JAX,Brian Thomas Jr.,WR,4810,75,27,4227,83,31
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8148,Jameson Williams,WR,DET,Jameson Williams,WR,4725,79,29,5061,64,25
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9758,C.J. Stroud,QB,HOU,C.J. Stroud,QB,4720,80,20,4151,87,23
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,13330,Kenyon Sadiq,TE,NYJ,Kenyon Sadiq,TE,4504,86,9,2916,132,20
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9228,Bryce Young,QB,CAR,Bryce Young,QB,3943,95,23,3732,101,26
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9487,Parker Washington,WR,JAX,Parker Washington,WR,3862,103,34,3863,96,36
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8161,Malik Willis,QB,MIA,Malik Willis,QB,3682,110,27,4629,77,21
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12501,Matthew Golden,WR,GB,Matthew Golden,WR,3598,113,36,2865,133,50
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12534,Kyle Monangai,RB,CHI,Kyle Monangai,RB,3495,121,27,3058,127,33
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8126,Wan'Dale Robinson,WR,TEN,Wan'Dale Robinson,WR,3414,128,45,2493,147,53
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,8228,Jaylen Warren,RB,PIT,Jaylen Warren,RB,3315,138,32,3549,110,28
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11603,AJ Barner,TE,SEA,AJ Barner,TE,3200,142,19,2396,150,25
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,5967,Tony Pollard,RB,TEN,Tony Pollard,RB,2827,174,41,3379,114,30
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12474,Woody Marks,RB,HOU,Woody Marks,RB,2726,184,45,1910,171,45
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,12509,Tre' Harris,WR,LAC,Tre Harris,WR,2694,189,66,1657,181,64
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11638,Ricky Pearsall,WR,SF,Ricky Pearsall,WR,2612,203,69,3228,122,47
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,11576,Braelon Allen,RB,NYJ,Braelon Allen,RB,2586,213,51,971,227,62
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9508,Tyjae Spears,RB,TEN,Tyjae Spears,RB,2571,215,52,1655,182,49
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,9479,Darnell Washington,TE,PIT,Darnell Washington,TE,2253,251,43,1418,193,36
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,13414,Kaelon Black,RB,SF,Kaelon Black,RB,2174,262,66,792,245,68
+2026_3,2026,3,sim_roster_value,Eat It While She Sleeper,GIVEDADDYASPIKE,10,0,0,0.00,7567,Kenny Gainwell,RB,TB,,RB,,,,,,
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8130,Trey McBride,TE,ARI,Trey McBride,TE,8098,9,2,8362,10,2
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4881,Lamar Jackson,QB,BAL,Lamar Jackson,QB,7545,14,4,9129,6,2
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12507,Omarion Hampton,RB,LAC,Omarion Hampton,RB,7043,22,5,6104,36,8
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8112,Drake London,WR,ATL,Drake London,WR,6962,24,8,7283,20,7
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9226,De'Von Achane,RB,MIA,De'Von Achane,RB,6829,25,6,5824,37,9
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,7569,Nico Collins,WR,HOU,Nico Collins,WR,5556,44,15,6658,25,9
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,6801,Tee Higgins,WR,CIN,Tee Higgins,WR,4964,69,25,5705,43,16
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,11584,Bucky Irving,RB,TB,Bucky Irving,RB,4682,81,19,4213,84,22
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4892,Baker Mayfield,QB,TB,Baker Mayfield,QB,4664,82,21,4792,72,19
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,7588,Javonte Williams,RB,DAL,Javonte Williams,RB,4587,83,20,4885,69,17
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8142,Alec Pierce,WR,IND,Alec Pierce,WR,3876,100,32,3645,105,40
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9756,Jordan Addison,WR,MIN,Jordan Addison,WR,3876,101,33,3539,112,42
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,421,Matthew Stafford,QB,LAR,Matthew Stafford,QB,3868,102,26,6264,33,11
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,8110,Jake Ferguson,TE,DAL,Jake Ferguson,TE,3643,111,14,3772,100,13
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12484,Jayden Higgins,WR,HOU,Jayden Higgins,WR,3419,127,44,2666,141,52
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12533,Jacory Croskey-Merritt,RB,WAS,Jacory Croskey-Merritt,RB,3021,159,37,2374,152,40
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,5947,Jakobi Meyers,WR,JAX,Jakobi Meyers,WR,3009,162,57,3141,126,48
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,3214,Hunter Henry,TE,NE,Hunter Henry,TE,2739,182,27,2789,137,21
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4033,David Njoku,TE,LAC,David Njoku,TE,2633,197,32,2134,162,28
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,7049,Jauan Jennings,WR,MIN,Jauan Jennings,WR,2365,237,87,1942,169,61
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,4199,Aaron Jones,RB,MIN,Aaron Jones,RB,2331,240,56,2573,145,39
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,5872,Deebo Samuel,WR,SF,Deebo Samuel,WR,2303,245,90,1541,185,65
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,12540,Chimere Dike,WR,TEN,Chimere Dike,WR,2264,249,91,574,277,98
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9506,Sean Tucker,RB,TB,Sean Tucker,RB,2185,261,65,1343,200,54
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,2449,Stefon Diggs,WR,,Stefon Diggs,WR,2121,266,92,2342,154,56
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,9494,Marvin Mims,WR,DEN,Marvin Mims,WR,2047,277,97,266,398,147
+2026_4,2026,4,sim_roster_value,Drake & Bake,davisdaniel1,6,0,0,0.00,11575,Ray Davis,RB,BUF,Ray Davis,RB,1937,293,75,1043,221,60
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,7547,Amon-Ra St. Brown,WR,DET,Amon-Ra St. Brown,WR,7898,10,4,8003,12,4
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6770,Joe Burrow,QB,CIN,Joe Burrow,QB,7401,17,6,8538,9,3
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8138,James Cook,RB,BUF,James Cook,RB,6137,33,8,6640,26,6
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6904,Jalen Hurts,QB,PHI,Jalen Hurts,QB,6134,34,11,7391,17,7
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8151,Kenneth Walker,RB,KC,Kenneth Walker III,RB,5625,40,9,5741,42,10
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,7525,DeVonta Smith,WR,PHI,DeVonta Smith,WR,5483,48,17,6275,32,11
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8155,Breece Hall,RB,NYJ,Breece Hall,RB,5288,56,13,5308,54,14
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,4034,Christian McCaffrey,RB,SF,Christian McCaffrey,RB,5268,57,14,7112,21,5
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,7553,Kyle Pitts,TE,ATL,Kyle Pitts,TE,5063,62,8,5085,62,7
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,5859,A.J. Brown,WR,NE,A.J. Brown,WR,4994,66,23,6989,22,8
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6790,D'Andre Swift,RB,CHI,D'Andre Swift,RB,3685,109,25,4202,86,23
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,5844,T.J. Hockenson,TE,MIN,T.J. Hockenson,TE,3040,155,23,2688,139,22
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,6806,J.K. Dobbins,RB,DEN,J.K. Dobbins,RB,3039,156,36,2790,136,36
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,11618,Jalen McMillan,WR,TB,Jalen McMillan,WR,3016,160,56,2108,163,58
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8676,Rashid Shaheed,WR,SEA,Rashid Shaheed,WR,2859,172,63,2208,160,57
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13320,Zachariah Branch,WR,ATL,Zachariah Branch,WR,2743,181,65,1208,208,73
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8111,Cade Otton,TE,TB,Cade Otton,TE,2685,190,30,2221,159,26
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13278,Max Klare,TE,LAR,Max Klare,TE,2672,191,31,623,264,53
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13317,Ted Hurst,WR,TB,Ted Hurst,WR,2611,204,70,1148,211,74
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8180,Jalen Nailor,WR,LV,Jalen Nailor,WR,2592,211,74,1991,167,59
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,10213,Tre Tucker,WR,LV,Tre Tucker,WR,2537,221,79,1819,174,63
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,12492,Pat Bryant,WR,DEN,Pat Bryant,WR,2477,228,82,887,237,82
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,8154,Brian Robinson,RB,ATL,Brian Robinson,RB,2409,232,55,1482,191,52
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,1373,Geno Smith,QB,NYJ,Geno Smith,QB,2223,255,36,2784,138,30
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,13400,Justin Joly,TE,DEN,Justin Joly,TE,2213,256,44,821,242,48
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,4066,Evan Engram,TE,DEN,Evan Engram,TE,2126,265,46,1639,183,34
+2026_5,2026,5,sim_roster_value,Lord Pittsy Flacco Joedy,dwol11,8,0,0,0.00,4017,Deshaun Watson,QB,CLE,Deshaun Watson,QB,1929,294,41,2537,146,32
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,7564,Ja'Marr Chase,WR,CIN,Ja'Marr Chase,WR,9975,4,1,9962,3,1
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,4046,Patrick Mahomes,QB,KC,Patrick Mahomes,QB,6307,29,8,5768,41,13
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,6813,Jonathan Taylor,RB,IND,Jonathan Taylor,RB,6190,32,7,7806,15,3
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,9484,Tucker Kraft,TE,GB,Tucker Kraft,TE,5513,47,5,5563,47,5
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,11620,Rome Odunze,WR,CHI,Rome Odunze,WR,5231,58,20,4808,71,28
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8150,Kyren Williams,RB,LAR,Kyren Williams,RB,4990,67,16,5011,65,16
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,3294,Dak Prescott,QB,DAL,Dak Prescott,QB,4947,70,17,6797,24,8
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5850,Josh Jacobs,RB,GB,Josh Jacobs,RB,4067,92,24,4771,74,18
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5870,Daniel Jones,QB,IND,Daniel Jones,QB,3882,99,25,3909,92,24
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,9754,Quentin Johnston,WR,LAC,Quentin Johnston,WR,3514,120,42,3726,102,38
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5846,DK Metcalf,WR,PIT,DK Metcalf,WR,3466,123,43,3877,95,35
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,5892,David Montgomery,RB,HOU,David Montgomery,RB,3462,125,29,4554,78,20
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,2216,Mike Evans,WR,SF,Mike Evans,WR,3396,132,47,5095,61,23
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,1466,Travis Kelce,TE,KC,Travis Kelce,TE,3035,157,24,4121,88,10
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8136,Rachaad White,RB,WAS,Rachaad White,RB,2824,175,42,2615,143,38
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8408,Jordan Mason,RB,MIN,Jordan Mason,RB,2737,183,44,2272,156,41
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8172,Greg Dulcich,TE,MIA,Greg Dulcich,TE,2722,185,28,2200,161,27
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,7002,Juwan Johnson,TE,NO,Juwan Johnson,TE,2718,186,29,3156,125,18
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,6768,Tua Tagovailoa,QB,ATL,Tua Tagovailoa,QB,2696,188,30,2579,144,31
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,11655,Tyrone Tracy,RB,NYG,Tyrone Tracy,RB,2606,206,50,2085,164,43
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,12497,Tory Horton,WR,SEA,Tory Horton,WR,2587,212,75,618,266,92
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,6783,Jerry Jeudy,WR,CLE,Jerry Jeudy,WR,2530,223,80,1209,207,72
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,11627,Troy Franklin,WR,DEN,Troy Franklin,WR,2502,225,81,829,241,84
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,7090,Darnell Mooney,WR,NYG,Darnell Mooney,WR,1942,292,103,1026,223,78
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,8188,Tyquan Thornton,WR,KC,Tyquan Thornton,WR,1725,319,113,580,274,95
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,12048,George Holani,RB,SEA,George Holani,RB,1620,337,83,850,240,66
+2026_6,2026,6,sim_roster_value,House of Hwang,mhwang12,5,0,0,0.00,3321,Tyreek Hill,WR,,Tyreek Hill,WR,1428,366,131,628,263,91
 2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,9509,Bijan Robinson,RB,ATL,Bijan Robinson,RB,9999,1,1,9669,4,2
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,6797,Justin Herbert,QB,LAC,Justin Herbert,QB,7067,21,7,6503,29,9
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4866,Saquon Barkley,RB,PHI,Saquon Barkley,RB,5053,62,15,6408,31,7
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,11628,Marvin Harrison,WR,ARI,Marvin Harrison Jr.,WR,4765,76,28,4120,89,33
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,3163,Jared Goff,QB,DET,Jared Goff,QB,4685,80,19,5469,49,15
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,6797,Justin Herbert,QB,LAC,Justin Herbert,QB,7098,21,7,6503,29,9
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4866,Saquon Barkley,RB,PHI,Saquon Barkley,RB,5047,63,15,6408,31,7
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,11628,Marvin Harrison,WR,ARI,Marvin Harrison Jr.,WR,4797,76,28,4120,89,33
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,3163,Jared Goff,QB,DET,Jared Goff,QB,4748,78,19,5469,49,15
 2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,3198,Derrick Henry,RB,BAL,Derrick Henry,RB,4199,91,23,5494,48,12
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,5849,Kyler Murray,QB,MIN,Kyler Murray,QB,3967,96,24,5123,59,17
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4217,George Kittle,TE,SF,George Kittle,TE,3816,104,12,4327,80,9
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,10236,Dalton Kincaid,TE,BUF,Dalton Kincaid,TE,3629,112,15,3908,93,11
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,9480,Brenton Strange,TE,JAX,Brenton Strange,TE,3512,120,16,2969,130,19
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,2133,Davante Adams,WR,LAR,Davante Adams,WR,3415,127,44,4995,66,26
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,6819,Michael Pittman,WR,PIT,Michael Pittman,WR,3383,134,48,3244,121,46
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,13345,Jonah Coleman,RB,DEN,Jonah Coleman,RB,3134,149,34,1844,173,46
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,5045,Courtland Sutton,WR,DEN,Courtland Sutton,WR,3075,151,54,3794,98,37
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,7611,Rhamondre Stevenson,RB,NE,Rhamondre Stevenson,RB,3042,157,36,3461,113,29
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,8121,Romeo Doubs,WR,NE,Romeo Doubs,WR,3012,162,58,3018,128,49
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4037,Chris Godwin,WR,TB,Chris Godwin,WR,2956,167,61,3587,109,41
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,13274,Germie Bernard,WR,PIT,Germie Bernard,WR,2922,169,62,1045,220,77
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,8132,Tyler Allgeier,RB,ARI,Tyler Allgeier,RB,2710,188,46,1717,179,48
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,9504,Kayshon Boutte,WR,NE,Kayshon Boutte,WR,2572,212,76,756,247,85
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,13319,Oscar Delp,TE,NO,Oscar Delp,TE,2566,216,35,922,234,47
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,6865,Colby Parkinson,TE,LAR,Colby Parkinson,TE,2328,243,42,1807,177,32
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,8205,Isiah Pacheco,RB,DET,Isiah Pacheco,RB,2236,252,62,1811,176,47
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,5906,Dawson Knox,TE,BUF,Dawson Knox,TE,2040,282,48,938,232,46
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,1166,Kirk Cousins,QB,LV,Kirk Cousins,QB,1857,302,44,2249,158,35
-2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4039,Cooper Kupp,WR,SEA,Cooper Kupp,WR,1694,325,115,920,235,81
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,5849,Kyler Murray,QB,MIN,Kyler Murray,QB,3937,96,24,5123,59,17
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4217,George Kittle,TE,SF,George Kittle,TE,3836,105,12,4327,80,9
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,10236,Dalton Kincaid,TE,BUF,Dalton Kincaid,TE,3636,112,15,3908,93,11
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,9480,Brenton Strange,TE,JAX,Brenton Strange,TE,3465,124,16,2969,130,19
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,2133,Davante Adams,WR,LAR,Davante Adams,WR,3399,131,46,4995,66,26
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,6819,Michael Pittman,WR,PIT,Michael Pittman,WR,3360,137,51,3244,121,46
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,13345,Jonah Coleman,RB,DEN,Jonah Coleman,RB,3090,150,35,1844,173,46
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,5045,Courtland Sutton,WR,DEN,Courtland Sutton,WR,3078,152,54,3794,98,37
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,7611,Rhamondre Stevenson,RB,NE,Rhamondre Stevenson,RB,3011,161,38,3461,113,29
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,8121,Romeo Doubs,WR,NE,Romeo Doubs,WR,3006,163,58,3018,128,49
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4037,Chris Godwin,WR,TB,Chris Godwin,WR,2953,166,60,3587,109,41
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,13274,Germie Bernard,WR,PIT,Germie Bernard,WR,2928,168,61,1045,220,77
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,8132,Tyler Allgeier,RB,ARI,Tyler Allgeier,RB,2758,178,43,1717,179,48
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,9504,Kayshon Boutte,WR,NE,Kayshon Boutte,WR,2583,214,76,756,247,85
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,13319,Oscar Delp,TE,NO,Oscar Delp,TE,2559,217,35,922,234,47
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,6865,Colby Parkinson,TE,LAR,Colby Parkinson,TE,2318,244,42,1807,177,32
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,8205,Isiah Pacheco,RB,DET,Isiah Pacheco,RB,2270,248,59,1811,176,47
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,5906,Dawson Knox,TE,BUF,Dawson Knox,TE,2044,280,48,938,232,46
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,1166,Kirk Cousins,QB,LV,Kirk Cousins,QB,1869,303,44,2249,158,35
+2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,4039,Cooper Kupp,WR,SEA,Cooper Kupp,WR,1710,322,115,920,235,81
 2026_7,2026,7,sim_roster_value,MrZaccheaus,MrZaccheaus,2,0,0,0.00,2078,Odell Beckham,WR,NYG,,WR,,,,,,

@@ -13,6 +13,8 @@ import {
   HWANG_COEFFICIENT_LABELS,
   HWANG_COMPOSITE_COEFFICIENT_KEY,
   getHwangCoefficientMap,
+  hwangMultiplierAt,
+  formatHwangCoefficient,
 } from './hwangPositionCoefficients';
 
 export {
@@ -20,6 +22,8 @@ export {
   HWANG_COEFFICIENT_LABELS,
   HWANG_COMPOSITE_COEFFICIENT_KEY,
   getHwangCoefficientMap,
+  hwangMultiplierAt,
+  formatHwangCoefficient,
 } from './hwangPositionCoefficients';
 
 export const HWANG_VALUE_ADJUSTMENTS = {
@@ -75,7 +79,7 @@ export function getStitchedKtcTepSfValue(entry) {
 export function applyHwangKtcAdjustment(baseValue, position, multipliers) {
   if (baseValue == null || !Number.isFinite(baseValue)) return null;
   const pos = (position || '').toUpperCase();
-  const multiplier = multipliers?.get(pos) ?? 1;
+  const multiplier = hwangMultiplierAt(multipliers?.get(pos), baseValue);
   return Math.round(baseValue * multiplier);
 }
 
@@ -172,6 +176,6 @@ export function getHwangAdjustedEntryByName(playerName, byName, hints = {}) {
 export function formatMultiplierSummary(multipliers) {
   return ['QB', 'RB', 'WR', 'TE']
     .filter((pos) => multipliers?.has(pos))
-    .map((pos) => `${pos}×${multipliers.get(pos)}`)
+    .map((pos) => `${pos}×${formatHwangCoefficient(multipliers.get(pos))}`)
     .join(' · ');
 }
