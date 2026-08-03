@@ -489,6 +489,7 @@ function SingleRunView({ results }) {
         </h3>
         <p className="pvc-section-desc">
           Lineup {lineupLabel(cfg.slotCounts)} · {scoringLabel(cfg.ppr, cfg.tePremium)} ·
+          {' '}{cfg.valueBasis === 'comp' ? 'competitor-adjusted values' : 'Final KTC values'} ·
           {' '}{cfg.archetypeCount} archetypes × {cfg.buildsPerArchetype} build{cfg.buildsPerArchetype > 1 ? 's' : ''}
           {' '}× {results.years.length} seasons
           {cfg.jitterPct > 0 ? ` · jitter ±${cfg.jitterPct}% (seed ${cfg.seed})` : ' · deterministic'} ·
@@ -694,6 +695,7 @@ function HwangTrueSimulator() {
     { slots: { ...PRESETS.generic.slots }, ppr: PRESETS.generic.ppr, tePremium: PRESETS.generic.tePremium },
   ]);
   const [buildsPerArchetype, setBuildsPerArchetype] = useState(DEFAULT_BUILDS_PER_ARCHETYPE);
+  const [valueBasis, setValueBasis] = useState('ktc');
   const [jitterPct, setJitterPct] = useState(DEFAULT_JITTER_PCT);
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000) + 1);
   const [archetypeOptions, setArchetypeOptions] = useState([]);
@@ -745,6 +747,7 @@ function HwangTrueSimulator() {
             ppr: activeFormats[i].ppr,
             tePremium: activeFormats[i].tePremium,
             archetypeIds: allSelected ? null : Array.from(selectedArchetypes),
+            valueBasis,
           },
           (p) => setProgress({
             ...p,
@@ -935,6 +938,17 @@ function HwangTrueSimulator() {
       </div>
 
       <div className="pvc-controls">
+        <label className="pvc-field">
+          <span className="pvc-label">Value basis (builds + pairing)</span>
+          <select
+            className="pvc-select"
+            value={valueBasis}
+            onChange={(e) => setValueBasis(e.target.value)}
+          >
+            <option value="ktc">Final KTC</option>
+            <option value="comp">Competitor Adjusted</option>
+          </select>
+        </label>
         <label className="pvc-field">
           <span className="pvc-label">Builds per archetype</span>
           <select

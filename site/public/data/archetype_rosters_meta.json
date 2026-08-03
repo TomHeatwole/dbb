@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-08-02T02:47:49.093Z",
+  "generatedAt": "2026-08-03T15:18:19.532Z",
   "ktcAsOf": "2026-08-02",
   "selection": {
     "2024": "top 6 by standings (wins, then fpts)",
-    "2025": "top 7 by standings (wins, then fpts)",
+    "2025": "top by standings (wins, then fpts), excluding tankers: PUPpy Bowl, The Boomers, Eat It While She Sleeper, Sell for Sellers",
     "2026": "all teams except Sell for Sellers, The Boomers, PUPpy Bowl, ordered by total roster KTC SF TE+ value"
   },
   "archetypes": [
@@ -126,16 +126,6 @@
       "owner": "aidsonballs",
       "record": "11-7",
       "fpts": 2620.44
-    },
-    {
-      "archetypeId": "2025_7",
-      "season": 2025,
-      "finishRank": 7,
-      "rankBasis": "standings",
-      "teamName": "PUPpy Bowl",
-      "owner": "sleeperdotcom",
-      "record": "5-13",
-      "fpts": 1735.46
     },
     {
       "archetypeId": "2026_1",

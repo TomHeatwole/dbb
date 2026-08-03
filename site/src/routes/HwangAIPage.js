@@ -116,15 +116,17 @@ function HwangAIPage() {
         }
         const data = await res.json();
         phase1Data = data;
-        const assistantMessage = {
-          role: 'assistant',
-          content: data.message,
-        };
         if (!data.interim || !data.continuation) {
-          setMessages(prev => [...prev, assistantMessage]);
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: data.message || "I blanked on that one — clanker moment. Hit me again.",
+          }]);
           break;
         }
-        setMessages(prev => [...prev, assistantMessage]);
+        // Interim "hang on" message — skip if empty, keep typing dots up
+        if (data.message) {
+          setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+        }
         requestBody = { messages: newMessages, systemPrompt, continuation: data.continuation };
       }
     } catch (err) {
@@ -147,8 +149,8 @@ function HwangAIPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
       });
-      if (searchRes.ok) {
-        const searchData = await searchRes.json();
+      const searchData = searchRes.ok ? await searchRes.json() : null;
+      if (searchData?.message) {
         setMessages(prev => {
           const updated = [...prev];
           const lastIdx = updated.length - 1;

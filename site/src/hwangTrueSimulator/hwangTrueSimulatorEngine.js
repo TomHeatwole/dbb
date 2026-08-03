@@ -338,7 +338,7 @@ export function findValuePairs(candidates, tolerancePct = PAIR_TOLERANCE_PCT) {
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
-async function loadSimInputs() {
+async function loadSimInputs(valueBasis) {
   const [archRes, ktcRes, scoreRes, metaRes] = await Promise.all([
     fetch('/data/archetype_rosters.csv'),
     fetch('/data/final_ktc_values.csv'),
@@ -354,10 +354,40 @@ async function loadSimInputs() {
   const scoringConfig = await scoreRes.json();
   const meta = metaRes.ok ? await metaRes.json() : null;
 
-  return { archetypeRows, finalKtcRows, scoringConfig, meta };
+  let valueRows = finalKtcRows;
+  if (valueBasis === 'comp') {
+    // Competitor-adjusted values live in the redraft value index, which has no
+    // sleeper ids — join to final KTC rows by (year, name). Same KTC name
+    // source, so the join is exact.
+    const compRes = await fetch('/data/final_ktc_redraft_value_index.csv');
+    if (!compRes.ok) throw new Error('Failed to fetch final_ktc_redraft_value_index.csv');
+    const compRows = parseCsv(await compRes.text());
+    const sleeperIds = new Map();
+    for (const row of finalKtcRows) {
+      sleeperIds.set(`${row.year}|${(row.name || '').trim().toLowerCase()}`, row.sleeper_id);
+    }
+    valueRows = [];
+    for (const row of compRows) {
+      const value = Number(row.competitor_adjusted_value);
+      if (!Number.isFinite(value)) continue;
+      const sleeperId = sleeperIds.get(`${row.year}|${(row.name || '').trim().toLowerCase()}`);
+      if (!sleeperId) continue;
+      valueRows.push({
+        year: row.year,
+        name: row.name,
+        position: row.position,
+        sleeper_id: sleeperId,
+        ktc_value: value,
+      });
+    }
+  }
+
+  return { archetypeRows, valueRows, scoringConfig, meta };
 }
 
-function buildArchetypes(archetypeRows) {
+function buildArchetypes(archetypeRows, valueBasis = 'ktc') {
+  const rankField = valueBasis === 'comp' ? 'comp_adj_pos_rank' : 'ktc_pos_rank';
+  const valueField = valueBasis === 'comp' ? 'comp_adj_value' : 'ktc_value';
   const byId = new Map();
   for (const row of archetypeRows) {
     if (!byId.has(row.archetype_id)) {
@@ -374,8 +404,8 @@ function buildArchetypes(archetypeRows) {
     byId.get(row.archetype_id).slots.push({
       playerName: row.player_name,
       position: row.position,
-      posRank: row.ktc_pos_rank ? Number(row.ktc_pos_rank) : null,
-      ktcValue: row.ktc_value ? Number(row.ktc_value) : null,
+      posRank: row[rankField] ? Number(row[rankField]) : null,
+      ktcValue: row[valueField] ? Number(row[valueField]) : null,
     });
   }
   return Array.from(byId.values());
@@ -428,6 +458,8 @@ function buildYearCandidates(finalKtcRows, year, ptsById) {
  * @param {number}   opts.ppr                 points per reception (all positions)
  * @param {number}   opts.tePremium           extra points per TE reception
  * @param {Array}    opts.archetypeIds        subset of archetype ids to run (null = all)
+ * @param {string}   opts.valueBasis          'ktc' (Final KTC) or 'comp' (competitor-adjusted):
+ *                                            drives archetype ranks, season boards, and pairing
  * @param {Function} opts.onProgress          ({ fraction, label }) => void
  * @param {Function} opts.isCancelled         () => boolean
  */
@@ -439,17 +471,18 @@ export async function runHwangTrueSimulation({
   ppr = 0,
   tePremium = 0.5,
   archetypeIds = null,
+  valueBasis = 'ktc',
   onProgress = () => {},
   isCancelled = () => false,
 } = {}) {
-  const { archetypeRows, finalKtcRows, scoringConfig: baseScoring, meta } = await loadSimInputs();
+  const { archetypeRows, valueRows, scoringConfig: baseScoring, meta } = await loadSimInputs(valueBasis);
   const scoringConfig = applyReceptionScoring(baseScoring, ppr, tePremium);
-  const allArchetypes = buildArchetypes(archetypeRows);
+  const allArchetypes = buildArchetypes(archetypeRows, valueBasis);
   const archetypes = archetypeIds && archetypeIds.length > 0
     ? allArchetypes.filter((a) => archetypeIds.includes(a.archetypeId))
     : allArchetypes;
   if (archetypes.length === 0) throw new Error('No archetypes selected');
-  const seasonBoards = buildSeasonBoards(finalKtcRows);
+  const seasonBoards = buildSeasonBoards(valueRows);
 
   // Identical builds without jitter would just re-measure the same roster.
   const builds = jitterPct > 0 ? Math.max(1, buildsPerArchetype) : 1;
@@ -489,7 +522,7 @@ export async function runHwangTrueSimulation({
     });
     clearStatsCache();
 
-    const { candidates, excludedZeroPoint, poolSize } = buildYearCandidates(finalKtcRows, year, ptsById);
+    const { candidates, excludedZeroPoint, poolSize } = buildYearCandidates(valueRows, year, ptsById);
     const pairs = findValuePairs(candidates, PAIR_TOLERANCE_PCT);
 
     const candidateById = new Map(candidates.map((c) => [c.playerId, c]));
@@ -661,6 +694,7 @@ export async function runHwangTrueSimulation({
       slotCounts,
       ppr,
       tePremium,
+      valueBasis,
       archetypeCount: archetypes.length,
       ktcAsOf: meta?.ktcAsOf || null,
       hvorpMethod: 'roster-context optimal starter totals (17 weeks, add-on / leave-one-out)',

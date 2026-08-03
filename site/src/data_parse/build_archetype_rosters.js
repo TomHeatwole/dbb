@@ -6,7 +6,10 @@
  *
  * Selection rules:
  *   - 2024: top 6 finishers (wins, then fpts)
- *   - 2025: top 7 finishers (wins, then fpts)
+ *   - 2025: top finishers (wins, then fpts) excluding tankers — the season had
+ *           only 6 competitive teams (11+ wins); the other four (PUPpy Bowl,
+ *           The Boomers, Eat It While She Sleeper, Sell for Sellers) tanked
+ *           and would taint the archetype data
  *   - 2026: top 7 by simulation — everyone except an explicit exclusion list,
  *           ordered by total roster KTC (SF TE+) value
  *
@@ -37,6 +40,11 @@ const OUT_META = path.join(DATA_DIR, 'archetype_rosters_meta.json');
 
 // Selection config
 const TOP_N_BY_SEASON = { 2024: 6, 2025: 7 };
+// Tankers excluded from past-season standings selection (no legitimate 7th
+// competitor existed in 2025 — top 7 by record would pull in a 5-13 tanker).
+const STANDINGS_EXCLUDED_TEAMS = {
+  2025: ['PUPpy Bowl', 'The Boomers', 'Eat It While She Sleeper', 'Sell for Sellers'],
+};
 const SIM_SEASON = 2026;
 const SIM_EXCLUDED_TEAMS = ['Sell for Sellers', 'The Boomers', 'PUPpy Bowl'];
 
@@ -219,7 +227,11 @@ async function main() {
     } else {
       rankBasis = 'standings';
       const topN = TOP_N_BY_SEASON[season];
+      const excluded = new Set(
+        (STANDINGS_EXCLUDED_TEAMS[season] || []).map((n) => n.toLowerCase()),
+      );
       selected = [...teams]
+        .filter((t) => !excluded.has(t.teamName.toLowerCase()))
         .sort((a, b) => (b.wins - a.wins) || (b.fpts - a.fpts))
         .slice(0, topN);
     }
@@ -290,7 +302,7 @@ async function main() {
     ktcAsOf: ktcBoard.asOf,
     selection: {
       2024: 'top 6 by standings (wins, then fpts)',
-      2025: 'top 7 by standings (wins, then fpts)',
+      2025: `top by standings (wins, then fpts), excluding tankers: ${(STANDINGS_EXCLUDED_TEAMS[2025] || []).join(', ')}`,
       [SIM_SEASON]: `all teams except ${SIM_EXCLUDED_TEAMS.join(', ')}, ordered by total roster KTC SF TE+ value`,
     },
     archetypes,

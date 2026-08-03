@@ -111,8 +111,13 @@ export default async function handler(req, res) {
     }
     const candidate = data.candidates?.[0];
     const parts = candidate?.content?.parts || [];
-    const text = parts.find(p => p.text)?.text || '';
+    const text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n').trim();
     const searchQueries = candidate?.groundingMetadata?.webSearchQueries || [];
+
+    if (!text) {
+      // Empty grounded result — let the frontend show its themed failure copy
+      return res.status(502).json({ error: 'Empty search result' });
+    }
 
     logConversation(messages, text);
     return res.status(200).json({ message: text, searchQueries });

@@ -40,6 +40,7 @@ import {
   lookupDraftPick,
   getPlayerStats,
 } from '../site/lib/mcp/tools.mjs';
+import { MCP_TOOL_RENDER_MODE } from '../site/lib/mcp/renderConfig.mjs';
 
 // ── Server setup ──────────────────────────────────────────────────────────────
 
@@ -147,21 +148,21 @@ server.tool(
       .optional()
       .describe('Primary value model (default hwang_true_value). Use competitor_adjusted for a win-now team, rebuilder_adjusted for a rebuild.'),
   },
-  wrapTool(({ giving, receiving, value_source }) => evaluateTrade(giving, receiving, value_source))
+  wrapTool(({ giving, receiving, value_source }) => evaluateTrade(giving, receiving, value_source, MCP_TOOL_RENDER_MODE))
 );
 
 server.tool(
   'get_player_value',
   "Get one player's value across ALL value models at once (KTC SF/TE+, Hwang Market, Hwang True, Competitor/Rebuild adjusted, FantasyCalc, FFB) with positional and overall ranks, age, and 30-day market trend.",
   { name: z.string().describe('Player name e.g. "Brock Bowers"') },
-  wrapTool(({ name }) => getPlayerValueBreakdown(name))
+  wrapTool(({ name }) => getPlayerValueBreakdown(name, MCP_TOOL_RENDER_MODE))
 );
 
 server.tool(
   'get_team_value_summary',
   'Roster construction report for a team: total value across models, league value rank, positional value breakdown with top assets and ages, value-weighted roster age, and a competitor-vs-rebuild timeline lean. Includes a league-wide value board.',
   { team: z.string().describe('Team name, owner name, or roster ID') },
-  wrapTool(({ team }) => getTeamValueSummary(team))
+  wrapTool(({ team }) => getTeamValueSummary(team, MCP_TOOL_RENDER_MODE))
 );
 
 server.tool(

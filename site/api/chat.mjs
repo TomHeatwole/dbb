@@ -7,6 +7,7 @@ import {
   getPlayerValueBreakdown, getTeamValueSummary,
   getSeasonOdds, simulateRosterChangeOdds,
 } from '../lib/mcp/tools.mjs';
+import { CHAT_TOOL_RENDER_MODE } from '../lib/mcp/renderConfig.mjs';
 
 // Primary model first; fallbacks have SEPARATE free-tier quotas, so a 429 on
 // flash (rate limit or exhausted daily quota) doesn't take HwangAI down.
@@ -439,9 +440,9 @@ async function executeTool(name, args) {
       case 'search_player':          return await searchPlayer(args.name);
       case 'get_player_stats':       return getPlayerStats(args.name, args.season);
       case 'compare_players':        return await comparePlayers(args.names);
-      case 'evaluate_trade':         return await evaluateTrade(args.giving, args.receiving, args.value_source);
-      case 'get_player_value':       return getPlayerValueBreakdown(args.name);
-      case 'get_team_value_summary': return await getTeamValueSummary(args.team);
+      case 'evaluate_trade':         return await evaluateTrade(args.giving, args.receiving, args.value_source, CHAT_TOOL_RENDER_MODE);
+      case 'get_player_value':       return getPlayerValueBreakdown(args.name, CHAT_TOOL_RENDER_MODE);
+      case 'get_team_value_summary': return await getTeamValueSummary(args.team, CHAT_TOOL_RENDER_MODE);
       case 'get_season_odds':        return await getSeasonOdds(args.iterations);
       case 'simulate_roster_change_odds':
         return await simulateRosterChangeOdds({ changes: args.changes, iterations: args.iterations });
@@ -656,6 +657,7 @@ export default async function handler(req, res) {
   // Tool-calling loop (max 10 rounds — multi-step value/simulation playbooks
   // chain several tools; the cap only guards against runaway loops)
   const geminiState = newGeminiState();
+  let retriedEmptyResponse = false;
   for (let round = 0; round < 10; round++) {
     const geminiRes = await callGemini(apiKey, { ...requestBase, contents }, geminiState);
 
@@ -676,16 +678,31 @@ export default async function handler(req, res) {
     const functionCalls = parts.filter(p => p.functionCall);
 
     if (functionCalls.length === 0) {
-      // No tool calls — extract the text response and stitch side query if present
-      let text = parts.find(p => p.text)?.text || '';
+      // No tool calls — extract the text response (skip Gemini 3.x thought-
+      // summary parts, join multiple text parts) and stitch side query
+      let text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n');
       const needsSearch =
         text.includes('<!--search-->') ||
         RESPONSE_SEARCH_PHRASES.some(re => re.test(text)) ||
         questionNeedsSearch(messages);
       text = text.replace(/<!--search-->/g, '').trim();
       text = await sanitizeInternalLeaks(text, apiKey, geminiState);
+
+      // Never ship an empty bubble: a model can occasionally return a bare
+      // <!--search--> marker or an empty/thought-only candidate.
+      if (!text) {
+        if (needsSearch) {
+          text = 'Let me dig into that.';
+        } else if (!retriedEmptyResponse) {
+          retriedEmptyResponse = true;
+          continue; // re-ask the model once with the same conversation
+        } else {
+          text = 'I blanked on that one — clanker moment. Hit me again.';
+        }
+      }
+
       const sideResult = await sideQueryPromise;
-      if (sideResult) {
+      if (sideResult && text) {
         text += `\n\n---\n\n${sideResult}`;
       }
       logConversation(messages, text);
@@ -701,7 +718,7 @@ export default async function handler(req, res) {
     // and we execute the pending tools on the continuation request.
     const wantsSlowTool = functionCalls.some(p => SLOW_TOOLS.has(p.functionCall.name));
     if (wantsSlowTool && continuationDepth < MAX_CONTINUATIONS) {
-      const interimText = parts.find(p => p.text)?.text?.trim() || pickInterimMessage();
+      const interimText = parts.find(p => p.text && !p.thought)?.text?.trim() || pickInterimMessage();
       return res.status(200).json({
         interim: true,
         message: interimText,

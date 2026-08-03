@@ -13,9 +13,10 @@ import {
 } from './helpers.mjs';
 import { runScenarioEval } from './scenarioEngine.mjs';
 import {
-  VALUE_SOURCES, VALUE_SOURCE_LABELS,
+  VALUE_SOURCES, VALUE_SOURCE_LABELS, PICK_VALUES,
   getValueLookups, lookupValueEntry, evaluateKtcStyleTrade,
 } from './values.mjs';
+import { RENDER_MODE_FULL, RENDER_MODE_SOFT } from './renderConfig.mjs';
 import { prepareSimContext, runSeasonSim, DEFAULT_ITERATIONS } from './simEngine.mjs';
 import { loadSimulationInputs } from './simData.mjs';
 
@@ -450,9 +451,59 @@ function resolveAssetForSource(name, source, ktcMap) {
   };
 }
 
-// Appended to every value-heavy tool output. The model tends to quote whatever
-// labels sit next to the numbers, so the translation reminder has to live HERE,
-// not just in the system prompt.
+// ─── Soft-signal rendering helpers ────────────────────────────────────────────
+// Used when a tool renders in 'soft' mode (see renderConfig.mjs): internal
+// values are expressed only as percentages, ranks, pick equivalents, and
+// qualitative buckets — quantities that are safe to repeat to users verbatim.
+
+/** Round a percentage to the nearest 5 for soft display. */
+const roundPct5 = (pct) => Math.round(pct / 5) * 5;
+
+/** Qualitative size bucket for a percentage gap. */
+function gapBucket(absPct) {
+  if (absPct < 3) return 'dead even';
+  if (absPct <= 10) return 'slight edge';
+  if (absPct <= 25) return 'clear edge';
+  return 'lopsided';
+}
+
+const ROUND_ORDINALS = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th' };
+
+/** Describe a value gap as a draft-pick equivalent (next draft's pick board). */
+function describePickEquivalent(gap) {
+  const g = Math.abs(Number(gap) || 0);
+  const year = Number(CURRENT_YEAR) + 1;
+  const byRound = PICK_VALUES[1];
+  const tiers = [];
+  for (const round of [1, 2, 3, 4]) {
+    for (const tier of ['early', 'mid', 'late']) {
+      tiers.push({ label: `${year} ${tier} ${ROUND_ORDINALS[round]}`, value: byRound[round][tier] });
+    }
+  }
+  tiers.sort((a, b) => a.value - b.value);
+  if (g < tiers[0].value * 0.6) return `less than a ${tiers[0].label} — negligible`;
+  const max = tiers[tiers.length - 1];
+  if (g > max.value * 1.3) return `more than a ${max.label}`;
+  let best = tiers[0];
+  for (const t of tiers) {
+    if (Math.abs(t.value - g) < Math.abs(best.value - g)) best = t;
+  }
+  return `roughly a ${best.label}`;
+}
+
+/** "favors receive side (~10%, slight edge)" from give/receive totals. */
+function describeLean(give, receive) {
+  if (!(give > 0) || !(receive > 0)) return null;
+  const pct = ((receive - give) / give) * 100;
+  const absPct = Math.abs(pct);
+  if (absPct < 3) return 'even';
+  const side = pct > 0 ? 'receive side' : 'give side';
+  return `favors the ${side} by ~${Math.max(5, roundPct5(absPct))}% (${gapBucket(absPct)})`;
+}
+
+// Appended to every value-heavy tool output in FULL mode. The model tends to
+// quote whatever labels sit next to the numbers, so the translation reminder
+// has to live HERE, not just in the system prompt.
 const VALUE_CONFIDENTIALITY_NOTE =
   '\n⚠️ INTERNAL DATA — model names ("Hwang True", "Hwang Market", "Competitor Adjusted", ' +
   '"Rebuild Adjusted") and their value numbers are for YOUR reasoning only. NEVER repeat them ' +
@@ -467,8 +518,9 @@ const VALUE_CONFIDENTIALITY_NOTE =
  * @param {string[]} giving
  * @param {string[]} receiving
  * @param {string} [valueSource='hwang_true_value']  One of VALUE_SOURCES.
+ * @param {string} [renderMode='full']  'full' | 'soft' (see renderConfig.mjs)
  */
-export async function evaluateTrade(giving, receiving, valueSource) {
+export async function evaluateTrade(giving, receiving, valueSource, renderMode = RENDER_MODE_FULL) {
   const source = VALUE_SOURCES.includes(valueSource) ? valueSource : 'hwang_true_value';
   const { map: ktcMap } = loadKtcData();
   getValueLookups(); // warm cache
@@ -478,6 +530,15 @@ export async function evaluateTrade(giving, receiving, valueSource) {
 
   const givingTotal = givingSide.reduce((s, p) => s + p.value, 0);
   const receivingTotal = receivingSide.reduce((s, p) => s + p.value, 0);
+
+  // Cross-source totals (used by both renderers)
+  const crossTotals = {};
+  for (const src of CROSS_CHECK_SOURCES) {
+    crossTotals[src] = {
+      give: giving.map((n) => resolveAssetForSource(n, src, ktcMap)).reduce((s, p) => s + p.value, 0),
+      receive: receiving.map((n) => resolveAssetForSource(n, src, ktcMap)).reduce((s, p) => s + p.value, 0),
+    };
+  }
 
   // KTC-style value adjustment: consolidation credit for the stud side in
   // uneven-count packages, judged by nonlinear raw scores.
@@ -489,6 +550,57 @@ export async function evaluateTrade(giving, receiving, valueSource) {
   const adjReceiving = receivingTotal + (va.adjustmentForB || 0);
   const diff = adjReceiving - adjGiving;
   const pct = adjGiving > 0 ? Math.round((diff / adjGiving) * 100) : 0;
+
+  if (renderMode === RENDER_MODE_SOFT) {
+    // Resolve both sides in the public KTC model for citeable figures
+    const ktcGive = giving.map((n) => resolveAssetForSource(n, 'ktc_sf_tep', ktcMap));
+    const ktcReceive = receiving.map((n) => resolveAssetForSource(n, 'ktc_sf_tep', ktcMap));
+    const assetLine = (p) => p.found
+      ? `${p.label}${p.posRank ? ` (${p.position}${p.posRank})` : p.isPick ? ' (pick)' : ''} — KTC ${fmt(p.value)}`
+      : `❓ ${p.label} (not found — verify the name)`;
+
+    const lines = ['**Trade check**\n'];
+    lines.push('**You give:**');
+    for (const p of ktcGive) lines.push(`  ${assetLine(p)}`);
+    lines.push('**You receive:**');
+    for (const p of ktcReceive) lines.push(`  ${assetLine(p)}`);
+    lines.push('');
+
+    // Verdict in this league's format (primary model, expressed softly)
+    const absPct = Math.abs(pct);
+    if (va.isEven || absPct < 3) {
+      lines.push("**Verdict:** dead even in this league's format.");
+    } else {
+      const winner = diff > 0 ? 'receive side' : 'give side';
+      lines.push(
+        `**Verdict:** ${gapBucket(absPct)} for the **${winner}** in this league's format ` +
+        `(~${Math.max(5, roundPct5(absPct))}% ahead; the gap is ${describePickEquivalent(diff)}).`,
+      );
+    }
+
+    // Consolidation credit
+    if (va.appliesAdjustment) {
+      const creditSide = va.adjustmentForA > 0 ? 'give side' : 'receive side';
+      lines.push(
+        `**Consolidation:** the ${creditSide} holds the best single asset in fewer pieces — ` +
+        'that gets a consolidation credit (studs > depth in best ball), already reflected in the verdict.',
+      );
+    }
+
+    // Timeline lenses
+    const winNow = describeLean(crossTotals.competitor_adjusted?.give, crossTotals.competitor_adjusted?.receive);
+    const future = describeLean(crossTotals.rebuilder_adjusted?.give, crossTotals.rebuilder_adjusted?.receive);
+    if (winNow) lines.push(`**Win-now lens (2026 impact):** ${winNow}.`);
+    if (future) lines.push(`**Future-asset lens (factoring out 2026):** ${future}.`);
+
+    // Public market cross-check — exact numbers are fine here
+    const ktcG = crossTotals.ktc_sf_tep?.give || 0;
+    const ktcR = crossTotals.ktc_sf_tep?.receive || 0;
+    lines.push(`**Market cross-check (KTC):** ${fmt(ktcG)} → ${fmt(ktcR)} (${describeLean(ktcG, ktcR) || 'even'}).`);
+
+    lines.push('\n*Everything above is phrased in user-safe terms — quote it freely. Draft picks are valued off the KTC pick board.*');
+    return lines.join('\n');
+  }
 
   let verdict;
   if (va.isEven || Math.abs(pct) <= 5) {
@@ -520,8 +632,7 @@ export async function evaluateTrade(giving, receiving, valueSource) {
   // Cross-source totals so the verdict can be sanity-checked against other models
   lines.push('\n**Totals across value models** (give → receive):');
   for (const src of CROSS_CHECK_SOURCES) {
-    const g = giving.map((n) => resolveAssetForSource(n, src, ktcMap)).reduce((s, p) => s + p.value, 0);
-    const r = receiving.map((n) => resolveAssetForSource(n, src, ktcMap)).reduce((s, p) => s + p.value, 0);
+    const { give: g, receive: r } = crossTotals[src];
     const marker = src === source ? ' ← primary' : '';
     const lean = g === r ? 'even' : (r > g ? 'receive side' : 'give side');
     lines.push(`  ${VALUE_SOURCE_LABELS[src].padEnd(16)} ${fmt(g)} → ${fmt(r)}  (favors ${lean})${marker}`);
@@ -535,11 +646,89 @@ export async function evaluateTrade(giving, receiving, valueSource) {
 
 // ─── Player Value Breakdown ───────────────────────────────────────────────────
 
+/** Soft-mode player value profile: public figures + user-safe signals only. */
+function renderPlayerValueSoft(displayName, pos, nflTeam, playerId) {
+  const { bySleeperId: fcById, byName: fcByName } = loadFantasyCalcData();
+  const fc = fcById.get(playerId) || fcByName.get(normalisePlayerName(displayName));
+  getValueLookups();
+
+  const entry = (src) => lookupValueEntry(displayName, src, { position: pos });
+  const ktc = entry('ktc_sf_tep');
+  const house = entry('hwang_true_value');
+  const winNow = entry('competitor_adjusted');
+  const future = entry('rebuilder_adjusted');
+  const fcEntry = entry('fantasycalc');
+
+  const lines = [`**${displayName}** | ${pos} | ${nflTeam}${fc?.age ? ` | Age ${fc.age}` : ''}`, ''];
+
+  if (ktc) {
+    lines.push(`Market value (KTC): **${fmt(ktc.value)}** — ${pos}${ktc.posRank}, #${ktc.overallRank} overall`);
+  } else {
+    lines.push('Market value (KTC): not ranked — deep bench / undrafted territory.');
+  }
+  if (fcEntry) {
+    const trend = fc?.trend30day ? ` | 30-day trend ${fc.trend30day > 0 ? '+' : ''}${fc.trend30day}` : '';
+    lines.push(`FantasyCalc: ${fmt(fcEntry.value)} — ${pos}${fcEntry.posRank}${trend}`);
+  }
+
+  // Internal signals, expressed only as % vs the public KTC number + ranks
+  const vsKtc = (e) => {
+    if (!e || !ktc || !(ktc.value > 0)) return null;
+    const pct = ((e.value - ktc.value) / ktc.value) * 100;
+    if (Math.abs(pct) < 3) return { dir: 'in line with market', pctStr: null, rank: e.posRank };
+    return {
+      dir: pct > 0 ? 'above market' : 'below market',
+      pctStr: `~${Math.max(5, roundPct5(Math.abs(pct)))}%`,
+      rank: e.posRank,
+    };
+  };
+
+  const houseCmp = vsKtc(house);
+  if (houseCmp) {
+    lines.push(
+      `In this league's format (2QB, TE-premium, best ball): ` +
+      `${houseCmp.pctStr ? `${houseCmp.pctStr} ${houseCmp.dir}` : houseCmp.dir}` +
+      `${houseCmp.rank ? ` — ${pos}${houseCmp.rank} here` : ''}.`,
+    );
+  }
+  const winCmp = vsKtc(winNow);
+  if (winCmp) {
+    lines.push(
+      `Win-now lens (${CURRENT_YEAR} impact): ` +
+      `${winCmp.pctStr ? `${winCmp.pctStr} ${winCmp.dir}` : winCmp.dir}` +
+      `${winCmp.rank ? ` — ${pos}${winCmp.rank} among win-now assets` : ''}.`,
+    );
+  }
+  const futCmp = vsKtc(future);
+  if (futCmp) {
+    lines.push(
+      `Future-asset lens (factoring out ${CURRENT_YEAR}): ` +
+      `${futCmp.pctStr ? `${futCmp.pctStr} ${futCmp.dir}` : futCmp.dir}` +
+      `${futCmp.rank ? ` — ${pos}${futCmp.rank} as a long-term hold` : ''}.`,
+    );
+  }
+
+  // Timeline fit bucket
+  if (winNow && future && winNow.value > 0 && future.value > 0) {
+    const leanPct = ((winNow.value - future.value) / ((winNow.value + future.value) / 2)) * 100;
+    const fit = leanPct > 10 ? 'stronger as a win-now piece than a long-term hold'
+      : leanPct < -10 ? 'stronger as a rebuild/future asset than a win-now piece'
+      : 'a timeline-neutral asset — fits contenders and rebuilders alike';
+    lines.push(`Timeline fit: ${fit}.`);
+  }
+
+  lines.push('\n*Everything above is phrased in user-safe terms — quote it freely. Use search_player for league ownership.*');
+  return lines.join('\n');
+}
+
 /**
  * Full multi-model value profile for one player — the atomic unit of any
  * value argument.
+ *
+ * @param {string} name
+ * @param {string} [renderMode='full']  'full' | 'soft' (see renderConfig.mjs)
  */
-export function getPlayerValueBreakdown(name) {
+export function getPlayerValueBreakdown(name, renderMode = RENDER_MODE_FULL) {
   const result = findPlayerByName(name);
   if (!result) {
     return `Player "${name}" not found. Try a full name like "Justin Jefferson".`;
@@ -549,6 +738,10 @@ export function getPlayerValueBreakdown(name) {
   const displayName = getPlayerDisplayName(player);
   const pos = player.position || '?';
   const nflTeam = player.team || 'FA';
+
+  if (renderMode === RENDER_MODE_SOFT) {
+    return renderPlayerValueSoft(displayName, pos, nflTeam, playerId);
+  }
 
   const { bySleeperId: fcById, byName: fcByName } = loadFantasyCalcData();
   const fc = fcById.get(playerId) || fcByName.get(normalisePlayerName(displayName));
@@ -608,8 +801,11 @@ async function computeRosterValueTotals(playerIds, playersData) {
 /**
  * Roster construction report: value totals across models, positional breakdown,
  * age profile, and a competitor-vs-rebuilder lean — with league-wide context.
+ *
+ * @param {string} teamQuery
+ * @param {string} [renderMode='full']  'full' | 'soft' (see renderConfig.mjs)
  */
-export async function getTeamValueSummary(teamQuery) {
+export async function getTeamValueSummary(teamQuery, renderMode = RENDER_MODE_FULL) {
   const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
   const teamMap = buildTeamMap(rosters, users);
   const teamInfo = findTeam(teamMap, teamQuery);
@@ -658,6 +854,42 @@ export async function getTeamValueSummary(teamQuery) {
   const reb = mine.rebuilder_adjusted;
   const leanPct = (comp + reb) > 0 ? Math.round(((comp - reb) / ((comp + reb) / 2)) * 100) : 0;
   const leanLabel = leanPct > 5 ? 'WIN-NOW build' : leanPct < -5 ? 'REBUILD-tilted assets' : 'balanced timeline';
+
+  if (renderMode === RENDER_MODE_SOFT) {
+    const lines = [
+      `**${teamLink(teamInfo.teamName, rid)}** (${teamInfo.ownerName}) — Roster Construction Report\n`,
+      `League value rank: **#${myRank} of ${leagueRows.length}** by this league's format-adjusted values`,
+      `Timeline: **${leanLabel}** — win-now value runs ${leanPct >= 0 ? `~${Math.max(5, roundPct5(Math.abs(leanPct)))}% above` : `~${Math.max(5, roundPct5(Math.abs(leanPct)))}% below`} long-term value` +
+        (Math.abs(leanPct) <= 5 ? ' (effectively balanced)' : ''),
+      weightedAge ? `Value-weighted roster age: **${weightedAge}**` : '',
+      '',
+      '**Positional shape** (share of roster value):',
+    ];
+
+    const totalValue = mine.hwang_true_value || 1;
+    for (const pos of ['QB', 'RB', 'WR', 'TE']) {
+      const group = byPos[pos].sort((a, b) => b.hwang_true_value - a.hwang_true_value);
+      const posTotal = group.reduce((s, r) => s + r.hwang_true_value, 0);
+      const share = Math.round((posTotal / totalValue) * 100);
+      const top = group.slice(0, 3)
+        .filter((r) => r.hwang_true_value > 0)
+        .map((r) => {
+          const e = lookupValueEntry(r.name, 'hwang_true_value', { position: r.position });
+          return `${r.name}${e?.posRank ? ` (${pos}${e.posRank})` : ''}${r.age ? `, ${r.age}` : ''}`;
+        })
+        .join('; ');
+      lines.push(`  ${pos}: **${share}%** — ${top || 'no valued assets'}`);
+    }
+
+    lines.push('', '**League value board** (rank order, this format):');
+    leagueRows.forEach((r, i) => {
+      const marker = r.rid === rid ? ' ◄' : '';
+      lines.push(`  ${i + 1}. ${r.teamName} (${r.ownerName})${marker}`);
+    });
+
+    lines.push('\n*Everything above is phrased in user-safe terms — quote it freely.*');
+    return lines.join('\n');
+  }
 
   const lines = [
     `**${teamLink(teamInfo.teamName, rid)}** (${teamInfo.ownerName}) — Roster Construction Report\n`,
