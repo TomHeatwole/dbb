@@ -9,12 +9,14 @@
  *   site/src/tradeCalculator/ktcValueAdjustment.js  (KTC-style VA formula)
  *   site/src/lookups/HwangValueAdjustmentLookup.js  (stitched KTC + multipliers)
  *   site/src/lookups/RedraftValueLookup.js          (competitor/rebuilder CSV)
- *   site/src/lookups/KtcLookup.js                   (PICK_VALUES table)
+ *   site/src/lookups/KtcLookup.js                   (pick market fallback)
+ *   site/src/lookups/TruePickValueLookup.js         (True pick multipliers)
+ *   site/public/data/true_rookie_pick_chart.json
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { DATA_DIR } from './config.mjs';
+import { DATA_DIR, CURRENT_YEAR } from './config.mjs';
 import { normalisePlayerName } from './helpers.mjs';
 import { loadKtcData, loadFantasyCalcData, loadFfbData } from './dataLoader.mjs';
 
@@ -163,8 +165,9 @@ export function evaluateKtcStyleTrade(teamA, teamB, highestValueOverall = KTC_HI
   };
 }
 
-// ─── Draft pick fallback value table (KTC SF TE+ mid estimates) ───────────────
+// ─── Draft pick market fallback + Hwang True multipliers ─────────────────────
 // Keys: yearOffset (season − currentYear), round (1–4), tier.
+// True prices = market × multiplier from true_rookie_pick_chart.json.
 
 export const PICK_VALUES = {
   0: {
@@ -193,7 +196,55 @@ export const PICK_VALUES = {
   },
 };
 
-export function getPickKtcValue(season, round, currentYear) {
+const ROUND_ORD = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th' };
+const TIER_CANON = { early: 'Early', mid: 'Mid', late: 'Late', Early: 'Early', Mid: 'Mid', Late: 'Late' };
+
+let truePickChartCache = null;
+
+export function loadTruePickChart() {
+  if (truePickChartCache) return truePickChartCache;
+  const path = join(DATA_DIR, 'true_rookie_pick_chart.json');
+  if (!existsSync(path)) {
+    truePickChartCache = { multiplierByTier: {}, avgTrueByTier: {}, multiplierByRound: {} };
+    return truePickChartCache;
+  }
+  truePickChartCache = JSON.parse(readFileSync(path, 'utf8'));
+  return truePickChartCache;
+}
+
+export function getTruePickMultiplier({ round, tier = 'Mid', slot = null } = {}) {
+  const chart = loadTruePickChart();
+  if (slot && chart.multiplierBySlot?.[slot] != null) return chart.multiplierBySlot[slot];
+  const t = TIER_CANON[tier] || 'Mid';
+  const ord = ROUND_ORD[Number(round)];
+  if (ord && chart.multiplierByTier?.[`${t} ${ord}`] != null) {
+    return chart.multiplierByTier[`${t} ${ord}`];
+  }
+  return chart.multiplierByRound?.[String(round)] ?? null;
+}
+
+export function getTruePickAvgValue({ round, tier = 'Mid', slot = null } = {}) {
+  const chart = loadTruePickChart();
+  if (slot && chart.avgTrueBySlot?.[slot] != null) return chart.avgTrueBySlot[slot];
+  const t = TIER_CANON[tier] || 'Mid';
+  const ord = ROUND_ORD[Number(round)];
+  if (!ord) return null;
+  return chart.avgTrueByTier?.[`${t} ${ord}`] ?? null;
+}
+
+/** Apply True multiplier to a market pick quote. */
+export function applyTruePickAdjustment(marketValue, { round, tier = 'Mid', slot = null } = {}) {
+  const mult = getTruePickMultiplier({ round, tier, slot });
+  if (marketValue != null && marketValue > 0 && mult != null) {
+    return Math.round(marketValue * mult);
+  }
+  const avgTrue = getTruePickAvgValue({ round, tier, slot });
+  if (avgTrue != null) return avgTrue;
+  if (marketValue != null && marketValue > 0) return Math.round(marketValue);
+  return 0;
+}
+
+export function getPickMarketFallback(season, round, currentYear = CURRENT_YEAR, tier = 'mid') {
   const offset = Number(season) - Number(currentYear);
   if (offset < 0) return 0;
   const valueOffset = offset >= 3 ? 2 : offset;
@@ -201,7 +252,48 @@ export function getPickKtcValue(season, round, currentYear) {
   if (!byRound) return 0;
   const tiers = byRound[Number(round)];
   if (!tiers) return 0;
-  return tiers.mid ?? 0;
+  const key = String(tier || 'mid').toLowerCase();
+  return tiers[key] ?? tiers.mid ?? 0;
+}
+
+/**
+ * Hwang True pick value. Prefer live KTC market × True multiplier.
+ */
+export function getPickKtcValue(season, round, currentYear = CURRENT_YEAR, options = {}) {
+  const offset = Number(season) - Number(currentYear);
+  if (offset < 0) return 0;
+  const tier = options.tier || 'Mid';
+  let market = options.marketValue;
+  if (market == null && options.ktcMap) {
+    const ord = ROUND_ORD[Number(round)];
+    const t = TIER_CANON[tier] || 'Mid';
+    if (ord) {
+      const entry = options.ktcMap.get(normalisePlayerName(`${season} ${t} ${ord}`));
+      market = entry?.ktcValue_tep || entry?.ktcValue_sf || null;
+    }
+  }
+  if (market == null) {
+    market = getPickMarketFallback(season, round, currentYear, tier);
+  }
+  return applyTruePickAdjustment(market, { round, tier, slot: options.slot || null });
+}
+
+/** True-adjusted pick board for soft-mode pick equivalents (next draft year). */
+export function getTruePickValueBoard(yearOffset = 1, currentYear = CURRENT_YEAR) {
+  const year = Number(currentYear) + Number(yearOffset);
+  const { map: ktcMap } = loadKtcData();
+  const board = [];
+  for (const round of [1, 2, 3, 4]) {
+    for (const tier of ['Early', 'Mid', 'Late']) {
+      board.push({
+        label: `${year} ${tier.toLowerCase()} ${ROUND_ORD[round]}`,
+        value: getPickKtcValue(year, round, currentYear, { tier, ktcMap }),
+        round,
+        tier,
+      });
+    }
+  }
+  return board.sort((a, b) => a.value - b.value);
 }
 
 // ─── Ranking helpers ──────────────────────────────────────────────────────────

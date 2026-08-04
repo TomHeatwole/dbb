@@ -31,18 +31,20 @@ export const HWANG_POSITION_COEFFICIENTS = {
     TE: 1.0,
   },
   // Hwang True Simulator v3b fit, Final KTC basis (Hwang format).
+  // `flat` is the baseline (value-independent) multiplier from the same fit,
+  // shown alongside the formula as a mental-math approximation.
   true: {
-    QB: { c: 0.932, k: -0.175 },
-    RB: { c: 1.263, k: 0.345 },
-    WR: { c: 0.866, k: -0.030 },
-    TE: { c: 0.981, k: -0.140 },
+    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    RB: { c: 1.263, k: 0.345, flat: 1.30 },
+    WR: { c: 0.866, k: -0.030, flat: 0.85 },
+    TE: { c: 0.981, k: -0.140, flat: 0.94 },
   },
   // Hwang True Simulator v3b fit, competitor-adjusted basis (Hwang format).
   trueComp: {
-    QB: { c: 0.900, k: 0.173 },
-    RB: { c: 1.343, k: 0.121 },
-    WR: { c: 0.871, k: -0.235 },
-    TE: { c: 0.950, k: -0.059 },
+    QB: { c: 0.900, k: 0.173, flat: 0.94 },
+    RB: { c: 1.343, k: 0.121, flat: 1.37 },
+    WR: { c: 0.871, k: -0.235, flat: 0.87 },
+    TE: { c: 0.950, k: -0.059, flat: 0.90 },
   },
 };
 
@@ -72,7 +74,8 @@ export function formatHwangCoefficient(entry) {
   if (entry == null) return '1';
   if (typeof entry === 'number') return String(entry);
   const k = entry.k >= 0 ? `+${entry.k}` : String(entry.k);
-  return `${entry.c}·(v/5k)^${k}`;
+  const flat = entry.flat != null ? ` (≈${entry.flat} flat)` : '';
+  return `${entry.c}·(v/5k)^${k}${flat}`;
 }
 
 export function getHwangCoefficientMap(adjustmentKey) {

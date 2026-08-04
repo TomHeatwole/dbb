@@ -9,21 +9,24 @@
  * Positional ranks are computed at parse time per format by sorting within
  * each position group by value descending.
  *
- * Draft pick values are approximate KTC Superflex TE+ mid-round estimates,
- * tiered by pick position (early 1–3 / mid 4–7 / late 8–10).
+ * Draft pick values use Hwang True pick multipliers (True Rookie Pick chart)
+ * applied to live KTC Early/Mid/Late quotes when available.
  */
 
 import { normalisePlayerName as normaliseName, findBestPlayerMatch } from '../utils/playerNameMatcher';
+import {
+  getTruePickValue,
+  getMarketPickValue,
+  tierFromPickInRound,
+} from './TruePickValueLookup';
 
 let cachedKtcMap = null;
 let cachedAsOf   = null;
 
-// ── Pick value table ──────────────────────────────────────────────────────────
-// Keys: yearOffset (season − currentYear), round (1–4), tier ('early'|'mid'|'late')
-// Approximate KTC Superflex TE+ values for a 10-team dynasty league.
-// offset 0 = the draft happening this year (preseason, picks not yet made)
-// offset 1 = next draft, etc.
-const PICK_VALUES = {
+// ── Fallback market pick table (pre-True) ─────────────────────────────────────
+// Used only when live KTC pick rows are missing. Keys: yearOffset, round, tier.
+// KEEP rough sync with site/lib/mcp/values.mjs PICK_VALUES.
+const PICK_MARKET_FALLBACK = {
   0: {
     1: { early: 9200, mid: 6200, late: 3800 },
     2: { early: 2900, mid: 2300, late: 1700 },
@@ -50,24 +53,52 @@ const PICK_VALUES = {
   },
 };
 
-/**
- * Return the approximate KTC value for a draft pick.
- * Uses mid-tier values for all picks. Years beyond the modeled window (e.g. 2029+)
- * reuse the furthest-out year table (2028 values when current year is 2026).
- * @param {string|number} season       – draft year (e.g. "2027")
- * @param {number}        round        – 1–4
- * @param {string|number} currentYear  – CURRENT_YEAR constant
- */
-export function getPickKtcValue(season, round, currentYear) {
+/** Raw market estimate before True adjustment (live map preferred at call sites). */
+export function getPickMarketFallback(season, round, currentYear, tier = 'mid') {
   const offset = Number(season) - Number(currentYear);
   if (offset < 0) return 0;
   const valueOffset = offset >= 3 ? 2 : offset;
-  const byRound = PICK_VALUES[valueOffset];
+  const byRound = PICK_MARKET_FALLBACK[valueOffset];
   if (!byRound) return 0;
   const tiers = byRound[Number(round)];
   if (!tiers) return 0;
-  return tiers.mid ?? 0;
+  const key = String(tier || 'mid').toLowerCase();
+  return tiers[key] ?? tiers.mid ?? 0;
 }
+
+/**
+ * Hwang True value for a draft pick.
+ * Prefer live KTC Early/Mid/Late × True multiplier; fall back to static market × True.
+ *
+ * @param {string|number} season
+ * @param {number}        round
+ * @param {string|number} currentYear
+ * @param {object}        [options]
+ * @param {'Early'|'Mid'|'Late'|string} [options.tier='Mid']
+ * @param {number|null} [options.pickInRound]
+ * @param {Map|null} [options.ktcMap]
+ * @param {number|null} [options.marketValue]
+ */
+export function getPickKtcValue(season, round, currentYear, options = {}) {
+  const offset = Number(season) - Number(currentYear);
+  if (offset < 0) return 0;
+
+  const pickInRound = options.pickInRound ?? null;
+  const tier = options.tier
+    || (pickInRound != null ? tierFromPickInRound(pickInRound) : 'Mid');
+
+  return getTruePickValue({
+    season,
+    round,
+    tier,
+    pickInRound,
+    ktcMap: options.ktcMap ?? cachedKtcMap,
+    marketValue: options.marketValue ?? null,
+    fallbackMarket: (s, r, t) => getPickMarketFallback(s, r, currentYear, t),
+  });
+}
+
+export { getMarketPickValue, tierFromPickInRound };
 
 // ── CSV parsing ───────────────────────────────────────────────────────────────
 

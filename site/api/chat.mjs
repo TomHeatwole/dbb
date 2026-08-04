@@ -317,7 +317,7 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'lookup_draft_pick',
-    description: 'Look up the KTC dynasty value of a draft pick by year and round. Use this when a user asks what a pick is worth, or before evaluate_trade when a pick\'s tier (Early/Mid/Late) is ambiguous. Returns all three tiers (Early/Mid/Late) when no tier is specified, along with how many years until the draft.',
+    description: 'Look up the Hwang True dynasty value of a draft pick by year and round (live KTC Early/Mid/Late market × True pick multiplier). Use this when a user asks what a pick is worth, or before evaluate_trade when a pick\'s tier (Early/Mid/Late) is ambiguous. Returns all three tiers when no tier is specified, along with how many years until the draft.',
     parameters: {
       type: 'OBJECT',
       properties: {

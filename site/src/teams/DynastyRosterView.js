@@ -8,7 +8,7 @@
  *  – Players sorted by KTC value descending, with overall rank and positional
  *    rank (e.g. #5 · RB2)
  *  – Draft picks below players, formatted as "2026 1.02" when draft order is
- *    known, with tier-based KTC values (early / mid / late)
+ *    known, valued with Hwang True pick prices (KTC Early/Mid/Late × True mult)
  *
  * Self-contained: owns all data loading.
  */
@@ -24,6 +24,7 @@ import {
   getPickKtcValue,
   formatKtcValue,
 } from '../lookups/KtcLookup';
+import { loadTruePickChart } from '../lookups/TruePickValueLookup';
 import { fetchFantasyCalcData, getFantasyCalcEntry, formatFcValue } from '../lookups/FantasyCalcLookup';
 import { fetchFfbData, getFfbEntry, formatFfbRank } from '../lookups/FfbLookup';
 import {
@@ -285,7 +286,7 @@ function DynastyRosterView() {
         const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
         const isPreSeason    = completedWeeks === 0;
         const prevYearStr    = String(Number(CURRENT_YEAR) - 1);
-        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, marketMult, trueMult, compositeMult, allTradedPicks, prevWeeksData, rookieDraftComplete] =
+        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, marketMult, trueMult, compositeMult, _truePickChart, allTradedPicks, prevWeeksData, rookieDraftComplete] =
           await Promise.all([
             fetchTeamData(CURRENT_YEAR),
             fetchScoresData(CURRENT_YEAR),
@@ -297,6 +298,7 @@ function DynastyRosterView() {
             loadHwangPositionMultipliers('market').catch(() => null),
             loadHwangPositionMultipliers('true').catch(() => null),
             loadHwangPositionMultipliers(HWANG_COMPOSITE_COEFFICIENT_KEY).catch(() => null),
+            loadTruePickChart().catch(() => null),
             PICKS_ENABLED ? fetchTradedPicks(CURRENT_YEAR).catch(() => []) : Promise.resolve([]),
             PICKS_ENABLED && isPreSeason
               ? fetchScoresData(prevYearStr).catch(() => null)
@@ -497,20 +499,27 @@ function DynastyRosterView() {
         if (!info) continue;
         total += getPlayerSortValue(pid, info);
       }
-      // Picks use KTC values; included in total when toggled on
+      // Picks use Hwang True pick values (live KTC × True multiplier)
       if (
         includePicksInTotal
         && PICKS_ENABLED
         && PICKS_VALUE_SOURCES.includes(valueSource)
       ) {
         for (const pick of (picksByRoster[team.rosterId] || [])) {
-          total += getPickKtcValue(pick.season, pick.round, CURRENT_YEAR);
+          const origRid = pick.roster_id != null ? String(pick.roster_id) : null;
+          const pickNum = (
+            String(pick.season) === String(nextDraftYear) && origRid
+          ) ? draftOrderMap[origRid] : null;
+          total += getPickKtcValue(pick.season, pick.round, CURRENT_YEAR, {
+            ktcMap,
+            pickInRound: pickNum ?? null,
+          });
         }
       }
       totals[team.rosterId] = total;
     }
     return totals;
-  }, [playersData, playerIdMap, teams, rosters, picksByRoster, getPlayerSortValue, valueSource, includePicksInTotal]);
+  }, [playersData, playerIdMap, teams, rosters, picksByRoster, getPlayerSortValue, valueSource, includePicksInTotal, ktcMap, draftOrderMap, nextDraftYear]);
 
   const teamKtcTepBaselines = useMemo(() => {
     if (!playersData || !playerIdMap) return {};
@@ -740,15 +749,20 @@ function DynastyRosterView() {
     if (!selectedId) return [];
     return (picksByRoster[selectedId] || []).map((pick) => {
       const origRid = pick.roster_id != null ? String(pick.roster_id) : null;
-      const pickNum = origRid ? draftOrderMap[origRid] : null;
+      const pickNum = (
+        String(pick.season) === String(nextDraftYear) && origRid
+      ) ? draftOrderMap[origRid] : null;
       return {
         ...pick,
         pickNum,
-        ktcValue: getPickKtcValue(pick.season, pick.round, CURRENT_YEAR),
+        ktcValue: getPickKtcValue(pick.season, pick.round, CURRENT_YEAR, {
+          ktcMap,
+          pickInRound: pickNum ?? null,
+        }),
         label:    formatPickLabel(pick, draftOrderMap, nextDraftYear, rosterInfoMap),
       };
     });
-  }, [selectedId, picksByRoster, draftOrderMap, nextDraftYear, rosterInfoMap]);
+  }, [selectedId, picksByRoster, draftOrderMap, nextDraftYear, rosterInfoMap, ktcMap]);
 
   const selectedTeam  = useMemo(() => sortedTeams.find((t) => t.rosterId === selectedId) || null, [sortedTeams, selectedId]);
   const selectedTotal = selectedId != null ? (teamKtcTotals[selectedId] ?? 0) : 0;

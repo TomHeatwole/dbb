@@ -13,8 +13,9 @@ import {
 } from './helpers.mjs';
 import { runScenarioEval } from './scenarioEngine.mjs';
 import {
-  VALUE_SOURCES, VALUE_SOURCE_LABELS, PICK_VALUES,
+  VALUE_SOURCES, VALUE_SOURCE_LABELS,
   getValueLookups, lookupValueEntry, evaluateKtcStyleTrade,
+  applyTruePickAdjustment, getTruePickValueBoard, getPickKtcValue,
 } from './values.mjs';
 import { RENDER_MODE_FULL, RENDER_MODE_SOFT } from './renderConfig.mjs';
 import { prepareSimContext, runSeasonSim, DEFAULT_ITERATIONS } from './simEngine.mjs';
@@ -303,6 +304,13 @@ const PICK_ROUND_MAP = {
   '4th': '4th', 'fourth': '4th',
 };
 
+const PICK_ROUND_NUM = {
+  '1st': 1, first: 1,
+  '2nd': 2, second: 2,
+  '3rd': 3, third: 3,
+  '4th': 4, fourth: 4,
+};
+
 const PICK_TIER_MAP = {
   early:  'Early',
   mid:    'Mid',
@@ -319,14 +327,29 @@ function resolvePick(name, ktcMap) {
 
   const year  = yearMatch[1];
   const round = PICK_ROUND_MAP[roundMatch[1]];
+  const roundNum = PICK_ROUND_NUM[roundMatch[1]];
 
   const tierKey = Object.keys(PICK_TIER_MAP).find((t) => n.includes(t));
   const tier    = tierKey ? PICK_TIER_MAP[tierKey] : 'Mid';
 
   const ktcName = `${year} ${tier} ${round}`;
   const entry   = ktcMap.get(normalisePlayerName(ktcName));
-  if (!entry) return null;
-  return { label: entry.name, value: entry.ktcValue_tep || 0, found: true };
+  const market  = entry?.ktcValue_tep || entry?.ktcValue_sf || 0;
+  if (!entry && !market) {
+    // Still allow True avg fallback when live board lacks the asset.
+    const value = getPickKtcValue(year, roundNum, CURRENT_YEAR, { tier, ktcMap });
+    if (!value) return null;
+    return { label: ktcName, value, marketValue: null, found: true, isTruePick: true };
+  }
+
+  const value = applyTruePickAdjustment(market, { round: roundNum, tier });
+  return {
+    label: entry?.name || ktcName,
+    value,
+    marketValue: market,
+    found: true,
+    isTruePick: true,
+  };
 }
 
 // ─── Compare Players ──────────────────────────────────────────────────────────
@@ -427,7 +450,7 @@ const CROSS_CHECK_SOURCES = [
 
 /**
  * Resolve one trade asset (player or pick) in a given value source.
- * Picks are always valued off the KTC pick board regardless of source.
+ * Picks use Hwang True pick values (live KTC Early/Mid/Late × True multiplier).
  */
 function resolveAssetForSource(name, source, ktcMap) {
   const pick = resolvePick(name, ktcMap);
@@ -467,20 +490,11 @@ function gapBucket(absPct) {
   return 'lopsided';
 }
 
-const ROUND_ORDINALS = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th' };
-
-/** Describe a value gap as a draft-pick equivalent (next draft's pick board). */
+/** Describe a value gap as a draft-pick equivalent (next draft's True pick board). */
 function describePickEquivalent(gap) {
   const g = Math.abs(Number(gap) || 0);
-  const year = Number(CURRENT_YEAR) + 1;
-  const byRound = PICK_VALUES[1];
-  const tiers = [];
-  for (const round of [1, 2, 3, 4]) {
-    for (const tier of ['early', 'mid', 'late']) {
-      tiers.push({ label: `${year} ${tier} ${ROUND_ORDINALS[round]}`, value: byRound[round][tier] });
-    }
-  }
-  tiers.sort((a, b) => a.value - b.value);
+  const tiers = getTruePickValueBoard(1, CURRENT_YEAR);
+  if (!tiers.length) return 'a mid-round pick';
   if (g < tiers[0].value * 0.6) return `less than a ${tiers[0].label} — negligible`;
   const max = tiers[tiers.length - 1];
   if (g > max.value * 1.3) return `more than a ${max.label}`;
@@ -598,7 +612,7 @@ export async function evaluateTrade(giving, receiving, valueSource, renderMode =
     const ktcR = crossTotals.ktc_sf_tep?.receive || 0;
     lines.push(`**Market cross-check (KTC):** ${fmt(ktcG)} → ${fmt(ktcR)} (${describeLean(ktcG, ktcR) || 'even'}).`);
 
-    lines.push('\n*Everything above is phrased in user-safe terms — quote it freely. Draft picks are valued off the KTC pick board.*');
+    lines.push('\n*Everything above is phrased in user-safe terms — quote it freely. Draft picks use Hwang True pick values (KTC market × True multipliers).*');
     return lines.join('\n');
   }
 
@@ -638,7 +652,7 @@ export async function evaluateTrade(giving, receiving, valueSource, renderMode =
     lines.push(`  ${VALUE_SOURCE_LABELS[src].padEnd(16)} ${fmt(g)} → ${fmt(r)}  (favors ${lean})${marker}`);
   }
 
-  lines.push('\n*Draft picks are valued off the KTC pick board in every model. Competitor/Rebuild models only make sense from one team\'s perspective — use the model matching the asking team\'s timeline.*');
+  lines.push('\n*Draft picks use Hwang True pick values (KTC market × True multipliers) in every model. Competitor/Rebuild models only make sense from one team\'s perspective — use the model matching the asking team\'s timeline.*');
   lines.push(VALUE_CONFIDENTIALITY_NOTE);
 
   return lines.join('\n');
@@ -1165,30 +1179,35 @@ export function lookupDraftPick(name) {
     : yearsAway === 1 ? 'next year\'s draft (~1 year away)'
     : `${yearsAway} years away`;
 
+  const roundNum = PICK_ROUND_NUM[roundMatch[1]];
   const lines = [
-    `**${year} ${round} Draft Pick — KTC SF TE+ Values** *(as of ${asOf || 'recent'})*`,
+    `**${year} ${round} Draft Pick — Hwang True Values** *(KTC market as of ${asOf || 'recent'} × True pick multiplier)*`,
     `*${year} draft = ${proximity}*`,
     '',
   ];
 
-  if (tierKey) {
-    const tier  = PICK_TIER_MAP[tierKey];
+  const tiersToShow = tierKey ? [PICK_TIER_MAP[tierKey]] : ['Early', 'Mid', 'Late'];
+  let any = false;
+  for (const tier of tiersToShow) {
     const entry = ktcMap.get(normalisePlayerName(`${year} ${tier} ${round}`));
-    if (!entry) {
-      return `No KTC data found for "${year} ${tier} ${round}". The pick may be beyond available data.`;
-    }
-    lines.push(`  **${entry.name}** — KTC: ${fmt(entry.ktcValue_tep)} (Overall #${entry.rank_tep || '?'})`);
-  } else {
-    for (const tier of ['Early', 'Mid', 'Late']) {
-      const entry = ktcMap.get(normalisePlayerName(`${year} ${tier} ${round}`));
-      if (entry) {
-        lines.push(`  **${entry.name}** — KTC: ${fmt(entry.ktcValue_tep)} (Overall #${entry.rank_tep || '?'})`);
-      }
-    }
+    const market = entry?.ktcValue_tep || entry?.ktcValue_sf || null;
+    const trueValue = getPickKtcValue(year, roundNum, CURRENT_YEAR, {
+      tier,
+      ktcMap,
+      marketValue: market,
+    });
+    if (!trueValue) continue;
+    any = true;
+    const marketBit = market != null ? ` · KTC market ${fmt(market)}` : '';
+    lines.push(`  **${year} ${tier} ${round}** — True: ${fmt(trueValue)}${marketBit}`);
+  }
+
+  if (!any) {
+    return `No pick value found for "${year} ${round}". The pick may be beyond available data.`;
   }
 
   lines.push('');
-  lines.push('*Tier (Early/Mid/Late) reflects projected draft slot. Use the appropriate tier based on the originating team\'s expected finish.*');
+  lines.push('*True pick values = live KTC Early/Mid/Late × 5-season Hwang True pick multipliers. Tier reflects projected draft slot.*');
   return lines.join('\n');
 }
 

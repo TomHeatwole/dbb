@@ -12,6 +12,7 @@ import {
   getPickKtcValue,
   formatKtcValue,
 } from '../lookups/KtcLookup';
+import { loadTruePickChart } from '../lookups/TruePickValueLookup';
 import { fetchFantasyCalcData, getFantasyCalcEntry, formatFcValue } from '../lookups/FantasyCalcLookup';
 import { fetchFfbData, getFfbEntry, formatFfbRank } from '../lookups/FfbLookup';
 import {
@@ -49,8 +50,8 @@ const ALL_YEARS = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)]
   .sort((a, b) => Number(b) - Number(a));
 const ROUND_ORDINAL = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th' };
 
-function buildPickCatalog() {
-  // Offer next 3 draft years × rounds 1–4 (mid-tier KTC values).
+function buildPickCatalog(ktcMap) {
+  // Offer next 3 draft years × rounds 1–4 (True-adjusted mid-tier pick values).
   const { minSeason, maxSeason } = getFuturePickSeasonRange(false);
   const picks = [];
   for (let season = minSeason; season <= maxSeason; season++) {
@@ -61,14 +62,13 @@ function buildPickCatalog() {
         season: String(season),
         round,
         label,
-        value: getPickKtcValue(season, round, CURRENT_YEAR),
+        value: getPickKtcValue(season, round, CURRENT_YEAR, { ktcMap, tier: 'Mid' }),
       });
     }
   }
   return picks;
 }
 
-const PICK_CATALOG = buildPickCatalog();
 let pickKeySeq = 0;
 function getLeagueId(year) {
   if (String(year) === String(CURRENT_YEAR)) return LEAGUE_ID;
@@ -437,6 +437,7 @@ function TradeCalculator() {
           marketMult,
           trueMult,
           compositeMult,
+          _truePickChart,
           ...yearTradeResults
         ] = await Promise.all([
           fetchTeamData(CURRENT_YEAR),
@@ -448,6 +449,7 @@ function TradeCalculator() {
           loadHwangPositionMultipliers('market').catch(() => null),
           loadHwangPositionMultipliers('true').catch(() => null),
           loadHwangPositionMultipliers(HWANG_COMPOSITE_COEFFICIENT_KEY).catch(() => null),
+          loadTruePickChart().catch(() => null),
           ...ALL_YEARS.map(async (year) => {
             const leagueId = getLeagueId(year);
             if (!leagueId) return { year, trades: [], rosterMap: {} };
@@ -694,12 +696,18 @@ function TradeCalculator() {
     });
   }, [playersData, playerIdMap, getPlayerValue, valueSource, ffbData]);
 
+  const pickCatalog = useMemo(() => buildPickCatalog(ktcMap), [ktcMap]);
+
   const enrichPicks = useCallback((picks) => (
     (picks || []).map((pick) => ({
       ...pick,
-      value: getPickKtcValue(pick.season, pick.round, CURRENT_YEAR),
+      value: getPickKtcValue(pick.season, pick.round, CURRENT_YEAR, {
+        ktcMap,
+        tier: 'Mid',
+        pickInRound: pick.pickInRound ?? pick.pickNum ?? null,
+      }),
     }))
-  ), []);
+  ), [ktcMap]);
 
   const leftPlayers = useMemo(() => resolveSide(leftIds), [resolveSide, leftIds]);
   const rightPlayers = useMemo(() => resolveSide(rightIds), [resolveSide, rightIds]);
@@ -767,7 +775,7 @@ function TradeCalculator() {
       || /^r?[1-4]$/.test(q);
 
     if (pickQuery) {
-      for (const pick of PICK_CATALOG) {
+      for (const pick of pickCatalog) {
         const label = pick.label.toLowerCase();
         const roundWord = (ROUND_ORDINAL[pick.round] || '').toLowerCase();
         if (
@@ -804,7 +812,7 @@ function TradeCalculator() {
     }
 
     return items;
-  }, [playersData, playerIdMap]);
+  }, [playersData, playerIdMap, pickCatalog]);
 
   const leftDropdownItems = useMemo(
     () => filterDropdownItems(leftQuery, [...leftIds, ...rightIds]),

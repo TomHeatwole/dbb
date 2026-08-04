@@ -5,14 +5,14 @@ rank,name,team,position,tier,sleeper_id
 4,Joe Burrow,CIN,QB,2,6770
 5,Jayden Daniels,WAS,QB,2,11566
 6,Jalen Hurts,PHI,QB,2,6904
-7,Caleb Williams,CHI,QB,2,11560
-8,Justin Herbert,LAC,QB,2,6797
+7,Justin Herbert,LAC,QB,2,6797
+8,Caleb Williams,CHI,QB,2,11560
 9,Trevor Lawrence,JAC,QB,2,7523
 10,Dak Prescott,DAL,QB,3,3294
 11,Brock Purdy,SF,QB,3,8183
 12,Jaxson Dart,NYG,QB,3,12508
-13,Bo Nix,DEN,QB,3,11563
-14,Patrick Mahomes II,KC,QB,3,4046
+13,Patrick Mahomes II,KC,QB,3,4046
+14,Bo Nix,DEN,QB,3,11563
 15,Matthew Stafford,LAR,QB,3,421
 16,Jared Goff,DET,QB,3,3163
 17,Kyler Murray,MIN,QB,4,5849
@@ -32,8 +32,8 @@ rank,name,team,position,tier,sleeper_id
 31,Fernando Mendoza,LV,QB,5,13269
 32,Michael Penix Jr.,ATL,QB,5,11559
 33,Kirk Cousins,LV,QB,5,1166
-34,Deshaun Watson,CLE,QB,5,4017
-35,Shedeur Sanders,CLE,QB,5,12524
+34,Shedeur Sanders,CLE,QB,5,12524
+35,Deshaun Watson,CLE,QB,5,4017
 36,J.J. McCarthy,MIN,QB,6,11565
 37,Mac Jones,SF,QB,6,7527
 38,Carson Beck,ARI,QB,6,13272
@@ -52,11 +52,11 @@ rank,name,team,position,tier,sleeper_id
 51,Jake Browning,TB,QB,7,6111
 52,Trey Lance,LAC,QB,7,7610
 53,Kenny Pickett,CAR,QB,7,8160
-54,Spencer Rattler,NO,QB,7,11562
-55,Tyson Bagent,CHI,QB,7,11256
+54,Tyson Bagent,CHI,QB,7,11256
+55,Spencer Rattler,NO,QB,7,11562
 56,Jalen Milroe,SEA,QB,7,12510
-57,Mitchell Trubisky,TEN,QB,7,3976
-58,Drew Allar,PIT,QB,7,13289
+57,Drew Allar,PIT,QB,7,13289
+58,Mitchell Trubisky,TEN,QB,7,3976
 59,Will Howard,PIT,QB,7,12511
 60,Davis Mills,HOU,QB,7,7585
 61,Tyler Huntley,BAL,QB,7,7083
@@ -65,8 +65,8 @@ rank,name,team,position,tier,sleeper_id
 64,Kyle Allen,BUF,QB,7,5127
 65,Drew Lock,SEA,QB,7,5854
 66,Nick Mullens,JAC,QB,7,4464
-67,Sam Howell,DAL,QB,7,8162
-68,Tommy DeVito,NE,QB,7,11292
+67,Tommy DeVito,NE,QB,7,11292
+68,Sam Howell,DAL,QB,7,8162
 69,Will Levis,TEN,QB,7,9999
 70,Mason Rudolph,PIT,QB,7,4972
 71,Taylen Green,CLE,QB,7,13306
@@ -77,8 +77,8 @@ rank,name,team,position,tier,sleeper_id
 76,Carson Wentz,MIN,QB,8,3161
 77,Tanner McKee,PHI,QB,8,9230
 78,Garrett Nussmeier,KC,QB,8,13404
-79,Jimmy Garoppolo,LAR,QB,8,1837
-80,Brady Cook,NYJ,QB,8,12538
+79,Brady Cook,NYJ,QB,8,12538
+80,Jimmy Garoppolo,LAR,QB,8,1837
 81,Josh Johnson,CIN,QB,8,260
 82,Brandon Allen,NYG,QB,8,3357
 83,Hendon Hooker,TEN,QB,8,9998

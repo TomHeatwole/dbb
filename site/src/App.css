@@ -16527,3 +16527,284 @@ body.modal-open {
     display: none;
   }
 }
+
+/* ── True Rookie Pick Value (sandbox) ── */
+
+.trpv-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-width: 0;
+}
+
+.trpv-intro,
+.trpv-meta,
+.trpv-warn {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #aaa;
+  max-width: 72rem;
+}
+
+.trpv-meta {
+  color: #888;
+  font-size: 0.78rem;
+}
+
+.trpv-warn {
+  color: #c98;
+}
+
+.trpv-error {
+  color: #e88;
+  padding: 1rem 0;
+}
+
+.trpv-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+}
+
+.trpv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.trpv-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
+}
+
+.trpv-select {
+  background: #1a1a1a;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  min-width: 8rem;
+  font-family: inherit;
+}
+
+.trpv-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.trpv-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 8rem;
+}
+
+.trpv-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.trpv-stat-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffd080;
+  font-variant-numeric: tabular-nums;
+}
+
+.trpv-table-wrap {
+  overflow: auto;
+  max-height: min(70vh, 48rem);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trpv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.trpv-table th {
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  background: #1c1c1c;
+  color: #aaa;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trpv-table td {
+  padding: 0.42rem 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #ddd;
+  vertical-align: middle;
+}
+
+.trpv-th-num,
+.trpv-td-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.trpv-slot {
+  font-weight: 600;
+  color: #eee;
+}
+
+.trpv-name {
+  margin-right: 0.45rem;
+}
+
+.trpv-true {
+  font-weight: 600;
+  color: #ffd080;
+}
+
+.trpv-mult {
+  color: #9ab;
+}
+
+.trpv-pick {
+  color: #cde;
+  white-space: nowrap;
+}
+
+.trpv-value-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.trpv-value-sub {
+  font-size: 0.68rem;
+  color: #888;
+}
+
+.trpv-pos {
+  color: #7dca9a;
+}
+
+.trpv-neg {
+  color: #e08888;
+}
+
+.trpv-pick-mult {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trpv-section-desc strong {
+  color: #ddd;
+  font-weight: 600;
+}
+
+.trpv-section-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #eee;
+}
+
+.trpv-section-desc {
+  margin: 0 0 0.85rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #999;
+  max-width: 72rem;
+}
+
+.trpv-avg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trpv-avg-grid {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(16rem, 20rem) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.trpv-avg-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.trpv-avg-card-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+}
+
+.trpv-avg-card--wide {
+  min-width: 0;
+}
+
+.trpv-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.trpv-table-wrap--compact {
+  max-height: none;
+}
+
+.trpv-table-wrap--compact .trpv-table {
+  font-size: 0.8rem;
+}
+
+.trpv-table-wrap--compact .trpv-table th,
+.trpv-table-wrap--compact .trpv-table td {
+  padding: 0.32rem 0.55rem;
+}
+
+.trpv-year-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 0.25rem;
+}
+
+@media (max-width: 1100px) {
+  .trpv-avg-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .trpv-avg-card--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .trpv-avg-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trpv-slot-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

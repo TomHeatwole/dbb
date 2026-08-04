@@ -9,13 +9,6 @@
  * whitespace don't cause false misses.
  *
  * Normalisation rules applied in order:
- *  1. Lowercase everything
- *  2. Strip trailing generational suffixes (Jr., Sr., II, III, IV, V)
- *  3. Remove all non-alphanumeric characters except spaces
- *     (apostrophes, hyphens, periods, etc.)
- *  4. Collapse and trim whitespace
- *
- * Normalisation rules applied in order:
  *  1. Unicode NFD decomposition (é → e + combining accent) + strip diacritics
  *  2. Lowercase everything
  *  3. Strip trailing generational suffixes (Jr., Sr., II, III, IV, V)
@@ -28,6 +21,40 @@
  *  "Calvin Ridley Jr."  → "calvin ridley"
  *  "Audric Estimé"      → "audric estime"
  */
+
+/**
+ * Map FantasyPros / KeepTradeCut-style abbreviations onto the canonical
+ * codes used by Sleeper and FantasyCalc (TB, GB, KC, …).
+ * Kept as identity entries where sources already agree.
+ */
+const NFL_TEAM_ALIASES = {
+  TBB: 'TB', TAM: 'TB',
+  GBP: 'GB', GNB: 'GB',
+  KCC: 'KC', KAN: 'KC',
+  NEP: 'NE', NWE: 'NE',
+  NOS: 'NO', NOR: 'NO',
+  SFO: 'SF',
+  JAC: 'JAX',
+  LVR: 'LV', OAK: 'LV', RAI: 'LV',
+  ARZ: 'ARI',
+  WSH: 'WAS', WASH: 'WAS',
+  SD: 'LAC', SDG: 'LAC',
+  STL: 'LAR',
+};
+
+/**
+ * Normalise an NFL team abbreviation for cross-source comparison.
+ * Returns '' for missing / free-agent markers so callers can treat them
+ * as "no team hint" rather than a hard mismatch against rostered codes.
+ * @param {string|null|undefined} team
+ * @returns {string}
+ */
+export function normaliseNflTeam(team) {
+  if (team == null) return '';
+  const upper = String(team).replace(/[^A-Za-z]/g, '').toUpperCase();
+  if (!upper || upper === 'FA' || upper === 'NONE') return '';
+  return NFL_TEAM_ALIASES[upper] || upper;
+}
 
 /**
  * Normalise a player name to a canonical form for comparison.
@@ -56,6 +83,27 @@ export function playerNamesMatch(a, b) {
 }
 
 /**
+ * True when first names look like the same person under a nickname/short form
+ * (Kenny/Kenneth, Chig/Chigoziem, Josh/Joshua), not merely the same initial.
+ * @param {string} nameA
+ * @param {string} nameB
+ * @returns {boolean}
+ */
+export function firstNamesCompatible(nameA, nameB) {
+  const a = normalisePlayerName(nameA).split(' ')[0] || '';
+  const b = normalisePlayerName(nameB).split(' ')[0] || '';
+  if (!a || !b) return false;
+  if (a === b) return true;
+  // One name is a short form of the other (josh/joshua, pat/patrick)
+  if (a.startsWith(b) || b.startsWith(a)) return true;
+  // Shared stem of 3+ chars (kenny/kenneth → "ken")
+  const limit = Math.min(a.length, b.length);
+  let shared = 0;
+  while (shared < limit && a[shared] === b[shared]) shared += 1;
+  return shared >= 3;
+}
+
+/**
  * Find the best matching player from a collection of candidates.
  *
  * Matching strategy (in order):
@@ -64,7 +112,10 @@ export function playerNamesMatch(a, b) {
  *   3. On multiple matches: score by position → team → age to find an
  *      unambiguous winner
  *   4. If still no match: last-name-only search filtered by position/team hints
- *      (at least one hint required to avoid false positives)
+ *      and compatible first names (at least one hint required to avoid false positives)
+ *
+ * Team hints are compared after {@link normaliseNflTeam} so KTC codes like
+ * "TBB" match Sleeper/FantasyCalc "TB".
  *
  * @param {string}        searchName
  * @param {Array<Object>} candidates   - pool of player objects to search
@@ -88,6 +139,7 @@ export function findBestPlayerMatch(searchName, candidates, hints = {}, keys = {
 
   const normSearch     = normalisePlayerName(searchName);
   const lastNameSearch = normSearch.split(' ').pop();
+  const hintTeam       = normaliseNflTeam(hints.team);
 
   // Score a candidate against the supplied hints.
   // Position is the strongest signal, team is secondary, exact age is a tiebreaker.
@@ -96,8 +148,8 @@ export function findBestPlayerMatch(searchName, candidates, hints = {}, keys = {
     if (hints.position && c[posKey]) {
       if ((c[posKey] || '').toUpperCase() === (hints.position || '').toUpperCase()) score += 4;
     }
-    if (hints.team && c[teamKey]) {
-      if ((c[teamKey] || '').toUpperCase() === (hints.team || '').toUpperCase()) score += 2;
+    if (hintTeam && c[teamKey]) {
+      if (normaliseNflTeam(c[teamKey]) === hintTeam) score += 2;
     }
     if (hints.age != null && c[ageKey] != null) {
       if (Math.abs(Number(c[ageKey]) - Number(hints.age)) === 0) score += 1;
@@ -110,7 +162,7 @@ export function findBestPlayerMatch(searchName, candidates, hints = {}, keys = {
   function pickBest(pool) {
     if (pool.length === 0) return null;
     if (pool.length === 1) return pool[0];
-    const hasHints = hints.position || hints.team || hints.age != null;
+    const hasHints = hints.position || hintTeam || hints.age != null;
     if (!hasHints) return null;
     const scored = pool
       .map((c) => ({ c, score: hintScore(c) }))
@@ -145,13 +197,20 @@ export function findBestPlayerMatch(searchName, candidates, hints = {}, keys = {
 
   // ── 3. Last-name fallback (nickname / alias support) ──────────────────────
   // Requires at least one hint to guard against false positives.
-  const hasHintsForLastName = hints.position || hints.team;
+  // First names must also be compatible so Kameron Johnson ≠ Tez Johnson
+  // even when last name, position, and (normalised) team all match.
+  const hasHintsForLastName = hints.position || hintTeam;
   if (hasHintsForLastName) {
     const lastNamePool = candidates.filter((c) => {
       const normCand = normalisePlayerName(c[nameKey] || '');
       if (normCand.split(' ').pop() !== lastNameSearch) return false;
+      if (!firstNamesCompatible(searchName, c[nameKey] || '')) return false;
       if (hints.position && (c[posKey] || '').toUpperCase() !== (hints.position || '').toUpperCase()) return false;
-      if (hints.team    && (c[teamKey] || '').toUpperCase() !== (hints.team    || '').toUpperCase()) return false;
+      if (hintTeam) {
+        const candTeam = normaliseNflTeam(c[teamKey]);
+        // Empty candidate team (FA) never satisfies a concrete team hint
+        if (!candTeam || candTeam !== hintTeam) return false;
+      }
       return true;
     });
     if (lastNamePool.length === 1) {

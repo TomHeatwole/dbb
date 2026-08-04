@@ -180,3 +180,37 @@ three positions of the dial give similar answers. So the philosophical
 choice is, in practice, mostly a referendum on how you want to price
 veteran RBs — which is fitting, because that's the oldest argument in
 dynasty fantasy football.
+
+---
+
+## Addendum: the persistence argument (where this actually landed)
+
+Pushing on Position A harder revealed that its rejection above was
+overbroad. The double-counting sin is specific to the **KTC-basis**
+multiplier, which contains the longevity strand. The **comp-basis**
+multiplier contains only format effect × market redraft error — no longevity
+strand at all — and the dynasty price V already encodes the market's beliefs
+about future *quantities*. So `TrueTotal = V × m_comp` re-rates what each
+season's production is worth without re-crediting seasons that won't happen.
+It requires exactly one assumption: **the market's redraft error persists
+into future seasons.**
+
+The evidence supports persistence: the error strand (comp-basis multiplier in
+the *regular* format) was positive for RB in essentially every simulated
+season, 2021–2025 (~1.05, 1.12, 1.00, 1.14, 1.35). A stashed RB's 2027
+production will, on this evidence, be underpriced again when it arrives —
+the holder who consumes it captures the full multiplier then, so paying it
+today is pre-paying for a recurring edge.
+
+Note also that the whole debate is ±12% on RB only: the future-slice dial
+runs from the format factor (1.22) to the full multiplier (1.37), and for
+WR/TE/QB the two endpoints nearly coincide.
+
+**Resolution for a production-consuming competitor:** apply the comp-basis
+multipliers to *total* dynasty value, position-level, with no player-level
+current/future split (avoiding any leakage of individual redraft signals
+into the dynasty board). Hold Position C's decomposition in reserve: the day
+the league shows signs of repricing RBs, the future slice should start
+drifting from 1.37 toward 1.22. The rebuilder index stays near market
+either way — its future slice is exchange-bound, and the market it sells
+into does not pay Hwang-corrected prices.

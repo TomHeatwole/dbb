@@ -4,8 +4,15 @@ import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PosValueCompare from '../posValueCompare/PosValueCompare';
 import ArchetypeRosterBuilder from '../archetypeRosterBuilder/ArchetypeRosterBuilder';
 import HwangTrueSimulator from '../hwangTrueSimulator/HwangTrueSimulator';
+import TrueRookiePickValue from '../trueRookiePickValue/TrueRookiePickValue';
 
 const FEATURES = [
+  {
+    id: 'TRUE_ROOKIE_PICK_VALUE',
+    label: 'True Rookie Pick Value',
+    description: 'Order each May 20 rookie class by Hwang True Value (top 48) and map them onto Early/Mid/Late pick prices at draft time.',
+    component: <TrueRookiePickValue />,
+  },
   {
     id: 'HWANG_TRUE_SIMULATOR',
     label: 'Hwang True Simulator',
