@@ -8,8 +8,10 @@ import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/Pl
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { LOGO_LETTER_OVERLAY } from '../utils/global_constants';
 import PositionBadge from '../PositionBadge';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function RookieDraftRecapCard() {
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rounds, setRounds] = useState(null);
@@ -187,7 +189,7 @@ function RookieDraftRecapCard() {
                   ) : null}
                 </span>
                 <Link
-                  className="draft-recap-team-link"
+                  className={`draft-recap-team-link${isMyRoster(pick.rosterId, myRosterId) ? ' rookie-draft-row--me' : ''}`}
                   to={`/team/${pick.rosterId}`}
                 >
                   <span className="draft-recap-team-avatar-wrap">

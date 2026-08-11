@@ -207,3 +207,42 @@ trade calculator all pick the curves up through the shared lookup.
 
 For the question of whether these multipliers should apply to future value
 as well as the current season, see `example_data/true_value_philosophy.md`.
+
+---
+
+## Addendum (Aug 2026): equilibrium iteration 2 — finding the fixed point
+
+Question: should the section-3 correction be iterated until no residual edge
+remains, or is one pass the right stopping point? Three runs (200 builds,
+seed 1, comp basis / Hwang format; dumps in
+`hwang_true_sim_200_v3b_eq{1,2,3}/`, composition helper
+`scripts/compose_equilibrium_params.py`):
+
+| board | update rule | QB | RB | WR | TE |
+|---|---|---|---|---|---|
+| eq1 = v3b curves (replicates §3) | — | 1.03 | 1.05 | 0.99 | 0.94 |
+| eq2 = eq1 ∘ fitted residual *curve* | curve fit | 0.98 | **1.15** | 0.96 | 0.93 |
+| eq3 = eq1 × flat residuals | flat LS | **1.02** | **1.01** | **0.99** | **0.98** |
+
+**Read:**
+
+1. **The leftover bias in §3 was real, and the flat update converges in one
+   step.** Multiplying the fitted curves' levels by the iteration-1 flat
+   residuals (QB ×1.027, RB ×1.046, WR ×0.995, TE ×0.935) produces a board
+   whose re-run residuals are all within ±2% — the fixed point. Those
+   composed curves (QB 0.924, RB 1.405, WR 0.867, TE 0.888; k unchanged)
+   are now live in `hwangPositionCoefficients.js` as `trueComp`.
+2. **Iterating with the pair-level curve fit diverges.** At residual scale
+   the curve estimator is dominated by shape misfit (it wanted RB *down* 9%
+   while the flat aggregate wanted it up 5%); following it pushed RB's flat
+   residual from 1.05 to 1.15. The two estimators disagree by more than the
+   distance to 1.0, so only the flat update rule is trustworthy here.
+3. **The shape residuals survive at the fixed point and are not fixable by
+   any per-position power law.** At eq3, sub-2k RBs still run ~1.34 and QB
+   remains non-monotone across bands (0.83 in 0–2k, 1.23 in 2k–4k). Zeroing
+   these requires a richer functional form (piecewise / spline), not more
+   iterations — the natural v4 refinement alongside the reception-share
+   tilt from §5.
+
+Net: one flat-update iteration captured the remaining ~5% RB / −6% TE level
+bias; anything beyond that is below the noise floor of this sample.

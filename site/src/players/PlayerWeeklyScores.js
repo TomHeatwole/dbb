@@ -7,8 +7,10 @@ import useIsMobile from '../hooks/useIsMobile';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchPlayersData } from '../lookups/PlayerLookup';
 import PositionBadge from '../PositionBadge';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride }) {
+  const myRosterId = useMyRosterId(rosters, users);
   // Default to previous year if current season hasn't started yet
   const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
   const isPreSeason = completedWeeks === 0;
@@ -296,7 +298,8 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
       if (owningUser) {
         ownershipInfo = {
           teamName: (owningUser.metadata && owningUser.metadata.team_name) || owningUser.display_name || `Team ${owningRoster.roster_id}`,
-          avatar: owningUser.team_avatar_url || owningUser.user_avatar_url || owningUser.avatar_url || null
+          avatar: owningUser.team_avatar_url || owningUser.user_avatar_url || owningUser.avatar_url || null,
+          rosterId: owningRoster.roster_id,
         };
       }
     }
@@ -358,11 +361,14 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
           </div>
 
           {!isMobile && (
-            <div className="player-ownership-info">
+            <div className={`player-ownership-info${isMyRoster(ownershipInfo?.rosterId, myRosterId) ? ' player-ownership-info--me' : ''}`}>
               {ownershipInfo ? (
                 <>
                   {ownershipInfo.avatar && <img src={ownershipInfo.avatar} alt={ownershipInfo.teamName} className="player-ownership-avatar" />}
-                  <span className="player-ownership-team">{ownershipInfo.teamName}</span>
+                  <span className="player-ownership-team">
+                    {ownershipInfo.teamName}
+                    {isMyRoster(ownershipInfo.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+                  </span>
                 </>
               ) : (
                 <span className="player-ownership-free-agent">Free Agent</span>

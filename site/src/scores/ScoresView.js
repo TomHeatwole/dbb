@@ -14,6 +14,7 @@ import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from './GamesParser';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { readPlayersSnapshot } from '../utils/database';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function MobileScaled({ children, className = 'mobile-standings-scale-70' }) {
   const innerRef = useRef(null);
@@ -84,6 +85,7 @@ function ScoresView({
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [rosters, setRosters] = useState(null);
   const [users, setUsers] = useState(null);
+  const myRosterId = useMyRosterId(rosters, users);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
@@ -574,7 +576,8 @@ function ScoresView({
             }
           }
 
-          const baseRowClass = usePlayoffTheme ? ' standings-row--playoff' : '';
+          const mine = isMyRoster(rosterId, myRosterId);
+          const baseRowClass = (usePlayoffTheme ? ' standings-row--playoff' : '') + (mine ? ' standings-row--me' : '');
 
           const seed =
             rosterIdToSeed && rosterIdToSeed[String(rosterId)] != null
@@ -621,7 +624,7 @@ function ScoresView({
                     alt={`${teamName} avatar`}
                   />
                 )}
-                <span className="standings-title">{teamName}</span>
+                <span className="standings-title">{teamName}{mine ? <span className="me-chip">YOU</span> : null}</span>
                 {isActiveWeek && !isMobile ? (
                   <span className="standings-activity">
                     <span className="standings-activity-item">

@@ -15,6 +15,7 @@ import { trackPageLoad } from '../utils/UsageTracker';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import useViewportMode, { VIEWPORT_MODES } from '../hooks/useViewportMode';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -52,6 +53,7 @@ function Teams2Detail() {
   const [scoresLoading, setScoresLoading] = useState(true);
   const [rosters, setRosters] = useState(null);
   const [users, setUsers] = useState(null);
+  const myRosterId = useMyRosterId(rosters, users);
   const teamAnalyticsRef = useRef();
   const teamScoresRef = useRef();
   const dropdownRef = useRef(null);
@@ -351,12 +353,15 @@ function Teams2Detail() {
         </Link>
 
         {/* Hero header */}
-        <div className="teams2-detail-hero">
+        <div className={`teams2-detail-hero${isMyRoster(id, myRosterId) ? ' teams2-detail-hero--me' : ''}`}>
           {teamAvatarUrl && (
             <img src={teamAvatarUrl} alt="" className="teams2-detail-avatar" />
           )}
           <div className="teams2-detail-hero-text">
-            <h1 className="teams2-detail-team-name">{teamName}</h1>
+            <h1 className="teams2-detail-team-name">
+              {teamName}
+              {isMyRoster(id, myRosterId) ? <span className="me-chip">YOU</span> : null}
+            </h1>
             <div className="teams2-detail-owner">
               {userAvatarUrl && userAvatarUrl !== teamAvatarUrl && (
                 <img src={userAvatarUrl} alt="" className="teams2-detail-owner-avatar" />

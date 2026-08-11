@@ -12,6 +12,7 @@ import {
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
@@ -237,6 +238,7 @@ function renderTankTooltip({ active, payload, label }) {
 }
 
 function TankRaceCard({ currentWeekOverride = null }) {
+  const myRosterId = useMyCurrentRosterId();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -427,7 +429,7 @@ function TankRaceCard({ currentWeekOverride = null }) {
               {bottomTeams.map((team) => (
                 <Link
                   to={`/team/${team.rosterId}`}
-                  className="tank-race-team-row tank-race-team-row--clickable"
+                  className={`tank-race-team-row tank-race-team-row--clickable${isMyRoster(team.rosterId, myRosterId) ? ' home-race-row--me' : ''}`}
                   key={team.rosterId}
                 >
                   <div className="tank-race-team-place">
@@ -443,6 +445,7 @@ function TankRaceCard({ currentWeekOverride = null }) {
                   <div className="tank-race-team-meta">
                     <div className="tank-race-team-name">
                       {team.teamName}
+                      {isMyRoster(team.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
                     </div>
                     <div className="tank-race-team-points">
                       {team.totalPoints.toFixed(1)}

@@ -18,6 +18,7 @@ import { createPortal } from 'react-dom';
 import { fetchTeamData, fetchTradedPicks, fetchRookieDraftComplete, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import PositionBadge from '../PositionBadge';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import {
   fetchKtcData,
   getKtcEntryByName,
@@ -270,6 +271,7 @@ function DynastyRosterView() {
     composite: null,
   });
   const [selectedId, setSelectedId]       = useState(null);
+  const myRosterId = useMyRosterId(rawRosters, rawUsers);
   const [valueSource, setValueSource]     = useState('ktc_sf_tep');
   const [includePicksInTotal, setIncludePicksInTotal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -878,6 +880,7 @@ function DynastyRosterView() {
         <div className="h2h-web-list dynasty-team-list">
           {sortedTeams.map((team, idx) => {
             const isSelected = team.rosterId === selectedId;
+            const mine = isMyRoster(team.rosterId, myRosterId);
             const total      = teamKtcTotals[team.rosterId];
             return (
               <button
@@ -885,7 +888,8 @@ function DynastyRosterView() {
                 type="button"
                 className={
                   'h2h-web-card dynasty-team-card' +
-                  (isSelected ? ' h2h-web-card--selected-primary' : '')
+                  (isSelected ? ' h2h-web-card--selected-primary' : '') +
+                  (mine ? ' h2h-web-card--me' : '')
                 }
                 onClick={() => setSelectedId(isSelected ? null : team.rosterId)}
               >
@@ -899,6 +903,7 @@ function DynastyRosterView() {
                 )}
                 <span className="yoffs-bracket-name h2h-web-name dynasty-card-name">
                   {team.teamName}
+                  {mine ? <span className="me-chip">YOU</span> : null}
                 </span>
                 {total != null && total > 0 && (
                   <div className="dynasty-card-values">
@@ -922,7 +927,7 @@ function DynastyRosterView() {
       {/* ── Roster panel ── */}
       {selectedTeam && (
         <div className="dynasty-roster-panel">
-          <div className="dynasty-roster-header">
+          <div className={`dynasty-roster-header${isMyRoster(selectedTeam.rosterId, myRosterId) ? ' dynasty-roster-header--me' : ''}`}>
             {selectedTeam.avatarUrl && (
               <img
                 className="standings-avatar dynasty-roster-avatar"

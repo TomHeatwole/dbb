@@ -29,6 +29,7 @@ import { loadFpRankings } from '../scenarios/fpRankingsLoader';
 import { buildHistoricalPositionRanks } from '../scenarios/historicalRankingsBuilder';
 import { computeFutureScenarioEval } from '../scenarios/computeFutureScenarioEval';
 import ScenarioStandingsPanel from '../scenarios/ScenarioStandingsPanel';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 import ScenarioTeamDetail from '../scenarios/ScenarioTeamDetail';
 import { getCurrentYear } from '../utils/DateHelper';
 
@@ -133,6 +134,7 @@ function ScenarioInvalidBadge({ violations }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 function FutureScenarioEvalPage() {
+  const myRosterId = useMyCurrentRosterId();
   const [searchParams]                              = useSearchParams();
   const scenarioParam                               = searchParams.get('scenario');
 
@@ -315,6 +317,7 @@ function FutureScenarioEvalPage() {
                     teamsForGrid={teamsForGrid}
                     selectedRosterId={selectedRosterId}
                     onSelectTeam={setSelectedRosterId}
+                    myRosterId={myRosterId}
                   />
                 ) : (
                   <div className="scenario-eval-placeholder">

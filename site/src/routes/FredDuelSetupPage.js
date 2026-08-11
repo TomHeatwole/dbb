@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { getSessionToken } from '../utils/authClient';
+import { useAuthUser } from '../hooks/useAuthUser';
 
 // Post-sign-in setup: every account must link a verified Sleeper username
 // before entering FredDuel. Signed-out or already-linked users are sent
@@ -19,6 +20,7 @@ const buttonStyle = {
 
 function FredDuelSetupPage() {
   const navigate = useNavigate();
+  const { refresh } = useAuthUser();
   const [me, setMe] = useState(undefined); // undefined = loading
   const [username, setUsername] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +56,7 @@ function FredDuelSetupPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      await refresh();
       navigate('/FredDuel');
     } catch (err) {
       setError(err.message);

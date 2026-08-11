@@ -8,6 +8,7 @@ import {
   buildScoreHistogramChartData,
   computeScoreHistogramStats,
 } from './simulatorHistograms';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -110,6 +111,8 @@ function SimulatorTeamDetail({
   simSamplesAvailable,
 }) {
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
+  const myRosterId = useMyCurrentRosterId();
+  const mine = isMyRoster(rosterId, myRosterId);
 
   const buckets = useMemo(
     () => teamFinishBuckets?.[rosterId] || teamFinishBuckets?.[String(rosterId)] || null,
@@ -151,8 +154,8 @@ function SimulatorTeamDetail({
       <div className="simulator-team-detail-header">
         <span className="simulator-team-detail-label">Viewing:</span>
         {team.avatarUrl
-          ? <img className="simulator-team-detail-avatar" src={team.avatarUrl} alt="" />
-          : <span className="simulator-team-detail-avatar simulator-team-detail-avatar--placeholder" />
+          ? <img className={`simulator-team-detail-avatar${mine ? ' me-avatar' : ''}`} src={team.avatarUrl} alt="" />
+          : <span className={`simulator-team-detail-avatar simulator-team-detail-avatar--placeholder${mine ? ' me-avatar' : ''}`} />
         }
         <span className="simulator-team-detail-name">{team.teamName || `Team ${rosterId}`}</span>
       </div>

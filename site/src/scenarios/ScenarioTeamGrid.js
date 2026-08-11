@@ -1,11 +1,12 @@
 import React from 'react';
+import { isMyRoster } from '../hooks/useAuthUser';
 
 /**
  * Renders the league teams in a grid similar to the h2h selector.
  * Single-selection: clicking a team opens its roster editor.
  * Clicking the selected team again deselects it.
  */
-function ScenarioTeamGrid({ teams, selectedRosterId, onSelectTeam }) {
+function ScenarioTeamGrid({ teams, selectedRosterId, onSelectTeam, myRosterId }) {
   if (!teams || teams.length === 0) {
     return <div>No teams found.</div>;
   }
@@ -17,13 +18,15 @@ function ScenarioTeamGrid({ teams, selectedRosterId, onSelectTeam }) {
         <div className="h2h-web-list">
           {teams.map((team) => {
             const isSelected = team.rosterId === selectedRosterId;
+            const mine = isMyRoster(team.rosterId, myRosterId);
             return (
               <button
                 key={team.rosterId}
                 type="button"
                 className={
                   'h2h-web-card' +
-                  (isSelected ? ' h2h-web-card--selected-primary' : '')
+                  (isSelected ? ' h2h-web-card--selected-primary' : '') +
+                  (mine ? ' h2h-web-card--me' : '')
                 }
                 onClick={() => onSelectTeam(isSelected ? null : team.rosterId)}
               >
@@ -36,6 +39,7 @@ function ScenarioTeamGrid({ teams, selectedRosterId, onSelectTeam }) {
                 )}
                 <span className="yoffs-bracket-name h2h-web-name">
                   {team.teamName}
+                  {mine ? <span className="me-chip">YOU</span> : null}
                 </span>
               </button>
             );

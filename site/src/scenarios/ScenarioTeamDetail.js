@@ -20,6 +20,7 @@ import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import PositionBadge from '../PositionBadge';
 import { computePlayerRosterStats } from './computeScenarioEval';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function buildSeasonTotalsMap(playerWeeklyPoints) {
   const totals = {};
@@ -1229,6 +1230,8 @@ function ScenarioTeamDetail({
 }) {
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
   const showProjections = Boolean(playerProjections);
+  const myRosterId = useMyCurrentRosterId();
+  const mine = isMyRoster(rosterId, myRosterId);
 
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -1311,8 +1314,8 @@ function ScenarioTeamDetail({
       <div className="scenario-team-detail-header">
         <span className="scenario-team-detail-label">Viewing:</span>
         {team.avatarUrl
-          ? <img className="scenario-team-detail-avatar" src={team.avatarUrl} alt="" />
-          : <span className="scenario-team-detail-avatar scenario-team-detail-avatar--placeholder" />
+          ? <img className={`scenario-team-detail-avatar${mine ? ' me-avatar' : ''}`} src={team.avatarUrl} alt="" />
+          : <span className={`scenario-team-detail-avatar scenario-team-detail-avatar--placeholder${mine ? ' me-avatar' : ''}`} />
         }
         <span className="scenario-team-detail-name">{team.teamName || `Team ${rosterId}`}</span>
       </div>

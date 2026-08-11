@@ -17,6 +17,7 @@ import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } fr
 import StandingsRowHeader from '../standings/StandingsRowHeader';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Hwang Dynasty Standings';
 const OG_DESCRIPTION = '';
@@ -47,6 +48,7 @@ function LeagueStandings() {
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
   const isMobile = useIsMobile();
+  const myRosterId = useMyRosterId(rosters, users);
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [currentWeekLabels, setCurrentWeekLabels] = useState({}); // pid -> { live, completed, text }
@@ -998,13 +1000,14 @@ function LeagueStandings() {
           }
 
           return (
-            <div key={rosterId} className={`standings-row ${isTop4Highlight ? 'standings-row--playoff' : ''}`}>
+            <div key={rosterId} className={`standings-row ${isTop4Highlight ? 'standings-row--playoff' : ''}${isMyRoster(rosterId, myRosterId) ? ' standings-row--me' : ''}`}>
               <StandingsRowHeader
                 isExpanded={isExpanded}
                 onToggle={() => toggleExpand(rosterId)}
                 rankLabel={`#${rankLabel}`}
                 avatarUrl={avatarUrl}
                 teamName={teamName}
+                isMe={isMyRoster(rosterId, myRosterId)}
                 rightContent={rightHeaderContent}
               />
               {isExpanded && (

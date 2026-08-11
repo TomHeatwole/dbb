@@ -10,8 +10,10 @@ import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PositionBadge from '../PositionBadge';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [targetWeek, setTargetWeek] = useState(null);
@@ -249,7 +251,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
                 </button>
                 <Link
                   to={`/team/${item.rosterId}`}
-                  className="week-stars-team week-stars-team--clickable"
+                  className={`week-stars-team week-stars-team--clickable${isMyRoster(item.rosterId, myRosterId) ? ' last-week-team--me' : ''}`}
                 >
                   <div className="week-stars-team-logo">
                     {item.avatarUrl && (
@@ -262,6 +264,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
                   </div>
                   <div className="week-stars-team-name">
                     {item.teamName}
+                    {isMyRoster(item.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
                   </div>
                 </Link>
               </div>

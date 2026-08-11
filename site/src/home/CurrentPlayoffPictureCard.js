@@ -8,6 +8,7 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { StartSitSort } from '../players/StartSitDecider';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const PLAYOFF_START_WEEK = 15;
 
@@ -51,6 +52,7 @@ function getAvatar(rosters, users, rosterId) {
 }
 
 function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [picture, setPicture] = useState(null);
@@ -335,7 +337,7 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
 
     return (
       <div className="active-playoffs-row">
-        <div className="active-playoffs-side active-playoffs-side--left">
+        <div className={`active-playoffs-side active-playoffs-side--left${isMyRoster(left.rosterId, myRosterId) ? ' active-playoffs-side--me' : ''}`}>
           <div className="active-playoffs-team-content">
             <div className="active-playoffs-team-header">
               <span className="active-playoffs-team-seed active-playoffs-team-seed--pending">#{left.seed}</span>
@@ -347,7 +349,10 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
                 />
               )}
             </div>
-            <span className="active-playoffs-team-name">{left.teamName}</span>
+            <span className="active-playoffs-team-name">
+              {left.teamName}
+              {isMyRoster(left.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+            </span>
           </div>
         </div>
         <div className="active-playoffs-score active-playoffs-score--left">
@@ -359,7 +364,7 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
         <div className="active-playoffs-score active-playoffs-score--right">
           {formatScore(right.totalPoints)}
         </div>
-        <div className="active-playoffs-side active-playoffs-side--right">
+        <div className={`active-playoffs-side active-playoffs-side--right${isMyRoster(right.rosterId, myRosterId) ? ' active-playoffs-side--me' : ''}`}>
           <div className="active-playoffs-team-content">
             <div className="active-playoffs-team-header active-playoffs-team-header--right">
               {right.avatarUrl && (
@@ -371,7 +376,10 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
               )}
               <span className="active-playoffs-team-seed active-playoffs-team-seed--pending">#{right.seed}</span>
             </div>
-            <span className="active-playoffs-team-name">{right.teamName}</span>
+            <span className="active-playoffs-team-name">
+              {right.teamName}
+              {isMyRoster(right.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+            </span>
           </div>
         </div>
       </div>

@@ -23,6 +23,7 @@ export default async function handler(req, res) {
         image: user.image,
         onboarded: Boolean(profile),
         sleeperUsername: profile?.sleeper_username || null,
+        sleeperUserId: profile?.sleeper_user_id || null,
         sleeperDisplayName: profile?.sleeper_display_name || null,
       },
     });

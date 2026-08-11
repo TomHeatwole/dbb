@@ -9,6 +9,7 @@ import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import PositionBadge from '../PositionBadge';
+import { findMyRosterId, isMyRoster, useAuthUser } from '../hooks/useAuthUser';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ export function formatPickLabel(pick, rosterIdToPickNum = {}) {
 
 // ─── TeamSide ────────────────────────────────────────────────────────────────
 
-export function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players, idMap, onPlayerClick }) {
+export function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players, idMap, onPlayerClick, myRosterId }) {
   const name = teamInfo?.teamName || `Team ${rosterId}`;
   const avatarUrl =
     teamInfo?.user?.team_avatar_url ||
@@ -83,8 +84,10 @@ export function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players,
     assets.push({ type: 'faab', key: 'faab', label: `$${side.faab} FAAB` });
   }
 
+  const mine = isMyRoster(rosterId, myRosterId);
+
   return (
-    <div className="recent-trades-side">
+    <div className={`recent-trades-side${mine ? ' recent-trades-side--me' : ''}`}>
       <Link
         className="recent-trades-team-header"
         to={`/team/${rosterId}`}
@@ -96,7 +99,10 @@ export function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players,
         ) : (
           <div className="recent-trades-team-avatar recent-trades-team-avatar--placeholder" />
         )}
-        <span className="recent-trades-team-name">{name}</span>
+        <span className="recent-trades-team-name">
+          {name}
+          {mine ? <span className="me-chip">YOU</span> : null}
+        </span>
       </Link>
 
       {assets.length > 0 && (
@@ -153,6 +159,7 @@ export function TeamSide({ rosterId, teamInfo, side, rosterIdToPickNum, players,
 // ─── TradeItem ───────────────────────────────────────────────────────────────
 
 export function TradeItem({ trade, rosterMap, rosterIdToPickNum, players, idMap, onPlayerClick }) {
+  const { user: authUser } = useAuthUser();
   const sides = buildTradeSides(trade);
   const rosterIds = Object.keys(sides).map(Number).sort((a, b) => a - b);
   if (rosterIds.length < 2) return null;
@@ -160,6 +167,14 @@ export function TradeItem({ trade, rosterMap, rosterIdToPickNum, players, idMap,
   const [leftId, rightId] = rosterIds;
   const leftInfo = rosterMap[leftId] || rosterMap[String(leftId)] || null;
   const rightInfo = rosterMap[rightId] || rosterMap[String(rightId)] || null;
+
+  const rosterList = rosterMap
+    ? Object.values(rosterMap).map((info) => info?.roster).filter(Boolean)
+    : [];
+  const userList = rosterMap
+    ? Object.values(rosterMap).map((info) => info?.user).filter(Boolean)
+    : [];
+  const myRosterId = findMyRosterId(rosterList, userList, authUser);
 
   return (
     <div className="recent-trades-item">
@@ -173,6 +188,7 @@ export function TradeItem({ trade, rosterMap, rosterIdToPickNum, players, idMap,
           players={players}
           idMap={idMap}
           onPlayerClick={onPlayerClick}
+          myRosterId={myRosterId}
         />
         <div className="recent-trades-divider" aria-hidden="true">⇄</div>
         <TeamSide
@@ -183,6 +199,7 @@ export function TradeItem({ trade, rosterMap, rosterIdToPickNum, players, idMap,
           players={players}
           idMap={idMap}
           onPlayerClick={onPlayerClick}
+          myRosterId={myRosterId}
         />
       </div>
     </div>

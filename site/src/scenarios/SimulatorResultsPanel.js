@@ -1,4 +1,5 @@
 import React from 'react';
+import { isMyRoster } from '../hooks/useAuthUser';
 
 function fmtPct(pct) {
   return `${pct.toFixed(1)}%`;
@@ -67,6 +68,7 @@ function RankMovement({ delta }) {
 function SimulatorResultsPanel({
   results, resultDeltas, teamsForGrid, iterations, selectedRosterId, onSelectTeam,
   drillDownEnabled = true,
+  myRosterId = null,
 }) {
   const teamInfoById = {};
   for (const t of (teamsForGrid || [])) teamInfoById[t.rosterId] = t;
@@ -134,7 +136,8 @@ function SimulatorResultsPanel({
                     (drillDownEnabled ? ' simulator-results-tr--clickable' : '') +
                     (drillDownEnabled && selectedRosterId === row.rosterId
                       ? ' simulator-results-tr--selected'
-                      : '')
+                      : '') +
+                    (isMyRoster(row.rosterId, myRosterId) ? ' simulator-results-tr--me' : '')
                   }
                   onClick={drillDownEnabled && onSelectTeam ? () => onSelectTeam(
                     selectedRosterId === row.rosterId ? null : row.rosterId,
@@ -155,6 +158,7 @@ function SimulatorResultsPanel({
                       <span className="simulator-results-name" title={team.teamName || ''}>
                         {idx === 0 && <span className="simulator-results-trophy">🏆</span>}
                         {team.teamName || `Team ${row.rosterId}`}
+                        {isMyRoster(row.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
                       </span>
                     </span>
                   </td>

@@ -10,6 +10,7 @@ import LoadingState from '../LoadingState';
 import { fetchMultipleWeeksStats } from '../data_parse/weeklyStatsLoader';
 import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import { decodeFutureScenario2, applyScenarioChanges } from '../scenarios/scenarioEncoding';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 import {
   loadCurrentHwangAdpRankMap,
   loadHwangPositionMaxRanks,
@@ -33,6 +34,7 @@ const OG_TITLE = 'Season Simulator — Results';
 const OG_DESCRIPTION = 'Championship odds from outcome-roll simulations.';
 
 function SimulatorRunPage() {
+  const myRosterId = useMyCurrentRosterId();
   const [searchParams] = useSearchParams();
   const scenarioParam = searchParams.get('scenario');
 
@@ -242,6 +244,7 @@ function SimulatorRunPage() {
                   selectedRosterId={selectedRosterId}
                   onSelectTeam={setSelectedRosterId}
                   drillDownEnabled
+                  myRosterId={myRosterId}
                 />
               </div>
             </div>

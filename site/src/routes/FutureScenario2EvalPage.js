@@ -23,6 +23,7 @@ import { loadHistoricalOutcomeCatalog } from '../scenarios/historicalOutcomeData
 import { generateMissingRolls, buildPlayerProjections } from '../scenarios/outcomeDistribution';
 import { computeFutureScenario2Eval, collectRequiredSeasonYears } from '../scenarios/computeFutureScenario2Eval';
 import ScenarioStandingsPanel from '../scenarios/ScenarioStandingsPanel';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 import ScenarioTeamDetail from '../scenarios/ScenarioTeamDetail';
 import { getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
 import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
@@ -61,6 +62,7 @@ function ScenarioInvalidBadge({ violations }) {
 }
 
 function FutureScenario2EvalPage() {
+  const myRosterId = useMyCurrentRosterId();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const scenarioParam = searchParams.get('scenario');
@@ -348,6 +350,7 @@ function FutureScenario2EvalPage() {
                     teamsForGrid={teamsForGrid}
                     selectedRosterId={selectedRosterId}
                     onSelectTeam={setSelectedRosterId}
+                    myRosterId={myRosterId}
                   />
                 ) : (
                   <div className="scenario-eval-placeholder">

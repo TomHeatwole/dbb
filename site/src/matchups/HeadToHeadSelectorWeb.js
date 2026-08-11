@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import useIsMobile from '../hooks/useIsMobile';
+import { useAuthUser, isMyRoster, findMyRosterId } from '../hooks/useAuthUser';
 
 function HeadToHeadSelectorWeb({
   teams,
   initialSelection = null,
   onSelectionChange = null,
   usePlayoffTheme = true,
-  enableMobileSelectorCollapse = false
+  enableMobileSelectorCollapse = false,
+  myRosterId: myRosterIdProp = null,
+  rosters = null,
+  users = null,
 }) {
   // Explicit slots so Team A/B positions don't shift when unselecting.
   // selectedSlots[0] -> Team A, selectedSlots[1] -> Team B
@@ -17,6 +21,8 @@ function HeadToHeadSelectorWeb({
   );
 
   const isMobile = useIsMobile();
+  const { user: authUser } = useAuthUser();
+  const myRosterId = myRosterIdProp != null ? myRosterIdProp : findMyRosterId(rosters, users, authUser);
   const isMobileCollapseActive = enableMobileSelectorCollapse && isMobile;
 
   useEffect(() => {
@@ -80,6 +86,7 @@ function HeadToHeadSelectorWeb({
           {visibleTeams.map((team) => {
             const isSelected = selectedSlots.includes(team.rosterId);
             const isDisabled = selectionFull && !isSelected;
+            const mine = isMyRoster(team.rosterId, myRosterId);
             const selectedClass = isSelected
               ? (usePlayoffTheme ? ' h2h-web-card--selected' : ' h2h-web-card--selected-primary')
               : '';
@@ -92,6 +99,7 @@ function HeadToHeadSelectorWeb({
                 className={
                   'h2h-web-card' +
                   selectedClass +
+                  (mine ? ' h2h-web-card--me' : '') +
                   (isDisabled ? ' h2h-web-card--disabled' : '')
                 }
                 disabled={isDisabled}
@@ -111,6 +119,7 @@ function HeadToHeadSelectorWeb({
                 )}
                 <span className="yoffs-bracket-name h2h-web-name">
                   {team.teamName}
+                  {mine ? <span className="me-chip">YOU</span> : null}
                 </span>
               </button>
             );

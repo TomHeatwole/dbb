@@ -9,6 +9,7 @@ import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { Link, useSearchParams } from 'react-router-dom';
 import MatchupView from '../matchups/MatchupView';
 import LoadingState from '../LoadingState';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function Yoffs2025Format({
   season,
@@ -46,6 +47,7 @@ function Yoffs2025Format({
   const [baseTeamData, setBaseTeamData] = useState(null);
   const [basePlayersData, setBasePlayersData] = useState(null);
   const [basePlayerIdMap, setBasePlayerIdMap] = useState(null);
+  const myRosterId = useMyRosterId(baseTeamData?.rosters, baseTeamData?.users);
 
   const matchupOptions = semisCompletedGlobal
     ? matchupOptionsBase
@@ -491,7 +493,8 @@ function Yoffs2025Format({
                                 ? topSemiWinner
                                   ? ' yoffs-bracket-team--winner'
                                   : ' yoffs-bracket-team--loser'
-                                : '')
+                                : '') +
+                              (isMyRoster(seed1.rosterId, myRosterId) ? ' yoffs-bracket-team--me' : '')
                             }
                           >
                             <span className="yoffs-bracket-seed">#{seed1.seed}</span>
@@ -502,7 +505,7 @@ function Yoffs2025Format({
                                 alt={`${seed1.teamName} avatar`}
                               />
                             )}
-                            <span className="yoffs-bracket-name">{seed1.teamName}</span>
+                            <span className="yoffs-bracket-name">{seed1.teamName}{isMyRoster(seed1.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}</span>
                             <span className="yoffs-bracket-score">
                               {formatScore(seed1.semiTotal)}
                             </span>
@@ -514,7 +517,8 @@ function Yoffs2025Format({
                                 ? !topSemiWinner
                                   ? ' yoffs-bracket-team--winner'
                                   : ' yoffs-bracket-team--loser'
-                                : '')
+                                : '') +
+                              (isMyRoster(seed4.rosterId, myRosterId) ? ' yoffs-bracket-team--me' : '')
                             }
                           >
                             <span className="yoffs-bracket-seed">#{seed4.seed}</span>
@@ -525,7 +529,7 @@ function Yoffs2025Format({
                                 alt={`${seed4.teamName} avatar`}
                               />
                             )}
-                            <span className="yoffs-bracket-name">{seed4.teamName}</span>
+                            <span className="yoffs-bracket-name">{seed4.teamName}{isMyRoster(seed4.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}</span>
                             <span className="yoffs-bracket-score">
                               {formatScore(seed4.semiTotal)}
                             </span>
@@ -544,7 +548,8 @@ function Yoffs2025Format({
                                 ? bottomSemiWinner
                                   ? ' yoffs-bracket-team--winner'
                                   : ' yoffs-bracket-team--loser'
-                                : '')
+                                : '') +
+                              (isMyRoster(seed2.rosterId, myRosterId) ? ' yoffs-bracket-team--me' : '')
                             }
                           >
                             <span className="yoffs-bracket-seed">#{seed2.seed}</span>
@@ -555,7 +560,7 @@ function Yoffs2025Format({
                                 alt={`${seed2.teamName} avatar`}
                               />
                             )}
-                            <span className="yoffs-bracket-name">{seed2.teamName}</span>
+                            <span className="yoffs-bracket-name">{seed2.teamName}{isMyRoster(seed2.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}</span>
                             <span className="yoffs-bracket-score">
                               {formatScore(seed2.semiTotal)}
                             </span>
@@ -567,7 +572,8 @@ function Yoffs2025Format({
                                 ? !bottomSemiWinner
                                   ? ' yoffs-bracket-team--winner'
                                   : ' yoffs-bracket-team--loser'
-                                : '')
+                                : '') +
+                              (isMyRoster(seed3.rosterId, myRosterId) ? ' yoffs-bracket-team--me' : '')
                             }
                           >
                             <span className="yoffs-bracket-seed">#{seed3.seed}</span>
@@ -578,7 +584,7 @@ function Yoffs2025Format({
                                 alt={`${seed3.teamName} avatar`}
                               />
                             )}
-                            <span className="yoffs-bracket-name">{seed3.teamName}</span>
+                            <span className="yoffs-bracket-name">{seed3.teamName}{isMyRoster(seed3.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}</span>
                             <span className="yoffs-bracket-score">
                               {formatScore(seed3.semiTotal)}
                             </span>
@@ -597,7 +603,7 @@ function Yoffs2025Format({
                               Semis Buffer:{' '}
                               {finalsInfo.buffer.avatarUrl && (
                                 <img
-                                  className="yoffs-bracket-buffer-avatar"
+                                  className={`yoffs-bracket-buffer-avatar${isMyRoster(finalsInfo.buffer.rosterId, myRosterId) ? ' me-avatar' : ''}`}
                                   src={finalsInfo.buffer.avatarUrl}
                                   alt={`${finalsInfo.buffer.teamName} avatar`}
                                 />
@@ -624,7 +630,8 @@ function Yoffs2025Format({
                                         ? finalsTopWinner
                                           ? ' yoffs-bracket-team--winner'
                                           : ' yoffs-bracket-team--loser'
-                                        : '')
+                                        : '') +
+                                      (isMyRoster(finalsInfo.top.rosterId, myRosterId) ? ' yoffs-bracket-team--me' : '')
                                     }
                                   >
                                     <span className="yoffs-bracket-seed">
@@ -639,6 +646,7 @@ function Yoffs2025Format({
                                     )}
                                     <span className="yoffs-bracket-name">
                                       {finalsInfo.top.teamName}
+                                      {isMyRoster(finalsInfo.top.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
                                     </span>
                                     <span className="yoffs-bracket-score">
                                       {formatScore(finalsInfo.top.finalsTotal)}
@@ -651,7 +659,8 @@ function Yoffs2025Format({
                                         ? !finalsTopWinner
                                           ? ' yoffs-bracket-team--winner'
                                           : ' yoffs-bracket-team--loser'
-                                        : '')
+                                        : '') +
+                                      (isMyRoster(finalsInfo.bottom.rosterId, myRosterId) ? ' yoffs-bracket-team--me' : '')
                                     }
                                   >
                                     <span className="yoffs-bracket-seed">
@@ -666,6 +675,7 @@ function Yoffs2025Format({
                                     )}
                                     <span className="yoffs-bracket-name">
                                       {finalsInfo.bottom.teamName}
+                                      {isMyRoster(finalsInfo.bottom.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
                                     </span>
                                     <span className="yoffs-bracket-score">
                                       {formatScore(finalsInfo.bottom.finalsTotal)}

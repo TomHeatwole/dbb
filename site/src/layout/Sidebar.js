@@ -2,14 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData } from '../lookups/PlayerLookup';
+import { findMyRosterId, isMyRoster, useAuthUser } from '../hooks/useAuthUser';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
 
 function Sidebar() {
   const [teams, setTeams] = useState([]);
+  const [rosters, setRosters] = useState(null);
+  const [users, setUsers] = useState(null);
   const [, setPlayers] = useState([]);
   const [teamsOpen, setTeamsOpen] = useState(true);
   const location = useLocation();
+  const { user: authUser } = useAuthUser();
+  const myRosterId = findMyRosterId(rosters, users, authUser);
   const isHome = location.pathname === '/home/' || location.pathname === '/althome';
   const [playUnroll, setPlayUnroll] = useState(false);
 
@@ -31,6 +36,8 @@ function Sidebar() {
     async function loadTeams() {
       try {
         const { rosters, users } = await fetchTeamData();
+        setRosters(rosters);
+        setUsers(users);
         const teamLinks = rosters.map(roster => {
           const user = users.find(u => String(u.user_id) === String(roster.owner_id));
           return {
@@ -85,11 +92,20 @@ function Sidebar() {
                 </div>
                 {teamsOpen && (
                   <ul className="dropdown-list sidebar-dropdown-list">
-                    {teams.map(team => (
-                      <li key={team.roster_id} className="sidebar-dropdown-list-item">
-                        <Link to={`/team/${team.roster_id}`}>{team.username}</Link>
-                      </li>
-                    ))}
+                    {teams.map(team => {
+                      const mine = isMyRoster(team.roster_id, myRosterId);
+                      return (
+                        <li
+                          key={team.roster_id}
+                          className={`sidebar-dropdown-list-item${mine ? ' sidebar-dropdown-list-item--me' : ''}`}
+                        >
+                          <Link to={`/team/${team.roster_id}`}>
+                            {team.username}
+                            {mine ? <span className="me-chip">YOU</span> : null}
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </li>

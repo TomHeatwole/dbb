@@ -38,6 +38,7 @@ import SOPPage, { SOP2Page } from './routes/SOPPage';
 import DKPage from './routes/DKPage';
 import FredDuelPage from './routes/FredDuelPage';
 import FredDuelSetupPage from './routes/FredDuelSetupPage';
+import { AuthUserProvider } from './hooks/useAuthUser';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
@@ -182,7 +183,9 @@ function AppInner() {
 function App() {
   return (
     <Router>
-      <AppInner />
+      <AuthUserProvider>
+        <AppInner />
+      </AuthUserProvider>
     </Router>
   );
 }

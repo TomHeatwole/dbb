@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import LoadingState from '../LoadingState';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function HeadToHeadSelector({ teamIds }) {
   const [selectedTeams, setSelectedTeams] = useState(new Set());
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const myRosterId = useMyCurrentRosterId();
 
   useEffect(() => {
     let cancelled = false;
@@ -102,10 +104,11 @@ function HeadToHeadSelector({ teamIds }) {
       </div>
       {teamData.map((team) => {
         const isSelected = selectedTeams.has(team.rosterId);
+        const mine = isMyRoster(team.rosterId, myRosterId);
         return (
           <div
             key={team.rosterId}
-            className={`head-to-head-team-box${isSelected ? ' head-to-head-team-box--selected' : ''}`}
+            className={`head-to-head-team-box${isSelected ? ' head-to-head-team-box--selected' : ''}${mine ? ' head-to-head-team-box--me' : ''}`}
             onClick={() => handleTeamClick(team.rosterId)}
           >
             {team.avatarUrl && (

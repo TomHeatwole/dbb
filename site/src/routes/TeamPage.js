@@ -12,6 +12,7 @@ import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 const OG_TITLE = 'The Hwang Dynasty';
@@ -52,6 +53,7 @@ function TeamPage() {
   const [scoresLoading, setScoresLoading] = useState(true);
   const [rosters, setRosters] = useState(null);
   const [users, setUsers] = useState(null);
+  const myRosterId = useMyRosterId(rosters, users);
   const teamAnalyticsRef = useRef();
   const teamScoresRef = useRef();
   const dropdownRef = useRef(null);
@@ -274,12 +276,14 @@ function TeamPage() {
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
     <InfoPageWrapper
       leftHeader={leftHeader}
-      title={teamName}
+      title={isMyRoster(id, myRosterId) ? (
+        <>{teamName}<span className="me-chip">YOU</span></>
+      ) : teamName}
       subtitle={
         <div className="owner-subtitle-inline">
           <span>Owner: {ownerName}</span>
           {userAvatarUrl && (
-            <img src={userAvatarUrl} alt="Owner Avatar" className="owner-subtitle-avatar" />
+            <img src={userAvatarUrl} alt="Owner Avatar" className={`owner-subtitle-avatar${isMyRoster(id, myRosterId) ? ' me-avatar' : ''}`} />
           )}
         </div>
       }

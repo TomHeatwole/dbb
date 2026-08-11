@@ -29,6 +29,7 @@ import {
   DEFAULT_OUTCOME_SCENARIO_YEAR,
   normalizeOutcomeScenarioYear,
 } from '../scenarios/outcomeScenarioConfig';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Future Scenarios v2';
 const OG_DESCRIPTION = 'Project rosters using Hwang ADP outcome distributions from historical seasons.';
@@ -64,6 +65,7 @@ function FutureScenarios2Tooltip({ season }) {
 }
 
 function FutureScenario2BuilderPage() {
+  const myRosterId = useMyCurrentRosterId();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -244,6 +246,7 @@ function FutureScenario2BuilderPage() {
                 teams={teamsForGrid}
                 selectedRosterId={selectedRosterId}
                 onSelectTeam={handleSelectTeam}
+                myRosterId={myRosterId}
               />
             </div>
 

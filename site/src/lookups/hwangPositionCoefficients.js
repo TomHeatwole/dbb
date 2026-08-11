@@ -39,12 +39,15 @@ export const HWANG_POSITION_COEFFICIENTS = {
     WR: { c: 0.866, k: -0.030, flat: 0.85 },
     TE: { c: 0.981, k: -0.140, flat: 0.94 },
   },
-  // Hwang True Simulator v3b fit, competitor-adjusted basis (Hwang format).
+  // Hwang True Simulator v3b fit, competitor-adjusted basis (Hwang format),
+  // iterated to the simulation fixed point (equilibrium iteration 2, Aug 2026):
+  // re-running the sim on these prices shows flat residuals within ±2% at
+  // every position. See hwang_true_sim_validation_report_v3b.md addendum.
   trueComp: {
-    QB: { c: 0.900, k: 0.173, flat: 0.94 },
-    RB: { c: 1.343, k: 0.121, flat: 1.37 },
-    WR: { c: 0.871, k: -0.235, flat: 0.87 },
-    TE: { c: 0.950, k: -0.059, flat: 0.90 },
+    QB: { c: 0.924, k: 0.173, flat: 0.97 },
+    RB: { c: 1.405, k: 0.121, flat: 1.43 },
+    WR: { c: 0.867, k: -0.235, flat: 0.87 },
+    TE: { c: 0.888, k: -0.059, flat: 0.84 },
   },
 };
 

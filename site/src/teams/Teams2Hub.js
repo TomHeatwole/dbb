@@ -12,6 +12,7 @@ import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import Teams2TeamCard from './Teams2TeamCard';
 import { trackPageLoad } from '../utils/UsageTracker';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -29,6 +30,7 @@ function Teams2Hub() {
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [loading, setLoading] = useState(true);
+  const myRosterId = useMyRosterId(rosters, users);
 
   useEffect(() => {
     trackPageLoad();
@@ -221,6 +223,7 @@ function Teams2Hub() {
                 recentScores={t.recentScores}
                 topPlayers={t.topPlayers}
                 season={season !== CURRENT_YEAR ? season : null}
+                isMe={isMyRoster(t.rosterId, myRosterId)}
               />
             ))}
           </div>

@@ -18,6 +18,7 @@ import { getPlayerLogoUrl } from '../utils/playerLogo';
 import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -95,6 +96,7 @@ function MatchupView({
   highlightMode = 'default', // 'default' | 'weekly' | 'seasonFinalOnly'
   highlightThreshold = null
 }) {
+  const myRosterId = useMyCurrentRosterId();
   const [teamData, setTeamData] = useState(preloadedTeamData || null);
   const [weeksParsedData, setWeeksParsedData] = useState(preloadedWeeksData || null);
   const [playersData, setPlayersData] = useState(preloadedPlayersData || null);
@@ -1092,6 +1094,12 @@ function MatchupView({
   } else if (rightIsLoser) {
     rightTeamBlockClasses.push('yoffs-matchup-team-block--loser');
   }
+  if (isMyRoster(team1Id, myRosterId)) {
+    leftTeamBlockClasses.push('yoffs-matchup-team-block--me');
+  }
+  if (isMyRoster(team2Id, myRosterId)) {
+    rightTeamBlockClasses.push('yoffs-matchup-team-block--me');
+  }
 
   const positions = STARTER_POSITION_NAMES || [];
 
@@ -1123,7 +1131,10 @@ function MatchupView({
                 {displaySeeds && seed1 != null && (
                   <span className="yoffs-bracket-seed">#{seed1}</span>
                 )}
-                <span className="yoffs-bracket-name">{leftMeta.teamName}</span>
+                <span className="yoffs-bracket-name">
+                  {leftMeta.teamName}
+                  {isMyRoster(team1Id, myRosterId) ? <span className="me-chip">YOU</span> : null}
+                </span>
               </div>
             </div>
           )}
@@ -1153,7 +1164,10 @@ function MatchupView({
                 {displaySeeds && seed2 != null && (
                   <span className="yoffs-bracket-seed">#{seed2}</span>
                 )}
-                <span className="yoffs-bracket-name">{rightMeta.teamName}</span>
+                <span className="yoffs-bracket-name">
+                  {rightMeta.teamName}
+                  {isMyRoster(team2Id, myRosterId) ? <span className="me-chip">YOU</span> : null}
+                </span>
               </div>
             </div>
           )}

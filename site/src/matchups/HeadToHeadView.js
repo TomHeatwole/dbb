@@ -3,6 +3,7 @@ import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
 import MatchupView from './MatchupView';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
+import { useMyRosterId } from '../hooks/useAuthUser';
 
 function buildSeedMap(teams) {
   const map = {};
@@ -52,6 +53,7 @@ function HeadToHeadView({
   highlightMode = 'default',
   highlightThreshold = null
 }) {
+  const myRosterId = useMyRosterId(preloadedTeamData?.rosters, preloadedTeamData?.users);
   const safeSelected = normalizeSelectedIds(selectedIds);
   const [team1Id, team2Id] = useMemo(() => {
     const a = safeSelected[0] != null ? Number(safeSelected[0]) : null;
@@ -101,6 +103,7 @@ function HeadToHeadView({
           onSelectionChange={handleSelectionChange}
           usePlayoffTheme={usePlayoffTheme}
           enableMobileSelectorCollapse={enableMobileSelectorCollapse}
+          myRosterId={myRosterId}
         />
       )}
       {showMatchup &&

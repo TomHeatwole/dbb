@@ -8,10 +8,12 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { StartSitSort } from '../players/StartSitDecider';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const PLAYOFF_START_WEEK = 15;
 
 function ActivePlayoffsCard() {
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [semis, setSemis] = useState(null);
@@ -219,7 +221,7 @@ function ActivePlayoffsCard() {
         to={`/yoffs?format=bracket&tab=Matchups&a=${left.rosterId}&b=${right.rosterId}&matchup=${matchupNum}`}
         className="active-playoffs-row active-playoffs-row--clickable"
       >
-        <div className="active-playoffs-side active-playoffs-side--left">
+        <div className={`active-playoffs-side active-playoffs-side--left${isMyRoster(left.rosterId, myRosterId) ? ' active-playoffs-side--me' : ''}`}>
           <div className="active-playoffs-team-content">
             <div className="active-playoffs-team-header">
               <span className="active-playoffs-team-seed">#{left.seed}</span>
@@ -231,7 +233,10 @@ function ActivePlayoffsCard() {
                 />
               )}
             </div>
-            <span className="active-playoffs-team-name">{left.teamName}</span>
+            <span className="active-playoffs-team-name">
+              {left.teamName}
+              {isMyRoster(left.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+            </span>
           </div>
         </div>
         <div className="active-playoffs-score active-playoffs-score--left">
@@ -243,7 +248,7 @@ function ActivePlayoffsCard() {
         <div className="active-playoffs-score active-playoffs-score--right">
           {formatScore(right.total)}
         </div>
-        <div className="active-playoffs-side active-playoffs-side--right">
+        <div className={`active-playoffs-side active-playoffs-side--right${isMyRoster(right.rosterId, myRosterId) ? ' active-playoffs-side--me' : ''}`}>
           <div className="active-playoffs-team-content active-playoffs-team-content--right">
             <div className="active-playoffs-team-header active-playoffs-team-header--right">
               {right.avatarUrl && (
@@ -255,7 +260,10 @@ function ActivePlayoffsCard() {
               )}
               <span className="active-playoffs-team-seed">#{right.seed}</span>
             </div>
-            <span className="active-playoffs-team-name">{right.teamName}</span>
+            <span className="active-playoffs-team-name">
+              {right.teamName}
+              {isMyRoster(right.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+            </span>
           </div>
         </div>
       </Link>

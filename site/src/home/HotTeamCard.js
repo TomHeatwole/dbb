@@ -13,6 +13,7 @@ import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
 import { selectHotTeam } from './HotTeamSelector';
 import useIsMobile from '../hooks/useIsMobile';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function computeYAxisDomain(hotTeam) {
   if (!hotTeam) {
@@ -55,6 +56,7 @@ function computeYAxisDomain(hotTeam) {
 
 function HotTeamCard({ currentWeekOverride = null }) {
   const isMobile = useIsMobile();
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hotTeam, setHotTeam] = useState(null);
@@ -124,7 +126,7 @@ function HotTeamCard({ currentWeekOverride = null }) {
       <div className="hot-team-body">
         <div className="hot-team-main">
           <div className="hot-team-left">
-            <Link to={`/team/${hotTeam.rosterId}`} className="hot-team-header hot-team-header--clickable">
+            <Link to={`/team/${hotTeam.rosterId}`} className={`hot-team-header hot-team-header--clickable${isMyRoster(hotTeam.rosterId, myRosterId) ? ' hot-team-header--me' : ''}`}>
               {hotTeam.avatarUrl && (
                 <img
                   className="hot-team-avatar"
@@ -133,7 +135,10 @@ function HotTeamCard({ currentWeekOverride = null }) {
                 />
               )}
               <div className="hot-team-team-line">
-                <span className="hot-team-team-name">{hotTeam.teamName}</span>
+                <span className="hot-team-team-name">
+                  {hotTeam.teamName}
+                  {isMyRoster(hotTeam.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+                </span>
               </div>
             </Link>
             <div className="hot-team-text">

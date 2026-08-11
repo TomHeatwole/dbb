@@ -10,9 +10,11 @@ import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { calculateDraftOrder } from '../utils/DraftOrderHelper';
 import useIsMobile from '../hooks/useIsMobile';
 import { LOGO_LETTER_OVERLAY } from '../utils/global_constants';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function RookieDraftCard() {
   const isMobile = useIsMobile();
+  const myRosterId = useMyCurrentRosterId();
   // When pre-season (current season hasn't started): show upcoming draft (CURRENT_YEAR) based on previous year.
   // When in-season/off-season: show next year's draft (CURRENT_YEAR + 1) based on current year.
   const { seasonForOrder, draftYear } = useMemo(() => {
@@ -327,7 +329,7 @@ function RookieDraftCard() {
                             aria-label={`${cell.label} - ${cell.ownerTeamName}`}
                           >
                             <Link
-                              className="rookie-draft-team rookie-draft-team--icon"
+                              className={`rookie-draft-team rookie-draft-team--icon${isMyRoster(cell.ownerRosterId, myRosterId) ? ' rookie-draft-row--me' : ''}`}
                               to={`/team/${cell.ownerRosterId}`}
                               onClick={(e) => {
                                 if (isMobile) {

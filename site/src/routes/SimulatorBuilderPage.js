@@ -31,6 +31,7 @@ import {
   normalizeOutcomeScenarioYear,
 } from '../scenarios/outcomeScenarioConfig';
 import { DEFAULT_ITERATIONS } from '../scenarios/simulatorMonteCarlo';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Season Simulator';
 const OG_DESCRIPTION = 'Run outcome-roll simulations and see championship odds.';
@@ -61,6 +62,7 @@ function SimulatorTooltip({ season, iterations }) {
 }
 
 function SimulatorBuilderPage() {
+  const myRosterId = useMyCurrentRosterId();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -247,6 +249,7 @@ function SimulatorBuilderPage() {
                 teams={teamsForGrid}
                 selectedRosterId={selectedRosterId}
                 onSelectTeam={handleSelectTeam}
+                myRosterId={myRosterId}
               />
             </div>
 

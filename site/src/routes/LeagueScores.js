@@ -21,6 +21,7 @@ import PageMeta from '../PageMeta';
 import YoffsLink from '../yoffs/YoffsLink';
 import { createLiveScoresPoller } from '../utils/livePolling';
 import LoadingState from '../LoadingState';
+import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Hwang Dynasty Scores';
 const OG_DESCRIPTION = '';
@@ -93,6 +94,7 @@ function LeagueScores() {
 	const [playerIdMap, setPlayerIdMap] = useState(null);
 	const [benchOpen, setBenchOpen] = useState({});
 	const isMobile = useIsMobile();
+	const myRosterId = useMyRosterId(rosters, users);
 	const [playerGameLabels, setPlayerGameLabels] = useState({});
 	const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
 	const [injuriesMap, setInjuriesMap] = useState({});
@@ -746,13 +748,14 @@ function LeagueScores() {
 
 							const teamHighlight = teamHighlightMap && teamHighlightMap[String(rosterId)];
 							const rowClass = teamHighlight === 'row' ? ' standings-row--pulse' : (teamHighlight === 'up' ? ' standings-row--up' : (teamHighlight === 'down' ? ' standings-row--down' : ''));
+							const mine = isMyRoster(rosterId, myRosterId);
 							return (
-								<div key={rosterId} className={`standings-row${rowClass}`}>
+								<div key={rosterId} className={`standings-row${rowClass}${mine ? ' standings-row--me' : ''}`}>
 									<button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
 										<span className={`standings-toggle-icon${isExpanded ? ' standings-toggle-icon--open' : ''}`}>{isExpanded ? '▾' : '▸'}</span>
 										<span className="standings-rank" style={{ visibility: 'hidden' }}>#</span>
 										{avatarUrl && <img className="standings-avatar" src={avatarUrl} alt={`${teamName} avatar`} />}
-										<span className="standings-title">{teamName}</span>
+										<span className="standings-title">{teamName}{mine ? <span className="me-chip">YOU</span> : null}</span>
 										{isActiveWeek && !isMobile ? (
 											<span className="standings-activity">
 												<span className="standings-activity-item">Yet to Play: {yetToPlayCount}</span>

@@ -23,6 +23,7 @@ import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import ScenarioBuilderTooltip from '../scenarios/ScenarioBuilderTooltip';
 import { encodeScenario, decodeScenario, applyScenarioChanges, sanitizeRosters } from '../scenarios/scenarioEncoding';
 import { isValidPlayerId } from '../scenarios/scenarioUtils';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Scenario Builder';
 const OG_DESCRIPTION = 'Build what-if scenarios by editing team rosters.';
@@ -97,6 +98,7 @@ function buildTopPlayersByStats(csvText, playersData, playerIdMap, n = 25) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 function ScenarioBuilderPage() {
+  const myRosterId = useMyCurrentRosterId();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -351,6 +353,7 @@ function ScenarioBuilderPage() {
                 teams={teamsForGrid}
                 selectedRosterId={selectedRosterId}
                 onSelectTeam={handleSelectTeam}
+                myRosterId={myRosterId}
               />
             </div>
 

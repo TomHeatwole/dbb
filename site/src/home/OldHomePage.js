@@ -3,6 +3,7 @@ import { trackPageLoad } from '../utils/UsageTracker';
 import { Link, useSearchParams } from 'react-router-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import PageMeta from '../PageMeta';
+import { findMyRosterId, isMyRoster, useAuthUser } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'The Hwang Dynasty';
 const OG_DESCRIPTION = '';
@@ -13,6 +14,10 @@ function OldHomePage() {
 
   const [showTeams, setShowTeams] = useState(initialShowTeams);
   const [teams, setTeams] = useState([]);
+  const [rosters, setRosters] = useState(null);
+  const [users, setUsers] = useState(null);
+  const { user: authUser } = useAuthUser();
+  const myRosterId = findMyRosterId(rosters, users, authUser);
 
   useEffect(() => {
     trackPageLoad();
@@ -21,6 +26,8 @@ function OldHomePage() {
         const data = await fetchTeamData();
         const rosters = data && Array.isArray(data.rosters) ? data.rosters : [];
         const users = data && Array.isArray(data.users) ? data.users : [];
+        setRosters(rosters);
+        setUsers(users);
         const mapped = rosters.map(roster => {
           const user = users.find(u => String(u.user_id) === String(roster.owner_id)) || {};
           const ownerName = user && user.display_name ? user.display_name : 'Unknown';
@@ -77,14 +84,24 @@ function OldHomePage() {
         )}
         {showTeams && (
           <div className="home-team-links" aria-label="Team Links">
-            {teams.map(t => (
-              <Link key={t.rosterId} to={`/team/${t.rosterId}`} className="home-team-link">
-                {t.avatarUrl && (
-                  <img className="home-team-link-avatar" src={t.avatarUrl} alt={`${t.ownerName} avatar`} />
-                )}
-                <span className="home-team-link-text">{t.teamName} - {t.ownerName}</span>
-              </Link>
-            ))}
+            {teams.map(t => {
+              const mine = isMyRoster(t.rosterId, myRosterId);
+              return (
+                <Link
+                  key={t.rosterId}
+                  to={`/team/${t.rosterId}`}
+                  className={`home-team-link${mine ? ' oldhome-team-link--me' : ''}`}
+                >
+                  {t.avatarUrl && (
+                    <img className="home-team-link-avatar" src={t.avatarUrl} alt={`${t.ownerName} avatar`} />
+                  )}
+                  <span className="home-team-link-text">
+                    {t.teamName} - {t.ownerName}
+                    {mine ? <span className="me-chip">YOU</span> : null}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         )}
       </main>

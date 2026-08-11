@@ -10,6 +10,7 @@ import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
 import Week1CountdownCard from './Week1CountdownCard';
+import AuthHomeCard from './AuthHomeCard';
 import PreviousYearRecapCard from './PreviousYearRecapCard';
 import RecentTradesCard from './RecentTradesCard';
 import RookieDraftCard from './RookieDraftCard';
@@ -116,6 +117,7 @@ function HomePage() {
           <div className="home-cards-grid home-cards-grid--single">
             {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
             <Week1CountdownCard />
+            <AuthHomeCard />
             <PreviousYearRecapCard />
             <RecentTradesCard />
             <TrendingFreeAgentsCard />
@@ -136,6 +138,7 @@ function HomePage() {
           <Week1CountdownCard />
           <div className="home-cards-grid--split">
             <div className="home-cards-column home-cards-column--left">
+              <AuthHomeCard />
               <RecentTradesCard />
               <TrendingFreeAgentsCard />
               <PodcastCard />
@@ -193,6 +196,7 @@ function HomePage() {
       <main className="home-main">
         <div className="home-cards-grid home-cards-grid--single">
           {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
+          <AuthHomeCard />
           {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
           {playoffCard}
           <HotTeamCard currentWeekOverride={safeWeekForCards} />
@@ -229,6 +233,7 @@ function HomePage() {
         {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
         <div className="home-cards-grid--split">
           <div className="home-cards-column home-cards-column--left">
+            <AuthHomeCard />
             {playoffCard}
             <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
             <TankRaceCard currentWeekOverride={safeWeekForCards} />

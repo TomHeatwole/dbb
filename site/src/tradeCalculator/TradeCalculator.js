@@ -43,6 +43,7 @@ import { LEAGUE_ID, PREVIOUS_YEARS } from '../utils/global_constants';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PositionBadge from '../PositionBadge';
 import LoadingState from '../LoadingState';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const ADDABLE_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
 const EVEN_THRESHOLD = 0.1; // within 10% → even coloring
@@ -387,6 +388,7 @@ function PlayerSide({
 }
 
 function TradeCalculator() {
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [playersData, setPlayersData] = useState(null);
@@ -503,6 +505,8 @@ function TradeCalculator() {
             const rightSide = sides[rightRid] || { playerIds: [], picks: [] };
             const leftName = rosterMap[leftRid]?.teamName || `Team ${leftRid}`;
             const rightName = rosterMap[rightRid]?.teamName || `Team ${rightRid}`;
+            const leftRosterId = leftRid;
+            const rightRosterId = rightRid;
 
             const dateLabel = formatTradeDate(trade.created);
             const leftSummary = summarizeAssets(
@@ -525,6 +529,8 @@ function TradeCalculator() {
               dateLabel,
               leftName,
               rightName,
+              leftRosterId,
+              rightRosterId,
               leftSummary,
               rightSummary,
               leftPlayerIds: leftSide.playerIds.map(String),
@@ -1043,12 +1049,18 @@ function TradeCalculator() {
                 </div>
                 <div className="trade-calc-history-matchup">
                   <div className="trade-calc-history-side">
-                    <span className="trade-calc-history-team">{trade.leftName}</span>
+                    <span className="trade-calc-history-team">
+                      {trade.leftName}
+                      {isMyRoster(trade.leftRosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+                    </span>
                     <span className="trade-calc-history-assets">{trade.leftSummary}</span>
                   </div>
                   <span className="trade-calc-history-vs">↔</span>
                   <div className="trade-calc-history-side trade-calc-history-side--right">
-                    <span className="trade-calc-history-team">{trade.rightName}</span>
+                    <span className="trade-calc-history-team">
+                      {trade.rightName}
+                      {isMyRoster(trade.rightRosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+                    </span>
                     <span className="trade-calc-history-assets">{trade.rightSummary}</span>
                   </div>
                 </div>

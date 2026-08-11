@@ -1,4 +1,5 @@
 import React from 'react';
+import { isMyRoster } from '../hooks/useAuthUser';
 
 function fmtPts(pts) {
   return Number(pts).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -20,7 +21,7 @@ function fmtDelta(delta) {
  *   teamDeltas         – [{ rosterId, originalPlace, regSeasonDelta, playoffDelta, isPlayoff }]
  *   teamsForGrid       – [{ rosterId, teamName, avatarUrl }]
  */
-function ScenarioStandingsPanel({ scenarioStandings, teamDeltas, teamsForGrid, selectedRosterId, onSelectTeam }) {
+function ScenarioStandingsPanel({ scenarioStandings, teamDeltas, teamsForGrid, selectedRosterId, onSelectTeam, myRosterId }) {
   const teamInfoById = {};
   for (const t of (teamsForGrid || [])) teamInfoById[t.rosterId] = t;
 
@@ -45,7 +46,8 @@ function ScenarioStandingsPanel({ scenarioStandings, teamDeltas, teamsForGrid, s
             `scenario-standings-row` +
             (row.isPlayoff ? ' scenario-standings-row--playoff' : '') +
             (isLastPlayoff ? ' scenario-standings-row--playoff-last' : '') +
-            (selectedRosterId === row.rosterId ? ' scenario-standings-row--selected' : '')
+            (selectedRosterId === row.rosterId ? ' scenario-standings-row--selected' : '') +
+            (isMyRoster(row.rosterId, myRosterId) ? ' scenario-standings-row--me' : '')
           }
           onClick={() => onSelectTeam && onSelectTeam(row.rosterId === selectedRosterId ? null : row.rosterId)}
           style={{ cursor: 'pointer' }}
@@ -76,6 +78,7 @@ function ScenarioStandingsPanel({ scenarioStandings, teamDeltas, teamsForGrid, s
           <span className="scenario-standings-name" title={team.teamName || ''}>
             {row.place === 1 && <span className="scenario-standings-trophy">🏆</span>}
             {team.teamName || `Team ${row.rosterId}`}
+            {isMyRoster(row.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
           </span>
 
           {/* 14-week total + inline delta */}

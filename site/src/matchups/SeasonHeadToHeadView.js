@@ -4,6 +4,7 @@ import MatchupView from './MatchupView';
 import { getWeekScoreBreakdown } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import LoadingState from '../LoadingState';
+import { useMyRosterId } from '../hooks/useAuthUser';
 
 function normalizeSelectedIds(selectedIds) {
   if (!Array.isArray(selectedIds)) {
@@ -82,6 +83,7 @@ function SeasonHeadToHeadView({
   controls = null,
   enableMobileSelectorCollapse = false
 }) {
+  const myRosterId = useMyRosterId(preloadedTeamData?.rosters, preloadedTeamData?.users);
   const safeSelected = normalizeSelectedIds(selectedIds);
   const [team1Id, team2Id] = useMemo(() => {
     const a = safeSelected[0] != null ? Number(safeSelected[0]) : null;
@@ -197,6 +199,7 @@ function SeasonHeadToHeadView({
             onSelectionChange={handleSelectionChange}
             usePlayoffTheme={false}
             enableMobileSelectorCollapse={enableMobileSelectorCollapse}
+            myRosterId={myRosterId}
           />
           {controls}
         </>

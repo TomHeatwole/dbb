@@ -54,7 +54,7 @@ function abbreviateTeamNameIfTooLong(rawName) {
     : name;
 }
 
-function StandingsRowHeader({ isExpanded, onToggle, rankLabel, avatarUrl, teamName, rightContent }) {
+function StandingsRowHeader({ isExpanded, onToggle, rankLabel, avatarUrl, teamName, rightContent, isMe }) {
   const isMobile = useIsMobile();
   const displayTeamName = isMobile ? abbreviateTeamNameIfTooLong(teamName) : teamName;
   const titleText = typeof teamName === 'string' ? teamName : '';
@@ -73,6 +73,7 @@ function StandingsRowHeader({ isExpanded, onToggle, rankLabel, avatarUrl, teamNa
       )}
       <span className="standings-title" title={titleText}>
         {displayTeamName}
+        {isMe ? <span className="me-chip">YOU</span> : null}
       </span>
       {rightContent}
     </button>

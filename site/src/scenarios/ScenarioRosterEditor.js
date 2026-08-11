@@ -5,6 +5,7 @@ import { getPlayerLogoUrl } from '../utils/playerLogo';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
 import { isValidPlayerId } from './scenarioUtils';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 const ADDABLE_POSITIONS = ['QB', 'RB', 'WR', 'TE'];
@@ -74,6 +75,8 @@ function ScenarioRosterEditor({
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const searchWrapperRef = useRef(null);
+  const myRosterId = useMyCurrentRosterId();
+  const mine = isMyRoster(team?.rosterId, myRosterId);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -187,7 +190,7 @@ function ScenarioRosterEditor({
       <div className="scenario-editor-header">
         {team.avatarUrl && (
           <img
-            className="standings-avatar scenario-editor-avatar"
+            className={`standings-avatar scenario-editor-avatar${mine ? ' me-avatar' : ''}`}
             src={team.avatarUrl}
             alt={team.teamName}
           />

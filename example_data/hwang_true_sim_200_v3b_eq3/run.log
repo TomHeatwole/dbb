@@ -1,0 +1,29 @@
+Corrected 1879 comp rows with {
+  QB: { c: 0.9243, k: 0.173 },
+  RB: { c: 1.4048, k: 0.121 },
+  WR: { c: 0.8666, k: -0.235 },
+  TE: { c: 0.8883, k: -0.059 }
+}
+
+Running corrected-comp / hwang (200 builds, seed 1)…
+  0% 2021: fetching weekly stats…
+  10% 2021: 2025 #4 — The Ladds (12-6) — build 92/200 — done
+  20% 2021: 2026 #7 — MrZaccheaus — build 200/200 — done
+  30% 2022: 2025 #4 — The Ladds (12-6) — build 92/200 — done
+  40% 2022: 2026 #7 — MrZaccheaus — build 200/200 — done
+  50% 2023: 2025 #4 — The Ladds (12-6) — build 92/200 — done
+  60% 2023: 2026 #7 — MrZaccheaus — build 200/200 — done
+  70% 2024: 2025 #4 — The Ladds (12-6) — build 92/200 — done
+  80% 2024: 2026 #7 — MrZaccheaus — build 200/200 — done
+  90% 2025: 2025 #4 — The Ladds (12-6) — build 92/200 — done
+  100% 2025: 2026 #7 — MrZaccheaus — build 200/200 — done
+  done in 181s
+  wrote candidates.csv: 1,340 rows
+  wrote pairs.csv: 3,478 rows
+  wrote archetype_player_hvorp.csv: 27,244 rows
+  wrote matchups.csv: 606 rows
+
+=== Corrected-board multipliers (mean-grounded) ===
+{ QB: 1.017, RB: 1.013, WR: 0.987, TE: 0.983 }
+
+Done.

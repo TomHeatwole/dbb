@@ -3,6 +3,7 @@ import { formatKtcValue } from '../lookups/KtcLookup';
 import useIsMobile from '../hooks/useIsMobile';
 import PositionBadge from '../PositionBadge';
 import { RedraftAdjTooltip } from '../redraftValueIndex/redraftValueTooltip';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 function FcTrend({ value }) {
   if (value === null || value === undefined) {
@@ -183,7 +184,7 @@ function renderCell(col, player, isMobile) {
 
     case 'fantasyTeamName':
       return val ? (
-        <span className="pdb-fantasy-team">{val}</span>
+        <FantasyTeamCell name={val} rosterId={player.fantasyTeamId} />
       ) : (
         <span className="status-badge status-free-agent">Free Agent</span>
       );
@@ -205,6 +206,17 @@ function renderCell(col, player, isMobile) {
  *   onRowClick       – (player) => void
  *   columnVisibility – { [colKey]: boolean }
  */
+function FantasyTeamCell({ name, rosterId }) {
+  const myRosterId = useMyCurrentRosterId();
+  const mine = isMyRoster(rosterId, myRosterId);
+  return (
+    <span className={`pdb-fantasy-team${mine ? ' pdb-fantasy-team--me' : ''}`}>
+      {name}
+      {mine ? <span className="me-chip">YOU</span> : null}
+    </span>
+  );
+}
+
 function PlayerDBTable({ columns, players, sortKey, sortDir, onSort, onRowClick, columnVisibility }) {
   const isMobile = useIsMobile();
 

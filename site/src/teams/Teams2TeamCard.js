@@ -14,6 +14,7 @@ function Teams2TeamCard({
   recentScores,
   topPlayers,
   season,
+  isMe,
 }) {
   // Trend: compare last 3 weeks average to prior 3 weeks average
   let trendDirection = null; // 'up', 'down', or null
@@ -60,7 +61,7 @@ function Teams2TeamCard({
   const yearParam = season ? `?year=${season}` : '';
 
   return (
-    <Link to={`/teams-2/${rosterId}${yearParam}`} className="teams2-card">
+    <Link to={`/teams-2/${rosterId}${yearParam}`} className={`teams2-card${isMe ? ' teams2-card--me' : ''}`}>
       <div className="teams2-card-top">
         <div className="teams2-card-rank">#{rank}</div>
         <div className="teams2-card-identity">
@@ -68,7 +69,10 @@ function Teams2TeamCard({
             <img src={avatarUrl} alt="" className="teams2-card-avatar" />
           )}
           <div className="teams2-card-names">
-            <span className="teams2-card-team-name">{teamName}</span>
+            <span className="teams2-card-team-name">
+              {teamName}
+              {isMe ? <span className="me-chip">YOU</span> : null}
+            </span>
             <span className="teams2-card-owner">{ownerName}</span>
           </div>
         </div>

@@ -30,6 +30,7 @@ import { decodeScenario, applyScenarioChanges } from '../scenarios/scenarioEncod
 import { validateScenarioRosters } from '../scenarios/scenarioValidation';
 import { computeScenarioEval } from '../scenarios/computeScenarioEval';
 import ScenarioStandingsPanel from '../scenarios/ScenarioStandingsPanel';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 import ScenarioTeamDetail from '../scenarios/ScenarioTeamDetail';
 
 const OG_TITLE = 'Scenario Builder — Evaluate';
@@ -139,6 +140,7 @@ function ScenarioInvalidBadge({ violations }) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 function ScenarioEvalPage() {
+  const myRosterId = useMyCurrentRosterId();
   const [searchParams]                            = useSearchParams();
   const scenarioParam                             = searchParams.get('scenario');
 
@@ -285,6 +287,7 @@ function ScenarioEvalPage() {
                     teamsForGrid={teamsForGrid}
                     selectedRosterId={selectedRosterId}
                     onSelectTeam={setSelectedRosterId}
+                    myRosterId={myRosterId}
                   />
                 ) : (
                   <div className="scenario-eval-placeholder">

@@ -28,6 +28,7 @@ import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import { buildTopPlayersFromFpCsvs } from '../scenarios/fpRankingsLoader';
 import { encodeFutureScenario, decodeFutureScenario, applyScenarioChanges, sanitizeRosters } from '../scenarios/scenarioEncoding';
 import { isValidPlayerId } from '../scenarios/scenarioUtils';
+import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Future Scenarios';
 const OG_DESCRIPTION = 'Project your current rosters through a full season using FantasyPros rankings.';
@@ -83,6 +84,7 @@ function FutureScenariosTooltip() {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 function FutureScenarioBuilderPage() {
+  const myRosterId = useMyCurrentRosterId();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -330,6 +332,7 @@ function FutureScenarioBuilderPage() {
                 teams={teamsForGrid}
                 selectedRosterId={selectedRosterId}
                 onSelectTeam={handleSelectTeam}
+                myRosterId={myRosterId}
               />
             </div>
 

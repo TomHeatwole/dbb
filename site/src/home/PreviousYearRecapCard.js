@@ -8,6 +8,7 @@ import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap, getStandings } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const PLAYOFF_START_WEEK = 15;
 const PLAYOFF_END_WEEK = 17;
@@ -22,6 +23,7 @@ function getTeamLabel(teamInfo, rosterId) {
 }
 
 function PreviousYearRecapCard() {
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [resultsRows, setResultsRows] = useState(null); // [{ key, label, rosterId, teamName, avatarUrl }]
@@ -285,7 +287,7 @@ function PreviousYearRecapCard() {
             <Link
               key={row.key}
               to={`/team/${row.rosterId}`}
-              className="previous-year-recap-link"
+              className={`previous-year-recap-link${isMyRoster(row.rosterId, myRosterId) ? ' recap-team--me' : ''}`}
             >
               <div className="previous-year-recap-rank">{row.label}</div>
               <div className="previous-year-recap-team">
@@ -298,7 +300,10 @@ function PreviousYearRecapCard() {
                 ) : (
                   <div className="previous-year-recap-avatar previous-year-recap-avatar--placeholder" />
                 )}
-                <div className="previous-year-recap-name">{row.teamName}</div>
+                <div className="previous-year-recap-name">
+                  {row.teamName}
+                  {isMyRoster(row.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
+                </div>
               </div>
             </Link>
           );
