@@ -36,6 +36,7 @@ import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
 import SOPPage, { SOP2Page } from './routes/SOPPage';
 import DKPage from './routes/DKPage';
+import FredDuelPage from './routes/FredDuelPage';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
@@ -150,6 +151,8 @@ function AppInner() {
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
       <Route path="/dk/*" element={<DKPage />} />
       <Route path="/DK/*" element={<DKPage />} />
+      <Route path="/FredDuel" element={<FredDuelPage />} />
+      <Route path="/fredduel" element={<FredDuelPage />} />
       
       <Route path="*" element={<Navigate to="/home/" replace />} />
     </Routes>

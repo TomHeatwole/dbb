@@ -57,7 +57,9 @@ const CURL_FILE    = path.join(__dirname, 'ffbcurl.txt');
 
 const UDK_PAGE_URL = 'https://www.thefantasyfootballers.com/2026-ultimate-draft-kit/udk-top-200-list/';
 
-const RELEVANT_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
+// K is included so the raw projections dump (which covers kickers) can match
+// them to Sleeper IDs; the ranking CSVs themselves only cover QB/RB/WR/TE
+const RELEVANT_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE', 'K']);
 
 // ── Fetch HTML via the saved curl command (URL swapped to the UDK page) ───────
 
@@ -366,12 +368,12 @@ function run() {
 
   const sleeperIdCache = new Map();
   function matchSleeperId(name, position, team) {
-    const key = `${name}|${position}|${team}`;
+    const key = `${name}|${position}|${team || ''}`;
     if (sleeperIdCache.has(key)) return sleeperIdCache.get(key);
     const { candidate, ambiguous } = findBestPlayerMatch(name, sleeperPool,
       { position, team: team || undefined });
     if (!candidate) {
-      unmatched.set(`${position} ${name} (${team})`, ambiguous.length > 0);
+      unmatched.set(`${position} ${name} (${team || 'no team'})`, ambiguous.length > 0);
     }
     const id = candidate ? candidate.sleeperId : '';
     sleeperIdCache.set(key, id);
@@ -430,16 +432,14 @@ function run() {
   // Top-200 and superflex (tier-multiplier-weighted cross-position lists).
   // Rows are copies of the position ranking rows, so tier and auction values
   // carry over; score / analyst scores are the multiplier-adjusted values.
-  const dashCopies = [];
   for (const [type, name] of [['top200', 'top200'], ['2qb', 'superflex']]) {
     const rows = rankings.getTierMultiplierRankings(type);
     rows.sort((a, b) => a.rank - b.rank);
-    const outPath = writeCsv(`ffb_udk_${name}.csv`, rows.map((r) => ({
+    writeCsv(`ffb_udk_${name}.csv`, rows.map((r) => ({
       ...rankingRow(r),
       score:          fmt(r.score, 2),
       position_score: r.scoreFormatted,
     })), CROSS_POSITION_COLS);
-    dashCopies.push(outPath);
   }
 
   // Raw per-analyst stat projections — the source data for everything above
@@ -458,15 +458,6 @@ function run() {
       sleeper_id:    matchSleeperId(p.name, p.fantasy_position, p.team),
     }));
   writeCsv('ffb_udk_projections.csv', projRows, PROJECTION_COLS);
-
-  // The top-200 / superflex lists double as Redraft Dash sources (declared in
-  // dbbp/redraft-dash/manifest.json; the dash reads rank/name/position/team
-  // and ignores the rest)
-  for (const src of dashCopies) {
-    const dest = path.join(DASH_DIR, path.basename(src));
-    fs.copyFileSync(src, dest);
-    console.log(`Copied to ${dest}`);
-  }
 
   if (unmatched.size > 0) {
     console.warn(`\nWARNING: ${unmatched.size} player(s) could not be matched to Sleeper IDs:`);
