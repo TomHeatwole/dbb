@@ -8,3 +8,4 @@ scripts/audit_ffpodcast_name_matches.js
 scripts/ffbcurl.txt
 mcp/owner_names.txt
 node_modules
+dbbp/

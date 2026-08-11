@@ -188,9 +188,10 @@ export default function TrueRookiePickValue() {
         const loaded = await loadTrueRookiePickValueData();
         if (cancelled) return;
         setData(loaded);
-        if (!loaded.byYear.has(year) && loaded.years.length > 0) {
-          setYear(loaded.years.includes(2024) ? 2024 : loaded.years[loaded.years.length - 1]);
-        }
+        setYear((prevYear) => {
+          if (loaded.byYear.has(prevYear) || loaded.years.length === 0) return prevYear;
+          return loaded.years.includes(2024) ? 2024 : loaded.years[loaded.years.length - 1];
+        });
       } catch (err) {
         if (!cancelled) setError(err.message || 'Failed to load true rookie pick values');
       } finally {

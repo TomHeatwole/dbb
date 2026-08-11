@@ -437,7 +437,8 @@ function TradeCalculator() {
           marketMult,
           trueMult,
           compositeMult,
-          _truePickChart,
+          // loadTruePickChart() is awaited for its cache-warming side effect; its result slot is skipped.
+          ,
           ...yearTradeResults
         ] = await Promise.all([
           fetchTeamData(CURRENT_YEAR),

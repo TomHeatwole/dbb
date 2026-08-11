@@ -286,7 +286,8 @@ function DynastyRosterView() {
         const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
         const isPreSeason    = completedWeeks === 0;
         const prevYearStr    = String(Number(CURRENT_YEAR) - 1);
-        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, marketMult, trueMult, compositeMult, _truePickChart, allTradedPicks, prevWeeksData, rookieDraftComplete] =
+        // loadTruePickChart() is awaited for its cache-warming side effect; its result slot is skipped.
+        const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, marketMult, trueMult, compositeMult, , allTradedPicks, prevWeeksData, rookieDraftComplete] =
           await Promise.all([
             fetchTeamData(CURRENT_YEAR),
             fetchScoresData(CURRENT_YEAR),
