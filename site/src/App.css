@@ -16808,3 +16808,111 @@ body.modal-open {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ── Redraft Dash (sandbox, private dbbp data) ─────────────────────────── */
+
+.rdd-privacy-note {
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(174, 78, 2, 0.1);
+  border: 1px solid rgba(174, 78, 2, 0.3);
+  color: #d9a066;
+  font-size: 0.8rem;
+}
+
+.rdd-privacy-note code {
+  color: #ffd080;
+}
+
+.rdd-unavailable {
+  padding: 1.25rem 1.5rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #bbb;
+  max-width: 40rem;
+}
+
+.rdd-unavailable h3 {
+  margin: 0 0 0.5rem;
+  color: #ddd;
+  font-size: 1rem;
+}
+
+.rdd-unavailable p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.rdd-unavailable code {
+  color: #ffd080;
+}
+
+.rdd-trust {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.rdd-trust--trusted {
+  background: rgba(80, 200, 120, 0.15);
+  border: 1px solid rgba(80, 200, 120, 0.35);
+  color: #7fd8a0;
+}
+
+.rdd-trust--untrusted {
+  background: rgba(220, 160, 60, 0.15);
+  border: 1px solid rgba(220, 160, 60, 0.35);
+  color: #e8b96a;
+}
+
+.rdd-source-meta {
+  align-self: center;
+}
+
+/* Hug content instead of stretching — keeps rank columns next to the names */
+.rdd-table-wrap {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.rdd-table {
+  width: auto;
+}
+
+.rdd-table .rv-th-name,
+.rdd-table .rv-td-name {
+  min-width: 13rem;
+}
+
+.rdd-th-rank,
+.rdd-td-rank {
+  width: 6.5rem;
+  text-align: right;
+}
+
+.rdd-th-rank .rv-sort-btn {
+  justify-content: flex-end;
+}
+
+.rdd-th-source {
+  display: inline-flex;
+  align-items: center;
+}
+
+.rdd-td-avg {
+  color: #ffd080;
+  font-weight: 600;
+}
+
+.rdd-td-spread-hot {
+  color: #ff9d7a;
+  font-weight: 600;
+}

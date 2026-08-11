@@ -19,6 +19,9 @@
 .env.test.local
 .env.production.local
 
+# private data synced from dbbp/ — never commit (see scripts/sync-dbbp-data.mjs)
+/public/data/redraft_dash
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

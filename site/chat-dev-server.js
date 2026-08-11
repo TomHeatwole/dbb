@@ -40,12 +40,14 @@ const server = http.createServer(async (req, res) => {
   const postHandlers = {
     '/api/chat': 'chat',
     '/api/search': 'search',
+    '/api/exchange': 'exchange',
   };
 
   const getHandlers = {
     '/api/fanduel-sop': 'fanduel-sop',
     '/api/draftkings-goal-method': 'draftkings-goal-method',
     '/api/kalshi-sop': 'kalshi-sop',
+    '/api/exchange': 'exchange',
   };
 
   const handlerName =

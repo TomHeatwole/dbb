@@ -8,6 +8,10 @@
 #      matches players to Sleeper IDs, and writes
 #      → site/public/data/ffb.csv
 #
+#   2b. Fetches the ffb Ultimate Draft Kit rankings (paywalled content) and
+#       writes CSVs to the private companion repo
+#       → dbbp/ffb-udk/ffb_udk_{qb,rb,wr,te,top200,superflex}.csv
+#
 # Usage (run from project root):
 #   bash scripts/update_downloads.sh
 
@@ -26,6 +30,13 @@ echo ""
 
 echo "FFB rankings: matching players to Sleeper IDs..."
 node "$SCRIPT_DIR/process_ffb_rankings.js"
+
+echo ""
+
+# ── 2b. ffb UDK rankings → dbbp/ffb-udk/*.csv (private repo) ──────────────────
+
+echo "FFB UDK rankings: computing rankings and matching players to Sleeper IDs..."
+node "$SCRIPT_DIR/process_udk_rankings.js"
 
 echo ""
 

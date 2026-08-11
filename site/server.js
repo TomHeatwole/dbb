@@ -99,6 +99,15 @@ async function main() {
     }
   });
 
+  app.all('/api/exchange', async (req, res) => {
+    try {
+      const { default: handler } = await import('./api/exchange.mjs');
+      return handler(req, res);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  });
+
   // Delegate all other GET requests (SPA routes) to the shared renderer.
   app.get('*', (req, res) => {
     return renderHandler(req, res);

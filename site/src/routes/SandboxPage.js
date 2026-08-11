@@ -89,6 +89,10 @@ function SandboxPage() {
           <span className="sandbox-feature-label">Value Sandbox</span>
           <span className="sandbox-feature-desc">Positional value research — HVORP, archetype rosters, and cross-position compares.</span>
         </Link>
+        <Link to="/redraftdash" className="sandbox-feature-card">
+          <span className="sandbox-feature-label">Redraft Dash</span>
+          <span className="sandbox-feature-desc">Cross-compare 2026 redraft rankings from trusted and untrusted sources (private data, local only).</span>
+        </Link>
         {FEATURES.map(feature => (
           <button
             key={feature.id}

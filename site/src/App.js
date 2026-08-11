@@ -31,6 +31,7 @@ import SimulatorPage from './routes/SimulatorPage';
 import TradesPage from './routes/TradesPage';
 import SandboxPage from './routes/SandboxPage';
 import ValueSandboxPage from './routes/ValueSandboxPage';
+import RedraftDashPage from './routes/RedraftDashPage';
 import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
 import SOPPage, { SOP2Page } from './routes/SOPPage';
@@ -140,6 +141,7 @@ function AppInner() {
       {/* Sandbox is always available for development */}
       <Route path="/sandbox" element={<SandboxPage />} />
       <Route path="/valuesandbox" element={<ValueSandboxPage />} />
+      <Route path="/redraftdash" element={<RedraftDashPage />} />
       <Route path="/hwangai" element={<HwangAIPage />} />
       <Route path="/teams-2" element={<Teams2Page />} />
       <Route path="/teams-2/:id" element={<Teams2Page />} />
