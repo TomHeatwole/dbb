@@ -23,12 +23,21 @@
  *
  * Outputs (dbbp/ffb-udk/ — the private companion repo; this is paywalled
  * content and must not ship with the public dbb repo):
- *   ffb_udk_qb.csv, ffb_udk_rb.csv, ffb_udk_wr.csv, ffb_udk_te.csv,
+ *   ffb_udk_qb.csv, ffb_udk_rb.csv, ffb_udk_wr.csv, ffb_udk_te.csv
+ *       — position rankings with tier, score/risk/upside, trajectory,
+ *         auction value + PAR, all ADP variants, per-analyst
+ *         rank/score/risk/upside, and player metadata
  *   ffb_udk_top200.csv, ffb_udk_superflex.csv
+ *       — cross-position lists (tier-multiplier weighted); same columns plus
+ *         position_score (the pre-multiplier position ranking score)
+ *   ffb_udk_projections.csv
+ *       — the raw per-analyst stat projections everything above is computed
+ *         from (one row per player per analyst)
  *
- * Columns: rank, name, position, team, bye_week, tier, score, risk, upside,
- *          adp, andy_rank, jason_rank, mike_rank, sleeper_id
- * (tier is only present in the position rankings files)
+ * The top-200 and superflex CSVs double as Redraft Dash sources: they are
+ * declared in dbbp/redraft-dash/manifest.json as "ffb-udk/<file>" paths,
+ * which resolve because sync-dbbp-data.mjs syncs dbbp/ffb-udk/ into
+ * site/public/data/redraft_dash/ffb-udk/.
  *
  * Usage (run from project root):
  *   node scripts/process_udk_rankings.js
@@ -181,9 +190,11 @@ function computeRankings(html) {
   });
   for (const p of udkData.projections)          rankings.addProjection(p);
   for (const p of udkData.previous_projections) rankings.addPreviousProjection(p);
-  rankings.calculate();
+  // Same code path as the position rankings pages (getRankingsWithAuction):
+  // computes position rankings + tiers, then auction values (par / $)
+  rankings.calculateWithAuction();
 
-  return rankings;
+  return { rankings, udkData };
 }
 
 // ── Name normalisation + smart matching (mirrors process_ffb_rankings.js) ────
@@ -289,62 +300,172 @@ function csvEscape(v) {
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
-const HEADER_ALIASES = {
-  fantasy_position: 'position',
-  scoreFormatted:   'score',
-  riskFormatted:    'risk',
-  upsideFormatted:  'upside',
-};
-
-function writeCsv(filename, rows, columns, sleeperPool, unmatchedLog) {
+function writeCsv(filename, rows, columns) {
   const outPath = path.join(OUT_DIR, filename);
-  const header  = [...columns.map((c) => HEADER_ALIASES[c] || c), 'sleeper_id'].join(',');
-  const lines   = [header];
-
-  for (const row of rows) {
-    const hints = { position: row.fantasy_position, team: row.team || undefined };
-    const { candidate, ambiguous } = findBestPlayerMatch(row.name, sleeperPool, hints);
-    if (!candidate) {
-      unmatchedLog.set(`${row.fantasy_position} ${row.name} (${row.team})`, ambiguous.length > 0);
-    }
-    const values = columns.map((c) => csvEscape(row[c]));
-    values.push(candidate ? candidate.sleeperId : '');
-    lines.push(values.join(','));
-  }
-
+  const lines   = [columns.join(',')];
+  for (const row of rows) lines.push(columns.map((c) => csvEscape(row[c])).join(','));
   fs.writeFileSync(outPath, lines.join('\n') + '\n', 'utf8');
   console.log(`Output: ${outPath} (${rows.length} rows)`);
+  return outPath;
+}
+
+/** Format a numeric value with fixed decimals, or '' when absent. */
+function fmt(v, decimals) {
+  const n = Number(v);
+  return v == null || v === '' || !Number.isFinite(n) ? '' : n.toFixed(decimals);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-const BASE_COLS = ['rank', 'name', 'fantasy_position', 'team', 'bye_week',
-  'scoreFormatted', 'riskFormatted', 'upsideFormatted', 'adp',
-  'andy_rank', 'jason_rank', 'mike_rank'];
+const RANKING_COLS = [
+  'rank', 'name', 'position', 'team', 'bye_week', 'tier',
+  'score', 'score_percentile', 'risk', 'upside', 'trajectory',
+  'auction_value', 'par', 'risk_adjusted_par',
+  'adp', 'adp_round', 'adp_std', 'adp_half_ppr', 'adp_ppr', 'adp_2qb',
+  'andy_rank', 'andy_score', 'andy_risk', 'andy_upside',
+  'jason_rank', 'jason_score', 'jason_risk', 'jason_upside',
+  'mike_rank', 'mike_score', 'mike_risk', 'mike_upside',
+  'ffb_player_id', 'slug', 'number', 'birth_date', 'experience', 'sleeper_id',
+];
+
+// Cross-position lists: score is the tier-multiplier-adjusted value that
+// determines the overall rank; position_score is the raw position ranking
+// score, and score_percentile does not apply
+const CROSS_POSITION_COLS = RANKING_COLS.flatMap((c) =>
+  c === 'score' ? ['score', 'position_score'] : c === 'score_percentile' ? [] : [c]);
+
+const PROJECTION_COLS = [
+  'name', 'position', 'team', 'analyst',
+  'passing_attempts', 'passing_completions', 'passing_yards', 'passing_touchdowns',
+  'interceptions_thrown',
+  'rushing_attempts', 'rushing_yards', 'rushing_yards_per_attempt', 'rushing_touchdowns',
+  'receiving_targets', 'receptions', 'receiving_yards', 'receiving_yards_per_reception',
+  'receiving_touchdowns', 'fumbles_lost',
+  'risk', 'upside',
+  'adp_std', 'adp_half_ppr', 'adp_ppr', 'adp_2qb',
+  'bye_week', 'number', 'birth_date', 'experience', 'season',
+  'ffb_player_id', 'slug', 'sleeper_id',
+];
 
 function run() {
   console.log(`Fetching UDK page via curl (${CURL_FILE})…`);
   const html = fetchUrl(buildCurlCommand(UDK_PAGE_URL), 'UDK page');
   checkForPaywall(html);
 
-  const rankings    = computeRankings(html);
+  const { rankings, udkData } = computeRankings(html);
   const sleeperPool = loadSleeperCandidates();
   const unmatched   = new Map();
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
+  // One raw projection row per player, for fields the ranking rows don't carry
+  const projById = new Map();
+  for (const p of udkData.projections) {
+    if (!projById.has(p.player_id)) projById.set(p.player_id, p);
+  }
+
+  const sleeperIdCache = new Map();
+  function matchSleeperId(name, position, team) {
+    const key = `${name}|${position}|${team}`;
+    if (sleeperIdCache.has(key)) return sleeperIdCache.get(key);
+    const { candidate, ambiguous } = findBestPlayerMatch(name, sleeperPool,
+      { position, team: team || undefined });
+    if (!candidate) {
+      unmatched.set(`${position} ${name} (${team})`, ambiguous.length > 0);
+    }
+    const id = candidate ? candidate.sleeperId : '';
+    sleeperIdCache.set(key, id);
+    return id;
+  }
+
+  /** Shared columns for both the position and cross-position ranking rows. */
+  function rankingRow(r) {
+    const proj = projById.get(r.player_id) || {};
+    const row = {
+      rank:              r.rank,
+      name:              r.name,
+      position:          r.fantasy_position,
+      team:              r.team,
+      bye_week:          r.bye_week,
+      tier:              r.tier,
+      risk:              fmt(r.risk, 2),
+      upside:            fmt(r.upside, 2),
+      trajectory:        r.trajectory,
+      auction_value:     r.auctionValueFormatted ?? '',
+      par:               fmt(r.par, 2),
+      risk_adjusted_par: fmt(r.riskAdjustedPar, 2),
+      adp:               r.adp ?? '',
+      adp_round:         r.adpFormatted ?? '',
+      adp_std:           proj.adp ?? '',
+      adp_half_ppr:      proj.adp_half_ppr ?? '',
+      adp_ppr:           proj.adp_ppr ?? '',
+      adp_2qb:           proj.adp_2qb ?? '',
+      ffb_player_id:     r.player_id,
+      slug:              r.slug,
+      number:            proj.number ?? '',
+      birth_date:        (proj.birth_date || '').slice(0, 10),
+      experience:        proj.experience ?? '',
+      sleeper_id:        matchSleeperId(r.name, r.fantasy_position, r.team),
+    };
+    for (const analyst of ['andy', 'jason', 'mike']) {
+      row[`${analyst}_rank`]   = r[`${analyst}_rank`];
+      row[`${analyst}_score`]  = fmt(r[`${analyst}_score`], 2);
+      row[`${analyst}_risk`]   = fmt(r[`${analyst}_risk`], 2);
+      row[`${analyst}_upside`] = fmt(r[`${analyst}_upside`], 2);
+    }
+    return row;
+  }
+
   // Position rankings (what the udk-position-rankings/?position=X pages show)
   for (const pos of ['QB', 'RB', 'WR', 'TE']) {
     const rows = rankings.getAnalystRankings(pos); // adds andy/jason/mike per-analyst ranks
     rows.sort((a, b) => a.rank - b.rank);
-    writeCsv(`ffb_udk_${pos.toLowerCase()}.csv`, rows, [...BASE_COLS, 'tier'], sleeperPool, unmatched);
+    writeCsv(`ffb_udk_${pos.toLowerCase()}.csv`, rows.map((r) => ({
+      ...rankingRow(r),
+      score:            fmt(r.score, 2),
+      score_percentile: fmt(r.scorePercentile, 4),
+    })), RANKING_COLS);
   }
 
-  // Top-200 and superflex (tier-multiplier-weighted cross-position lists)
+  // Top-200 and superflex (tier-multiplier-weighted cross-position lists).
+  // Rows are copies of the position ranking rows, so tier and auction values
+  // carry over; score / analyst scores are the multiplier-adjusted values.
+  const dashCopies = [];
   for (const [type, name] of [['top200', 'top200'], ['2qb', 'superflex']]) {
     const rows = rankings.getTierMultiplierRankings(type);
     rows.sort((a, b) => a.rank - b.rank);
-    writeCsv(`ffb_udk_${name}.csv`, rows, BASE_COLS, sleeperPool, unmatched);
+    const outPath = writeCsv(`ffb_udk_${name}.csv`, rows.map((r) => ({
+      ...rankingRow(r),
+      score:          fmt(r.score, 2),
+      position_score: r.scoreFormatted,
+    })), CROSS_POSITION_COLS);
+    dashCopies.push(outPath);
+  }
+
+  // Raw per-analyst stat projections — the source data for everything above
+  const projRows = [...udkData.projections]
+    .sort((a, b) => a.name.localeCompare(b.name) || a.analyst_id - b.analyst_id)
+    .map((p) => ({
+      ...p,
+      position:      p.fantasy_position,
+      analyst:       (p.analyst_name || '').toLowerCase(),
+      adp_std:       p.adp ?? '',
+      adp_half_ppr:  p.adp_half_ppr ?? '',
+      adp_ppr:       p.adp_ppr ?? '',
+      adp_2qb:       p.adp_2qb ?? '',
+      birth_date:    (p.birth_date || '').slice(0, 10),
+      ffb_player_id: p.player_id,
+      sleeper_id:    matchSleeperId(p.name, p.fantasy_position, p.team),
+    }));
+  writeCsv('ffb_udk_projections.csv', projRows, PROJECTION_COLS);
+
+  // The top-200 / superflex lists double as Redraft Dash sources (declared in
+  // dbbp/redraft-dash/manifest.json; the dash reads rank/name/position/team
+  // and ignores the rest)
+  for (const src of dashCopies) {
+    const dest = path.join(DASH_DIR, path.basename(src));
+    fs.copyFileSync(src, dest);
+    console.log(`Copied to ${dest}`);
   }
 
   if (unmatched.size > 0) {

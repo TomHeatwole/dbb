@@ -16,9 +16,11 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
-// [dbbp subfolder, site/public/data subfolder]
+// [dbbp path, site/public/data path] — directories or single files
 const SYNC_TARGETS = [
   ['redraft-dash', 'redraft_dash'],
+  ['ffb-udk', 'redraft_dash/ffb-udk'],
+  ['lrdg_rankings.csv', 'redraft_dash/lrdg_rankings.csv'],
 ];
 
 const dbbpRoot = path.resolve(scriptDir, '../../dbbp');
@@ -37,7 +39,10 @@ for (const [srcName, destName] of SYNC_TARGETS) {
     continue;
   }
   fs.rmSync(dest, { recursive: true, force: true });
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.cpSync(src, dest, { recursive: true });
-  const count = fs.readdirSync(dest).length;
-  console.log(`[sync-dbbp-data] dbbp/${srcName} -> public/data/${destName} (${count} files)`);
+  const detail = fs.statSync(dest).isDirectory()
+    ? `${fs.readdirSync(dest).length} files`
+    : 'file';
+  console.log(`[sync-dbbp-data] dbbp/${srcName} -> public/data/${destName} (${detail})`);
 }

@@ -73,13 +73,25 @@ async function loadManifest() {
   }
 }
 
-/** Parse one source CSV (rank,player,position,team) into row objects. */
+/** First matching header index among aliases, or -1. */
+function headerIndex(header, aliases) {
+  for (const alias of aliases) {
+    const idx = header.indexOf(alias);
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+/**
+ * Parse one source CSV into row objects. Column aliases cover the different
+ * private sources: rank|overall_rank, player|name. Extra columns are ignored.
+ */
 function parseSourceCsv(text) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
   if (lines.length < 2) return [];
   const header = parseCsvRow(lines[0]).map((h) => h.toLowerCase());
-  const rankIdx = header.indexOf('rank');
-  const nameIdx = header.indexOf('player');
+  const rankIdx = headerIndex(header, ['rank', 'overall_rank']);
+  const nameIdx = headerIndex(header, ['player', 'name']);
   const posIdx = header.indexOf('position');
   const teamIdx = header.indexOf('team');
   if (rankIdx === -1 || nameIdx === -1) return [];

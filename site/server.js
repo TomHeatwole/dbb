@@ -99,6 +99,15 @@ async function main() {
     }
   });
 
+  app.get('/api/db-hello', async (req, res) => {
+    try {
+      const { default: handler } = await import('./api/db-hello.mjs');
+      return handler(req, res);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  });
+
   app.all('/api/exchange', async (req, res) => {
     try {
       const { default: handler } = await import('./api/exchange.mjs');

@@ -48,6 +48,7 @@ const server = http.createServer(async (req, res) => {
     '/api/draftkings-goal-method': 'draftkings-goal-method',
     '/api/kalshi-sop': 'kalshi-sop',
     '/api/exchange': 'exchange',
+    '/api/db-hello': 'db-hello',
   };
 
   const handlerName =
