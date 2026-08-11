@@ -16912,6 +16912,13 @@ body.modal-open {
   font-weight: 600;
 }
 
+.rdd-tier {
+  margin-left: 0.3rem;
+  font-size: 0.66rem;
+  color: #7f8a99;
+  vertical-align: 0.08rem;
+}
+
 .rdd-td-spread-hot {
   color: #ff9d7a;
   font-weight: 600;

@@ -123,9 +123,16 @@ function RedraftDash() {
         </p>
       </div>
 
-      <div className="rdd-privacy-note">
-        Sources load from <code>dbbp/</code> (private) at startup — they never ship with the public deploy.
-      </div>
+      {data.privateMissing ? (
+        <div className="rv-error">
+          Private <code>dbbp/</code> sources are unavailable in this deployment — showing public sources only.
+        </div>
+      ) : (
+        <div className="rdd-privacy-note">
+          Private sources load from <code>dbbp/</code> at startup — they never ship with the public deploy.
+          Public baselines (FP ECR, Gibbs, YAFSB SF ADP) ship with the site.
+        </div>
+      )}
 
       <div className="rv-table-wrap rdd-table-wrap">
         <table className="rv-table rdd-table">
@@ -161,6 +168,9 @@ function RedraftDash() {
                 {data.sources.map((s) => (
                   <td key={s.id} className="rv-td rdd-td-rank">
                     {formatRank(player.ranks[s.id])}
+                    {player.tiers[s.id] != null && (
+                      <span className="rdd-tier">T{player.tiers[s.id]}</span>
+                    )}
                   </td>
                 ))}
                 <td className="rv-td rdd-td-rank rdd-td-avg">{formatRank(player.avgRank)}</td>

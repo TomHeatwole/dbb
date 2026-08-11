@@ -20,6 +20,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const SYNC_TARGETS = [
   ['redraft-dash', 'redraft_dash'],
   ['ffb-udk', 'redraft_dash/ffb-udk'],
+  ['etr', 'redraft_dash/etr'],
   ['lrdg_rankings.csv', 'redraft_dash/lrdg_rankings.csv'],
 ];
 

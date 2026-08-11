@@ -13,9 +13,52 @@
  * spelling variants ("Marvin Harrison" vs "Marvin Harrison Jr.") land on the
  * same row.
  */
-import { findBestPlayerMatch } from '../utils/playerNameMatcher';
+import { findBestPlayerMatch, normalisePlayerName } from '../utils/playerNameMatcher';
 
 const MANIFEST_URL = '/data/redraft_dash/manifest.json';
+
+/** Dash is skill-position only — drop K/DST rows from full-board sources. */
+const DASH_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
+
+/**
+ * Public sources shipped with the dbb repo (site/public/data). Unlike the
+ * manifest sources these exist on the deployed site too, so the dash can
+ * render them even when the private dbbp data is absent.
+ */
+const PUBLIC_SOURCES = [
+  {
+    id: 'fp_ecr_half',
+    label: 'FP ECR Half',
+    trust: 'trusted',
+    format: '1qb',
+    url: '/data/fantasypros_ecr_half.csv',
+    description: 'FantasyPros half-PPR expert consensus (1QB) with tiers.',
+  },
+  {
+    id: 'fp_ecr_half_sf',
+    label: 'FP ECR SF',
+    trust: 'trusted',
+    format: 'superflex',
+    url: '/data/fantasypros_ecr_half_superflex.csv',
+    description: 'FantasyPros half-PPR superflex consensus with tiers — QBs rank much higher by design.',
+  },
+  {
+    id: 'yafsb_adp_half_sf',
+    label: 'YAFSB SF ADP',
+    trust: 'trusted',
+    format: 'superflex',
+    url: '/data/yafsb_adp_half_superflex.csv',
+    description: 'Real Sleeper redraft ADP (12-team, half-PPR, superflex) from YAFSB. Mean pick across recent matching drafts.',
+  },
+];
+
+const GIBBS_SOURCE = {
+  id: 'gibbs_implied',
+  label: 'Jacob Gibbs',
+  trust: 'trusted',
+  format: '1qb',
+  description: 'Implied full board: half-PPR ECR with Gibbs deltas (|diff| ≥ 2) substituted in.',
+};
 
 let dashDataPromise = null;
 
@@ -84,7 +127,8 @@ function headerIndex(header, aliases) {
 
 /**
  * Parse one source CSV into row objects. Column aliases cover the different
- * private sources: rank|overall_rank, player|name. Extra columns are ignored.
+ * sources: rank|overall_rank, player|name. Rows for positions outside
+ * QB/RB/WR/TE (kickers, defenses) are dropped. Tier is carried when present.
  */
 function parseSourceCsv(text) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
@@ -94,6 +138,7 @@ function parseSourceCsv(text) {
   const nameIdx = headerIndex(header, ['player', 'name']);
   const posIdx = header.indexOf('position');
   const teamIdx = header.indexOf('team');
+  const tierIdx = header.indexOf('tier');
   if (rankIdx === -1 || nameIdx === -1) return [];
 
   const rows = [];
@@ -102,11 +147,77 @@ function parseSourceCsv(text) {
     const rank = Number(cells[rankIdx]);
     const name = cells[nameIdx] || '';
     if (!name || !Number.isFinite(rank)) continue;
+    const position = posIdx !== -1 ? (cells[posIdx] || '').toUpperCase() : '';
+    if (position && !DASH_POSITIONS.has(position)) continue;
+    const tier = tierIdx !== -1 ? Number(cells[tierIdx]) : NaN;
     rows.push({
       rank,
       name,
-      position: posIdx !== -1 ? (cells[posIdx] || '').toUpperCase() : '',
+      position,
       team: teamIdx !== -1 ? (cells[teamIdx] || '').toUpperCase() : '',
+      tier: Number.isFinite(tier) ? tier : null,
+    });
+  }
+  return rows;
+}
+
+/**
+ * Build Jacob Gibbs' implied full board: start from the half-PPR ECR baseline
+ * and substitute his rank wherever the deltas file records a disagreement.
+ * Joined on sleeper_id with a normalised-name fallback.
+ */
+function buildGibbsImpliedRows(ecrText, deltasText) {
+  if (!ecrText || !deltasText) return [];
+
+  const deltaLines = deltasText.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (deltaLines.length < 2) return [];
+  const dHeader = parseCsvRow(deltaLines[0]).map((h) => h.toLowerCase());
+  const dName = dHeader.indexOf('player');
+  const dGibbs = dHeader.indexOf('gibbs_rank');
+  const dSleeper = dHeader.indexOf('sleeper_id');
+  if (dName === -1 || dGibbs === -1) return [];
+
+  const gibbsBySleeper = new Map();
+  const gibbsByName = new Map();
+  for (let i = 1; i < deltaLines.length; i += 1) {
+    const cells = parseCsvRow(deltaLines[i]);
+    const rank = Number(cells[dGibbs]);
+    if (!Number.isFinite(rank)) continue;
+    const sleeperId = dSleeper !== -1 ? cells[dSleeper] : '';
+    if (sleeperId) gibbsBySleeper.set(sleeperId, rank);
+    gibbsByName.set(normalisePlayerName(cells[dName] || ''), rank);
+  }
+
+  const ecrLines = ecrText.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (ecrLines.length < 2) return [];
+  const eHeader = parseCsvRow(ecrLines[0]).map((h) => h.toLowerCase());
+  const eRank = eHeader.indexOf('rank');
+  const eName = eHeader.indexOf('name');
+  const ePos = eHeader.indexOf('position');
+  const eTeam = eHeader.indexOf('team');
+  const eSleeper = eHeader.indexOf('sleeper_id');
+  if (eRank === -1 || eName === -1) return [];
+
+  const rows = [];
+  for (let i = 1; i < ecrLines.length; i += 1) {
+    const cells = parseCsvRow(ecrLines[i]);
+    const ecrRank = Number(cells[eRank]);
+    const name = cells[eName] || '';
+    if (!name || !Number.isFinite(ecrRank)) continue;
+    const position = ePos !== -1 ? (cells[ePos] || '').toUpperCase() : '';
+    if (position && !DASH_POSITIONS.has(position)) continue;
+
+    const sleeperId = eSleeper !== -1 ? cells[eSleeper] : '';
+    const gibbsRank = (sleeperId ? gibbsBySleeper.get(sleeperId) : undefined)
+      ?? gibbsByName.get(normalisePlayerName(name))
+      ?? null;
+
+    rows.push({
+      rank: gibbsRank ?? ecrRank,
+      name,
+      position,
+      team: eTeam !== -1 ? (cells[eTeam] || '').toUpperCase() : '',
+      tier: null,
     });
   }
   return rows;
@@ -128,6 +239,7 @@ function mergeSources(sourceRows) {
       );
       if (candidate) {
         candidate.ranks[sourceId] = row.rank;
+        if (row.tier != null) candidate.tiers[sourceId] = row.tier;
         // Prefer the longer name variant (usually includes the suffix)
         if (row.name.length > candidate.name.length) candidate.name = row.name;
         if (!candidate.position && row.position) candidate.position = row.position;
@@ -138,6 +250,7 @@ function mergeSources(sourceRows) {
           position: row.position,
           team: row.team,
           ranks: { [sourceId]: row.rank },
+          tiers: row.tier != null ? { [sourceId]: row.tier } : {},
         });
       }
     }
@@ -160,29 +273,52 @@ function computeAggregates(players) {
 
 async function loadRedraftDashDataUncached() {
   const manifest = await loadManifest();
-  if (!manifest) {
-    return { available: false, season: null, sources: [], players: [] };
-  }
-
-  const csvTexts = await Promise.all(
-    manifest.sources.map((s) => fetchStaticText(`/data/redraft_dash/${s.file}`))
-  );
 
   const sources = [];
   const sourceRows = [];
-  manifest.sources.forEach((source, i) => {
-    const text = csvTexts[i];
-    const rows = text ? parseSourceCsv(text) : [];
-    sources.push({
-      id: source.id,
-      label: source.label,
-      trust: source.trust === 'trusted' ? 'trusted' : 'untrusted',
-      description: source.description || '',
-      count: rows.length,
-      missing: !text,
+  const addSource = (meta, rows, missing) => {
+    sources.push({ ...meta, count: rows.length, missing });
+    if (rows.length) sourceRows.push({ sourceId: meta.id, rows });
+  };
+
+  // Private sources from the dbbp manifest (absent on public deploys)
+  if (manifest) {
+    const csvTexts = await Promise.all(
+      manifest.sources.map((s) => fetchStaticText(`/data/redraft_dash/${s.file}`))
+    );
+    manifest.sources.forEach((source, i) => {
+      const text = csvTexts[i];
+      addSource(
+        {
+          id: source.id,
+          label: source.label,
+          trust: source.trust === 'trusted' ? 'trusted' : 'untrusted',
+          // QB ranks are not comparable across formats — superflex sources
+          // rank QBs far higher. Analytics must group/convert by format.
+          format: source.format === 'superflex' ? 'superflex' : '1qb',
+          description: source.description || '',
+        },
+        text ? parseSourceCsv(text) : [],
+        !text,
+      );
     });
-    if (rows.length) sourceRows.push({ sourceId: source.id, rows });
+  }
+
+  // Public sources shipped with the dbb repo
+  const [publicTexts, gibbsDeltasText] = await Promise.all([
+    Promise.all(PUBLIC_SOURCES.map((s) => fetchStaticText(s.url))),
+    fetchStaticText('/data/gibbs_deltas.csv'),
+  ]);
+  PUBLIC_SOURCES.forEach((source, i) => {
+    const text = publicTexts[i];
+    const { url, ...meta } = source;
+    addSource(meta, text ? parseSourceCsv(text) : [], !text);
   });
+
+  // Derived: Gibbs implied board = ECR half baseline + his deltas
+  const ecrHalfText = publicTexts[PUBLIC_SOURCES.findIndex((s) => s.id === 'fp_ecr_half')];
+  const gibbsRows = buildGibbsImpliedRows(ecrHalfText, gibbsDeltasText);
+  addSource(GIBBS_SOURCE, gibbsRows, gibbsRows.length === 0);
 
   const players = mergeSources(sourceRows);
   computeAggregates(players);
@@ -190,7 +326,8 @@ async function loadRedraftDashDataUncached() {
 
   return {
     available: sourceRows.length > 0,
-    season: manifest.season ?? null,
+    privateMissing: !manifest,
+    season: manifest?.season ?? 2026,
     sources,
     players,
   };

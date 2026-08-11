@@ -41,6 +41,7 @@ const server = http.createServer(async (req, res) => {
     '/api/chat': 'chat',
     '/api/search': 'search',
     '/api/exchange': 'exchange',
+    '/api/onboard': 'onboard',
   };
 
   const getHandlers = {
@@ -49,6 +50,7 @@ const server = http.createServer(async (req, res) => {
     '/api/kalshi-sop': 'kalshi-sop',
     '/api/exchange': 'exchange',
     '/api/db-hello': 'db-hello',
+    '/api/me': 'me',
   };
 
   const handlerName =

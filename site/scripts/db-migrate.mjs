@@ -69,6 +69,23 @@ const statements = [
 
   `CREATE INDEX IF NOT EXISTS idx_exchange_fills_asset
      ON exchange_fills (asset, created_at DESC)`,
+
+  // App-level profile for authenticated users (auth accounts live in
+  // neon_auth.user, managed by Neon). A row here means the user completed
+  // onboarding with a Sleeper username verified against the Sleeper API.
+  // No FK into neon_auth: that schema is managed by Neon's auth service.
+  `CREATE TABLE IF NOT EXISTS app_users (
+    auth_user_id         UUID PRIMARY KEY,
+    sleeper_username     TEXT NOT NULL,
+    sleeper_user_id      TEXT NOT NULL UNIQUE,
+    sleeper_display_name TEXT,
+    sleeper_avatar       TEXT,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
+
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_app_users_sleeper_username
+     ON app_users (lower(sleeper_username))`,
 ];
 
 for (const stmt of statements) {

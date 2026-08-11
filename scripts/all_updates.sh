@@ -7,3 +7,5 @@ set -e
 ./scrape_adp
 ./scripts/update_player_ids.sh
 ./scripts/update_players.sh
+node ./scripts/process_gibbs_deltas.js
+node ./scripts/process_yafsb_adp.js

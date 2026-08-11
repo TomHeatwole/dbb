@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@neondatabase/neon-js": "^0.6.2-beta",
     "@neondatabase/serverless": "^1.1.0",
     "cra-template-pwa": "2.0.0",
     "firebase": "^10.14.1",
+    "jose": "^6.2.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-markdown": "^8.0.7",
