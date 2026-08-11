@@ -2,8 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import LoadingState from '../LoadingState';
 import PositionBadge from '../PositionBadge';
 import { loadRedraftDashData } from './redraftDashLoader';
+import RedraftDashTierView from './RedraftDashTierView';
 
 const POSITION_FILTERS = ['ALL', 'QB', 'RB', 'WR', 'TE'];
+
+const VIEWS = [
+  { id: 'table', label: 'Sources table' },
+  { id: 'tiers', label: 'View by tier' },
+];
 
 function formatRank(rank) {
   if (rank == null) return '—';
@@ -14,6 +20,7 @@ function RedraftDash() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [positionFilter, setPositionFilter] = useState('ALL');
+  const [view, setView] = useState('table');
   const [sortKey, setSortKey] = useState('avgRank');
   const [sortDir, setSortDir] = useState('asc');
 
@@ -98,6 +105,21 @@ function RedraftDash() {
     <div className="rv-root rdd-root">
       <div className="rv-controls">
         <div className="rv-field">
+          <span className="rv-label">View</span>
+          <div className="rdd-view-toggle">
+            {VIEWS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                className={`rdd-view-btn${view === v.id ? ' rdd-view-btn--active' : ''}`}
+                onClick={() => setView(v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rv-field">
           <span className="rv-label">Position</span>
           <select
             className="rv-select rv-select--narrow"
@@ -134,6 +156,11 @@ function RedraftDash() {
         </div>
       )}
 
+      {view === 'tiers' && (
+        <RedraftDashTierView players={data.customBoard || []} positionFilter={positionFilter} />
+      )}
+
+      {view === 'table' && (
       <div className="rv-table-wrap rdd-table-wrap">
         <table className="rv-table rdd-table">
           <thead>
@@ -182,6 +209,7 @@ function RedraftDash() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

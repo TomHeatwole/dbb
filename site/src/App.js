@@ -13,6 +13,7 @@ import TeamPage from './routes/TeamPage';
 import HomePage from './routes/HomePage';
 import OldHomePage from './routes/OldHomePage';
 import Sidebar from './layout/Sidebar';
+import SignOutControl from './layout/SignOutControl';
 import useViewportMode, { 
   useShowVerticalSidebar, 
   useShowHorizontalNav,
@@ -76,11 +77,19 @@ function MobileTopNav() {
             <Link to="/hwangai" className="mobile-top-home-card-link">HwangAI</Link>
             <a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer" className="mobile-top-home-card-link">Podcast</a>
             <Link to="/h2h" className="mobile-top-home-card-link">Head&nbsp;to&nbsp;Head</Link>
+            <SignOutControl className="mobile-top-home-card-link mobile-top-home-card-signout" />
           </div>
         )}
       </nav>
     </div>
   );
+}
+
+// `/` is not a real route. Keep the query string so an OAuth return to
+// `/?neon_auth_session_verifier=…` does not throw away the session.
+function UnknownRoute() {
+  const location = useLocation();
+  return <Navigate to={{ pathname: '/home/', search: location.search }} replace />;
 }
 
 function AppInner() {
@@ -157,7 +166,7 @@ function AppInner() {
       <Route path="/fredduel" element={<FredDuelPage />} />
       <Route path="/FredDuel/setup" element={<FredDuelSetupPage />} />
       
-      <Route path="*" element={<Navigate to="/home/" replace />} />
+      <Route path="*" element={<UnknownRoute />} />
     </Routes>
   );
 

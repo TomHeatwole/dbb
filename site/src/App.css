@@ -242,7 +242,7 @@
 .sidebar nav ul li {
   color: #5A3B1E;
   margin: 0.5rem 0; /* 8px -> 0.5rem */
-  font-size: 1.4em;
+  font-size: 1.33em;
 }
 .sidebar nav ul li a {
   color: #5A3B1E;
@@ -264,7 +264,7 @@
 }
 
 .sidebar .dropdown-list li {
-  font-size: 0.75em;
+  font-size: 0.71em;
   padding: 0;
   margin: 0.25rem 0; /* 4px -> 0.25rem */
   margin-left: 0;
@@ -483,7 +483,7 @@
 }
 .sidebar-dropdown-list-item {
   padding-left: 1.125rem; /* 18px -> 1.125rem */
-  font-size: 0.65rem;
+  font-size: 0.62rem;
 }
 
 /* --- TeamPage Tabs --- */
@@ -1939,6 +1939,14 @@
     gap: 1rem;
     margin-top: 0.2rem;
     padding-bottom: 0.1rem;
+  }
+
+  .mobile-top-home-card-signout {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
   }
 }
 
@@ -17193,6 +17201,315 @@ body.modal-open {
   font-weight: 600;
 }
 
+/* ── Redraft Dash: view toggle ───────────────────────────────────────────── */
+
+.rdd-view-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rdd-view-btn {
+  padding: 0.4rem 0.85rem;
+  background: transparent;
+  border: none;
+  color: #9aa4b0;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.rdd-view-btn + .rdd-view-btn {
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.rdd-view-btn:hover {
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rdd-view-btn--active {
+  background: rgba(255, 208, 128, 0.14);
+  color: #ffd080;
+  font-weight: 600;
+}
+
+/* ── Redraft Dash: tier view ─────────────────────────────────────────────── */
+
+.rddt-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 62rem;
+}
+
+.rddt-legend {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #8b95a3;
+  line-height: 1.7;
+}
+
+.rddt-legend-chip {
+  cursor: default;
+}
+
+.rddt-tier {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.rddt-tier-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.5rem 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.rddt-tier-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffd080;
+  letter-spacing: 0.02em;
+}
+
+.rddt-tier-meta {
+  font-size: 0.74rem;
+  color: #7f8a99;
+}
+
+.rddt-tier-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.rddt-player {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(11rem, 1fr) 9rem 7.6rem auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.45rem 0.9rem;
+}
+
+.rddt-player + .rddt-player {
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+.rddt-player:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rddt-player-rank {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #cfd6df;
+  text-align: right;
+}
+
+.rddt-player-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.rddt-player-name {
+  font-size: 0.9rem;
+  color: #e8ecf1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rddt-player-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: #7f8a99;
+}
+
+.rddt-player-posrank {
+  color: #9aa4b0;
+  font-weight: 600;
+}
+
+.rddt-player-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rddt-value-bar {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.rddt-value-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #a86e2f, #ffd080);
+}
+
+.rddt-value-num {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: #d9a066;
+  min-width: 2.6rem;
+  text-align: right;
+}
+
+.rddt-chips {
+  display: inline-flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.rddt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.14rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #9aa4b0;
+  cursor: help;
+}
+
+.rddt-chip-label {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.rddt-chip-rank {
+  font-variant-numeric: tabular-nums;
+}
+
+.rddt-chip-arrow {
+  font-size: 0.6rem;
+}
+
+.rddt-chip-arrow--up {
+  color: #7fd8a0;
+}
+
+.rddt-chip-arrow--down {
+  color: #ff9d7a;
+}
+
+.rddt-chip--high {
+  border-color: rgba(80, 200, 120, 0.35);
+  background: rgba(80, 200, 120, 0.1);
+  color: #7fd8a0;
+}
+
+.rddt-chip--high-strong {
+  border-color: rgba(80, 200, 120, 0.6);
+  background: rgba(80, 200, 120, 0.22);
+  color: #a4ecc0;
+}
+
+.rddt-chip--low {
+  border-color: rgba(255, 130, 90, 0.35);
+  background: rgba(255, 130, 90, 0.1);
+  color: #ff9d7a;
+}
+
+.rddt-chip--low-strong {
+  border-color: rgba(255, 130, 90, 0.6);
+  background: rgba(255, 130, 90, 0.22);
+  color: #ffbfa5;
+}
+
+.rddt-chip--missing {
+  opacity: 0.45;
+}
+
+.rddt-adp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  justify-self: end;
+  padding: 0.14rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #9aa4b0;
+  cursor: help;
+  white-space: nowrap;
+}
+
+.rddt-adp-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  opacity: 0.65;
+}
+
+.rddt-adp-num {
+  font-variant-numeric: tabular-nums;
+  color: #cfd6df;
+}
+
+.rddt-adp-delta {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.rddt-adp--high .rddt-adp-delta,
+.rddt-adp--high-strong .rddt-adp-delta {
+  color: #7fd8a0;
+}
+
+.rddt-adp--low .rddt-adp-delta,
+.rddt-adp--low-strong .rddt-adp-delta {
+  color: #ff9d7a;
+}
+
+.rddt-adp--high-strong {
+  border-color: rgba(80, 200, 120, 0.45);
+  background: rgba(80, 200, 120, 0.1);
+}
+
+.rddt-adp--low-strong {
+  border-color: rgba(255, 130, 90, 0.45);
+  background: rgba(255, 130, 90, 0.1);
+}
+
+.rddt-adp--missing {
+  opacity: 0.4;
+}
+
+@media (max-width: 760px) {
+  .rddt-player {
+    grid-template-columns: 2rem minmax(9rem, 1fr) 7.6rem;
+    grid-template-rows: auto auto;
+    row-gap: 0.3rem;
+  }
+
+  .rddt-player-value {
+    grid-column: 2;
+  }
+
+  .rddt-chips {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
 /* ── Logged-in user's team highlight ─────────────────────────────────────── */
 /* Green, not gold — gold already means playoffs. Matches existing up-trend greens. */
 
@@ -17213,6 +17530,86 @@ body.modal-open {
 .sidebar-dropdown-list-item--me a {
   color: #166534;
   font-weight: 700;
+}
+
+.sidebar-signout-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: #5A3B1E;
+  cursor: pointer;
+  font-size: 1.2em;
+}
+
+.sidebar-signout-btn:hover {
+  color: #61dafb;
+}
+
+.signout-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 12, 22, 0.62);
+  padding: 1rem;
+}
+
+.signout-confirm {
+  position: relative;
+  width: min(18rem, 100%);
+  padding: 1.35rem 1.2rem 1.1rem;
+  border-radius: 0.9rem;
+  background: #1a365d;
+  border: 1px solid rgba(74, 222, 128, 0.55);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  color: #e2e8f0;
+  text-align: center;
+}
+
+.signout-confirm-close {
+  appearance: none;
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  border: 0;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.85);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.signout-confirm-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0.2rem 0 0.9rem;
+}
+
+.signout-confirm-btn {
+  appearance: none;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(74, 222, 128, 0.6);
+  background: rgba(74, 222, 128, 0.16);
+  color: #ecfdf3;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.signout-confirm-btn:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.24);
+}
+
+.signout-confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .standings-row--me {

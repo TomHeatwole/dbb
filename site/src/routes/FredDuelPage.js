@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
-import { getAuthClient, getSessionToken } from '../utils/authClient';
+import { getAuthClient, getSessionToken, clearSessionCache } from '../utils/authClient';
 
 // FredDuel — future home of the exchange.
 // Auth flow: Google sign-in (Neon Managed Better Auth) → accounts without a
@@ -71,6 +71,7 @@ function FredDuelPage() {
 
   const signOut = async () => {
     await getAuthClient().signOut();
+    clearSessionCache();
     setMe(null);
   };
 

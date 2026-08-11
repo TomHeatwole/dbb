@@ -60,6 +60,20 @@ const GIBBS_SOURCE = {
   description: 'Implied full board: half-PPR ECR with Gibbs deltas (|diff| ≥ 2) substituted in.',
 };
 
+/**
+ * The formula inputs behind the DBB Custom board (dbb_custom_rankings.csv),
+ * in blend-weight order. `column` is the CSV column carrying that source's
+ * equivalent-SF rank for the player (1QB sources are pre-converted to the
+ * SF scale by the build script, so all five are directly comparable).
+ */
+export const CUSTOM_BOARD_SOURCES = [
+  { id: 'etr', label: 'ETR', column: 'etr_sf', weight: 30 },
+  { id: 'lrdg', label: 'LRDG', column: 'lrdg_eq', weight: 22.5 },
+  { id: 'gibbs', label: 'Gibbs', column: 'gibbs_eq', weight: 22.5 },
+  { id: 'ecr', label: 'ECR', column: 'ecr_sf', weight: 12.5 },
+  { id: 'ffb', label: 'FFB', column: 'udk_sf', weight: 12.5 },
+];
+
 let dashDataPromise = null;
 
 /** Quote-aware CSV row parser (same convention as the other loaders). */
@@ -224,6 +238,98 @@ function buildGibbsImpliedRows(ecrText, deltasText) {
 }
 
 /**
+ * Parse the DBB Custom board with its full column set (tiers, value score,
+ * per-source equivalent-SF ranks) for the tier view. Returns [] when the
+ * file is absent (public deploys).
+ */
+function parseCustomBoard(text) {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (lines.length < 2) return [];
+  const header = parseCsvRow(lines[0]).map((h) => h.toLowerCase());
+  const col = (name) => header.indexOf(name);
+  const idx = {
+    rank: col('rank'),
+    player: col('player'),
+    position: col('position'),
+    team: col('team'),
+    tier: col('tier'),
+    posRank: col('pos_rank'),
+    posTier: col('pos_tier'),
+    value: col('value'),
+    coverage: col('coverage'),
+    sleeperId: col('sleeper_id'),
+  };
+  if (idx.rank === -1 || idx.player === -1 || idx.tier === -1) return [];
+  const sourceIdx = CUSTOM_BOARD_SOURCES.map((s) => col(s.column));
+
+  const num = (cells, i) => {
+    if (i === -1) return null;
+    const v = Number(cells[i]);
+    return Number.isFinite(v) ? v : null;
+  };
+
+  const players = [];
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = parseCsvRow(lines[i]);
+    const rank = num(cells, idx.rank);
+    const name = cells[idx.player] || '';
+    if (!name || rank == null) continue;
+    const sourceRanks = {};
+    CUSTOM_BOARD_SOURCES.forEach((s, j) => {
+      sourceRanks[s.id] = num(cells, sourceIdx[j]);
+    });
+    players.push({
+      rank,
+      name,
+      position: idx.position !== -1 ? (cells[idx.position] || '').toUpperCase() : '',
+      team: idx.team !== -1 ? (cells[idx.team] || '').toUpperCase() : '',
+      tier: num(cells, idx.tier),
+      posRank: num(cells, idx.posRank),
+      posTier: num(cells, idx.posTier),
+      value: num(cells, idx.value),
+      coverage: num(cells, idx.coverage),
+      sleeperId: idx.sleeperId !== -1 ? (cells[idx.sleeperId] || '') : '',
+      adp: null, // attached later from the YAFSB SF ADP file
+      sourceRanks,
+    });
+  }
+  return players;
+}
+
+/**
+ * Attach Sleeper superflex ADP (YAFSB file) to the custom board so the tier
+ * view can show market cost vs our rank. ADP is display-only — it is never an
+ * input to the blend. Joined on sleeper_id with a normalised-name fallback.
+ */
+function attachAdpToCustomBoard(customBoard, yafsbText) {
+  if (!customBoard.length || !yafsbText) return;
+  const lines = yafsbText.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (lines.length < 2) return;
+  const header = parseCsvRow(lines[0]).map((h) => h.toLowerCase());
+  const adpIdx = header.indexOf('adp');
+  const nameIdx = header.indexOf('player');
+  const sleeperIdx = header.indexOf('sleeper_id');
+  if (adpIdx === -1 || nameIdx === -1) return;
+
+  const bySleeper = new Map();
+  const byName = new Map();
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = parseCsvRow(lines[i]);
+    const adp = Number(cells[adpIdx]);
+    if (!Number.isFinite(adp)) continue;
+    const sleeperId = sleeperIdx !== -1 ? cells[sleeperIdx] : '';
+    if (sleeperId) bySleeper.set(sleeperId, adp);
+    byName.set(normalisePlayerName(cells[nameIdx] || ''), adp);
+  }
+  for (const p of customBoard) {
+    p.adp = (p.sleeperId ? bySleeper.get(p.sleeperId) : undefined)
+      ?? byName.get(normalisePlayerName(p.name))
+      ?? null;
+  }
+}
+
+/**
  * Merge per-source rows into one player list. Sources are processed in
  * manifest order; each row either fuzzy-matches an existing player (name +
  * position/team hints) or starts a new one.
@@ -282,10 +388,13 @@ async function loadRedraftDashDataUncached() {
   };
 
   // Private sources from the dbbp manifest (absent on public deploys)
+  let customBoard = [];
   if (manifest) {
     const csvTexts = await Promise.all(
       manifest.sources.map((s) => fetchStaticText(`/data/redraft_dash/${s.file}`))
     );
+    const customIdx = manifest.sources.findIndex((s) => s.id === 'dbb_custom');
+    if (customIdx !== -1) customBoard = parseCustomBoard(csvTexts[customIdx]);
     manifest.sources.forEach((source, i) => {
       const text = csvTexts[i];
       addSource(
@@ -315,6 +424,10 @@ async function loadRedraftDashDataUncached() {
     addSource(meta, text ? parseSourceCsv(text) : [], !text);
   });
 
+  // Market ADP overlay for the custom board (display-only, not a blend input)
+  const yafsbText = publicTexts[PUBLIC_SOURCES.findIndex((s) => s.id === 'yafsb_adp_half_sf')];
+  attachAdpToCustomBoard(customBoard, yafsbText);
+
   // Derived: Gibbs implied board = ECR half baseline + his deltas
   const ecrHalfText = publicTexts[PUBLIC_SOURCES.findIndex((s) => s.id === 'fp_ecr_half')];
   const gibbsRows = buildGibbsImpliedRows(ecrHalfText, gibbsDeltasText);
@@ -330,6 +443,7 @@ async function loadRedraftDashDataUncached() {
     season: manifest?.season ?? 2026,
     sources,
     players,
+    customBoard,
   };
 }
 

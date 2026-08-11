@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData } from '../lookups/PlayerLookup';
 import { findMyRosterId, isMyRoster, useAuthUser } from '../hooks/useAuthUser';
+import SignOutControl from './SignOutControl';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
 
@@ -82,6 +83,9 @@ function Sidebar() {
               <li><Link to="/yoffs">Playoffs</Link></li>
               <li><a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a></li>
               <li><Link to="/hwangai">HwangAI</Link></li>
+              <li>
+                <SignOutControl className="sidebar-signout-btn" />
+              </li>
               <li>
                 <div
                   className="dropdown-toggle"

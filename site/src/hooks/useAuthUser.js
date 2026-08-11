@@ -19,8 +19,7 @@ export function AuthUserProvider({ children }) {
       }
       const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      const next = res.ok && data.user && data.user.onboarded ? data.user : null;
-      setUser(next);
+      setUser(res.ok ? (data.user || null) : null);
     } catch {
       setUser(null);
     } finally {
