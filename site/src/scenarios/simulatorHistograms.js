@@ -8,15 +8,15 @@
 export const SCORE_BUCKET_WIDTH = 25;
 
 export const SCORE_BIN_ORIGIN = {
-  reg: 1000,
+  reg: 0,
   playoff: 0,
-  total: 1000,
+  total: 0,
 };
 
 export const SCORE_BIN_COUNT = {
-  reg: 160,    // 1000–5000
+  reg: 200,    // 0–5000
   playoff: 48, // 0–1200
-  total: 180,  // 1000–5500
+  total: 220,  // 0–5500
 };
 
 function scoreBinIndex(value, origin, width, count) {
@@ -242,15 +242,15 @@ export function buildTeamFinishChartData(buckets, iterations) {
 export const SLOT_SCORE_BUCKET_WIDTH = 10;
 
 export const SLOT_SCORE_BIN_ORIGIN = {
-  reg: 80,
+  reg: 0,
   playoff: 0,
-  total: 80,
+  total: 0,
 };
 
 export const SLOT_SCORE_BIN_COUNT = {
-  reg: 45,     // 80–530
+  reg: 53,     // 0–530
   playoff: 40, // 0–400
-  total: 55,   // 80–630
+  total: 63,   // 0–630
 };
 
 function createSlotScoreHistogram(metric) {

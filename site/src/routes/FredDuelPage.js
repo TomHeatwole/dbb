@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { getAuthClient, getSessionToken, clearSessionCache } from '../utils/authClient';
+import { setAuthReturnTo } from '../utils/authReturn';
 
 // FredDuel — future home of the exchange.
 // Auth flow: Google sign-in (Neon Managed Better Auth) → accounts without a
@@ -22,6 +23,7 @@ function GoogleSignInButton() {
 
   const signIn = async () => {
     try {
+      setAuthReturnTo('/FredDuel');
       await getAuthClient().signIn.social({
         provider: 'google',
         callbackURL: `${window.location.origin}/auth/callback`,
@@ -75,9 +77,10 @@ function FredDuelPage() {
     setMe(null);
   };
 
-  // Signed in but no verified Sleeper account yet → finish setup first
+  // Signed in but no verified Sleeper account yet → generic setup (returns here after)
   if (!loading && me && !me.onboarded) {
-    return <Navigate to="/FredDuel/setup" replace />;
+    setAuthReturnTo('/FredDuel');
+    return <Navigate to="/account/setup" replace />;
   }
 
   let content;

@@ -96,7 +96,13 @@ function Sidebar() {
                 </div>
                 {teamsOpen && (
                   <ul className="dropdown-list sidebar-dropdown-list">
-                    {teams.map(team => {
+                    {[...teams]
+                      .sort((a, b) => {
+                        const aMine = isMyRoster(a.roster_id, myRosterId) ? 0 : 1;
+                        const bMine = isMyRoster(b.roster_id, myRosterId) ? 0 : 1;
+                        return aMine - bMine;
+                      })
+                      .map(team => {
                       const mine = isMyRoster(team.roster_id, myRosterId);
                       return (
                         <li

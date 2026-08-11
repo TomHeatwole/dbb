@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import HomeCard from './HomeCard';
 import { getAuthClient } from '../utils/authClient';
+import { setAuthReturnTo } from '../utils/authReturn';
 
 const SLEEPER_BOT = '/data/sleeper-bot.png';
 
@@ -12,6 +13,7 @@ function LoginHomeCard() {
     setError(null);
     setBusy(true);
     try {
+      setAuthReturnTo('/home/');
       const origin = window.location.origin;
       await getAuthClient().signIn.social({
         provider: 'google',

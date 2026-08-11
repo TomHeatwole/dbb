@@ -8,7 +8,7 @@ import YourTeamHomeCard from './YourTeamHomeCard';
 function AuthHomeCard() {
   const { user, loading } = useAuthUser();
   if (loading && getLoggedInTeamOverride() == null) return null;
-  if (user && !user.onboarded) return <Navigate to="/FredDuel/setup" replace />;
+  if (user && !user.onboarded) return <Navigate to="/account/setup" replace />;
   return (user || getLoggedInTeamOverride() != null) ? <YourTeamHomeCard /> : <LoginHomeCard />;
 }
 
