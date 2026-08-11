@@ -15,10 +15,8 @@ function LoginHomeCard() {
       const origin = window.location.origin;
       await getAuthClient().signIn.social({
         provider: 'google',
-        // Must be a real route. `/` is a catch-all redirect to `/home/` that
-        // would strip `?neon_auth_session_verifier=…` and leave us signed out.
-        callbackURL: `${origin}/home/`,
-        newUserCallbackURL: `${origin}/FredDuel/setup`,
+        callbackURL: `${origin}/auth/callback`,
+        newUserCallbackURL: `${origin}/auth/callback`,
       });
     } catch (e) {
       setError(e.message || 'Sign-in failed');

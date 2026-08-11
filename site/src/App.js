@@ -39,7 +39,9 @@ import SOPPage, { SOP2Page } from './routes/SOPPage';
 import DKPage from './routes/DKPage';
 import FredDuelPage from './routes/FredDuelPage';
 import FredDuelSetupPage from './routes/FredDuelSetupPage';
+import AuthCallbackPage from './routes/AuthCallbackPage';
 import { AuthUserProvider } from './hooks/useAuthUser';
+import RequireAdmin from './layout/RequireAdmin';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
@@ -126,7 +128,7 @@ function AppInner() {
       <Route path="/oldhome/" element={<OldHomePage />} />
       <Route path="/standings" element={<LeagueStandings />} />
       <Route path="/Scores/Week" element={<LeagueScores />} />
-      <Route path="/admincontrols" element={<AdminControls />} />
+      <Route path="/admincontrols" element={<RequireAdmin><AdminControls /></RequireAdmin>} />
       <Route path="/notes" element={<NotesPage />} />
       <Route path="/trades" element={<TradesPage />} />
 
@@ -135,13 +137,13 @@ function AppInner() {
         <Route path="/scenarios" element={<ScenariosPage />} />
       )}
       {isFeatureEnabled('FUTURE_SCENARIOS_ENABLED', MAIN_FEATURES) && (
-        <Route path="/future-scenarios" element={<FutureScenariosPage />} />
+        <Route path="/future-scenarios" element={<RequireAdmin><FutureScenariosPage /></RequireAdmin>} />
       )}
       {isFeatureEnabled('FUTURE_SCENARIOS_2_ENABLED', MAIN_FEATURES) && (
-        <Route path="/future-scenarios-2" element={<FutureScenarios2Page />} />
+        <Route path="/future-scenarios-2" element={<RequireAdmin><FutureScenarios2Page /></RequireAdmin>} />
       )}
       {isFeatureEnabled('SIMULATOR_ENABLED', MAIN_FEATURES) && (
-        <Route path="/simulator" element={<SimulatorPage />} />
+        <Route path="/simulator" element={<RequireAdmin><SimulatorPage /></RequireAdmin>} />
       )}
       {isFeatureEnabled('PLAYOFFS_ENABLED', MAIN_FEATURES) && (
         <Route path="/yoffs" element={<YoffsPage />} />
@@ -149,14 +151,13 @@ function AppInner() {
       {isFeatureEnabled('HEAD_TO_HEAD_ENABLED', MAIN_FEATURES) && (
         <Route path="/h2h" element={<H2hPage />} />
       )}
-      
-      {/* Sandbox is always available for development */}
-      <Route path="/sandbox" element={<SandboxPage />} />
-      <Route path="/valuesandbox" element={<ValueSandboxPage />} />
-      <Route path="/redraftdash" element={<RedraftDashPage />} />
+
+      <Route path="/sandbox" element={<RequireAdmin><SandboxPage /></RequireAdmin>} />
+      <Route path="/valuesandbox" element={<RequireAdmin><ValueSandboxPage /></RequireAdmin>} />
+      <Route path="/redraftdash" element={<RequireAdmin><RedraftDashPage /></RequireAdmin>} />
       <Route path="/hwangai" element={<HwangAIPage />} />
-      <Route path="/teams-2" element={<Teams2Page />} />
-      <Route path="/teams-2/:id" element={<Teams2Page />} />
+      <Route path="/teams-2" element={<RequireAdmin><Teams2Page /></RequireAdmin>} />
+      <Route path="/teams-2/:id" element={<RequireAdmin><Teams2Page /></RequireAdmin>} />
       <Route path="/SOP/*" element={<SOPPage />} />
       <Route path="/SOP2/*" element={<SOP2Page />} />
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
@@ -165,6 +166,7 @@ function AppInner() {
       <Route path="/FredDuel" element={<FredDuelPage />} />
       <Route path="/fredduel" element={<FredDuelPage />} />
       <Route path="/FredDuel/setup" element={<FredDuelSetupPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       
       <Route path="*" element={<UnknownRoute />} />
     </Routes>

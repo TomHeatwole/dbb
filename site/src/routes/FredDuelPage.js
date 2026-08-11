@@ -24,8 +24,8 @@ function GoogleSignInButton() {
     try {
       await getAuthClient().signIn.social({
         provider: 'google',
-        callbackURL: `${window.location.origin}/FredDuel`,
-        newUserCallbackURL: `${window.location.origin}/FredDuel/setup`,
+        callbackURL: `${window.location.origin}/auth/callback`,
+        newUserCallbackURL: `${window.location.origin}/auth/callback`,
       });
     } catch (e) {
       setError(e.message);
