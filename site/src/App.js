@@ -39,6 +39,7 @@ import SOPPage, { SOP2Page } from './routes/SOPPage';
 import DKPage from './routes/DKPage';
 import FredDuelPage from './routes/FredDuelPage';
 import FredDuelSetupPage from './routes/FredDuelSetupPage';
+import AccountSetupPage from './routes/AccountSetupPage';
 import AuthCallbackPage from './routes/AuthCallbackPage';
 import { AuthUserProvider } from './hooks/useAuthUser';
 import RequireAdmin from './layout/RequireAdmin';
@@ -166,6 +167,7 @@ function AppInner() {
       <Route path="/FredDuel" element={<FredDuelPage />} />
       <Route path="/fredduel" element={<FredDuelPage />} />
       <Route path="/FredDuel/setup" element={<FredDuelSetupPage />} />
+      <Route path="/account/setup" element={<AccountSetupPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       
       <Route path="*" element={<UnknownRoute />} />

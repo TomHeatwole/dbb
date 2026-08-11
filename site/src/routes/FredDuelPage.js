@@ -5,8 +5,8 @@ import { getAuthClient, getSessionToken, clearSessionCache } from '../utils/auth
 import { setAuthReturnTo } from '../utils/authReturn';
 
 // FredDuel — future home of the exchange.
-// Auth flow: Google sign-in (Neon Managed Better Auth) → accounts without a
-// verified Sleeper username are redirected to /FredDuel/setup to finish.
+// Auth flow: Google sign-in → unverified accounts finish at /account/setup,
+// then return here (return path stored in sessionStorage).
 
 const buttonStyle = {
   padding: '0.6rem 1.4rem',
@@ -71,6 +71,12 @@ function FredDuelPage() {
 
   useEffect(() => { refreshMe(); }, [refreshMe]);
 
+  useEffect(() => {
+    if (!loading && me && !me.onboarded) {
+      setAuthReturnTo('/FredDuel');
+    }
+  }, [loading, me]);
+
   const signOut = async () => {
     await getAuthClient().signOut();
     clearSessionCache();
@@ -79,7 +85,6 @@ function FredDuelPage() {
 
   // Signed in but no verified Sleeper account yet → generic setup (returns here after)
   if (!loading && me && !me.onboarded) {
-    setAuthReturnTo('/FredDuel');
     return <Navigate to="/account/setup" replace />;
   }
 

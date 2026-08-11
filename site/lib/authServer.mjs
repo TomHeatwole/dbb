@@ -8,9 +8,14 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { getSql } from './db.mjs';
 
+// Public Auth base URL (not a secret) — fallback for environments where the
+// env var was never configured (e.g. the Vercel project).
+const DEFAULT_NEON_AUTH_URL =
+  'https://ep-summer-cell-ay0cfaq6.neonauth.c-5.us-east-2.aws.neon.tech/neondb/auth';
+
 function getAuthBaseUrl() {
-  const url = process.env.NEON_AUTH_URL || process.env.REACT_APP_NEON_AUTH_URL;
-  if (!url) throw new Error('NEON_AUTH_URL / REACT_APP_NEON_AUTH_URL is not set');
+  const url =
+    process.env.NEON_AUTH_URL || process.env.REACT_APP_NEON_AUTH_URL || DEFAULT_NEON_AUTH_URL;
   return url.replace(/\/$/, '');
 }
 
