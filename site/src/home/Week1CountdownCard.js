@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import HomeCard from './HomeCard';
-
-// Hardcoded kickoff time: September 9th at 8:20PM ET.
-// For 2026, 8:20PM ET is 2026-09-10T00:20:00Z (EDT, UTC-4).
-const TARGET_KICKOFF_TS_MS = Date.parse('2026-09-10T00:20:00Z');
+import { CURRENT_YEAR, getWeek1KickoffMs, hasSeasonStarted } from '../utils/DateHelper';
+import { SEASON_START_DAY } from '../utils/global_constants';
 
 function formatTwo(n) {
   const v = Number(n);
@@ -22,33 +20,41 @@ function splitMs(ms) {
   return { days, hours, minutes, seconds };
 }
 
+function formatKickoffLabel(tsMs) {
+  if (!Number.isFinite(tsMs)) return '';
+  try {
+    const d = new Date(tsMs);
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' });
+    const month = d.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/New_York' });
+    const day = d.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'America/New_York' });
+    return `Kickoff: ${weekday} ${month} ${day}, ${CURRENT_YEAR} • 8:20 PM ET`;
+  } catch (_) {
+    return `Kickoff: ${SEASON_START_DAY}/${CURRENT_YEAR} • 8:20 PM ET`;
+  }
+}
+
 function Week1CountdownCard() {
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const targetMs = useMemo(() => getWeek1KickoffMs(), []);
+  const seasonStarted = hasSeasonStarted();
 
   useEffect(() => {
+    if (seasonStarted || !Number.isFinite(targetMs)) return undefined;
     const id = setInterval(() => {
       setNowMs(Date.now());
     }, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [seasonStarted, targetMs]);
 
-  const remainingMs = Math.max(0, TARGET_KICKOFF_TS_MS - nowMs);
+  const remainingMs = Number.isFinite(targetMs) ? Math.max(0, targetMs - nowMs) : 0;
   const parts = useMemo(() => splitMs(remainingMs), [remainingMs]);
-  const labelYear = useMemo(() => {
-    try {
-      const d = new Date(TARGET_KICKOFF_TS_MS);
-      return d.getUTCFullYear();
-    } catch (_) {
-      return 2026;
-    }
-  }, []);
 
-  const isDone = remainingMs <= 0;
-  // If kickoff time has already passed, don't render the card at all.
-  if (isDone) {
+  // Season underway (SEASON_START_DAY / CURRENT_WEEK_OVERRIDE) → hide countdown
+  if (seasonStarted || !Number.isFinite(targetMs) || remainingMs <= 0) {
     return null;
   }
-  const title = `⏱️ ${labelYear} Week 1 Countdown`;
+
+  const title = `⏱️ ${CURRENT_YEAR} Week 1 Countdown`;
 
   return (
     <HomeCard className="week1-countdown-card">
@@ -74,7 +80,7 @@ function Week1CountdownCard() {
             </div>
           </div>
           <div className="week1-countdown-kickoff">
-            Kickoff: Wed Sep 9, {labelYear} • 8:20 PM ET
+            {formatKickoffLabel(targetMs)}
           </div>
         </div>
       </div>
@@ -83,5 +89,3 @@ function Week1CountdownCard() {
 }
 
 export default Week1CountdownCard;
-
-

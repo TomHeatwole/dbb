@@ -32,7 +32,17 @@ function hasVerifierInUrl() {
 
 function readStoredToken() {
   try {
-    return window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+    // Prefer localStorage so login survives tab close / browser restart.
+    // Migrate any leftover sessionStorage value from older builds.
+    const fromLocal = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (fromLocal) return fromLocal;
+    const fromSession = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+    if (fromSession) {
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, fromSession);
+      window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      return fromSession;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -40,8 +50,13 @@ function readStoredToken() {
 
 function writeStoredToken(token) {
   try {
-    if (token) window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
-    else window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    if (token) {
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    } else {
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
   } catch {
     // private mode / disabled storage
   }
@@ -52,16 +67,31 @@ function extractToken(result) {
   return session?.token || session?.access_token || result?.data?.token || null;
 }
 
+/** True if JWT is missing/malformed or past exp (with a small skew buffer). */
+function isJwtExpired(token) {
+  try {
+    const parts = String(token).split('.');
+    if (parts.length < 2) return true;
+    const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+    const payload = JSON.parse(json);
+    if (!payload?.exp) return false;
+    return Date.now() >= (Number(payload.exp) * 1000) - 30_000;
+  } catch {
+    return true;
+  }
+}
+
 /** Current session JWT, for Authorization headers on API calls. Null if signed out.
- *  Short-lived (~15 min) and auto-refreshed by the SDK, so fetch it per request.
+ *  Short-lived (~15 min) and auto-refreshed by the SDK via getSession(), so we
+ *  always try a live session first and only fall back to a persisted JWT when
+ *  the SDK can't refresh (common on localhost when third-party auth cookies
+ *  are blocked).
  *
  *  The OAuth return URL carries a single-use `neon_auth_session_verifier`. Two
- *  getSession() calls (React Strict Mode, AuthUserProvider + page loader) would
- *  both send it — the second loses and the app looks signed out. We:
+ *  getSession() calls would both send it — the second loses. We:
  *   1. start the exchange as soon as this module loads, before React mounts
  *   2. coalesce concurrent callers onto one in-flight promise
- *   3. persist a successful JWT so a later getSession() after the verifier
- *      is stripped does not look signed-out. */
+ *   3. persist a successful JWT in localStorage so later loads still work */
 let _inflightSession = null;
 let _cachedToken = null;
 
@@ -97,11 +127,28 @@ if (typeof window !== 'undefined' && hasVerifierInUrl()) {
 }
 
 export async function getSessionToken() {
-  if (_cachedToken) return _cachedToken;
+  if (_cachedToken && !isJwtExpired(_cachedToken)) return _cachedToken;
+  if (_cachedToken && isJwtExpired(_cachedToken)) {
+    _cachedToken = null;
+  }
+
+  // Always attempt a live getSession() so the SDK can refresh the JWT.
+  // Critical on page reload — skipping this left us stuck on a stale token.
+  let liveToken = null;
+  try {
+    liveToken = await startSessionFetch();
+  } catch {
+    liveToken = null;
+  }
+  if (liveToken && !isJwtExpired(liveToken)) return liveToken;
+
+  // Fallback: persisted JWT (covers verifier-race aftermath and localhost
+  // cases where Neon session cookies aren't sent cross-site).
   const stored = readStoredToken();
-  if (stored) {
+  if (stored && !isJwtExpired(stored)) {
     _cachedToken = stored;
     return stored;
   }
-  return startSessionFetch();
+  if (stored) writeStoredToken(null);
+  return null;
 }

@@ -22,19 +22,9 @@ import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
-import { getCurrentNFLWeek, isCurrentWeekCompleted, getCompletedWeeksCount } from '../utils/DateHelper';
+import { getCurrentNFLWeek, isCurrentWeekCompleted, isPreSeason } from '../utils/DateHelper';
+import { HOME_OFFSEASON_OVERRIDE } from '../utils/global_constants';
 import { fetchRookieDraftComplete } from '../lookups/TeamLookup';
-
-// Optional manual override for the "current week" used by home cards.
-// - Set this to a positive integer (e.g. 10) to pretend the current week is 10.
-// - Leave as null to use the real current week from the underlying helpers.
-const ALT_HOME_WEEK_OVERRIDE = null;
-
-// Optional manual override for the off-season state.
-// - null: derive automatically (Week 17 completed => off-season)
-// - true: force off-season layout
-// - false: force normal in-season layout
-const ALT_HOME_OFFSEASON_OVERRIDE = null;
 
 function HomePage() {
   const isMobile = useIsMobile();
@@ -92,21 +82,18 @@ function HomePage() {
     );
   }
 
-  // Determine which week to pass to cards
-  const effectiveWeekOverride = ALT_HOME_WEEK_OVERRIDE != null 
-    ? ALT_HOME_WEEK_OVERRIDE 
-    : homePageCurrentWeek;
+  // Week comes from DateHelper (SEASON_START_DAY / CURRENT_WEEK_OVERRIDE in global_constants)
+  const effectiveWeekOverride = homePageCurrentWeek;
   const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
   // Off-season when: (1) Week 17 of current season is complete, OR (2) current season hasn't started yet
-  const isPreSeason = getCompletedWeeksCount() === 0;
   const autoOffSeason =
-    isPreSeason ||
+    isPreSeason() ||
     (Number.isFinite(Number(effectiveWeekOverride)) &&
     Number(effectiveWeekOverride) > 17);
   const isOffSeasonHome =
-    ALT_HOME_OFFSEASON_OVERRIDE == null
+    HOME_OFFSEASON_OVERRIDE == null
       ? autoOffSeason
-      : !!ALT_HOME_OFFSEASON_OVERRIDE;
+      : !!HOME_OFFSEASON_OVERRIDE;
   const showWeek1CountdownCard = isOffSeasonHome;
 
   // Off-season layout: separate "home cards set" once Week 17 is completed.
@@ -223,7 +210,6 @@ function HomePage() {
   // Right column:
   //  - Hot Team Alert
   //  - On the Bubble (if before week 14)
-  //  - Trending Free Agents
   //  - Week 14 Top Scores
   //  - Commissioner Note
 
@@ -242,7 +228,6 @@ function HomePage() {
           <div className="home-cards-column home-cards-column--right">
             <HotTeamCard currentWeekOverride={safeWeekForCards} />
             {bubbleCard}
-            <TrendingFreeAgentsCard />
             <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
             <HwangAICard />
             <CommissionerNoteCard />

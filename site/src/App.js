@@ -9,7 +9,6 @@ import {
 } from 'react-router-dom';
 
 import './App.css';
-import TeamPage from './routes/TeamPage';
 import HomePage from './routes/HomePage';
 import OldHomePage from './routes/OldHomePage';
 import Sidebar from './layout/Sidebar';
@@ -63,7 +62,7 @@ function MobileTopNav() {
           <Link to="/yoffs" className="mobile-top-home-card-link">
             Playoffs
           </Link>
-          <Link to="/oldhome/?view=teams" className="mobile-top-home-card-link">
+          <Link to="/teams" className="mobile-top-home-card-link">
             Teams
           </Link>
           <button
@@ -124,7 +123,8 @@ function AppInner() {
 
   const routes = (
     <Routes>
-      <Route path="/team/:id" element={<TeamPage />} />
+      <Route path="/team/:id" element={<Teams2Page />} />
+      <Route path="/teams" element={<Teams2Page />} />
       <Route path="/home/" element={<HomePage />} />
       <Route path="/oldhome/" element={<OldHomePage />} />
       <Route path="/standings" element={<LeagueStandings />} />
@@ -157,8 +157,7 @@ function AppInner() {
       <Route path="/valuesandbox" element={<RequireAdmin><ValueSandboxPage /></RequireAdmin>} />
       <Route path="/redraftdash" element={<RequireAdmin><RedraftDashPage /></RequireAdmin>} />
       <Route path="/hwangai" element={<HwangAIPage />} />
-      <Route path="/teams-2" element={<RequireAdmin><Teams2Page /></RequireAdmin>} />
-      <Route path="/teams-2/:id" element={<RequireAdmin><Teams2Page /></RequireAdmin>} />
+      <Route path="/teams-2" element={<Navigate to="/teams" replace />} />
       <Route path="/SOP/*" element={<SOPPage />} />
       <Route path="/SOP2/*" element={<SOP2Page />} />
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />

@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { CURRENT_YEAR, isPostSeasonPreDraft, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, isPostSeasonPreDraft, isPreSeason as isPreSeasonYear } from '../utils/DateHelper';
 import { LEAGUE_ID, PREVIOUS_YEARS } from '../utils/global_constants';
 import { fetchTradedPicks, fetchRookieDraftComplete, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
@@ -21,8 +21,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
   const [rookieDraftComplete, setRookieDraftComplete] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const isCurrentSeason = !urlYear || String(urlYear) === String(CURRENT_YEAR);
-  const completedWeeks = getCompletedWeeksCount(urlYear || CURRENT_YEAR);
-  const isPreSeason = isCurrentSeason && completedWeeks === 0;
+  const isPreSeason = isPreSeasonYear(urlYear || CURRENT_YEAR);
 
   const rosterIdToTeamInfo = useMemo(() => {
     return buildRosterIdToTeamInfoMap(rosters, users);
@@ -42,7 +41,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
     return () => { cancelled = true; };
   }, [isCurrentSeason, isPreSeason]);
 
-  // Load traded picks (same logic as TeamSummary)
+  // Load traded picks
   useEffect(() => {
     let cancelled = false;
     if (!isCurrentSeason || rookieDraftComplete === null) {
@@ -189,7 +188,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
     return <LoadingState label="Loading overview..." />;
   }
 
-  const positions = isCurrentSeason ? ['QB', 'RB', 'WR', 'TE'] : ['QB', 'RB', 'WR', 'TE'];
+  const positions = ['QB', 'RB', 'WR', 'TE'];
   const showPicks = isCurrentSeason && tradedPicks.length > 0;
 
   const modal = selectedPlayer ? (
@@ -240,33 +239,57 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
         ))}
       </div>
 
-      {/* Draft picks */}
-      {showPicks && (
-        <div className="teams2-picks-section">
-          <h3 className="teams2-picks-title">Draft Capital</h3>
-          <div className="teams2-picks-grid">
-            {tradedPicks.map((pick, i) => {
-              const season = pick.season || '';
-              const round = pick.round;
-              const via = pick.team_name;
-              let label = `${season} Round ${round}`;
-              if (draftOrder && pick.roster_id != null) {
-                const pickNum = draftOrder[String(pick.roster_id)];
-                if (Number.isFinite(pickNum)) {
-                  label = `${season} ${round}.${String(pickNum).padStart(2, '0')}`;
-                }
-              }
-              return (
-                <div key={i} className="teams2-pick-chip">
-                  <span className="teams2-pick-round">R{round}</span>
-                  <span className="teams2-pick-label">{label}</span>
-                  {via && <span className="teams2-pick-via">via {via}</span>}
+      {/* Draft picks: one column per year, with a round summary in the header */}
+      {showPicks && (() => {
+        const roundCounts = {};
+        for (const p of tradedPicks) {
+          const r = Number(p.round);
+          if (Number.isFinite(r)) roundCounts[r] = (roundCounts[r] || 0) + 1;
+        }
+        const ordinal = (r) => (r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : `${r}th`);
+        const summary = Object.keys(roundCounts)
+          .map(Number)
+          .sort((a, b) => a - b)
+          .map(r => `${roundCounts[r]} ${ordinal(r)}${roundCounts[r] === 1 ? '' : 's'}`)
+          .join(' · ');
+        const years = [...new Set(tradedPicks.map(p => String(p.season || '')))].filter(Boolean).sort();
+
+        return (
+          <div className="teams2-picks-section">
+            <div className="teams2-picks-header">
+              <h3 className="teams2-picks-title">Draft Capital</h3>
+              <span className="teams2-picks-summary">{summary}</span>
+            </div>
+            <div className="teams2-picks-years">
+              {years.map(yr => (
+                <div key={yr} className="teams2-picks-year-col">
+                  <div className="teams2-picks-year-header">{yr}</div>
+                  <div className="teams2-picks-year-list">
+                    {tradedPicks.filter(p => String(p.season) === yr).map((pick, i) => {
+                      const round = pick.round;
+                      const via = pick.team_name;
+                      let label = `Round ${round}`;
+                      if (draftOrder && pick.roster_id != null) {
+                        const pickNum = draftOrder[String(pick.roster_id)];
+                        if (Number.isFinite(pickNum)) {
+                          label = `${round}.${String(pickNum).padStart(2, '0')}`;
+                        }
+                      }
+                      return (
+                        <div key={i} className="teams2-pick-chip">
+                          <span className="teams2-pick-round">R{round}</span>
+                          <span className="teams2-pick-label">{label}</span>
+                          {via && <span className="teams2-pick-via">via {via}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {modal && createPortal(modal, document.body)}
     </div>

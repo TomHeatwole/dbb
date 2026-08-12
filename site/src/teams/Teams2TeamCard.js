@@ -15,6 +15,7 @@ function Teams2TeamCard({
   topPlayers,
   season,
   isMe,
+  preseason = false,
 }) {
   // Trend: compare last 3 weeks average to prior 3 weeks average
   let trendDirection = null; // 'up', 'down', or null
@@ -61,9 +62,9 @@ function Teams2TeamCard({
   const yearParam = season ? `?year=${season}` : '';
 
   return (
-    <Link to={`/teams-2/${rosterId}${yearParam}`} className={`teams2-card${isMe ? ' teams2-card--me' : ''}`}>
+    <Link to={`/team/${rosterId}${yearParam}`} className={`teams2-card${isMe ? ' teams2-card--me' : ''}`}>
       <div className="teams2-card-top">
-        <div className="teams2-card-rank">#{rank}</div>
+        {!preseason && <div className="teams2-card-rank">#{rank}</div>}
         <div className="teams2-card-identity">
           {avatarUrl && (
             <img src={avatarUrl} alt="" className="teams2-card-avatar" />
@@ -87,16 +88,18 @@ function Teams2TeamCard({
           </div>
         )}
       </div>
-      <div className="teams2-card-stats">
-        <div className="teams2-stat">
-          <span className="teams2-stat-value">{Math.round(totalPF)}</span>
-          <span className="teams2-stat-label">PF</span>
+      {!preseason && (
+        <div className="teams2-card-stats">
+          <div className="teams2-stat">
+            <span className="teams2-stat-value">{Math.round(totalPF)}</span>
+            <span className="teams2-stat-label">PF</span>
+          </div>
+          <div className="teams2-stat">
+            <span className="teams2-stat-value">{ppg}</span>
+            <span className="teams2-stat-label">PPG</span>
+          </div>
         </div>
-        <div className="teams2-stat">
-          <span className="teams2-stat-value">{ppg}</span>
-          <span className="teams2-stat-label">PPG</span>
-        </div>
-      </div>
+      )}
       {topPlayers && topPlayers.length > 0 && (
         <div className="teams2-card-players">
           {topPlayers.map((p, i) => (

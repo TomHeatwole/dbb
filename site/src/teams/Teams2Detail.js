@@ -3,7 +3,7 @@ import { useParams, Navigate, useSearchParams, Link } from 'react-router-dom';
 import { getPlayerInfo, fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { PREVIOUS_YEARS } from '../utils/global_constants';
-import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount, isPreSeason } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
@@ -286,7 +286,7 @@ function Teams2Detail() {
   }, [weeksParsedData, rosters, id, season, playersData, playerIdMap, playerSeasonTotalsMap]);
 
   if (!/^[1-9]\d*$/.test(id)) {
-    return <Navigate to="/teams-2" replace />;
+    return <Navigate to="/teams" replace />;
   }
 
   if (loading || !playersData || !playerIdMap || !rosters || !users) {
@@ -313,105 +313,111 @@ function Teams2Detail() {
   });
 
   const leftHeader = (
-    <div
-      ref={dropdownRef}
-      className="team-season-dropdown"
-      onClick={() => setSeasonDropdownOpen(open => !open)}
-    >
-      {season}
-      <span className="team-season-dropdown-arrow">{seasonDropdownOpen ? '▲' : '▼'}</span>
-      {seasonDropdownOpen && (
-        <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
-          {allYears.map(opt => (
-            <div
-              key={opt}
-              className={'team-season-dropdown-option' + (opt === season ? ' team-season-dropdown-option-active' : '')}
-              onClick={() => {
-                setSeason(opt);
-                setSeasonDropdownOpen(false);
-                updateQueryParams({ year: opt === CURRENT_YEAR ? null : opt, start_week: null, end_week: null, week: null });
-                if (teamScoresRef.current?.resetWeek) teamScoresRef.current.resetWeek(opt);
-              }}
-            >
-              {opt}
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="teams2-header-controls">
+      <Link
+        to={`/teams${season !== CURRENT_YEAR ? `?year=${season}` : ''}`}
+        className="teams2-back-btn"
+        aria-label="All teams"
+      >
+        <span className="teams2-back-btn-arrow">←</span>
+        <span className="teams2-back-btn-label">Teams</span>
+      </Link>
+      <div
+        ref={dropdownRef}
+        className="team-season-dropdown"
+        onClick={() => setSeasonDropdownOpen(open => !open)}
+      >
+        {season}
+        <span className="team-season-dropdown-arrow">{seasonDropdownOpen ? '▲' : '▼'}</span>
+        {seasonDropdownOpen && (
+          <div className="team-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
+            {allYears.map(opt => (
+              <div
+                key={opt}
+                className={'team-season-dropdown-option' + (opt === season ? ' team-season-dropdown-option-active' : '')}
+                onClick={() => {
+                  setSeason(opt);
+                  setSeasonDropdownOpen(false);
+                  updateQueryParams({ year: opt === CURRENT_YEAR ? null : opt, start_week: null, end_week: null, week: null });
+                  if (teamScoresRef.current?.resetWeek) teamScoresRef.current.resetWeek(opt);
+                }}
+              >
+                {opt}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 
-  const isPreSeason = getCompletedWeeksCount(season) === 0 && season === CURRENT_YEAR;
+  const preSeason = isPreSeason(season);
 
   return (
     <>
       <PageMeta title={`${teamName} - The Hwang Dynasty`} />
       <InfoPageWrapper leftHeader={leftHeader} title={null} subtitle={null}>
-        {/* Back link */}
-        <Link to={`/teams-2${season !== CURRENT_YEAR ? `?year=${season}` : ''}`} className="teams2-back-link">
-          ← All Teams
-        </Link>
-
-        {/* Hero header */}
+        {/* Hero header: identity + quick stats in one card */}
         <div className={`teams2-detail-hero${isMyRoster(id, myRosterId) ? ' teams2-detail-hero--me' : ''}`}>
-          {teamAvatarUrl && (
-            <img src={teamAvatarUrl} alt="" className="teams2-detail-avatar" />
-          )}
-          <div className="teams2-detail-hero-text">
-            <h1 className="teams2-detail-team-name">
-              {teamName}
-              {isMyRoster(id, myRosterId) ? <span className="me-chip">YOU</span> : null}
-            </h1>
-            <div className="teams2-detail-owner">
-              {userAvatarUrl && userAvatarUrl !== teamAvatarUrl && (
-                <img src={userAvatarUrl} alt="" className="teams2-detail-owner-avatar" />
+          <div className="teams2-detail-identity">
+            {teamAvatarUrl && (
+              <img src={teamAvatarUrl} alt="" className="teams2-detail-avatar" />
+            )}
+            <div className="teams2-detail-hero-text">
+              <h1 className="teams2-detail-team-name">
+                {teamName}
+                {isMyRoster(id, myRosterId) ? <span className="me-chip">YOU</span> : null}
+              </h1>
+              <div className="teams2-detail-owner">
+                {userAvatarUrl && userAvatarUrl !== teamAvatarUrl && (
+                  <img src={userAvatarUrl} alt="" className="teams2-detail-owner-avatar" />
+                )}
+                <span>{ownerName}</span>
+              </div>
+            </div>
+          </div>
+
+          {quickStats && !preSeason && (
+            <div className="teams2-stats-bar">
+              <div className="teams2-stats-item">
+                <span className="teams2-stats-value">#{quickStats.rank}</span>
+                <span className="teams2-stats-label">Standing</span>
+              </div>
+              <div className="teams2-stats-divider" />
+              <div className="teams2-stats-item">
+                <span className="teams2-stats-value">{quickStats.totalPF}</span>
+                <span className="teams2-stats-label">Total PF</span>
+              </div>
+              <div className="teams2-stats-divider" />
+              <div className="teams2-stats-item">
+                <span className="teams2-stats-value">{quickStats.ppg}</span>
+                <span className="teams2-stats-label">PPG</span>
+              </div>
+              {quickStats.highWeek && (
+                <>
+                  <div className="teams2-stats-divider" />
+                  <div className="teams2-stats-item">
+                    <span className="teams2-stats-value teams2-stats-high">{quickStats.highWeek.pts}</span>
+                    <span className="teams2-stats-label">High (W{quickStats.highWeek.week})</span>
+                  </div>
+                </>
               )}
-              <span>{ownerName}</span>
+              {quickStats.lowWeek && !isMobile && (
+                <>
+                  <div className="teams2-stats-divider" />
+                  <div className="teams2-stats-item">
+                    <span className="teams2-stats-value teams2-stats-low">{quickStats.lowWeek.pts}</span>
+                    <span className="teams2-stats-label">Low (W{quickStats.lowWeek.week})</span>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
+          )}
+
+          {preSeason && (
+            <div className="teams2-preseason-banner">Season hasn't started yet</div>
+          )}
         </div>
-
-        {/* Quick stats bar */}
-        {quickStats && !isPreSeason && (
-          <div className="teams2-stats-bar">
-            <div className="teams2-stats-item">
-              <span className="teams2-stats-value">#{quickStats.rank}</span>
-              <span className="teams2-stats-label">Standing</span>
-            </div>
-            <div className="teams2-stats-divider" />
-            <div className="teams2-stats-item">
-              <span className="teams2-stats-value">{quickStats.totalPF}</span>
-              <span className="teams2-stats-label">Total PF</span>
-            </div>
-            <div className="teams2-stats-divider" />
-            <div className="teams2-stats-item">
-              <span className="teams2-stats-value">{quickStats.ppg}</span>
-              <span className="teams2-stats-label">PPG</span>
-            </div>
-            {quickStats.highWeek && (
-              <>
-                <div className="teams2-stats-divider" />
-                <div className="teams2-stats-item">
-                  <span className="teams2-stats-value teams2-stats-high">{quickStats.highWeek.pts}</span>
-                  <span className="teams2-stats-label">High (W{quickStats.highWeek.week})</span>
-                </div>
-              </>
-            )}
-            {quickStats.lowWeek && !isMobile && (
-              <>
-                <div className="teams2-stats-divider" />
-                <div className="teams2-stats-item">
-                  <span className="teams2-stats-value teams2-stats-low">{quickStats.lowWeek.pts}</span>
-                  <span className="teams2-stats-label">Low (W{quickStats.lowWeek.week})</span>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {isPreSeason && (
-          <div className="teams2-preseason-banner">Season hasn't started yet</div>
-        )}
 
         {/* Pill tab bar */}
         <div className="teams2-tab-bar">

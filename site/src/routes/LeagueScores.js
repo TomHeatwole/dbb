@@ -11,6 +11,7 @@ import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from '.
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
+import MobileScaled from '../scores/MobileScaled';
 import MobileTeamScoreSummary from '../scores/MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
@@ -37,37 +38,6 @@ function getAvailableYearsAndDefault() {
 	const availableYears = isPreSeason ? prevYears : allYears;
 	const defaultSeason = isPreSeason && prevYears.length > 0 ? prevYears[0] : CURRENT_YEAR;
 	return { availableYears, defaultSeason, isPreSeason };
-}
-
-function MobileScaled({ children, className = 'mobile-standings-scale-70' }) {
-	const innerRef = useRef(null);
-	const [heightPx, setHeightPx] = useState(null);
-	// Align prevData baseline with first-loaded labels; intentionally
-	// depends only on coarse-grained keys to avoid excessive recalcs.
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	useEffect(() => {
-		const el = innerRef.current;
-		if (!el) return;
-		const compute = () => {
-			const rect = el.getBoundingClientRect();
-			setHeightPx(rect.height);
-		};
-		compute();
-		const ro = new ResizeObserver(() => compute());
-		ro.observe(el);
-		window.addEventListener('resize', compute);
-		return () => {
-			try { ro.disconnect(); } catch (_) {}
-			window.removeEventListener('resize', compute);
-		};
-	}, []);
-	return (
-		<div style={{ height: heightPx != null ? `${heightPx}px` : 'auto' }}>
-			<div ref={innerRef} className={className}>
-				{children}
-			</div>
-		</div>
-	);
 }
 
 function LeagueScores() {

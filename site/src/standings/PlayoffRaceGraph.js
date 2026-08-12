@@ -2,7 +2,10 @@ import React, { useMemo } from 'react';
 import { StartSitSort } from '../players/StartSitDecider';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import useIsMobile from '../hooks/useIsMobile';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea } from 'recharts';
+
+const ME_LINE_COLOR = '#4ade80';
 
 function computePlayoffRaceSeries(weeksParsedData, completedWeeks, rosterIds, playersData, playerIdMap, playerSeasonTotalsMap) {
   if (!Array.isArray(weeksParsedData)) {
@@ -99,6 +102,7 @@ function computeRoundedYDomain(data, seriesRosterIds) {
 
 export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rosterIdToName, rosterIds, playersData, playerIdMap }) {
   const isMobile = useIsMobile();
+  const myRosterId = useMyCurrentRosterId();
   function abbreviateTeamName(name) {
     if (!isMobile) { return name; }
     if (!name || typeof name !== 'string') { return name; }
@@ -121,6 +125,14 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
     [weeksParsedData, completedWeeks, rosterIdSet, playersData, playerIdMap, playerSeasonTotalsMap]
   );
 
+  // Draw "me" last so the solid green line sits on top of the dotted pack.
+  const orderedRosterIds = useMemo(() => {
+    if (myRosterId == null) return seriesRosterIds;
+    const others = seriesRosterIds.filter((rid) => !isMyRoster(rid, myRosterId));
+    const mine = seriesRosterIds.filter((rid) => isMyRoster(rid, myRosterId));
+    return [...others, ...mine];
+  }, [seriesRosterIds, myRosterId]);
+
   const [yMinRaw, yMaxRaw] = useMemo(() => computeRoundedYDomain(data, seriesRosterIds), [data, seriesRosterIds]);
   const yMin = Math.min(yMinRaw, 0);
   const yMax = Math.max(yMaxRaw, 0);
@@ -131,6 +143,9 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
     const rows = payload
       .slice()
       .sort((a, b) => {
+        const aMine = isMyRoster(a.dataKey, myRosterId);
+        const bMine = isMyRoster(b.dataKey, myRosterId);
+        if (aMine !== bMine) return aMine ? -1 : 1;
         const av = typeof a.value === 'number' ? a.value : -Infinity;
         const bv = typeof b.value === 'number' ? b.value : -Infinity;
         return bv - av;
@@ -138,15 +153,38 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
       .map((item) => {
         const ridKey = item.dataKey;
         const ridNum = Number(ridKey);
+        const mine = isMyRoster(ridNum, myRosterId);
         const fullName = (rosterIdToName && rosterIdToName[ridNum]) ? rosterIdToName[ridNum] : (item.name || `Team ${ridKey}`);
         const teamName = abbreviateTeamName(fullName);
         const cumulativeVal = item.payload ? item.payload[`c_${ridKey}`] : undefined;
         const signedDelta = typeof item.value === 'number' ? (item.value >= 0 ? `+${Math.round(item.value)}` : `${Math.round(item.value)}`) : '';
         const valueText = `${typeof cumulativeVal === 'number' ? Math.round(cumulativeVal) : ''} (${signedDelta})`;
         return (
-          <div key={ridKey} style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between', width: '100%', alignItems: 'baseline' }}>
-            <span style={{ color: item.color, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '0.5rem', minWidth: 0, maxWidth: isMobile ? '65%' : 'unset' }}>{teamName}</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{valueText}</span>
+          <div
+            key={ridKey}
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'space-between',
+              width: '100%',
+              alignItems: 'baseline',
+              opacity: mine ? 1 : 0.85,
+            }}
+          >
+            <span style={{
+              color: mine ? ME_LINE_COLOR : item.color,
+              fontWeight: mine ? 800 : 700,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              paddingRight: '0.5rem',
+              minWidth: 0,
+              maxWidth: isMobile ? '65%' : 'unset',
+            }}
+            >
+              {teamName}{mine ? ' · YOU' : ''}
+            </span>
+            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: mine ? 800 : 400 }}>{valueText}</span>
           </div>
         );
       });
@@ -208,25 +246,46 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
             <ReferenceArea y1={0} y2={Math.max(yMax, 0)} fill="#ffd700" fillOpacity={0.14} />
             <ReferenceArea y1={Math.min(yMin, 0)} y2={0} fill="#4fb7ff" fillOpacity={0.1} />
             <Tooltip content={renderTooltip} />
-            <Legend />
+            <Legend
+              formatter={(value, entry) => {
+                const rid = entry?.dataKey;
+                const mine = isMyRoster(rid, myRosterId);
+                return (
+                  <span style={{
+                    color: mine ? ME_LINE_COLOR : undefined,
+                    fontWeight: mine ? 800 : 500,
+                  }}
+                  >
+                    {value}{mine ? ' · YOU' : ''}
+                  </span>
+                );
+              }}
+            />
             {/* Solid baseline at 0.0 (no label) */}
             <ReferenceLine y={0} stroke="#ffffff" strokeWidth={1} ifOverflow="extendDomain" />
-            {seriesRosterIds.map((rid, idx) => (
-              <Line
-                key={rid}
-                type="monotone"
-                dataKey={rid}
-                name={rosterIdToName && rosterIdToName[rid] ? rosterIdToName[rid] : `Team ${rid}`}
-                stroke={palette[idx % palette.length]}
-                dot={false}
-                strokeWidth={2}
-                strokeDasharray="6 6"
-                isAnimationActive={false}
-              />
-            ))}
+            {orderedRosterIds.map((rid) => {
+              const mine = isMyRoster(rid, myRosterId);
+              const baseName = rosterIdToName && rosterIdToName[rid] ? rosterIdToName[rid] : `Team ${rid}`;
+              // Palette index from original series order so colors stay stable when "me" moves last
+              const paletteIdx = Math.max(0, seriesRosterIds.indexOf(rid));
+              return (
+                <Line
+                  key={rid}
+                  type="monotone"
+                  dataKey={rid}
+                  name={baseName}
+                  stroke={mine ? ME_LINE_COLOR : palette[paletteIdx % palette.length]}
+                  dot={false}
+                  strokeWidth={mine ? 3.5 : 2}
+                  strokeDasharray={mine ? undefined : '6 6'}
+                  strokeOpacity={mine ? 1 : 0.72}
+                  isAnimationActive={false}
+                />
+              );
+            })}
           </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
   );
-} 
+}

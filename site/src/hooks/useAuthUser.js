@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState, createContext } from 'react';
-import { getSessionToken } from '../utils/authClient';
+import { getSessionToken, clearSessionCache } from '../utils/authClient';
 import { getLoggedInTeamOverride } from '../debug/loggedInTeam';
 
 // Shared signed-in user for the whole app. Pages use this to highlight the
@@ -12,13 +12,25 @@ export function AuthUserProvider({ children }) {
 
   const refresh = useCallback(async () => {
     try {
-      const token = await getSessionToken();
+      let token = await getSessionToken();
       if (!token) {
         setUser(null);
         return;
       }
-      const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      let res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+      let data = await res.json();
+      // Stored JWT can look fine client-side but be rejected server-side. Clear
+      // and retry once so the SDK can refresh via its session cookie.
+      if (res.ok && !data.user) {
+        clearSessionCache();
+        token = await getSessionToken();
+        if (!token) {
+          setUser(null);
+          return;
+        }
+        res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+        data = await res.json();
+      }
       setUser(res.ok ? (data.user || null) : null);
     } catch {
       setUser(null);

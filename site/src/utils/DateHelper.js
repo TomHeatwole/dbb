@@ -1,7 +1,12 @@
 // DateHelper.js
 // Utility to get the current year as a string
 
-import { SEASON_START_DAY, PREVIOUS_CURRENT_WEEK_OVERRIDE, PREVIOUS_YEARS } from './global_constants';
+import {
+  SEASON_START_DAY,
+  CURRENT_WEEK_OVERRIDE,
+  PREVIOUS_CURRENT_WEEK_OVERRIDE,
+  PREVIOUS_YEARS,
+} from './global_constants';
 import { readAdminBlob } from './database';
 
 function getClockYear() {
@@ -32,19 +37,40 @@ export function getCurrentYear() {
 
 export const CURRENT_YEAR = getCurrentYear();
 
+function parseSeasonStart(targetYear) {
+  const [month, day] = String(SEASON_START_DAY || '09/09').split('/').map(Number);
+  return new Date(Number(targetYear), month - 1, day);
+}
+
+function clampWeek(n, min, max) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return null;
+  return Math.max(min, Math.min(max, v));
+}
+
+/** Debug override for the season being queried, if any. */
+function weekOverrideForSeason(season) {
+  const isCurrent =
+    season == null || String(season) === String(getCurrentYear());
+  if (isCurrent && CURRENT_WEEK_OVERRIDE != null) {
+    return clampWeek(CURRENT_WEEK_OVERRIDE, 1, 17);
+  }
+  const isPrevious = season && String(season) !== String(getCurrentYear());
+  if (isPrevious && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
+    return clampWeek(PREVIOUS_CURRENT_WEEK_OVERRIDE, 1, 17);
+  }
+  return null;
+}
+
 export function getCurrentNFLWeek(season = null) {
-  // SEASON_START_DAY is MM/DD
+  const override = weekOverrideForSeason(season);
+  if (override != null) return override;
+
   const now = new Date();
   const effectiveCurrentSeasonYear = Number(getCurrentYear());
   const targetYear = season ? Number(season) : effectiveCurrentSeasonYear;
-  const [month, day] = SEASON_START_DAY.split('/').map(Number);
-  const seasonStart = new Date(targetYear, month - 1, day);
-
-  // If we're looking at a previous season and an override is set, use it
+  const seasonStart = parseSeasonStart(targetYear);
   const isPreviousSeason = season && String(season) !== String(getCurrentYear());
-  if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
-    return Math.max(1, Math.min(17, Number(PREVIOUS_CURRENT_WEEK_OVERRIDE)));
-  }
 
   // If before season start (and no override), return 1
   if (!isPreviousSeason && now < seasonStart) return 1;
@@ -58,17 +84,18 @@ export function getCurrentNFLWeek(season = null) {
 
 // Number of weeks for which Tuesday has passed relative to each week start (Thu)
 export function getCompletedWeeksCount(season = null) {
+  const override = weekOverrideForSeason(season);
+  if (override != null) {
+    // Debug pin: treat override as both current week and completed-weeks snapshot
+    // so preseason checks (=== 0) and in-season UIs flip together.
+    return clampWeek(override, 0, 17);
+  }
+
   const now = new Date();
   const effectiveCurrentSeasonYear = Number(getCurrentYear());
   const targetYear = season ? Number(season) : effectiveCurrentSeasonYear;
-  const [month, day] = SEASON_START_DAY.split('/').map(Number);
-  const seasonStart = new Date(targetYear, month - 1, day);
-
+  const seasonStart = parseSeasonStart(targetYear);
   const isPreviousSeason = season && String(season) !== String(getCurrentYear());
-  if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
-    // completed weeks equals override (cap at 17)
-    return Math.max(0, Math.min(17, Number(PREVIOUS_CURRENT_WEEK_OVERRIDE)));
-  }
 
   if (!isPreviousSeason && now < seasonStart) {
     return 0;
@@ -83,19 +110,33 @@ export function getCompletedWeeksCount(season = null) {
   return Math.max(0, Math.min(17, raw));
 }
 
+/** True when the active season has not started yet (completed weeks === 0). Past seasons are never "preseason". */
+export function isPreSeason(season = null) {
+  const target = season == null ? CURRENT_YEAR : season;
+  if (String(target) !== String(CURRENT_YEAR)) return false;
+  return getCompletedWeeksCount(CURRENT_YEAR) === 0;
+}
+
+/** True once SEASON_START_DAY (or CURRENT_WEEK_OVERRIDE) says the active season is underway. */
+export function hasSeasonStarted(season = null) {
+  return !isPreSeason(season);
+}
+
 // Whether the current week (per getCurrentNFLWeek) has completed (i.e., Tuesday has passed)
 export function isCurrentWeekCompletedByDate(season = null) {
+  const override = weekOverrideForSeason(season);
+  if (override != null) {
+    // Debug pin: treat as a static completed snapshot for previous seasons;
+    // for current-season override, treat the pinned week as still in progress.
+    const isPrevious = season && String(season) !== String(getCurrentYear());
+    return !!isPrevious;
+  }
+
   const now = new Date();
   const effectiveCurrentSeasonYear = Number(getCurrentYear());
   const targetYear = season ? Number(season) : effectiveCurrentSeasonYear;
-  const [month, day] = SEASON_START_DAY.split('/').map(Number);
-  const seasonStart = new Date(targetYear, month - 1, day);
-
+  const seasonStart = parseSeasonStart(targetYear);
   const isPreviousSeason = season && String(season) !== String(getCurrentYear());
-  if (isPreviousSeason && PREVIOUS_CURRENT_WEEK_OVERRIDE != null) {
-    // completed weeks equals override; current week considered completed if override advanced beyond start+5 of that week
-    return true; // previous seasons are static with override, treat as completed snapshot
-  }
 
   if (!isPreviousSeason && now < seasonStart) {
     return false;
@@ -172,21 +213,32 @@ export function isCurrentYearRookieDraftDone(rookieDraftComplete = false) {
 export function getFuturePickSeasonRange(rookieDraftComplete = false) {
   const currentYearNum = Number(CURRENT_YEAR);
   const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-  const isPreSeason = completedWeeks === 0;
+  const preSeason = completedWeeks === 0;
   const currentYearDraftDone = isCurrentYearRookieDraftDone(rookieDraftComplete);
   const minSeason = currentYearNum + (currentYearDraftDone ? 1 : 0);
   return {
     minSeason,
     maxSeason: minSeason + 2,
-    isPreSeason,
+    isPreSeason: preSeason,
     currentYearDraftDone,
   };
 }
 
 export function getNextDraftYear(rookieDraftComplete = false) {
-  const { isPreSeason, currentYearDraftDone } = getFuturePickSeasonRange(rookieDraftComplete);
-  if (isPreSeason && !currentYearDraftDone) return String(CURRENT_YEAR);
+  const { isPreSeason: preSeason, currentYearDraftDone } = getFuturePickSeasonRange(rookieDraftComplete);
+  if (preSeason && !currentYearDraftDone) return String(CURRENT_YEAR);
   return String(Number(CURRENT_YEAR) + 1);
+}
+
+/** Kickoff instant for Week 1 countdown — SEASON_START_DAY @ 8:20 PM ET in CURRENT_YEAR. */
+export function getWeek1KickoffMs() {
+  const [month, day] = String(SEASON_START_DAY || '09/09').split('/').map(Number);
+  const y = Number(CURRENT_YEAR);
+  const mm = String(month).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  // Sep kickoffs are on EDT (UTC-4). Fixed offset keeps the countdown deterministic.
+  const ts = Date.parse(`${y}-${mm}-${dd}T20:20:00-04:00`);
+  return Number.isFinite(ts) ? ts : null;
 }
 
 // Decide if we should poll current week's data based on ESPN scoreboard json

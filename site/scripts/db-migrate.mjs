@@ -30,45 +30,57 @@ if (!process.env.DATABASE_URL) {
 const sql = neon(process.env.DATABASE_URL);
 
 const statements = [
-  `CREATE TABLE IF NOT EXISTS exchange_users (
-    id         SERIAL PRIMARY KEY,
-    username   TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  // FredDuel exchange: offers are sportsbook-style lays. The creator quotes an
+  // American line (from the taker's perspective) and caps their own loss with
+  // max_exposure. Takes decrement remaining_exposure; the offer row survives
+  // partial fills so linked bets show as "action" on it.
+  `CREATE TABLE IF NOT EXISTS fd_offers (
+    id                 SERIAL PRIMARY KEY,
+    creator_user_id    UUID NOT NULL,
+    creator_name       TEXT NOT NULL,
+    market_kind        TEXT NOT NULL CHECK (market_kind IN ('season', 'weekly', 'custom')),
+    market             JSONB,
+    title              TEXT NOT NULL,
+    description        TEXT NOT NULL DEFAULT '',
+    line               INTEGER NOT NULL CHECK (line >= 100 OR line <= -100),
+    max_exposure       NUMERIC(12,2) NOT NULL CHECK (max_exposure > 0),
+    remaining_exposure NUMERIC(12,2) NOT NULL CHECK (remaining_exposure >= 0),
+    min_take           NUMERIC(12,2) NOT NULL DEFAULT 1 CHECK (min_take >= 1),
+    status             TEXT NOT NULL DEFAULT 'open'
+                       CHECK (status IN ('open', 'filled', 'cancelled', 'expired')),
+    expires_at         TIMESTAMPTZ NOT NULL,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
 
-  `CREATE TABLE IF NOT EXISTS exchange_orders (
+  `CREATE INDEX IF NOT EXISTS idx_fd_offers_status
+     ON fd_offers (status, expires_at)`,
+
+  `CREATE INDEX IF NOT EXISTS idx_fd_offers_creator
+     ON fd_offers (creator_user_id, created_at DESC)`,
+
+  // A live bet = an accepted slice of an offer. creator_risk is what the
+  // offerer loses (and the taker wins) if the bet hits; taker_stake is the
+  // reverse. Names are denormalized so tickets render without joins.
+  `CREATE TABLE IF NOT EXISTS fd_bets (
     id              SERIAL PRIMARY KEY,
-    user_id         INTEGER NOT NULL REFERENCES exchange_users(id),
-    side            TEXT NOT NULL CHECK (side IN ('buy', 'sell')),
-    asset           TEXT NOT NULL,
-    price           NUMERIC(12,2) NOT NULL CHECK (price > 0),
-    quantity        INTEGER NOT NULL CHECK (quantity > 0),
-    quantity_filled INTEGER NOT NULL DEFAULT 0
-                    CHECK (quantity_filled >= 0 AND quantity_filled <= quantity),
-    status          TEXT NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('open', 'filled', 'cancelled')),
+    offer_id        INTEGER NOT NULL REFERENCES fd_offers(id),
+    creator_user_id UUID NOT NULL,
+    creator_name    TEXT NOT NULL,
+    taker_user_id   UUID NOT NULL,
+    taker_name      TEXT NOT NULL,
+    line            INTEGER NOT NULL,
+    taker_stake     NUMERIC(12,2) NOT NULL CHECK (taker_stake > 0),
+    creator_risk    NUMERIC(12,2) NOT NULL CHECK (creator_risk > 0),
+    status          TEXT NOT NULL DEFAULT 'live'
+                    CHECK (status IN ('live', 'settled', 'void')),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
 
-  `CREATE INDEX IF NOT EXISTS idx_exchange_orders_book
-     ON exchange_orders (asset, status, side)`,
+  `CREATE INDEX IF NOT EXISTS idx_fd_bets_offer
+     ON fd_bets (offer_id)`,
 
-  `CREATE INDEX IF NOT EXISTS idx_exchange_orders_user
-     ON exchange_orders (user_id, status)`,
-
-  // Records each match between a buy and a sell order (for when matching is added)
-  `CREATE TABLE IF NOT EXISTS exchange_fills (
-    id            SERIAL PRIMARY KEY,
-    buy_order_id  INTEGER NOT NULL REFERENCES exchange_orders(id),
-    sell_order_id INTEGER NOT NULL REFERENCES exchange_orders(id),
-    asset         TEXT NOT NULL,
-    price         NUMERIC(12,2) NOT NULL,
-    quantity      INTEGER NOT NULL CHECK (quantity > 0),
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
-  )`,
-
-  `CREATE INDEX IF NOT EXISTS idx_exchange_fills_asset
-     ON exchange_fills (asset, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_fd_bets_taker
+     ON fd_bets (taker_user_id, created_at DESC)`,
 
   // App-level profile for authenticated users (auth accounts live in
   // neon_auth.user, managed by Neon). A row here means the user completed

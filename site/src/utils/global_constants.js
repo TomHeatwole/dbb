@@ -16,10 +16,26 @@ export const PREVIOUS_YEARS = parsedSettings.PREVIOUS_YEARS || {};
 export const PREVIOUS_ROSTER_OVERRIDES = parsedSettings.PREVIOUS_ROSTER_OVERRIDES || {};
 export const LOGO_LETTER_OVERLAY = parsedSettings.LOGO_LETTER_OVERLAY || {};
 export const PLAYER_ESPN_MAP_OVERRIDES = parsedSettings.PLAYER_ESPN_MAP_OVERRIDES || {};
-export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/09";
+export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/12";
 
-// Only for lcoal override while developing
+/* LOCAL DEBUG OVERRIDES — leave null before committing.
+ * These are the knobs that DateHelper (and therefore home, teams-2, scores,
+ * standings, etc.) all read when deciding preseason / current week / offseason.
+ *
+ * CURRENT_WEEK_OVERRIDE:
+ *   Force the active season's NFL week (1–17). When set, getCurrentNFLWeek and
+ *   getCompletedWeeksCount for CURRENT_YEAR use this instead of SEASON_START_DAY math.
+ *   Example: 8 → pretend we're in week 8 (in-season UI everywhere).
+ *
+ * PREVIOUS_CURRENT_WEEK_OVERRIDE:
+ *   Same idea, but only when browsing a previous season year.
+ *
+ * HOME_OFFSEASON_OVERRIDE:
+ *   null = derive (preseason OR week > 17). true/false = force home off-/in-season layout.
+ */
+export const CURRENT_WEEK_OVERRIDE = null;
 export const PREVIOUS_CURRENT_WEEK_OVERRIDE = null;
+export const HOME_OFFSEASON_OVERRIDE = null;
 
 
 // Firebase configuration values (non-secret parts)

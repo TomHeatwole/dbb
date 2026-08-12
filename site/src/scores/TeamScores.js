@@ -9,7 +9,8 @@ import WeekSelector from './WeekSelector';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam, isScoreboardWeekComplete } from './GamesParser';
-import TeamScoresTables from './TeamScoresTables';
+import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
+import MobileScaled from './MobileScaled';
 import useIsMobile from '../hooks/useIsMobile';
 import { createLiveScoresPoller } from '../utils/livePolling';
 
@@ -45,6 +46,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const urlWeek = parseInt(searchParams.get('week'), 10);
   const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : getDefaultDisplayWeek(searchParams.get('year'));
   const [week, setWeek] = useState(initialWeek);
+  const [benchOpen, setBenchOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const { id } = useParams();
@@ -76,9 +78,10 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     return () => document.removeEventListener('mousedown', handleClick);
   }, [dropdownOpen]);
 
-  // Close dropdown on week change (arrow, dropdown, or query param)
+  // Close dropdown (and collapse bench) on week change (arrow, dropdown, or query param)
   useEffect(() => {
     setDropdownOpen(false);
+    setBenchOpen(false);
   }, [week]);
 
   // Update query param when week changes
@@ -387,9 +390,9 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   }
 
   return (
-    <div className="team-scores-container team-scores-container--team-page">
+    <div className="team-scores-container team-scores-container--modern">
       <WeekSelector week={week} onChange={handleSelect} />
-      
+
       {isActiveWeek && (
         <div className="team-scores-activity-banner">
           <span className="standings-activity-item">
@@ -402,18 +405,32 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
       )}
 
       {weekBreakdown ? (
-        <TeamScoresTables
-          weekBreakdown={weekBreakdown}
-          totalsPlacement="top"
-          playersData={playersDataForWeek}
-          playerIdMap={playerIdMap}
-          playerGameLabels={playerGameLabels}
-          isActiveWeek={isActiveWeek}
-          injuriesMap={injuriesMap}
-          showCurrentInjury={showCurrentInjury}
-          playerHighlightMap={{}}
-          playersTeamMap={playersTeamMap}
-        />
+        <div className="standings-row teams2-scores-row">
+          <div className="teams2-scores-row-body">
+            {(() => {
+              const breakdown = (
+                <LeagueScoresTeamBreakdown
+                  weekBreakdown={weekBreakdown}
+                  week={week}
+                  rosterId={rosterId}
+                  benchOpen={benchOpen}
+                  onToggleBench={() => setBenchOpen(open => !open)}
+                  benchTotal={weekBreakdown.benchTotal}
+                  playersData={playersDataForWeek}
+                  playerIdMap={playerIdMap}
+                  searchParams={searchParams}
+                  playerGameLabels={playerGameLabels}
+                  isActiveWeek={isActiveWeek}
+                  injuriesMap={injuriesMap}
+                  showCurrentInjury={showCurrentInjury}
+                  playerHighlightMap={{}}
+                  playersTeamMap={playersTeamMap}
+                />
+              );
+              return isMobile ? <MobileScaled>{breakdown}</MobileScaled> : breakdown;
+            })()}
+          </div>
+        </div>
       ) : (
         <div>No data for this week/team.</div>
       )}

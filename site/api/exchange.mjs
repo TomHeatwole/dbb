@@ -1,123 +1,264 @@
-// Exchange API — buy/sell order book backed by Neon Postgres.
+// FredDuel exchange API — offers + live bets backed by Neon Postgres.
 //
-// GET  /api/exchange                 → all open orders + recent fills
-// GET  /api/exchange?asset=X         → order book for one asset
-// GET  /api/exchange?username=Y      → one user's orders (any status)
-// POST /api/exchange { action: 'place', username, side, asset, price, quantity }
-// POST /api/exchange { action: 'cancel', username, orderId }
+// GET  /api/exchange
+//        → { offers, bets } (latest 300 each; stale open offers are expired
+//          lazily on read)
+// POST /api/exchange { action: 'create', marketKind, market, title,
+//                      description, line, maxExposure, minTake, expiresAt }
+// POST /api/exchange { action: 'take', offerId, stake }
+// POST /api/exchange { action: 'cancel', offerId }
 //
-// Identity is honor-system for now (username string); orders are keyed by
-// user_id so real auth can be added later without a schema change.
+// POSTs require a signed-in, onboarded user (Authorization: Bearer <jwt>,
+// same as /api/me). Money is dollars (NUMERIC 12,2).
+//
+// Odds semantics: an offer's `line` is quoted from the TAKER's perspective;
+// the creator is laying the bet. The creator's loss on a take (creator_risk)
+// equals the taker's potential win, and the sum of creator_risk across takes
+// can never exceed the offer's max_exposure.
 
 import { getSql } from '../lib/db.mjs';
+import { getSessionUser, getAppProfile } from '../lib/authServer.mjs';
 
-const MAX_NAME_LEN = 64;
-const MAX_ASSET_LEN = 128;
+// --- odds math (mirror of site/src/fredduel/oddsMath.js) ---
+
+const roundCents = (x) => Math.round((Number(x) + Number.EPSILON) * 100) / 100;
+const floorCents = (x) => Math.floor((Number(x) + 1e-9) * 100) / 100;
+const isValidLine = (line) => Number.isInteger(line) && (line >= 100 || line <= -100);
+const takerWinAmount = (stake, line) =>
+  line > 0 ? roundCents(stake * (line / 100)) : roundCents(stake * (100 / -line));
+const maxStakeForExposure = (exposure, line) => {
+  if (exposure <= 0) return 0;
+  return line > 0 ? floorCents(exposure * (100 / line)) : floorCents(exposure * (-line / 100));
+};
+
+// --- row mapping ---
+
+function mapOffer(row) {
+  return {
+    id: row.id,
+    creatorId: row.creator_user_id,
+    creatorName: row.creator_name,
+    marketKind: row.market_kind,
+    market: row.market || null,
+    title: row.title,
+    description: row.description || '',
+    line: Number(row.line),
+    maxExposure: Number(row.max_exposure),
+    remainingExposure: Number(row.remaining_exposure),
+    minTake: Number(row.min_take),
+    status: row.status,
+    expiresAt: new Date(row.expires_at).toISOString(),
+    createdAt: new Date(row.created_at).toISOString(),
+  };
+}
+
+function mapBet(row) {
+  return {
+    id: row.id,
+    offerId: row.offer_id,
+    offerTitle: row.offer_title,
+    creatorId: row.creator_user_id,
+    creatorName: row.creator_name,
+    takerId: row.taker_user_id,
+    takerName: row.taker_name,
+    line: Number(row.line),
+    takerStake: Number(row.taker_stake),
+    creatorRisk: Number(row.creator_risk),
+    status: row.status,
+    createdAt: new Date(row.created_at).toISOString(),
+  };
+}
+
+async function requireBettor(req, res) {
+  const user = await getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'Sign in to use the exchange.' });
+    return null;
+  }
+  const profile = await getAppProfile(user.userId);
+  if (!profile) {
+    res.status(403).json({ error: 'Finish account setup before betting.' });
+    return null;
+  }
+  return {
+    id: user.userId,
+    name: profile.sleeper_display_name || profile.sleeper_username,
+  };
+}
+
+async function expireStaleOffers(sql) {
+  await sql`
+    UPDATE fd_offers SET status = 'expired'
+    WHERE status = 'open' AND expires_at <= now()
+  `;
+}
+
+// --- handlers ---
 
 async function handleGet(req, res, sql) {
-  const { asset, username } = req.query || {};
+  await expireStaleOffers(sql);
 
-  if (username) {
-    const orders = await sql`
-      SELECT o.id, u.username, o.side, o.asset, o.price, o.quantity,
-             o.quantity_filled, o.status, o.created_at
-      FROM exchange_orders o JOIN exchange_users u ON u.id = o.user_id
-      WHERE u.username = ${username}
-      ORDER BY o.created_at DESC
-      LIMIT 200
-    `;
-    return res.status(200).json({ orders });
-  }
-
-  const orders = asset
-    ? await sql`
-        SELECT o.id, u.username, o.side, o.asset, o.price, o.quantity,
-               o.quantity_filled, o.status, o.created_at
-        FROM exchange_orders o JOIN exchange_users u ON u.id = o.user_id
-        WHERE o.status = 'open' AND o.asset = ${asset}
-        ORDER BY o.side, CASE WHEN o.side = 'buy' THEN -o.price ELSE o.price END
-      `
-    : await sql`
-        SELECT o.id, u.username, o.side, o.asset, o.price, o.quantity,
-               o.quantity_filled, o.status, o.created_at
-        FROM exchange_orders o JOIN exchange_users u ON u.id = o.user_id
-        WHERE o.status = 'open'
-        ORDER BY o.asset, o.side, o.created_at DESC
-        LIMIT 500
-      `;
-
-  const fills = asset
-    ? await sql`
-        SELECT id, asset, price, quantity, created_at FROM exchange_fills
-        WHERE asset = ${asset} ORDER BY created_at DESC LIMIT 50
-      `
-    : await sql`
-        SELECT id, asset, price, quantity, created_at FROM exchange_fills
-        ORDER BY created_at DESC LIMIT 50
-      `;
-
-  return res.status(200).json({ orders, fills });
-}
-
-async function handlePlace(req, res, sql) {
-  const { username, side, asset, price, quantity } = req.body || {};
-
-  const name = typeof username === 'string' ? username.trim() : '';
-  const assetName = typeof asset === 'string' ? asset.trim() : '';
-  const priceNum = Number(price);
-  const qtyNum = Number(quantity);
-
-  if (!name || name.length > MAX_NAME_LEN) {
-    return res.status(400).json({ error: 'username is required (max 64 chars)' });
-  }
-  if (side !== 'buy' && side !== 'sell') {
-    return res.status(400).json({ error: "side must be 'buy' or 'sell'" });
-  }
-  if (!assetName || assetName.length > MAX_ASSET_LEN) {
-    return res.status(400).json({ error: 'asset is required (max 128 chars)' });
-  }
-  if (!Number.isFinite(priceNum) || priceNum <= 0) {
-    return res.status(400).json({ error: 'price must be a positive number' });
-  }
-  if (!Number.isInteger(qtyNum) || qtyNum <= 0) {
-    return res.status(400).json({ error: 'quantity must be a positive integer' });
-  }
-
-  const [user] = await sql`
-    INSERT INTO exchange_users (username) VALUES (${name})
-    ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
-    RETURNING id, username
+  const offers = await sql`
+    SELECT * FROM fd_offers ORDER BY created_at DESC LIMIT 300
+  `;
+  const bets = await sql`
+    SELECT b.*, o.title AS offer_title
+    FROM fd_bets b JOIN fd_offers o ON o.id = b.offer_id
+    ORDER BY b.created_at DESC LIMIT 300
   `;
 
-  const [order] = await sql`
-    INSERT INTO exchange_orders (user_id, side, asset, price, quantity)
-    VALUES (${user.id}, ${side}, ${assetName}, ${priceNum}, ${qtyNum})
-    RETURNING id, side, asset, price, quantity, quantity_filled, status, created_at
-  `;
-
-  return res.status(200).json({ order: { ...order, username: user.username } });
+  return res.status(200).json({
+    offers: offers.map(mapOffer),
+    bets: bets.map(mapBet),
+  });
 }
 
-async function handleCancel(req, res, sql) {
-  const { username, orderId } = req.body || {};
-  const idNum = Number(orderId);
+async function handleCreate(req, res, sql, bettor) {
+  const { marketKind, market, title, description, line, maxExposure, minTake, expiresAt } =
+    req.body || {};
+
+  const titleStr = String(title || '').trim();
+  const descStr = String(description || '').trim();
+  const lineNum = Number(line);
+  const exposure = roundCents(maxExposure);
+  const minTakeNum = roundCents(minTake ?? 1);
+  const expiresMs = new Date(expiresAt).getTime();
+
+  if (!['season', 'weekly', 'custom'].includes(marketKind)) {
+    return res.status(400).json({ error: 'marketKind must be season, weekly, or custom' });
+  }
+  if (!titleStr || titleStr.length > 200) {
+    return res.status(400).json({ error: 'title is required (max 200 chars)' });
+  }
+  if (descStr.length > 2000) {
+    return res.status(400).json({ error: 'description is too long (max 2000 chars)' });
+  }
+  if (!isValidLine(lineNum)) {
+    return res.status(400).json({ error: 'line must be an integer >= +100 or <= -100' });
+  }
+  if (!Number.isFinite(exposure) || exposure < 1 || exposure > 100000) {
+    return res.status(400).json({ error: 'maxExposure must be between $1 and $100,000' });
+  }
+  if (!Number.isFinite(minTakeNum) || minTakeNum < 1) {
+    return res.status(400).json({ error: 'minTake must be at least $1' });
+  }
+  if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
+    return res.status(400).json({ error: 'expiresAt must be in the future' });
+  }
+  if (expiresMs > Date.now() + 366 * 24 * 60 * 60 * 1000) {
+    return res.status(400).json({ error: 'expiresAt must be within a year' });
+  }
+  const marketJson = market == null ? null : JSON.stringify(market);
+  if (marketJson && marketJson.length > 4000) {
+    return res.status(400).json({ error: 'market spec is too large' });
+  }
+
+  const [row] = await sql`
+    INSERT INTO fd_offers (
+      creator_user_id, creator_name, market_kind, market, title, description,
+      line, max_exposure, remaining_exposure, min_take, expires_at
+    ) VALUES (
+      ${bettor.id}, ${bettor.name}, ${marketKind}, ${marketJson}, ${titleStr},
+      ${descStr}, ${lineNum}, ${exposure}, ${exposure}, ${minTakeNum},
+      ${new Date(expiresMs).toISOString()}
+    )
+    RETURNING *
+  `;
+  return res.status(200).json({ offer: mapOffer(row) });
+}
+
+async function handleTake(req, res, sql, bettor) {
+  const { offerId, stake } = req.body || {};
+  const idNum = Number(offerId);
+  const stakeNum = roundCents(stake);
   if (!Number.isInteger(idNum)) {
-    return res.status(400).json({ error: 'orderId must be an integer' });
+    return res.status(400).json({ error: 'offerId must be an integer' });
+  }
+  if (!Number.isFinite(stakeNum) || stakeNum <= 0) {
+    return res.status(400).json({ error: 'stake must be a positive amount' });
+  }
+
+  await expireStaleOffers(sql);
+
+  const [offerRow] = await sql`SELECT * FROM fd_offers WHERE id = ${idNum}`;
+  if (!offerRow) return res.status(404).json({ error: 'Offer not found' });
+  const offer = mapOffer(offerRow);
+
+  if (offer.status !== 'open') {
+    return res.status(409).json({ error: `Offer is ${offer.status}` });
+  }
+  if (offer.creatorId === bettor.id) {
+    return res.status(400).json({ error: "You can't take your own offer" });
+  }
+
+  const minStake = Math.max(1, offer.minTake);
+  const maxStake = maxStakeForExposure(offer.remainingExposure, offer.line);
+  if (stakeNum < minStake) {
+    return res.status(400).json({ error: `Minimum stake for this offer is $${minStake}` });
+  }
+  if (stakeNum > maxStake) {
+    return res.status(400).json({ error: `Maximum stake left on this offer is $${maxStake}` });
+  }
+
+  const creatorRisk = takerWinAmount(stakeNum, offer.line);
+
+  // Guarded decrement: the WHERE clause re-checks state so concurrent takes
+  // can't push exposure below zero.
+  const [updated] = await sql`
+    UPDATE fd_offers
+    SET remaining_exposure = remaining_exposure - ${creatorRisk}
+    WHERE id = ${idNum} AND status = 'open' AND expires_at > now()
+      AND remaining_exposure >= ${creatorRisk}
+    RETURNING *
+  `;
+  if (!updated) {
+    return res.status(409).json({ error: 'Offer changed while you were taking it — refresh and retry' });
+  }
+
+  const [betRow] = await sql`
+    INSERT INTO fd_bets (
+      offer_id, creator_user_id, creator_name, taker_user_id, taker_name,
+      line, taker_stake, creator_risk
+    ) VALUES (
+      ${idNum}, ${offer.creatorId}, ${offer.creatorName}, ${bettor.id},
+      ${bettor.name}, ${offer.line}, ${stakeNum}, ${creatorRisk}
+    )
+    RETURNING *
+  `;
+
+  // Leftover exposure too small to cover the offer's minimum take → filled.
+  let finalOffer = mapOffer(updated);
+  const leftoverMaxStake = maxStakeForExposure(finalOffer.remainingExposure, finalOffer.line);
+  if (leftoverMaxStake < Math.max(1, finalOffer.minTake)) {
+    const [closed] = await sql`
+      UPDATE fd_offers SET status = 'filled'
+      WHERE id = ${idNum} AND status = 'open'
+      RETURNING *
+    `;
+    if (closed) finalOffer = mapOffer(closed);
+  }
+
+  return res.status(200).json({
+    bet: mapBet({ ...betRow, offer_title: offer.title }),
+    offer: finalOffer,
+  });
+}
+
+async function handleCancel(req, res, sql, bettor) {
+  const idNum = Number(req.body?.offerId);
+  if (!Number.isInteger(idNum)) {
+    return res.status(400).json({ error: 'offerId must be an integer' });
   }
 
   const [cancelled] = await sql`
-    UPDATE exchange_orders o SET status = 'cancelled'
-    FROM exchange_users u
-    WHERE o.id = ${idNum} AND o.user_id = u.id
-      AND u.username = ${String(username || '')}
-      AND o.status = 'open'
-    RETURNING o.id, o.side, o.asset, o.price, o.quantity, o.status
+    UPDATE fd_offers SET status = 'cancelled'
+    WHERE id = ${idNum} AND creator_user_id = ${bettor.id} AND status = 'open'
+    RETURNING *
   `;
-
   if (!cancelled) {
-    return res.status(404).json({ error: 'No open order with that id belonging to that user' });
+    return res.status(404).json({ error: 'No open offer of yours with that id' });
   }
-  return res.status(200).json({ order: cancelled });
+  return res.status(200).json({ offer: mapOffer(cancelled) });
 }
 
 export default async function handler(req, res) {
@@ -133,10 +274,13 @@ export default async function handler(req, res) {
       return await handleGet(req, res, sql);
     }
     if (req.method === 'POST') {
+      const bettor = await requireBettor(req, res);
+      if (!bettor) return undefined;
       const action = req.body?.action;
-      if (action === 'place') return await handlePlace(req, res, sql);
-      if (action === 'cancel') return await handleCancel(req, res, sql);
-      return res.status(400).json({ error: "action must be 'place' or 'cancel'" });
+      if (action === 'create') return await handleCreate(req, res, sql, bettor);
+      if (action === 'take') return await handleTake(req, res, sql, bettor);
+      if (action === 'cancel') return await handleCancel(req, res, sql, bettor);
+      return res.status(400).json({ error: "action must be 'create', 'take', or 'cancel'" });
     }
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {

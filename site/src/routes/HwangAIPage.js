@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
+import { useAuthUser } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'HwangAI';
 const OG_DESCRIPTION = 'Your dynasty fantasy football AI assistant';
@@ -62,10 +63,18 @@ function HwangAIPage() {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
-  const [systemPrompt, setSystemPrompt] = useState('');
+  const [baseSystemPrompt, setBaseSystemPrompt] = useState('');
+  const { user } = useAuthUser();
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const pendingQueryRef = useRef(null);
+
+  const systemPrompt = useMemo(() => {
+    if (!baseSystemPrompt) return '';
+    if (!user?.sleeperUsername) return baseSystemPrompt;
+    const name = user.sleeperDisplayName || user.sleeperUsername;
+    return `${baseSystemPrompt}\n\nThe user you are currently chatting with is ${name} (Sleeper username: ${user.sleeperUsername}). They are a manager in the Hwang Dynasty league. When they ask about "my team" or "my roster", they mean their own team.`;
+  }, [baseSystemPrompt, user]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -79,7 +88,7 @@ function HwangAIPage() {
   useEffect(() => {
     fetch('/data/hwangai_system_prompt.txt', { cache: 'no-store' })
       .then(r => r.text())
-      .then(text => setSystemPrompt(text.trim()))
+      .then(text => setBaseSystemPrompt(text.trim()))
       .catch(() => {});
   }, []);
 

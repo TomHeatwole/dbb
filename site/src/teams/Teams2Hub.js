@@ -224,6 +224,7 @@ function Teams2Hub() {
                 topPlayers={t.topPlayers}
                 season={season !== CURRENT_YEAR ? season : null}
                 isMe={isMyRoster(t.rosterId, myRosterId)}
+                preseason={season === CURRENT_YEAR && getCompletedWeeksCount(season) === 0}
               />
             ))}
           </div>

@@ -10,15 +10,24 @@ import { getLoggedInTeamOverride } from '../debug/loggedInTeam';
 import { buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { fetchKtcData, getKtcEntryByName, formatKtcValue } from '../lookups/KtcLookup';
+import { fetchScoresData } from '../lookups/ScoresLookup';
+import { getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
+import { CURRENT_YEAR, hasSeasonStarted } from '../utils/DateHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 const SLEEPER_BOT = '/data/sleeper-bot.png';
+
+function formatSeasonPoints(pts) {
+  const n = Number(pts) || 0;
+  return n.toFixed(1);
+}
 
 function YourTeamHomeCard() {
   const { user } = useAuthUser();
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState(null);
   const [topAssets, setTopAssets] = useState([]);
+  const [assetsMode, setAssetsMode] = useState('ktc'); // 'ktc' | 'points'
   const [teamData, setTeamData] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
@@ -48,15 +57,19 @@ function YourTeamHomeCard() {
       return undefined;
     }
 
+    const usePoints = hasSeasonStarted();
     setLoading(true);
-    Promise.all([
+    const loads = [
       loadCurrentTeamData(),
-      fetchKtcData(),
       fetchPlayerIdMap(),
       fetchPlayersData(),
-    ])
-      .then(([{ rosters, users }, ktcResult, idMap, playersData]) => {
+      usePoints ? fetchScoresData(CURRENT_YEAR) : fetchKtcData(),
+    ];
+
+    Promise.all(loads)
+      .then(([teamPayload, idMap, playersData, rankingSource]) => {
         if (cancelled) return;
+        const { rosters, users } = teamPayload;
         setTeamData({ rosters, users });
         const rosterId = findMyRosterId(rosters, users, user);
         const info = rosterId != null
@@ -73,28 +86,49 @@ function YourTeamHomeCard() {
 
         const roster = (rosters || []).find((r) => Number(r.roster_id) === Number(rosterId));
         const playerIds = Array.isArray(roster?.players) ? roster.players : [];
-        const ktcMap = ktcResult?.map || null;
-        const ranked = playerIds.map((pid) => {
-          const playerInfo = getPlayerInfo(pid, playersData, idMap);
-          if (!playerInfo) return null;
-          const name = playerInfo.full_name || playerInfo.name || '';
-          const hints = {
-            position: playerInfo.position,
-            team: playerInfo.team || playerInfo.team_abbr,
-            age: playerInfo.age,
-          };
-          const entry = getKtcEntryByName(name, ktcMap, 'sf_tep', hints);
-          return {
-            playerId: pid,
-            name,
-            position: playerInfo.position || entry?.position || '',
-            photo: playerInfo.espn_photo_url || null,
-            ktcValue: entry?.ktcValue || 0,
-            fullInfo: playerInfo,
-          };
-        }).filter(Boolean);
-        ranked.sort((a, b) => b.ktcValue - a.ktcValue);
-        setTopAssets(ranked.slice(0, 3));
+
+        if (usePoints) {
+          const seasonTotals = getPlayerSeasonTotalsMap(rankingSource);
+          const ranked = playerIds.map((pid) => {
+            const playerInfo = getPlayerInfo(pid, playersData, idMap);
+            if (!playerInfo) return null;
+            return {
+              playerId: pid,
+              name: playerInfo.full_name || playerInfo.name || '',
+              position: playerInfo.position || '',
+              photo: playerInfo.espn_photo_url || null,
+              value: seasonTotals[String(pid)] || seasonTotals[pid] || 0,
+              fullInfo: playerInfo,
+            };
+          }).filter(Boolean);
+          ranked.sort((a, b) => b.value - a.value);
+          setAssetsMode('points');
+          setTopAssets(ranked.slice(0, 3));
+        } else {
+          const ktcMap = rankingSource?.map || null;
+          const ranked = playerIds.map((pid) => {
+            const playerInfo = getPlayerInfo(pid, playersData, idMap);
+            if (!playerInfo) return null;
+            const name = playerInfo.full_name || playerInfo.name || '';
+            const hints = {
+              position: playerInfo.position,
+              team: playerInfo.team || playerInfo.team_abbr,
+              age: playerInfo.age,
+            };
+            const entry = getKtcEntryByName(name, ktcMap, 'sf_tep', hints);
+            return {
+              playerId: pid,
+              name,
+              position: playerInfo.position || entry?.position || '',
+              photo: playerInfo.espn_photo_url || null,
+              value: entry?.ktcValue || 0,
+              fullInfo: playerInfo,
+            };
+          }).filter(Boolean);
+          ranked.sort((a, b) => b.value - a.value);
+          setAssetsMode('ktc');
+          setTopAssets(ranked.slice(0, 3));
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -143,6 +177,8 @@ function YourTeamHomeCard() {
     );
   } else {
     const showOwnerPic = team.ownerAvatarUrl && team.ownerAvatarUrl !== team.teamAvatarUrl;
+    const assetsTitle = assetsMode === 'points' ? 'Top Assets (Pts)' : 'Top Assets (KTC)';
+    const emptyLabel = assetsMode === 'points' ? 'No points yet.' : 'No KTC values yet.';
     body = (
       <>
         <div className="your-team-home-body">
@@ -176,9 +212,9 @@ function YourTeamHomeCard() {
             </Link>
           </div>
           <div className="your-team-home-assets">
-            <div className="your-team-home-assets-title">Top assets</div>
+            <div className="your-team-home-assets-title">{assetsTitle}</div>
             {topAssets.length === 0 ? (
-              <div className="your-team-home-assets-empty">No KTC values yet.</div>
+              <div className="your-team-home-assets-empty">{emptyLabel}</div>
             ) : (
               <ul className="your-team-home-assets-list">
                 {topAssets.map((asset) => (
@@ -195,7 +231,11 @@ function YourTeamHomeCard() {
                         alt={asset.name}
                       />
                       <PositionBadge position={asset.position} />
-                      <span className="your-team-home-asset-value">{formatKtcValue(asset.ktcValue)}</span>
+                      <span className="your-team-home-asset-value">
+                        {assetsMode === 'points'
+                          ? formatSeasonPoints(asset.value)
+                          : formatKtcValue(asset.value)}
+                      </span>
                     </button>
                   </li>
                 ))}
