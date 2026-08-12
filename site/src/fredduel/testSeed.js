@@ -102,6 +102,17 @@ export function buildTestSeed(now = Date.now()) {
     createdAt: iso(now - 5 * HOUR),
   });
 
+  // 2b. Weekly head-to-head offer.
+  const m2b = weeklyMarket(3, 'weekly_outscore', 1, {
+    opponentRosterId: 4, opponentName: team(4).teamName,
+  });
+  addOffer({
+    creatorId: actor(3).id, creatorName: actor(3).name,
+    marketKind: m2b.kind, market: m2b, title: describeMarket(m2b),
+    line: -110, maxExposure: 55, remainingExposure: 55,
+    createdAt: iso(now - 90 * MIN), expiresAt: iso(now + 18 * HOUR),
+  });
+
   // 3. Weekly offer expiring soon (countdown demo).
   const m3 = weeklyMarket(1, 'weekly_finish_above', 1, { place: 3.5 });
   addOffer({
@@ -115,8 +126,8 @@ export function buildTestSeed(now = Date.now()) {
   addOffer({
     creatorId: actor(8).id, creatorName: actor(8).name,
     marketKind: MARKET_KINDS.CUSTOM, market: null,
-    title: 'Fred shows up on time to the live draft',
-    description: 'On time = seated and connected at the official start. Commissioner is the judge.',
+    title: 'Mike and Mac to both miss the playoffs',
+    description: 'Settles yes only if BOTH teams miss the playoffs. Commissioner is the judge.',
     line: 300, maxExposure: 30, remainingExposure: 30,
     createdAt: iso(now - DAY), expiresAt: iso(now + 5 * DAY),
   });

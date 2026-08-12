@@ -247,18 +247,24 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
           if (Number.isFinite(r)) roundCounts[r] = (roundCounts[r] || 0) + 1;
         }
         const ordinal = (r) => (r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : `${r}th`);
-        const summary = Object.keys(roundCounts)
-          .map(Number)
-          .sort((a, b) => a - b)
-          .map(r => `${roundCounts[r]} ${ordinal(r)}${roundCounts[r] === 1 ? '' : 's'}`)
-          .join(' · ');
+        const roundClass = (r) => `teams2-pick-round--${Math.min(Math.max(Number(r) || 0, 1), 4)}`;
+        const summaryRounds = Object.keys(roundCounts).map(Number).sort((a, b) => a - b);
         const years = [...new Set(tradedPicks.map(p => String(p.season || '')))].filter(Boolean).sort();
 
         return (
           <div className="teams2-picks-section">
             <div className="teams2-picks-header">
               <h3 className="teams2-picks-title">Draft Capital</h3>
-              <span className="teams2-picks-summary">{summary}</span>
+              <span className="teams2-picks-summary">
+                {summaryRounds.map((r, i) => (
+                  <React.Fragment key={r}>
+                    {i > 0 && <span className="teams2-picks-summary-sep"> · </span>}
+                    <span className={roundClass(r)}>
+                      {roundCounts[r]} {ordinal(r)}{roundCounts[r] === 1 ? '' : 's'}
+                    </span>
+                  </React.Fragment>
+                ))}
+              </span>
             </div>
             <div className="teams2-picks-years">
               {years.map(yr => (
@@ -266,19 +272,19 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
                   <div className="teams2-picks-year-header">{yr}</div>
                   <div className="teams2-picks-year-list">
                     {tradedPicks.filter(p => String(p.season) === yr).map((pick, i) => {
-                      const round = pick.round;
+                      const round = Number(pick.round);
                       const via = pick.team_name;
-                      let label = `Round ${round}`;
+                      let slot = null;
                       if (draftOrder && pick.roster_id != null) {
                         const pickNum = draftOrder[String(pick.roster_id)];
                         if (Number.isFinite(pickNum)) {
-                          label = `${round}.${String(pickNum).padStart(2, '0')}`;
+                          slot = `${round}.${String(pickNum).padStart(2, '0')}`;
                         }
                       }
                       return (
                         <div key={i} className="teams2-pick-chip">
-                          <span className="teams2-pick-round">R{round}</span>
-                          <span className="teams2-pick-label">{label}</span>
+                          <span className={`teams2-pick-round ${roundClass(round)}`}>{ordinal(round)}</span>
+                          {slot && <span className="teams2-pick-label">{slot}</span>}
                           {via && <span className="teams2-pick-via">via {via}</span>}
                         </div>
                       );

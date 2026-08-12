@@ -28,12 +28,36 @@ export const MAX_ITERATIONS = 5000;
 
 const ADP_WINDOW = 5;
 const BOTTOM_BUCKET_SIZE = 10;
-const TOP_NORMALIZATION_MAX_RANK = 5;
+const KERNEL_HALF_WIDTH = ADP_WINDOW + 1;
 
-export function percentileToOutcomeIndex(percentile, outcomeCount) {
+export function percentileToOutcomeIndex(percentile, outcomeCount, cumWeights = null) {
   if (outcomeCount <= 0) return -1;
   const p = Math.max(0, Math.min(100, Number(percentile) || 0));
-  return Math.min(outcomeCount - 1, Math.floor(((100 - p) / 100) * outcomeCount));
+  if (!cumWeights) {
+    return Math.min(outcomeCount - 1, Math.floor(((100 - p) / 100) * outcomeCount));
+  }
+  const target = ((100 - p) / 100) * cumWeights[outcomeCount - 1];
+  let lo = 0;
+  let hi = outcomeCount - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (cumWeights[mid] > target) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
+export function buildPoolCumulativeWeights(outcomes) {
+  if (!outcomes || outcomes.length === 0 || outcomes[0]?.weight == null) {
+    return null;
+  }
+  const cum = new Float64Array(outcomes.length);
+  let total = 0;
+  for (let i = 0; i < outcomes.length; i++) {
+    total += outcomes[i].weight ?? 1;
+    cum[i] = total;
+  }
+  return cum;
 }
 
 function isBottomBucket(effRank, posRank, position, positionMaxRanks) {
@@ -58,39 +82,15 @@ function filterBottomBucket(catalog, position, positionMaxRanks) {
   return catalog.filter((e) => e.position === position && e.effRank >= minEff);
 }
 
-function findEliteOutcomeSeasons(catalog, position, maxOutcomeRank) {
-  return catalog.filter(
-    (e) => e.position === position && e.outcomeRank != null && e.outcomeRank <= maxOutcomeRank,
-  );
+function isTopTruncatedWindow(effRank) {
+  return effRank - ADP_WINDOW < 1;
 }
 
-function injectTopAdpSyntheticOutcomes(baseOutcomes, catalog, position, effRank) {
-  const rank = Math.ceil(effRank);
-  if (rank > TOP_NORMALIZATION_MAX_RANK || baseOutcomes.length === 0) return baseOutcomes;
-
-  const missingUp = Math.max(0, ADP_WINDOW - (rank - 1));
-  if (missingUp === 0) return baseOutcomes;
-
-  const fullWindowSize = ADP_WINDOW * 2 + 1;
-  const syntheticTarget = Math.round(baseOutcomes.length * (missingUp / fullWindowSize));
-  if (syntheticTarget <= 0) return baseOutcomes;
-
-  const elitePool = findEliteOutcomeSeasons(catalog, position, rank);
-  if (elitePool.length === 0) return baseOutcomes;
-
-  const sorted = baseOutcomes.slice().sort((a, b) => b.scoringPts - a.scoringPts);
-  const medianPts = sorted[Math.floor(sorted.length / 2)]?.scoringPts ?? 0;
-
-  const goodElite = elitePool
-    .filter((e) => e.scoringPts >= medianPts)
-    .sort((a, b) => b.scoringPts - a.scoringPts);
-
-  const source = goodElite.length > 0 ? goodElite : elitePool.sort((a, b) => b.scoringPts - a.scoringPts);
-  const augmented = [...baseOutcomes];
-  for (let i = 0; i < syntheticTarget; i++) {
-    augmented.push({ ...source[i % source.length], synthetic: true });
-  }
-  return augmented;
+function applyKernelWeights(outcomes, centerEffRank) {
+  return outcomes.map((e) => ({
+    ...e,
+    weight: (KERNEL_HALF_WIDTH - Math.abs(e.effRank - centerEffRank)) / KERNEL_HALF_WIDTH,
+  }));
 }
 
 export function buildOutcomePool(adpInfo, catalog, positionMaxRanks) {
@@ -104,8 +104,8 @@ export function buildOutcomePool(adpInfo, catalog, positionMaxRanks) {
     pool = filterBottomBucket(catalog, position, positionMaxRanks);
   } else {
     pool = filterByEffRankWindow(catalog, position, effRank, ADP_WINDOW);
-    if (effRank <= TOP_NORMALIZATION_MAX_RANK) {
-      pool = injectTopAdpSyntheticOutcomes(pool, catalog, position, effRank);
+    if (isTopTruncatedWindow(effRank)) {
+      pool = applyKernelWeights(pool, effRank);
     }
   }
   return pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
@@ -490,9 +490,11 @@ export function prepareSimContext({
   const playerIdList = [...allPlayerIds];
 
   const pools = {};
+  const poolCumWeights = {};
   for (const pid of playerIdList) {
     const adpInfo = hwangAdpRankMap && hwangAdpRankMap[pid];
     pools[pid] = adpInfo ? buildOutcomePool(adpInfo, catalog, positionMaxRanks) : [];
+    poolCumWeights[pid] = buildPoolCumulativeWeights(pools[pid]);
   }
 
   const outcomeWeekPts = {};
@@ -513,6 +515,7 @@ export function prepareSimContext({
     baselineRosters: trackBaseline ? baselineRosters : null,
     allPlayerIds: playerIdList,
     pools,
+    poolCumWeights,
     outcomeWeekPts,
     playerPositions: buildPlayerPositionsMap(playerIdList, playersData),
     rosterIds: Object.keys(scenarioRosters).map(Number),
@@ -523,13 +526,13 @@ export function prepareSimContext({
 }
 
 function fillWeeklyFromRolls(ctx) {
-  const { allPlayerIds, pools, outcomeWeekPts, weekBuffers, seasonTotals, rolls } = ctx;
+  const { allPlayerIds, pools, poolCumWeights, outcomeWeekPts, weekBuffers, seasonTotals, rolls } = ctx;
   for (const pid of allPlayerIds) {
     const poolLen = pools[pid]?.length ?? 0;
     let ptsArr = ZERO_WEEKS;
     if (poolLen > 0) {
       const pct = rolls[pid] ?? 50;
-      const idx = percentileToOutcomeIndex(pct, poolLen);
+      const idx = percentileToOutcomeIndex(pct, poolLen, poolCumWeights[pid]);
       ptsArr = outcomeWeekPts[pid][idx] || ZERO_WEEKS;
     }
     let total = 0;

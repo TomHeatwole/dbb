@@ -1,8 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getCurrentNFLWeek } from '../utils/DateHelper';
+import { getCompletedWeeksCount } from '../utils/DateHelper';
 import OfferCard from './OfferCard';
 import BetCard from './BetCard';
 import CreateOfferPanel from './CreateOfferPanel';
+
+// Weekly bets are only offered on the upcoming week: the first week that
+// hasn't completed yet. Before the season starts this is week 1.
+function getUpcomingWeek() {
+  return Math.min(17, Math.max(1, getCompletedWeeksCount() + 1));
+}
 
 function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -106,6 +112,10 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     await client.cancelOffer(offerId);
     await refresh();
   };
+  const updateOfferExposure = (offerId) => async (newRemaining) => {
+    await client.updateOfferExposure(offerId, newRemaining);
+    await refresh();
+  };
   const createOffer = async (input) => {
     await client.createOffer(input);
     setTab('market');
@@ -123,6 +133,7 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
         now={now}
         onTake={takeOffer(offer.id)}
         onCancel={cancelOffer(offer.id)}
+        onUpdateExposure={updateOfferExposure(offer.id)}
         onViewBets={viewBet}
       />
     ));
@@ -187,7 +198,7 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
       {showCreate && (
         <CreateOfferPanel
           teams={teams}
-          currentWeek={getCurrentNFLWeek()}
+          currentWeek={getUpcomingWeek()}
           onCreate={createOffer}
           onClose={() => setShowCreate(false)}
         />

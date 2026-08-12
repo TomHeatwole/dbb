@@ -5,7 +5,11 @@
  */
 
 import { buildFinalStandings } from './computeScenarioEval';
-import { buildOutcomePool, percentileToOutcomeIndex } from './outcomeDistribution';
+import {
+  buildOutcomePool,
+  buildPoolCumulativeWeights,
+  percentileToOutcomeIndex,
+} from './outcomeDistribution';
 import { buildSleeperBasePoints } from './sleeperScoring';
 import { computeLuckFromRolls } from './luckMetrics';
 import { scoreAllRostersFast, buildPlayerPositionsMap } from './simulatorLineup';
@@ -108,14 +112,14 @@ function fillRandomRolls(allPlayerIds, rolls) {
 }
 
 function fillWeeklyFromRolls(ctx) {
-  const { allPlayerIds, pools, outcomeWeekPts, weekBuffers, seasonTotals, rolls } = ctx;
+  const { allPlayerIds, pools, poolCumWeights, outcomeWeekPts, weekBuffers, seasonTotals, rolls } = ctx;
 
   for (const pid of allPlayerIds) {
     const poolLen = pools[pid]?.length ?? 0;
     let ptsArr = ZERO_WEEKS;
     if (poolLen > 0) {
       const pct = rolls[pid] ?? 50;
-      const idx = percentileToOutcomeIndex(pct, poolLen);
+      const idx = percentileToOutcomeIndex(pct, poolLen, poolCumWeights[pid]);
       ptsArr = outcomeWeekPts[pid][idx] || ZERO_WEEKS;
     }
 
@@ -343,6 +347,10 @@ export function prepareSimulatorContext({
 
   const playerIdList = [...allPlayerIds];
   const pools = precomputeOutcomePools(playerIdList, hwangAdpRankMap, catalog, positionMaxRanks);
+  const poolCumWeights = {};
+  for (const pid of playerIdList) {
+    poolCumWeights[pid] = buildPoolCumulativeWeights(pools[pid]);
+  }
   const basePointsByYear = precomputeBasePointsByYear(weeklyStatsByYear, scoringConfig, playersData);
   const outcomeWeekPts = precomputeOutcomeWeekPoints(playerIdList, pools, basePointsByYear);
   const playerPositions = buildPlayerPositionsMap(playerIdList, playersData);
@@ -355,6 +363,7 @@ export function prepareSimulatorContext({
     hwangAdpRankMap,
     allPlayerIds: playerIdList,
     pools,
+    poolCumWeights,
     outcomeWeekPts,
     playerPositions,
     rosterIds,

@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
-import { useAuthUser } from '../hooks/useAuthUser';
+import { findMyRosterId, loadCurrentTeamData, useAuthUser } from '../hooks/useAuthUser';
+import { getLoggedInTeamOverride } from '../debug/loggedInTeam';
+import { buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 
 const OG_TITLE = 'HwangAI';
 const OG_DESCRIPTION = 'Your dynasty fantasy football AI assistant';
@@ -57,6 +59,27 @@ function ChatMessage({ message }) {
   );
 }
 
+function buildLoggedInUserBlock(identity) {
+  if (!identity) return '';
+  const lines = [
+    '',
+    '════════════════════════════════════════',
+    'LOGGED-IN USER',
+    '════════════════════════════════════════',
+    'The site login identified the person currently chatting with you:',
+  ];
+  if (identity.teamName) lines.push(`- Team name: ${identity.teamName}`);
+  if (identity.ownerName) lines.push(`- Owner / display name: ${identity.ownerName}`);
+  if (identity.sleeperUsername) lines.push(`- Sleeper username: ${identity.sleeperUsername}`);
+  if (identity.rosterId != null) lines.push(`- Roster ID: ${identity.rosterId}`);
+  lines.push(
+    '',
+    'This IS who you are talking to. Do not ask them to identify themselves.',
+    'When they say "my team" / "can I compete", use this team (still call tools for roster/odds data).',
+  );
+  return lines.join('\n');
+}
+
 function HwangAIPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -64,17 +87,18 @@ function HwangAIPage() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
   const [baseSystemPrompt, setBaseSystemPrompt] = useState('');
-  const { user } = useAuthUser();
+  const [identity, setIdentity] = useState(null);
+  const [identityReady, setIdentityReady] = useState(false);
+  const { user, loading: authLoading } = useAuthUser();
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const pendingQueryRef = useRef(null);
 
   const systemPrompt = useMemo(() => {
-    if (!baseSystemPrompt) return '';
-    if (!user?.sleeperUsername) return baseSystemPrompt;
-    const name = user.sleeperDisplayName || user.sleeperUsername;
-    return `${baseSystemPrompt}\n\nThe user you are currently chatting with is ${name} (Sleeper username: ${user.sleeperUsername}). They are a manager in the Hwang Dynasty league. When they ask about "my team" or "my roster", they mean their own team.`;
-  }, [baseSystemPrompt, user]);
+    if (!baseSystemPrompt || !identityReady) return '';
+    const block = buildLoggedInUserBlock(identity);
+    return block ? `${baseSystemPrompt}\n${block}` : baseSystemPrompt;
+  }, [baseSystemPrompt, identity, identityReady]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -92,13 +116,61 @@ function HwangAIPage() {
       .catch(() => {});
   }, []);
 
+  // Resolve logged-in (or debug-override) team identity for the system prompt.
+  useEffect(() => {
+    let cancelled = false;
+    if (authLoading) {
+      setIdentityReady(false);
+      return undefined;
+    }
+    if (!user?.sleeperUsername && getLoggedInTeamOverride() == null) {
+      setIdentity(null);
+      setIdentityReady(true);
+      return undefined;
+    }
+
+    setIdentityReady(false);
+    loadCurrentTeamData()
+      .then(({ rosters, users }) => {
+        if (cancelled) return;
+        const rosterId = findMyRosterId(rosters, users, user);
+        const info = rosterId != null
+          ? buildRosterIdToTeamInfoMap(rosters, users)[rosterId]
+          : null;
+        setIdentity({
+          rosterId,
+          teamName: info?.teamName || null,
+          ownerName: info?.ownerName || user?.sleeperDisplayName || null,
+          sleeperUsername: user?.sleeperUsername || info?.user?.username || null,
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        if (user?.sleeperUsername) {
+          setIdentity({
+            rosterId: null,
+            teamName: null,
+            ownerName: user.sleeperDisplayName || null,
+            sleeperUsername: user.sleeperUsername,
+          });
+        } else {
+          setIdentity(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIdentityReady(true);
+      });
+
+    return () => { cancelled = true; };
+  }, [user, authLoading]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
   const sendMessage = useCallback(async (overrideText) => {
     const text = (overrideText ?? input).trim();
-    if (!text || loading || searching) return;
+    if (!text || loading || searching || !systemPrompt) return;
 
     const newMessages = [...messages, { role: 'user', content: text }];
     setMessages(newMessages);
@@ -270,12 +342,12 @@ function HwangAIPage() {
               onKeyDown={handleKeyDown}
               placeholder="Ask HwangAI…"
               rows={1}
-              disabled={loading || searching}
+              disabled={loading || searching || !systemPrompt}
             />
             <button
               className="hwang-ai-send-btn"
               onClick={() => sendMessage()}
-              disabled={!input.trim() || loading || searching}
+              disabled={!input.trim() || loading || searching || !systemPrompt}
               aria-label="Send message"
             >
               ↑

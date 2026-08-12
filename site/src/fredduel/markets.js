@@ -36,13 +36,17 @@ export function describePlaceLine(place, direction) {
   return p === 9.5 ? 'last only' : `${ordinal(p + 0.5)} or worse`;
 }
 
-// needs: which extra input the outcome requires ('place' | 'points' | null).
+// needs: which extra input the outcome requires
+// ('place' | 'points' | 'opponent' | null).
 export const SEASON_OUTCOMES = [
   { id: 'win_league', label: 'To win the league', needs: null },
   { id: 'make_playoffs', label: 'To make the playoffs', needs: null },
   { id: 'miss_playoffs', label: 'To miss the playoffs', needs: null },
   { id: 'finish_better', label: 'To finish better than N.5 place', needs: 'place', placeDirection: 'better' },
   { id: 'finish_worse', label: 'To finish worse than N.5 place', needs: 'place', placeDirection: 'worse' },
+  { id: 'finish_above_team', label: 'To finish better than… (head-to-head)', needs: 'opponent' },
+  { id: 'season_outscore_14', label: 'To outscore… (head-to-head, weeks 1-14)', needs: 'opponent' },
+  { id: 'season_outscore_17', label: 'To outscore… (head-to-head, weeks 1-17)', needs: 'opponent' },
   { id: 'points_over_14', label: 'To score more than N points (weeks 1-14)', needs: 'points' },
   { id: 'points_under_14', label: 'To score fewer than N points (weeks 1-14)', needs: 'points' },
   { id: 'points_over_17', label: 'To score more than N points (weeks 1-17)', needs: 'points' },
@@ -50,8 +54,7 @@ export const SEASON_OUTCOMES = [
 ];
 
 export const WEEKLY_OUTCOMES = [
-  { id: 'weekly_win', label: 'To win their matchup', needs: null },
-  { id: 'weekly_lose', label: 'To lose their matchup', needs: null },
+  { id: 'weekly_outscore', label: 'To outscore… (head-to-head)', needs: 'opponent' },
   { id: 'weekly_finish_above', label: 'To finish better than N.5 in weekly scoring', needs: 'place', placeDirection: 'better' },
   { id: 'weekly_finish_below', label: 'To finish worse than N.5 in weekly scoring', needs: 'place', placeDirection: 'worse' },
   { id: 'weekly_points_over', label: 'To score more than N points', needs: 'points' },
@@ -81,6 +84,7 @@ function fmtPoints(points) {
 export function describeMarket(market) {
   if (!market) return '';
   const team = market.teamName || 'Team ?';
+  const opp = market.opponentName || 'Team ?';
   const { outcome, place, points, week } = market;
 
   if (market.kind === MARKET_KINDS.SEASON) {
@@ -90,6 +94,9 @@ export function describeMarket(market) {
       case 'miss_playoffs': return `${team} to miss the playoffs`;
       case 'finish_better': return `${team} to finish better than ${place} place`;
       case 'finish_worse': return `${team} to finish worse than ${place} place`;
+      case 'finish_above_team': return `${team} to finish better than ${opp} in the standings`;
+      case 'season_outscore_14': return `${team} to outscore ${opp} (weeks 1-14)`;
+      case 'season_outscore_17': return `${team} to outscore ${opp} (weeks 1-17)`;
       case 'points_over_14': return `${team} to score more than ${fmtPoints(points)} points (weeks 1-14)`;
       case 'points_under_14': return `${team} to score fewer than ${fmtPoints(points)} points (weeks 1-14)`;
       case 'points_over_17': return `${team} to score more than ${fmtPoints(points)} points (weeks 1-17)`;
@@ -101,8 +108,7 @@ export function describeMarket(market) {
   if (market.kind === MARKET_KINDS.WEEKLY) {
     const wk = `week ${week}`;
     switch (outcome) {
-      case 'weekly_win': return `${team} to win their ${wk} matchup`;
-      case 'weekly_lose': return `${team} to lose their ${wk} matchup`;
+      case 'weekly_outscore': return `${team} to outscore ${opp} in ${wk}`;
       case 'weekly_finish_above': return `${team} to finish better than ${place} in ${wk} scoring`;
       case 'weekly_finish_below': return `${team} to finish worse than ${place} in ${wk} scoring`;
       case 'weekly_points_over': return `${team} to score more than ${fmtPoints(points)} points in ${wk}`;
@@ -137,6 +143,12 @@ export function validateMarket(market) {
   if (def.needs === 'points') {
     const pts = Number(market.points);
     if (!Number.isFinite(pts) || pts <= 0) return 'Enter a points total.';
+  }
+  if (def.needs === 'opponent') {
+    if (market.opponentRosterId == null) return 'Pick an opponent.';
+    if (Number(market.opponentRosterId) === Number(market.teamRosterId)) {
+      return 'Head-to-head needs two different teams.';
+    }
   }
   return null;
 }

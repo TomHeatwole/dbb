@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 import {
   formatLine, formatMoney, formatPercent, impliedProbability,
   minStakeForOffer, maxStakeForOffer, takerWinAmount, roundCents,
+  maxStakeForExposure,
 } from './oddsMath';
+import { validateExposureUpdate } from './exchangeClient';
 import { formatCountdown, formatTimestamp, isExpiringSoon } from './timeFmt';
 
 function kindLabel(offer) {
@@ -94,14 +96,80 @@ function TakePanel({ offer, onTake, onClose }) {
   );
 }
 
+// Inline panel for the offerer to change the unfilled exposure of an open
+// offer. Matched action never changes; the ceiling moves with the edit.
+function UpdateExposurePanel({ offer, onUpdate, onClose }) {
+  const [text, setText] = useState(String(offer.remainingExposure));
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const value = Number(text);
+  const validationError = validateExposureUpdate(offer, value);
+  const valid = validationError == null;
+  const newMaxStake = valid ? maxStakeForExposure(value, offer.line) : null;
+
+  const submit = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await onUpdate(roundCents(value));
+    } catch (e) {
+      setError(e.message);
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    onClose();
+  };
+
+  return (
+    <div className="fd-take-panel">
+      <div className="fd-take-row">
+        <span className="fd-take-label">Unfilled exposure</span>
+        <div className="fd-money-input">
+          <span>$</span>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            autoFocus
+          />
+        </div>
+      </div>
+      <div className="fd-take-summary">
+        {valid ? (
+          <>
+            Takers can still stake up to <strong>{formatMoney(newMaxStake)}</strong> at{' '}
+            {formatLine(offer.line)} against it.
+          </>
+        ) : (
+          <span className="fd-muted">{validationError}</span>
+        )}
+      </div>
+      {error && <div className="fd-error">{error}</div>}
+      <div className="fd-take-actions">
+        <button className="fd-btn fd-btn-primary" disabled={!valid || busy} onClick={submit}>
+          {busy ? 'Updating…' : 'Update exposure'}
+        </button>
+        <button className="fd-btn fd-btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * One offer on the exchange.
  * props: offer, linkedBets (bets already taken on this offer), actor,
  *        now (ticking ms timestamp), onTake(stake), onCancel(),
- *        onViewBets(betId) — jump to a linked bet ticket
+ *        onUpdateExposure(newRemaining), onViewBets(betId)
  */
-function OfferCard({ offer, linkedBets = [], actor, now, onTake, onCancel, onViewBets }) {
+function OfferCard({
+  offer, linkedBets = [], actor, now, onTake, onCancel, onUpdateExposure, onViewBets,
+}) {
   const [taking, setTaking] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelError, setCancelError] = useState(null);
 
@@ -195,7 +263,7 @@ function OfferCard({ offer, linkedBets = [], actor, now, onTake, onCancel, onVie
         </div>
       </div>
 
-      {isOpen && !taking && (
+      {isOpen && !taking && !updating && (
         <div className="fd-card-actions">
           {!isMine && (
             <button className="fd-btn fd-btn-primary" onClick={() => setTaking(true)}>
@@ -203,9 +271,14 @@ function OfferCard({ offer, linkedBets = [], actor, now, onTake, onCancel, onVie
             </button>
           )}
           {isMine && (
-            <button className="fd-btn fd-btn-danger" onClick={cancel} disabled={cancelBusy}>
-              {cancelBusy ? 'Cancelling…' : 'Cancel offer'}
-            </button>
+            <>
+              <button className="fd-btn fd-btn-ghost" onClick={() => setUpdating(true)}>
+                Update exposure
+              </button>
+              <button className="fd-btn fd-btn-danger" onClick={cancel} disabled={cancelBusy}>
+                {cancelBusy ? 'Cancelling…' : 'Cancel offer'}
+              </button>
+            </>
           )}
         </div>
       )}
@@ -213,6 +286,13 @@ function OfferCard({ offer, linkedBets = [], actor, now, onTake, onCancel, onVie
 
       {isOpen && taking && (
         <TakePanel offer={offer} onTake={onTake} onClose={() => setTaking(false)} />
+      )}
+      {isOpen && updating && (
+        <UpdateExposurePanel
+          offer={offer}
+          onUpdate={onUpdateExposure}
+          onClose={() => setUpdating(false)}
+        />
       )}
     </div>
   );

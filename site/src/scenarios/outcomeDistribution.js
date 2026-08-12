@@ -2,21 +2,51 @@
  * outcomeDistribution.js
  *
  * Builds Gaussian-ish outcome pools from historical ADP ±5 windows,
- * handles bottom-10 bucket sharing and top-ADP normalization, and
- * maps percentile rolls (0–100) to selected outcomes.
+ * handles bottom-10 bucket sharing and top-of-position kernel weighting,
+ * and maps percentile rolls (0–100) to selected outcomes.
  */
 
 const ADP_WINDOW = 5;
 const BOTTOM_BUCKET_SIZE = 10;
-const TOP_NORMALIZATION_MAX_RANK = 5;
+const KERNEL_HALF_WIDTH = ADP_WINDOW + 1;
 
 /**
  * Map percentile (0=worst, 100=best) to an outcome index in a descending-sorted pool.
+ * When cumWeights is provided (kernel-weighted pool), the percentile maps through
+ * the weighted CDF instead of uniformly by index.
  */
-export function percentileToOutcomeIndex(percentile, outcomeCount) {
+export function percentileToOutcomeIndex(percentile, outcomeCount, cumWeights = null) {
   if (outcomeCount <= 0) return -1;
   const p = Math.max(0, Math.min(100, Number(percentile) || 0));
-  return Math.min(outcomeCount - 1, Math.floor(((100 - p) / 100) * outcomeCount));
+  if (!cumWeights) {
+    return Math.min(outcomeCount - 1, Math.floor(((100 - p) / 100) * outcomeCount));
+  }
+  const target = ((100 - p) / 100) * cumWeights[outcomeCount - 1];
+  let lo = 0;
+  let hi = outcomeCount - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (cumWeights[mid] > target) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
+/**
+ * Cumulative weights for a sorted pool, or null when the pool is unweighted
+ * (uniform index sampling is equivalent and cheaper).
+ */
+export function buildPoolCumulativeWeights(outcomes) {
+  if (!outcomes || outcomes.length === 0 || outcomes[0]?.weight == null) {
+    return null;
+  }
+  const cum = new Float64Array(outcomes.length);
+  let total = 0;
+  for (let i = 0; i < outcomes.length; i++) {
+    total += outcomes[i].weight ?? 1;
+    cum[i] = total;
+  }
+  return cum;
 }
 
 /**
@@ -26,7 +56,8 @@ export function selectOutcomeFromPool(outcomes, percentile) {
   if (!outcomes || outcomes.length === 0) {
     return { outcome: null, index: -1 };
   }
-  const idx = percentileToOutcomeIndex(percentile, outcomes.length);
+  const cumWeights = buildPoolCumulativeWeights(outcomes);
+  const idx = percentileToOutcomeIndex(percentile, outcomes.length, cumWeights);
   return { outcome: outcomes[idx], index: idx };
 }
 
@@ -57,51 +88,25 @@ function filterBottomBucket(catalog, position, positionMaxRanks) {
 }
 
 /**
- * Find elite outcome seasons (by finish rank) for top-ADP normalization.
+ * True when the ±window around effRank is cut off at the top of the position
+ * (no ranks above #1 exist), leaving the pool asymmetric.
  */
-function findEliteOutcomeSeasons(catalog, position, maxOutcomeRank) {
-  return catalog.filter(
-    (e) => e.position === position
-      && e.outcomeRank != null
-      && e.outcomeRank <= maxOutcomeRank,
-  );
+function isTopTruncatedWindow(effRank) {
+  return effRank - ADP_WINDOW < 1;
 }
 
 /**
- * Inject synthetic duplicates proportional to missing upward ADP range.
- * Preserves P50 ≈ median of base pool by duplicating top-half elite seasons.
+ * Weight window entries by a triangular kernel on ADP distance. Applied only
+ * at the top of a position, where the window is truncated: seasons drafted
+ * closest to the player's rank count most, so the few same-rank seasons
+ * aren't drowned out by lower-ranked neighbors. Nothing is fabricated or
+ * duplicated to fill the missing side of the window.
  */
-function injectTopAdpSyntheticOutcomes(baseOutcomes, catalog, position, effRank) {
-  const rank = Math.ceil(effRank);
-  if (rank > TOP_NORMALIZATION_MAX_RANK || baseOutcomes.length === 0) {
-    return baseOutcomes;
-  }
-
-  const missingUp = Math.max(0, ADP_WINDOW - (rank - 1));
-  if (missingUp === 0) return baseOutcomes;
-
-  const fullWindowSize = ADP_WINDOW * 2 + 1;
-  const syntheticTarget = Math.round(baseOutcomes.length * (missingUp / fullWindowSize));
-  if (syntheticTarget <= 0) return baseOutcomes;
-
-  const elitePool = findEliteOutcomeSeasons(catalog, position, rank);
-  if (elitePool.length === 0) return baseOutcomes;
-
-  const sorted = baseOutcomes.slice().sort((a, b) => b.scoringPts - a.scoringPts);
-  const medianPts = sorted[Math.floor(sorted.length / 2)]?.scoringPts ?? 0;
-
-  const goodElite = elitePool
-    .filter((e) => e.scoringPts >= medianPts)
-    .sort((a, b) => b.scoringPts - a.scoringPts);
-
-  const source = goodElite.length > 0 ? goodElite : elitePool.sort((a, b) => b.scoringPts - a.scoringPts);
-  const augmented = [...baseOutcomes];
-
-  for (let i = 0; i < syntheticTarget; i++) {
-    augmented.push({ ...source[i % source.length], synthetic: true });
-  }
-
-  return augmented;
+function applyKernelWeights(outcomes, centerEffRank) {
+  return outcomes.map((e) => ({
+    ...e,
+    weight: (KERNEL_HALF_WIDTH - Math.abs(e.effRank - centerEffRank)) / KERNEL_HALF_WIDTH,
+  }));
 }
 
 /**
@@ -125,8 +130,8 @@ export function buildOutcomePool(adpInfo, catalog, positionMaxRanks) {
     pool = filterBottomBucket(catalog, position, positionMaxRanks);
   } else {
     pool = filterByEffRankWindow(catalog, position, effRank, ADP_WINDOW);
-    if (effRank <= TOP_NORMALIZATION_MAX_RANK) {
-      pool = injectTopAdpSyntheticOutcomes(pool, catalog, position, effRank);
+    if (isTopTruncatedWindow(effRank)) {
+      pool = applyKernelWeights(pool, effRank);
     }
   }
 

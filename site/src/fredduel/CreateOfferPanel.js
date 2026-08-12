@@ -33,23 +33,24 @@ function Chip({ active, onClick, children }) {
 
 /**
  * Interactive editor for a new offer.
- * props: teams [{rosterId, teamName, ownerName}], currentWeek, onCreate(input), onClose
+ * props: teams [{rosterId, teamName, ownerName}], currentWeek (the upcoming
+ * week — weekly bets are locked to it), onCreate(input), onClose
  */
 function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
   const [kind, setKind] = useState(MARKET_KINDS.SEASON);
   const [teamRosterId, setTeamRosterId] = useState(teams[0]?.rosterId ?? 1);
+  const [opponentRosterId, setOpponentRosterId] = useState(teams[1]?.rosterId ?? 2);
   // Outcome selection is remembered per kind so toggling back keeps context.
   const [seasonOutcome, setSeasonOutcome] = useState('win_league');
-  const [weeklyOutcome, setWeeklyOutcome] = useState('weekly_win');
+  const [weeklyOutcome, setWeeklyOutcome] = useState('weekly_outscore');
   const [place, setPlace] = useState(3.5);
   const [points, setPoints] = useState('');
-  const [week, setWeek] = useState(currentWeek);
   const [customTitle, setCustomTitle] = useState('');
   const [description, setDescription] = useState('');
   // Line and implied % are two views of the same number; editing either one
   // rewrites the other, so folks can think in whichever unit they prefer.
-  const [lineText, setLineText] = useState('+150');
-  const [pctText, setPctText] = useState('40');
+  const [lineText, setLineText] = useState('+100');
+  const [pctText, setPctText] = useState('50');
   const [exposureText, setExposureText] = useState('200');
   const [minTakeText, setMinTakeText] = useState('1');
   const [expiryChoice, setExpiryChoice] = useState('24h');
@@ -61,6 +62,14 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
   const outcomeId = kind === MARKET_KINDS.SEASON ? seasonOutcome : weeklyOutcome;
   const outcomeDef = findOutcome(kind, outcomeId);
   const team = teams.find((t) => Number(t.rosterId) === Number(teamRosterId));
+  const opponent = teams.find((t) => Number(t.rosterId) === Number(opponentRosterId));
+
+  // Picking your current opponent as the team swaps the two, so head-to-head
+  // never ends up with the same team on both sides.
+  const pickTeam = (rid) => {
+    if (Number(rid) === Number(opponentRosterId)) setOpponentRosterId(Number(teamRosterId));
+    setTeamRosterId(Number(rid));
+  };
 
   const market = useMemo(() => {
     if (isCustom) return null;
@@ -71,9 +80,19 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
       outcome: outcomeId,
       ...(outcomeDef?.needs === 'place' ? { place: Number(place) } : {}),
       ...(outcomeDef?.needs === 'points' ? { points: Number(points) } : {}),
-      ...(kind === MARKET_KINDS.WEEKLY ? { week: Number(week) } : {}),
+      ...(outcomeDef?.needs === 'opponent'
+        ? {
+            opponentRosterId: Number(opponentRosterId),
+            opponentName: opponent?.teamName || `Team ${opponentRosterId}`,
+          }
+        : {}),
+      // Weekly bets are always on the upcoming week.
+      ...(kind === MARKET_KINDS.WEEKLY ? { week: Number(currentWeek) } : {}),
     };
-  }, [isCustom, kind, teamRosterId, team, outcomeId, outcomeDef, place, points, week]);
+  }, [
+    isCustom, kind, teamRosterId, team, outcomeId, outcomeDef, place, points,
+    opponentRosterId, opponent, currentWeek,
+  ]);
 
   const title = isCustom ? customTitle.trim() : describeMarket(market);
   const line = parseLineInput(lineText);
@@ -108,6 +127,11 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
   const sampleStake = fullTakeStake != null ? Math.min(10, fullTakeStake) : null;
   const sampleWin = sampleStake != null && sampleStake > 0 ? takerWinAmount(sampleStake, line) : null;
 
+  // Min take must fit inside the biggest stake the exposure can cover,
+  // otherwise the offer can never be taken.
+  const minTake = Number(minTakeText) || 1;
+  const minTakeConflict = fullTakeStake != null && minTake > fullTakeStake;
+
   const submit = async () => {
     setError(null);
     const marketError = isCustom
@@ -121,7 +145,9 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
       marketKind: kind,
       market,
       title,
-      description: description.trim(),
+      // Description only applies to custom bets; drop any leftover text if
+      // the user typed one in custom mode and then switched.
+      description: isCustom ? description.trim() : '',
       line,
       maxExposure: exposure,
       minTake: Number(minTakeText) || 1,
@@ -179,7 +205,7 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
             <input
               type="text"
               maxLength={200}
-              placeholder="e.g. Fred shows up on time to the live draft"
+              placeholder="e.g. Mike and Mac to both miss the playoffs"
               value={customTitle}
               onChange={(e) => setCustomTitle(e.target.value)}
             />
@@ -190,7 +216,7 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
           <div className="fd-field-row">
             <div className="fd-field">
               <label>Team</label>
-              <select value={teamRosterId} onChange={(e) => setTeamRosterId(Number(e.target.value))}>
+              <select value={teamRosterId} onChange={(e) => pickTeam(e.target.value)}>
                 {teams.map((t) => (
                   <option key={t.rosterId} value={t.rosterId}>
                     {t.teamName}{t.ownerName ? ` (${t.ownerName})` : ''}
@@ -200,12 +226,8 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
             </div>
             {kind === MARKET_KINDS.WEEKLY && (
               <div className="fd-field fd-field-narrow">
-                <label>Week</label>
-                <select value={week} onChange={(e) => setWeek(Number(e.target.value))}>
-                  {Array.from({ length: 17 }, (_, i) => i + 1).map((w) => (
-                    <option key={w} value={w}>Week {w}</option>
-                  ))}
-                </select>
+                <label>Week <span className="fd-muted">(upcoming only)</span></label>
+                <div className="fd-static-value">Week {currentWeek}</div>
               </div>
             )}
           </div>
@@ -224,6 +246,23 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
                 ))}
               </select>
             </div>
+            {outcomeDef?.needs === 'opponent' && (
+              <div className="fd-field">
+                <label>Versus</label>
+                <select
+                  value={opponentRosterId}
+                  onChange={(e) => setOpponentRosterId(Number(e.target.value))}
+                >
+                  {teams
+                    .filter((t) => Number(t.rosterId) !== Number(teamRosterId))
+                    .map((t) => (
+                      <option key={t.rosterId} value={t.rosterId}>
+                        {t.teamName}{t.ownerName ? ` (${t.ownerName})` : ''}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
             {outcomeDef?.needs === 'place' && (
               <div className="fd-field fd-field-narrow">
                 <label>Place line</label>
@@ -253,16 +292,19 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
         </>
       )}
 
-      <div className="fd-field">
-        <label>Description <span className="fd-muted">(optional{isCustom ? ', settlement rules encouraged' : ''})</span></label>
-        <textarea
-          rows={2}
-          maxLength={2000}
-          placeholder={isCustom ? 'How does this settle? Who judges?' : 'Any extra context…'}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
+      {/* Structured markets describe themselves; only custom bets need one */}
+      {isCustom && (
+        <div className="fd-field">
+          <label>Description <span className="fd-muted">(optional, settlement rules encouraged)</span></label>
+          <textarea
+            rows={2}
+            maxLength={2000}
+            placeholder="How does this settle? Who judges?"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+      )}
 
       {/* Live title preview */}
       <div className={`fd-preview${title ? '' : ' fd-preview-empty'}`}>
@@ -271,35 +313,42 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
         {lineOk && <span className="fd-preview-line">{formatLine(line)}</span>}
       </div>
 
-      {/* The numbers: line ⇄ implied %, exposure, min take — one row */}
-      <div className="fd-field-row">
-        <div className="fd-field fd-field-narrow">
-          <label>Line <span className="fd-muted">(taker's odds)</span></label>
-          <input
-            type="text"
-            className={lineText && !lineOk ? 'fd-input-bad' : ''}
-            value={lineText}
-            onChange={(e) => onLineEdited(e.target.value)}
-            placeholder="+150"
-          />
-        </div>
-        <div className="fd-field fd-field-narrow">
-          <label>Implied win % <span className="fd-muted">(same thing)</span></label>
-          <div className={`fd-money-input${pctText && !pctOk ? ' fd-input-bad' : ''}`}>
+      {/* The numbers: odds (line ⇄ implied %), exposure, min take — one row */}
+      <div className="fd-numbers-row">
+        <div className="fd-numbers-field">
+          <label>Odds <span className="fd-muted">(edit either side)</span></label>
+          <div
+            className={`fd-input-box fd-odds-box${
+              (lineText && !lineOk) || (pctText && !pctOk) ? ' fd-input-bad' : ''
+            }`}
+          >
             <input
               type="text"
+              className="fd-odds-line"
+              value={lineText}
+              onChange={(e) => onLineEdited(e.target.value)}
+              placeholder="+100"
+              aria-label="American line"
+            />
+            <span className="fd-odds-link" title="Line and implied win % are the same number — editing one updates the other">
+              ⇄
+            </span>
+            <input
+              type="text"
+              className="fd-odds-pct"
               inputMode="decimal"
               value={pctText}
               onChange={(e) => onPctEdited(e.target.value)}
-              placeholder="40"
+              placeholder="50"
+              aria-label="Implied win percent"
             />
-            <span>%</span>
+            <span className="fd-unit">%</span>
           </div>
         </div>
-        <div className="fd-field fd-field-narrow">
+        <div className="fd-numbers-field">
           <label>Max exposure <span className="fd-muted">(most you're willing to lose)</span></label>
-          <div className="fd-money-input">
-            <span>$</span>
+          <div className="fd-input-box">
+            <span className="fd-unit">$</span>
             <input
               type="number"
               min="1"
@@ -309,10 +358,10 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
             />
           </div>
         </div>
-        <div className="fd-field fd-field-narrow">
+        <div className="fd-numbers-field">
           <label>Min take <span className="fd-muted">($1 floor)</span></label>
-          <div className="fd-money-input">
-            <span>$</span>
+          <div className={`fd-input-box${minTakeConflict ? ' fd-input-bad' : ''}`}>
+            <span className="fd-unit">$</span>
             <input
               type="number"
               min="1"
@@ -323,6 +372,14 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
           </div>
         </div>
       </div>
+
+      {minTakeConflict && (
+        <div className="fd-error">
+          Min take doesn't fit this offer: at {formatLine(line)}, a{' '}
+          {formatMoney(exposure)} exposure covers at most a {formatMoney(fullTakeStake)} take.
+          Lower the min take or raise your exposure.
+        </div>
+      )}
 
       {/* Payout math preview */}
       {lineOk && exposureOk && fullTakeStake > 0 && (
@@ -374,7 +431,7 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
       {error && <div className="fd-error">{error}</div>}
 
       <div className="fd-create-actions">
-        <button className="fd-btn fd-btn-primary" onClick={submit} disabled={busy}>
+        <button className="fd-btn fd-btn-primary" onClick={submit} disabled={busy || minTakeConflict}>
           {busy ? 'Posting…' : 'Post offer'}
         </button>
         <button className="fd-btn fd-btn-ghost" onClick={onClose} disabled={busy}>Discard</button>

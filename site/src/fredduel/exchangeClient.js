@@ -11,17 +11,19 @@
 //                                     description, line, maxExposure,
 //                                     minTake, expiresAt }
 //   takeOffer(offerId, stake) -> { bet, offer }
+//   updateOfferExposure(offerId, newRemaining) -> offer
 //   cancelOffer(offerId) -> offer
 //   resetTestData()      -> void (test client only)
 
 import {
   isValidLine, roundCents, takerWinAmount, validateTake, isEffectivelyFilled,
+  maxStakeForExposure,
 } from './oddsMath';
 import { buildTestSeed } from './testSeed';
 
 export const TEST_MODE_KEY = 'fredduel_test_mode';
 export const TEST_ACTOR_KEY = 'fredduel_test_actor';
-const TEST_DB_KEY = 'fredduel_test_db_v2';
+const TEST_DB_KEY = 'fredduel_test_db_v4';
 
 export function isTestMode() {
   try {
@@ -53,10 +55,33 @@ export function validateOfferInput(input) {
   if (exposure > 100000) return 'Max exposure is capped at $100,000.';
   const minTake = Number(input.minTake ?? 1);
   if (!Number.isFinite(minTake) || minTake < 1) return 'Minimum take must be at least $1.';
+  // An offer nobody can take is invalid: the largest stake the exposure can
+  // cover at this line must be at least the minimum take.
+  const maxStake = maxStakeForExposure(exposure, Number(input.line));
+  if (minTake > maxStake) {
+    return `Min take is too high: at ${Number(input.line) > 0 ? '+' : ''}${Number(input.line)} `
+      + `a $${exposure} exposure covers at most a $${maxStake} take.`;
+  }
   const expires = new Date(input.expiresAt).getTime();
   if (!Number.isFinite(expires)) return 'Pick an expiry time.';
   if (expires <= Date.now()) return 'Expiry must be in the future.';
   if (expires > Date.now() + 366 * 24 * 60 * 60 * 1000) return 'Expiry must be within a year.';
+  return null;
+}
+
+/**
+ * Validate changing an open offer's unfilled exposure to `newRemaining`.
+ * Matched action is untouched; the ceiling becomes matched + newRemaining.
+ */
+export function validateExposureUpdate(offer, newRemaining) {
+  const val = Number(newRemaining);
+  if (!Number.isFinite(val) || val < 1) return 'Unfilled exposure must be at least $1.';
+  const matched = roundCents(Number(offer.maxExposure) - Number(offer.remainingExposure));
+  if (matched + val > 100000) return 'Total exposure is capped at $100,000.';
+  if (Number(offer.minTake) > maxStakeForExposure(val, Number(offer.line))) {
+    const needed = takerWinAmount(Number(offer.minTake), Number(offer.line));
+    return `Too low for your $${offer.minTake} min take — it needs at least $${needed} of exposure at this line.`;
+  }
   return null;
 }
 
@@ -182,6 +207,23 @@ export function createTestClient(getActor) {
       return { bet, offer };
     },
 
+    async updateOfferExposure(offerId, newRemaining) {
+      const actor = requireActor();
+      const db = loadTestDb();
+      applyExpiry(db);
+      const offer = db.offers.find((o) => o.id === offerId);
+      if (!offer) throw new Error('Offer not found.');
+      if (offer.creatorId !== actor.id) throw new Error('Not your offer.');
+      if (offer.status !== 'open') throw new Error(`Offer is ${offer.status}.`);
+      const error = validateExposureUpdate(offer, newRemaining);
+      if (error) throw new Error(error);
+      const matched = roundCents(offer.maxExposure - offer.remainingExposure);
+      offer.remainingExposure = roundCents(newRemaining);
+      offer.maxExposure = roundCents(matched + Number(newRemaining));
+      saveTestDb(db);
+      return offer;
+    },
+
     async cancelOffer(offerId) {
       const actor = requireActor();
       const db = loadTestDb();
@@ -249,6 +291,13 @@ export function createRemoteClient(getToken) {
     async takeOffer(offerId, stake) {
       const data = await authed({ action: 'take', offerId, stake: roundCents(stake) });
       return { bet: data.bet, offer: data.offer };
+    },
+
+    async updateOfferExposure(offerId, newRemaining) {
+      const data = await authed({
+        action: 'updateExposure', offerId, remainingExposure: roundCents(newRemaining),
+      });
+      return data.offer;
     },
 
     async cancelOffer(offerId) {

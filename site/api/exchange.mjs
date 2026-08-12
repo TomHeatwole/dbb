@@ -142,6 +142,11 @@ async function handleCreate(req, res, sql, bettor) {
   if (!Number.isFinite(minTakeNum) || minTakeNum < 1) {
     return res.status(400).json({ error: 'minTake must be at least $1' });
   }
+  // An offer nobody can take is invalid: the exposure must cover at least a
+  // minTake-sized stake at this line.
+  if (minTakeNum > maxStakeForExposure(exposure, lineNum)) {
+    return res.status(400).json({ error: 'minTake exceeds the largest stake maxExposure can cover at this line' });
+  }
   if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
     return res.status(400).json({ error: 'expiresAt must be in the future' });
   }
@@ -244,6 +249,48 @@ async function handleTake(req, res, sql, bettor) {
   });
 }
 
+async function handleUpdateExposure(req, res, sql, bettor) {
+  const idNum = Number(req.body?.offerId);
+  const newRemaining = roundCents(req.body?.remainingExposure);
+  if (!Number.isInteger(idNum)) {
+    return res.status(400).json({ error: 'offerId must be an integer' });
+  }
+  if (!Number.isFinite(newRemaining) || newRemaining < 1) {
+    return res.status(400).json({ error: 'remainingExposure must be at least $1' });
+  }
+
+  await expireStaleOffers(sql);
+  const [row] = await sql`
+    SELECT * FROM fd_offers
+    WHERE id = ${idNum} AND creator_user_id = ${bettor.id} AND status = 'open'
+  `;
+  if (!row) {
+    return res.status(404).json({ error: 'No open offer of yours with that id' });
+  }
+
+  const offer = mapOffer(row);
+  // Matched action is untouched; the ceiling becomes matched + newRemaining.
+  const matched = roundCents(offer.maxExposure - offer.remainingExposure);
+  if (matched + newRemaining > 100000) {
+    return res.status(400).json({ error: 'Total exposure is capped at $100,000' });
+  }
+  if (offer.minTake > maxStakeForExposure(newRemaining, offer.line)) {
+    return res.status(400).json({ error: 'remainingExposure is too low to cover this offer\'s minTake at its line' });
+  }
+
+  const [updated] = await sql`
+    UPDATE fd_offers
+    SET remaining_exposure = ${newRemaining},
+        max_exposure = ${roundCents(matched + newRemaining)}
+    WHERE id = ${idNum} AND creator_user_id = ${bettor.id} AND status = 'open'
+    RETURNING *
+  `;
+  if (!updated) {
+    return res.status(409).json({ error: 'Offer changed while updating; try again' });
+  }
+  return res.status(200).json({ offer: mapOffer(updated) });
+}
+
 async function handleCancel(req, res, sql, bettor) {
   const idNum = Number(req.body?.offerId);
   if (!Number.isInteger(idNum)) {
@@ -279,8 +326,9 @@ export default async function handler(req, res) {
       const action = req.body?.action;
       if (action === 'create') return await handleCreate(req, res, sql, bettor);
       if (action === 'take') return await handleTake(req, res, sql, bettor);
+      if (action === 'updateExposure') return await handleUpdateExposure(req, res, sql, bettor);
       if (action === 'cancel') return await handleCancel(req, res, sql, bettor);
-      return res.status(400).json({ error: "action must be 'create', 'take', or 'cancel'" });
+      return res.status(400).json({ error: "action must be 'create', 'take', 'updateExposure', or 'cancel'" });
     }
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {

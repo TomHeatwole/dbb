@@ -116,7 +116,9 @@ function OutcomeListModal({
                     <td className="fp-rank-modal-td fp-rank-modal-td--name">
                       {name || entry.sleeperId}
                       <span className="outcome-modal-season"> · {entry.seasonYear}</span>
-                      {entry.synthetic && <span className="outcome-modal-synthetic"> synth</span>}
+                      {entry.weight != null && (
+                        <span className="outcome-modal-weight"> ·w {entry.weight.toFixed(2)}</span>
+                      )}
                     </td>
                     <td className="fp-rank-modal-td fp-rank-modal-td--adp">{adpStr}</td>
                     <td className="fp-rank-modal-td fp-rank-modal-td--pts">

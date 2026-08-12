@@ -4178,9 +4178,8 @@
   margin: 0;
 }
 .tablet-info-container {
-  padding-left: 2rem;
-  padding-right: 2rem;
-  padding-top: 2rem;
+  box-sizing: border-box;
+  padding: 2rem 2rem 2rem;
   min-height: calc(90vh);
   margin: 0 auto;
   max-width: 90rem;
@@ -8205,7 +8204,7 @@ body.modal-open {
   font-size: 0.9em;
 }
 
-.outcome-modal-synthetic {
+.outcome-modal-weight {
   color: rgba(180, 140, 40, 0.65);
   font-size: 0.78em;
   font-style: italic;
@@ -13616,9 +13615,51 @@ body.modal-open {
 }
 
 .teams2-pick-round {
+  flex-shrink: 0;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
   font-weight: 800;
-  color: #818cf8;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+}
+
+/* Round tiers, ordered by grandness: gold, green, blue, purple */
+.teams2-pick-round--1 {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #fbbf24;
+}
+.teams2-pick-round--2 {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.32);
+  color: #4ade80;
+}
+.teams2-pick-round--3 {
+  background: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.32);
+  color: #60a5fa;
+}
+.teams2-pick-round--4 {
+  background: rgba(192, 132, 252, 0.1);
+  border-color: rgba(192, 132, 252, 0.32);
+  color: #c084fc;
+}
+
+/* Summary counts reuse the tier colors as plain text */
+.teams2-picks-summary .teams2-pick-round--1,
+.teams2-picks-summary .teams2-pick-round--2,
+.teams2-picks-summary .teams2-pick-round--3,
+.teams2-picks-summary .teams2-pick-round--4 {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.teams2-picks-summary-sep {
+  color: #475569;
 }
 
 .teams2-pick-label {
@@ -17878,7 +17919,9 @@ body.modal-open {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.75;
+  /* Dim via color, not opacity: opacity would also fade descendants like the
+     expiry tooltip, which must render fully opaque. */
+  color: rgba(255, 255, 255, 0.75);
   margin-bottom: 0.35rem;
 }
 
@@ -18049,27 +18092,38 @@ body.modal-open {
 
 .fd-tip-pop {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
   min-width: 240px;
-  max-width: 320px;
-  background: #12151d;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 9px;
-  padding: 0.55rem 0.75rem;
+  max-width: 300px;
+  background: #1b2130;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
   font-size: 0.8rem;
   font-weight: 400;
   line-height: 1.45;
   text-transform: none;
   letter-spacing: normal;
-  color: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.12s ease;
   pointer-events: none;
+}
+
+/* Tooltip arrow pointing down at the anchor */
+.fd-tip-pop::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1b2130;
 }
 
 .fd-tip:hover .fd-tip-pop,
@@ -18104,4 +18158,102 @@ body.modal-open {
 
 .fd-bet-highlight {
   animation: fd-bet-flash 2.4s ease-out;
+}
+
+/* --- FredDuel editor: uniform number inputs + linked odds pair --- */
+
+.fd-numbers-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.9rem;
+  margin-bottom: 0.85rem;
+}
+
+.fd-numbers-field > label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 0.35rem;
+  white-space: nowrap;
+}
+
+.fd-numbers-field > label .fd-muted { text-transform: none; font-weight: 400; }
+
+.fd-input-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 44px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+  padding: 0 0.7rem;
+  transition: border-color 0.12s ease;
+}
+
+.fd-input-box:focus-within {
+  border-color: rgba(96, 165, 250, 0.65);
+}
+
+.fd-input-box.fd-input-bad { border-color: rgba(248, 113, 113, 0.7); }
+
+.fd-input-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-size: 1rem;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+  width: 84px;
+}
+
+.fd-input-box input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.fd-input-box .fd-unit {
+  opacity: 0.55;
+  font-size: 0.92rem;
+}
+
+.fd-odds-box .fd-odds-line { width: 64px; text-align: center; }
+.fd-odds-box .fd-odds-pct { width: 52px; text-align: center; }
+
+.fd-odds-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(96, 165, 250, 0.18);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  color: #93c5fd;
+  font-size: 0.85rem;
+  cursor: help;
+  flex: 0 0 auto;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .fd-numbers-row { gap: 0.7rem; }
+  .fd-numbers-field > label { white-space: normal; }
+  .fd-input-box input { width: 72px; }
+}
+
+/* FredDuel editor: read-only value (e.g. locked upcoming week) */
+.fd-static-value {
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.95rem;
+  opacity: 0.8;
+  white-space: nowrap;
 }
