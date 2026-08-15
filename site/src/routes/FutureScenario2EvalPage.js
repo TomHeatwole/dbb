@@ -19,13 +19,12 @@ import {
   loadCurrentHwangAdpRankMap,
   loadHwangPositionMaxRanks,
 } from '../scenarios/hwangAdpLoader';
-import { loadHistoricalOutcomeCatalog } from '../scenarios/historicalOutcomeData';
-import { generateMissingRolls, buildPlayerProjections } from '../scenarios/outcomeDistribution';
-import { computeFutureScenario2Eval, collectRequiredSeasonYears } from '../scenarios/computeFutureScenario2Eval';
+import { loadHistoricalOutcomeCatalog, getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
+import { generateMissingRolls } from '../scenarios/outcomeDistribution';
+import { computeFutureScenario2Eval } from '../scenarios/computeFutureScenario2Eval';
 import ScenarioStandingsPanel from '../scenarios/ScenarioStandingsPanel';
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 import ScenarioTeamDetail from '../scenarios/ScenarioTeamDetail';
-import { getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
 import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
 import { normalizeOutcomeScenarioYear } from '../scenarios/outcomeScenarioConfig';
 
@@ -80,6 +79,7 @@ function FutureScenario2EvalPage() {
   const [outcomeCatalog, setOutcomeCatalog] = useState(null);
   const [positionMaxRanks, setPositionMaxRanks] = useState(null);
   const [percentileRolls, setPercentileRolls] = useState({});
+  const [playoffRolls, setPlayoffRolls] = useState({});
   const [weeklyStatsByYear, setWeeklyStatsByYear] = useState(null);
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [scenarioSeason, setScenarioSeason] = useState(null);
@@ -108,9 +108,10 @@ function FutureScenario2EvalPage() {
       scoringConfig,
       playersData,
       playerIdMap,
+      playoffRolls,
     );
   }, [
-    hwangAdpRankMap, outcomeCatalog, positionMaxRanks, percentileRolls,
+    hwangAdpRankMap, outcomeCatalog, positionMaxRanks, percentileRolls, playoffRolls,
     weeklyStatsByYear, scoringConfig, playersData, playerIdMap,
     originalRosters, scenarioRosters,
   ]);
@@ -158,10 +159,13 @@ function FutureScenario2EvalPage() {
         }
 
         const rolls = generateMissingRolls([...allPlayerIds], decoded.p);
-        const rollsWereGenerated = [...allPlayerIds].some((pid) => decoded.p?.[pid] == null);
+        const poRolls = generateMissingRolls([...allPlayerIds], decoded.pp);
+        const rollsWereGenerated = [...allPlayerIds].some(
+          (pid) => decoded.p?.[pid] == null || decoded.pp?.[pid] == null,
+        );
 
         if (rollsWereGenerated && !cancelled) {
-          const encoded = encodeFutureScenario2(orig, modified, rolls, seasonYear);
+          const encoded = encodeFutureScenario2(orig, modified, rolls, seasonYear, poRolls);
           navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`, { replace: true });
         }
 
@@ -175,6 +179,7 @@ function FutureScenario2EvalPage() {
         setOutcomeCatalog(catalog);
         setPositionMaxRanks(maxRanks);
         setPercentileRolls(rolls);
+        setPlayoffRolls(poRolls);
       } catch (e) {
         if (!cancelled) setError('Failed to load scenario data.');
       } finally {
@@ -187,28 +192,9 @@ function FutureScenario2EvalPage() {
   }, [scenarioParam, navigate]);
 
   const yearsNeeded = useMemo(() => {
-    if (!hwangAdpRankMap || !outcomeCatalog || !positionMaxRanks) return [];
-
-    const allPlayerIds = new Set();
-    for (const rid in scenarioRosters) {
-      for (const pid of (scenarioRosters[rid] || [])) allPlayerIds.add(pid);
-    }
-    for (const rid in originalRosters) {
-      for (const pid of (originalRosters[rid] || [])) allPlayerIds.add(pid);
-    }
-
-    const projections = buildPlayerProjections(
-      allPlayerIds,
-      hwangAdpRankMap,
-      outcomeCatalog.catalog,
-      positionMaxRanks,
-      percentileRolls,
-    );
-    return collectRequiredSeasonYears(projections);
-  }, [
-    hwangAdpRankMap, outcomeCatalog, positionMaxRanks, percentileRolls,
-    originalRosters, scenarioRosters,
-  ]);
+    if (!scenarioSeason) return [];
+    return getOutcomeHistoryYears(Number(scenarioSeason));
+  }, [scenarioSeason]);
 
   useEffect(() => {
     if (yearsNeeded.length === 0) {
@@ -250,11 +236,27 @@ function FutureScenario2EvalPage() {
         scenarioRosters,
         next,
         scenarioSeason,
+        playoffRolls,
       );
       navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`, { replace: true });
       return next;
     });
-  }, [originalRosters, scenarioRosters, scenarioSeason, navigate]);
+  }, [originalRosters, scenarioRosters, scenarioSeason, playoffRolls, navigate]);
+
+  const handlePlayoffPercentileChange = useCallback((playerId, percentile) => {
+    setPlayoffRolls((prev) => {
+      const next = { ...prev, [playerId]: Math.max(0, Math.min(100, Math.round(percentile))) };
+      const encoded = encodeFutureScenario2(
+        originalRosters,
+        scenarioRosters,
+        percentileRolls,
+        scenarioSeason,
+        next,
+      );
+      navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`, { replace: true });
+      return next;
+    });
+  }, [originalRosters, scenarioRosters, scenarioSeason, percentileRolls, navigate]);
 
   const handleRerollAll = useCallback(() => {
     const allPlayerIds = new Set();
@@ -262,15 +264,19 @@ function FutureScenario2EvalPage() {
       for (const pid of scenarioRosters[rid]) allPlayerIds.add(pid);
     }
     const next = {};
+    const nextPo = {};
     for (const pid of allPlayerIds) {
       next[pid] = Math.floor(Math.random() * 101);
+      nextPo[pid] = Math.floor(Math.random() * 101);
     }
     setPercentileRolls(next);
+    setPlayoffRolls(nextPo);
     const encoded = encodeFutureScenario2(
       originalRosters,
       scenarioRosters,
       next,
       scenarioSeason,
+      nextPo,
     );
     navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`, { replace: true });
   }, [originalRosters, scenarioRosters, scenarioSeason, navigate]);
@@ -317,7 +323,7 @@ function FutureScenario2EvalPage() {
           <div className="scenario-page-layout scenario-eval-layout">
             <div className="scenario-eval-topbar">
               <span className="scenario-eval-season-label">
-                {scenarioSeason} ADP · outcomes {historyLabel} · Hwang ADP ±5
+                {scenarioSeason} ADP · outcomes {historyLabel} · Hwang ADP ±2
               </span>
               <button
                 type="button"
@@ -359,8 +365,8 @@ function FutureScenario2EvalPage() {
                       {loadingStats ? 'Loading weekly stats…' : 'Computing…'}
                     </div>
                     <div className="scenario-eval-placeholder-body">
-                      Rolling percentile outcomes from {historyLabel} and building
-                      optimal lineups for all 17 weeks.
+                      Rolling regular-season outcomes from {historyLabel}, then an
+                      independent playoff roll from real weeks 15–17.
                     </div>
                   </div>
                 )}
@@ -378,6 +384,7 @@ function FutureScenario2EvalPage() {
                   playerIdMap={playerIdMap}
                   playerProjections={evalResult.playerProjections}
                   onPercentileChange={handlePercentileChange}
+                  onPlayoffPercentileChange={handlePlayoffPercentileChange}
                   scenarioRosters={scenarioRosters}
                   playerWeeklyPoints={evalResult.playerWeeklyPoints}
                 />

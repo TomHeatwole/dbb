@@ -6,9 +6,10 @@ import {
   MAX_SIMULATOR_ITERATIONS,
   SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS,
 } from './simulatorMonteCarlo';
+import { VARIANCE_LEVELS, DEFAULT_VARIANCE, MONOTONE_MODES, DEFAULT_MONOTONE } from './outcomeDistribution';
 
 const PRESETS = [1000, 5000, 10000, 50000, 100000, 1_000_000];
-const POPOVER_WIDTH_PX = 248;
+const POPOVER_WIDTH_PX = 280;
 const POPOVER_GAP_PX = 7;
 const VIEWPORT_MARGIN_PX = 8;
 
@@ -36,7 +37,14 @@ function computePopoverStyle(anchorEl) {
   };
 }
 
-function SimulatorRunSettings({ iterations, onChangeIterations }) {
+function SimulatorRunSettings({
+  iterations,
+  onChangeIterations,
+  variance = DEFAULT_VARIANCE,
+  onChangeVariance,
+  monotone = DEFAULT_MONOTONE,
+  onChangeMonotone,
+}) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(String(iterations ?? DEFAULT_ITERATIONS));
   const [popoverStyle, setPopoverStyle] = useState(null);
@@ -135,6 +143,58 @@ function SimulatorRunSettings({ iterations, onChangeIterations }) {
           </button>
         ))}
       </div>
+      {onChangeVariance && (
+        <>
+          <div className="simulator-run-settings-label simulator-run-settings-variance-label">
+            Outcome variance
+          </div>
+          <div className="simulator-run-settings-presets">
+            {Object.entries(VARIANCE_LEVELS).map(([key, level]) => (
+              <button
+                key={key}
+                type="button"
+                title={level.description}
+                className={
+                  'simulator-run-settings-preset' +
+                  (variance === key ? ' simulator-run-settings-preset--active' : '')
+                }
+                onClick={() => onChangeVariance(key)}
+              >
+                {level.label}
+              </button>
+            ))}
+          </div>
+          <p className="simulator-run-settings-hint">
+            {VARIANCE_LEVELS[variance]?.description}
+          </p>
+        </>
+      )}
+      {onChangeMonotone && (
+        <>
+          <div className="simulator-run-settings-label simulator-run-settings-variance-label">
+            ADP envelope
+          </div>
+          <div className="simulator-run-settings-presets">
+            {Object.entries(MONOTONE_MODES).map(([key, level]) => (
+              <button
+                key={key}
+                type="button"
+                title={level.description}
+                className={
+                  'simulator-run-settings-preset' +
+                  (monotone === key ? ' simulator-run-settings-preset--active' : '')
+                }
+                onClick={() => onChangeMonotone(key)}
+              >
+                {level.label}
+              </button>
+            ))}
+          </div>
+          <p className="simulator-run-settings-hint">
+            {MONOTONE_MODES[monotone]?.description}
+          </p>
+        </>
+      )}
       <button type="button" className="simulator-run-settings-apply" onClick={commitDraft}>
         Apply
       </button>

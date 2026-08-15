@@ -2,7 +2,10 @@
  * computeFutureScenario2Eval.js
  *
  * Future Scenarios v2: projects current rosters by rolling percentile outcomes
- * from a Gaussian-ish pool built from historical Hwang ADP ±5 windows.
+ * from monotonic, synthetic-densified pools built from historical Hwang ADP
+ * ±2 windows (weeks 1–14; see outcomeDistribution.js). Weeks 15–17 are a
+ * second independent roll from real historical playoff weeks conditioned on
+ * the realized regular-season total.
  */
 
 import { buildSleeperBasePoints } from './sleeperScoring';
@@ -15,6 +18,10 @@ import {
 import {
   buildPlayerProjections,
   collectRequiredSeasonYears,
+  materializeOutcomeWeeks,
+  buildPlayoffIndex,
+  overlayPlayoffWeeks,
+  attachPlayoffProjection,
 } from './outcomeDistribution';
 
 const NUM_WEEKS = 17;
@@ -31,7 +38,9 @@ function buildProjectedSeasonTotals(playerWeeklyPoints) {
 
 /**
  * Build weekly points using rolled historical outcomes.
- * Each player borrows weekly stats from their selected outcome's season.
+ * Each player borrows weeks 1–14 from their selected ADP-pool outcome, then
+ * independently rolls weeks 15–17 from real historical playoff weeks of
+ * seasons with similar regular-season scoring.
  */
 export function buildOutcomeProjectionPoints(
   allRosters,
@@ -39,6 +48,8 @@ export function buildOutcomeProjectionPoints(
   weeklyStatsByYear,
   scoringConfig,
   playersData,
+  catalog,
+  playoffRolls = {},
 ) {
   const basePointsByYear = {};
 
@@ -50,33 +61,38 @@ export function buildOutcomeProjectionPoints(
     );
   }
 
+  const playoffIndex = buildPlayoffIndex(catalog, basePointsByYear, NUM_WEEKS);
+
   const allCurrentPlayerIds = new Set();
   for (const rid in allRosters) {
     for (const pid of (allRosters[rid] || [])) allCurrentPlayerIds.add(pid);
   }
 
+  const weeksByPid = {};
+  for (const currentPid of allCurrentPlayerIds) {
+    const proj = playerProjections && playerProjections[currentPid];
+    const outcome = proj?.selectedOutcome;
+    let weeks = outcome
+      ? materializeOutcomeWeeks(outcome, basePointsByYear, NUM_WEEKS)
+      : null;
+    if (weeks && proj && !proj.unranked) {
+      const next = attachPlayoffProjection(
+        proj,
+        playoffIndex,
+        weeks,
+        playoffRolls[currentPid],
+      );
+      playerProjections[currentPid] = next;
+      weeks = overlayPlayoffWeeks(weeks, next.selectedPlayoffOutcome) || weeks;
+    }
+    weeksByPid[currentPid] = weeks;
+  }
+
   return Array.from({ length: NUM_WEEKS }, (_, weekIdx) => {
     const weekPts = {};
-
     for (const currentPid of allCurrentPlayerIds) {
-      const proj = playerProjections && playerProjections[currentPid];
-      const outcome = proj?.selectedOutcome;
-
-      if (!outcome) {
-        weekPts[currentPid] = 0;
-        continue;
-      }
-
-      const yearKey = String(outcome.seasonYear);
-      const historicalBasePoints = basePointsByYear[yearKey];
-      if (!historicalBasePoints) {
-        weekPts[currentPid] = 0;
-        continue;
-      }
-
-      weekPts[currentPid] = historicalBasePoints[weekIdx]?.[outcome.sleeperId] ?? 0;
+      weekPts[currentPid] = weeksByPid[currentPid]?.[weekIdx] ?? 0;
     }
-
     return weekPts;
   });
 }
@@ -95,6 +111,7 @@ export function computeFutureScenario2Eval(
   scoringConfig,
   playersData,
   playerIdMap,
+  playoffRolls = {},
 ) {
   const combinedRosters = {};
   const allRids = new Set([
@@ -126,6 +143,8 @@ export function computeFutureScenario2Eval(
     weeklyStatsByYear,
     scoringConfig,
     playersData,
+    catalog,
+    playoffRolls,
   );
 
   const playerSeasonTotalsMap = buildProjectedSeasonTotals(playerWeeklyPoints);

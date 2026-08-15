@@ -26,6 +26,7 @@ import SimulatorResultsPanel from '../scenarios/SimulatorResultsPanel';
 import SimulatorTeamDetail from '../scenarios/SimulatorTeamDetail';
 import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
 import { normalizeOutcomeScenarioYear } from '../scenarios/outcomeScenarioConfig';
+import { DEFAULT_VARIANCE, VARIANCE_LEVELS, normalizeVariance, DEFAULT_MONOTONE, MONOTONE_MODES, normalizeMonotone } from '../scenarios/outcomeDistribution';
 
 import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
 import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
@@ -55,6 +56,8 @@ function SimulatorRunPage() {
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [scenarioSeason, setScenarioSeason] = useState(null);
   const [iterations, setIterations] = useState(DEFAULT_ITERATIONS);
+  const [variance, setVariance] = useState(DEFAULT_VARIANCE);
+  const [monotone, setMonotone] = useState(DEFAULT_MONOTONE);
 
   useEffect(() => {
     const decoded = decodeFutureScenario2(scenarioParam);
@@ -66,8 +69,12 @@ function SimulatorRunPage() {
 
     const seasonYear = normalizeOutcomeScenarioYear(decoded.sy);
     const runCount = decoded.n ?? DEFAULT_ITERATIONS;
+    const runVariance = normalizeVariance(decoded.v);
+    const runMonotone = normalizeMonotone(decoded.m);
     setScenarioSeason(seasonYear);
     setIterations(runCount);
+    setVariance(runVariance);
+    setMonotone(runMonotone);
 
     let cancelled = false;
 
@@ -122,6 +129,8 @@ function SimulatorRunPage() {
           weeklyStatsByYear,
           scoringConfig: cfg,
           playersData: players,
+          variance: runVariance,
+          monotone: runMonotone,
         });
 
         setLoadingProgress(1);
@@ -195,7 +204,9 @@ function SimulatorRunPage() {
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper
         title="Season Simulator"
-        subtitle={scenarioSeason ? `${scenarioSeason} · ${iterations.toLocaleString()} runs` : null}
+        subtitle={scenarioSeason
+          ? `${scenarioSeason} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
+          : null}
         leftHeader={backLink}
       >
         {(phase === 'loading' || phase === 'running' || phase === 'celebrating') && (

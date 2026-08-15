@@ -31,6 +31,7 @@ import {
   normalizeOutcomeScenarioYear,
 } from '../scenarios/outcomeScenarioConfig';
 import { DEFAULT_ITERATIONS } from '../scenarios/simulatorMonteCarlo';
+import { DEFAULT_VARIANCE, normalizeVariance, DEFAULT_MONOTONE, normalizeMonotone } from '../scenarios/outcomeDistribution';
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Season Simulator';
@@ -48,7 +49,10 @@ function SimulatorTooltip({ season, iterations }) {
           <div className="scenario-builder-tooltip-body">
             <p style={{ margin: '0 0 0.6em 0' }}>
               Same outcome engine as Future Scenarios v2 — each player gets a random
-              percentile roll from their {season} Hwang ADP ±5 historical pool ({yearLabel}).
+              percentile roll from their {season} Hwang ADP ±2 historical pool ({yearLabel}),
+              densified with synthetic in-between seasons, for weeks 1–14. Playoff weeks
+              15–17 are rolled independently from real historical playoffs of similar
+              regular-season scorers.
             </p>
             <p style={{ margin: 0 }}>
               Edit rosters, then run <strong>{iterations.toLocaleString()} simulations</strong> to
@@ -92,6 +96,14 @@ function SimulatorBuilderPage() {
     const pre = pendingScenarioRef.current;
     return pre?.n ?? DEFAULT_ITERATIONS;
   });
+  const [variance, setVariance] = useState(() => {
+    const pre = pendingScenarioRef.current;
+    return normalizeVariance(pre?.v ?? DEFAULT_VARIANCE);
+  });
+  const [monotone, setMonotone] = useState(() => {
+    const pre = pendingScenarioRef.current;
+    return normalizeMonotone(pre?.m ?? DEFAULT_MONOTONE);
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -131,6 +143,8 @@ function SimulatorBuilderPage() {
 
         if (pending?.sy && normalizeOutcomeScenarioYear(pending.sy) === season) {
           if (pending.n != null) setIterations(pending.n);
+          if (pending.v != null) setVariance(normalizeVariance(pending.v));
+          if (pending.m != null) setMonotone(normalizeMonotone(pending.m));
           if (Array.isArray(pending.c) && pending.c.length > 0) {
             setScenarioRosters(sanitizeRosters(applyScenarioChanges(initial, pending.c)));
             setSearchParams((prev) => {
@@ -205,6 +219,8 @@ function SimulatorBuilderPage() {
     const encoded = encodeSimulatorScenario(originalRosters, scenarioRosters, {
       seasonYear: season,
       iterations,
+      variance,
+      monotone,
     });
     navigate(`?state=run&scenario=${encodeURIComponent(encoded)}`);
   };
@@ -276,6 +292,10 @@ function SimulatorBuilderPage() {
                   <SimulatorRunSettings
                     iterations={iterations}
                     onChangeIterations={setIterations}
+                    variance={variance}
+                    onChangeVariance={setVariance}
+                    monotone={monotone}
+                    onChangeMonotone={setMonotone}
                   />
                 </div>
               </div>

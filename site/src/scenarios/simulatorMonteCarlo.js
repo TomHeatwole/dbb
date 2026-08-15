@@ -45,6 +45,7 @@ function createWorkerContext(ctx) {
     weekBuffers: Array.from({ length: 17 }, () => ({})),
     seasonTotals: {},
     rolls: {},
+    playoffRolls: {},
   };
 }
 

@@ -35,6 +35,7 @@ export function buildTeamFinishBuckets(simRuns, rosterId) {
     bucket.runs.push({
       simIndex: sim.simIndex,
       rolls: sim.rolls,
+      playoffRolls: sim.playoffRolls,
       totalScore: tr.totalScore,
       luckPercentile: tr.luckPercentile ?? null,
     });
@@ -252,6 +253,7 @@ function SimulatorTeamDetail({
                         scenarioRosters,
                         run.rolls,
                         seasonYear,
+                        run.playoffRolls,
                       );
                       const luckLabel = run.luckPercentile != null
                         ? `P${Math.round(run.luckPercentile)}`

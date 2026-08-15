@@ -8,7 +8,10 @@ import { buildFinalStandings } from './computeScenarioEval';
 import {
   buildOutcomePool,
   buildPoolCumulativeWeights,
+  buildPlayoffIndex,
+  materializeOutcomeWeeks,
   percentileToOutcomeIndex,
+  selectPlayoffOutcome,
 } from './outcomeDistribution';
 import { buildSleeperBasePoints } from './sleeperScoring';
 import { computeLuckFromRolls } from './luckMetrics';
@@ -24,6 +27,7 @@ import {
 } from './simulatorHistograms';
 
 const NUM_WEEKS = 17;
+const REG_SEASON_WEEKS = 14;
 const MAX_RUNS_PER_FINISH = 50;
 const ZERO_WEEKS = new Float32Array(NUM_WEEKS);
 
@@ -58,11 +62,13 @@ function rostersEqual(a, b) {
   return true;
 }
 
-function precomputeOutcomePools(allPlayerIds, hwangAdpRankMap, catalog, positionMaxRanks) {
+function precomputeOutcomePools(allPlayerIds, hwangAdpRankMap, catalog, positionMaxRanks, variance, monotone) {
   const pools = {};
   for (const pid of allPlayerIds) {
     const adpInfo = hwangAdpRankMap && hwangAdpRankMap[pid];
-    pools[pid] = adpInfo ? buildOutcomePool(adpInfo, catalog, positionMaxRanks) : [];
+    pools[pid] = adpInfo
+      ? buildOutcomePool(adpInfo, catalog, positionMaxRanks, { variance, monotone })
+      : [];
   }
   return pools;
 }
@@ -83,15 +89,9 @@ function precomputeOutcomeWeekPoints(allPlayerIds, pools, basePointsByYear) {
   const outcomeWeekPts = {};
   for (const pid of allPlayerIds) {
     const pool = pools[pid] || [];
-    outcomeWeekPts[pid] = pool.map((outcome) => {
-      const yearKey = String(outcome.seasonYear);
-      const yearWeeks = basePointsByYear[yearKey];
-      const arr = new Float32Array(NUM_WEEKS);
-      for (let wi = 0; wi < NUM_WEEKS; wi++) {
-        arr[wi] = yearWeeks?.[wi]?.[outcome.sleeperId] ?? 0;
-      }
-      return arr;
-    });
+    outcomeWeekPts[pid] = pool.map(
+      (outcome) => Float32Array.from(materializeOutcomeWeeks(outcome, basePointsByYear, NUM_WEEKS)),
+    );
   }
   return outcomeWeekPts;
 }
@@ -101,32 +101,50 @@ function createRuntimeBuffers(allPlayerIds) {
     weekBuffers: Array.from({ length: NUM_WEEKS }, () => ({})),
     seasonTotals: {},
     rolls: {},
+    playoffRolls: {},
   };
 }
 
-function fillRandomRolls(allPlayerIds, rolls) {
+function fillRandomRolls(allPlayerIds, rolls, playoffRolls = {}) {
   for (const pid of allPlayerIds) {
     rolls[pid] = (Math.random() * 101) | 0;
+    playoffRolls[pid] = (Math.random() * 101) | 0;
   }
-  return rolls;
 }
 
 function fillWeeklyFromRolls(ctx) {
-  const { allPlayerIds, pools, poolCumWeights, outcomeWeekPts, weekBuffers, seasonTotals, rolls } = ctx;
+  const {
+    allPlayerIds, pools, poolCumWeights, outcomeWeekPts, playoffIndex,
+    playerPositions, weekBuffers, seasonTotals, rolls, playoffRolls,
+  } = ctx;
 
   for (const pid of allPlayerIds) {
     const poolLen = pools[pid]?.length ?? 0;
-    let ptsArr = ZERO_WEEKS;
-    if (poolLen > 0) {
-      const pct = rolls[pid] ?? 50;
-      const idx = percentileToOutcomeIndex(pct, poolLen, poolCumWeights[pid]);
-      ptsArr = outcomeWeekPts[pid][idx] || ZERO_WEEKS;
+    if (poolLen === 0) {
+      for (let wi = 0; wi < NUM_WEEKS; wi++) weekBuffers[wi][pid] = 0;
+      seasonTotals[pid] = 0;
+      continue;
     }
+    const pct = rolls[pid] ?? 50;
+    const idx = percentileToOutcomeIndex(pct, poolLen, poolCumWeights[pid]);
+    const ptsArr = outcomeWeekPts[pid][idx] || ZERO_WEEKS;
 
     let total = 0;
-    for (let wi = 0; wi < NUM_WEEKS; wi++) {
+    let reg = 0;
+    for (let wi = 0; wi < REG_SEASON_WEEKS; wi++) {
       const p = ptsArr[wi];
       weekBuffers[wi][pid] = p;
+      total += p;
+      reg += p;
+    }
+    const pos = playerPositions[pid];
+    const poSel = playoffIndex
+      ? selectPlayoffOutcome(playoffIndex, pos, reg, (playoffRolls || {})[pid] ?? 50)
+      : { outcome: null };
+    const po = poSel.outcome?.po;
+    for (let k = 0; k < 3; k++) {
+      const p = po ? po[k] : (ptsArr[REG_SEASON_WEEKS + k] || 0);
+      weekBuffers[REG_SEASON_WEEKS + k][pid] = p;
       total += p;
     }
     seasonTotals[pid] = total;
@@ -199,7 +217,7 @@ function incrementTeamFinishCount(buckets, rosterId, place) {
   teamBuckets[place - 1].count += 1;
 }
 
-function recordTeamFinishSample(buckets, rosterId, simIndex, rolls, teamResult) {
+function recordTeamFinishSample(buckets, rosterId, simIndex, rolls, playoffRolls, teamResult) {
   const place = teamResult?.place;
   if (place == null || place < 1 || place > 10) return;
 
@@ -212,6 +230,7 @@ function recordTeamFinishSample(buckets, rosterId, simIndex, rolls, teamResult) 
   const entry = {
     simIndex,
     rolls: { ...rolls },
+    playoffRolls: { ...playoffRolls },
     totalScore: teamResult.totalScore,
     luckPercentile: teamResult.luckPercentile ?? null,
   };
@@ -333,6 +352,8 @@ export function prepareSimulatorContext({
   weeklyStatsByYear,
   scoringConfig,
   playersData,
+  variance,
+  monotone,
 }) {
   const allPlayerIds = new Set();
   for (const rid in scenarioRosters) {
@@ -346,13 +367,14 @@ export function prepareSimulatorContext({
   }
 
   const playerIdList = [...allPlayerIds];
-  const pools = precomputeOutcomePools(playerIdList, hwangAdpRankMap, catalog, positionMaxRanks);
+  const pools = precomputeOutcomePools(playerIdList, hwangAdpRankMap, catalog, positionMaxRanks, variance, monotone);
   const poolCumWeights = {};
   for (const pid of playerIdList) {
     poolCumWeights[pid] = buildPoolCumulativeWeights(pools[pid]);
   }
   const basePointsByYear = precomputeBasePointsByYear(weeklyStatsByYear, scoringConfig, playersData);
   const outcomeWeekPts = precomputeOutcomeWeekPoints(playerIdList, pools, basePointsByYear);
+  const playoffIndex = buildPlayoffIndex(catalog, basePointsByYear, NUM_WEEKS);
   const playerPositions = buildPlayerPositionsMap(playerIdList, playersData);
   const runtime = createRuntimeBuffers(playerIdList);
   const rosterIds = Object.keys(scenarioRosters).map(Number);
@@ -365,6 +387,7 @@ export function prepareSimulatorContext({
     pools,
     poolCumWeights,
     outcomeWeekPts,
+    playoffIndex,
     playerPositions,
     rosterIds,
     ...runtime,
@@ -406,7 +429,7 @@ export function runSimulationIterations(ctx, state, {
   for (let i = 0; i < count; i++) {
     const simIndex = startIndex + i;
 
-    fillRandomRolls(ctx.allPlayerIds, ctx.rolls);
+    fillRandomRolls(ctx.allPlayerIds, ctx.rolls, ctx.playoffRolls);
     fillWeeklyFromRolls(ctx);
 
     const scenarioOutcome = scoreRostersFromWeekly(ctx, ctx.scenarioRosters, !keepSimSamples);
@@ -436,7 +459,7 @@ export function runSimulationIterations(ctx, state, {
 
     if (keepSimSamples) {
       for (const [rid, tr] of Object.entries(scenarioOutcome.teamResults || {})) {
-        recordTeamFinishSample(teamFinishBuckets, rid, simIndex + 1, ctx.rolls, tr);
+        recordTeamFinishSample(teamFinishBuckets, rid, simIndex + 1, ctx.rolls, ctx.playoffRolls, tr);
       }
     }
 

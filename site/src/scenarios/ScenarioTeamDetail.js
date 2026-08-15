@@ -34,6 +34,21 @@ function buildSeasonTotalsMap(playerWeeklyPoints) {
 
 // ── Outcome projection badge (Future Scenarios v2) ────────────────────────────
 
+/**
+ * Human-readable label for a synthetic outcome, e.g.
+ * "Josh Jacobs 2022 + Raheem Mostert 2023" or "Cooper Kupp 2021 ×1.12".
+ */
+function syntheticOutcomeLabel(outcome, playersData) {
+  const parts = (outcome.parents || []).map((p) => {
+    const name = playerName(playersData && playersData[p.sleeperId]) || p.sleeperId;
+    return `${name} ${p.seasonYear}`;
+  });
+  if (outcome.extrapolation) {
+    return `${parts[0] || '?'} ×${Number(outcome.scale).toFixed(2)}`;
+  }
+  return parts.join(' + ');
+}
+
 function OutcomeListModal({
   projection, playersData, onClose, onPercentileChange,
 }) {
@@ -64,9 +79,9 @@ function OutcomeListModal({
         <button type="button" className="player-card-close" aria-label="Close" onClick={onClose}>×</button>
 
         <div className="fp-rank-modal-header">
-          <span className="fp-rank-modal-title">{adpLabel} — Possible Outcomes</span>
+          <span className="fp-rank-modal-title">{adpLabel} — Regular-season outcomes</span>
           <span className="fp-rank-modal-subtitle">
-            Past 5 seasons · {scoringNote} · sorted by season points
+            Past 5 seasons · {scoringNote} · sorted by season points · supplies weeks 1–14
           </span>
         </div>
 
@@ -102,24 +117,38 @@ function OutcomeListModal({
             </thead>
             <tbody>
               {(outcomes || []).map((entry, i) => {
-                const name = playerName(playersData && playersData[entry.sleeperId]);
-                const adpStr = entry.adpRank != null
-                  ? `${position}${entry.adpRank}`
-                  : `${position}${Math.round(entry.effRank)}`;
                 const isActive = i === selectedIndex;
+                const rowKey = entry.synthetic
+                  ? `synth-${i}`
+                  : `${entry.sleeperId}-${entry.seasonYear}-${i}`;
+
+                const nameCell = entry.synthetic
+                  ? (
+                    <>
+                      <span className="outcome-modal-weight">synthetic · </span>
+                      {syntheticOutcomeLabel(entry, playersData)}
+                    </>
+                  )
+                  : (
+                    <>
+                      {playerName(playersData && playersData[entry.sleeperId]) || entry.sleeperId}
+                      <span className="outcome-modal-season"> · {entry.seasonYear}</span>
+                    </>
+                  );
+
+                const adpStr = entry.synthetic
+                  ? '—'
+                  : (entry.adpRank != null
+                    ? `${position}${entry.adpRank}`
+                    : `${position}${Math.round(entry.effRank)}`);
+
                 return (
                   <tr
-                    key={`${entry.sleeperId}-${entry.seasonYear}-${i}`}
+                    key={rowKey}
                     className={`fp-rank-modal-row${isActive ? ' fp-rank-modal-row--active' : ''}`}
                   >
                     <td className="fp-rank-modal-td fp-rank-modal-td--rank">{i + 1}</td>
-                    <td className="fp-rank-modal-td fp-rank-modal-td--name">
-                      {name || entry.sleeperId}
-                      <span className="outcome-modal-season"> · {entry.seasonYear}</span>
-                      {entry.weight != null && (
-                        <span className="outcome-modal-weight"> ·w {entry.weight.toFixed(2)}</span>
-                      )}
-                    </td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--name">{nameCell}</td>
                     <td className="fp-rank-modal-td fp-rank-modal-td--adp">{adpStr}</td>
                     <td className="fp-rank-modal-td fp-rank-modal-td--pts">
                       {entry.outcomeRank != null ? `${position}${entry.outcomeRank}` : '—'}
@@ -139,19 +168,126 @@ function OutcomeListModal({
   );
 }
 
+function PlayoffOutcomeModal({
+  projection, playersData, onClose, onPlayoffPercentileChange,
+}) {
+  const [localPercentile, setLocalPercentile] = useState(projection?.playoffPercentile ?? 50);
+
+  useEffect(() => {
+    setLocalPercentile(projection?.playoffPercentile ?? 50);
+  }, [projection?.playoffPercentile, projection?.selectedPlayoffIndex]);
+
+  if (!projection) return null;
+
+  const { adpLabel, playoffOutcomes, selectedPlayoffIndex, regularSeasonPts } = projection;
+  const rsLabel = regularSeasonPts != null ? `${regularSeasonPts.toFixed(0)} pts in weeks 1–14` : 'this regular season';
+
+  const handleApply = () => {
+    if (onPlayoffPercentileChange) onPlayoffPercentileChange(localPercentile);
+    onClose();
+  };
+
+  return createPortal(
+    <div className="player-modal-overlay" onClick={onClose}>
+      <div
+        className="player-modal fp-rank-modal outcome-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="player-card-close" aria-label="Close" onClick={onClose}>×</button>
+
+        <div className="fp-rank-modal-header">
+          <span className="fp-rank-modal-title">{adpLabel} — Playoff outcomes</span>
+          <span className="fp-rank-modal-subtitle">
+            Real weeks 15–17 from historical seasons with similar regular-season scoring
+            ({rsLabel})
+          </span>
+        </div>
+
+        <div className="outcome-modal-controls">
+          <label className="outcome-modal-percentile-label" htmlFor="playoff-percentile-input">
+            Playoff percentile
+          </label>
+          <input
+            id="playoff-percentile-input"
+            type="range"
+            min={0}
+            max={100}
+            value={localPercentile}
+            onChange={(e) => setLocalPercentile(Number(e.target.value))}
+            className="outcome-modal-slider"
+          />
+          <span className="outcome-modal-percentile-value">P{localPercentile}</span>
+          <button type="button" className="outcome-modal-apply-btn" onClick={handleApply}>
+            Apply
+          </button>
+        </div>
+
+        <div className="fp-rank-modal-scroll">
+          <table className="fp-rank-modal-table">
+            <thead>
+              <tr>
+                <th className="fp-rank-modal-th fp-rank-modal-th--rank">#</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--name">Player · Season</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--pts">RS 1–14</th>
+                <th className="fp-rank-modal-th fp-rank-modal-th--pts">W15–17</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(playoffOutcomes || []).map((entry, i) => {
+                const isActive = i === selectedPlayoffIndex;
+                const name = playerName(playersData && playersData[entry.sleeperId]) || entry.sleeperId;
+                return (
+                  <tr
+                    key={`${entry.sleeperId}-${entry.seasonYear}-${i}`}
+                    className={`fp-rank-modal-row${isActive ? ' fp-rank-modal-row--active' : ''}`}
+                  >
+                    <td className="fp-rank-modal-td fp-rank-modal-td--rank">{i + 1}</td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--name">
+                      {name}
+                      <span className="outcome-modal-season"> · {entry.seasonYear}</span>
+                    </td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--pts">
+                      {entry.regPts.toFixed(1)}
+                    </td>
+                    <td className="fp-rank-modal-td fp-rank-modal-td--pts">
+                      {entry.poTotal.toFixed(1)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function playoffOutcomeLabel(outcome, playersData) {
+  if (!outcome) return null;
+  const name = playerName(playersData && playersData[outcome.sleeperId]) || outcome.sleeperId;
+  return `${name} ${outcome.seasonYear} W15–17`;
+}
+
 function OutcomeProjectionPills({
   projection,
   playersData,
   onPercentileChange,
+  onPlayoffPercentileChange,
   playerId,
   showAdp = true,
   showRoll = true,
+  showPlayoffRoll = false,
 }) {
   const [tipPos, setTipPos] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [playoffModalOpen, setPlayoffModalOpen] = useState(false);
 
   if (!projection || projection.unranked) {
-    if (!showAdp && !showRoll) return null;
+    if (!showAdp && !showRoll && !showPlayoffRoll) return null;
     return (
       <span
         className="fp-rank-badge fp-rank-badge--not-found"
@@ -162,22 +298,36 @@ function OutcomeProjectionPills({
     );
   }
 
-  const { adpLabel, percentile, selectedOutcome, position } = projection;
+  const { adpLabel, percentile, selectedOutcome, position, playoffPercentile, selectedPlayoffOutcome } = projection;
   const historicalPlayer = selectedOutcome
     && playersData
     && playersData[selectedOutcome.sleeperId];
   const historicalPlayerName = playerName(historicalPlayer);
   const outcomeRank = selectedOutcome?.outcomeRank;
   const rollColor = percentileColor(percentile);
+  const playoffColor = percentileColor(playoffPercentile);
 
-  const tooltip = historicalPlayerName && selectedOutcome
-    ? `${historicalPlayerName}, ${selectedOutcome.seasonYear} season · finish ${position}${outcomeRank ?? '?'} · P${Math.round(percentile)}`
-    : `${adpLabel} outcome pool · P${Math.round(percentile)}`;
+  const rsBit = selectedOutcome?.synthetic
+    ? `Synthetic weeks 1–14 · ${syntheticOutcomeLabel(selectedOutcome, playersData)} · P${Math.round(percentile)}`
+    : historicalPlayerName && selectedOutcome
+      ? `${historicalPlayerName}, ${selectedOutcome.seasonYear} weeks 1–14 · finish ${position}${outcomeRank ?? '?'} · P${Math.round(percentile)}`
+      : `${adpLabel} outcome pool · P${Math.round(percentile)}`;
+  const poBit = selectedPlayoffOutcome
+    ? `Playoff · ${playoffOutcomeLabel(selectedPlayoffOutcome, playersData)} · ${selectedPlayoffOutcome.poTotal.toFixed(1)} pts · P${Math.round(playoffPercentile)} given this regular season`
+    : playoffPercentile != null
+      ? `Playoff P${Math.round(playoffPercentile)} given this regular season`
+      : null;
+  const tooltip = poBit ? `${rsBit} · ${poBit}` : rsBit;
 
   const openModal = (e) => {
     e.stopPropagation();
     setTipPos(null);
     setModalOpen(true);
+  };
+  const openPlayoffModal = (e) => {
+    e.stopPropagation();
+    setTipPos(null);
+    setPlayoffModalOpen(true);
   };
 
   const pills = (
@@ -202,10 +352,20 @@ function OutcomeProjectionPills({
           )}
         </span>
       )}
+      {showPlayoffRoll && playoffPercentile != null && (
+        <span
+          className="outcome-roll-badge outcome-roll-badge--playoff fp-rank-badge--clickable"
+          style={{ '--roll-color': playoffColor }}
+          onClick={openPlayoffModal}
+        >
+          <span className="outcome-roll-kind">Yoff</span>
+          <span className="outcome-roll-pct">P{Math.round(playoffPercentile)}</span>
+        </span>
+      )}
     </>
   );
 
-  if (!showAdp && !showRoll) return null;
+  if (!showAdp && !showRoll && !showPlayoffRoll) return null;
 
   return (
     <>
@@ -218,7 +378,7 @@ function OutcomeProjectionPills({
         {pills}
       </span>
 
-      {tipPos && !modalOpen && (
+      {tipPos && !modalOpen && !playoffModalOpen && (
         <span
           className="fp-rank-tooltip-fixed"
           style={{ right: window.innerWidth - tipPos.x + 8, top: tipPos.y - 36 }}
@@ -235,11 +395,21 @@ function OutcomeProjectionPills({
           onPercentileChange={(p) => onPercentileChange && onPercentileChange(playerId, p)}
         />
       )}
+      {playoffModalOpen && (
+        <PlayoffOutcomeModal
+          projection={projection}
+          playersData={playersData}
+          onClose={() => setPlayoffModalOpen(false)}
+          onPlayoffPercentileChange={(p) => onPlayoffPercentileChange && onPlayoffPercentileChange(playerId, p)}
+        />
+      )}
     </>
   );
 }
 
-function OutcomeProjectionBadge({ playerId, playerProjections, playersData, onPercentileChange }) {
+function OutcomeProjectionBadge({
+  playerId, playerProjections, playersData, onPercentileChange, onPlayoffPercentileChange,
+}) {
   if (!playerProjections) return null;
   const proj = playerProjections[playerId];
   return (
@@ -248,6 +418,8 @@ function OutcomeProjectionBadge({ playerId, playerProjections, playersData, onPe
       projection={proj}
       playersData={playersData}
       onPercentileChange={onPercentileChange}
+      onPlayoffPercentileChange={onPlayoffPercentileChange}
+      showPlayoffRoll
     />
   );
 }
@@ -474,7 +646,7 @@ function PtsDelta({ delta, tooltip }) {
 function ScenarioWeekTable({
   scenarioWeek, originalWeek, playersData, playerIdMap, onPlayerClick,
   fpRankings, historicalPositionRanks, projectionYear,
-  playerProjections, onPercentileChange,
+  playerProjections, onPercentileChange, onPlayoffPercentileChange,
 }) {
   const [benchExpanded, setBenchExpanded] = useState(false);
   const startersSectionRef = useRef(null);
@@ -546,6 +718,7 @@ function ScenarioWeekTable({
                 playerProjections={playerProjections}
                 playersData={playersData}
                 onPercentileChange={onPercentileChange}
+                onPlayoffPercentileChange={onPlayoffPercentileChange}
               />
             ) : (
               <>
@@ -604,6 +777,7 @@ function ScenarioWeekTable({
               playerProjections={playerProjections}
               playersData={playersData}
               onPercentileChange={onPercentileChange}
+              onPlayoffPercentileChange={onPlayoffPercentileChange}
             />
           ) : (
             <>
@@ -1041,6 +1215,7 @@ function ScenarioPlayerStatsTable({
   onPlayerClick,
   playerProjections,
   onPercentileChange,
+  onPlayoffPercentileChange,
 }) {
   const showProjections = Boolean(playerProjections);
 
@@ -1077,9 +1252,15 @@ function ScenarioPlayerStatsTable({
                 </th>
                 <th
                   className="scenario-player-stats-th scenario-player-stats-th--badge"
-                  title="Percentile roll and rolled outcome finish rank"
+                  title="Percentile roll and rolled outcome finish rank (weeks 1–14)"
                 >
                   Roll
+                </th>
+                <th
+                  className="scenario-player-stats-th scenario-player-stats-th--badge"
+                  title="Independent playoff percentile given this regular season (weeks 15–17)"
+                >
+                  Yoff
                 </th>
               </>
             )}
@@ -1121,6 +1302,7 @@ function ScenarioPlayerStatsTable({
                         projection={playerProjections[row.playerId]}
                         playersData={playersData}
                         onPercentileChange={onPercentileChange}
+                        onPlayoffPercentileChange={onPlayoffPercentileChange}
                         showAdp
                         showRoll={false}
                       />
@@ -1131,8 +1313,21 @@ function ScenarioPlayerStatsTable({
                         projection={playerProjections[row.playerId]}
                         playersData={playersData}
                         onPercentileChange={onPercentileChange}
+                        onPlayoffPercentileChange={onPlayoffPercentileChange}
                         showAdp={false}
                         showRoll
+                      />
+                    </td>
+                    <td className="scenario-player-stats-badge-col">
+                      <OutcomeProjectionPills
+                        playerId={row.playerId}
+                        projection={playerProjections[row.playerId]}
+                        playersData={playersData}
+                        onPercentileChange={onPercentileChange}
+                        onPlayoffPercentileChange={onPlayoffPercentileChange}
+                        showAdp={false}
+                        showRoll={false}
+                        showPlayoffRoll
                       />
                     </td>
                   </>
@@ -1227,7 +1422,7 @@ function ScenarioLuckSummary({ luckMetrics }) {
 function ScenarioTeamDetail({
   rosterId, teamsForGrid, originalWeeklyScores, scenarioWeeklyScores, playersData, playerIdMap,
   fpRankings, historicalPositionRanks, projectionYear,
-  playerProjections, onPercentileChange,
+  playerProjections, onPercentileChange, onPlayoffPercentileChange,
   scenarioRosters, playerWeeklyPoints,
 }) {
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
@@ -1294,7 +1489,7 @@ function ScenarioTeamDetail({
       <div className="scenario-team-detail-section-title">Player Scoring</div>
       <div className="scenario-team-detail-section-subtitle">
         Season totals, lineup usage, and HVORP
-        {showProjections ? ' · ADP rolls from outcome distributions' : ' (Hwang value over replacement)'}
+        {showProjections ? ' · ADP rolls (weeks 1–14) and independent playoff rolls (weeks 15–17)' : ' (Hwang value over replacement)'}
       </div>
       <ScenarioPlayerStatsTable
         rosterId={rosterId}
@@ -1306,6 +1501,7 @@ function ScenarioTeamDetail({
         onPlayerClick={setSelectedPlayer}
         playerProjections={playerProjections}
         onPercentileChange={onPercentileChange}
+        onPlayoffPercentileChange={onPlayoffPercentileChange}
       />
     </div>
   ) : null;
@@ -1404,6 +1600,7 @@ function ScenarioTeamDetail({
           projectionYear={projectionYear}
           playerProjections={playerProjections}
           onPercentileChange={onPercentileChange}
+          onPlayoffPercentileChange={onPlayoffPercentileChange}
         />
       </div>
 

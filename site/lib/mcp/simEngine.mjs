@@ -3,8 +3,10 @@
  *
  * Node port of the browser simulator's pure math. Each iteration rolls a
  * percentile per player, maps it into an outcome pool built from historical
- * seasons of players with similar Hwang ADP, scores every roster with optimal
- * best-ball lineups for 17 weeks, and accumulates finish distributions.
+ * seasons of players with similar Hwang ADP (weeks 1–14), then independently
+ * rolls weeks 15–17 from real playoff weeks of seasons with similar 1–14
+ * scoring. Scores every roster with optimal best-ball lineups and accumulates
+ * finish distributions.
  *
  * KEEP IN SYNC with the frontend sources of truth:
  *   site/src/scenarios/outcomeDistribution.js   (outcome pools)
@@ -24,11 +26,34 @@ const ZERO_WEEKS = new Float32Array(NUM_WEEKS);
 export const DEFAULT_ITERATIONS = 1000;
 export const MAX_ITERATIONS = 5000;
 
-// ─── Outcome pools (Hwang ADP ±5 window) ─────────────────────────────────────
+// ─── Outcome pools (Hwang ADP ±2 window, monotonic grid + synthetics) ────────
 
-const ADP_WINDOW = 5;
-const BOTTOM_BUCKET_SIZE = 10;
+const ADP_WINDOW = 2;
 const KERNEL_HALF_WIDTH = ADP_WINDOW + 1;
+const BOTTOM_BUCKET_SIZE = 10;
+const INTERP_SPLIT_WEEK = 9;
+const PLAYOFF_NEIGHBORS = 30;
+
+export const VARIANCE_LEVELS = {
+  low: { extrapolations: [] },
+  medium: { extrapolations: [0.12] },
+  high: { extrapolations: [0.12, 0.25] },
+};
+export const DEFAULT_VARIANCE = 'low';
+
+export function normalizeVariance(v) {
+  return VARIANCE_LEVELS[v] ? v : DEFAULT_VARIANCE;
+}
+
+export const MONOTONE_MODES = {
+  quantiles: true,
+  medianPool: true,
+};
+export const DEFAULT_MONOTONE = 'quantiles';
+
+export function normalizeMonotone(m) {
+  return MONOTONE_MODES[m] ? m : DEFAULT_MONOTONE;
+}
 
 export function percentileToOutcomeIndex(percentile, outcomeCount, cumWeights = null) {
   if (outcomeCount <= 0) return -1;
@@ -60,55 +85,396 @@ export function buildPoolCumulativeWeights(outcomes) {
   return cum;
 }
 
-function isBottomBucket(effRank, posRank, position, positionMaxRanks) {
-  const max = positionMaxRanks && positionMaxRanks[position];
-  if (!max) return false;
-  const eff = effRank ?? posRank;
-  if (eff == null) return false;
-  return eff >= max.maxEffRank - (BOTTOM_BUCKET_SIZE - 1)
-    || (posRank != null && posRank >= max.maxPosRank - (BOTTOM_BUCKET_SIZE - 1));
+function seasonKey(e) {
+  if (e?.synthetic) {
+    if (e.scale != null) {
+      const p = e.parents?.[0];
+      return `x:${p?.sleeperId}|${p?.seasonYear}|${e.scale}`;
+    }
+    const ps = (e.parents || []).map((p) => `${p.sleeperId}|${p.seasonYear}`).join('+');
+    return `s:${ps}|${e.splitWeek}|${Math.round((e.scoringPts || 0) * 100)}`;
+  }
+  return `${e.sleeperId}|${e.seasonYear}`;
 }
 
-function filterByEffRankWindow(catalog, position, centerEffRank, windowSize = ADP_WINDOW) {
-  const lo = centerEffRank - windowSize;
-  const hi = centerEffRank + windowSize;
-  return catalog.filter((e) => e.position === position && e.effRank >= lo && e.effRank <= hi);
+function sortPoolDesc(pool) {
+  pool.sort((a, b) => b.scoringPts - a.scoringPts);
+  return pool;
 }
 
-function filterBottomBucket(catalog, position, positionMaxRanks) {
-  const max = positionMaxRanks[position];
-  if (!max) return [];
-  const minEff = max.maxEffRank - (BOTTOM_BUCKET_SIZE - 1);
-  return catalog.filter((e) => e.position === position && e.effRank >= minEff);
+function outcomeIndexAt(pool, percentile) {
+  if (!pool.length) return -1;
+  return percentileToOutcomeIndex(percentile, pool.length, buildPoolCumulativeWeights(pool));
 }
 
-function isTopTruncatedWindow(effRank) {
-  return effRank - ADP_WINDOW < 1;
+function applyUpperQuantilePromotions(pools) {
+  const EPS = 1e-6;
+  const last = pools.length - 1;
+  if (last < 1) return;
+
+  // Lower percentiles can delete a duplicate smash from a worse rank and
+  // punch a hole in a higher quantile. Repeat the P100→P50 sweep until the
+  // whole upper half is stable.
+  for (let sweep = 0; sweep < 20; sweep++) {
+    let any = false;
+    for (let p = 100; p >= 50; p -= 1) {
+      for (let pass = 0; pass <= last; pass++) {
+        let changed = false;
+        for (let r = 0; r < last; r++) {
+          const better = pools[r];
+          const worse = pools[r + 1];
+          if (!better.length || !worse.length) continue;
+          sortPoolDesc(better);
+          sortPoolDesc(worse);
+          const ib = outcomeIndexAt(worse, p);
+          const ia = outcomeIndexAt(better, p);
+          const a = better[ia];
+          const b = worse[ib];
+          if (!a || !b || b.scoringPts <= a.scoringPts + EPS) continue;
+
+          const kB = seasonKey(b);
+          if (better.some((e) => seasonKey(e) === kB)) continue;
+
+          worse.splice(ib, 1);
+          better.push({ ...b, weight: b.weight ?? 1 });
+          changed = true;
+          any = true;
+        }
+        if (!changed) break;
+      }
+    }
+    if (!any) break;
+  }
+  for (const pool of pools) sortPoolDesc(pool);
 }
 
-function applyKernelWeights(outcomes, centerEffRank) {
-  return outcomes.map((e) => ({
-    ...e,
-    weight: (KERNEL_HALF_WIDTH - Math.abs(e.effRank - centerEffRank)) / KERNEL_HALF_WIDTH,
-  }));
+function poolQuality(pool) {
+  if (pool.length === 0) return { median: -Infinity, mean: -Infinity };
+  let wTot = 0;
+  let sum = 0;
+  for (const e of pool) {
+    wTot += e.weight;
+    sum += e.weight * e.scoringPts;
+  }
+  const sorted = pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
+  const densified = densifyPool(sorted, DEFAULT_VARIANCE);
+  const cum = buildPoolCumulativeWeights(densified);
+  const idx = percentileToOutcomeIndex(50, densified.length, cum);
+  return { median: densified[idx].scoringPts, mean: wTot > 0 ? sum / wTot : -Infinity };
 }
 
-export function buildOutcomePool(adpInfo, catalog, positionMaxRanks) {
+const gridCache = new WeakMap();
+
+function getPositionGrid(catalog, position, positionMaxRanks, opts = {}) {
+  const max = positionMaxRanks?.[position];
+  const monotone = normalizeMonotone(opts.monotone);
+  const variance = normalizeVariance(opts.variance);
+  const densify = opts.densify !== false;
+  const cacheKey = `${position}|${max?.maxEffRank ?? ''}|${max?.maxPosRank ?? ''}|${monotone}|${
+    monotone === 'quantiles' && densify ? variance : (monotone === 'quantiles' ? 'reals' : '')
+  }`;
+  let byKey = gridCache.get(catalog);
+  if (!byKey) {
+    byKey = new Map();
+    gridCache.set(catalog, byKey);
+  }
+  const cached = byKey.get(cacheKey);
+  if (cached) return cached;
+
+  const entries = catalog.filter((e) => e.position === position);
+
+  let maxEntryEff = 0;
+  for (const e of entries) maxEntryEff = Math.max(maxEntryEff, e.effRank);
+  const bottomStart = max?.maxEffRank != null
+    ? max.maxEffRank - (BOTTOM_BUCKET_SIZE - 1)
+    : maxEntryEff - (BOTTOM_BUCKET_SIZE - 1);
+  const tailStart = bottomStart;
+  const gridMax = Math.max(1, Math.ceil(tailStart) - 1);
+
+  const rawPools = [];
+  for (let r = 1; r <= gridMax; r++) {
+    const lo = r - ADP_WINDOW;
+    const hi = r + ADP_WINDOW;
+    const truncated = lo < 1;
+    const pool = [];
+    for (const e of entries) {
+      if (e.effRank < lo || e.effRank > hi) continue;
+      const weight = truncated
+        ? (KERNEL_HALF_WIDTH - Math.abs(e.effRank - r)) / KERNEL_HALF_WIDTH
+        : 1;
+      pool.push({ ...e, weight });
+    }
+    rawPools.push(pool);
+  }
+
+  const tailBucket = entries
+    .filter((e) => e.effRank >= tailStart)
+    .map((e) => ({ ...e, weight: 1 }));
+
+  let pools;
+  let tailPool;
+  let preDensified = false;
+
+  if (monotone === 'medianPool') {
+    const ranked = [...rawPools, tailBucket]
+      .map((pool) => ({ pool, q: poolQuality(pool) }))
+      .sort((x, y) => (y.q.median - x.q.median) || (y.q.mean - x.q.mean))
+      .map((row) => row.pool);
+    pools = ranked.slice(0, gridMax);
+    tailPool = ranked[gridMax] ?? tailBucket;
+  } else {
+    const all = [...rawPools, tailBucket];
+    applyUpperQuantilePromotions(all);
+    if (densify) {
+      for (let i = 0; i < all.length; i++) {
+        all[i] = densifyPool(sortPoolDesc(all[i].slice()), variance);
+      }
+      applyUpperQuantilePromotions(all);
+      preDensified = true;
+    }
+    pools = all.slice(0, gridMax);
+    tailPool = all[gridMax] ?? tailBucket;
+  }
+
+  const grid = {
+    pools,
+    gridMax,
+    tailStart,
+    tailPool,
+    maxPosRank: max?.maxPosRank ?? null,
+    preDensified,
+  };
+  byKey.set(cacheKey, grid);
+  return grid;
+}
+
+function blendAdjacentPools(poolA, poolB, frac) {
+  const merged = new Map();
+  const add = (e, scale) => {
+    if (scale <= 0) return;
+    const key = seasonKey(e);
+    const prev = merged.get(key);
+    if (prev) prev.weight += e.weight * scale;
+    else merged.set(key, { ...e, weight: e.weight * scale });
+  };
+  for (const e of poolA) add(e, 1 - frac);
+  for (const e of poolB) add(e, frac);
+  return [...merged.values()];
+}
+
+function parentRef(e) {
+  return { sleeperId: e.sleeperId, seasonYear: e.seasonYear, scoringPts: e.scoringPts };
+}
+
+function densifyPool(sortedReal, variance) {
+  if (sortedReal.length < 2) return sortedReal;
+
+  const out = [];
+  for (let i = 0; i < sortedReal.length; i++) {
+    out.push(sortedReal[i]);
+    if (i + 1 >= sortedReal.length) break;
+    const hi = sortedReal[i];
+    const lo = sortedReal[i + 1];
+    const parents = i % 2 === 0 ? [hi, lo] : [lo, hi];
+    out.push({
+      synthetic: true,
+      position: hi.position,
+      parents: parents.map(parentRef),
+      splitWeek: INTERP_SPLIT_WEEK,
+      scoringPts: (hi.scoringPts + lo.scoringPts) / 2,
+      weight: ((hi.weight ?? 1) + (lo.weight ?? 1)) / 2,
+      outcomeRank: null,
+    });
+  }
+
+  const { extrapolations } = VARIANCE_LEVELS[variance] || VARIANCE_LEVELS[DEFAULT_VARIANCE];
+  if (extrapolations.length > 0) {
+    const best = sortedReal[0];
+    const worst = sortedReal[sortedReal.length - 1];
+    for (const d of extrapolations) {
+      out.push({
+        synthetic: true,
+        extrapolation: 'ceiling',
+        position: best.position,
+        parents: [parentRef(best)],
+        scale: 1 + d,
+        scoringPts: best.scoringPts * (1 + d),
+        weight: (best.weight ?? 1) * 0.5,
+        outcomeRank: null,
+      });
+      out.push({
+        synthetic: true,
+        extrapolation: 'floor',
+        position: worst.position,
+        parents: [parentRef(worst)],
+        scale: Math.max(0, 1 - d),
+        scoringPts: worst.scoringPts * Math.max(0, 1 - d),
+        weight: (worst.weight ?? 1) * 0.5,
+        outcomeRank: null,
+      });
+    }
+  }
+
+  return out.sort((a, b) => b.scoringPts - a.scoringPts);
+}
+
+export function buildOutcomePool(adpInfo, catalog, positionMaxRanks, options = {}) {
   if (!adpInfo || !catalog) return [];
   const { position, posRank, effRank: rawEffRank } = adpInfo;
   const effRank = rawEffRank ?? posRank;
   if (!position || effRank == null) return [];
 
+  const monotone = normalizeMonotone(options.monotone);
+  const variance = normalizeVariance(options.variance);
+  const densify = options.densify !== false;
+  const grid = getPositionGrid(catalog, position, positionMaxRanks, { monotone, variance, densify });
+
+  const inTail = effRank >= grid.tailStart
+    || (posRank != null && grid.maxPosRank != null
+      && posRank >= grid.maxPosRank - (BOTTOM_BUCKET_SIZE - 1));
+
   let pool;
-  if (isBottomBucket(effRank, posRank, position, positionMaxRanks)) {
-    pool = filterBottomBucket(catalog, position, positionMaxRanks);
+  if (inTail || grid.pools.length === 0) {
+    pool = grid.tailPool;
   } else {
-    pool = filterByEffRankWindow(catalog, position, effRank, ADP_WINDOW);
-    if (isTopTruncatedWindow(effRank)) {
-      pool = applyKernelWeights(pool, effRank);
-    }
+    const r0 = Math.min(Math.max(1, Math.floor(effRank)), grid.gridMax);
+    const r1 = Math.min(Math.ceil(effRank), grid.gridMax);
+    pool = r0 === r1
+      ? grid.pools[r0 - 1]
+      : blendAdjacentPools(grid.pools[r0 - 1], grid.pools[r1 - 1], effRank - r0);
+    if (pool.length === 0) pool = grid.tailPool;
   }
-  return pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
+
+  const sorted = pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
+  if (grid.preDensified || !densify) return sorted;
+  return densifyPool(sorted, variance);
+}
+
+function realWeekArray(ref, basePointsByYear, numWeeks) {
+  const arr = new Array(numWeeks).fill(0);
+  const yearWeeks = basePointsByYear[String(ref.seasonYear)];
+  if (!yearWeeks) return arr;
+  for (let wi = 0; wi < numWeeks; wi++) {
+    arr[wi] = yearWeeks[wi]?.[ref.sleeperId] ?? 0;
+  }
+  return arr;
+}
+
+export function materializeOutcomeWeeks(outcome, basePointsByYear, numWeeks = NUM_WEEKS) {
+  if (!outcome) return new Array(numWeeks).fill(0);
+  if (!outcome.synthetic) return realWeekArray(outcome, basePointsByYear, numWeeks);
+
+  const parents = outcome.parents || [];
+  if (outcome.scale != null && parents.length === 1) {
+    return realWeekArray(parents[0], basePointsByYear, numWeeks).map((p) => p * outcome.scale);
+  }
+  if (parents.length === 2) {
+    const a = realWeekArray(parents[0], basePointsByYear, numWeeks);
+    const b = realWeekArray(parents[1], basePointsByYear, numWeeks);
+    const split = outcome.splitWeek ?? INTERP_SPLIT_WEEK;
+    const spliced = a.map((v, wi) => (wi < split ? v : b[wi]));
+    const sum = (arr) => arr.reduce((x, y) => x + y, 0);
+    const target = (sum(a) + sum(b)) / 2;
+    const spliceTotal = sum(spliced);
+    const f = spliceTotal > 0 ? target / spliceTotal : 0;
+    return spliced.map((v) => v * f);
+  }
+  return new Array(numWeeks).fill(0);
+}
+
+function closestRegIndex(regs, query) {
+  const n = regs.length;
+  if (n === 0) return -1;
+  let lo = 0;
+  let hi = n - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (regs[mid] < query) lo = mid + 1;
+    else hi = mid;
+  }
+  if (lo > 0 && Math.abs(regs[lo - 1] - query) <= Math.abs(regs[lo] - query)) return lo - 1;
+  return lo;
+}
+
+function neighborBounds(n, center, k) {
+  let lo = center;
+  let hi = center;
+  const want = Math.min(k, n);
+  while (hi - lo + 1 < want && (lo > 0 || hi < n - 1)) {
+    if (lo === 0) { hi += 1; continue; }
+    if (hi === n - 1) { lo -= 1; continue; }
+    const left = Math.abs(center - (lo - 1));
+    const right = Math.abs((hi + 1) - center);
+    if (left <= right) lo -= 1;
+    else hi += 1;
+  }
+  return { lo, hi };
+}
+
+function playoffPoolAtIndex(seasons, center) {
+  const n = seasons.length;
+  const { lo, hi } = neighborBounds(n, center, PLAYOFF_NEIGHBORS);
+  const query = seasons[center].regPts;
+  const bandwidth = Math.max(
+    Math.abs(seasons[lo].regPts - query),
+    Math.abs(seasons[hi].regPts - query),
+    1,
+  );
+  const pool = [];
+  for (let i = lo; i <= hi; i++) {
+    const e = seasons[i];
+    const weight = Math.max(0.05, 1 - Math.abs(e.regPts - query) / (bandwidth + 1e-6));
+    pool.push({ ...e, weight });
+  }
+  pool.sort((a, b) => b.poTotal - a.poTotal);
+  return pool;
+}
+
+export function buildPlayoffIndex(catalog, basePointsByYear, numWeeks = NUM_WEEKS) {
+  const byPos = {};
+  for (const e of catalog || []) {
+    const pos = e.position;
+    if (!pos) continue;
+    if (!byPos[pos]) byPos[pos] = [];
+    const weeks = realWeekArray(e, basePointsByYear, numWeeks);
+    let regPts = 0;
+    for (let wi = 0; wi < REG_SEASON_WEEKS; wi++) regPts += weeks[wi] || 0;
+    const po = [
+      weeks[REG_SEASON_WEEKS] || 0,
+      weeks[REG_SEASON_WEEKS + 1] || 0,
+      weeks[REG_SEASON_WEEKS + 2] || 0,
+    ];
+    byPos[pos].push({
+      sleeperId: e.sleeperId,
+      seasonYear: e.seasonYear,
+      position: pos,
+      regPts,
+      po,
+      poTotal: po[0] + po[1] + po[2],
+    });
+  }
+
+  const index = {};
+  for (const pos of Object.keys(byPos)) {
+    const seasons = byPos[pos].sort((a, b) => a.regPts - b.regPts);
+    const regs = seasons.map((s) => s.regPts);
+    const pools = seasons.map((_, i) => playoffPoolAtIndex(seasons, i));
+    const cumWeights = pools.map((pool) => buildPoolCumulativeWeights(pool));
+    index[pos] = { seasons, regs, pools, cumWeights };
+  }
+  return index;
+}
+
+export function selectPlayoffOutcome(playoffIndex, position, regPts, percentile) {
+  const posIndex = playoffIndex && playoffIndex[position];
+  if (!posIndex || !posIndex.pools.length) {
+    return { outcome: null, index: -1, pool: [] };
+  }
+  const center = closestRegIndex(posIndex.regs, Number(regPts) || 0);
+  const pool = posIndex.pools[center] || [];
+  if (!pool.length) return { outcome: null, index: -1, pool };
+  const idx = percentileToOutcomeIndex(percentile, pool.length, posIndex.cumWeights[center]);
+  return { outcome: pool[idx], index: idx, pool };
 }
 
 // ─── Scoring config math (fantasyCalculator.js) ───────────────────────────────
@@ -463,6 +829,8 @@ export function prepareSimContext({
   positionMaxRanks,
   basePointsByYear,
   playersData,
+  variance,
+  monotone,
 }) {
   const allPlayerIds = new Set();
   for (const rid in scenarioRosters) {
@@ -493,22 +861,21 @@ export function prepareSimContext({
   const poolCumWeights = {};
   for (const pid of playerIdList) {
     const adpInfo = hwangAdpRankMap && hwangAdpRankMap[pid];
-    pools[pid] = adpInfo ? buildOutcomePool(adpInfo, catalog, positionMaxRanks) : [];
+    pools[pid] = adpInfo
+      ? buildOutcomePool(adpInfo, catalog, positionMaxRanks, { variance, monotone })
+      : [];
     poolCumWeights[pid] = buildPoolCumulativeWeights(pools[pid]);
   }
 
   const outcomeWeekPts = {};
   for (const pid of playerIdList) {
     const pool = pools[pid] || [];
-    outcomeWeekPts[pid] = pool.map((outcome) => {
-      const yearWeeks = basePointsByYear[String(outcome.seasonYear)];
-      const arr = new Float32Array(NUM_WEEKS);
-      for (let wi = 0; wi < NUM_WEEKS; wi++) {
-        arr[wi] = yearWeeks?.[wi]?.[outcome.sleeperId] ?? 0;
-      }
-      return arr;
-    });
+    outcomeWeekPts[pid] = pool.map(
+      (outcome) => Float32Array.from(materializeOutcomeWeeks(outcome, basePointsByYear, NUM_WEEKS)),
+    );
   }
+
+  const playoffIndex = buildPlayoffIndex(catalog, basePointsByYear, NUM_WEEKS);
 
   return {
     scenarioRosters,
@@ -517,28 +884,47 @@ export function prepareSimContext({
     pools,
     poolCumWeights,
     outcomeWeekPts,
+    playoffIndex,
     playerPositions: buildPlayerPositionsMap(playerIdList, playersData),
     rosterIds: Object.keys(scenarioRosters).map(Number),
     weekBuffers: Array.from({ length: NUM_WEEKS }, () => ({})),
     seasonTotals: {},
     rolls: {},
+    playoffRolls: {},
   };
 }
 
 function fillWeeklyFromRolls(ctx) {
-  const { allPlayerIds, pools, poolCumWeights, outcomeWeekPts, weekBuffers, seasonTotals, rolls } = ctx;
+  const {
+    allPlayerIds, pools, poolCumWeights, outcomeWeekPts, playoffIndex,
+    playerPositions, weekBuffers, seasonTotals, rolls, playoffRolls,
+  } = ctx;
   for (const pid of allPlayerIds) {
     const poolLen = pools[pid]?.length ?? 0;
-    let ptsArr = ZERO_WEEKS;
-    if (poolLen > 0) {
-      const pct = rolls[pid] ?? 50;
-      const idx = percentileToOutcomeIndex(pct, poolLen, poolCumWeights[pid]);
-      ptsArr = outcomeWeekPts[pid][idx] || ZERO_WEEKS;
+    if (poolLen === 0) {
+      for (let wi = 0; wi < NUM_WEEKS; wi++) weekBuffers[wi][pid] = 0;
+      seasonTotals[pid] = 0;
+      continue;
     }
+    const pct = rolls[pid] ?? 50;
+    const idx = percentileToOutcomeIndex(pct, poolLen, poolCumWeights[pid]);
+    const ptsArr = outcomeWeekPts[pid][idx] || ZERO_WEEKS;
     let total = 0;
-    for (let wi = 0; wi < NUM_WEEKS; wi++) {
+    let reg = 0;
+    for (let wi = 0; wi < REG_SEASON_WEEKS; wi++) {
       const p = ptsArr[wi];
       weekBuffers[wi][pid] = p;
+      total += p;
+      reg += p;
+    }
+    const pos = playerPositions[pid];
+    const poSel = playoffIndex
+      ? selectPlayoffOutcome(playoffIndex, pos, reg, (playoffRolls || {})[pid] ?? 50)
+      : { outcome: null };
+    const po = poSel.outcome?.po;
+    for (let k = 0; k < 3; k++) {
+      const p = po ? po[k] : (ptsArr[REG_SEASON_WEEKS + k] || 0);
+      weekBuffers[REG_SEASON_WEEKS + k][pid] = p;
       total += p;
     }
     seasonTotals[pid] = total;
@@ -627,10 +1013,12 @@ export function runSeasonSim(ctx, iterations = DEFAULT_ITERATIONS) {
   const n = Math.max(1, Math.min(MAX_ITERATIONS, Math.round(Number(iterations) || DEFAULT_ITERATIONS)));
   const stats = emptyStats(ctx.rosterIds);
   const baselineStats = ctx.baselineRosters ? emptyStats(ctx.rosterIds) : null;
+  if (!ctx.playoffRolls) ctx.playoffRolls = {};
 
   for (let i = 0; i < n; i++) {
     for (const pid of ctx.allPlayerIds) {
       ctx.rolls[pid] = (Math.random() * 101) | 0;
+      ctx.playoffRolls[pid] = (Math.random() * 101) | 0;
     }
     fillWeeklyFromRolls(ctx);
 

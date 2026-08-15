@@ -49,9 +49,11 @@ function FutureScenarios2Tooltip({ season }) {
               player-seasons centered on each player&apos;s Hwang Adjusted ADP rank.
             </p>
             <p style={{ margin: '0 0 0.6em 0' }}>
-              For each player, we collect outcomes from ADP ±5 over {yearLabel},
-              stack-rank them by season points, and roll 0–100 to pick which outcome
-              to slot in.
+              For each player, we collect outcomes from ADP ±2 over {yearLabel}
+              (plus synthetic in-between seasons), stack-rank them by season points,
+              and roll 0–100 to pick weeks 1–14. Weeks 15–17 are a second independent
+              roll from real historical playoff weeks of players who scored similarly
+              in the regular season — so a P98 regular season can still draw a P40 playoff.
             </p>
             <p style={{ margin: 0 }}>
               Edit rosters, hit <strong>Evaluate →</strong>, then click players to

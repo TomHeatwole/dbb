@@ -15,6 +15,7 @@
 import { isValidPlayerId, sanitizeRoster, sanitizeRosters } from './scenarioUtils';
 import { normalizeOutcomeScenarioYear, DEFAULT_OUTCOME_SCENARIO_YEAR } from './outcomeScenarioConfig';
 import { clampSimulatorIterations, DEFAULT_ITERATIONS } from './simulatorMonteCarlo';
+import { normalizeVariance, DEFAULT_VARIANCE, normalizeMonotone, DEFAULT_MONOTONE } from './outcomeDistribution';
 
 export { sanitizeRoster, sanitizeRosters, isValidPlayerId };
 
@@ -120,15 +121,17 @@ export function decodeFutureScenario(encoded) {
 
 // ── Future Scenario v2 encoding ───────────────────────────────────────────────
 //
-// Outcome-based projections using Hwang ADP ±5 historical pools + percentile rolls.
+// Outcome-based projections using Hwang ADP ±2 historical pools + percentile rolls.
 //
-// { y: "future2", sy: "2025", c: [{ r, a, d }], p: { [playerId]: percentile 0-100 } }
+// { y: "future2", sy: "2025", c: [{ r, a, d }], p: { [playerId]: percentile 0-100 },
+//   pp: { [playerId]: playoff percentile 0-100 } }
 
 export function encodeFutureScenario2(
   originalRosters,
   scenarioRosters,
   percentileRolls = {},
   seasonYear = DEFAULT_OUTCOME_SCENARIO_YEAR,
+  playoffRolls = {},
 ) {
   const changes = [];
 
@@ -150,6 +153,7 @@ export function encodeFutureScenario2(
     sy: normalizeOutcomeScenarioYear(seasonYear),
     c: changes,
     p: percentileRolls || {},
+    pp: playoffRolls || {},
   };
   return btoa(JSON.stringify(schema));
 }
@@ -164,7 +168,10 @@ export function decodeFutureScenario2(encoded) {
       sy: normalizeOutcomeScenarioYear(obj.sy),
       c: obj.c,
       p: obj.p && typeof obj.p === 'object' ? obj.p : {},
+      pp: obj.pp && typeof obj.pp === 'object' ? obj.pp : {},
       n: obj.y === 'simulator' ? clampSimulatorIterations(obj.n) : undefined,
+      v: obj.y === 'simulator' ? normalizeVariance(obj.v) : undefined,
+      m: obj.y === 'simulator' ? normalizeMonotone(obj.m) : undefined,
     };
   } catch {
     return null;
@@ -174,7 +181,12 @@ export function decodeFutureScenario2(encoded) {
 export function encodeSimulatorScenario(
   originalRosters,
   scenarioRosters,
-  { seasonYear = DEFAULT_OUTCOME_SCENARIO_YEAR, iterations = DEFAULT_ITERATIONS } = {},
+  {
+    seasonYear = DEFAULT_OUTCOME_SCENARIO_YEAR,
+    iterations = DEFAULT_ITERATIONS,
+    variance = DEFAULT_VARIANCE,
+    monotone = DEFAULT_MONOTONE,
+  } = {},
 ) {
   const changes = [];
 
@@ -195,6 +207,8 @@ export function encodeSimulatorScenario(
     y: 'simulator',
     sy: normalizeOutcomeScenarioYear(seasonYear),
     n: clampSimulatorIterations(iterations),
+    v: normalizeVariance(variance),
+    m: normalizeMonotone(monotone),
     c: changes,
   }));
 }
@@ -207,12 +221,14 @@ export function buildFutureScenario2EvalUrl(
   scenarioRosters,
   percentileRolls,
   seasonYear = DEFAULT_OUTCOME_SCENARIO_YEAR,
+  playoffRolls = {},
 ) {
   const encoded = encodeFutureScenario2(
     originalRosters,
     scenarioRosters,
     percentileRolls,
     seasonYear,
+    playoffRolls,
   );
   return `/future-scenarios-2?state=eval&scenario=${encodeURIComponent(encoded)}`;
 }

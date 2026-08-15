@@ -8129,6 +8129,12 @@ body.modal-open {
   border-color: color-mix(in srgb, var(--roll-color, #c9b8ff) 58%, transparent);
 }
 
+.outcome-roll-kind {
+  font-weight: 600;
+  opacity: 0.78;
+  font-size: 0.92em;
+}
+
 .outcome-roll-pct {
   font-variant-numeric: tabular-nums;
 }
@@ -8735,6 +8741,10 @@ body.modal-open {
   font-size: 0.72rem;
   color: rgba(160, 170, 220, 0.65);
   margin-bottom: 0.35rem;
+}
+
+.simulator-run-settings-variance-label {
+  margin-top: 0.7rem;
 }
 
 .simulator-run-settings-input {
