@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { continueHand, generateHand, isStreetTerminal, streetOverReason } from '../poker/quiz';
+import { continueHand, generateHand, shuffleItems, streetOverReason } from '../poker/quiz';
 import { PokerTable, HandGrid, ActionButtons } from './PreflopShared';
+import PreflopResults from './PreflopResults';
 
 function deal() {
   const first = generateHand();
@@ -11,31 +12,56 @@ function deal() {
 }
 
 export default function PreflopPlayer({ onExit }) {
+  const [phase, setPhase] = useState('play');
   const [hand, setHand] = useState(() => deal());
+  const [handNumber, setHandNumber] = useState(1);
   const [guess, setGuess] = useState('');
   const [missedStreet, setMissedStreet] = useState(false);
   const [resolved, setResolved] = useState(false);
   const [queued, setQueued] = useState(null);
+  const [log, setLog] = useState([]);
+  const [retrying, setRetrying] = useState(false);
 
   const street = hand.streets[hand.index];
   const nextStreet = queued;
   const handOver = resolved && !nextStreet;
   const correct = guess && guess === street.correctAction;
+  const answeredCount = log.length;
+  const correctCount = log.filter(entry => entry.guess === entry.q.correctAction).length;
 
-  const dealNext = () => {
-    setHand(deal());
+  const resetStreet = (nextHand) => {
+    setHand(nextHand);
     setGuess('');
     setMissedStreet(false);
     setResolved(false);
     setQueued(null);
   };
 
+  const dealNext = () => {
+    resetStreet(deal());
+    setHandNumber(n => n + 1);
+  };
+
+  const startFresh = () => {
+    setLog([]);
+    setRetrying(false);
+    setHandNumber(1);
+    resetStreet(deal());
+    setPhase('play');
+  };
+
   const handleGuess = (action) => {
     if (resolved) return;
+    if (!guess) {
+      const note = retrying
+        ? `Retry ${hand.index + 1}`
+        : `Hand ${handNumber}, street ${hand.index + 1}`;
+      setLog(prev => [...prev, { q: { ...street, sessionNote: note }, guess: action }]);
+    }
     setGuess(action);
     if (action === street.correctAction) {
       setResolved(true);
-      setQueued(continueHand(street));
+      setQueued(retrying ? null : continueHand(street));
     } else {
       setMissedStreet(true);
     }
@@ -53,35 +79,94 @@ export default function PreflopPlayer({ onExit }) {
     setQueued(null);
   };
 
+  const endSession = () => {
+    if (log.length === 0) return;
+    setPhase('results');
+  };
+
+  const retryMisses = () => {
+    const missed = log.filter(entry => entry.guess && entry.guess !== entry.q.correctAction).map(entry => entry.q);
+    if (missed.length === 0) return;
+    const shuffled = shuffleItems(missed);
+    setLog([]);
+    setRetrying(true);
+    resetStreet({ streets: shuffled, index: 0 });
+    setPhase('play');
+  };
+
+  const goRetryNext = () => {
+    if (hand.index + 1 >= hand.streets.length) {
+      setPhase('results');
+      return;
+    }
+    setHand(prev => ({ ...prev, index: prev.index + 1 }));
+    setGuess('');
+    setMissedStreet(false);
+    setResolved(false);
+    setQueued(null);
+  };
+
+  if (phase === 'results') {
+    return (
+      <PreflopResults
+        title="Hand player results"
+        questions={log.map(entry => entry.q)}
+        guesses={log.map(entry => entry.guess)}
+        exportPayload={{ sessionKind: 'hands', continuous: true, immediate: true, questionCount: log.length }}
+        exportName="preflop-hands"
+        playAgainLabel="Keep dealing"
+        onPlayAgain={startFresh}
+        onRetryMisses={retryMisses}
+        onExit={onExit}
+      />
+    );
+  }
+
+  const nextLabel = retrying
+    ? (hand.index + 1 >= hand.streets.length ? 'See results' : 'Next')
+    : (handOver ? 'Next hand' : 'Continue');
+  const nextReady = retrying ? resolved : (resolved && (nextStreet || handOver));
+  const onNext = retrying ? goRetryNext : (nextStreet ? goContinue : dealNext);
+
   return (
     <div className="preflop-quiz-play">
       <div className="preflop-quiz-play-bar">
         <div>
-          <div className="preflop-quiz-progress">Hand player</div>
+          <div className="preflop-quiz-progress">
+            {retrying
+              ? `Retry ${hand.index + 1} / ${hand.streets.length}`
+              : `Hand ${handNumber} · street ${hand.index + 1}`}
+          </div>
           <div className="preflop-quiz-live-score">
-            Street {hand.index + 1}
+            {answeredCount > 0 ? `${correctCount}/${answeredCount}` : 'Hands'}
             {missedStreet ? ' · miss' : ''}
           </div>
         </div>
         <div className="preflop-quiz-result-actions">
-          {resolved && nextStreet && (
-            <button className="preflop-quiz-start preflop-quiz-next" onClick={goContinue}>
-              Continue
-            </button>
+          <button
+            className="preflop-quiz-start preflop-quiz-next"
+            onClick={onNext}
+            disabled={!nextReady}
+          >
+            {nextLabel}
+          </button>
+          <button className="preflop-quiz-link" onClick={endSession} disabled={log.length === 0}>
+            End session
+          </button>
+          {!retrying && (
+            <button className="preflop-quiz-link" onClick={dealNext}>Deal</button>
           )}
-          {handOver && (
-            <button className="preflop-quiz-start preflop-quiz-next" onClick={dealNext}>
-              Next hand
-            </button>
-          )}
-          <button className="preflop-quiz-link" onClick={dealNext}>Deal</button>
           <button className="preflop-quiz-link" onClick={onExit}>Back to charts</button>
         </div>
       </div>
 
-      <p className="preflop-quiz-help">Trial: same hand, more action until you fold, call, or shove.</p>
+      <p className="preflop-quiz-help">
+        {retrying
+          ? 'Retrying misses as individual spots. First click counts.'
+          : 'Same hand until you fold, call, or shove. First click on each street counts.'}
+      </p>
 
-      {hand.streets.length > 1 && (
+      {!retrying && hand.streets.length > 1 && (
         <ol className="preflop-hand-log">
           {hand.streets.slice(0, -1).map((s, i) => (
             <li key={s.key + i}>
@@ -117,9 +202,9 @@ export default function PreflopPlayer({ onExit }) {
       )}
       {correct && (
         <div className="preflop-quiz-feedback preflop-quiz-feedback--ok">
-          {nextStreet
-            ? `Correct. ${street.actionLabels[street.correctAction]}.`
-            : streetOverReason(street)}
+          {retrying || !nextStreet
+            ? (retrying ? 'Correct' : streetOverReason(street))
+            : `Correct. ${street.actionLabels[street.correctAction]}.`}
         </div>
       )}
 

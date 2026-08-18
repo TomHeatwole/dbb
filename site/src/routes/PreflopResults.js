@@ -79,7 +79,7 @@ export default function PreflopResults({
         >
           {diagnostics.status === 'loading' ? 'Reading your leaks…' : 'See diagnostics'}
         </button>
-        <button className="preflop-quiz-link" onClick={exportResults}>Export quiz results</button>
+        <button className="preflop-quiz-link" onClick={exportResults}>Export results</button>
         {onChangeSettings && (
           <button className="preflop-quiz-link" onClick={onChangeSettings}>Change settings</button>
         )}

@@ -81,9 +81,7 @@ export default function PreflopQuiz({ onExit }) {
   const [index, setIndex] = useState(0);
   const [guesses, setGuesses] = useState([]);
   const [recentKeys, setRecentKeys] = useState([]);
-  const [reviewIncorrect, setReviewIncorrect] = useState(false);
   const [missRetry, setMissRetry] = useState(false);
-  const [diagnostics, setDiagnostics] = useState({ status: 'idle', text: '', error: '' });
 
   const current = questions[index];
   const guessed = guesses[index] || '';
@@ -92,11 +90,6 @@ export default function PreflopQuiz({ onExit }) {
     guesses[i] && guesses[i] === q.correctAction ? sum + 1 : sum
   ), 0);
   const missed = questions.filter((q, i) => guesses[i] && guesses[i] !== q.correctAction);
-  const unansweredCount = questions.length - answeredCount;
-  const reviewItems = (reviewIncorrect
-    ? questions.map((q, i) => ({ q, i })).filter(({ q, i }) => guesses[i] && guesses[i] !== q.correctAction)
-    : questions.map((q, i) => ({ q, i })).filter(({ i }) => guesses[i] || answeredCount === questions.length)
-  );
 
   const handleMix = (id, value) => {
     setMix(prev => ({ ...prev, [id]: value }));
@@ -115,9 +108,7 @@ export default function PreflopQuiz({ onExit }) {
     }
     setIndex(0);
     setGuesses([]);
-    setReviewIncorrect(false);
     setMissRetry(false);
-    setDiagnostics({ status: 'idle', text: '', error: '' });
     setPhase('play');
   };
 
@@ -158,68 +149,20 @@ export default function PreflopQuiz({ onExit }) {
 
   const retryMisses = () => {
     if (missed.length === 0) return;
-    setQuestions(shuffle(missed));
+    setQuestions(shuffleItems(missed));
     setIndex(0);
     setGuesses([]);
-    setReviewIncorrect(false);
     setMissRetry(true);
     setPhase('play');
   };
 
-  const exportResults = () => {
-    const text = formatQuizExport({
-      questions,
-      guesses,
-      mix,
-      difficulty,
-      continuous,
-      immediate,
-      questionCount,
-    });
-    const stamp = new Date().toISOString().slice(0, 10);
-    downloadText(`preflop-quiz-${stamp}.txt`, text);
-  };
-
-  const runDiagnostics = async () => {
-    setDiagnostics({ status: 'loading', text: '', error: '' });
-    try {
-      const promptRes = await fetch('/data/preflop_diagnostics_prompt.txt', { cache: 'no-store' });
-      if (!promptRes.ok) throw new Error('Could not load diagnostics prompt.');
-      const systemPrompt = (await promptRes.text()).trim();
-      const dump = formatQuizExport({
-        questions,
-        guesses,
-        mix,
-        difficulty,
-        continuous,
-        immediate,
-        questionCount,
-      });
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: dump }],
-          systemPrompt,
-          mode: 'plain',
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || `Request failed (${res.status})`);
-      }
-      setDiagnostics({
-        status: 'done',
-        text: data.message || 'Empty diagnosis. Try again.',
-        error: '',
-      });
-    } catch (err) {
-      setDiagnostics({
-        status: 'error',
-        text: '',
-        error: err.message || 'Diagnostics failed.',
-      });
-    }
+  const quizExport = {
+    mix,
+    difficulty,
+    continuous,
+    immediate,
+    questionCount,
+    sessionKind: 'quiz',
   };
 
   if (phase === 'setup') {
@@ -313,72 +256,17 @@ export default function PreflopQuiz({ onExit }) {
 
   if (phase === 'results') {
     return (
-      <div className="preflop-quiz-results">
-        <h2>Quiz results</h2>
-        <p className="preflop-quiz-score">
-          {correctCount} / {answeredCount || questions.length} correct
-        </p>
-        <p className="preflop-quiz-help">
-          {missed.length > 0 ? `${missed.length} miss${missed.length === 1 ? '' : 'es'}` : 'No misses'}
-          {unansweredCount > 0 ? ` · ${unansweredCount} unanswered` : ''}
-        </p>
-        <div className="preflop-quiz-result-actions">
-          <button className="preflop-quiz-start" onClick={startQuiz}>Play again</button>
-          <button
-            className="preflop-quiz-start preflop-quiz-start--secondary"
-            onClick={retryMisses}
-            disabled={missed.length === 0}
-          >
-            Retry misses
-          </button>
-          <button
-            className="preflop-quiz-start"
-            onClick={runDiagnostics}
-            disabled={answeredCount === 0 || diagnostics.status === 'loading'}
-          >
-            {diagnostics.status === 'loading' ? 'Reading your leaks…' : 'See diagnostics'}
-          </button>
-          <button className="preflop-quiz-link" onClick={exportResults}>Export quiz results</button>
-          <button className="preflop-quiz-link" onClick={() => setPhase('setup')}>Change settings</button>
-          <button className="preflop-quiz-link" onClick={onExit}>Back to charts</button>
-        </div>
-        <label className="preflop-quiz-check">
-          <input
-            type="checkbox"
-            checked={reviewIncorrect}
-            onChange={(e) => setReviewIncorrect(e.target.checked)}
-            disabled={missed.length === 0}
-          />
-          Review incorrect
-        </label>
-        {diagnostics.status === 'error' && (
-          <p className="preflop-quiz-feedback preflop-quiz-feedback--bad">{diagnostics.error}</p>
-        )}
-        {diagnostics.status === 'done' && diagnostics.text && (
-          <div className="preflop-diagnostics">
-            <ReactMarkdown>{diagnostics.text}</ReactMarkdown>
-          </div>
-        )}
-        {reviewIncorrect && reviewItems.length === 0 && (
-          <p className="preflop-quiz-help">No misses to review.</p>
-        )}
-        {reviewItems.map(({ q, i }) => (
-          <div key={q.key + i} className="preflop-quiz-review">
-            <div className={`preflop-quiz-feedback${guesses[i] === q.correctAction ? ' preflop-quiz-feedback--ok' : guesses[i] ? ' preflop-quiz-feedback--bad' : ''}`}>
-              Q{i + 1}: {guesses[i] ? `you ${q.actionLabels[guesses[i]] || guesses[i]}` : 'unanswered'} · chart {q.actionLabels[q.correctAction]}
-            </div>
-            <p className="preflop-quiz-prompt">{q.prompt}</p>
-            <HoleCards cards={q.cards} size="md" />
-            <HandGrid
-              grid={q.chart}
-              actionColors={q.actionColors}
-              actionLabels={q.actionLabels}
-              highlightHand={q.hand}
-              reachMask={q.reachMask}
-            />
-          </div>
-        ))}
-      </div>
+      <PreflopResults
+        title="Quiz results"
+        questions={questions}
+        guesses={guesses}
+        exportPayload={quizExport}
+        exportName="preflop-quiz"
+        onPlayAgain={startQuiz}
+        onRetryMisses={retryMisses}
+        onChangeSettings={() => setPhase('setup')}
+        onExit={onExit}
+      />
     );
   }
 

@@ -256,7 +256,7 @@ export function formatQuizExport({
   });
 
   const lines = [
-    'Preflop quiz results',
+    sessionKind === 'hands' ? 'Preflop hand-player results' : 'Preflop quiz results',
     "Source: Jonathan Little's Ultimate $1/$3 Cash Game Preflop Guide (100BB)",
     `Exported: ${new Date().toISOString()}`,
     '',
