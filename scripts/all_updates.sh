@@ -68,12 +68,14 @@ add_task gibbs_deltas      "node scripts/process_gibbs_deltas.js"
 add_task yafsb_adp         "node scripts/process_yafsb_adp.js"
 if [ "$HAVE_DBBP" -eq 1 ]; then
   # DBB custom redraft board — blends the private + public boards refreshed
-  # above, so it must run last.
-  add_task custom_rankings "node dbbp/scripts/build_custom_rankings.js"
+  # above, so it must run last. The snapshot strips per-source ranks and
+  # writes the aggregated board into site/public/data for the live site.
+  add_task custom_rankings         "node dbbp/scripts/build_custom_rankings.js"
+  add_task redraft_dash_snapshot   "node scripts/build_redraft_dash_snapshot.js"
 fi
 
 if [ "$HAVE_DBBP" -eq 0 ]; then
-  echo "dbbp/ not checked out — skipping ffb, ffb_udk, etr, custom_rankings."
+  echo "dbbp/ not checked out — skipping ffb, ffb_udk, etr, custom_rankings, redraft_dash_snapshot."
 fi
 
 # ── --retry-failed: keep only the scrapes that failed in the last report ──────

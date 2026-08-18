@@ -5,6 +5,8 @@ import PageMeta from '../PageMeta';
 import { findMyRosterId, loadCurrentTeamData, useAuthUser } from '../hooks/useAuthUser';
 import { getLoggedInTeamOverride } from '../debug/loggedInTeam';
 import { buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
+import { getAuthClient } from '../utils/authClient';
+import { setAuthReturnTo } from '../utils/authReturn';
 
 const OG_TITLE = 'HwangAI';
 const OG_DESCRIPTION = 'Your dynasty fantasy football AI assistant';
@@ -20,6 +22,31 @@ function TypingDots() {
 }
 
 const LOGO = '/data/hwangai.png';
+
+function GoogleSignInButton() {
+  const [error, setError] = useState(null);
+
+  const signIn = async () => {
+    try {
+      setAuthReturnTo('/hwangai');
+      await getAuthClient().signIn.social({
+        provider: 'google',
+        callbackURL: `${window.location.origin}/auth/callback`,
+        newUserCallbackURL: `${window.location.origin}/auth/callback`,
+      });
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  return (
+    <div>
+      <p>Sign in to use HwangAI.</p>
+      <button className="fd-btn fd-btn-primary" onClick={signIn}>Sign in with Google</button>
+      {error && <p style={{ opacity: 0.7 }}>Sign-in failed: {error}</p>}
+    </div>
+  );
+}
 
 function SearchingBubble() {
   return (
@@ -90,6 +117,7 @@ function HwangAIPage() {
   const [identity, setIdentity] = useState(null);
   const [identityReady, setIdentityReady] = useState(false);
   const { user, loading: authLoading } = useAuthUser();
+  const isLoggedIn = Boolean(user) || getLoggedInTeamOverride() != null;
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const pendingQueryRef = useRef(null);
@@ -101,13 +129,14 @@ function HwangAIPage() {
   }, [baseSystemPrompt, identity, identityReady]);
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');
     if (q) {
       pendingQueryRef.current = q.trim();
       window.history.replaceState({}, '', '/hwangai');
     }
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     fetch('/data/hwangai_system_prompt.txt', { cache: 'no-store' })
@@ -279,11 +308,11 @@ function HwangAIPage() {
   }, [input, loading, searching, messages, systemPrompt]);
 
   useEffect(() => {
-    if (!systemPrompt || !pendingQueryRef.current) return;
+    if (!isLoggedIn || !systemPrompt || !pendingQueryRef.current) return;
     const text = pendingQueryRef.current;
     pendingQueryRef.current = null;
     sendMessage(text);
-  }, [systemPrompt, sendMessage]);
+  }, [isLoggedIn, systemPrompt, sendMessage]);
 
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -299,61 +328,78 @@ function HwangAIPage() {
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
   }
 
+  const pageTitle = (
+    <span className="info-title-inline">
+      <img src={LOGO} alt="" className="hwang-ai-title-logo" aria-hidden="true" />
+      HwangAI
+    </span>
+  );
+
+  let content;
+  if (authLoading && getLoggedInTeamOverride() == null) {
+    content = <p style={{ textAlign: 'center' }}>Loading…</p>;
+  } else if (!isLoggedIn) {
+    content = (
+      <div style={{ maxWidth: 560, margin: '2rem auto', textAlign: 'center' }}>
+        <GoogleSignInButton />
+      </div>
+    );
+  } else {
+    content = (
+      <div className="hwang-ai-root">
+        <div className="hwang-ai-messages">
+          {messages.length === 0 && !loading && (
+            <div className="hwang-ai-empty">
+              <img src={LOGO} alt="HwangAI" className="hwang-ai-empty-logo" />
+              <div className="hwang-ai-empty-text">
+                Ask me anything — trade values, league history, waiver pickups, dynasty strategy, NFL news. I'll run the numbers. I will not be nice about it.
+              </div>
+            </div>
+          )}
+          {messages.map((msg, i) => (
+            <ChatMessage key={i} message={msg} />
+          ))}
+          {loading && (
+            <div className="hwang-ai-message hwang-ai-message--ai">
+              <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
+              <TypingDots />
+            </div>
+          )}
+          {error && (
+            <div className="hwang-ai-error">{error}</div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="hwang-ai-input-row">
+          <textarea
+            ref={inputRef}
+            className="hwang-ai-input"
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask HwangAI…"
+            rows={1}
+            disabled={loading || searching || !systemPrompt}
+          />
+          <button
+            className="hwang-ai-send-btn"
+            onClick={() => sendMessage()}
+            disabled={!input.trim() || loading || searching || !systemPrompt}
+            aria-label="Send message"
+          >
+            ↑
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title={
-        <span className="info-title-inline">
-          <img src={LOGO} alt="" className="hwang-ai-title-logo" aria-hidden="true" />
-          HwangAI
-        </span>
-      }>
-        <div className="hwang-ai-root">
-          <div className="hwang-ai-messages">
-            {messages.length === 0 && !loading && (
-              <div className="hwang-ai-empty">
-                <img src={LOGO} alt="HwangAI" className="hwang-ai-empty-logo" />
-                <div className="hwang-ai-empty-text">
-                  Ask me anything — trade values, league history, waiver pickups, dynasty strategy, NFL news, etc.
-                </div>
-              </div>
-            )}
-            {messages.map((msg, i) => (
-              <ChatMessage key={i} message={msg} />
-            ))}
-            {loading && (
-              <div className="hwang-ai-message hwang-ai-message--ai">
-                <img src={LOGO} alt="HwangAI" className="hwang-ai-avatar" />
-                <TypingDots />
-              </div>
-            )}
-            {error && (
-              <div className="hwang-ai-error">{error}</div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div className="hwang-ai-input-row">
-            <textarea
-              ref={inputRef}
-              className="hwang-ai-input"
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask HwangAI…"
-              rows={1}
-              disabled={loading || searching || !systemPrompt}
-            />
-            <button
-              className="hwang-ai-send-btn"
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || loading || searching || !systemPrompt}
-              aria-label="Send message"
-            >
-              ↑
-            </button>
-          </div>
-        </div>
+      <InfoPageWrapper title={pageTitle}>
+        {content}
       </InfoPageWrapper>
     </>
   );

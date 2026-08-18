@@ -7,7 +7,7 @@ function RedraftDashPage() {
   return (
     <InfoPageWrapper
       title="Redraft Dash"
-      subtitle="2026 Cross-Source Rankings"
+      subtitle="2026 Cross-Source Rankings — Local or Public snapshot"
       leftHeader={
         <Link to="/sandbox" className="sandbox-back-btn">
           ← Sandbox

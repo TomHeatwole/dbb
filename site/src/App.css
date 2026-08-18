@@ -17178,6 +17178,10 @@ body.modal-open {
   padding: 0.45rem 0.9rem;
 }
 
+.rddt-player--public {
+  grid-template-columns: 2.4rem minmax(11rem, 1fr) 7.6rem;
+}
+
 .rddt-player + .rddt-player {
   border-top: 1px solid rgba(255, 255, 255, 0.045);
 }
@@ -17380,6 +17384,11 @@ body.modal-open {
     grid-template-columns: 2rem minmax(9rem, 1fr) 7.6rem;
     grid-template-rows: auto auto;
     row-gap: 0.3rem;
+  }
+
+  .rddt-player--public {
+    grid-template-columns: 2rem minmax(9rem, 1fr) 7.6rem;
+    grid-template-rows: auto;
   }
 
   .rddt-player-value {

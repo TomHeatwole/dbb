@@ -7,6 +7,7 @@ const POS_CLASSES = {
   TE: 'pos-badge--te',
   K: 'pos-badge--k',
   DEF: 'pos-badge--def',
+  DST: 'pos-badge--def',
 };
 
 export default function PositionBadge({ position }) {

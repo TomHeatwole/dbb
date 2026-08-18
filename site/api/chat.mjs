@@ -21,8 +21,6 @@ const MODEL_GENERATION_CONFIG = {
   'gemini-flash-lite-latest': { thinkingConfig: { thinkingLevel: 'low' } },
 };
 
-const GEMINI_FLASH_URL = geminiUrlFor(GEMINI_MODELS[0]);
-
 // Friendly in-character response when every model is rate-limited — returned
 // as a 200 so the UI shows it as a normal chat message instead of the generic
 // "Something went wrong" error.
@@ -492,17 +490,24 @@ async function fetchChineseCharacters(apiKey) {
     const systemPrompt = loadFile('chinese_characters_prompt.txt');
     const inputPrompt = loadFile('chinese_characters_input.txt');
     if (!systemPrompt || !inputPrompt) return null;
-    const res = await fetch(`${GEMINI_FLASH_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: 'user', parts: [{ text: inputPrompt }] }],
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || null;
+    const payload = {
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: [{ text: inputPrompt }] }],
+    };
+    // Don't share the main chat's model slot — a 429 on flash used to
+    // silently drop the proverb, which is half the bit.
+    for (const model of GEMINI_MODELS) {
+      const res = await fetch(`${geminiUrlFor(model)}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
+      if (text) return text;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -547,9 +552,9 @@ const SLOW_TOOLS = new Set(['get_season_odds', 'simulate_roster_change_odds', 'r
 const MAX_CONTINUATIONS = 3;
 
 const INTERIM_MESSAGES = [
-  'Hang on — I gotta crunch the numbers on this one. Give me a few seconds.',
-  'One sec, firing up the simulation engine. This takes a moment.',
-  'Hold tight — running the sims now. Real analysis takes real compute.',
+  'Hang on — actually running the sims instead of vibing. Give me a few seconds.',
+  'One sec. Letting the Monte Carlo cook. Try not to make another trade while you wait.',
+  'Hold tight — crunching a thousand seasons. Your take can sit in the lobby.',
 ];
 
 const pickInterimMessage = () =>

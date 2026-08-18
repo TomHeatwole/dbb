@@ -91,7 +91,7 @@ function SandboxPage() {
         </Link>
         <Link to="/redraftdash" className="sandbox-feature-card">
           <span className="sandbox-feature-label">Redraft Dash</span>
-          <span className="sandbox-feature-desc">Cross-compare 2026 redraft rankings from trusted and untrusted sources (private data, local only).</span>
+          <span className="sandbox-feature-desc">2026 redraft board — Local (private sources) or Public (committed snapshot of rank + ADP).</span>
         </Link>
         {FEATURES.map(feature => (
           <button

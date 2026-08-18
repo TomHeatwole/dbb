@@ -17,8 +17,8 @@ import { findBestPlayerMatch, normalisePlayerName } from '../utils/playerNameMat
 
 const MANIFEST_URL = '/data/redraft_dash/manifest.json';
 
-/** Dash is skill-position only — drop K/DST rows from full-board sources. */
-const DASH_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
+/** Skill positions plus kickers (kickers splice into the overall board). DST stays off it. */
+const DASH_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE', 'K']);
 
 /**
  * Public sources shipped with the dbb repo (site/public/data). Unlike the
@@ -75,6 +75,10 @@ export const CUSTOM_BOARD_SOURCES = [
 ];
 
 let dashDataPromise = null;
+let snapshotDataPromise = null;
+
+const SNAPSHOT_CSV_URL = '/data/redraft_dash_snapshot.csv';
+const SNAPSHOT_META_URL = '/data/redraft_dash_snapshot_meta.json';
 
 /** Quote-aware CSV row parser (same convention as the other loaders). */
 function parseCsvRow(line) {
@@ -141,8 +145,8 @@ function headerIndex(header, aliases) {
 
 /**
  * Parse one source CSV into row objects. Column aliases cover the different
- * sources: rank|overall_rank, player|name. Rows for positions outside
- * QB/RB/WR/TE (kickers, defenses) are dropped. Tier is carried when present.
+ * sources: rank|overall_rank, player|name. DST rows are dropped (separate
+ * tab). Kickers are kept. Tier is carried when present.
  */
 function parseSourceCsv(text) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
@@ -298,6 +302,45 @@ function parseCustomBoard(text) {
 }
 
 /**
+ * ETR 2QB/half defense ranks from etr_tiers.csv. Defenses stay off the
+ * overall board — the dash renders them on a separate tab like punters.
+ */
+function parseEtrDefenses(text) {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (lines.length < 2) return [];
+  const header = parseCsvRow(lines[0]).map((h) => h.toLowerCase());
+  const nameIdx = headerIndex(header, ['name', 'player']);
+  const posIdx = header.indexOf('position');
+  const teamIdx = header.indexOf('team');
+  const rankIdx = header.indexOf('rank_2qb_half');
+  const posRankIdx = header.indexOf('pos_rank_2qb_half');
+  const tierIdx = header.indexOf('tier_2qb_half');
+  if (nameIdx === -1 || rankIdx === -1) return [];
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = parseCsvRow(lines[i]);
+    const position = posIdx !== -1 ? (cells[posIdx] || '').toUpperCase() : '';
+    if (position !== 'DST' && position !== 'DEF') continue;
+    const name = cells[nameIdx] || '';
+    const rank = Number(cells[rankIdx]);
+    if (!name || !Number.isFinite(rank)) continue;
+    const posRank = posRankIdx !== -1 ? Number(cells[posRankIdx]) : NaN;
+    const tier = tierIdx !== -1 ? Number(cells[tierIdx]) : NaN;
+    rows.push({
+      name,
+      team: teamIdx !== -1 ? (cells[teamIdx] || '').toUpperCase() : '',
+      etrRank: rank,
+      posRank: Number.isFinite(posRank) ? posRank : rows.length + 1,
+      tier: Number.isFinite(tier) ? tier : null,
+    });
+  }
+  rows.sort((a, b) => a.etrRank - b.etrRank || a.posRank - b.posRank);
+  return rows;
+}
+
+/**
  * Attach Sleeper superflex ADP (YAFSB file) to the custom board so the tier
  * view can show market cost vs our rank. ADP is display-only — it is never an
  * input to the blend. Joined on sleeper_id with a normalised-name fallback.
@@ -428,6 +471,9 @@ async function loadRedraftDashDataUncached() {
   const yafsbText = publicTexts[PUBLIC_SOURCES.findIndex((s) => s.id === 'yafsb_adp_half_sf')];
   attachAdpToCustomBoard(customBoard, yafsbText);
 
+  const etrTiersText = await fetchStaticText('/data/redraft_dash/etr/etr_tiers.csv');
+  const defenses = parseEtrDefenses(etrTiersText);
+
   // Derived: Gibbs implied board = ECR half baseline + his deltas
   const ecrHalfText = publicTexts[PUBLIC_SOURCES.findIndex((s) => s.id === 'fp_ecr_half')];
   const gibbsRows = buildGibbsImpliedRows(ecrHalfText, gibbsDeltasText);
@@ -444,6 +490,7 @@ async function loadRedraftDashDataUncached() {
     sources,
     players,
     customBoard,
+    defenses,
   };
 }
 
@@ -462,4 +509,98 @@ export function loadRedraftDashData() {
     });
   }
   return dashDataPromise;
+}
+
+/**
+ * Parse the public snapshot CSV. Only the aggregated board columns are
+ * read — per-source ranks are never present in this file and are not
+ * reconstructed here.
+ */
+function parseSnapshotBoard(text) {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (lines.length < 2) return [];
+  const header = parseCsvRow(lines[0]).map((h) => h.toLowerCase());
+  const col = (name) => header.indexOf(name);
+  const idx = {
+    rank: col('rank'),
+    player: col('player'),
+    position: col('position'),
+    team: col('team'),
+    tier: col('tier'),
+    posRank: col('pos_rank'),
+    posTier: col('pos_tier'),
+    value: col('value'),
+    adp: col('adp'),
+    sleeperId: col('sleeper_id'),
+  };
+  if (idx.rank === -1 || idx.player === -1 || idx.tier === -1) return [];
+
+  const num = (cells, i) => {
+    if (i === -1) return null;
+    const v = Number(cells[i]);
+    return Number.isFinite(v) ? v : null;
+  };
+
+  const players = [];
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = parseCsvRow(lines[i]);
+    const rank = num(cells, idx.rank);
+    const name = cells[idx.player] || '';
+    if (!name || rank == null) continue;
+    players.push({
+      rank,
+      name,
+      position: idx.position !== -1 ? (cells[idx.position] || '').toUpperCase() : '',
+      team: idx.team !== -1 ? (cells[idx.team] || '').toUpperCase() : '',
+      tier: num(cells, idx.tier),
+      posRank: num(cells, idx.posRank),
+      posTier: num(cells, idx.posTier),
+      value: num(cells, idx.value),
+      coverage: null,
+      sleeperId: idx.sleeperId !== -1 ? (cells[idx.sleeperId] || '') : '',
+      adp: num(cells, idx.adp),
+      sourceRanks: {},
+    });
+  }
+  return players;
+}
+
+async function loadRedraftDashSnapshotUncached() {
+  const [csvText, metaText] = await Promise.all([
+    fetchStaticText(SNAPSHOT_CSV_URL),
+    fetchStaticText(SNAPSHOT_META_URL),
+  ]);
+  const customBoard = parseSnapshotBoard(csvText);
+  let season = 2026;
+  let generatedAt = null;
+  if (metaText) {
+    try {
+      const meta = JSON.parse(metaText);
+      if (Number.isFinite(Number(meta.season))) season = Number(meta.season);
+      generatedAt = meta.generatedAt || null;
+    } catch (err) {
+      // ignore malformed meta — the CSV is the source of truth
+    }
+  }
+  return {
+    available: customBoard.length > 0,
+    season,
+    generatedAt,
+    customBoard,
+  };
+}
+
+/**
+ * Load the sanitized public snapshot (committed CSV). Cached for the session.
+ * Safe on prod: no dbbp/ files are fetched.
+ */
+export function loadRedraftDashSnapshot() {
+  if (!snapshotDataPromise) {
+    snapshotDataPromise = loadRedraftDashSnapshotUncached().catch((err) => {
+      snapshotDataPromise = null;
+      throw err;
+    });
+  }
+  return snapshotDataPromise;
 }

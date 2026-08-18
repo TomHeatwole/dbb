@@ -104,7 +104,7 @@ function SourceChips({ player }) {
   );
 }
 
-function RedraftDashTierView({ players, positionFilter }) {
+function RedraftDashTierView({ players, positionFilter, publicMode = false }) {
   const byPosition = positionFilter !== 'ALL';
 
   const tierGroups = useMemo(() => {
@@ -122,17 +122,37 @@ function RedraftDashTierView({ players, positionFilter }) {
   if (players.length === 0) {
     return (
       <div className="rv-error">
-        The DBB Custom board isn't available — run
-        <code> node dbbp/scripts/build_custom_rankings.js</code> and restart the dev server.
+        {publicMode
+          ? <>The public snapshot isn&apos;t available — run <code> node scripts/build_redraft_dash_snapshot.js</code>.</>
+          : <>The DBB Custom board isn&apos;t available — run
+            <code> node dbbp/scripts/build_custom_rankings.js</code> and restart the dev server.</>}
       </div>
     );
   }
 
-  return (
-    <div className="rddt-root">
-      <p className="rddt-legend">
-        {byPosition ? `${positionFilter} positional tiers` : 'Overall tiers'} from the DBB Custom blend.
-        Chips show each source's equivalent-SF rank —{' '}
+  const legend = publicMode
+    ? (
+      <>
+        {byPosition
+          ? `${positionFilter} positional tiers from the DBB custom board.`
+          : 'Overall tiers from the DBB custom board.'}
+        {' '}
+        Each row shows our overall rank and Sleeper superflex ADP
+        (ADP is market cost, not an input to the board):{' '}
+        <span className="rddt-adp rddt-adp--high rddt-legend-chip">+later</span> means they should
+        still be there past our rank, <span className="rddt-adp rddt-adp--low rddt-legend-chip">−earlier</span> means
+        the market takes them first.
+      </>
+    )
+    : (
+      <>
+        {byPosition && positionFilter === 'K'
+          ? 'Kicker positional tiers from ETR superflex ranks, spliced into the custom board by value. Only ETR ranks kickers — other source chips will be empty.'
+          : byPosition
+            ? `${positionFilter} positional tiers from the DBB Custom blend.`
+            : 'Overall tiers from the DBB Custom blend (kickers inserted at ETR superflex values).'}
+        {' '}
+        Chips show each source&apos;s equivalent-SF rank —{' '}
         <span className="rddt-chip rddt-chip--high rddt-legend-chip">higher</span> /{' '}
         <span className="rddt-chip rddt-chip--low rddt-legend-chip">lower</span> than our blended rank,
         with ▲/▼ marking the most bullish and most bearish source on that player.
@@ -140,6 +160,13 @@ function RedraftDashTierView({ players, positionFilter }) {
         <span className="rddt-adp rddt-adp--high rddt-legend-chip">+later</span> means they should
         still be there past our rank, <span className="rddt-adp rddt-adp--low rddt-legend-chip">−earlier</span> means
         the market takes them first.
+      </>
+    );
+
+  return (
+    <div className="rddt-root">
+      <p className="rddt-legend">
+        {legend}
       </p>
 
       {tierGroups.map(([tier, tierPlayers]) => {
@@ -152,14 +179,17 @@ function RedraftDashTierView({ players, positionFilter }) {
               <span className="rddt-tier-badge">Tier {tier}</span>
               <span className="rddt-tier-meta">
                 {tierPlayers.length} player{tierPlayers.length === 1 ? '' : 's'}
-                {hi != null && lo != null && (
+                {!publicMode && hi != null && lo != null && (
                   <> · value {hi.toFixed(1)}{hi !== lo && <> – {lo.toFixed(1)}</>}</>
                 )}
               </span>
             </header>
             <div className="rddt-tier-body">
               {tierPlayers.map((p) => (
-                <div key={p.rank} className="rddt-player">
+                <div
+                  key={p.rank}
+                  className={`rddt-player${publicMode ? ' rddt-player--public' : ''}`}
+                >
                   <span className="rddt-player-rank">{byPosition ? p.posRank : p.rank}</span>
                   <span className="rddt-player-id">
                     <span className="rddt-player-name">{p.name}</span>
@@ -171,17 +201,19 @@ function RedraftDashTierView({ players, positionFilter }) {
                       )}
                     </span>
                   </span>
-                  <span className="rddt-player-value" title="Blended value score (top player = 100)">
-                    <span className="rddt-value-bar">
-                      <span
-                        className="rddt-value-fill"
-                        style={{ width: `${Math.max(1, Math.min(100, p.value ?? 0))}%` }}
-                      />
+                  {!publicMode && (
+                    <span className="rddt-player-value" title="Blended value score (top player = 100)">
+                      <span className="rddt-value-bar">
+                        <span
+                          className="rddt-value-fill"
+                          style={{ width: `${Math.max(1, Math.min(100, p.value ?? 0))}%` }}
+                        />
+                      </span>
+                      <span className="rddt-value-num">{p.value == null ? '—' : p.value.toFixed(1)}</span>
                     </span>
-                    <span className="rddt-value-num">{p.value == null ? '—' : p.value.toFixed(1)}</span>
-                  </span>
+                  )}
                   <AdpCell player={p} />
-                  <SourceChips player={p} />
+                  {!publicMode && <SourceChips player={p} />}
                 </div>
               ))}
             </div>
