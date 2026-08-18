@@ -7,9 +7,9 @@
  *
  * Reads the private custom board (dbbp/redraft-dash/dbb_custom_rankings.csv)
  * and the public YAFSB SF ADP file, then writes ONLY the aggregated board:
- * rank, player, position, team, tier, pos_rank, pos_tier, value, adp,
- * sleeper_id. Per-source equivalent ranks (ETR/LRDG/Gibbs/ECR/FFB) and
- * coverage are stripped — those stay in dbbp/ and never ship.
+ * rank, player, position, team, tier, pos_rank, pos_tier, adp, sleeper_id.
+ * Per-source equivalent ranks (ETR/LRDG/Gibbs/ECR/FFB), coverage, and the
+ * ETR-calibrated value score are stripped — those stay in dbbp/ and never ship.
  *
  * Wired into all_updates.sh after custom_rankings so a full refresh updates
  * the committed public CSV. The live site loads this file; it does not need
@@ -33,7 +33,7 @@ const SEASON = 2026;
 
 /** Columns allowed in the public file. Anything else from the private board is dropped. */
 const PUBLIC_COLUMNS = [
-  'rank', 'player', 'position', 'team', 'tier', 'pos_rank', 'pos_tier', 'value', 'adp', 'sleeper_id',
+  'rank', 'player', 'position', 'team', 'tier', 'pos_rank', 'pos_tier', 'adp', 'sleeper_id',
 ];
 
 /**
@@ -153,7 +153,6 @@ function run() {
       tier: numOrEmpty(row.tier),
       pos_rank: numOrEmpty(row.pos_rank),
       pos_tier: numOrEmpty(row.pos_tier),
-      value: numOrEmpty(row.value),
       adp: adp == null ? '' : (Number.isInteger(adp) ? String(adp) : adp.toFixed(1)),
       sleeper_id: sleeperId,
     };
