@@ -171,8 +171,11 @@ export function RangeStats({ grid, actionLabels, actionColors }) {
   );
 }
 
-export function HandGrid({ grid, actionColors, actionLabels, highlightHand }) {
+export function HandGrid({ grid, actionColors, actionLabels, highlightHand, reachMask }) {
   if (!grid) return <div className="preflop-no-chart">No chart for this spot.</div>;
+
+  const hasUnreached = Boolean(reachMask?.some(row => row.some(reached => !reached)));
+  const foldColor = hasUnreached ? '#3b82f6' : (actionColors.F || '#374151');
 
   return (
     <div className="preflop-grid-wrapper">
@@ -181,15 +184,19 @@ export function HandGrid({ grid, actionColors, actionLabels, highlightHand }) {
           row.map((action, c) => {
             const label = handLabel(r, c);
             const highlighted = highlightHand === label;
+            const reached = !reachMask || reachMask[r][c];
+            const isFold = reached && action === 'F';
             return (
               <div
                 key={`${r}-${c}`}
-                className={`preflop-cell${highlighted ? ' preflop-cell--highlight' : ''}`}
-                style={{
-                  backgroundColor: actionColors[action] || '#374151',
-                  color: action === 'F' ? '#6b7280' : '#fff',
-                }}
-                title={`${label}: ${actionLabels[action] || action}`}
+                className={`preflop-cell${highlighted ? ' preflop-cell--highlight' : ''}${reached ? '' : ' preflop-cell--unreached'}`}
+                style={reached ? {
+                  backgroundColor: isFold ? foldColor : (actionColors[action] || '#374151'),
+                  color: isFold ? '#dbeafe' : (action === 'F' ? '#6b7280' : '#fff'),
+                } : undefined}
+                title={reached
+                  ? `${label}: ${actionLabels[action] || action}`
+                  : `${label}: folded earlier — not in this spot`}
               >
                 <span className="preflop-cell-hand">{label}</span>
               </div>
@@ -197,6 +204,18 @@ export function HandGrid({ grid, actionColors, actionLabels, highlightHand }) {
           })
         )}
       </div>
+      {hasUnreached && (
+        <div className="preflop-legend preflop-legend--grid">
+          <div className="preflop-legend-item">
+            <span className="preflop-legend-swatch" style={{ backgroundColor: foldColor }} />
+            Fold here
+          </div>
+          <div className="preflop-legend-item">
+            <span className="preflop-legend-swatch preflop-legend-swatch--unreached" />
+            Folded earlier
+          </div>
+        </div>
+      )}
     </div>
   );
 }

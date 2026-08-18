@@ -46,17 +46,25 @@ function ActionButtons({ chart, actionLabels, actionColors, disabled, selected, 
 
   return (
     <div className="preflop-quiz-actions">
-      {unique.map(key => (
-        <button
-          key={key}
-          className={`preflop-quiz-action${selected === key ? ' preflop-quiz-action--picked' : ''}`}
-          style={{ borderColor: actionColors[key], color: selected === key ? '#0f172a' : actionColors[key], background: selected === key ? actionColors[key] : 'transparent' }}
-          disabled={disabled}
-          onClick={() => onPick(key)}
-        >
-          {actionLabels[key]}
-        </button>
-      ))}
+      {unique.map(key => {
+        const color = key === 'F' ? '#94a3b8' : (actionColors[key] || '#94a3b8');
+        const picked = selected === key;
+        return (
+          <button
+            key={key}
+            className={`preflop-quiz-action${picked ? ' preflop-quiz-action--picked' : ''}`}
+            style={{
+              borderColor: color,
+              color: picked ? '#0f172a' : color,
+              background: picked ? color : 'transparent',
+            }}
+            disabled={disabled}
+            onClick={() => onPick(key)}
+          >
+            {actionLabels[key]}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -98,6 +106,7 @@ function QuestionCard({ question, index, total, showAnswer, guessed, onGuess }) 
           actionColors={question.actionColors}
           actionLabels={question.actionLabels}
           highlightHand={question.hand}
+          reachMask={question.reachMask}
         />
       )}
     </div>
@@ -288,6 +297,8 @@ export default function PreflopQuiz({ onExit }) {
               actionColors={q.actionColors}
               actionLabels={q.actionLabels}
               highlightHand={q.hand}
+              reachMask={q.reachMask}
+            />
             />
           </div>
         ))}

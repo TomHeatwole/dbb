@@ -120,7 +120,11 @@ function reachedThisSpot(spot, r, c) {
   return true;
 }
 
-function pickHand(spot, difficulty) {
+function buildReachMask(spot) {
+  return Array.from({ length: 13 }, (_, r) =>
+    Array.from({ length: 13 }, (_, c) => reachedThisSpot(spot, r, c))
+  );
+}
   const cells = [];
   for (let r = 0; r < 13; r++) {
     for (let c = 0; c < 13; c++) {
@@ -215,6 +219,7 @@ export function generateQuestion(mix, difficulty, recentKeys = []) {
     actionColors: scenario.actionColors,
     prompt: describeSpot(spot),
     cards: cardsFromHand(hand),
+    reachMask: buildReachMask(spot),
   };
 }
 
