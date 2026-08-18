@@ -125,6 +125,8 @@ function buildReachMask(spot) {
     Array.from({ length: 13 }, (_, c) => reachedThisSpot(spot, r, c))
   );
 }
+
+function pickHand(spot, difficulty) {
   const cells = [];
   for (let r = 0; r < 13; r++) {
     for (let c = 0; c < 13; c++) {
