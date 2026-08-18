@@ -495,12 +495,26 @@ async function main() {
           players: sides[0].players.map((p) => `${p.name} (${p.pos} ${round1(p.adj)})`),
           picks: sides[0].picks.map((p) => p.label),
           adj: adjA,
+          playerObjs: sides[0].players.map((p) => ({
+            name: p.name, pos: p.pos, adj: round1(p.adj),
+          })),
+          pickObjs: sides[0].picks.filter((p) => !p.startup).map((p) => ({
+            label: p.label, round: p.round, season: p.season,
+            currentYear: p.currentYear, tier: p.tier, slot: p.slot,
+          })),
         },
         b: {
           team: sides[1].team,
           players: sides[1].players.map((p) => `${p.name} (${p.pos} ${round1(p.adj)})`),
           picks: sides[1].picks.map((p) => p.label),
           adj: adjB,
+          playerObjs: sides[1].players.map((p) => ({
+            name: p.name, pos: p.pos, adj: round1(p.adj),
+          })),
+          pickObjs: sides[1].picks.filter((p) => !p.startup).map((p) => ({
+            label: p.label, round: p.round, season: p.season,
+            currentYear: p.currentYear, tier: p.tier, slot: p.slot,
+          })),
         },
         y,
         x: net,
@@ -583,7 +597,38 @@ async function main() {
     };
   }
 
-  const coverage = {};
+  const senderEvents = [];
+  for (const t of modeled) {
+    const make = (sender, receiver, picksSent, picksRecv, playersIn, playersOut, adjIn, adjOut) => {
+      if (!picksSent.length) return;
+      const implied = adjIn - adjOut;
+      const roundsSent = [...new Set(picksSent.map((p) => p.round))].sort((a, b) => a - b);
+      const oneWay = picksRecv.length === 0;
+      senderEvents.push({
+        date: t.date,
+        transactionId: t.transactionId,
+        sender: sender.team,
+        receiver: receiver.team,
+        picksSent: picksSent.map((p) => p.label),
+        picksSentObjs: picksSent,
+        picksReceived: picksRecv.map((p) => p.label),
+        playersIn: playersIn.map((p) => `${p.name} (${p.pos} ${p.adj})`),
+        playersOut: playersOut.map((p) => `${p.name} (${p.pos} ${p.adj})`),
+        playerInObjs: playersIn,
+        playerOutObjs: playersOut,
+        adjIn,
+        adjOut,
+        implied,
+        oneWay,
+        singleRound: oneWay && roundsSent.length === 1,
+        round: roundsSent.length === 1 ? roundsSent[0] : null,
+        nPicksSent: picksSent.length,
+        usedLiveFallback: t.usedLiveFallback,
+      });
+    };
+    // B sent whatever A received in picks.
+    make(t.b, t.a, t.b.pickObjs ? t.a.pickObjs : t.a.pickObjs, t.b.pickObjs, t.b.playerObjs, t.a.playerObjs, t.b.adj, t.a.adj);
+  }
   for (const key of [...ROUND_KEYS, ...SPLIT_KEYS]) {
     coverage[key] = modeled.reduce((s, r) => s + Math.abs(r.x[key]), 0);
   }
