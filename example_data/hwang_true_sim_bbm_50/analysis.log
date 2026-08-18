@@ -1,0 +1,135 @@
+============================================================================
+1. BASELINE MULTIPLIERS (mean-grounded, value+points weighted)
+============================================================================
+  ktc / hwang    QB 0.925  RB 1.275  WR 0.859  TE 0.988
+  ktc / regular  QB 0.477  RB 1.580  WR 1.275  TE 1.041
+  ktc / factor   QB 1.939  RB 0.807  WR 0.673  TE 0.949
+ comp / hwang    QB 0.938  RB 1.320  WR 0.868  TE 0.930
+ comp / regular  QB 0.490  RB 1.637  WR 1.279  TE 0.975
+ comp / factor   QB 1.914  RB 0.806  WR 0.679  TE 0.954
+
+============================================================================
+2. MULTIPLIERS BY 1000-VALUE BAND (mean-grounded)
+============================================================================
+
+--- basis: ktc (per position: Hwang / Regular / factor) ---
+band      pairs |                  QB |                  RB |                  WR |                  TE |
+0k-1k       220 |   0.95/ 0.45/ 2.11 |   0.94/ 1.22/ 0.77 |   1.08/ 1.62/ 0.66 |   1.04/ 1.12/ 0.93 |
+1k-2k      1479 |   0.88/ 0.45/ 1.95 |   1.18/ 1.47/ 0.80 |   0.86/ 1.30/ 0.67 |   1.11/ 1.16/ 0.96 |
+2k-3k      1297 |   1.20/ 0.64/ 1.88 |   1.10/ 1.32/ 0.83 |   0.84/ 1.27/ 0.66 |   0.90/ 0.93/ 0.97 |
+3k-4k      1096 |   0.97/ 0.47/ 2.06 |   1.27/ 1.59/ 0.80 |   0.82/ 1.25/ 0.65 |   0.99/ 1.07/ 0.93 |
+4k-5k       658 |   0.97/ 0.51/ 1.90 |   1.25/ 1.48/ 0.84 |   0.87/ 1.28/ 0.68 |   0.95/ 1.04/ 0.92 |
+5k-6k       427 |   0.79/ 0.39/ 2.04 |   1.43/ 1.83/ 0.78 |   0.84/ 1.23/ 0.68 |   1.07/ 1.15/ 0.93 |
+6k-7k       181 |   0.87/ 0.47/ 1.86 |   1.30/ 1.62/ 0.81 |   0.93/ 1.35/ 0.69 |   0.95/ 0.98/ 0.97 |
+7k+         131 |   0.94/ 0.51/ 1.83 |   1.28/ 1.60/ 0.80 |   0.88/ 1.27/ 0.69 |   0.94/ 0.96/ 0.98 |
+
+--- basis: comp (per position: Hwang / Regular / factor) ---
+band      pairs |                  QB |                  RB |                  WR |                  TE |
+0k-1k       887 |   0.53/ 0.25/ 2.09 |   1.44/ 1.82/ 0.79 |   1.38/ 2.24/ 0.61 |   0.95/ 0.97/ 0.98 |
+1k-2k       383 |   0.72/ 0.36/ 2.00 |   1.34/ 1.63/ 0.82 |   1.01/ 1.56/ 0.64 |   1.04/ 1.10/ 0.95 |
+2k-3k       431 |   1.01/ 0.48/ 2.07 |   1.34/ 1.70/ 0.79 |   0.78/ 1.20/ 0.65 |   0.95/ 1.02/ 0.93 |
+3k-4k       721 |   1.05/ 0.51/ 2.06 |   1.11/ 1.37/ 0.81 |   0.90/ 1.37/ 0.66 |   0.95/ 1.04/ 0.92 |
+4k-5k       559 |   0.92/ 0.47/ 1.95 |   1.47/ 1.81/ 0.81 |   0.88/ 1.31/ 0.67 |   0.84/ 0.89/ 0.94 |
+5k-6k       395 |   0.94/ 0.50/ 1.89 |   1.38/ 1.73/ 0.80 |   0.83/ 1.22/ 0.68 |   0.93/ 0.95/ 0.98 |
+6k-7k       173 |   0.93/ 0.51/ 1.82 |   1.43/ 1.78/ 0.80 |   0.86/ 1.24/ 0.69 |   0.88/ 0.88/ 1.00 |
+7k+          74 |   0.87/ 0.48/ 1.81 |   1.20/ 1.49/ 0.81 |   0.86/ 1.19/ 0.72 |   1.11/ 1.17/ 0.95 |
+
+============================================================================
+3. FITTED POWER LAWS  m(v) = c * (v/5000)^k   [mean gauge, incl. QB]
+============================================================================
+
+ktc / hwang  (weighted pair-level R^2 = 0.033, n = 5,473)
+  QB: m(v) = 0.873 * (v/5000)^-0.073   -> @1k 0.98x  @3k 0.91x  @5k 0.87x  @8k 0.84x
+  RB: m(v) = 1.277 * (v/5000)^+0.246   -> @1k 0.86x  @3k 1.13x  @5k 1.28x  @8k 1.43x
+  WR: m(v) = 0.875 * (v/5000)^-0.031   -> @1k 0.92x  @3k 0.89x  @5k 0.88x  @8k 0.86x
+  TE: m(v) = 1.025 * (v/5000)^-0.142   -> @1k 1.29x  @3k 1.10x  @5k 1.02x  @8k 0.96x
+
+ktc / regular  (weighted pair-level R^2 = 0.131, n = 5,465)
+  QB: m(v) = 0.424 * (v/5000)^-0.098   -> @1k 0.50x  @3k 0.45x  @5k 0.42x  @8k 0.41x
+  RB: m(v) = 1.593 * (v/5000)^+0.362   -> @1k 0.89x  @3k 1.32x  @5k 1.59x  @8k 1.89x
+  WR: m(v) = 1.340 * (v/5000)^-0.079   -> @1k 1.52x  @3k 1.40x  @5k 1.34x  @8k 1.29x
+  TE: m(v) = 1.104 * (v/5000)^-0.185   -> @1k 1.49x  @3k 1.21x  @5k 1.10x  @8k 1.01x
+
+comp / hwang  (weighted pair-level R^2 = 0.075, n = 3,482)
+  QB: m(v) = 0.893 * (v/5000)^+0.152   -> @1k 0.70x  @3k 0.83x  @5k 0.89x  @8k 0.96x
+  RB: m(v) = 1.326 * (v/5000)^+0.077   -> @1k 1.17x  @3k 1.28x  @5k 1.33x  @8k 1.38x
+  WR: m(v) = 0.869 * (v/5000)^-0.171   -> @1k 1.14x  @3k 0.95x  @5k 0.87x  @8k 0.80x
+  TE: m(v) = 0.971 * (v/5000)^-0.059   -> @1k 1.07x  @3k 1.00x  @5k 0.97x  @8k 0.94x
+
+comp / regular  (weighted pair-level R^2 = 0.276, n = 3,451)
+  QB: m(v) = 0.450 * (v/5000)^+0.162   -> @1k 0.35x  @3k 0.41x  @5k 0.45x  @8k 0.49x
+  RB: m(v) = 1.653 * (v/5000)^+0.140   -> @1k 1.32x  @3k 1.54x  @5k 1.65x  @8k 1.77x
+  WR: m(v) = 1.296 * (v/5000)^-0.246   -> @1k 1.92x  @3k 1.47x  @5k 1.30x  @8k 1.15x
+  TE: m(v) = 1.038 * (v/5000)^-0.057   -> @1k 1.14x  @3k 1.07x  @5k 1.04x  @8k 1.01x
+
+wrote /Users/tomh/dev/dbb/example_data/hwang_true_sim_bbm_50/analysis/multiplier_curves_ktc.png
+
+wrote /Users/tomh/dev/dbb/example_data/hwang_true_sim_bbm_50/analysis/multiplier_curves_comp.png
+
+============================================================================
+4. PER-ARCHETYPE MULTIPLIERS (mean-grounded)
+============================================================================
+
+--- basis: ktc / format: hwang ---
+  2026 #5 — Zero RB + late 3QB                 QB 0.86  RB 1.36  WR 0.85  TE 1.00
+  2026 #1 — Hero RB + late 3QB                 QB 0.79  RB 1.34  WR 0.90  TE 1.05
+  2026 #6 — Zero RB + elite 2QB                QB 1.00  RB 1.29  WR 0.81  TE 0.96
+  2026 #7 — Robust RB + late 3QB               QB 0.87  RB 1.29  WR 0.90  TE 0.99
+  2026 #3 — Double-anchor + late 3QB           QB 0.83  RB 1.28  WR 0.90  TE 1.04
+  2026 #2 — Hero RB + elite 2QB                QB 1.02  RB 1.24  WR 0.82  TE 0.96
+  2026 #8 — Robust RB + elite 2QB              QB 1.00  RB 1.23  WR 0.86  TE 0.95
+  2026 #4 — Double-anchor + elite 2QB          QB 1.03  RB 1.20  WR 0.84  TE 0.97
+
+--- basis: ktc / format: regular ---
+  2026 #6 — Zero RB + elite 2QB                QB 0.43  RB 1.84  WR 1.15  TE 1.09
+  2026 #5 — Zero RB + late 3QB                 QB 0.48  RB 1.79  WR 1.12  TE 1.03
+  2026 #1 — Hero RB + late 3QB                 QB 0.43  RB 1.66  WR 1.27  TE 1.09
+  2026 #2 — Hero RB + elite 2QB                QB 0.45  RB 1.66  WR 1.21  TE 1.12
+  2026 #8 — Robust RB + elite 2QB              QB 0.47  RB 1.48  WR 1.49  TE 0.97
+  2026 #3 — Double-anchor + late 3QB           QB 0.49  RB 1.43  WR 1.31  TE 1.09
+  2026 #7 — Robust RB + late 3QB               QB 0.53  RB 1.42  WR 1.43  TE 0.92
+  2026 #4 — Double-anchor + elite 2QB          QB 0.53  RB 1.41  WR 1.27  TE 1.05
+
+--- basis: comp / format: hwang ---
+  2026 #5 — Zero RB + late 3QB                 QB 0.88  RB 1.40  WR 0.86  TE 0.94
+  2026 #1 — Hero RB + late 3QB                 QB 0.81  RB 1.38  WR 0.91  TE 0.98
+  2026 #6 — Zero RB + elite 2QB                QB 1.01  RB 1.34  WR 0.82  TE 0.90
+  2026 #7 — Robust RB + late 3QB               QB 0.89  RB 1.34  WR 0.90  TE 0.93
+  2026 #3 — Double-anchor + late 3QB           QB 0.85  RB 1.33  WR 0.91  TE 0.97
+  2026 #2 — Hero RB + elite 2QB                QB 1.02  RB 1.29  WR 0.83  TE 0.91
+  2026 #8 — Robust RB + elite 2QB              QB 1.00  RB 1.28  WR 0.87  TE 0.90
+  2026 #4 — Double-anchor + elite 2QB          QB 1.04  RB 1.24  WR 0.85  TE 0.91
+
+--- basis: comp / format: regular ---
+  2026 #6 — Zero RB + elite 2QB                QB 0.44  RB 1.90  WR 1.16  TE 1.02
+  2026 #5 — Zero RB + late 3QB                 QB 0.50  RB 1.83  WR 1.13  TE 0.97
+  2026 #2 — Hero RB + elite 2QB                QB 0.46  RB 1.72  WR 1.22  TE 1.05
+  2026 #1 — Hero RB + late 3QB                 QB 0.45  RB 1.71  WR 1.27  TE 1.02
+  2026 #8 — Robust RB + elite 2QB              QB 0.47  RB 1.55  WR 1.49  TE 0.91
+  2026 #3 — Double-anchor + late 3QB           QB 0.51  RB 1.49  WR 1.31  TE 1.00
+  2026 #7 — Robust RB + late 3QB               QB 0.55  RB 1.49  WR 1.42  TE 0.86
+  2026 #4 — Double-anchor + elite 2QB          QB 0.54  RB 1.47  WR 1.27  TE 0.99
+wrote /Users/tomh/dev/dbb/example_data/hwang_true_sim_bbm_50/analysis/archetype_spectrum_ktc.png
+wrote /Users/tomh/dev/dbb/example_data/hwang_true_sim_bbm_50/analysis/archetype_spectrum_comp.png
+
+============================================================================
+5. PER-YEAR MULTIPLIERS (mean-grounded)
+============================================================================
+
+--- basis: ktc (per position: Hwang / Regular / factor) ---
+year                    QB |                  RB |                  WR |                  TE |
+2021     0.87/ 0.43/ 2.03 |   1.23/ 1.58/ 0.78 |   0.91/ 1.41/ 0.64 |   1.03/ 1.05/ 0.98 |
+2022     0.93/ 0.48/ 1.95 |   1.24/ 1.48/ 0.84 |   0.83/ 1.21/ 0.68 |   1.06/ 1.17/ 0.90 |
+2023     0.94/ 0.48/ 1.97 |   1.21/ 1.52/ 0.80 |   0.91/ 1.38/ 0.66 |   0.97/ 1.00/ 0.96 |
+2024     0.94/ 0.48/ 1.97 |   1.33/ 1.63/ 0.81 |   0.85/ 1.25/ 0.68 |   0.94/ 1.03/ 0.92 |
+2025     0.93/ 0.52/ 1.81 |   1.36/ 1.69/ 0.81 |   0.81/ 1.16/ 0.70 |   0.97/ 0.99/ 0.98 |
+
+--- basis: comp (per position: Hwang / Regular / factor) ---
+year                    QB |                  RB |                  WR |                  TE |
+2021     0.97/ 0.51/ 1.90 |   1.20/ 1.53/ 0.79 |   0.90/ 1.35/ 0.67 |   0.95/ 0.95/ 1.01 |
+2022     1.01/ 0.53/ 1.89 |   1.33/ 1.60/ 0.83 |   0.89/ 1.30/ 0.68 |   0.83/ 0.89/ 0.93 |
+2023     0.89/ 0.45/ 1.96 |   1.22/ 1.52/ 0.81 |   0.93/ 1.39/ 0.67 |   0.99/ 1.04/ 0.94 |
+2024     0.90/ 0.45/ 2.01 |   1.37/ 1.70/ 0.80 |   0.87/ 1.29/ 0.67 |   0.93/ 1.02/ 0.92 |
+2025     0.93/ 0.51/ 1.83 |   1.51/ 1.90/ 0.80 |   0.76/ 1.07/ 0.70 |   0.94/ 0.96/ 0.97 |
+
+wrote /Users/tomh/dev/dbb/example_data/hwang_true_sim_bbm_50/analysis/multipliers_by_year.png

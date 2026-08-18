@@ -1,0 +1,213 @@
+{
+  "generated_at": "2026-08-18T21:48:02.011970+00:00",
+  "ktc_board": "sf_ktc_values_historical.csv (SF TE+ merged)",
+  "ktc_date_range": {
+    "min": "2020-04-01",
+    "max": "2026-08-18"
+  },
+  "tep_scrape_max": "2026-06-19",
+  "funnel": {
+    "completed_trades": 84,
+    "has_picks": 65,
+    "multi_player": 12,
+    "one_for_one": 3,
+    "has_faab": 3,
+    "not_two_team": 1
+  },
+  "n_one_for_one": 3,
+  "n_priced": 3,
+  "n_unpriced": 0,
+  "n_cross_pos": 3,
+  "n_same_pos": 0,
+  "season_counts": {
+    "2024": 2,
+    "2025": 1
+  },
+  "pair_counts": {
+    "QB\u2013RB": 1,
+    "RB\u2013WR": 2
+  },
+  "ktc_abs_diff": {
+    "all_mean": 372,
+    "all_median": 328,
+    "cross_mean": 372,
+    "cross_median": 328,
+    "same_mean": null,
+    "same_median": null
+  },
+  "ktc_ratio_median": 1.138,
+  "position_gaps": {
+    "QB": {
+      "n": 1,
+      "mean": -625,
+      "median": -625,
+      "mean_pct_of_other": null,
+      "ktc_higher_count": 0,
+      "ktc_lower_count": 1,
+      "ktc_tie_count": 0,
+      "share_ktc_higher": 0.0,
+      "mean_pct_vs_other": -19.4,
+      "median_pct_vs_other": -19.4
+    },
+    "RB": {
+      "n": 3,
+      "mean": 263.3,
+      "median": 328,
+      "mean_pct_of_other": null,
+      "ktc_higher_count": 2,
+      "ktc_lower_count": 1,
+      "ktc_tie_count": 0,
+      "share_ktc_higher": 0.667,
+      "mean_pct_vs_other": 11.0,
+      "median_pct_vs_other": 13.8
+    },
+    "WR": {
+      "n": 2,
+      "mean": -82.5,
+      "median": -82.5,
+      "mean_pct_of_other": null,
+      "ktc_higher_count": 1,
+      "ktc_lower_count": 1,
+      "ktc_tie_count": 0,
+      "share_ktc_higher": 0.5,
+      "mean_pct_vs_other": -3.5,
+      "median_pct_vs_other": -3.5
+    },
+    "TE": {
+      "n": 0
+    }
+  },
+  "pair_gaps": {
+    "QB\u2013RB": {
+      "n": 1,
+      "mean": -625,
+      "median": -625,
+      "mean_pct_of_other": null,
+      "ktc_higher_count": 0,
+      "ktc_lower_count": 1,
+      "ktc_tie_count": 0,
+      "share_ktc_higher": 0.0
+    },
+    "RB\u2013WR": {
+      "n": 2,
+      "mean": 82.5,
+      "median": 82.5,
+      "mean_pct_of_other": null,
+      "ktc_higher_count": 1,
+      "ktc_lower_count": 1,
+      "ktc_tie_count": 0,
+      "share_ktc_higher": 0.5
+    }
+  },
+  "trades": [
+    {
+      "season": "2024",
+      "date": "2024-08-23",
+      "time_et": "2024-08-23 09:50 PM ET",
+      "created_iso": "2024-08-24T01:50:27.267000+00:00",
+      "transaction_id": "1132888716072218624",
+      "a": {
+        "roster_id": 8,
+        "team": "Adam(s) and Steve(nson)",
+        "id": "8154",
+        "name": "Brian Robinson",
+        "pos": "RB",
+        "nfl_team": "ATL",
+        "ktc": 3216,
+        "ktc_as_of": "2024-08-23",
+        "ktc_slack_days": 0
+      },
+      "b": {
+        "roster_id": 2,
+        "team": "Let James Cook",
+        "id": "1373",
+        "name": "Geno Smith",
+        "pos": "QB",
+        "nfl_team": "NYJ",
+        "ktc": 2591,
+        "ktc_as_of": "2024-08-23",
+        "ktc_slack_days": 0
+      },
+      "pair": "QB\u2013RB",
+      "same_pos": false,
+      "cross_pos": true,
+      "ktc_diff_a_minus_b": 625,
+      "ktc_abs_diff": 625,
+      "ktc_ratio": 1.2412196063296024,
+      "has_ktc": true
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-23",
+      "time_et": "2024-08-23 09:42 PM ET",
+      "created_iso": "2024-08-24T01:42:45.907000+00:00",
+      "transaction_id": "1132886780988121088",
+      "a": {
+        "roster_id": 10,
+        "team": "Eat It While She Sleeper",
+        "id": "11638",
+        "name": "Ricky Pearsall",
+        "pos": "WR",
+        "nfl_team": "SF",
+        "ktc": 3379,
+        "ktc_as_of": "2024-08-23",
+        "ktc_slack_days": 0
+      },
+      "b": {
+        "roster_id": 2,
+        "team": "Let James Cook",
+        "id": "8154",
+        "name": "Brian Robinson",
+        "pos": "RB",
+        "nfl_team": "ATL",
+        "ktc": 3216,
+        "ktc_as_of": "2024-08-23",
+        "ktc_slack_days": 0
+      },
+      "pair": "RB\u2013WR",
+      "same_pos": false,
+      "cross_pos": true,
+      "ktc_diff_a_minus_b": 163,
+      "ktc_abs_diff": 163,
+      "ktc_ratio": 1.05068407960199,
+      "has_ktc": true
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "time_et": "2025-06-30 06:04 PM ET",
+      "created_iso": "2025-06-30T22:04:40.531000+00:00",
+      "transaction_id": "1245534523144290304",
+      "a": {
+        "roster_id": 6,
+        "team": "Drake & Bake",
+        "id": "7588",
+        "name": "Javonte Williams",
+        "pos": "RB",
+        "nfl_team": "DAL",
+        "ktc": 2707,
+        "ktc_as_of": "2025-06-30",
+        "ktc_slack_days": 0
+      },
+      "b": {
+        "roster_id": 1,
+        "team": "PUPpy Bowl",
+        "id": "8121",
+        "name": "Romeo Doubs",
+        "pos": "WR",
+        "nfl_team": "NE",
+        "ktc": 2379,
+        "ktc_as_of": "2025-06-30",
+        "ktc_slack_days": 0
+      },
+      "pair": "RB\u2013WR",
+      "same_pos": false,
+      "cross_pos": true,
+      "ktc_diff_a_minus_b": 328,
+      "ktc_abs_diff": 328,
+      "ktc_ratio": 1.1378730559058428,
+      "has_ktc": true
+    }
+  ],
+  "unpriced": []
+}

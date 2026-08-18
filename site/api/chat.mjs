@@ -585,11 +585,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
 
-  const { messages, systemPrompt, continuation } = body || {};
+  const { messages, systemPrompt, continuation, mode } = body || {};
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Invalid messages' });
   }
   const continuationDepth = Number(continuation?.depth) || 0;
+  const plain = mode === 'plain';
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -597,7 +598,7 @@ export default async function handler(req, res) {
   }
 
   // Decide whether to fire the side query this turn
-  const doSideQuery = Math.random() < SIDE_QUERY_PROBABILITY;
+  const doSideQuery = !plain && Math.random() < SIDE_QUERY_PROBABILITY;
   const sideQueryPromise = doSideQuery
     ? fetchChineseCharacters(apiKey)
     : Promise.resolve(null);
@@ -653,9 +654,7 @@ export default async function handler(req, res) {
   }
 
   const requestBase = {
-    tools: [
-      { functionDeclarations: TOOL_DECLARATIONS },
-    ],
+    ...(plain ? {} : { tools: [{ functionDeclarations: TOOL_DECLARATIONS }] }),
     ...(systemPrompt ? { systemInstruction: { parts: [{ text: systemPrompt }] } } : {}),
   };
 
@@ -686,12 +685,15 @@ export default async function handler(req, res) {
       // No tool calls — extract the text response (skip Gemini 3.x thought-
       // summary parts, join multiple text parts) and stitch side query
       let text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n');
-      const needsSearch =
+      const needsSearch = !plain && (
         text.includes('<!--search-->') ||
         RESPONSE_SEARCH_PHRASES.some(re => re.test(text)) ||
-        questionNeedsSearch(messages);
+        questionNeedsSearch(messages)
+      );
       text = text.replace(/<!--search-->/g, '').trim();
-      text = await sanitizeInternalLeaks(text, apiKey, geminiState);
+      if (!plain) {
+        text = await sanitizeInternalLeaks(text, apiKey, geminiState);
+      }
 
       // Never ship an empty bubble: a model can occasionally return a bare
       // <!--search--> marker or an empty/thought-only candidate.

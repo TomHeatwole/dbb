@@ -74,10 +74,10 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
       const newParams = new URLSearchParams(searchParams);
       newParams.set('start_week', startWeek);
       newParams.set('end_week', endWeek);
-      newParams.set('tab', 'Analytics');
+      newParams.set('tab', 'Team Analytics');
       setSearchParams(newParams, { replace: true });
     } else {
-      updateQueryParams({ start_week: startWeek, end_week: endWeek, tab: 'Analytics' });
+      updateQueryParams({ start_week: startWeek, end_week: endWeek, tab: 'Team Analytics' });
     }
     // eslint-disable-next-line
   }, [startWeek, endWeek]);
@@ -118,7 +118,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
       setStartWeek(newStart);
       setEndWeek(newEnd);
       if (updateQueryParams) {
-        updateQueryParams({ start_week: newStart, end_week: newEnd, tab: 'Analytics', year: season === CURRENT_YEAR ? null : season });
+        updateQueryParams({ start_week: newStart, end_week: newEnd, tab: 'Team Analytics', year: season === CURRENT_YEAR ? null : season });
       } else {
         const newParams = new URLSearchParams(searchParams);
         newParams.set('start_week', newStart);

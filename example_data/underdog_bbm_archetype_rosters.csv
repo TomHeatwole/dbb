@@ -1,0 +1,145 @@
+archetype_id,season,finish_rank,rank_basis,team_name,owner,roster_id,wins,losses,fpts,sleeper_id,player_name,sleeper_position,nfl_team,ktc_name,position,ktc_value,ktc_overall_rank,ktc_pos_rank,comp_adj_value,comp_adj_overall_rank,comp_adj_pos_rank
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R1 WR5,WR,,R1 WR5,WR,18000,6,5,18000,6,5
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R2 RB8,RB,,R2 RB8,RB,17000,19,8,17000,19,8
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R3 WR20,WR,,R3 WR20,WR,16000,30,20,16000,30,20
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R4 WR28,WR,,R4 WR28,WR,15000,43,28,15000,43,28
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R5 TE7,TE,,R5 TE7,TE,14000,54,7,14000,54,7
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R6 WR44,WR,,R6 WR44,WR,13000,67,44,13000,67,44
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R7 RB38,RB,,R7 RB38,RB,12000,78,38,12000,78,38
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R8 WR60,WR,,R8 WR60,WR,11000,91,60,11000,91,60
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R9 QB13,QB,,R9 QB13,QB,10000,102,13,10000,102,13
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R10 RB54,RB,,R10 RB54,RB,9000,115,54,9000,115,54
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R11 WR84,WR,,R11 WR84,WR,8000,126,84,8000,126,84
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R12 RB64,RB,,R12 RB64,RB,7000,139,64,7000,139,64
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R13 QB19,QB,,R13 QB19,QB,6000,150,19,6000,150,19
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R14 RB72,RB,,R14 RB72,RB,5000,163,72,5000,163,72
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R15 QB21,QB,,R15 QB21,QB,4000,174,21,4000,174,21
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R16 TE26,TE,,R16 TE26,TE,3000,187,26,3000,187,26
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R17 WR120,WR,,R17 WR120,WR,2000,198,120,2000,198,120
+bb_hero_3qb,2026,1,bbm_synthetic,Hero RB + late 3QB,bb_hero_3qb,1,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R1 WR5,WR,,R1 WR5,WR,18000,6,5,18000,6,5
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R2 RB8,RB,,R2 RB8,RB,17000,19,8,17000,19,8
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R3 QB1,QB,,R3 QB1,QB,16000,30,1,16000,30,1
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R4 WR28,WR,,R4 WR28,WR,15000,43,28,15000,43,28
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R5 WR36,WR,,R5 WR36,WR,14000,54,36,14000,54,36
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R6 WR44,WR,,R6 WR44,WR,13000,67,44,13000,67,44
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R7 RB38,RB,,R7 RB38,RB,12000,78,38,12000,78,38
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R8 TE13,TE,,R8 TE13,TE,11000,91,13,11000,91,13
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R9 WR68,WR,,R9 WR68,WR,10000,102,68,10000,102,68
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R10 RB54,RB,,R10 RB54,RB,9000,115,54,9000,115,54
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R11 WR84,WR,,R11 WR84,WR,8000,126,84,8000,126,84
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R12 RB64,RB,,R12 RB64,RB,7000,139,64,7000,139,64
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R13 WR96,WR,,R13 WR96,WR,6000,150,96,6000,150,96
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R14 RB72,RB,,R14 RB72,RB,5000,163,72,5000,163,72
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R15 TE24,TE,,R15 TE24,TE,4000,174,24,4000,174,24
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R16 WR114,WR,,R16 WR114,WR,3000,187,114,3000,187,114
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R17 QB23,QB,,R17 QB23,QB,2000,198,23,2000,198,23
+bb_hero_2qb,2026,2,bbm_synthetic,Hero RB + elite 2QB,bb_hero_2qb,2,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R1 RB3,RB,,R1 RB3,RB,18000,6,3,18000,6,3
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R2 WR12,WR,,R2 WR12,WR,17000,19,12,17000,19,12
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R3 RB14,RB,,R3 RB14,RB,16000,30,14,16000,30,14
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R4 WR28,WR,,R4 WR28,WR,15000,43,28,15000,43,28
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R5 WR36,WR,,R5 WR36,WR,14000,54,36,14000,54,36
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R6 TE9,TE,,R6 TE9,TE,13000,67,9,13000,67,9
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R7 WR52,WR,,R7 WR52,WR,12000,78,52,12000,78,52
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R8 QB11,QB,,R8 QB11,QB,11000,91,11,11000,91,11
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R9 RB49,RB,,R9 RB49,RB,10000,102,49,10000,102,49
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R10 WR76,WR,,R10 WR76,WR,9000,115,76,9000,115,76
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R11 RB59,RB,,R11 RB59,RB,8000,126,59,8000,126,59
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R12 QB18,QB,,R12 QB18,QB,7000,139,18,7000,139,18
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R13 WR96,WR,,R13 WR96,WR,6000,150,96,6000,150,96
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R14 RB72,RB,,R14 RB72,RB,5000,163,72,5000,163,72
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R15 TE24,TE,,R15 TE24,TE,4000,174,24,4000,174,24
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R16 QB22,QB,,R16 QB22,QB,3000,187,22,3000,187,22
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R17 WR120,WR,,R17 WR120,WR,2000,198,120,2000,198,120
+bb_double_3qb,2026,3,bbm_synthetic,Double-anchor + late 3QB,bb_double_3qb,3,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R1 RB3,RB,,R1 RB3,RB,18000,6,3,18000,6,3
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R2 WR12,WR,,R2 WR12,WR,17000,19,12,17000,19,12
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R3 RB14,RB,,R3 RB14,RB,16000,30,14,16000,30,14
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R4 QB3,QB,,R4 QB3,QB,15000,43,3,15000,43,3
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R5 WR36,WR,,R5 WR36,WR,14000,54,36,14000,54,36
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R6 WR44,WR,,R6 WR44,WR,13000,67,44,13000,67,44
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R7 WR52,WR,,R7 WR52,WR,12000,78,52,12000,78,52
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R8 TE13,TE,,R8 TE13,TE,11000,91,13,11000,91,13
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R9 RB49,RB,,R9 RB49,RB,10000,102,49,10000,102,49
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R10 WR76,WR,,R10 WR76,WR,9000,115,76,9000,115,76
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R11 RB59,RB,,R11 RB59,RB,8000,126,59,8000,126,59
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R12 WR90,WR,,R12 WR90,WR,7000,139,90,7000,139,90
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R13 RB68,RB,,R13 RB68,RB,6000,150,68,6000,150,68
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R14 WR102,WR,,R14 WR102,WR,5000,163,102,5000,163,102
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R15 TE24,TE,,R15 TE24,TE,4000,174,24,4000,174,24
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R16 WR114,WR,,R16 WR114,WR,3000,187,114,3000,187,114
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R17 QB23,QB,,R17 QB23,QB,2000,198,23,2000,198,23
+bb_double_2qb,2026,4,bbm_synthetic,Double-anchor + elite 2QB,bb_double_2qb,4,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R1 WR5,WR,,R1 WR5,WR,18000,6,5,18000,6,5
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R2 WR12,WR,,R2 WR12,WR,17000,19,12,17000,19,12
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R3 WR20,WR,,R3 WR20,WR,16000,30,20,16000,30,20
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R4 TE5,TE,,R4 TE5,TE,15000,43,5,15000,43,5
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R5 WR36,WR,,R5 WR36,WR,14000,54,36,14000,54,36
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R6 WR44,WR,,R6 WR44,WR,13000,67,44,13000,67,44
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R7 RB38,RB,,R7 RB38,RB,12000,78,38,12000,78,38
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R8 WR60,WR,,R8 WR60,WR,11000,91,60,11000,91,60
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R9 RB49,RB,,R9 RB49,RB,10000,102,49,10000,102,49
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R10 QB15,QB,,R10 QB15,QB,9000,115,15,9000,115,15
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R11 RB59,RB,,R11 RB59,RB,8000,126,59,8000,126,59
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R12 WR90,WR,,R12 WR90,WR,7000,139,90,7000,139,90
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R13 RB68,RB,,R13 RB68,RB,6000,150,68,6000,150,68
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R14 QB20,QB,,R14 QB20,QB,5000,163,20,5000,163,20
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R15 RB76,RB,,R15 RB76,RB,4000,174,76,4000,174,76
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R16 TE26,TE,,R16 TE26,TE,3000,187,26,3000,187,26
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R17 QB23,QB,,R17 QB23,QB,2000,198,23,2000,198,23
+bb_zero_3qb,2026,5,bbm_synthetic,Zero RB + late 3QB,bb_zero_3qb,5,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R1 WR5,WR,,R1 WR5,WR,18000,6,5,18000,6,5
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R2 WR12,WR,,R2 WR12,WR,17000,19,12,17000,19,12
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R3 QB1,QB,,R3 QB1,QB,16000,30,1,16000,30,1
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R4 WR28,WR,,R4 WR28,WR,15000,43,28,15000,43,28
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R5 WR36,WR,,R5 WR36,WR,14000,54,36,14000,54,36
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R6 TE9,TE,,R6 TE9,TE,13000,67,9,13000,67,9
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R7 RB38,RB,,R7 RB38,RB,12000,78,38,12000,78,38
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R8 WR60,WR,,R8 WR60,WR,11000,91,60,11000,91,60
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R9 RB49,RB,,R9 RB49,RB,10000,102,49,10000,102,49
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R10 WR76,WR,,R10 WR76,WR,9000,115,76,9000,115,76
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R11 RB59,RB,,R11 RB59,RB,8000,126,59,8000,126,59
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R12 WR90,WR,,R12 WR90,WR,7000,139,90,7000,139,90
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R13 RB68,RB,,R13 RB68,RB,6000,150,68,6000,150,68
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R14 WR102,WR,,R14 WR102,WR,5000,163,102,5000,163,102
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R15 TE24,TE,,R15 TE24,TE,4000,174,24,4000,174,24
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R16 RB80,RB,,R16 RB80,RB,3000,187,80,3000,187,80
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R17 QB23,QB,,R17 QB23,QB,2000,198,23,2000,198,23
+bb_zero_2qb,2026,6,bbm_synthetic,Zero RB + elite 2QB,bb_zero_2qb,6,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R1 RB3,RB,,R1 RB3,RB,18000,6,3,18000,6,3
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R2 RB8,RB,,R2 RB8,RB,17000,19,8,17000,19,8
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R3 WR20,WR,,R3 WR20,WR,16000,30,20,16000,30,20
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R4 RB20,RB,,R4 RB20,RB,15000,43,20,15000,43,20
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R5 WR36,WR,,R5 WR36,WR,14000,54,36,14000,54,36
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R6 TE9,TE,,R6 TE9,TE,13000,67,9,13000,67,9
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R7 WR52,WR,,R7 WR52,WR,12000,78,52,12000,78,52
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R8 QB11,QB,,R8 QB11,QB,11000,91,11,11000,91,11
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R9 WR68,WR,,R9 WR68,WR,10000,102,68,10000,102,68
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R10 TE16,TE,,R10 TE16,TE,9000,115,16,9000,115,16
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R11 WR84,WR,,R11 WR84,WR,8000,126,84,8000,126,84
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R12 QB18,QB,,R12 QB18,QB,7000,139,18,7000,139,18
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R13 WR96,WR,,R13 WR96,WR,6000,150,96,6000,150,96
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R14 RB72,RB,,R14 RB72,RB,5000,163,72,5000,163,72
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R15 TE24,TE,,R15 TE24,TE,4000,174,24,4000,174,24
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R16 QB22,QB,,R16 QB22,QB,3000,187,22,3000,187,22
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R17 WR120,WR,,R17 WR120,WR,2000,198,120,2000,198,120
+bb_robust_3qb,2026,7,bbm_synthetic,Robust RB + late 3QB,bb_robust_3qb,7,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R1 RB3,RB,,R1 RB3,RB,18000,6,3,18000,6,3
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R2 RB8,RB,,R2 RB8,RB,17000,19,8,17000,19,8
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R3 QB1,QB,,R3 QB1,QB,16000,30,1,16000,30,1
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R4 RB20,RB,,R4 RB20,RB,15000,43,20,15000,43,20
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R5 WR36,WR,,R5 WR36,WR,14000,54,36,14000,54,36
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R6 WR44,WR,,R6 WR44,WR,13000,67,44,13000,67,44
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R7 TE11,TE,,R7 TE11,TE,12000,78,11,12000,78,11
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R8 WR60,WR,,R8 WR60,WR,11000,91,60,11000,91,60
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R9 WR68,WR,,R9 WR68,WR,10000,102,68,10000,102,68
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R10 TE16,TE,,R10 TE16,TE,9000,115,16,9000,115,16
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R11 WR84,WR,,R11 WR84,WR,8000,126,84,8000,126,84
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R12 WR90,WR,,R12 WR90,WR,7000,139,90,7000,139,90
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R13 RB68,RB,,R13 RB68,RB,6000,150,68,6000,150,68
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R14 WR102,WR,,R14 WR102,WR,5000,163,102,5000,163,102
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R15 TE24,TE,,R15 TE24,TE,4000,174,24,4000,174,24
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R16 WR114,WR,,R16 WR114,WR,3000,187,114,3000,187,114
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R17 QB23,QB,,R17 QB23,QB,2000,198,23,2000,198,23
+bb_robust_2qb,2026,8,bbm_synthetic,Robust RB + elite 2QB,bb_robust_2qb,8,0,0,0,,R18 RB88,RB,,R18 RB88,RB,1000,211,88,1000,211,88

@@ -1,0 +1,85 @@
+
+Running basis="ktc" format="hwang" (50 builds, seed 1)…
+  0% 2021: fetching weekly stats…
+  10% 2021: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/207)
+  20% 2021: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  30% 2022: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/269)
+  40% 2022: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  50% 2023: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/290)
+  60% 2023: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  70% 2024: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/288)
+  80% 2024: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  90% 2025: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/276)
+  100% 2025: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  done in 34s
+
+Running basis="ktc" format="regular" (50 builds, seed 1)…
+  0% 2021: fetching weekly stats…
+  10% 2021: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/207)
+  20% 2021: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  30% 2022: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/270)
+  40% 2022: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  50% 2023: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/291)
+  60% 2023: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  70% 2024: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/288)
+  80% 2024: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  90% 2025: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/276)
+  100% 2025: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  done in 20s
+
+Running basis="comp" format="hwang" (50 builds, seed 1)…
+  0% 2021: fetching weekly stats…
+  10% 2021: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/193)
+  20% 2021: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  30% 2022: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/270)
+  40% 2022: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  50% 2023: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/289)
+  60% 2023: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  70% 2024: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/290)
+  80% 2024: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  90% 2025: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/282)
+  100% 2025: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  done in 21s
+
+Running basis="comp" format="regular" (50 builds, seed 1)…
+  0% 2021: fetching weekly stats…
+  10% 2021: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/193)
+  20% 2021: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  30% 2022: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/272)
+  40% 2022: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  50% 2023: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/291)
+  60% 2023: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  70% 2024: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/290)
+  80% 2024: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  90% 2025: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/282)
+  100% 2025: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  done in 21s
+
+Writing CSVs to example_data/hwang_true_sim_bbm_50/
+  wrote config.csv: 4 rows (0.0 MB)
+  wrote years.csv: 20 rows (0.0 MB)
+  wrote matchups.csv: 1,104 rows (0.1 MB)
+  wrote candidates.csv: 5,445 rows (0.3 MB)
+  wrote pairs.csv: 18,243 rows (0.6 MB)
+  wrote archetype_player_hvorp.csv: 45,060 rows (2.2 MB)
+  wrote build_players.csv: 28,800 rows (3.4 MB)
+
+=== Multipliers (mean-grounded, weighted, full comparison network) ===
+ktc / hwang: { QB: 0.925, RB: 1.275, WR: 0.859, TE: 0.988 }
+ktc / regular: { QB: 0.477, RB: 1.58, WR: 1.275, TE: 1.041 }
+comp / hwang: { QB: 0.938, RB: 1.32, WR: 0.868, TE: 0.93 }
+comp / regular: { QB: 0.49, RB: 1.637, WR: 1.279, TE: 0.975 }
+
+=== ktc: format factors (hwang ÷ regular) ===
+  QB: 1.939
+  RB: 0.807
+  WR: 0.674
+  TE: 0.949
+
+=== comp: format factors (hwang ÷ regular) ===
+  QB: 1.914
+  RB: 0.806
+  WR: 0.679
+  TE: 0.954
+
+Done.

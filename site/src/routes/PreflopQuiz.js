@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { defaultMix, generateQuestion, generateQuiz, getSpotCounts } from '../poker/quiz';
-import { PokerTable, HandGrid, HoleCards } from './PreflopShared';
+import { defaultMix, generateQuestion, generateQuiz, getSpotCounts, shuffleItems } from '../poker/quiz';
+import { PokerTable, HandGrid, ActionButtons } from './PreflopShared';
+import PreflopResults from './PreflopResults';
 
 const MIX_LABELS = {
   rfi: 'Open',
@@ -27,56 +28,11 @@ function MixSlider({ id, value, onChange, count }) {
   );
 }
 
-function ActionButtons({ chart, actionLabels, actionColors, disabled, selected, onPick }) {
-  const present = new Set();
-  if (chart) {
-    for (const row of chart) {
-      for (const action of row) present.add(action);
-    }
-  }
-  const unique = [];
-  const seen = new Set();
-  for (const key of Object.keys(actionLabels)) {
-    if (!present.has(key)) continue;
-    const label = actionLabels[key];
-    if (seen.has(label)) continue;
-    seen.add(label);
-    unique.push(key);
-  }
-
-  return (
-    <div className="preflop-quiz-actions">
-      {unique.map(key => {
-        const color = key === 'F' ? '#94a3b8' : (actionColors[key] || '#94a3b8');
-        const picked = selected === key;
-        return (
-          <button
-            key={key}
-            className={`preflop-quiz-action${picked ? ' preflop-quiz-action--picked' : ''}`}
-            style={{
-              borderColor: color,
-              color: picked ? '#0f172a' : color,
-              background: picked ? color : 'transparent',
-            }}
-            disabled={disabled}
-            onClick={() => onPick(key)}
-          >
-            {actionLabels[key]}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function QuestionCard({ question, index, total, showAnswer, guessed, onGuess }) {
+function QuestionCard({ question, showAnswer, guessed, onGuess }) {
   const correct = guessed && guessed === question.correctAction;
 
   return (
     <div className="preflop-quiz-question">
-      <div className="preflop-quiz-progress">
-        {total ? `Question ${index + 1} / ${total}` : `Question ${index + 1}`}
-      </div>
       <p className="preflop-quiz-prompt">{question.prompt}</p>
       <PokerTable
         myPos={question.myPos}
@@ -125,6 +81,9 @@ export default function PreflopQuiz({ onExit }) {
   const [index, setIndex] = useState(0);
   const [guesses, setGuesses] = useState([]);
   const [recentKeys, setRecentKeys] = useState([]);
+  const [reviewIncorrect, setReviewIncorrect] = useState(false);
+  const [missRetry, setMissRetry] = useState(false);
+  const [diagnostics, setDiagnostics] = useState({ status: 'idle', text: '', error: '' });
 
   const current = questions[index];
   const guessed = guesses[index] || '';
@@ -132,6 +91,12 @@ export default function PreflopQuiz({ onExit }) {
   const correctCount = questions.reduce((sum, q, i) => (
     guesses[i] && guesses[i] === q.correctAction ? sum + 1 : sum
   ), 0);
+  const missed = questions.filter((q, i) => guesses[i] && guesses[i] !== q.correctAction);
+  const unansweredCount = questions.length - answeredCount;
+  const reviewItems = (reviewIncorrect
+    ? questions.map((q, i) => ({ q, i })).filter(({ q, i }) => guesses[i] && guesses[i] !== q.correctAction)
+    : questions.map((q, i) => ({ q, i })).filter(({ i }) => guesses[i] || answeredCount === questions.length)
+  );
 
   const handleMix = (id, value) => {
     setMix(prev => ({ ...prev, [id]: value }));
@@ -150,15 +115,19 @@ export default function PreflopQuiz({ onExit }) {
     }
     setIndex(0);
     setGuesses([]);
+    setReviewIncorrect(false);
+    setMissRetry(false);
+    setDiagnostics({ status: 'idle', text: '', error: '' });
     setPhase('play');
   };
 
   const goNext = () => {
-    if (!continuous && index + 1 >= questions.length) {
+    const finite = !continuous || missRetry;
+    if (finite && index + 1 >= questions.length) {
       setPhase('results');
       return;
     }
-    if (continuous && index + 1 >= questions.length) {
+    if (!finite && index + 1 >= questions.length) {
       const next = generateQuestion(mix, difficulty / 100, recentKeys.slice(-80));
       setQuestions(prev => [...prev, next]);
       setRecentKeys(prev => [...prev, next.key]);
@@ -172,17 +141,84 @@ export default function PreflopQuiz({ onExit }) {
       next[index] = action;
       return next;
     });
-    if (!immediate && !continuous && index + 1 >= questions.length) {
+    const finite = !continuous || missRetry;
+    if (!immediate && finite && index + 1 >= questions.length) {
       setPhase('results');
       return;
     }
     if (!immediate) {
-      if (continuous && index + 1 >= questions.length) {
+      if (!finite && index + 1 >= questions.length) {
         const next = generateQuestion(mix, difficulty / 100, recentKeys.slice(-80));
         setQuestions(prev => [...prev, next]);
         setRecentKeys(prev => [...prev, next.key]);
       }
       setIndex(prev => prev + 1);
+    }
+  };
+
+  const retryMisses = () => {
+    if (missed.length === 0) return;
+    setQuestions(shuffle(missed));
+    setIndex(0);
+    setGuesses([]);
+    setReviewIncorrect(false);
+    setMissRetry(true);
+    setPhase('play');
+  };
+
+  const exportResults = () => {
+    const text = formatQuizExport({
+      questions,
+      guesses,
+      mix,
+      difficulty,
+      continuous,
+      immediate,
+      questionCount,
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadText(`preflop-quiz-${stamp}.txt`, text);
+  };
+
+  const runDiagnostics = async () => {
+    setDiagnostics({ status: 'loading', text: '', error: '' });
+    try {
+      const promptRes = await fetch('/data/preflop_diagnostics_prompt.txt', { cache: 'no-store' });
+      if (!promptRes.ok) throw new Error('Could not load diagnostics prompt.');
+      const systemPrompt = (await promptRes.text()).trim();
+      const dump = formatQuizExport({
+        questions,
+        guesses,
+        mix,
+        difficulty,
+        continuous,
+        immediate,
+        questionCount,
+      });
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: dump }],
+          systemPrompt,
+          mode: 'plain',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `Request failed (${res.status})`);
+      }
+      setDiagnostics({
+        status: 'done',
+        text: data.message || 'Empty diagnosis. Try again.',
+        error: '',
+      });
+    } catch (err) {
+      setDiagnostics({
+        status: 'error',
+        text: '',
+        error: err.message || 'Diagnostics failed.',
+      });
     }
   };
 
@@ -279,16 +315,57 @@ export default function PreflopQuiz({ onExit }) {
     return (
       <div className="preflop-quiz-results">
         <h2>Quiz results</h2>
-        <p className="preflop-quiz-score">{correctCount} / {questions.length} correct</p>
+        <p className="preflop-quiz-score">
+          {correctCount} / {answeredCount || questions.length} correct
+        </p>
+        <p className="preflop-quiz-help">
+          {missed.length > 0 ? `${missed.length} miss${missed.length === 1 ? '' : 'es'}` : 'No misses'}
+          {unansweredCount > 0 ? ` · ${unansweredCount} unanswered` : ''}
+        </p>
         <div className="preflop-quiz-result-actions">
           <button className="preflop-quiz-start" onClick={startQuiz}>Play again</button>
+          <button
+            className="preflop-quiz-start preflop-quiz-start--secondary"
+            onClick={retryMisses}
+            disabled={missed.length === 0}
+          >
+            Retry misses
+          </button>
+          <button
+            className="preflop-quiz-start"
+            onClick={runDiagnostics}
+            disabled={answeredCount === 0 || diagnostics.status === 'loading'}
+          >
+            {diagnostics.status === 'loading' ? 'Reading your leaks…' : 'See diagnostics'}
+          </button>
+          <button className="preflop-quiz-link" onClick={exportResults}>Export quiz results</button>
           <button className="preflop-quiz-link" onClick={() => setPhase('setup')}>Change settings</button>
           <button className="preflop-quiz-link" onClick={onExit}>Back to charts</button>
         </div>
-        {questions.map((q, i) => (
+        <label className="preflop-quiz-check">
+          <input
+            type="checkbox"
+            checked={reviewIncorrect}
+            onChange={(e) => setReviewIncorrect(e.target.checked)}
+            disabled={missed.length === 0}
+          />
+          Review incorrect
+        </label>
+        {diagnostics.status === 'error' && (
+          <p className="preflop-quiz-feedback preflop-quiz-feedback--bad">{diagnostics.error}</p>
+        )}
+        {diagnostics.status === 'done' && diagnostics.text && (
+          <div className="preflop-diagnostics">
+            <ReactMarkdown>{diagnostics.text}</ReactMarkdown>
+          </div>
+        )}
+        {reviewIncorrect && reviewItems.length === 0 && (
+          <p className="preflop-quiz-help">No misses to review.</p>
+        )}
+        {reviewItems.map(({ q, i }) => (
           <div key={q.key + i} className="preflop-quiz-review">
-            <div className={`preflop-quiz-feedback${guesses[i] === q.correctAction ? ' preflop-quiz-feedback--ok' : ' preflop-quiz-feedback--bad'}`}>
-              Q{i + 1}: you {q.actionLabels[guesses[i]] || guesses[i] || '—'} · chart {q.actionLabels[q.correctAction]}
+            <div className={`preflop-quiz-feedback${guesses[i] === q.correctAction ? ' preflop-quiz-feedback--ok' : guesses[i] ? ' preflop-quiz-feedback--bad' : ''}`}>
+              Q{i + 1}: {guesses[i] ? `you ${q.actionLabels[guesses[i]] || guesses[i]}` : 'unanswered'} · chart {q.actionLabels[q.correctAction]}
             </div>
             <p className="preflop-quiz-prompt">{q.prompt}</p>
             <HoleCards cards={q.cards} size="md" />
@@ -299,20 +376,36 @@ export default function PreflopQuiz({ onExit }) {
               highlightHand={q.hand}
               reachMask={q.reachMask}
             />
-            />
           </div>
         ))}
       </div>
     );
   }
 
+  const finite = !continuous || missRetry;
+  const nextLabel = finite && index + 1 >= questions.length ? 'See results' : 'Next';
+
   return (
     <div className="preflop-quiz-play">
-      <div className="preflop-quiz-setup-head">
-        <div className="preflop-quiz-live-score">
-          {answeredCount > 0 ? `${correctCount}/${answeredCount}` : 'Quiz'}
+      <div className="preflop-quiz-play-bar">
+        <div>
+          <div className="preflop-quiz-progress">
+            {finite ? `Question ${index + 1} / ${questions.length}` : `Question ${index + 1}`}
+          </div>
+          <div className="preflop-quiz-live-score">
+            {answeredCount > 0 ? `${correctCount}/${answeredCount}` : 'Quiz'}
+          </div>
         </div>
         <div className="preflop-quiz-result-actions">
+          {immediate && (
+            <button
+              className="preflop-quiz-start preflop-quiz-next"
+              onClick={goNext}
+              disabled={!guessed}
+            >
+              {nextLabel}
+            </button>
+          )}
           {(continuous || immediate) && (
             <button className="preflop-quiz-link" onClick={() => setPhase('results')}>End quiz</button>
           )}
@@ -323,18 +416,10 @@ export default function PreflopQuiz({ onExit }) {
       {current && (
         <QuestionCard
           question={current}
-          index={index}
-          total={continuous ? 0 : questions.length}
           showAnswer={immediate}
           guessed={guessed}
           onGuess={handleGuess}
         />
-      )}
-
-      {immediate && guessed && (
-        <button className="preflop-quiz-start" onClick={goNext}>
-          {!continuous && index + 1 >= questions.length ? 'See results' : 'Next'}
-        </button>
       )}
     </div>
   );

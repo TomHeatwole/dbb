@@ -1,0 +1,3083 @@
+{
+  "generatedAt": "2026-08-18T22:11:43.735Z",
+  "posMult": {
+    "QB": 0.99,
+    "RB": 1.04,
+    "WR": 1,
+    "TE": 1.06
+  },
+  "funnel": {
+    "completed": 84,
+    "with_picks": 65,
+    "modeled": 53,
+    "no_picks": 18,
+    "missing_player_ktc": 1,
+    "has_faab": 10,
+    "not_two_team": 1,
+    "startup_only": 1
+  },
+  "nModeled": 52,
+  "nHistOnly": 36,
+  "nLiveFallback": 16,
+  "nStartupExcluded": 1,
+  "coverage": {
+    "r1": 19,
+    "r2": 24,
+    "r3": 17,
+    "r4": 10,
+    "r1_early": 0,
+    "r1_mid": 1,
+    "r1_late": 2,
+    "r1_future": 20,
+    "r2_curr": 4,
+    "r2_future": 20,
+    "r3_curr": 3,
+    "r3_future": 14,
+    "r4_curr": 0,
+    "r4_future": 10
+  },
+  "methods": {
+    "olsRounds": {
+      "keys": [
+        "r1",
+        "r2",
+        "r3",
+        "r4"
+      ],
+      "beta": {
+        "r1": 2409.169794092465,
+        "r2": 1658.4744105308218,
+        "r3": 1436.5754952910956,
+        "r4": 1287.9353792808215
+      },
+      "se": {
+        "r1": 396.2801155805585,
+        "r2": 340.9929457446626,
+        "r3": 412.97861113689976,
+        "r4": 580.1867455361728
+      },
+      "n": 52,
+      "r2": 0.6590494867284551,
+      "rmse": 1727.8770074955605,
+      "ci": {
+        "r1": {
+          "p05": 1566.3386812329293,
+          "p50": 2438.4836636184527,
+          "p95": 3585.10779921552,
+          "n": 400
+        },
+        "r2": {
+          "p05": 1086.584000745446,
+          "p50": 1725.0250213728943,
+          "p95": 2451.155382341209,
+          "n": 400
+        },
+        "r3": {
+          "p05": 870.1648037258815,
+          "p50": 1430.8776954742082,
+          "p95": 2039.6861827096404,
+          "n": 400
+        },
+        "r4": {
+          "p05": 434.0500168038782,
+          "p50": 1322.004139445994,
+          "p95": 2125.8146875,
+          "n": 400
+        }
+      }
+    },
+    "isotonicRounds": {
+      "r1": 2409.169794092465,
+      "r2": 1658.4744105308218,
+      "r3": 1436.5754952910956,
+      "r4": 1287.9353792808215
+    },
+    "olsHistOnly": {
+      "n": 36,
+      "beta": {
+        "r1": 2158.230937948636,
+        "r2": 1571.1174270218535,
+        "r3": 682.1964077205297,
+        "r4": 1377.3617068112937
+      },
+      "r2": 0.6157903901282101,
+      "isotonic": {
+        "r1": 2158.230937948636,
+        "r2": 1571.1174270218535,
+        "r3": 1029.7790572659117,
+        "r4": 1029.7790572659117
+      }
+    },
+    "olsSplit": {
+      "keys": [
+        "r1_mid",
+        "r1_late",
+        "r1_future",
+        "r2_curr",
+        "r2_future",
+        "r3_curr",
+        "r3_future",
+        "r4_future"
+      ],
+      "beta": {
+        "r1_mid": 6369.886577899712,
+        "r1_late": 5655.886577899712,
+        "r1_future": 2498.197294831296,
+        "r2_curr": 3730.513333333334,
+        "r2_future": 1407.705416755811,
+        "r3_curr": 572.8240502649168,
+        "r3_future": 1530.6757437168853,
+        "r4_future": 1385.3518994701665
+      },
+      "se": {
+        "r1_mid": 3036.964015432921,
+        "r1_late": 2463.6091810020575,
+        "r1_future": 393.9422351111539,
+        "r2_curr": 1025.3097473961743,
+        "r2_future": 363.49719469254325,
+        "r3_curr": 1289.9809334898764,
+        "r3_future": 445.5032552644166,
+        "r4_future": 590.4597923957315
+      },
+      "n": 52,
+      "r2": 0.6952480752522626,
+      "rmse": 1633.5798955640817,
+      "ci": {
+        "r1_mid": {
+          "p05": 4812.419646550336,
+          "p50": 6566.817290051076,
+          "p95": 7771.944387204983,
+          "n": 131
+        },
+        "r1_late": {
+          "p05": 4098.419646550336,
+          "p50": 5852.817290051076,
+          "p95": 7057.944387204983,
+          "n": 131
+        },
+        "r1_future": {
+          "p05": 1710.333754066072,
+          "p50": 2543.8441553812368,
+          "p95": 3343.4181655196758,
+          "n": 131
+        },
+        "r2_curr": {
+          "p05": 3375.04,
+          "p50": 3730.513333333334,
+          "p95": 4054.5,
+          "n": 131
+        },
+        "r2_future": {
+          "p05": 685.0638890161426,
+          "p50": 1486.1420889916212,
+          "p95": 2276.6068930781407,
+          "n": 131
+        },
+        "r3_curr": {
+          "p05": 0,
+          "p50": 413.88296141542105,
+          "p95": 2074.0303537509512,
+          "n": 131
+        },
+        "r3_future": {
+          "p05": 895.2069059495275,
+          "p50": 1513.4799999999998,
+          "p95": 2174.6890388376646,
+          "n": 131
+        },
+        "r4_future": {
+          "p05": 134.59298366123653,
+          "p50": 1367.425459521378,
+          "p95": 2400.500014509839,
+          "n": 131
+        }
+      }
+    },
+    "cleanSingleRound": {
+      "r1": {
+        "n": 7,
+        "mean": 2789.567142857143,
+        "median": 1744.6599999999999,
+        "min": 1077.7799999999997,
+        "max": 6963.99
+      },
+      "r2": {
+        "n": 12,
+        "mean": 2155.8508333333334,
+        "median": 2382.84,
+        "min": -331.3699999999999,
+        "max": 4054.5
+      },
+      "r3": {
+        "n": 7,
+        "mean": 1319.9314285714286,
+        "median": 1428.56,
+        "min": 148,
+        "max": 2490.8
+      },
+      "r4": {
+        "n": 4,
+        "mean": 1534.58,
+        "median": 1605.32,
+        "min": -723.6399999999999,
+        "max": 3651.3199999999997
+      }
+    },
+    "pickOnlyVsPlayers": {
+      "r1": {
+        "n": 1,
+        "mean": 6963.99,
+        "median": 6963.99,
+        "min": 6963.99,
+        "max": 6963.99
+      },
+      "r2": {
+        "n": 4,
+        "mean": 3363.215,
+        "median": 3232.1400000000003,
+        "min": 2934.08,
+        "max": 4054.5
+      },
+      "r3": {
+        "n": 2,
+        "mean": 2238.09,
+        "median": 2238.09,
+        "min": 1985.38,
+        "max": 2490.8
+      },
+      "r4": {
+        "n": 1,
+        "mean": 2612.48,
+        "median": 2612.48,
+        "min": 2612.48,
+        "max": 2612.48
+      }
+    },
+    "currentYearFirstByTier": {
+      "Early": {
+        "n": 0
+      },
+      "Mid": {
+        "n": 0
+      },
+      "Late": {
+        "n": 0
+      }
+    }
+  },
+  "trades": [
+    {
+      "season": "2024",
+      "date": "2024-07-26",
+      "transactionId": "1122569774858424320",
+      "a": {
+        "team": "KobeCopters",
+        "players": [
+          "George Pickens (WR 4980)"
+        ],
+        "picks": [
+          "2026 3rd"
+        ],
+        "adj": 4980
+      },
+      "b": {
+        "team": "Here Comes the Sun God",
+        "players": [
+          "Michael Pittman (WR 5128)"
+        ],
+        "picks": [],
+        "adj": 5128
+      },
+      "y": 148,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        3
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-01",
+      "transactionId": "1124851150441828352",
+      "a": {
+        "team": "Trey Trey",
+        "players": [
+          "Trey McBride (TE 6390)",
+          "Jonathon Brooks (RB 4946)",
+          "Kimani Vidal (RB 2291)"
+        ],
+        "picks": [
+          "2025 1st"
+        ],
+        "adj": 14960.940000000002
+      },
+      "b": {
+        "team": "Let James Cook",
+        "players": [
+          "George Kittle (TE 4186)",
+          "Devin Singletary (RB 2721)",
+          "Kenneth Walker (RB 4832)",
+          "Isiah Pacheco (RB 4954)"
+        ],
+        "picks": [],
+        "adj": 16691.940000000002
+      },
+      "y": 1731,
+      "x": {
+        "r1": 1,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": true,
+      "usedLiveFallback": true,
+      "nPlayers": 7,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        1
+      ],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-02",
+      "transactionId": "1125165568560181248",
+      "a": {
+        "team": "Trey Trey",
+        "players": [],
+        "picks": [
+          "2025 1st"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "Age is just a number",
+        "players": [],
+        "picks": [
+          "2025 1st"
+        ],
+        "adj": 0
+      },
+      "y": 0,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 0,
+      "nPicks": 2,
+      "nonzeroRounds": [],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-03",
+      "transactionId": "1125594177087033344",
+      "a": {
+        "team": "Age is just a number",
+        "players": [
+          "Ja'Marr Chase (WR 8724)"
+        ],
+        "picks": [],
+        "adj": 8724
+      },
+      "b": {
+        "team": "KobeCopters",
+        "players": [
+          "Drake London (WR 5905)"
+        ],
+        "picks": [
+          "2025 1st",
+          "2025 2nd",
+          "2026 1st",
+          "2026 2nd"
+        ],
+        "adj": 5905
+      },
+      "y": -2819,
+      "x": {
+        "r1": -2,
+        "r2": -2,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -2,
+        "r2_curr": 0,
+        "r2_future": -2,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 4,
+      "nonzeroRounds": [
+        1,
+        2
+      ],
+      "roundsPresent": [
+        1,
+        2
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-05",
+      "transactionId": "1126351704007467008",
+      "a": {
+        "team": "Let James Cook",
+        "players": [
+          "Rome Odunze (WR 5650)"
+        ],
+        "picks": [
+          "2025 2nd"
+        ],
+        "adj": 6118.279999999999
+      },
+      "b": {
+        "team": "Adam(s) and Steve(nson)",
+        "players": [
+          "Davante Adams (WR 3911)",
+          "Kenneth Walker (RB 4843)"
+        ],
+        "picks": [],
+        "adj": 8754.279999999999
+      },
+      "y": 2636,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": true,
+      "usedLiveFallback": false,
+      "nPlayers": 3,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-06",
+      "transactionId": "1126406263807574016",
+      "a": {
+        "team": "Let James Cook",
+        "players": [
+          "Derrick Henry (RB 3763)",
+          "Brian Thomas (WR 4342)"
+        ],
+        "picks": [],
+        "adj": 8104.72
+      },
+      "b": {
+        "team": "KobeCopters",
+        "players": [
+          "Rome Odunze (WR 5701)"
+        ],
+        "picks": [
+          "2025 2nd",
+          "2025 2nd"
+        ],
+        "adj": 6904.72
+      },
+      "y": -1200,
+      "x": {
+        "r1": 0,
+        "r2": -2,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": -2,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": true,
+      "usedLiveFallback": false,
+      "nPlayers": 3,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-09",
+      "transactionId": "1127719540193964032",
+      "a": {
+        "team": "The Boomers",
+        "players": [
+          "Kyren Williams (RB 5270)"
+        ],
+        "picks": [
+          "2026 3rd"
+        ],
+        "adj": 5269.68
+      },
+      "b": {
+        "team": "Eat It While She Sleeper",
+        "players": [],
+        "picks": [
+          "2026 1st",
+          "2026 2nd"
+        ],
+        "adj": 0
+      },
+      "y": -5269.68,
+      "x": {
+        "r1": -1,
+        "r2": -1,
+        "r3": 1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": -1,
+        "r3_curr": 0,
+        "r3_future": 1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 3,
+      "nonzeroRounds": [
+        1,
+        2,
+        3
+      ],
+      "roundsPresent": [
+        3,
+        1,
+        2
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-13",
+      "transactionId": "1129274305898024960",
+      "a": {
+        "team": "Trey Trey",
+        "players": [
+          "Drew Lock (QB 1174)",
+          "Drake Maye (QB 4703)"
+        ],
+        "picks": [],
+        "adj": 5877.63
+      },
+      "b": {
+        "team": "seanjcrow",
+        "players": [
+          "Matthew Stafford (QB 3168)",
+          "Keenan Allen (WR 3041)"
+        ],
+        "picks": [
+          "2026 2nd"
+        ],
+        "adj": 6209
+      },
+      "y": 331.3699999999999,
+      "x": {
+        "r1": 0,
+        "r2": -1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": -1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 4,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-19",
+      "transactionId": "1131437938786570240",
+      "a": {
+        "team": "KobeCopters",
+        "players": [
+          "Juwan Johnson (TE 1728)"
+        ],
+        "picks": [
+          "2027 1st"
+        ],
+        "adj": 1727.8000000000002
+      },
+      "b": {
+        "team": "Adam(s) and Steve(nson)",
+        "players": [
+          "Evan Engram (TE 3819)"
+        ],
+        "picks": [
+          "2025 4th"
+        ],
+        "adj": 3819.1800000000003
+      },
+      "y": 2091.38,
+      "x": {
+        "r1": 1,
+        "r2": 0,
+        "r3": 0,
+        "r4": -1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": -1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1,
+        4
+      ],
+      "roundsPresent": [
+        1,
+        4
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-25",
+      "transactionId": "1133504846897807360",
+      "a": {
+        "team": "The Boomers",
+        "players": [
+          "Justice Hill (RB 1592)"
+        ],
+        "picks": [
+          "2027 1st",
+          "2027 2nd"
+        ],
+        "adj": 1592.24
+      },
+      "b": {
+        "team": "Age is just a number",
+        "players": [
+          "Kyren Williams (RB 5385)"
+        ],
+        "picks": [],
+        "adj": 5385.12
+      },
+      "y": 3792.88,
+      "x": {
+        "r1": 1,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 1,
+        "r2_curr": 0,
+        "r2_future": 1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1,
+        2
+      ],
+      "roundsPresent": [
+        1,
+        2
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2024",
+      "date": "2024-09-03",
+      "transactionId": "1136718531543855104",
+      "a": {
+        "team": "Let James Cook",
+        "players": [
+          "Chuba Hubbard (RB 2491)"
+        ],
+        "picks": [],
+        "adj": 2490.8
+      },
+      "b": {
+        "team": "KobeCopters",
+        "players": [],
+        "picks": [
+          "2025 3rd"
+        ],
+        "adj": 0
+      },
+      "y": -2490.8,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        3
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-02-18",
+      "transactionId": "1197722968499695616",
+      "a": {
+        "team": "The Boomers",
+        "players": [
+          "Joe Burrow (QB 8252)",
+          "Garrett Wilson (WR 6272)",
+          "Ja'Lynn Polk (WR 2110)"
+        ],
+        "picks": [
+          "2026 2nd"
+        ],
+        "adj": 16633.65
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [
+          "Justin Jefferson (WR 9279)",
+          "Brock Purdy (QB 5519)"
+        ],
+        "picks": [
+          "2027 2nd"
+        ],
+        "adj": 18142.65
+      },
+      "y": 1509,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": true,
+      "usedLiveFallback": false,
+      "nPlayers": 5,
+      "nPicks": 2,
+      "nonzeroRounds": [],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-02-19",
+      "transactionId": "1197996779048534016",
+      "a": {
+        "team": "The Ladds",
+        "players": [
+          "Chris Olave (WR 4704)"
+        ],
+        "picks": [
+          "2025 1.06 (Mid)"
+        ],
+        "adj": 4704
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Rome Odunze (WR 5418)"
+        ],
+        "picks": [
+          "2025 1.10 (Late)"
+        ],
+        "adj": 5418
+      },
+      "y": 714,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 1,
+        "r1_late": -1,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-02-21",
+      "transactionId": "1198701786462949376",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Jordan Love (QB 6328)"
+        ],
+        "picks": [
+          "2026 1st"
+        ],
+        "adj": 6328.08
+      },
+      "b": {
+        "team": "Drake & Bake",
+        "players": [
+          "Trey McBride (TE 7606)"
+        ],
+        "picks": [],
+        "adj": 7605.5
+      },
+      "y": 1277.42,
+      "x": {
+        "r1": 1,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        1
+      ],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-03-05",
+      "transactionId": "1203043131860209664",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [],
+        "picks": [
+          "2025 2.10 (Late)",
+          "2025 3.10 (Late)"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [
+          "Jonnu Smith (TE 3375)"
+        ],
+        "picks": [
+          "2025 3.03 (Early)"
+        ],
+        "adj": 3375.04
+      },
+      "y": 3375.04,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 1,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 3,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2,
+        3
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-03-08",
+      "transactionId": "1204230308669444096",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [],
+        "picks": [
+          "2027 3rd"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "House of Hwang",
+        "players": [
+          "Juwan Johnson (TE 1985)"
+        ],
+        "picks": [],
+        "adj": 1985.38
+      },
+      "y": 1985.38,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        3
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-03-13",
+      "transactionId": "1205943762094665728",
+      "a": {
+        "team": "The Ladds",
+        "players": [
+          "Malik Nabers (WR 8330)"
+        ],
+        "picks": [
+          "2026 1st"
+        ],
+        "adj": 8330
+      },
+      "b": {
+        "team": "Eat It While She Sleeper",
+        "players": [
+          "Justin Jefferson (WR 9454)"
+        ],
+        "picks": [
+          "2026 4th"
+        ],
+        "adj": 9454
+      },
+      "y": 1124,
+      "x": {
+        "r1": 1,
+        "r2": 0,
+        "r3": 0,
+        "r4": -1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": -1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1,
+        4
+      ],
+      "roundsPresent": [
+        1,
+        4
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-05-12",
+      "transactionId": "1227819085912358912",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [],
+        "picks": [
+          "2026 1st",
+          "2025 2.06 (Mid)"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [],
+        "picks": [
+          "2025 1.08 (Late)",
+          "2025 3.06 (Mid)"
+        ],
+        "adj": 0
+      },
+      "y": 0,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": -1,
+        "r1_future": 1,
+        "r2_curr": 1,
+        "r2_future": 0,
+        "r3_curr": -1,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 0,
+      "nPicks": 4,
+      "nonzeroRounds": [
+        2,
+        3
+      ],
+      "roundsPresent": [
+        1,
+        2,
+        3
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-05-20",
+      "transactionId": "1230665515119157248",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [],
+        "picks": [
+          "2025 2.02 (Early)"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [],
+        "picks": [
+          "2025 3.10 (Late)",
+          "2025 2.06 (Mid)"
+        ],
+        "adj": 0
+      },
+      "y": 0,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": -1,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 0,
+      "nPicks": 3,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        2,
+        3
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-05-24",
+      "transactionId": "1232208190070853632",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Jalen McMillan (WR 2904)"
+        ],
+        "picks": [
+          "2028 1st"
+        ],
+        "adj": 2904
+      },
+      "b": {
+        "team": "House of Hwang",
+        "players": [
+          "Tua Tagovailoa (QB 3982)"
+        ],
+        "picks": [],
+        "adj": 3981.7799999999997
+      },
+      "y": 1077.7799999999997,
+      "x": {
+        "r1": 1,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        1
+      ],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-03",
+      "transactionId": "1235743440147337216",
+      "a": {
+        "team": "Drake & Bake",
+        "players": [
+          "Stefon Diggs (WR 2708)",
+          "Calvin Ridley (WR 2879)"
+        ],
+        "picks": [],
+        "adj": 5587
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Jordan James (RB 2167)"
+        ],
+        "picks": [
+          "2026 3rd",
+          "2027 3rd"
+        ],
+        "adj": 2167.36
+      },
+      "y": -3419.64,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": -2,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -2,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 3,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        3
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-09",
+      "transactionId": "1237901866403115008",
+      "a": {
+        "team": "The Ladds",
+        "players": [
+          "Jaylen Warren (RB 2996)",
+          "Tyjae Spears (RB 2914)"
+        ],
+        "picks": [],
+        "adj": 5910.32
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Jack Bech (WR 2259)"
+        ],
+        "picks": [
+          "2027 4th"
+        ],
+        "adj": 2259
+      },
+      "y": -3651.3199999999997,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": -1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": -1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 3,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        4
+      ],
+      "roundsPresent": [
+        4
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-13",
+      "transactionId": "1239208919729979392",
+      "a": {
+        "team": "seanjcrow",
+        "players": [
+          "Jayden Reed (WR 3683)"
+        ],
+        "picks": [],
+        "adj": 3683
+      },
+      "b": {
+        "team": "Drake & Bake",
+        "players": [
+          "Matthew Stafford (QB 3085)"
+        ],
+        "picks": [
+          "2026 4th"
+        ],
+        "adj": 3084.84
+      },
+      "y": -598.1599999999999,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": -1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": -1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        4
+      ],
+      "roundsPresent": [
+        4
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "transactionId": "1250584646735904768",
+      "a": {
+        "team": "Lord Pittsy Flacco Joedy",
+        "players": [
+          "Justin Herbert (QB 6424)"
+        ],
+        "picks": [
+          "2026 4th"
+        ],
+        "adj": 6424.11
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Sam Howell (QB 1403)"
+        ],
+        "picks": [
+          "2026 1st",
+          "2027 2nd",
+          "2028 2nd"
+        ],
+        "adj": 1402.83
+      },
+      "y": -5021.28,
+      "x": {
+        "r1": -1,
+        "r2": -2,
+        "r3": 0,
+        "r4": 1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": -2,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 4,
+      "nonzeroRounds": [
+        1,
+        2,
+        4
+      ],
+      "roundsPresent": [
+        4,
+        1,
+        2
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-25",
+      "transactionId": "1254496856474406912",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [],
+        "picks": [
+          "2026 4th",
+          "2026 2nd"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "Drake & Bake",
+        "players": [
+          "Hunter Henry (TE 2462)",
+          "Ray Davis (RB 2782)"
+        ],
+        "picks": [],
+        "adj": 5244.38
+      },
+      "y": 5244.38,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": 0,
+        "r4": 1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        2,
+        4
+      ],
+      "roundsPresent": [
+        4,
+        2
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-28",
+      "transactionId": "1255683578860154880",
+      "a": {
+        "team": "aidsonballs",
+        "players": [
+          "Saquon Barkley (RB 6596)"
+        ],
+        "picks": [],
+        "adj": 6595.68
+      },
+      "b": {
+        "team": "The Boomers",
+        "players": [
+          "Chuba Hubbard (RB 4317)"
+        ],
+        "picks": [
+          "2026 1st",
+          "2027 3rd"
+        ],
+        "adj": 4317.04
+      },
+      "y": -2278.6400000000003,
+      "x": {
+        "r1": -1,
+        "r2": 0,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1,
+        3
+      ],
+      "roundsPresent": [
+        1,
+        3
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-28",
+      "transactionId": "1255588777326288896",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Devin Neal (RB 1881)"
+        ],
+        "picks": [
+          "2028 2nd"
+        ],
+        "adj": 1881.3600000000001
+      },
+      "b": {
+        "team": "House of Hwang",
+        "players": [
+          "Tucker Kraft (TE 4011)"
+        ],
+        "picks": [],
+        "adj": 4011.0400000000004
+      },
+      "y": 2129.6800000000003,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-29",
+      "transactionId": "1256070441630433280",
+      "a": {
+        "team": "aidsonballs",
+        "players": [
+          "Michael Pittman (WR 3234)"
+        ],
+        "picks": [],
+        "adj": 3234
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Brashard Smith (RB 1805)"
+        ],
+        "picks": [
+          "2026 3rd"
+        ],
+        "adj": 1805.44
+      },
+      "y": -1428.56,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        3
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-31",
+      "transactionId": "1256646379808227328",
+      "a": {
+        "team": "Drake & Bake",
+        "players": [
+          "Jauan Jennings (WR 3110)"
+        ],
+        "picks": [],
+        "adj": 3110
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Elic Ayomanor (WR 2386)"
+        ],
+        "picks": [
+          "2028 3rd"
+        ],
+        "adj": 2386
+      },
+      "y": -724,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        3
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-08-02",
+      "transactionId": "1257395766696095744",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Isaac TeSlaa (WR 2605)"
+        ],
+        "picks": [
+          "2027 4th"
+        ],
+        "adj": 2605
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Devin Neal (RB 1881)"
+        ],
+        "picks": [],
+        "adj": 1881.3600000000001
+      },
+      "y": -723.6399999999999,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": 1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        4
+      ],
+      "roundsPresent": [
+        4
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-08-28",
+      "transactionId": "1266780405088915456",
+      "a": {
+        "team": "aidsonballs",
+        "players": [
+          "Tyler Allgeier (RB 2546)"
+        ],
+        "picks": [
+          "2026 2nd"
+        ],
+        "adj": 2545.92
+      },
+      "b": {
+        "team": "Eat It While She Sleeper",
+        "players": [],
+        "picks": [
+          "2027 1st"
+        ],
+        "adj": 0
+      },
+      "y": -2545.92,
+      "x": {
+        "r1": -1,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": 1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1,
+        2
+      ],
+      "roundsPresent": [
+        2,
+        1
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2025",
+      "date": "2025-09-01",
+      "transactionId": "1268110333210275840",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Jalen Coker (WR 3235)"
+        ],
+        "picks": [
+          "2026 4th"
+        ],
+        "adj": 3235
+      },
+      "b": {
+        "team": "Lord Pittsy Flacco Joedy",
+        "players": [
+          "Joe Flacco (QB 1551)"
+        ],
+        "picks": [
+          "2026 3rd"
+        ],
+        "adj": 1551.33
+      },
+      "y": -1683.67,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": -1,
+        "r4": 1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        3,
+        4
+      ],
+      "roundsPresent": [
+        4,
+        3
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-02-09",
+      "transactionId": "1326609485212454912",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [],
+        "picks": [
+          "2028 4th"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [],
+        "picks": [
+          "2028 4th"
+        ],
+        "adj": 0
+      },
+      "y": 0,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 0,
+      "nPicks": 2,
+      "nonzeroRounds": [],
+      "roundsPresent": [
+        4
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-02-20",
+      "transactionId": "1330785180641693696",
+      "a": {
+        "team": "DrakeHigginsAchane ²",
+        "players": [
+          "Sean Tucker (RB 2612)"
+        ],
+        "picks": [],
+        "adj": 2612.48
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [],
+        "picks": [
+          "2027 4th"
+        ],
+        "adj": 0
+      },
+      "y": -2612.48,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": -1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": -1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        4
+      ],
+      "roundsPresent": [
+        4
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-02-20",
+      "transactionId": "1330585014005428224",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Jake Ferguson (TE 4055)"
+        ],
+        "picks": [],
+        "adj": 4054.5
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [],
+        "picks": [
+          "2026 2.02 (Early)"
+        ],
+        "adj": 0
+      },
+      "y": -4054.5,
+      "x": {
+        "r1": 0,
+        "r2": -1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": -1,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-02-22",
+      "transactionId": "1331363677063909376",
+      "a": {
+        "team": "DrakeHigginsAchane ²",
+        "players": [
+          "Jordan Addison (WR 3999)"
+        ],
+        "picks": [],
+        "adj": 3999
+      },
+      "b": {
+        "team": "Eat It While She Sleeper",
+        "players": [
+          "Tony Pollard (RB 2791)"
+        ],
+        "picks": [
+          "2027 2nd"
+        ],
+        "adj": 2791.36
+      },
+      "y": -1207.6399999999999,
+      "x": {
+        "r1": 0,
+        "r2": -1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": -1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-02-24",
+      "transactionId": "1332241788273950720",
+      "a": {
+        "team": "MrZaccheaus",
+        "players": [
+          "Kayshon Boutte (WR 2973)"
+        ],
+        "picks": [],
+        "adj": 2973
+      },
+      "b": {
+        "team": "Eat It While She Sleeper",
+        "players": [],
+        "picks": [
+          "2028 2nd"
+        ],
+        "adj": 0
+      },
+      "y": -2973,
+      "x": {
+        "r1": 0,
+        "r2": -1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": -1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-03-18",
+      "transactionId": "1340121724494045184",
+      "a": {
+        "team": "MrZaccheaus",
+        "players": [
+          "Mac Jones (QB 2941)",
+          "Dalton Kincaid (TE 4023)"
+        ],
+        "picks": [],
+        "adj": 6963.99
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [],
+        "picks": [
+          "2028 1st"
+        ],
+        "adj": 0
+      },
+      "y": -6963.99,
+      "x": {
+        "r1": -1,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        1
+      ],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-03-26",
+      "transactionId": "1343080565980528640",
+      "a": {
+        "team": "House of Hwang",
+        "players": [
+          "Tory Horton (WR 2531)"
+        ],
+        "picks": [],
+        "adj": 2531
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [],
+        "picks": [
+          "2026 3.07 (Mid)",
+          "2027 4th"
+        ],
+        "adj": 0
+      },
+      "y": -2531,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": -1,
+        "r4": -1,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": -1,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": -1
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 1,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        3,
+        4
+      ],
+      "roundsPresent": [
+        3,
+        4
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-04-11",
+      "transactionId": "1348672295966617600",
+      "a": {
+        "team": "seanjcrow",
+        "players": [
+          "George Pickens (WR 6022)"
+        ],
+        "picks": [],
+        "adj": 6022
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [
+          "Travis Etienne (RB 4847)"
+        ],
+        "picks": [
+          "2027 2nd"
+        ],
+        "adj": 4847.4400000000005
+      },
+      "y": -1174.5599999999995,
+      "x": {
+        "r1": 0,
+        "r2": -1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": -1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-05-21",
+      "transactionId": "1363388634257973248",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Zach Charbonnet (RB 3491)"
+        ],
+        "picks": [],
+        "adj": 3491.28
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [],
+        "picks": [
+          "2028 2nd"
+        ],
+        "adj": 0
+      },
+      "y": -3491.28,
+      "x": {
+        "r1": 0,
+        "r2": -1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": -1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-05-21",
+      "transactionId": "1363353724327567360",
+      "a": {
+        "team": "House of Hwang",
+        "players": [
+          "Quentin Johnston (WR 3299)",
+          "Kaleb Johnson (RB 2108)"
+        ],
+        "picks": [],
+        "adj": 5407.08
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [],
+        "picks": [
+          "2028 3rd",
+          "2029 2nd"
+        ],
+        "adj": 0
+      },
+      "y": -5407.08,
+      "x": {
+        "r1": 0,
+        "r2": -1,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": -1,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        2,
+        3
+      ],
+      "roundsPresent": [
+        3,
+        2
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-05-21",
+      "transactionId": "1363322601182593024",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Mac Jones (QB 2651)",
+          "Keon Coleman (WR 2449)",
+          "Jaylen Wright (RB 2325)"
+        ],
+        "picks": [
+          "2026 2.05 (Mid)"
+        ],
+        "adj": 7425.66
+      },
+      "b": {
+        "team": "MrZaccheaus",
+        "players": [
+          "Romeo Doubs (WR 3273)",
+          "Marvin Harrison (WR 5120)"
+        ],
+        "picks": [],
+        "adj": 11187.66
+      },
+      "y": 3762,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 1,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": true,
+      "usedLiveFallback": false,
+      "nPlayers": 5,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-05-24",
+      "transactionId": "1364355048007557120",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [],
+        "picks": [
+          "2029 1st"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "House of Hwang",
+        "players": [],
+        "picks": [
+          "2028 1st"
+        ],
+        "adj": 0
+      },
+      "y": 0,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 0,
+      "nPicks": 2,
+      "nonzeroRounds": [],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-11",
+      "transactionId": "1370820871303725056",
+      "a": {
+        "team": "The Boomers",
+        "players": [
+          "Kaleb Johnson (RB 2108)"
+        ],
+        "picks": [
+          "2029 3rd"
+        ],
+        "adj": 2108.08
+      },
+      "b": {
+        "team": "House of Hwang",
+        "players": [
+          "Rachaad White (RB 2861)"
+        ],
+        "picks": [],
+        "adj": 2861.04
+      },
+      "y": 752.96,
+      "x": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        3
+      ],
+      "roundsPresent": [
+        3
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-21",
+      "transactionId": "1374620081799041024",
+      "a": {
+        "team": "seanjcrow",
+        "players": [],
+        "picks": [
+          "2028 2nd"
+        ],
+        "adj": 0
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [
+          "Mark Andrews (TE 2934)"
+        ],
+        "picks": [],
+        "adj": 2934.08
+      },
+      "y": 2934.08,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 1,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": true,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-21",
+      "transactionId": "1374620013637435392",
+      "a": {
+        "team": "The Ladds",
+        "players": [
+          "Josh Downs (WR 3652)"
+        ],
+        "picks": [
+          "2027 2nd"
+        ],
+        "adj": 3652
+      },
+      "b": {
+        "team": "Eat It While She Sleeper",
+        "players": [
+          "Kenyon Sadiq (TE 4891)"
+        ],
+        "picks": [],
+        "adj": 4890.84
+      },
+      "y": 1238.8400000000001,
+      "x": {
+        "r1": 0,
+        "r2": 1,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 0,
+        "r2_curr": 0,
+        "r2_future": 1,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": false,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        2
+      ],
+      "roundsPresent": [
+        2
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-23",
+      "transactionId": "1375254828879450112",
+      "a": {
+        "team": "The Ladds",
+        "players": [
+          "RJ Harvey (RB 3514)",
+          "Jeremiyah Love (RB 7778)"
+        ],
+        "picks": [],
+        "adj": 11292.32
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Alec Pierce (WR 4032)",
+          "Denzel Boston (WR 3771)"
+        ],
+        "picks": [
+          "2027 1st",
+          "2027 1st"
+        ],
+        "adj": 7803
+      },
+      "y": -3489.3199999999997,
+      "x": {
+        "r1": -2,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -2,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 4,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1
+      ],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-26",
+      "transactionId": "1387196971852238849",
+      "a": {
+        "team": "DrakeHigginsAchane ²",
+        "players": [
+          "Jake Ferguson (TE 3431)",
+          "Alec Pierce (WR 4032)",
+          "Jayden Higgins (WR 3437)"
+        ],
+        "picks": [],
+        "adj": 10900.220000000001
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Oronde Gadsden (TE 3865)",
+          "Jaylin Noel (WR 2556)"
+        ],
+        "picks": [
+          "2028 1st"
+        ],
+        "adj": 6420.76
+      },
+      "y": -4479.460000000001,
+      "x": {
+        "r1": -1,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 5,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        1
+      ],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-29",
+      "transactionId": "1388062969669103616",
+      "a": {
+        "team": "House of Hwang",
+        "players": [
+          "Rome Odunze (WR 5368)"
+        ],
+        "picks": [],
+        "adj": 5368
+      },
+      "b": {
+        "team": "Sell for Sellers",
+        "players": [
+          "Gunnar Helm (TE 3115)"
+        ],
+        "picks": [
+          "2028 1st"
+        ],
+        "adj": 3115.34
+      },
+      "y": -2252.66,
+      "x": {
+        "r1": -1,
+        "r2": 0,
+        "r3": 0,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": 0,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 1,
+      "nonzeroRounds": [
+        1
+      ],
+      "roundsPresent": [
+        1
+      ],
+      "singleRound": true,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-08-03",
+      "transactionId": "1390127290549018624",
+      "a": {
+        "team": "PUPpy Bowl",
+        "players": [
+          "Cole Kmet (TE 2142)"
+        ],
+        "picks": [
+          "2027 1st"
+        ],
+        "adj": 2142.26
+      },
+      "b": {
+        "team": "Eat It While She Sleeper",
+        "players": [
+          "Jadarian Price (RB 5141)"
+        ],
+        "picks": [
+          "2027 3rd"
+        ],
+        "adj": 5140.72
+      },
+      "y": 2998.46,
+      "x": {
+        "r1": 1,
+        "r2": 0,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": 1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 2,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1,
+        3
+      ],
+      "roundsPresent": [
+        1,
+        3
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    },
+    {
+      "season": "2026",
+      "date": "2026-08-08",
+      "transactionId": "1391798843351269376",
+      "a": {
+        "team": "DrakeHigginsAchane ²",
+        "players": [
+          "Travis Etienne (RB 4688)",
+          "Drake Maye (QB 9312)",
+          "Malik Washington (WR 2528)",
+          "Eli Raridon (TE 2975)"
+        ],
+        "picks": [],
+        "adj": 19503.68
+      },
+      "b": {
+        "team": "The Ladds",
+        "players": [
+          "Baker Mayfield (QB 4696)",
+          "Omarion Hampton (RB 7173)"
+        ],
+        "picks": [
+          "2029 1st",
+          "2029 3rd"
+        ],
+        "adj": 11868.45
+      },
+      "y": -7635.23,
+      "x": {
+        "r1": -1,
+        "r2": 0,
+        "r3": -1,
+        "r4": 0,
+        "r1_early": 0,
+        "r1_mid": 0,
+        "r1_late": 0,
+        "r1_future": -1,
+        "r2_curr": 0,
+        "r2_future": 0,
+        "r3_curr": 0,
+        "r3_future": -1,
+        "r4_curr": 0,
+        "r4_future": 0
+      },
+      "vaApplied": false,
+      "usedLiveFallback": true,
+      "nPlayers": 6,
+      "nPicks": 2,
+      "nonzeroRounds": [
+        1,
+        3
+      ],
+      "roundsPresent": [
+        1,
+        3
+      ],
+      "singleRound": false,
+      "pickOnlyVsPlayers": false,
+      "hasStartup": false
+    }
+  ]
+}

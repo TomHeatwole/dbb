@@ -10,6 +10,7 @@ import { StartSitSort } from '../players/StartSitDecider';
 import Teams2Overview from './Teams2Overview';
 import TeamScores from '../scores/TeamScores';
 import TeamAnalytics from './TeamAnalytics';
+import PlayerAnalytics from './PlayerAnalytics';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import PageMeta from '../PageMeta';
@@ -18,6 +19,19 @@ import useViewportMode, { VIEWPORT_MODES } from '../hooks/useViewportMode';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
+
+const TAB_OVERVIEW = 'Overview';
+const TAB_SCORES = 'Scores';
+const TAB_TEAM_ANALYTICS = 'Team Analytics';
+const TAB_PLAYER_ANALYTICS = 'Player Analytics';
+const tabOptions = [TAB_OVERVIEW, TAB_SCORES, TAB_TEAM_ANALYTICS, TAB_PLAYER_ANALYTICS];
+
+function resolveTeamTab(raw) {
+  if (!raw) return null;
+  if (raw === 'Summary' || raw === 'Roster') return TAB_OVERVIEW;
+  if (raw === 'Analytics') return TAB_TEAM_ANALYTICS;
+  return tabOptions.find((option) => option.toLowerCase() === raw.toLowerCase()) || raw;
+}
 
 function Teams2Detail() {
   const { id } = useParams();
@@ -35,18 +49,9 @@ function Teams2Detail() {
   const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
   const [season, setSeason] = useState(initialSeason);
 
-  const tabOptions = ['Overview', 'Scores', 'Analytics'];
   const urlTabRaw = searchParams.get('tab');
-  let urlTab = urlTabRaw;
-  if (urlTabRaw === 'Summary' || urlTabRaw === 'Roster') {
-    urlTab = 'Overview';
-  } else if (urlTabRaw) {
-    const matchedTab = tabOptions.find(
-      option => option.toLowerCase() === urlTabRaw.toLowerCase()
-    );
-    urlTab = matchedTab || urlTabRaw;
-  }
-  const initialTab = tabOptions.includes(urlTab) ? urlTab : tabOptions[0];
+  const urlTab = resolveTeamTab(urlTabRaw);
+  const initialTab = tabOptions.includes(urlTab) ? urlTab : TAB_OVERVIEW;
   const [selectedTab, setSelectedTab] = useState(initialTab);
 
   const [weeksParsedData, setWeeksParsedData] = useState(null);
@@ -85,11 +90,14 @@ function Teams2Detail() {
 
   useEffect(() => {
     const changes = {};
-    changes.tab = tabOptions.includes(selectedTab) ? selectedTab : 'Overview';
-    if (selectedTab !== 'Scores') changes.week = null;
-    if (selectedTab !== 'Analytics') {
+    changes.tab = tabOptions.includes(selectedTab) ? selectedTab : TAB_OVERVIEW;
+    if (selectedTab !== TAB_SCORES) changes.week = null;
+    if (selectedTab !== TAB_TEAM_ANALYTICS) {
       changes.start_week = null;
       changes.end_week = null;
+    }
+    if (selectedTab !== TAB_PLAYER_ANALYTICS) {
+      changes.player = null;
     }
     updateQueryParams(changes);
     // eslint-disable-next-line
@@ -101,7 +109,7 @@ function Teams2Detail() {
   }, [urlTab]);
 
   useEffect(() => {
-    if (selectedTab === 'Overview') {
+    if (selectedTab === TAB_OVERVIEW) {
       updateQueryParams({ year: season === CURRENT_YEAR ? null : season });
     }
     // eslint-disable-next-line
@@ -338,7 +346,7 @@ function Teams2Detail() {
                 onClick={() => {
                   setSeason(opt);
                   setSeasonDropdownOpen(false);
-                  updateQueryParams({ year: opt === CURRENT_YEAR ? null : opt, start_week: null, end_week: null, week: null });
+                  updateQueryParams({ year: opt === CURRENT_YEAR ? null : opt, start_week: null, end_week: null, week: null, player: null });
                   if (teamScoresRef.current?.resetWeek) teamScoresRef.current.resetWeek(opt);
                 }}
               >
@@ -434,7 +442,7 @@ function Teams2Detail() {
         </div>
 
         {/* Tab content */}
-        {selectedTab === 'Overview' && (
+        {selectedTab === TAB_OVERVIEW && (
           <Teams2Overview
             weeksParsedData={weeksParsedData}
             loading={scoresLoading}
@@ -445,7 +453,7 @@ function Teams2Detail() {
             users={users}
           />
         )}
-        {selectedTab === 'Scores' && (
+        {selectedTab === TAB_SCORES && (
           <TeamScores
             ref={teamScoresRef}
             weeksParsedData={weeksParsedData}
@@ -454,13 +462,23 @@ function Teams2Detail() {
             updateQueryParams={updateQueryParams}
           />
         )}
-        {selectedTab === 'Analytics' && (
+        {selectedTab === TAB_TEAM_ANALYTICS && (
           <TeamAnalytics
             ref={teamAnalyticsRef}
             weeksParsedData={weeksParsedData}
             teamName={teamName}
             rosters={rosters}
             users={users}
+            updateQueryParams={updateQueryParams}
+          />
+        )}
+        {selectedTab === TAB_PLAYER_ANALYTICS && (
+          <PlayerAnalytics
+            weeksParsedData={weeksParsedData}
+            roster={roster}
+            playersData={playersData}
+            playerIdMap={playerIdMap}
+            season={season}
             updateQueryParams={updateQueryParams}
           />
         )}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
@@ -10,7 +11,9 @@ import PositionBadge from '../PositionBadge';
 
 export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, totalsPlacement = 'bottom', playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
   const isMobileView = useIsMobile();
+  const [searchParams] = useSearchParams();
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const modalSeason = searchParams.get('year') || undefined;
   if (!weekBreakdown) {
     return <div>No data for this week/team.</div>;
   }
@@ -252,6 +255,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <PlayerWeeklyScores
           player={selectedPlayer}
           onClose={() => setSelectedPlayer(null)}
+          initialSeason={modalSeason}
         />
       </div>
     </div>,

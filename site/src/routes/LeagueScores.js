@@ -24,7 +24,7 @@ import { createLiveScoresPoller } from '../utils/livePolling';
 import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
-const OG_TITLE = 'Hwang Dynasty Scores';
+const OG_TITLE = 'Scores – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
 
 // Hardcoded toggle to force show the Sleeper API banner
@@ -574,7 +574,7 @@ function LeagueScores() {
 				title={OG_TITLE}
 				description={OG_DESCRIPTION}
 			/>
-		<InfoPageWrapper title={isMobile ? "Scores" : "Hwang Dynasty Scores"} subtitle={null} leftHeader={leftHeader}>
+		<InfoPageWrapper title="Scores" subtitle={null} leftHeader={leftHeader}>
 			<div className="team-scores-container">
 				<WeekSelector week={week} onChange={setWeek} />
 			</div>

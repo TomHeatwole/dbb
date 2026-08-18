@@ -353,6 +353,35 @@
   flex-wrap: wrap;
 }
 
+.preflop-quiz-play-bar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 0.15rem 0.65rem;
+  margin: -0.2rem -0.15rem 0.1rem;
+  background: #282c34;
+  border-bottom: 1px solid #334155;
+}
+
+.preflop-quiz-next {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.88rem;
+}
+
+.preflop-quiz-start:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.preflop-quiz-start--secondary {
+  background: #334155;
+}
+
 .preflop-quiz-setup-head h2,
 .preflop-quiz-results h2 {
   margin: 0;
@@ -496,6 +525,59 @@
   gap: 0.45rem;
   padding-top: 0.6rem;
   border-top: 1px solid #334155;
+}
+
+.preflop-diagnostics {
+  padding: 0.85rem 1rem;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.preflop-diagnostics p {
+  margin: 0 0 0.7rem;
+}
+
+.preflop-diagnostics p:last-child {
+  margin-bottom: 0;
+}
+
+.preflop-diagnostics h1,
+.preflop-diagnostics h2,
+.preflop-diagnostics h3 {
+  margin: 0.4rem 0 0.5rem;
+  font-size: 1rem;
+  color: #f1f5f9;
+}
+
+.preflop-diagnostics ul,
+.preflop-diagnostics ol {
+  margin: 0 0 0.7rem;
+  padding-left: 1.2rem;
+}
+
+.preflop-diagnostics li {
+  margin: 0.2rem 0;
+}
+
+.preflop-diagnostics strong {
+  color: #f8fafc;
+}
+
+.preflop-hand-log {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.preflop-hand-log--current {
+  color: #e2e8f0;
+  font-weight: 700;
 }
 
 .preflop-no-chart {

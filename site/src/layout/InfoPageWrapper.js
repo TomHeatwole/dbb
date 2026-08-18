@@ -35,9 +35,12 @@ function InfoPageWrapper({ leftHeader, title, subtitle, children }) {
         </div>
       )}
 
-      {/* Title and subtitle */}
-      {title ? <h1 className="info-title">{title}</h1> : null}
-      {subtitle ? <div className="info-subtitle">{subtitle}</div> : null}
+      {(title || subtitle) ? (
+        <header className="info-page-header">
+          {title ? <h1 className="info-title">{title}</h1> : null}
+          {subtitle ? <div className="info-subtitle">{subtitle}</div> : null}
+        </header>
+      ) : null}
 
       {/* Page content */}
       {children}

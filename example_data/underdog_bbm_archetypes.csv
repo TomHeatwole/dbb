@@ -1,0 +1,145 @@
+archetype_id,label,rb_strategy,qb_strategy,qb,rb,wr,te,round,overall_pick,position,pos_rank
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,1,6,WR,5
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,2,19,RB,8
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,3,30,WR,20
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,4,43,WR,28
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,5,54,TE,7
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,6,67,WR,44
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,7,78,RB,38
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,8,91,WR,60
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,9,102,QB,13
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,10,115,RB,54
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,11,126,WR,84
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,12,139,RB,64
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,13,150,QB,19
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,14,163,RB,72
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,15,174,QB,21
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,16,187,TE,26
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,17,198,WR,120
+bb_hero_3qb,Hero RB + late 3QB,hero,late_3qb,3,6,7,2,18,211,RB,88
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,1,6,WR,5
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,2,19,RB,8
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,3,30,QB,1
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,4,43,WR,28
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,5,54,WR,36
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,6,67,WR,44
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,7,78,RB,38
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,8,91,TE,13
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,9,102,WR,68
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,10,115,RB,54
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,11,126,WR,84
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,12,139,RB,64
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,13,150,WR,96
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,14,163,RB,72
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,15,174,TE,24
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,16,187,WR,114
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,17,198,QB,23
+bb_hero_2qb,Hero RB + elite 2QB,hero,elite_2qb,2,6,8,2,18,211,RB,88
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,1,6,RB,3
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,2,19,WR,12
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,3,30,RB,14
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,4,43,WR,28
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,5,54,WR,36
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,6,67,TE,9
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,7,78,WR,52
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,8,91,QB,11
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,9,102,RB,49
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,10,115,WR,76
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,11,126,RB,59
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,12,139,QB,18
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,13,150,WR,96
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,14,163,RB,72
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,15,174,TE,24
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,16,187,QB,22
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,17,198,WR,120
+bb_double_3qb,Double-anchor + late 3QB,double_anchor,late_3qb,3,6,7,2,18,211,RB,88
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,1,6,RB,3
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,2,19,WR,12
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,3,30,RB,14
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,4,43,QB,3
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,5,54,WR,36
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,6,67,WR,44
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,7,78,WR,52
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,8,91,TE,13
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,9,102,RB,49
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,10,115,WR,76
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,11,126,RB,59
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,12,139,WR,90
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,13,150,RB,68
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,14,163,WR,102
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,15,174,TE,24
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,16,187,WR,114
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,17,198,QB,23
+bb_double_2qb,Double-anchor + elite 2QB,double_anchor,elite_2qb,2,6,8,2,18,211,RB,88
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,1,6,WR,5
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,2,19,WR,12
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,3,30,WR,20
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,4,43,TE,5
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,5,54,WR,36
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,6,67,WR,44
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,7,78,RB,38
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,8,91,WR,60
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,9,102,RB,49
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,10,115,QB,15
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,11,126,RB,59
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,12,139,WR,90
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,13,150,RB,68
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,14,163,QB,20
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,15,174,RB,76
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,16,187,TE,26
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,17,198,QB,23
+bb_zero_3qb,Zero RB + late 3QB,zero,late_3qb,3,6,7,2,18,211,RB,88
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,1,6,WR,5
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,2,19,WR,12
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,3,30,QB,1
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,4,43,WR,28
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,5,54,WR,36
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,6,67,TE,9
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,7,78,RB,38
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,8,91,WR,60
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,9,102,RB,49
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,10,115,WR,76
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,11,126,RB,59
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,12,139,WR,90
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,13,150,RB,68
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,14,163,WR,102
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,15,174,TE,24
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,16,187,RB,80
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,17,198,QB,23
+bb_zero_2qb,Zero RB + elite 2QB,zero,elite_2qb,2,6,8,2,18,211,RB,88
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,1,6,RB,3
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,2,19,RB,8
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,3,30,WR,20
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,4,43,RB,20
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,5,54,WR,36
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,6,67,TE,9
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,7,78,WR,52
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,8,91,QB,11
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,9,102,WR,68
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,10,115,TE,16
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,11,126,WR,84
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,12,139,QB,18
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,13,150,WR,96
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,14,163,RB,72
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,15,174,TE,24
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,16,187,QB,22
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,17,198,WR,120
+bb_robust_3qb,Robust RB + late 3QB,robust,late_3qb,3,5,7,3,18,211,RB,88
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,1,6,RB,3
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,2,19,RB,8
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,3,30,QB,1
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,4,43,RB,20
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,5,54,WR,36
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,6,67,WR,44
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,7,78,TE,11
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,8,91,WR,60
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,9,102,WR,68
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,10,115,TE,16
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,11,126,WR,84
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,12,139,WR,90
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,13,150,RB,68
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,14,163,WR,102
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,15,174,TE,24
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,16,187,WR,114
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,17,198,QB,23
+bb_robust_2qb,Robust RB + elite 2QB,robust,elite_2qb,2,5,8,3,18,211,RB,88

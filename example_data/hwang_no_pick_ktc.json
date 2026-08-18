@@ -1,0 +1,1544 @@
+{
+  "generatedAt": "2026-08-18T21:57:21.567Z",
+  "ktcBoard": "sf_ktc_values_historical.csv (SF TE+) + evaluateKtcStyleTrade VA",
+  "ktcDateRange": {
+    "min": "2020-04-01",
+    "max": "2026-08-18"
+  },
+  "funnel": {
+    "completed": 84,
+    "has_picks": 65,
+    "players_only": 15,
+    "faab_or_empty_side": 2,
+    "players_plus_faab": 1,
+    "not_two_team": 1
+  },
+  "nNoPickTwoTeam": 16,
+  "nPriced": 13,
+  "nCleanNoFaab": 13,
+  "nMixedPos": 12,
+  "nWithVa": 3,
+  "shapeCounts": {
+    "2-for-2": 4,
+    "1-for-2": 3,
+    "2-for-3": 1,
+    "1-for-1": 3,
+    "1-for-3": 1,
+    "3-for-3": 1
+  },
+  "nEvenAt10pct": 9,
+  "absOrdinaryMean": 1096.2307692307693,
+  "absOrdinaryMedian": 809,
+  "absAdjMean": 704.5384615384615,
+  "absAdjMedian": 625,
+  "absAdjPctMedian": 0.08282099486814694,
+  "positionStatsAllPriced": {
+    "QB": {
+      "nPlayers": 9,
+      "ktc": 55460,
+      "meanRatio": 0.9917966480656917,
+      "overKtcShare": 0.16229715109989182,
+      "underKtcShare": 0.20423728813559322,
+      "evenShare": 0.633465560764515
+    },
+    "RB": {
+      "nPlayers": 13,
+      "ktc": 39149,
+      "meanRatio": 1.040364498930302,
+      "overKtcShare": 0.21075889550180082,
+      "underKtcShare": 0,
+      "evenShare": 0.7892411044981992
+    },
+    "WR": {
+      "nPlayers": 19,
+      "ktc": 84827,
+      "meanRatio": 1.0242016394582383,
+      "overKtcShare": 0.0902896483430983,
+      "underKtcShare": 0.10678203873766608,
+      "evenShare": 0.8029283129192356
+    },
+    "TE": {
+      "nPlayers": 5,
+      "ktc": 12363,
+      "meanRatio": 1.0555792255172292,
+      "overKtcShare": 0,
+      "underKtcShare": 0,
+      "evenShare": 1
+    }
+  },
+  "positionStatsClean": {
+    "QB": {
+      "nPlayers": 9,
+      "ktc": 55460,
+      "meanRatio": 0.9917966480656917,
+      "overKtcShare": 0.16229715109989182,
+      "underKtcShare": 0.20423728813559322,
+      "evenShare": 0.633465560764515
+    },
+    "RB": {
+      "nPlayers": 13,
+      "ktc": 39149,
+      "meanRatio": 1.040364498930302,
+      "overKtcShare": 0.21075889550180082,
+      "underKtcShare": 0,
+      "evenShare": 0.7892411044981992
+    },
+    "WR": {
+      "nPlayers": 19,
+      "ktc": 84827,
+      "meanRatio": 1.0242016394582383,
+      "overKtcShare": 0.0902896483430983,
+      "underKtcShare": 0.10678203873766608,
+      "evenShare": 0.8029283129192356
+    },
+    "TE": {
+      "nPlayers": 5,
+      "ktc": 12363,
+      "meanRatio": 1.0555792255172292,
+      "overKtcShare": 0,
+      "underKtcShare": 0,
+      "evenShare": 1
+    }
+  },
+  "positionStatsMixed": {
+    "QB": {
+      "nPlayers": 9,
+      "ktc": 55460,
+      "meanRatio": 0.9917966480656917,
+      "overKtcShare": 0.16229715109989182,
+      "underKtcShare": 0.20423728813559322,
+      "evenShare": 0.633465560764515
+    },
+    "RB": {
+      "nPlayers": 13,
+      "ktc": 39149,
+      "meanRatio": 1.040364498930302,
+      "overKtcShare": 0.21075889550180082,
+      "underKtcShare": 0,
+      "evenShare": 0.7892411044981992
+    },
+    "WR": {
+      "nPlayers": 16,
+      "ktc": 77888,
+      "meanRatio": 0.9961075554050937,
+      "overKtcShare": 0.04132857436318817,
+      "underKtcShare": 0.08421066146261298,
+      "evenShare": 0.8744607641741988
+    },
+    "TE": {
+      "nPlayers": 5,
+      "ktc": 12363,
+      "meanRatio": 1.0555792255172292,
+      "overKtcShare": 0,
+      "underKtcShare": 0,
+      "evenShare": 1
+    }
+  },
+  "netLongClean": {
+    "QB": {
+      "n": 5,
+      "meanResidualWhenLong": -0.01603851026251326,
+      "medianResidualWhenLong": -0.013096511876738711,
+      "shareLongSideWonKtc": 0.4
+    },
+    "RB": {
+      "n": 10,
+      "meanResidualWhenLong": 0.0387404909651811,
+      "medianResidualWhenLong": 0.038485408044484394,
+      "shareLongSideWonKtc": 0.5
+    },
+    "WR": {
+      "n": 11,
+      "meanResidualWhenLong": 0.032588200473948135,
+      "medianResidualWhenLong": 0.022242065102686906,
+      "shareLongSideWonKtc": 0.45454545454545453
+    },
+    "TE": {
+      "n": 4,
+      "meanResidualWhenLong": 0.02676534475141474,
+      "medianResidualWhenLong": 0.03486224149570411,
+      "shareLongSideWonKtc": 0.5
+    }
+  },
+  "netLongMixed": {
+    "QB": {
+      "n": 5,
+      "meanResidualWhenLong": -0.01603851026251326,
+      "medianResidualWhenLong": -0.013096511876738711,
+      "shareLongSideWonKtc": 0.4
+    },
+    "RB": {
+      "n": 10,
+      "meanResidualWhenLong": 0.0387404909651811,
+      "medianResidualWhenLong": 0.038485408044484394,
+      "shareLongSideWonKtc": 0.5
+    },
+    "WR": {
+      "n": 10,
+      "meanResidualWhenLong": -0.020097640092578375,
+      "medianResidualWhenLong": -0.020816119554771584,
+      "shareLongSideWonKtc": 0.4
+    },
+    "TE": {
+      "n": 4,
+      "meanResidualWhenLong": 0.02676534475141474,
+      "medianResidualWhenLong": 0.03486224149570411,
+      "shareLongSideWonKtc": 0.5
+    }
+  },
+  "trades": [
+    {
+      "season": "2024",
+      "date": "2024-07-31",
+      "timeEt": "2024-07-31 6:20 PM ET",
+      "transactionId": "1124500834156421120",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "2-for-2",
+      "a": {
+        "rosterId": 3,
+        "team": "The Boomers",
+        "players": [
+          {
+            "id": "6794",
+            "name": "Justin Jefferson",
+            "pos": "WR",
+            "ktc": 9700,
+            "ktcAsOf": "2024-07-31",
+            "ktcSlack": 0
+          },
+          {
+            "id": "10870",
+            "name": "Deneric Prince",
+            "pos": "RB",
+            "ktc": 1285,
+            "ktcAsOf": "2024-07-31",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 7,
+        "team": "KobeCopters",
+        "players": [
+          {
+            "id": "7564",
+            "name": "Ja'Marr Chase",
+            "pos": "WR",
+            "ktc": 8733,
+            "ktcAsOf": "2024-07-31",
+            "ktcSlack": 0
+          },
+          {
+            "id": "11619",
+            "name": "Ja'Lynn Polk",
+            "pos": "WR",
+            "ktc": 3002,
+            "ktcAsOf": "2024-07-31",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 10985,
+      "ordinaryB": 11735,
+      "adjA": 10985,
+      "adjB": 11735,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "A",
+      "ordinaryGap": -750,
+      "adjGap": -750,
+      "adjPctA": -0.06602112676056338,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "WR",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 1285,
+        "WR": 9700,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 11735,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-07",
+      "timeEt": "2024-08-07 10:59 PM ET",
+      "transactionId": "1127107934829293568",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-2",
+      "a": {
+        "rosterId": 7,
+        "team": "KobeCopters",
+        "players": [
+          {
+            "id": "5970",
+            "name": "Greg Dortch",
+            "pos": "WR",
+            "ktc": 1689,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          },
+          {
+            "id": "8119",
+            "name": "Jahan Dotson",
+            "pos": "WR",
+            "ktc": 2751,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 8,
+        "team": "Adam(s) and Steve(nson)",
+        "players": [
+          {
+            "id": "1426",
+            "name": "DeAndre Hopkins",
+            "pos": "WR",
+            "ktc": 2499,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 4440,
+      "ordinaryB": 2499,
+      "adjA": 4440,
+      "adjB": 2499,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "A",
+      "ordinaryGap": 1941,
+      "adjGap": 1941,
+      "adjPctA": 0.5594466061392132,
+      "evenAt10pct": false,
+      "ktcWinner": "A",
+      "positions": [
+        "WR"
+      ],
+      "samePos": true,
+      "posA": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 4440,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 2499,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-07",
+      "timeEt": "2024-08-07 5:15 PM ET",
+      "transactionId": "1127021227064913920",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "2-for-3",
+      "a": {
+        "rosterId": 6,
+        "team": "We Have McCaffrey at Home",
+        "players": [
+          {
+            "id": "4881",
+            "name": "Lamar Jackson",
+            "pos": "QB",
+            "ktc": 8736,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          },
+          {
+            "id": "10229",
+            "name": "Rashee Rice",
+            "pos": "WR",
+            "ktc": 4180,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 10,
+        "team": "Eat It While She Sleeper",
+        "players": [
+          {
+            "id": "8132",
+            "name": "Tyler Allgeier",
+            "pos": "RB",
+            "ktc": 2328,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          },
+          {
+            "id": "8148",
+            "name": "Jameson Williams",
+            "pos": "WR",
+            "ktc": 3219,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          },
+          {
+            "id": "9758",
+            "name": "C.J. Stroud",
+            "pos": "QB",
+            "ktc": 9001,
+            "ktcAsOf": "2024-08-07",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 12916,
+      "ordinaryB": 14548,
+      "adjA": 12916,
+      "adjB": 14548,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -1632,
+      "adjGap": -1632,
+      "adjPctA": -0.11884648995048062,
+      "evenAt10pct": false,
+      "ktcWinner": "B",
+      "positions": [
+        "QB",
+        "WR",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 8736,
+        "RB": 0,
+        "WR": 4180,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 9001,
+        "RB": 2328,
+        "WR": 3219,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-19",
+      "timeEt": "2024-08-19 9:44 PM ET",
+      "transactionId": "1131437684691619840",
+      "kind": "players_plus_faab",
+      "faab": [
+        {
+          "amount": 1,
+          "sender": 3,
+          "receiver": 7
+        }
+      ],
+      "shape": "2-for-2",
+      "a": {
+        "rosterId": 3,
+        "team": "The Boomers",
+        "players": [
+          {
+            "id": "4017",
+            "name": "Deshaun Watson",
+            "pos": "QB",
+            "ktc": 3414,
+            "ktcAsOf": "2024-08-19",
+            "ktcSlack": 0
+          },
+          {
+            "id": "8112",
+            "name": "Drake London",
+            "pos": "WR",
+            "ktc": 5804,
+            "ktcAsOf": "2024-08-19",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 7,
+        "team": "KobeCopters",
+        "players": [
+          {
+            "id": "7526",
+            "name": "Jaylen Waddle",
+            "pos": "WR",
+            "ktc": 6028,
+            "ktcAsOf": "2024-08-19",
+            "ktcSlack": 0
+          },
+          {
+            "id": "11565",
+            "name": "J.J. McCarthy",
+            "pos": "QB",
+            "ktc": 4091,
+            "ktcAsOf": "2024-08-19",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 9218,
+      "ordinaryB": 10119,
+      "adjA": 9218,
+      "adjB": 10119,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -901,
+      "adjGap": -901,
+      "adjPctA": -0.09318922273361949,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "QB",
+        "WR"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 3414,
+        "RB": 0,
+        "WR": 5804,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 4091,
+        "RB": 0,
+        "WR": 6028,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-23",
+      "timeEt": "2024-08-23 9:50 PM ET",
+      "transactionId": "1132888716072218624",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-1",
+      "a": {
+        "rosterId": 2,
+        "team": "Let James Cook",
+        "players": [
+          {
+            "id": "1373",
+            "name": "Geno Smith",
+            "pos": "QB",
+            "ktc": 2591,
+            "ktcAsOf": "2024-08-23",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 8,
+        "team": "Adam(s) and Steve(nson)",
+        "players": [
+          {
+            "id": "8154",
+            "name": "Brian Robinson",
+            "pos": "RB",
+            "ktc": 3216,
+            "ktcAsOf": "2024-08-23",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 2591,
+      "ordinaryB": 3216,
+      "adjA": 2591,
+      "adjB": 3216,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -625,
+      "adjGap": -625,
+      "adjPctA": -0.2152574479076976,
+      "evenAt10pct": false,
+      "ktcWinner": "B",
+      "positions": [
+        "QB",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 2591,
+        "RB": 0,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 3216,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2024",
+      "date": "2024-08-23",
+      "timeEt": "2024-08-23 9:42 PM ET",
+      "transactionId": "1132886780988121088",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-1",
+      "a": {
+        "rosterId": 2,
+        "team": "Let James Cook",
+        "players": [
+          {
+            "id": "8154",
+            "name": "Brian Robinson",
+            "pos": "RB",
+            "ktc": 3216,
+            "ktcAsOf": "2024-08-23",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 10,
+        "team": "Eat It While She Sleeper",
+        "players": [
+          {
+            "id": "11638",
+            "name": "Ricky Pearsall",
+            "pos": "WR",
+            "ktc": 3379,
+            "ktcAsOf": "2024-08-23",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 3216,
+      "ordinaryB": 3379,
+      "adjA": 3216,
+      "adjB": 3379,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -163,
+      "adjGap": -163,
+      "adjPctA": -0.049431387414708115,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "RB",
+        "WR"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 3216,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 3379,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2025",
+      "date": "2025-05-26",
+      "timeEt": "2025-05-26 12:24 PM ET",
+      "transactionId": "1232765262772572160",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "2-for-2",
+      "a": {
+        "rosterId": 1,
+        "team": "PUPpy Bowl",
+        "players": [
+          {
+            "id": "8183",
+            "name": "Brock Purdy",
+            "pos": "QB",
+            "ktc": 5758,
+            "ktcAsOf": "2025-05-26",
+            "ktcSlack": 0
+          },
+          {
+            "id": "12519",
+            "name": "Luther Burden",
+            "pos": "WR",
+            "ktc": null,
+            "ktcAsOf": null,
+            "ktcSlack": null
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 7,
+        "team": "The Ladds",
+        "players": [
+          {
+            "id": "11564",
+            "name": "Drake Maye",
+            "pos": "QB",
+            "ktc": 6756,
+            "ktcAsOf": "2025-05-26",
+            "ktcSlack": 0
+          },
+          {
+            "id": "11589",
+            "name": "Trey Benson",
+            "pos": "RB",
+            "ktc": 3217,
+            "ktcAsOf": "2025-05-26",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [
+        "Luther Burden"
+      ],
+      "priced": false,
+      "ordinaryA": 5758,
+      "ordinaryB": 9973,
+      "adjA": 5758,
+      "adjB": 9973,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -4215,
+      "adjGap": -4215,
+      "adjPctA": -0.5358845591507215,
+      "evenAt10pct": false,
+      "ktcWinner": "B",
+      "positions": [
+        "QB",
+        "WR",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 5758,
+        "RB": 0,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 6756,
+        "RB": 3217,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "timeEt": "2025-06-30 6:04 PM ET",
+      "transactionId": "1245534523144290304",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-1",
+      "a": {
+        "rosterId": 1,
+        "team": "PUPpy Bowl",
+        "players": [
+          {
+            "id": "8121",
+            "name": "Romeo Doubs",
+            "pos": "WR",
+            "ktc": 2379,
+            "ktcAsOf": "2025-06-30",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 6,
+        "team": "Drake & Bake",
+        "players": [
+          {
+            "id": "7588",
+            "name": "Javonte Williams",
+            "pos": "RB",
+            "ktc": 2707,
+            "ktcAsOf": "2025-06-30",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 2379,
+      "ordinaryB": 2707,
+      "adjA": 2379,
+      "adjB": 2707,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -328,
+      "adjGap": -328,
+      "adjPctA": -0.12898151789225323,
+      "evenAt10pct": false,
+      "ktcWinner": "B",
+      "positions": [
+        "WR",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 2379,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 2707,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-12",
+      "timeEt": "2025-07-12 2:37 PM ET",
+      "transactionId": "1249831073790038016",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-2",
+      "a": {
+        "rosterId": 5,
+        "team": "House of Hwang",
+        "players": [
+          {
+            "id": "6813",
+            "name": "Jonathan Taylor",
+            "pos": "RB",
+            "ktc": 5409,
+            "ktcAsOf": "2025-07-12",
+            "ktcSlack": 0
+          },
+          {
+            "id": "12471",
+            "name": "DJ Giddens",
+            "pos": "RB",
+            "ktc": null,
+            "ktcAsOf": null,
+            "ktcSlack": null
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 6,
+        "team": "Drake & Bake",
+        "players": [
+          {
+            "id": "11584",
+            "name": "Bucky Irving",
+            "pos": "RB",
+            "ktc": 5850,
+            "ktcAsOf": "2025-07-12",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [
+        "DJ Giddens"
+      ],
+      "priced": false,
+      "ordinaryA": 5409,
+      "ordinaryB": 5850,
+      "adjA": 5409,
+      "adjB": 5850,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -441,
+      "adjGap": -441,
+      "adjPctA": -0.07833733013589128,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "RB"
+      ],
+      "samePos": true,
+      "posA": {
+        "QB": 0,
+        "RB": 5409,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 5850,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "timeEt": "2025-07-21 6:56 PM ET",
+      "transactionId": "1253157765057093632",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "2-for-2",
+      "a": {
+        "rosterId": 3,
+        "team": "The Boomers",
+        "players": [
+          {
+            "id": "5133",
+            "name": "Tyler Conklin",
+            "pos": "TE",
+            "ktc": 1633,
+            "ktcAsOf": "2025-07-21",
+            "ktcSlack": 0
+          },
+          {
+            "id": "11566",
+            "name": "Jayden Daniels",
+            "pos": "QB",
+            "ktc": 9973,
+            "ktcAsOf": "2025-07-21",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 8,
+        "team": "Lord Pittsy Flacco Joedy",
+        "players": [
+          {
+            "id": "4018",
+            "name": "Joe Mixon",
+            "pos": "RB",
+            "ktc": 3492,
+            "ktcAsOf": "2025-07-21",
+            "ktcSlack": 0
+          },
+          {
+            "id": "6770",
+            "name": "Joe Burrow",
+            "pos": "QB",
+            "ktc": 8267,
+            "ktcAsOf": "2025-07-21",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 11606,
+      "ordinaryB": 11759,
+      "adjA": 11606,
+      "adjB": 11759,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "A",
+      "ordinaryGap": -153,
+      "adjGap": -153,
+      "adjPctA": -0.013096511876738711,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "TE",
+        "QB",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 9973,
+        "RB": 0,
+        "WR": 0,
+        "TE": 1633,
+        "other": 0
+      },
+      "posB": {
+        "QB": 8267,
+        "RB": 3492,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-22",
+      "timeEt": "2025-07-22 9:52 AM ET",
+      "transactionId": "1253383160385769472",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-3",
+      "a": {
+        "rosterId": 3,
+        "team": "The Boomers",
+        "players": [
+          {
+            "id": "5022",
+            "name": "Dallas Goedert",
+            "pos": "TE",
+            "ktc": 2918,
+            "ktcAsOf": "2025-07-22",
+            "ktcSlack": 0
+          },
+          {
+            "id": "8143",
+            "name": "Jerome Ford",
+            "pos": "RB",
+            "ktc": 2035,
+            "ktcAsOf": "2025-07-22",
+            "ktcSlack": 0
+          },
+          {
+            "id": "10229",
+            "name": "Rashee Rice",
+            "pos": "WR",
+            "ktc": 5295,
+            "ktcAsOf": "2025-07-22",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 6,
+        "team": "Drake & Bake",
+        "players": [
+          {
+            "id": "8112",
+            "name": "Drake London",
+            "pos": "WR",
+            "ktc": 6633,
+            "ktcAsOf": "2025-07-22",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 10248,
+      "ordinaryB": 6633,
+      "adjA": 10248,
+      "adjB": 9433,
+      "vaA": 0,
+      "vaB": 2800,
+      "appliesAdjustment": true,
+      "rawWinner": "A",
+      "ordinaryGap": 3615,
+      "adjGap": 815,
+      "adjPctA": 0.08282099486814694,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "TE",
+        "RB",
+        "WR"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 2035,
+        "WR": 5295,
+        "TE": 2918,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 6633,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-24",
+      "timeEt": "2025-07-24 8:38 AM ET",
+      "transactionId": "1254089285024354304",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "2-for-2",
+      "a": {
+        "rosterId": 3,
+        "team": "The Boomers",
+        "players": [
+          {
+            "id": "10235",
+            "name": "Roschon Johnson",
+            "pos": "RB",
+            "ktc": 2328,
+            "ktcAsOf": "2025-07-24",
+            "ktcSlack": 0
+          },
+          {
+            "id": "11626",
+            "name": "Xavier Legette",
+            "pos": "WR",
+            "ktc": 2808,
+            "ktcAsOf": "2025-07-24",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 7,
+        "team": "The Ladds",
+        "players": [
+          {
+            "id": "8110",
+            "name": "Jake Ferguson",
+            "pos": "TE",
+            "ktc": 3168,
+            "ktcAsOf": "2025-07-24",
+            "ktcSlack": 0
+          },
+          {
+            "id": "8210",
+            "name": "Chig Okonkwo",
+            "pos": "TE",
+            "ktc": 2496,
+            "ktcAsOf": "2025-07-24",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 5136,
+      "ordinaryB": 5664,
+      "adjA": 5136,
+      "adjB": 5664,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -528,
+      "adjGap": -528,
+      "adjPctA": -0.09777777777777778,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 2328,
+        "WR": 2808,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 0,
+        "TE": 5664,
+        "other": 0
+      }
+    },
+    {
+      "season": "2025",
+      "date": "2025-09-01",
+      "timeEt": "2025-09-01 8:37 PM ET",
+      "transactionId": "1268403476803620864",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "3-for-3",
+      "a": {
+        "rosterId": 2,
+        "team": "aidsonballs",
+        "players": [
+          {
+            "id": "2133",
+            "name": "Davante Adams",
+            "pos": "WR",
+            "ktc": 3493,
+            "ktcAsOf": "2025-09-01",
+            "ktcSlack": 0
+          },
+          {
+            "id": "6797",
+            "name": "Justin Herbert",
+            "pos": "QB",
+            "ktc": 6281,
+            "ktcAsOf": "2025-09-01",
+            "ktcSlack": 0
+          },
+          {
+            "id": "7611",
+            "name": "Rhamondre Stevenson",
+            "pos": "RB",
+            "ktc": 2487,
+            "ktcAsOf": "2025-09-01",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 8,
+        "team": "Lord Pittsy Flacco Joedy",
+        "players": [
+          {
+            "id": "1373",
+            "name": "Geno Smith",
+            "pos": "QB",
+            "ktc": 3106,
+            "ktcAsOf": "2025-09-01",
+            "ktcSlack": 0
+          },
+          {
+            "id": "8138",
+            "name": "James Cook",
+            "pos": "RB",
+            "ktc": 5020,
+            "ktcAsOf": "2025-09-01",
+            "ktcSlack": 0
+          },
+          {
+            "id": "8155",
+            "name": "Breece Hall",
+            "pos": "RB",
+            "ktc": 4944,
+            "ktcAsOf": "2025-09-01",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 12261,
+      "ordinaryB": 13070,
+      "adjA": 12261,
+      "adjB": 13070,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -809,
+      "adjGap": -809,
+      "adjPctA": -0.06387430421223007,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "WR",
+        "QB",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 6281,
+        "RB": 2487,
+        "WR": 3493,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 3106,
+        "RB": 9964,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2026",
+      "date": "2026-02-17",
+      "timeEt": "2026-02-17 2:39 PM ET",
+      "transactionId": "1329572025227816960",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-2",
+      "a": {
+        "rosterId": 7,
+        "team": "The Ladds",
+        "players": [
+          {
+            "id": "9997",
+            "name": "Zay Flowers",
+            "pos": "WR",
+            "ktc": 4583,
+            "ktcAsOf": "2026-02-17",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 10,
+        "team": "Eat It While She Sleeper",
+        "players": [
+          {
+            "id": "8228",
+            "name": "Jaylen Warren",
+            "pos": "RB",
+            "ktc": 3333,
+            "ktcAsOf": "2026-02-17",
+            "ktcSlack": 0
+          },
+          {
+            "id": "9508",
+            "name": "Tyjae Spears",
+            "pos": "RB",
+            "ktc": 2758,
+            "ktcAsOf": "2026-02-17",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 4583,
+      "ordinaryB": 6091,
+      "adjA": 6228,
+      "adjB": 6091,
+      "vaA": 1645,
+      "vaB": 0,
+      "appliesAdjustment": true,
+      "rawWinner": "A",
+      "ordinaryGap": -1508,
+      "adjGap": 137,
+      "adjPctA": 0.022242065102686906,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "WR",
+        "RB"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 4583,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 6091,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      }
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-01",
+      "timeEt": "2026-07-01 6:31 PM ET",
+      "transactionId": "1378175286100643840",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "1-for-2",
+      "a": {
+        "rosterId": 1,
+        "team": "PUPpy Bowl",
+        "players": [
+          {
+            "id": "7526",
+            "name": "Jaylen Waddle",
+            "pos": "WR",
+            "ktc": 4751,
+            "ktcAsOf": "2026-07-01",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 7,
+        "team": "The Ladds",
+        "players": [
+          {
+            "id": "8167",
+            "name": "Christian Watson",
+            "pos": "WR",
+            "ktc": 3901,
+            "ktcAsOf": "2026-07-01",
+            "ktcSlack": 0
+          },
+          {
+            "id": "9482",
+            "name": "Michael Mayer",
+            "pos": "TE",
+            "ktc": 2148,
+            "ktcAsOf": "2026-07-01",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [],
+      "priced": true,
+      "ordinaryA": 4751,
+      "ordinaryB": 6049,
+      "adjA": 6426,
+      "adjB": 6049,
+      "vaA": 1675,
+      "vaB": 0,
+      "appliesAdjustment": true,
+      "rawWinner": "A",
+      "ordinaryGap": -1298,
+      "adjGap": 377,
+      "adjPctA": 0.060440881763527056,
+      "evenAt10pct": true,
+      "ktcWinner": null,
+      "positions": [
+        "WR",
+        "TE"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 4751,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 3901,
+        "TE": 2148,
+        "other": 0
+      }
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-28",
+      "timeEt": "2026-07-28 11:56 PM ET",
+      "transactionId": "1388041588378189824",
+      "kind": "players_only",
+      "faab": [],
+      "shape": "2-for-2",
+      "a": {
+        "rosterId": 1,
+        "team": "PUPpy Bowl",
+        "players": [
+          {
+            "id": "10219",
+            "name": "Chris Rodriguez",
+            "pos": "RB",
+            "ktc": 2620,
+            "ktcAsOf": "2026-07-28",
+            "ktcSlack": 0
+          },
+          {
+            "id": "13305",
+            "name": "Mike Washington",
+            "pos": "RB",
+            "ktc": null,
+            "ktcAsOf": null,
+            "ktcSlack": null
+          }
+        ]
+      },
+      "b": {
+        "rosterId": 8,
+        "team": "Lord Pittsy Flacco Joedy",
+        "players": [
+          {
+            "id": "8111",
+            "name": "Cade Otton",
+            "pos": "TE",
+            "ktc": 2345,
+            "ktcAsOf": "2026-07-28",
+            "ktcSlack": 0
+          },
+          {
+            "id": "11618",
+            "name": "Jalen McMillan",
+            "pos": "WR",
+            "ktc": 3095,
+            "ktcAsOf": "2026-07-28",
+            "ktcSlack": 0
+          }
+        ]
+      },
+      "missing": [
+        "Mike Washington"
+      ],
+      "priced": false,
+      "ordinaryA": 2620,
+      "ordinaryB": 5440,
+      "adjA": 2620,
+      "adjB": 5440,
+      "vaA": 0,
+      "vaB": 0,
+      "appliesAdjustment": false,
+      "rawWinner": "B",
+      "ordinaryGap": -2820,
+      "adjGap": -2820,
+      "adjPctA": -0.6997518610421837,
+      "evenAt10pct": false,
+      "ktcWinner": "B",
+      "positions": [
+        "RB",
+        "TE",
+        "WR"
+      ],
+      "samePos": false,
+      "posA": {
+        "QB": 0,
+        "RB": 2620,
+        "WR": 0,
+        "TE": 0,
+        "other": 0
+      },
+      "posB": {
+        "QB": 0,
+        "RB": 0,
+        "WR": 3095,
+        "TE": 2345,
+        "other": 0
+      }
+    }
+  ]
+}

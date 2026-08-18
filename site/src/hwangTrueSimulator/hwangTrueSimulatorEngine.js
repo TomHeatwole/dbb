@@ -354,7 +354,32 @@ export function findValuePairs(candidates, tolerancePct = PAIR_TOLERANCE_PCT) {
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
-async function loadSimInputs(valueBasis) {
+function joinCompRows(finalKtcRows, compRows) {
+  // Competitor-adjusted values live in the redraft value index, which has no
+  // sleeper ids — join to final KTC rows by (year, name). Same KTC name
+  // source, so the join is exact.
+  const sleeperIds = new Map();
+  for (const row of finalKtcRows) {
+    sleeperIds.set(`${row.year}|${(row.name || '').trim().toLowerCase()}`, row.sleeper_id);
+  }
+  const valueRows = [];
+  for (const row of compRows) {
+    const value = Number(row.competitor_adjusted_value);
+    if (!Number.isFinite(value)) continue;
+    const sleeperId = sleeperIds.get(`${row.year}|${(row.name || '').trim().toLowerCase()}`);
+    if (!sleeperId) continue;
+    valueRows.push({
+      year: row.year,
+      name: row.name,
+      position: row.position,
+      sleeper_id: sleeperId,
+      ktc_value: value,
+    });
+  }
+  return valueRows;
+}
+
+async function loadSimInputs(valueBasis, constructionBasis) {
   const [archRes, ktcRes, scoreRes, metaRes] = await Promise.all([
     fetch('/data/archetype_rosters.csv'),
     fetch('/data/final_ktc_values.csv'),
@@ -370,40 +395,27 @@ async function loadSimInputs(valueBasis) {
   const scoringConfig = await scoreRes.json();
   const meta = metaRes.ok ? await metaRes.json() : null;
 
-  let valueRows = finalKtcRows;
-  if (valueBasis === 'comp') {
-    // Competitor-adjusted values live in the redraft value index, which has no
-    // sleeper ids — join to final KTC rows by (year, name). Same KTC name
-    // source, so the join is exact.
+  const needComp = valueBasis === 'comp' || constructionBasis === 'comp';
+  let compJoined = null;
+  if (needComp) {
     const compRes = await fetch('/data/final_ktc_redraft_value_index.csv');
     if (!compRes.ok) throw new Error('Failed to fetch final_ktc_redraft_value_index.csv');
-    const compRows = parseCsv(await compRes.text());
-    const sleeperIds = new Map();
-    for (const row of finalKtcRows) {
-      sleeperIds.set(`${row.year}|${(row.name || '').trim().toLowerCase()}`, row.sleeper_id);
-    }
-    valueRows = [];
-    for (const row of compRows) {
-      const value = Number(row.competitor_adjusted_value);
-      if (!Number.isFinite(value)) continue;
-      const sleeperId = sleeperIds.get(`${row.year}|${(row.name || '').trim().toLowerCase()}`);
-      if (!sleeperId) continue;
-      valueRows.push({
-        year: row.year,
-        name: row.name,
-        position: row.position,
-        sleeper_id: sleeperId,
-        ktc_value: value,
-      });
-    }
+    compJoined = joinCompRows(finalKtcRows, parseCsv(await compRes.text()));
   }
 
-  return { archetypeRows, valueRows, scoringConfig, meta };
+  const rowsFor = (basis) => (basis === 'comp' ? compJoined : finalKtcRows);
+  return {
+    archetypeRows,
+    valueRows: rowsFor(valueBasis),
+    constructionRows: rowsFor(constructionBasis),
+    scoringConfig,
+    meta,
+  };
 }
 
-function buildArchetypes(archetypeRows, valueBasis = 'ktc') {
-  const rankField = valueBasis === 'comp' ? 'comp_adj_pos_rank' : 'ktc_pos_rank';
-  const valueField = valueBasis === 'comp' ? 'comp_adj_value' : 'ktc_value';
+function buildArchetypes(archetypeRows, rankBasis = 'ktc') {
+  const rankField = rankBasis === 'comp' ? 'comp_adj_pos_rank' : 'ktc_pos_rank';
+  const valueField = rankBasis === 'comp' ? 'comp_adj_value' : 'ktc_value';
   const byId = new Map();
   for (const row of archetypeRows) {
     if (!byId.has(row.archetype_id)) {
@@ -475,7 +487,12 @@ function buildYearCandidates(finalKtcRows, year, ptsById) {
  * @param {number}   opts.tePremium           extra points per TE reception
  * @param {Array}    opts.archetypeIds        subset of archetype ids to run (null = all)
  * @param {string}   opts.valueBasis          'ktc' (Final KTC) or 'comp' (competitor-adjusted):
- *                                            drives archetype ranks, season boards, and pairing
+ *                                            drives pair prices and value-weighting
+ * @param {string}   opts.constructionBasis   'ktc' or 'comp': board used to instantiate
+ *                                            archetype rank slots. Defaults to valueBasis.
+ *                                            Pin this to 'comp' when the archetypes are
+ *                                            redraft/ADP rank ladders so KTC pairing does
+ *                                            not rebuild the roster as a dynasty club.
  * @param {string}   opts.grounding           'mean' (default; multipliers vs the average
  *                                            same-priced player) or 'qb' (pin QB = 1.0)
  * @param {boolean}  opts.valueWeightPairs    weight each pair's contribution by its mid value
@@ -493,20 +510,23 @@ export async function runHwangTrueSimulation({
   tePremium = 0.5,
   archetypeIds = null,
   valueBasis = 'ktc',
+  constructionBasis = null,
   grounding = 'mean',
   valueWeightPairs = true,
   pointsWeightBuilds = true,
   onProgress = () => {},
   isCancelled = () => false,
 } = {}) {
-  const { archetypeRows, valueRows, scoringConfig: baseScoring, meta } = await loadSimInputs(valueBasis);
+  const rankBasis = constructionBasis || valueBasis;
+  const { archetypeRows, valueRows, constructionRows, scoringConfig: baseScoring, meta } = await loadSimInputs(valueBasis, rankBasis);
   const scoringConfig = applyReceptionScoring(baseScoring, ppr, tePremium);
-  const allArchetypes = buildArchetypes(archetypeRows, valueBasis);
+  const allArchetypes = buildArchetypes(archetypeRows, rankBasis);
   const archetypes = archetypeIds && archetypeIds.length > 0
     ? allArchetypes.filter((a) => archetypeIds.includes(a.archetypeId))
     : allArchetypes;
   if (archetypes.length === 0) throw new Error('No archetypes selected');
-  const seasonBoards = buildSeasonBoards(valueRows);
+  const seasonBoards = buildSeasonBoards(constructionRows);
+  const valueBoards = rankBasis === valueBasis ? seasonBoards : buildSeasonBoards(valueRows);
 
   // Identical builds without jitter would just re-measure the same roster.
   const builds = jitterPct > 0 ? Math.max(1, buildsPerArchetype) : 1;
@@ -531,14 +551,19 @@ export async function runHwangTrueSimulation({
     const board = seasonBoards.get(year);
     if (!board) continue;
 
-    // Score every player on the year's Final KTC board (covers candidates and
-    // every instantiated roster player).
+    // Score every player who might appear on a constructed roster or in the
+    // pairing pool (construction and pairing boards can differ).
     const positionsById = new Map();
-    for (const pos of Object.keys(board)) {
-      for (const entry of board[pos]) {
-        if (entry.sleeperId) positionsById.set(entry.sleeperId, pos);
+    const addBoard = (b) => {
+      if (!b) return;
+      for (const pos of Object.keys(b)) {
+        for (const entry of b[pos]) {
+          if (entry.sleeperId) positionsById.set(entry.sleeperId, pos);
+        }
       }
-    }
+    };
+    addBoard(board);
+    addBoard(valueBoards.get(year));
     report(0, `${year}: fetching weekly stats…`);
     const ptsById = await buildYearWeeklyPoints(year, positionsById, scoringConfig, (week) => {
       progress.unitsDone += 1;
@@ -739,6 +764,7 @@ export async function runHwangTrueSimulation({
       ppr,
       tePremium,
       valueBasis,
+      constructionBasis: rankBasis,
       grounding,
       valueWeightPairs,
       pointsWeightBuilds,

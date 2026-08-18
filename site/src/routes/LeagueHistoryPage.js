@@ -377,7 +377,7 @@ function LeagueHistoryPage() {
   return (
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title="📜 League History">
+      <InfoPageWrapper title="League History">
         {loading && <LoadingState label="Loading league history…" />}
 
         {!loading && error && <div className="league-history-error">{error}</div>}

@@ -199,6 +199,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
           onClose={() => setSelectedPlayer(null)}
           rosters={rosters}
           users={users}
+          initialSeason={urlYear || undefined}
         />
       </div>
     </div>

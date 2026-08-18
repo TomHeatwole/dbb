@@ -5,8 +5,10 @@ import {
   RFI,
   VS_RFI,
 } from '../poker/ranges';
+import { describeSpot } from '../poker/quiz';
 import { PokerTable, RangeStats, HandGrid } from './PreflopShared';
 import PreflopQuiz from './PreflopQuiz';
+import PreflopPlayer from './PreflopPlayer';
 import './PreflopPage.css';
 
 export default function PreflopPage() {
@@ -124,14 +126,21 @@ export default function PreflopPage() {
 
   const promptText = useMemo(() => {
     if (scenario.fixedMyPos) return null;
-    if (!scenario.needsVillainPos) return null;
+    if (!scenario.needsVillainPos) {
+      return describeSpot({ scenarioId: scenario.id, myPos: effectiveMyPos, villainPos: '' });
+    }
     if (effectivePickMode === 'pick_hero') {
-      return 'Select your seat on the table.';
+      if (scenario.id === 'vs_3bet') return 'Select your seat — you opened from here.';
+      if (scenario.id === 'vs_4bet') return 'Select your seat — you 3-bet from here.';
+      return 'Select your seat.';
     }
     if (!villainPos) {
-      return 'Now pick the opponent. Tap your seat to change position.';
+      if (scenario.id === 'vs_rfi') return 'Tap who opened.';
+      if (scenario.id === 'vs_3bet') return 'Tap who 3-bet.';
+      if (scenario.id === 'vs_4bet') return 'Tap who 4-bet.';
+      return 'Tap the opponent.';
     }
-    return `You: ${effectiveMyPos} · Opponent: ${villainPos}. Tap any seat to change.`;
+    return describeSpot({ scenarioId: scenario.id, myPos: effectiveMyPos, villainPos });
   }, [scenario, effectivePickMode, villainPos, effectiveMyPos]);
 
   return (
@@ -152,11 +161,19 @@ export default function PreflopPage() {
           >
             Quiz
           </button>
+          <button
+            className={`preflop-scenario-btn${mode === 'hands' ? ' preflop-scenario-btn--active' : ''}`}
+            onClick={() => setMode('hands')}
+          >
+            Hands
+          </button>
         </div>
       </div>
 
       {mode === 'quiz' ? (
         <PreflopQuiz onExit={() => setMode('charts')} />
+      ) : mode === 'hands' ? (
+        <PreflopPlayer onExit={() => setMode('charts')} />
       ) : (
         <>
           <div className="preflop-controls">
@@ -178,6 +195,10 @@ export default function PreflopPage() {
 
           <p className="preflop-desc">{description}</p>
 
+          {promptText && (
+            <p className="preflop-prompt">{promptText}</p>
+          )}
+
           {!scenario.fixedMyPos && (
             <PokerTable
               myPos={myPos}
@@ -186,10 +207,6 @@ export default function PreflopPage() {
               onClickSeat={handleClickSeatWrapped}
               validVillainPositions={validVillainPositions}
             />
-          )}
-
-          {promptText && (
-            <p className="preflop-prompt">{promptText}</p>
           )}
 
           <RangeStats

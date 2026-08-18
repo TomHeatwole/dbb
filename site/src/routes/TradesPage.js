@@ -151,7 +151,7 @@ function TradesPage() {
   return (
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title="🤝 Trade History" subtitle={null}>
+      <InfoPageWrapper title="Trade History" subtitle={null}>
         {loading && <LoadingState label="Loading trade history…" />}
 
         {!loading && error && (

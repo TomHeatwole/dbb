@@ -5,17 +5,22 @@ import LoadingState from '../LoadingState';
 import { loadSeasonStatsFromCSV, mapCSVStatsToSleeperFormat } from './WeeklyStatsLoader';
 import useIsMobile from '../hooks/useIsMobile';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
-import { fetchPlayersData } from '../lookups/PlayerLookup';
+import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import PositionBadge from '../PositionBadge';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
+import { fetchNflScoreboard } from '../lookups/GamesLookup';
+import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
+import { readPlayersSnapshot } from '../utils/database';
 
-function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride }) {
+function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride, initialSeason }) {
   const myRosterId = useMyRosterId(rosters, users);
   // Default to previous year if current season hasn't started yet
   const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
   const isPreSeason = completedWeeks === 0;
   const defaultSeason = isPreSeason ? String(Number(CURRENT_YEAR) - 1) : CURRENT_YEAR;
-  const [season, setSeason] = useState(defaultSeason);
+  const [season, setSeason] = useState(
+    initialSeason ? String(initialSeason) : defaultSeason
+  );
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [weeklyScores, setWeeklyScores] = useState([]);
   const [seasonStats, setSeasonStats] = useState(null);
@@ -25,11 +30,20 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
   const [positionRankTotal, setPositionRankTotal] = useState(null);
   const [positionRankPerGame, setPositionRankPerGame] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [weeklyGames, setWeeklyGames] = useState({});
   const dropdownRef = useRef(null);
   const isMobile = useIsMobile();
 
   const playerId = player && player.player_id ? player.player_id : null;
   const rookieYear = player && player.metadata && player.metadata.rookie_year ? player.metadata.rookie_year : null;
+
+  useEffect(() => {
+    const next = initialSeason ? String(initialSeason) : defaultSeason;
+    setSeason(next);
+    // Only re-seed when the player or calling page's year changes, not when
+    // the user picks a year inside this card.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerId, initialSeason]);
   
   // Build available years list from rookie year to current (or previous year if pre-season)
   const availableYears = [];
@@ -89,6 +103,72 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
 
   const currentWeek = getCurrentNFLWeek(season);
   const totalWeeks = season === CURRENT_YEAR ? Math.min(17, currentWeek) : 17;
+
+  // NFL opponent + result for each week, same source as /scores
+  useEffect(() => {
+    const pid = playerId ? String(playerId) : null;
+    const yearNum = parseInt(season, 10);
+    if (!pid || !Number.isFinite(yearNum) || yearNum < 2024 || totalWeeks < 1) {
+      setWeeklyGames({});
+      return;
+    }
+
+    let cancelled = false;
+    setWeeklyGames({});
+    (async () => {
+      try {
+        const idMap = await fetchPlayerIdMap().catch(() => null);
+        const playersData = { [pid]: player || {} };
+        const weeks = Array.from({ length: totalWeeks }, (_, i) => i + 1);
+        const results = await Promise.all(weeks.map(async (week) => {
+          try {
+            const [json, snap] = await Promise.all([
+              fetchNflScoreboard(yearNum, week),
+              readPlayersSnapshot(String(season), week).catch(() => null),
+            ]);
+            let overrideTeamMap = null;
+            const snapData = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
+            if (snapData) {
+              const pinfo = snapData[pid] || snapData[playerId];
+              const abbr = pinfo && (pinfo.team || pinfo.team_abbr || pinfo.team_abbreviation);
+              if (abbr) {
+                overrideTeamMap = { [pid]: String(abbr) };
+              }
+            }
+            const mapping = await mapPlayersToGames(
+              [pid],
+              playersData,
+              idMap,
+              json,
+              overrideTeamMap
+            );
+            const item = mapping[pid] || mapping[playerId];
+            const ev = item && item.event;
+            const teamForWeek = item && item.team;
+            const d = ev
+              ? getGameDisplayForTeam(ev, teamForWeek)
+              : { text: 'BYE', live: false, completed: false };
+            const eventId = ev && ev.id ? String(ev.id) : null;
+            return [week, { ...d, eventId }];
+          } catch (_) {
+            return [week, { text: '', eventId: null }];
+          }
+        }));
+        if (cancelled) return;
+        const next = {};
+        for (const [week, game] of results) {
+          next[week] = game;
+        }
+        setWeeklyGames(next);
+      } catch (_) {
+        if (!cancelled) setWeeklyGames({});
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [playerId, season, totalWeeks, player]);
 
   useEffect(() => {
     if (!weeksParsedData || !playerId || loading) return;
@@ -310,6 +390,32 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
   const yearNum = parseInt(season);
   const isPre2024 = yearNum < 2024;
   const showSeasonAggregateOnly = isPre2024;
+  const showGameColumn = !isPre2024;
+
+  function renderGameCell(week, { isTotal = false } = {}) {
+    if (isTotal || !showGameColumn) return null;
+    const game = weeklyGames[week];
+    const text = game && game.text ? game.text : '';
+    if (!text) {
+      return <td className="player-weekly-game">-</td>;
+    }
+    if (game.eventId) {
+      return (
+        <td className="player-weekly-game">
+          <a
+            href={`https://www.espn.com/nfl/game/_/gameId/${game.eventId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="player-weekly-game-link"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {text}
+          </a>
+        </td>
+      );
+    }
+    return <td className="player-weekly-game">{text}</td>;
+  }
 
   return (
     <div className="player-card player-weekly-card">
@@ -449,6 +555,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
               <thead>
                 <tr>
                   <th>Week</th>
+                  {showGameColumn ? <th>Game</th> : null}
                   {statsColumns.map(col => (
                     <th key={col.key}>{col.label}</th>
                   ))}
@@ -459,6 +566,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
                 {weeklyScores.map(({ week, points, stats }) => (
                   <tr key={week} className={points > 0 ? '' : 'player-weekly-zero'}>
                     <td>{isMobile ? week : `Week ${week}`}</td>
+                    {renderGameCell(week)}
                     {statsColumns.map(col => (
                       <td key={col.key} className="player-weekly-stat">
                         {stats ? col.format(stats[col.key]) : '-'}
@@ -473,6 +581,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
               <tfoot>
                 <tr className="player-weekly-totals-row">
                   <td className="player-weekly-totals-label">Total</td>
+                  {showGameColumn ? <td className="player-weekly-game" /> : null}
                   {statsColumns.map(col => {
                     const total = weeklyScores.reduce((sum, { stats }) => {
                       return sum + (stats ? (stats[col.key] || 0) : 0);

@@ -221,3 +221,45 @@ export function HandGrid({ grid, actionColors, actionLabels, highlightHand, reac
 }
 
 export { TABLE_SEATS };
+
+export function ActionButtons({ chart, actionLabels, actionColors, disabled, selected, onPick }) {
+  const present = new Set();
+  if (chart) {
+    for (const row of chart) {
+      for (const action of row) present.add(action);
+    }
+  }
+  const unique = [];
+  const seen = new Set();
+  for (const key of Object.keys(actionLabels)) {
+    if (!present.has(key)) continue;
+    const label = actionLabels[key];
+    if (seen.has(label)) continue;
+    seen.add(label);
+    unique.push(key);
+  }
+
+  return (
+    <div className="preflop-quiz-actions">
+      {unique.map(key => {
+        const color = key === 'F' ? '#94a3b8' : (actionColors[key] || '#94a3b8');
+        const picked = selected === key;
+        return (
+          <button
+            key={key}
+            className={`preflop-quiz-action${picked ? ' preflop-quiz-action--picked' : ''}`}
+            style={{
+              borderColor: color,
+              color: picked ? '#0f172a' : color,
+              background: picked ? color : 'transparent',
+            }}
+            disabled={disabled}
+            onClick={() => onPick(key)}
+          >
+            {actionLabels[key]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

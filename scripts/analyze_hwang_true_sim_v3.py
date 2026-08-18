@@ -249,7 +249,7 @@ def main():
         for ax, fmt, title in zip(
                 axes, FORMATS,
                 ['Hwang format (3RB/2FLEX · 0 PPR · TE +0.5)',
-                 'Regular format (2RB/1FLEX · 0.5 PPR · TE +0.5)']):
+                 'Regular format (2RB/1FLEX · 0.5 PPR)']):
             bands = band_results[(basis, fmt)]
             vgrid = np.linspace(600, 9200, 200)
             for pos in POS4:
@@ -274,10 +274,10 @@ def main():
         plt.close(fig)
         print(f"\nwrote {path}")
 
-    # ── Per-archetype multipliers (Hwang format, engine-weighted totals) ────
+    # ── Per-archetype multipliers (engine-weighted totals) ─────────────────
     print()
     print('=' * 76)
-    print('4. PER-ARCHETYPE MULTIPLIERS (Hwang format, mean-grounded)')
+    print('4. PER-ARCHETYPE MULTIPLIERS (mean-grounded)')
     print('=' * 76)
     arch_labels = {}
     with open(os.path.join(DATA, 'build_players.csv')) as f:
@@ -291,8 +291,8 @@ def main():
             vals = (float(r['total_hvorp_a']), float(r['total_hvorp_b']),
                     float(r['weight_sum']))
             pk = (r['pos_a'], r['pos_b'])
-            if r['scope'] == 'archetype' and r['format'] == 'hwang':
-                a = arch_matchups[(r['value_basis'], r['archetype_id'])][pk]
+            if r['scope'] == 'archetype':
+                a = arch_matchups[(r['value_basis'], r['format'], r['archetype_id'])][pk]
                 a[0] += vals[0]; a[1] += vals[1]; a[2] += vals[2]
             elif r['scope'] == 'year':
                 a = year_matchups[(r['value_basis'], r['format'], r['year'])][pk]
@@ -301,24 +301,25 @@ def main():
     arch_mults = {k: regauge(ls_solve(v)) for k, v in arch_matchups.items()}
 
     for basis in BASES:
-        print(f"\n--- basis: {basis} ---")
-        aids = sorted({aid for (b, aid) in arch_mults if b == basis},
-                      key=lambda aid: -arch_mults[(basis, aid)]['RB'])
-        for aid in aids:
-            m = arch_mults[(basis, aid)]
-            print(f"  {arch_labels.get(aid, aid):<44} " +
-                  '  '.join(f"{p} {m[p]:.2f}" for p in POS4))
+        for fmt in FORMATS:
+            print(f"\n--- basis: {basis} / format: {fmt} ---")
+            aids = sorted({aid for (b, f, aid) in arch_mults if b == basis and f == fmt},
+                          key=lambda aid: -arch_mults[(basis, fmt, aid)]['RB'])
+            for aid in aids:
+                m = arch_mults[(basis, fmt, aid)]
+                print(f"  {arch_labels.get(aid, aid):<44} " +
+                      '  '.join(f"{p} {m[p]:.2f}" for p in POS4))
 
     for basis in BASES:
-        aids = sorted({aid for (b, aid) in arch_mults if b == basis},
-                      key=lambda aid: arch_mults[(basis, aid)]['RB'])
+        aids = sorted({aid for (b, f, aid) in arch_mults if b == basis and f == 'hwang'},
+                      key=lambda aid: arch_mults[(basis, 'hwang', aid)]['RB'])
         labels = [arch_labels.get(a, a).replace(' — ', ' · ') for a in aids]
         fig, (ax1, ax2) = plt.subplots(
             1, 2, figsize=(14, 7), gridspec_kw={'width_ratios': [1.35, 1]})
 
         ypos = np.arange(len(aids))
         for pos in POS4:
-            vals = [arch_mults[(basis, a)][pos] for a in aids]
+            vals = [arch_mults[(basis, 'hwang', a)][pos] for a in aids]
             ax1.scatter(vals, ypos, color=COLORS[pos], s=42, label=pos, zorder=3)
         ax1.axvline(1.0, color='#666666', ls='--', lw=1.2, label='avg = 1.0')
         ax1.set_yticks(ypos)
@@ -327,9 +328,9 @@ def main():
         ax1.set_title('Spectrum by archetype (sorted by RB)', fontsize=10)
         ax1.legend(fontsize=8, loc='lower right')
 
-        rb = np.array([arch_mults[(basis, a)]['RB'] for a in aids])
-        wr = np.array([arch_mults[(basis, a)]['WR'] for a in aids])
-        te = np.array([arch_mults[(basis, a)]['TE'] for a in aids])
+        rb = np.array([arch_mults[(basis, 'hwang', a)]['RB'] for a in aids])
+        wr = np.array([arch_mults[(basis, 'hwang', a)]['WR'] for a in aids])
+        te = np.array([arch_mults[(basis, 'hwang', a)]['TE'] for a in aids])
         sc = ax2.scatter(rb, wr, c=te, cmap='viridis', s=110, edgecolor='k', lw=0.5)
         for i, a in enumerate(aids):
             short = arch_labels.get(a, a).split(' — ')[0]
@@ -343,7 +344,7 @@ def main():
         fig.colorbar(sc, ax=ax2, label='TE multiplier', shrink=0.8)
 
         bname = 'Final KTC' if basis == 'ktc' else 'Competitor-adjusted'
-        fig.suptitle(f'V3 per-archetype multipliers — Hwang format, {bname} basis, '
+        fig.suptitle(f'Per-archetype multipliers — Hwang format, {bname} basis, '
                      f'mean-grounded', fontsize=12)
         fig.tight_layout()
         path = os.path.join(OUT, f'archetype_spectrum_{basis}.png')

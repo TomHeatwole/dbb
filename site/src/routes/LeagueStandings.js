@@ -19,7 +19,7 @@ import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 
-const OG_TITLE = 'Hwang Dynasty Standings';
+const OG_TITLE = 'Standings – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
@@ -518,7 +518,7 @@ function LeagueStandings() {
     return (
       <>
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
+      <InfoPageWrapper title="Standings" subtitle={null} leftHeader={leftHeader}>
         <div>Error loading standings.</div>
       </InfoPageWrapper>
       </>
@@ -530,7 +530,7 @@ function LeagueStandings() {
     return (
       <>
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
+      <InfoPageWrapper title="Standings" subtitle={null} leftHeader={leftHeader}>
         <LoadingState label="Loading standings…" />
       </InfoPageWrapper>
       </>
@@ -542,7 +542,7 @@ function LeagueStandings() {
     return (
       <>
         <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-      <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
+      <InfoPageWrapper title="Standings" subtitle={null} leftHeader={leftHeader}>
         <LoadingState label="Loading standings…" />
       </InfoPageWrapper>
       </>
@@ -909,7 +909,7 @@ function LeagueStandings() {
   return (
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
-    <InfoPageWrapper title={isMobile ? "Standings" : "Hwang Dynasty Standings"} subtitle={null} leftHeader={leftHeader}>
+    <InfoPageWrapper title="Standings" subtitle={null} leftHeader={leftHeader}>
       {showYoffsLink ? <YoffsLink /> : null}
       <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "") + (showPpgColumn ? "" : " standings-list--no-ppg") }>
         {displayRows.map((row, idx) => {
