@@ -1,0 +1,271 @@
+.preflop-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  color: #e2e8f0;
+}
+
+.preflop-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.preflop-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0;
+  color: #f1f5f9;
+}
+.preflop-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* ── Poker table ── */
+.preflop-table-wrap {
+  margin: 0.6rem auto 1rem;
+  max-width: 400px;
+}
+.preflop-table-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.preflop-table-felt {
+  fill: #166534;
+  stroke: #854d0e;
+  stroke-width: 5;
+}
+.preflop-table-rail {
+  fill: none;
+  stroke: #15803d;
+  stroke-width: 1.5;
+}
+.preflop-table-text {
+  fill: #22c55e;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.5;
+}
+.preflop-seat {
+  fill: #1e293b;
+  stroke: #475569;
+  stroke-width: 1.5;
+  transition: all 0.15s;
+}
+.preflop-seat:hover {
+  fill: #334155;
+}
+.preflop-seat--my {
+  fill: #10b981;
+  stroke: #34d399;
+  stroke-width: 2;
+}
+.preflop-seat--villain {
+  fill: #ef4444;
+  stroke: #f87171;
+  stroke-width: 2;
+}
+.preflop-seat--valid {
+  fill: #1e293b;
+  stroke: #f97316;
+  stroke-width: 2;
+  stroke-dasharray: 3 2;
+}
+.preflop-seat--valid:hover {
+  fill: #431407;
+}
+.preflop-seat--disabled {
+  fill: #0f172a;
+  stroke: #334155;
+  stroke-width: 1;
+  opacity: 0.4;
+}
+.preflop-seat-label {
+  fill: #e2e8f0;
+  font-size: 8px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.preflop-seat-label--dim {
+  fill: #64748b;
+}
+.preflop-seat-you {
+  fill: #34d399;
+  font-size: 5px;
+  font-weight: 800;
+  pointer-events: none;
+}
+.preflop-seat-villain-tag {
+  fill: #fca5a5;
+  font-size: 6px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.preflop-prompt {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #f97316;
+  margin: 0 0 0.8rem;
+  font-weight: 600;
+}
+
+/* ── Stats bars ── */
+.preflop-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.7rem 0.8rem;
+  background: #1e293b;
+  border-radius: 0.5rem;
+}
+.preflop-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.preflop-stat-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #0f172a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.preflop-stat-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.preflop-stat-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 5.5rem;
+  text-align: right;
+}
+.preflop-stat-pct {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  min-width: 3rem;
+  text-align: right;
+}
+
+/* ── Controls ── */
+.preflop-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+.preflop-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.preflop-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.preflop-scenario-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.preflop-scenario-btn {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preflop-scenario-btn:hover {
+  background: #334155;
+}
+.preflop-scenario-btn--active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.preflop-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0 0 0.5rem;
+  text-align: center;
+}
+
+/* ── Grid ── */
+.preflop-grid-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.preflop-grid {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 2px;
+  min-width: 420px;
+}
+.preflop-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.2rem;
+  position: relative;
+}
+.preflop-cell-hand {
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.preflop-no-chart {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* ── Legend ── */
+.preflop-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+  justify-content: center;
+}
+.preflop-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+.preflop-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .preflop-cell-hand {
+    font-size: 0.48rem;
+  }
+  .preflop-grid {
+    gap: 1px;
+    min-width: 320px;
+  }
+}

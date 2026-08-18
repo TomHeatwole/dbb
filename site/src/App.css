@@ -17055,6 +17055,34 @@ body.modal-open {
   font-weight: 600;
 }
 
+/* ── Redraft Dash: punter list ──────────────────────────────────────────── */
+
+.rdd-punter-list {
+  margin-top: 1rem;
+}
+
+.rdd-punter-note {
+  color: #9aa4b0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  max-width: 56rem;
+}
+
+.rdd-punter-note strong {
+  color: #ffd080;
+}
+
+.rdd-punter-table {
+  width: auto;
+  min-width: 36rem;
+}
+
+.rdd-punter-note-cell {
+  color: #9aa4b0;
+  font-size: 0.82rem;
+}
+
 /* ── Redraft Dash: view toggle ───────────────────────────────────────────── */
 
 .rdd-view-toggle {
@@ -17507,7 +17535,8 @@ body.modal-open {
 .tank-race-team--me,
 .last-week-team--me,
 .recap-team--me,
-.rookie-draft-row--me {
+.rookie-draft-row--me,
+.league-history-me {
   color: #4ade80;
 }
 
@@ -17553,6 +17582,7 @@ body.modal-open {
 .hot-team-header--me .hot-team-avatar,
 .last-week-team--me .week-stars-team-avatar,
 .recap-team--me .previous-year-recap-avatar,
+.league-history-me .league-history-avatar,
 .rookie-draft-row--me .draft-recap-team-avatar,
 .rookie-draft-row--me .rookie-draft-avatar,
 .teams2-card--me .teams2-card-avatar,
@@ -18266,4 +18296,344 @@ body.modal-open {
   font-size: 0.95rem;
   opacity: 0.8;
   white-space: nowrap;
+}
+
+/* League History card (home) */
+.lh-card-seasons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.lh-card-season {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.lh-card-year {
+  font-weight: 900;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.55);
+  flex: 0 0 auto;
+  padding-top: 0.1rem;
+  min-width: 2.2rem;
+}
+
+.lh-card-top4 {
+  display: flex;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.lh-card-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.lh-card-place {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.55);
+  line-height: 1;
+}
+
+.lh-card-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lh-card-team:first-child .lh-card-avatar {
+  border-color: rgba(251, 191, 36, 0.7);
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.25);
+}
+
+.lh-card-avatar--placeholder {
+  display: block;
+}
+
+.lh-card-name {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.7);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@media (max-width: 50em) {
+  .lh-card-top4 {
+    gap: 0.35rem;
+  }
+
+  .lh-card-avatar {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .lh-card-name {
+    font-size: 0.5rem;
+  }
+}
+
+/* League History page */
+.league-history-root {
+  max-width: 920px;
+  margin: 0 auto;
+  padding-bottom: 2.5rem;
+}
+
+.league-history-section-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.01em;
+}
+
+.league-history-highlights {
+  margin-bottom: 2.75rem;
+}
+
+.league-history-year-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.league-history-year-card {
+  background: rgba(148, 180, 255, 0.08);
+  border: 1px solid rgba(148, 180, 255, 0.35);
+  border-radius: 12px;
+  padding: 1rem 1.1rem 1.05rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.league-history-year-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.league-history-year-heading {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.league-history-yoffs-link {
+  color: rgba(186, 210, 255, 0.95);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.league-history-yoffs-link:hover {
+  text-decoration: underline;
+}
+
+.league-history-result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.15rem 0;
+}
+
+.league-history-result-row .previous-year-recap-team {
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.league-history-result-row .previous-year-recap-team:hover {
+  text-decoration: underline;
+}
+
+.league-history-career {
+  margin-top: 0.5rem;
+}
+
+.league-history-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.league-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.league-history-table th,
+.league-history-table td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+.league-history-table th {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(226, 232, 240, 0.72);
+  white-space: nowrap;
+}
+
+.league-history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.league-history-table td:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: rgba(248, 250, 252, 0.92);
+  text-align: center;
+}
+
+.league-history-table th:not(:first-child) {
+  text-align: center;
+}
+
+.league-history-stat--hot {
+  color: #fbbf24;
+}
+
+.league-history-team-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  max-width: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.league-history-team-link:hover {
+  text-decoration: underline;
+}
+
+.league-history-avatar {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  flex: 0 0 auto;
+}
+
+.league-history-avatar--placeholder {
+  display: inline-block;
+}
+
+.league-history-team-name-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.league-history-team-name {
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.league-history-asterisk {
+  font-weight: 600;
+  font-size: 0.78em;
+  color: rgba(251, 191, 36, 0.85);
+  font-style: italic;
+}
+
+.league-history-asterisk--mobile {
+  display: none;
+  line-height: 1.3;
+}
+
+.league-history-error {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  padding: 1.5rem 0;
+}
+
+.league-history-empty {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.95rem;
+  padding: 2rem 0;
+}
+
+@media (max-width: 50em) {
+  .league-history-year-card {
+    padding: 0.85rem 0.9rem 0.9rem;
+  }
+
+  .league-history-year-heading {
+    font-size: 0.95rem;
+  }
+
+  .league-history-result-row {
+    gap: 0.4rem;
+  }
+
+  .league-history-table {
+    min-width: 0;
+  }
+
+  .league-history-table th,
+  .league-history-table td {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  .league-history-table th {
+    font-size: 0.6rem;
+  }
+
+  .league-history-table td:first-child {
+    max-width: 7.5rem;
+    overflow: hidden;
+  }
+
+  .league-history-avatar {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .league-history-team-link {
+    gap: 0.35rem;
+  }
+
+  .league-history-team-name {
+    font-size: 0.7rem;
+  }
+
+  .league-history-asterisk--desktop {
+    display: none;
+  }
+
+  .league-history-asterisk--mobile {
+    display: block;
+    font-size: 0.55rem;
+  }
 }

@@ -29,6 +29,7 @@ import FutureScenariosPage from './routes/FutureScenariosPage';
 import FutureScenarios2Page from './routes/FutureScenarios2Page';
 import SimulatorPage from './routes/SimulatorPage';
 import TradesPage from './routes/TradesPage';
+import LeagueHistoryPage from './routes/LeagueHistoryPage';
 import SandboxPage from './routes/SandboxPage';
 import ValueSandboxPage from './routes/ValueSandboxPage';
 import RedraftDashPage from './routes/RedraftDashPage';
@@ -36,6 +37,7 @@ import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
 import SOPPage, { SOP2Page } from './routes/SOPPage';
 import DKPage from './routes/DKPage';
+import PreflopPage from './routes/PreflopPage';
 import FredDuelPage from './routes/FredDuelPage';
 import FredDuelSetupPage from './routes/FredDuelSetupPage';
 import AccountSetupPage from './routes/AccountSetupPage';
@@ -76,8 +78,9 @@ function MobileTopNav() {
         </div>
         {moreOpen && (
           <div className="mobile-top-home-card-more">
-            <Link to="/hwangai" className="mobile-top-home-card-link">HwangAI</Link>
             <a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer" className="mobile-top-home-card-link">Podcast</a>
+            <Link to="/league-history" className="mobile-top-home-card-link">History</Link>
+            <Link to="/hwangai" className="mobile-top-home-card-link">HwangAI</Link>
             <Link to="/h2h" className="mobile-top-home-card-link">Head&nbsp;to&nbsp;Head</Link>
             <SignOutControl className="mobile-top-home-card-link mobile-top-home-card-signout" />
           </div>
@@ -132,6 +135,7 @@ function AppInner() {
       <Route path="/admincontrols" element={<RequireAdmin><AdminControls /></RequireAdmin>} />
       <Route path="/notes" element={<NotesPage />} />
       <Route path="/trades" element={<TradesPage />} />
+      <Route path="/league-history" element={<LeagueHistoryPage />} />
 
       {/* Conditionally rendered routes based on feature toggles */}
       {isFeatureEnabled('SCENARIOS_ENABLED', MAIN_FEATURES) && (
@@ -163,6 +167,7 @@ function AppInner() {
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
       <Route path="/dk/*" element={<DKPage />} />
       <Route path="/DK/*" element={<DKPage />} />
+      <Route path="/preflop" element={<PreflopPage />} />
       <Route path="/FredDuel" element={<FredDuelPage />} />
       <Route path="/fredduel" element={<FredDuelPage />} />
       <Route path="/FredDuel/setup" element={<FredDuelSetupPage />} />

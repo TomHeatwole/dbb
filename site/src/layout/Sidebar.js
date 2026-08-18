@@ -82,6 +82,7 @@ function Sidebar() {
               <li><Link to="/h2h">Head to Head</Link></li>
               <li><Link to="/yoffs">Playoffs</Link></li>
               <li><a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a></li>
+              <li><Link to="/league-history">History</Link></li>
               <li><Link to="/hwangai">HwangAI</Link></li>
               <li>
                 <SignOutControl className="sidebar-signout-btn" />

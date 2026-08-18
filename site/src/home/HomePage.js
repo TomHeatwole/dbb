@@ -18,6 +18,7 @@ import RookieDraftRecapCard from './RookieDraftRecapCard';
 import IosShortcutNoticeCard from './IosShortcutNoticeCard';
 import TrendingFreeAgentsCard from './TrendingFreeAgentsCard';
 import HwangAICard from './HwangAICard';
+import LeagueHistoryCard from './LeagueHistoryCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
@@ -109,6 +110,7 @@ function HomePage() {
             <RecentTradesCard />
             <TrendingFreeAgentsCard />
             {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
+            <LeagueHistoryCard />
             <HwangAICard />
             <CommissionerNoteCard />
             <PodcastCard />
@@ -133,6 +135,7 @@ function HomePage() {
             <div className="home-cards-column home-cards-column--right">
               <PreviousYearRecapCard />
               {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
+              <LeagueHistoryCard />
               <HwangAICard />
               <CommissionerNoteCard />
             </div>
@@ -191,6 +194,7 @@ function HomePage() {
           <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
           <TankRaceCard currentWeekOverride={safeWeekForCards} />
+          <LeagueHistoryCard />
           <HwangAICard />
           <CommissionerNoteCard />
           <PodcastCard />
@@ -229,6 +233,7 @@ function HomePage() {
             <HotTeamCard currentWeekOverride={safeWeekForCards} />
             {bubbleCard}
             <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
+            <LeagueHistoryCard />
             <HwangAICard />
             <CommissionerNoteCard />
           </div>
