@@ -1,5 +1,29 @@
-import React, { useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { handLabel } from '../poker/ranges';
+
+const LowWifiContext = createContext(false);
+
+export function LowWifiProvider({ value, children }) {
+  return <LowWifiContext.Provider value={Boolean(value)}>{children}</LowWifiContext.Provider>;
+}
+
+export function useLowWifi() {
+  return useContext(LowWifiContext);
+}
+
+function handFromCards(cards) {
+  if (!cards || cards.length < 2) return '';
+  const toRank = rank => (rank === '10' ? 'T' : rank);
+  const r1 = toRank(cards[0].rank);
+  const r2 = toRank(cards[1].rank);
+  const order = 'AKQJT98765432';
+  const i1 = order.indexOf(r1);
+  const i2 = order.indexOf(r2);
+  const high = i1 <= i2 ? r1 : r2;
+  const low = i1 <= i2 ? r2 : r1;
+  if (high === low) return `${high}${low}`;
+  return `${high}${low}${cards[0].suit === cards[1].suit ? 's' : 'o'}`;
+}
 
 const TABLE_SEATS = [
   { pos: 'UTG',   angle: 200 },
@@ -36,8 +60,14 @@ export function PlayingCard({ rank, suit, size = 'md' }) {
   );
 }
 
-export function HoleCards({ cards, size = 'lg' }) {
-  if (!cards?.length) return null;
+export function HoleCards({ cards, hand, size = 'lg' }) {
+  const lowWifi = useLowWifi();
+  const label = hand || handFromCards(cards);
+  if (!cards?.length && !label) return null;
+  if (lowWifi) {
+    return <div className={`hole-cards-text hole-cards-text--${size}`}>{label}</div>;
+  }
+  if (!cards?.length) return <div className={`hole-cards-text hole-cards-text--${size}`}>{label}</div>;
   return (
     <div className={`hole-cards hole-cards--${size}`}>
       {cards.map((card, i) => (
@@ -55,6 +85,7 @@ export function PokerTable({
   validVillainPositions,
   interactive = true,
   holeCards,
+  hand,
 }) {
   const cx = 160, cy = 110, rx = 110, ry = 65;
 
@@ -116,7 +147,7 @@ export function PokerTable({
       </svg>
       {holeCards && (
         <div className="preflop-table-hole">
-          <HoleCards cards={holeCards} size="lg" />
+          <HoleCards cards={holeCards} hand={hand} size="lg" />
         </div>
       )}
     </div>

@@ -6,13 +6,24 @@ import {
   VS_RFI,
 } from '../poker/ranges';
 import { describeSpot } from '../poker/quiz';
-import { PokerTable, RangeStats, HandGrid } from './PreflopShared';
+import { PokerTable, RangeStats, HandGrid, LowWifiProvider } from './PreflopShared';
 import PreflopQuiz from './PreflopQuiz';
 import PreflopPlayer from './PreflopPlayer';
 import './PreflopPage.css';
 
+const LOW_WIFI_KEY = 'preflop-low-wifi';
+
+function readLowWifi() {
+  try {
+    return localStorage.getItem(LOW_WIFI_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export default function PreflopPage() {
   const [mode, setMode] = useState('charts');
+  const [lowWifi, setLowWifi] = useState(readLowWifi);
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [myPos, setMyPos] = useState('CO');
   const [villainPos, setVillainPos] = useState('');
@@ -144,6 +155,7 @@ export default function PreflopPage() {
   }, [scenario, effectivePickMode, villainPos, effectiveMyPos]);
 
   return (
+    <LowWifiProvider value={lowWifi}>
     <div className="preflop-page">
       <div className="preflop-header">
         <h1>$1/$3 Preflop Guide</h1>
@@ -234,6 +246,22 @@ export default function PreflopPage() {
           </div>
         </>
       )}
+
+      <label className="preflop-quiz-check preflop-low-wifi">
+        <input
+          type="checkbox"
+          checked={lowWifi}
+          onChange={(e) => {
+            const next = e.target.checked;
+            setLowWifi(next);
+            try {
+              localStorage.setItem(LOW_WIFI_KEY, next ? '1' : '0');
+            } catch {}
+          }}
+        />
+        Low WIFI mode
+      </label>
     </div>
+    </LowWifiProvider>
   );
 }

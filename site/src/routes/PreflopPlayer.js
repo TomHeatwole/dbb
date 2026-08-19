@@ -185,6 +185,7 @@ export default function PreflopPlayer({ onExit }) {
         validVillainPositions={[]}
         interactive={false}
         holeCards={street.cards}
+        hand={street.hand}
       />
       <ActionButtons
         chart={street.chart}

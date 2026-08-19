@@ -42,6 +42,7 @@ function QuestionCard({ question, showAnswer, guessed, onGuess }) {
         validVillainPositions={[]}
         interactive={false}
         holeCards={question.cards}
+        hand={question.hand}
       />
       <ActionButtons
         chart={question.chart}

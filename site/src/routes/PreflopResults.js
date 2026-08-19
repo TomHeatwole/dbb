@@ -112,7 +112,7 @@ export default function PreflopResults({
           </div>
           {q.sessionNote && <p className="preflop-quiz-help">{q.sessionNote}</p>}
           <p className="preflop-quiz-prompt">{q.prompt}</p>
-          <HoleCards cards={q.cards} size="md" />
+          <HoleCards cards={q.cards} hand={q.hand} size="md" />
           <HandGrid
             grid={q.chart}
             actionColors={q.actionColors}
