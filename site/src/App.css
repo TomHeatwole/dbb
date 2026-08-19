@@ -13898,6 +13898,10 @@ body.modal-open {
 
 .player-analytics-table-scroll {
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  flex-shrink: 0;
+  max-height: none;
   border: 1px solid rgba(148, 180, 255, 0.1);
   border-radius: 0.7rem;
   background: rgba(16, 18, 40, 0.55);
@@ -14952,6 +14956,12 @@ body.modal-open {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.35rem;
+  }
+
+  .player-analytics-table-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
   }
 
   .teams2-roster {
