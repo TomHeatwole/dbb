@@ -35,6 +35,8 @@ import {
 } from '../lookups/RedraftValueLookup';
 import {
   loadHwangPositionMultipliers,
+  getHwangCompositeMultipliers,
+  applyHwangKtcAdjustment,
   buildHwangAdjustedLookup,
   buildHwangAdjustedFromEntries,
   getHwangAdjustedEntryByName,
@@ -300,7 +302,8 @@ function DynastyRosterView() {
             fetchRedraftValueData().catch(() => null),
             loadHwangPositionMultipliers('market').catch(() => null),
             loadHwangPositionMultipliers('true').catch(() => null),
-            loadHwangPositionMultipliers(HWANG_COMPOSITE_COEFFICIENT_KEY).catch(() => null),
+            loadHwangPositionMultipliers(HWANG_COMPOSITE_COEFFICIENT_KEY)
+              .catch(() => getHwangCompositeMultipliers()),
             loadTruePickChart().catch(() => null),
             PICKS_ENABLED ? fetchTradedPicks(CURRENT_YEAR).catch(() => []) : Promise.resolve([]),
             PICKS_ENABLED && isPreSeason
@@ -431,6 +434,29 @@ function DynastyRosterView() {
       : null
   ), [redraftData, hwangMultipliers.composite]);
 
+  const getHwangCompositePlayerEntry = React.useCallback((name, info, source) => {
+    const hints = { position: info?.position, team: info?.team || info?.team_abbr, age: info?.age };
+    const lookup = source === 'hwang_competitor_adjusted'
+      ? hwangCompetitorLookup
+      : hwangRebuilderLookup;
+    if (lookup?.byName) {
+      const entry = getHwangAdjustedEntryByName(name, lookup.byName, hints);
+      if (entry) return entry;
+    }
+    if (!redraftData?.byName || !hwangMultipliers.composite) return null;
+    const redraftEntry = getRedraftValueEntryByName(name, redraftData.byName, hints);
+    const base = source === 'hwang_competitor_adjusted'
+      ? redraftEntry?.competitorAdjustedValue
+      : redraftEntry?.rebuilderAdjustedValue;
+    const value = applyHwangKtcAdjustment(
+      base,
+      info?.position || redraftEntry?.position,
+      hwangMultipliers.composite,
+    );
+    if (value == null) return null;
+    return { value, overallRank: null, posRank: null };
+  }, [hwangCompetitorLookup, hwangRebuilderLookup, redraftData, hwangMultipliers.composite]);
+
   // ── Helper: get a numeric "sort value" for a player given the current source ──
 
   const getPlayerSortValue = React.useCallback((pid, info) => {
@@ -470,12 +496,7 @@ function DynastyRosterView() {
       return entry?.value ?? 0;
     }
     if (valueSource === 'hwang_competitor_adjusted' || valueSource === 'hwang_rebuilder_adjusted') {
-      const lookup = valueSource === 'hwang_competitor_adjusted'
-        ? hwangCompetitorLookup
-        : hwangRebuilderLookup;
-      if (!lookup?.byName) return 0;
-      const entry = getHwangAdjustedEntryByName(name, lookup.byName, hints);
-      return entry?.value ?? 0;
+      return getHwangCompositePlayerEntry(name, info, valueSource)?.value ?? 0;
     }
     return 0;
   }, [
@@ -486,8 +507,7 @@ function DynastyRosterView() {
     redraftData,
     hwangMarketLookup,
     hwangTrueLookup,
-    hwangCompetitorLookup,
-    hwangRebuilderLookup,
+    getHwangCompositePlayerEntry,
   ]);
 
   // ── Per-team value totals (recomputes when source changes) ───────────────────
@@ -679,12 +699,7 @@ function DynastyRosterView() {
         overallRank = hwangEntry?.overallRank ?? null;
         posRank = hwangEntry?.posRank ?? null;
       } else if (valueSource === 'hwang_competitor_adjusted' || valueSource === 'hwang_rebuilder_adjusted') {
-        const lookup = valueSource === 'hwang_competitor_adjusted'
-          ? hwangCompetitorLookup
-          : hwangRebuilderLookup;
-        const hwangEntry = lookup?.byName
-          ? getHwangAdjustedEntryByName(name, lookup.byName, hints)
-          : null;
+        const hwangEntry = getHwangCompositePlayerEntry(name, info, valueSource);
         sortValue = hwangEntry?.value ?? 0;
         displayValue = formatKtcValue(sortValue);
         overallRank = hwangEntry?.overallRank ?? null;
@@ -735,8 +750,7 @@ function DynastyRosterView() {
     getPlayerKtcTepValue,
     hwangMarketLookup,
     hwangTrueLookup,
-    hwangCompetitorLookup,
-    hwangRebuilderLookup,
+    getHwangCompositePlayerEntry,
   ]);
 
   const selectedTeamIndex = selectedId != null ? teamRedraftIndices[selectedId] : null;

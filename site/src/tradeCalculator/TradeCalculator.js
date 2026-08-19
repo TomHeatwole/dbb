@@ -22,6 +22,7 @@ import {
 } from '../lookups/RedraftValueLookup';
 import {
   loadHwangPositionMultipliers,
+  getHwangCompositeMultipliers,
   buildHwangAdjustedLookup,
   buildHwangAdjustedFromEntries,
   getHwangAdjustedEntryByName,
@@ -451,7 +452,8 @@ function TradeCalculator() {
           fetchRedraftValueData().catch(() => null),
           loadHwangPositionMultipliers('market').catch(() => null),
           loadHwangPositionMultipliers('true').catch(() => null),
-          loadHwangPositionMultipliers(HWANG_COMPOSITE_COEFFICIENT_KEY).catch(() => null),
+          loadHwangPositionMultipliers(HWANG_COMPOSITE_COEFFICIENT_KEY)
+            .catch(() => getHwangCompositeMultipliers()),
           loadTruePickChart().catch(() => null),
           ...ALL_YEARS.map(async (year) => {
             const leagueId = getLeagueId(year);

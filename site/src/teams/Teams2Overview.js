@@ -85,17 +85,19 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
 
         const ownedTraded = allPicks
           .filter((p) => {
-            if (!p || p.owner_id == null) return false;
+            if (!p || p.owner_id == null || p.roster_id == null) return false;
             const seasonNum = p.season != null ? Number(p.season) : Number(seasonForPicks);
             if (!Number.isFinite(seasonNum) || seasonNum < minSeason || seasonNum > maxSeason) return false;
-            return Number(p.owner_id) === Number(rosterId);
+            // Only acquired picks: current owner is this team, original slot belongs to someone else.
+            return Number(p.owner_id) === Number(rosterId) && Number(p.roster_id) !== Number(rosterId);
           })
           .map((p) => {
-            const prevId = p.previous_owner_id != null ? Number(p.previous_owner_id) : null;
-            const info = prevId != null ? rosterIdToTeamInfo[prevId] : null;
+            // roster_id is the original owner (whose standing sets the pick), not previous_owner_id.
+            const origId = Number(p.roster_id);
+            const info = rosterIdToTeamInfo[origId];
             return {
               ...p,
-              team_name: info?.teamName || (prevId != null ? `Team ${prevId}` : null),
+              team_name: info?.teamName || `Team ${origId}`,
             };
           });
 
@@ -250,7 +252,9 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
         const ordinal = (r) => (r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : `${r}th`);
         const roundClass = (r) => `teams2-pick-round--${Math.min(Math.max(Number(r) || 0, 1), 4)}`;
         const summaryRounds = Object.keys(roundCounts).map(Number).sort((a, b) => a - b);
-        const years = [...new Set(tradedPicks.map(p => String(p.season || '')))].filter(Boolean).sort();
+        const yearOffset = (isPreSeason && !rookieDraftComplete) ? 0 : 1;
+        const minSeason = Number(CURRENT_YEAR) + yearOffset;
+        const years = [minSeason, minSeason + 1, minSeason + 2].map(String);
 
         return (
           <div className="teams2-picks-section">
@@ -268,31 +272,36 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
               </span>
             </div>
             <div className="teams2-picks-years">
-              {years.map(yr => (
-                <div key={yr} className="teams2-picks-year-col">
-                  <div className="teams2-picks-year-header">{yr}</div>
-                  <div className="teams2-picks-year-list">
-                    {tradedPicks.filter(p => String(p.season) === yr).map((pick, i) => {
-                      const round = Number(pick.round);
-                      const via = pick.team_name;
-                      let slot = null;
-                      if (draftOrder && pick.roster_id != null) {
-                        const pickNum = draftOrder[String(pick.roster_id)];
-                        if (Number.isFinite(pickNum)) {
-                          slot = `${round}.${String(pickNum).padStart(2, '0')}`;
+              {years.map(yr => {
+                const yearPicks = tradedPicks.filter(p => String(p.season) === yr);
+                return (
+                  <div key={yr} className="teams2-picks-year-col">
+                    <div className="teams2-picks-year-header">{yr}</div>
+                    <div className="teams2-picks-year-list">
+                      {yearPicks.length === 0 ? (
+                        <div className="teams2-pick-chip teams2-picks-empty">No Picks</div>
+                      ) : yearPicks.map((pick, i) => {
+                        const round = Number(pick.round);
+                        const via = pick.team_name;
+                        let slot = null;
+                        if (draftOrder && pick.roster_id != null) {
+                          const pickNum = draftOrder[String(pick.roster_id)];
+                          if (Number.isFinite(pickNum)) {
+                            slot = `${round}.${String(pickNum).padStart(2, '0')}`;
+                          }
                         }
-                      }
-                      return (
-                        <div key={i} className="teams2-pick-chip">
-                          <span className={`teams2-pick-round ${roundClass(round)}`}>{ordinal(round)}</span>
-                          {slot && <span className="teams2-pick-label">{slot}</span>}
-                          {via && <span className="teams2-pick-via">via {via}</span>}
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div key={i} className="teams2-pick-chip">
+                            <span className={`teams2-pick-round ${roundClass(round)}`}>{ordinal(round)}</span>
+                            {slot && <span className="teams2-pick-label">{slot}</span>}
+                            {via && <span className="teams2-pick-via">via {via}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

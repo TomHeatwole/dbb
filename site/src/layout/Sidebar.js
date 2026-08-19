@@ -4,8 +4,22 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData } from '../lookups/PlayerLookup';
 import { findMyRosterId, isMyRoster, useAuthUser } from '../hooks/useAuthUser';
 import SignOutControl from './SignOutControl';
+import { inkNavClass, navIsActive, navIsAnyActive, NAV_MATCH } from './navActive';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
+const TEAM_SLOT_COUNT = 10;
+
+function SidebarLink({ to, active, children }) {
+  return (
+    <Link
+      to={to}
+      className={inkNavClass(active)}
+      aria-current={active ? 'page' : undefined}
+    >
+      {children}
+    </Link>
+  );
+}
 
 function Sidebar() {
   const [teams, setTeams] = useState([]);
@@ -16,7 +30,9 @@ function Sidebar() {
   const location = useLocation();
   const { user: authUser } = useAuthUser();
   const myRosterId = findMyRosterId(rosters, users, authUser);
-  const isHome = location.pathname === '/home/' || location.pathname === '/althome';
+  const isHome = navIsAnyActive(location.pathname, NAV_MATCH.home);
+  const teamsHubActive = navIsAnyActive(location.pathname, NAV_MATCH.teamsHub);
+  const onATeamPage = navIsActive(location.pathname, '/team');
   const [playUnroll, setPlayUnroll] = useState(false);
 
 
@@ -69,6 +85,16 @@ function Sidebar() {
     loadPlayers();
   }, []);
 
+  const sortedTeams = [...teams].sort((a, b) => {
+    const aMine = isMyRoster(a.roster_id, myRosterId) ? 0 : 1;
+    const bMine = isMyRoster(b.roster_id, myRosterId) ? 0 : 1;
+    return aMine - bMine;
+  });
+  const teamSlots = Array.from(
+    { length: Math.max(TEAM_SLOT_COUNT, sortedTeams.length) },
+    (_, i) => sortedTeams[i] || null
+  );
+
   return (
     <div className="sidebar">
       <aside className={`scroll-sidebar${playUnroll ? ' scroll-animating' : ''}`}>
@@ -76,49 +102,90 @@ function Sidebar() {
         <div className="scroll-body">
           <nav>
             <ul>
-              <li><Link to="/home/">Home</Link></li>
-              <li><Link to="/Scores/Week">Scores</Link></li>
-              <li><Link to="/standings">Standings</Link></li>
-              <li><Link to="/h2h">Head to Head</Link></li>
-              <li><Link to="/yoffs">Playoffs</Link></li>
-              <li><a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a></li>
-              <li><Link to="/league-history">History</Link></li>
-              <li><Link to="/hwangai">HwangAI</Link></li>
               <li>
-                <SignOutControl className="sidebar-signout-btn" />
+                <SidebarLink to="/home/" active={isHome}>Home</SidebarLink>
               </li>
               <li>
+                <SidebarLink to="/Scores/Week" active={navIsAnyActive(location.pathname, NAV_MATCH.scores)}>
+                  Scores
+                </SidebarLink>
+              </li>
+              <li>
+                <SidebarLink to="/standings" active={navIsAnyActive(location.pathname, NAV_MATCH.standings)}>
+                  Standings
+                </SidebarLink>
+              </li>
+              <li>
+                <SidebarLink to="/h2h" active={navIsAnyActive(location.pathname, NAV_MATCH.h2h)}>
+                  Head to Head
+                </SidebarLink>
+              </li>
+              <li>
+                <SidebarLink to="/yoffs" active={navIsAnyActive(location.pathname, NAV_MATCH.playoffs)}>
+                  Playoffs
+                </SidebarLink>
+              </li>
+              <li>
+                <a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer">Podcast</a>
+              </li>
+              <li>
+                <SidebarLink to="/league-history" active={navIsAnyActive(location.pathname, NAV_MATCH.history)}>
+                  History
+                </SidebarLink>
+              </li>
+              <li>
+                <SidebarLink to="/hwangai" active={navIsAnyActive(location.pathname, NAV_MATCH.hwangai)}>
+                  HwangAI
+                </SidebarLink>
+              </li>
+              {authUser ? (
+                <li>
+                  <SignOutControl className="sidebar-signout-btn" />
+                </li>
+              ) : null}
+              <li>
                 <div
-                  className="dropdown-toggle"
+                  className={inkNavClass(teamsHubActive, 'dropdown-toggle')}
                   onClick={() => setTeamsOpen(open => !open)}
                 >
                   <span>Teams</span>
                   <span className="sidebar-teams-arrow">{teamsOpen ? '▼' : '▶'}</span>
                 </div>
-                {teamsOpen && (
-                  <ul className="dropdown-list sidebar-dropdown-list">
-                    {[...teams]
-                      .sort((a, b) => {
-                        const aMine = isMyRoster(a.roster_id, myRosterId) ? 0 : 1;
-                        const bMine = isMyRoster(b.roster_id, myRosterId) ? 0 : 1;
-                        return aMine - bMine;
-                      })
-                      .map(team => {
-                      const mine = isMyRoster(team.roster_id, myRosterId);
+                <ul
+                  className={`dropdown-list sidebar-dropdown-list${teamsOpen ? '' : ' is-collapsed'}`}
+                  aria-hidden={!teamsOpen}
+                >
+                  {teamSlots.map((team, i) => {
+                    if (!team) {
                       return (
                         <li
-                          key={team.roster_id}
-                          className={`sidebar-dropdown-list-item${mine ? ' sidebar-dropdown-list-item--me' : ''}`}
-                        >
-                          <Link to={`/team/${team.roster_id}`}>
-                            {team.username}
-                            {mine ? <span className="me-chip">YOU</span> : null}
-                          </Link>
-                        </li>
+                          key={`team-slot-${i}`}
+                          className="sidebar-dropdown-list-item sidebar-dropdown-list-item--slot"
+                          aria-hidden="true"
+                        />
                       );
-                    })}
-                  </ul>
-                )}
+                    }
+                    const mine = isMyRoster(team.roster_id, myRosterId);
+                    const teamActive = onATeamPage
+                      && navIsActive(location.pathname, `/team/${team.roster_id}`, { exact: true });
+                    return (
+                      <li
+                        key={team.roster_id}
+                        className={`sidebar-dropdown-list-item${mine ? ' sidebar-dropdown-list-item--me' : ''}`}
+                      >
+                        <Link
+                          to={`/team/${team.roster_id}`}
+                          className={inkNavClass(teamActive)}
+                          aria-current={teamActive ? 'page' : undefined}
+                          tabIndex={teamsOpen ? undefined : -1}
+                        >
+                          {team.username}
+                          {mine ? <span className="me-chip">YOU</span> : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               </li>
             </ul>
           </nav>

@@ -11,6 +11,9 @@
 # production
 /build
 
+# local source copies used to regenerate aged scroll caps
+/src/assets/*.orig.png
+
 # misc
 .DS_Store
 .env.local

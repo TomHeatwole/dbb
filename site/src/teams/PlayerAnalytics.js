@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import NewTabLink from '../components/NewTabLink';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
@@ -548,14 +549,12 @@ function WithoutPlayerPreview({ teamName, playerName, preview, completedWeeks })
           {teamName || 'This team'}&apos;s season without {playerName}
         </div>
         {showScenariosLink && (
-          <Link
+          <NewTabLink
             to={{ pathname: '/scenarios', search: preview.search }}
-            target="_blank"
-            rel="noopener noreferrer"
             className="player-analytics-without-btn"
           >
             See full scenario
-          </Link>
+          </NewTabLink>
         )}
       </div>
       <div className="player-analytics-without-metrics">

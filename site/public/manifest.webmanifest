@@ -6,9 +6,14 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["browser"],
+  "display_override": ["tabbed", "standalone"],
   "handle_links": "not-preferred",
   "capture_links": "none",
+  "tab_strip": {
+    "new_tab_button": {
+      "url": "/home/"
+    }
+  },
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#000000",

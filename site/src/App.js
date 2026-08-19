@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -45,30 +45,55 @@ import AuthCallbackPage from './routes/AuthCallbackPage';
 import { AuthUserProvider } from './hooks/useAuthUser';
 import RequireAdmin from './layout/RequireAdmin';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
+import { inkNavClass, navIsAnyActive, NAV_MATCH } from './layout/navActive';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
 
+function MobileNavLink({ to, match, children, className = 'mobile-top-home-card-link' }) {
+  const { pathname } = useLocation();
+  const active = navIsAnyActive(pathname, match);
+  return (
+    <Link
+      to={to}
+      className={inkNavClass(active, className)}
+      aria-current={active ? 'page' : undefined}
+    >
+      {children}
+    </Link>
+  );
+}
+
 function MobileTopNav() {
-  const [moreOpen, setMoreOpen] = useState(false);
+  const { pathname } = useLocation();
+  const moreActive = navIsAnyActive(pathname, [
+    ...NAV_MATCH.history,
+    ...NAV_MATCH.hwangai,
+    ...NAV_MATCH.h2h,
+  ]);
+  const [moreOpen, setMoreOpen] = useState(moreActive);
+
+  useEffect(() => {
+    if (moreActive) setMoreOpen(true);
+  }, [moreActive]);
 
   return (
     <div className="mobile-top-home-card-wrapper">
       <nav className="mobile-top-home-card" aria-label="Main navigation">
         <div className="mobile-top-home-card-links">
-          <Link to="/Scores/Week" className="mobile-top-home-card-link">
+          <MobileNavLink to="/Scores/Week" match={NAV_MATCH.scores}>
             Scores
-          </Link>
-          <Link to="/standings" className="mobile-top-home-card-link">
+          </MobileNavLink>
+          <MobileNavLink to="/standings" match={NAV_MATCH.standings}>
             Standings
-          </Link>
-          <Link to="/yoffs" className="mobile-top-home-card-link">
+          </MobileNavLink>
+          <MobileNavLink to="/yoffs" match={NAV_MATCH.playoffs}>
             Playoffs
-          </Link>
-          <Link to="/teams" className="mobile-top-home-card-link">
+          </MobileNavLink>
+          <MobileNavLink to="/teams" match={NAV_MATCH.teamsAny}>
             Teams
-          </Link>
+          </MobileNavLink>
           <button
-            className="mobile-top-home-card-more-toggle mobile-top-home-card-link"
+            className={inkNavClass(moreActive && !moreOpen, 'mobile-top-home-card-more-toggle mobile-top-home-card-link')}
             onClick={() => setMoreOpen(o => !o)}
             aria-expanded={moreOpen}
           >
@@ -79,9 +104,9 @@ function MobileTopNav() {
         {moreOpen && (
           <div className="mobile-top-home-card-more">
             <a href={PODCAST_LINK} target="_blank" rel="noopener noreferrer" className="mobile-top-home-card-link">Podcast</a>
-            <Link to="/league-history" className="mobile-top-home-card-link">History</Link>
-            <Link to="/hwangai" className="mobile-top-home-card-link">HwangAI</Link>
-            <Link to="/h2h" className="mobile-top-home-card-link">Head&nbsp;to&nbsp;Head</Link>
+            <MobileNavLink to="/league-history" match={NAV_MATCH.history}>History</MobileNavLink>
+            <MobileNavLink to="/hwangai" match={NAV_MATCH.hwangai}>HwangAI</MobileNavLink>
+            <MobileNavLink to="/h2h" match={NAV_MATCH.h2h}>Head&nbsp;to&nbsp;Head</MobileNavLink>
             <SignOutControl className="mobile-top-home-card-link mobile-top-home-card-signout" />
           </div>
         )}

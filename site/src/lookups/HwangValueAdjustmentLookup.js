@@ -39,15 +39,14 @@ export const HWANG_VALUE_ADJUSTMENTS = {
 const multiplierCache = new Map();
 
 export async function loadHwangPositionMultipliers(adjustmentKey) {
-  if (!HWANG_VALUE_ADJUSTMENTS[adjustmentKey]) {
-    throw new Error(`Unknown Hwang value adjustment: ${adjustmentKey}`);
-  }
-
   if (multiplierCache.has(adjustmentKey)) return multiplierCache.get(adjustmentKey);
 
+  // Rankings-viewer keys (market / true) live in HWANG_VALUE_ADJUSTMENTS.
+  // Competitor / Rebuild use HWANG_COMPOSITE_COEFFICIENT_KEY (trueComp),
+  // which is a coefficient set but not a KTC ranking source.
   const multipliers = getHwangCoefficientMap(adjustmentKey);
   if (!multipliers) {
-    throw new Error(`Missing Hwang coefficients for: ${adjustmentKey}`);
+    throw new Error(`Unknown Hwang value adjustment: ${adjustmentKey}`);
   }
 
   multiplierCache.set(adjustmentKey, multipliers);

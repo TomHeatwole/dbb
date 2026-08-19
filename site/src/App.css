@@ -218,6 +218,7 @@
 
 .sidebar {
   font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
+  font-size: 1rem;
   position: relative;
   top: 4.375rem; /* 70px -> 4.375rem */
   left: 5.875rem; /* 94px -> 5.875rem */
@@ -236,13 +237,13 @@
 
 .sidebar nav ul {
   list-style: none;
-  padding: 0 0 0 0;
+  padding: 0;
   margin: 0;
   width: 100%;
 }
 .sidebar nav ul li {
   color: #5A3B1E;
-  margin: 0.5rem 0; /* 8px -> 0.5rem */
+  margin: 0;
   font-size: 1.33em;
 }
 .sidebar nav ul li a {
@@ -260,14 +261,15 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   user-select: none;
   color: inherit;
 }
 
 .sidebar .dropdown-list li {
-  font-size: 0.71em;
+  font-size: 1em;
   padding: 0;
-  margin: 0.25rem 0; /* 4px -> 0.25rem */
+  margin: 0;
   margin-left: 0;
 }
 
@@ -288,6 +290,7 @@
 .scroll-bottom {
   height: 3.75rem; /* 60px -> 3.75rem */
   width: 23.125rem; /* 370px -> 23.125rem */
+  flex-shrink: 0;
   background-size: cover;
   background-repeat: no-repeat;
 }
@@ -301,20 +304,97 @@
 }
 
 .scroll-body {
+  position: relative;
   flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-left: 4.25rem; /* 68px -> 4.25rem */
   margin-right: 4.375rem; /* 70px -> 4.375rem */
-  background: #C49A6C;
+  background-color: #c49a6c;
+  background-image:
+    radial-gradient(ellipse 90% 28% at 16% 18%, rgba(118, 62, 22, 0.2), transparent 72%),
+    radial-gradient(ellipse 70% 22% at 86% 62%, rgba(88, 42, 12, 0.18), transparent 70%),
+    radial-gradient(ellipse 55% 18% at 42% 92%, rgba(132, 78, 28, 0.14), transparent 68%),
+    linear-gradient(
+      90deg,
+      rgba(78, 42, 14, 0.38) 0,
+      rgba(90, 50, 18, 0.16) 0.7rem,
+      transparent 1.7rem,
+      transparent calc(100% - 1.7rem),
+      rgba(90, 50, 18, 0.16) calc(100% - 0.7rem),
+      rgba(78, 42, 14, 0.38) 100%
+    ),
+    url('./assets/scroll-parchment.png');
+  background-size: auto, auto, auto, auto, 100% auto;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat-y;
+  box-shadow:
+    inset 0.7rem 0 0.9rem -0.65rem rgba(62, 28, 8, 0.38),
+    inset -0.7rem 0 0.9rem -0.65rem rgba(62, 28, 8, 0.38);
 }
 
-.scroll-body nav ul {
+.scroll-body::before,
+.scroll-body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1rem;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b3a16' stroke-width='1.05' d='M1.5 1.5h9v9h-9z M3.6 3.6h4.8v4.8H3.6z'/%3E%3C/svg%3E");
+  background-repeat: repeat-y;
+  background-size: 1rem 1rem;
+}
+
+.scroll-body::before { left: 0; }
+.scroll-body::after { right: 0; }
+
+.scroll-body > nav {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll-body nav > ul {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 0;
   margin: 0;
+  padding: 0.5em 0 0.75em;
+}
+
+.scroll-body nav > ul > li:empty {
+  display: none;
+}
+
+.scroll-body nav > ul > li:last-child {
+  display: contents;
+}
+
+.scroll-body nav > ul > li,
+.scroll-body .dropdown-toggle {
+  flex: 1.55 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.sidebar-dropdown-list-item {
+  flex: 0.9 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
 }
 
 .scroll-body nav ul li {
@@ -378,12 +458,134 @@
   font-size: 0.85em;
 }
 .sidebar-dropdown-list {
-  margin-top: 0.375rem; /* 6px -> 0.375rem */
+  display: contents;
+  margin-top: 0;
   padding-left: 0;
 }
-.sidebar-dropdown-list-item {
-  padding-left: 1.125rem; /* 18px -> 1.125rem */
-  font-size: 0.62rem;
+.sidebar-dropdown-list.is-collapsed .sidebar-dropdown-list-item {
+  visibility: hidden;
+  pointer-events: none;
+}
+.sidebar nav ul li.sidebar-dropdown-list-item {
+  padding-left: 0;
+  font-size: 1rem;
+}
+.sidebar nav ul li.sidebar-dropdown-list-item a {
+  white-space: nowrap;
+  font-size: 1.12rem;
+}
+
+/* Cinnabar ink + 此 chop on the current sidebar / top-nav item */
+.nav-ink {
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
+}
+
+.sidebar nav ul li a.nav-ink {
+  display: inline-block;
+}
+
+.sidebar .dropdown-toggle.nav-ink {
+  display: inline-flex;
+}
+
+.nav-ink.is-active {
+  color: #c41e3a;
+  text-shadow:
+    0.03em 0.05em 0 rgba(90, 8, 8, 0.28),
+    0 0 0.55em rgba(196, 30, 58, 0.35);
+}
+
+.sidebar nav ul li a.nav-ink.is-active,
+.sidebar nav ul li a.nav-ink.is-active:hover {
+  color: #c41e3a;
+}
+
+.nav-ink.is-active::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  left: -0.55em;
+  right: -0.7em;
+  top: -0.08em;
+  bottom: -0.18em;
+  background:
+    radial-gradient(ellipse 82% 70% at 40% 50%, rgba(196, 30, 58, 0.34) 0%, rgba(196, 30, 58, 0) 72%),
+    radial-gradient(ellipse 42% 90% at 82% 36%, rgba(160, 18, 28, 0.26) 0%, transparent 68%),
+    radial-gradient(circle at 8% 78%, rgba(140, 16, 20, 0.4) 0 0.16em, transparent 0.34em),
+    radial-gradient(circle at 92% 16%, rgba(150, 18, 22, 0.32) 0 0.12em, transparent 0.26em),
+    radial-gradient(circle at 58% 96%, rgba(120, 12, 16, 0.28) 0 0.1em, transparent 0.22em);
+  clip-path: polygon(4% 30%, 14% 6%, 40% 2%, 74% 8%, 97% 24%, 100% 54%, 90% 86%, 68% 100%, 28% 98%, 6% 84%, 0 56%);
+  transform: rotate(-2.2deg);
+  filter: blur(0.15px) contrast(1.2);
+}
+
+.nav-ink.is-active::after {
+  content: '此';
+  position: absolute;
+  z-index: 2;
+  top: -0.38em;
+  right: -2.15em;
+  width: 1.55em;
+  height: 1.55em;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-family: 'Noto Sans SC', 'Ma Shan Zheng', serif;
+  font-size: 0.78em;
+  font-weight: 700;
+  line-height: 1;
+  color: #f6e1c4;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255, 110, 90, 0.28), transparent 46%),
+    #c41e3a;
+  border: 0.1em solid #8a1414;
+  box-shadow:
+    inset 0 0 0 0.08em rgba(246, 225, 196, 0.35),
+    0.06em 0.07em 0 rgba(70, 8, 8, 0.28);
+  border-radius: 0.06em;
+  transform: rotate(-13deg);
+  animation: ink-chop-stamp 0.38s cubic-bezier(0.15, 1.15, 0.3, 1) both;
+}
+
+.sidebar .dropdown-toggle.nav-ink.is-active::after {
+  right: -0.15em;
+  top: -0.32em;
+}
+
+.sidebar-dropdown-list-item .nav-ink.is-active::after {
+  width: 1.2em;
+  height: 1.2em;
+  right: -1.55em;
+  top: -0.22em;
+  font-size: 0.7em;
+}
+
+.sidebar-dropdown-list-item--me a.nav-ink.is-active {
+  color: #c41e3a;
+}
+
+@keyframes ink-chop-stamp {
+  0% {
+    opacity: 0;
+    transform: rotate(-4deg) scale(1.55) translate(0.15em, -0.2em);
+  }
+  62% {
+    opacity: 1;
+    transform: rotate(-14deg) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-12deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-ink.is-active::after {
+    animation: none;
+  }
 }
 
 /* --- Tabs bar (used by Yoffs pages) --- */
@@ -1533,7 +1735,18 @@
   }
 
   .mobile-top-home-card {
-    background: #C49A6C; /* match scroll-body background */
+    background-color: #c49a6c;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(78, 42, 14, 0.16),
+        transparent 40%,
+        transparent 60%,
+        rgba(78, 42, 14, 0.16)
+      ),
+      url('./assets/scroll-parchment.png');
+    background-size: auto, 100% auto;
+    background-repeat: no-repeat, repeat;
     color: #5A3B1E;      /* match scroll text color */
     border-radius: 0.9rem;
     padding: 0.25rem 0.85rem;
@@ -1555,6 +1768,34 @@
     color: inherit;
     text-decoration: none;
     white-space: nowrap;
+  }
+
+  .mobile-top-home-card-link.nav-ink.is-active {
+    color: #c41e3a;
+    text-shadow:
+      0.03em 0.04em 0 rgba(70, 8, 6, 0.2),
+      0 0 0.35em rgba(196, 30, 58, 0.25);
+  }
+
+  .mobile-top-home-card-link.nav-ink.is-active::before {
+    left: -0.28em;
+    right: -0.28em;
+    top: 0.12em;
+    bottom: 0.02em;
+  }
+
+  .mobile-top-home-card-link.nav-ink.is-active::after {
+    top: -0.42em;
+    right: -1.35em;
+    width: 1.15em;
+    height: 1.15em;
+    font-size: 0.58em;
+  }
+
+  .mobile-top-home-card,
+  .mobile-top-home-card-links,
+  .mobile-top-home-card-more {
+    overflow: visible;
   }
 
   .mobile-top-home-card-teams-toggle {
@@ -2314,8 +2555,9 @@
   }
 
   .your-team-home-team-name .me-chip {
-    font-size: 0.52em;
-    padding: 0.04em 0.32em;
+    font-size: 0.7em;
+    width: 1.45em;
+    height: 1.45em;
     margin-left: 0.25em;
   }
 
@@ -14499,6 +14741,15 @@ body.modal-open {
   gap: 0.45rem;
 }
 
+.teams2-pick-chip.teams2-picks-empty {
+  justify-content: center;
+  background: transparent;
+  border-style: dashed;
+  color: #64748b;
+  font-style: italic;
+  font-weight: 600;
+}
+
 .teams2-pick-chip {
   display: flex;
   align-items: center;
@@ -18335,22 +18586,50 @@ body.modal-open {
 /* Green, not gold — gold already means playoffs. Matches existing up-trend greens. */
 
 .me-chip {
-  display: inline-block;
-  margin-left: 0.4em;
-  padding: 0.05em 0.4em;
-  font-size: 0.62em;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #06210f;
-  background: #4ade80;
-  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  width: 1.55em;
+  height: 1.55em;
+  margin-left: 0.3em;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Noto Sans SC', 'Ma Shan Zheng', serif;
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0;
+  color: transparent;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(180, 255, 196, 0.28), transparent 46%),
+    #15803d;
+  border: 0.1em solid #14532d;
+  box-shadow:
+    inset 0 0 0 0.08em rgba(232, 246, 235, 0.35),
+    0.05em 0.06em 0 rgba(12, 40, 20, 0.28);
+  border-radius: 0.06em;
+  transform: rotate(9deg);
   vertical-align: middle;
-  line-height: 1.4;
+}
+
+.me-chip::after {
+  content: '你';
+  color: #e8f6eb;
+  line-height: 1;
+  font-size: 1em;
+  font-weight: 700;
 }
 
 .sidebar-dropdown-list-item--me a {
   color: #166534;
   font-weight: 700;
+}
+
+.sidebar .me-chip {
+  font-size: 0.62rem;
+  width: 1.32em;
+  height: 1.32em;
+  margin-left: 0.18em;
 }
 
 .sidebar-signout-btn {
@@ -18362,7 +18641,6 @@ body.modal-open {
   font: inherit;
   color: #5A3B1E;
   cursor: pointer;
-  font-size: 1.2em;
 }
 
 .sidebar-signout-btn:hover {

@@ -34,6 +34,24 @@ function resolveTeamTab(raw) {
   return tabOptions.find((option) => option.toLowerCase() === raw.toLowerCase()) || raw;
 }
 
+function getPreviousSeasonYear() {
+  return Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a)[0] || null;
+}
+
+function isAnalyticsTab(tab) {
+  return tab === TAB_TEAM_ANALYTICS || tab === TAB_HVORP_ANALYTICS;
+}
+
+// Team / HVORP analytics need completed weekly data. Until the current season
+// has started, default those tabs to the most recent previous year.
+function getDefaultSeasonForTab(tab, urlYear) {
+  if (urlYear && allYears.includes(urlYear)) return urlYear;
+  if (isAnalyticsTab(tab) && isPreSeason()) {
+    return getPreviousSeasonYear() || CURRENT_YEAR;
+  }
+  return CURRENT_YEAR;
+}
+
 function Teams2Detail() {
   const { id } = useParams();
   const viewportMode = useViewportMode();
@@ -47,13 +65,11 @@ function Teams2Detail() {
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const urlYear = searchParams.get('year');
-  const initialSeason = urlYear && allYears.includes(urlYear) ? urlYear : CURRENT_YEAR;
-  const [season, setSeason] = useState(initialSeason);
-
   const urlTabRaw = searchParams.get('tab');
   const urlTab = resolveTeamTab(urlTabRaw);
   const initialTab = tabOptions.includes(urlTab) ? urlTab : TAB_OVERVIEW;
   const [selectedTab, setSelectedTab] = useState(initialTab);
+  const [season, setSeason] = useState(() => getDefaultSeasonForTab(initialTab, urlYear));
 
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [scoresLoading, setScoresLoading] = useState(true);
@@ -100,6 +116,17 @@ function Teams2Detail() {
     if (selectedTab !== TAB_HVORP_ANALYTICS) {
       changes.player = null;
     }
+    if (isAnalyticsTab(selectedTab) && isPreSeason()) {
+      if (String(season) === String(CURRENT_YEAR)) {
+        const prevYear = getPreviousSeasonYear();
+        if (prevYear) {
+          changes.year = prevYear;
+          setSeason(prevYear);
+        }
+      } else if (!urlYear) {
+        changes.year = season;
+      }
+    }
     updateQueryParams(changes);
     // eslint-disable-next-line
   }, [selectedTab]);
@@ -118,7 +145,11 @@ function Teams2Detail() {
 
   useEffect(() => {
     if (urlYear && allYears.includes(urlYear) && season !== urlYear) setSeason(urlYear);
-    if (!urlYear && season !== CURRENT_YEAR) setSeason(CURRENT_YEAR);
+    if (!urlYear && season !== CURRENT_YEAR) {
+      if (!(isAnalyticsTab(selectedTab) && isPreSeason())) {
+        setSeason(CURRENT_YEAR);
+      }
+    }
     // eslint-disable-next-line
   }, [urlYear]);
 
