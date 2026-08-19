@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getWeeklyStandings, getPositionalBreakdownData, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
@@ -10,6 +9,7 @@ import PlayerBreakdownTable from '../players/PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
+import { AnalyticsLineChart, ANALYTICS_SERIES, formatWeekTick } from './AnalyticsCharts';
 
 const WEEKS = Array.from({ length: 17 }, (_, i) => i + 1);
 
@@ -40,6 +40,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   const [endWeek, setEndWeek] = useState(initialEndWeek);
   const [startDropdownOpen, setStartDropdownOpen] = useState(false);
   const [endDropdownOpen, setEndDropdownOpen] = useState(false);
+  const [activePos, setActivePos] = useState(0);
   const startDropdownRef = useRef(null);
   const endDropdownRef = useRef(null);
 
@@ -271,7 +272,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   // Early return AFTER all hooks: Show loading state until all required data is ready
   if (dataLoading || !playersData || !playerIdMap || !weeksParsedData || !Array.isArray(weeksParsedData) || weeksParsedData.length === 0) {
     return (
-      <div className="team-analytics-root">
+      <div className="team-analytics">
         <LoadingState label="Loading analytics…" />
       </div>
     );
@@ -314,235 +315,257 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
   });
 
   const showWeekInfo = isCurrentSeason && startWeek <= currentWeek && endWeek >= currentWeek;
+  const teamLineName = teamName || 'This team';
+
+  const scoreSummary = (() => {
+    if (!weeklyScoresData.length) return null;
+    const pts = weeklyScoresData.map((d) => d.points);
+    const avg = pts.reduce((a, b) => a + b, 0) / pts.length;
+    const medAvg = weeklyScoresData.reduce((a, d) => a + d.leagueMedian, 0) / weeklyScoresData.length;
+    const vsMed = avg - medAvg;
+    let high = weeklyScoresData[0];
+    let low = weeklyScoresData[0];
+    weeklyScoresData.forEach((d) => {
+      if (d.points > high.points) high = d;
+      if (d.points < low.points) low = d;
+    });
+    return { avg, vsMed, high, low };
+  })();
+
+  const cumulativeData = weeklyStandings.map((weekArr, i) => {
+    const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
+    const user = sorted.find(x => x.rosterId === rosterId);
+    const runningArr = sorted.map(x => x.runningTotalPoints);
+    const leagueCeiling = runningArr.length ? runningArr[0] : 0;
+    const leagueFloor = runningArr.length ? runningArr[runningArr.length - 1] : 0;
+    let leagueMedian = 0;
+    if (runningArr.length >= 6) {
+      leagueMedian = (runningArr[4] + runningArr[5]) / 2;
+    } else if (runningArr.length > 0) {
+      const mid = Math.floor(runningArr.length / 2);
+      leagueMedian = runningArr[mid];
+    }
+    return {
+      name: `Week ${adjustedStartWeek + i}`,
+      runningTotalPoints: user ? user.runningTotalPoints : 0,
+      leagueCeiling,
+      leagueFloor,
+      leagueMedian: Math.round(leagueMedian * 10) / 10,
+    };
+  });
+
+  const relativeData = weeklyStandings.map((weekArr, i) => {
+    const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
+    const user = sorted.find(x => x.rosterId === rosterId);
+    const runningArr = sorted.map(x => x.runningTotalPoints);
+    const leagueFloor = runningArr.length ? runningArr[runningArr.length - 1] : 0;
+    const leagueCeiling = runningArr.length ? (runningArr[0] - leagueFloor) : 0;
+    let leagueMedian = 0;
+    if (runningArr.length >= 6) {
+      leagueMedian = ((runningArr[4] + runningArr[5]) / 2) - leagueFloor;
+    } else if (runningArr.length > 0) {
+      const mid = Math.floor(runningArr.length / 2);
+      leagueMedian = runningArr[mid] - leagueFloor;
+    }
+    let playoffBarAbs = 0;
+    if (runningArr.length >= 5) {
+      playoffBarAbs = (runningArr[3] + runningArr[4]) / 2;
+    } else if (runningArr.length >= 4) {
+      playoffBarAbs = runningArr[3];
+    } else if (runningArr.length > 0) {
+      playoffBarAbs = runningArr[Math.floor(runningArr.length / 2)];
+    }
+    const playoffBar = playoffBarAbs - leagueFloor;
+    return {
+      name: `Week ${adjustedStartWeek + i}`,
+      runningTotalPoints: user ? Math.round((user.runningTotalPoints - leagueFloor) * 10) / 10 : 0,
+      leagueCeiling: Math.round(leagueCeiling * 10) / 10,
+      leagueMedian: Math.round(leagueMedian * 10) / 10,
+      playoffBar: Math.round(playoffBar * 10) / 10,
+    };
+  });
+
+  const fmt1 = (v) => (Number.isFinite(v) ? v.toFixed(1) : '—');
+  const fmtSigned = (v) => {
+    if (!Number.isFinite(v)) return '—';
+    const abs = Math.abs(v).toFixed(1);
+    return v > 0 ? `+${abs}` : v < 0 ? `−${abs}` : abs;
+  };
+
+  const scoreLines = [
+    { dataKey: 'points', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
+    { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
+    { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
+    { dataKey: 'leagueFloor', stroke: ANALYTICS_SERIES.floor, name: 'Floor', strokeDasharray: '5 5' },
+  ];
 
   return (
-    <div className="team-analytics-root">
-      {showWeekInfo && (
-        <div className="team-analytics-info">
-          <span className="info-icon" aria-label="Analytics update cadence">
-            ℹ️
-            <span className="info-icon-tooltip">Team Analytics updates after each NFL week is complete. Current week data appears once all games are final.</span>
-          </span>
-          <span className="team-analytics-info-text">Updates after each week is complete</span>
+    <div className="team-analytics">
+      <div className="team-analytics-toolbar">
+        <div className="team-analytics-range">
+          <span className="team-analytics-range-kicker">Weeks</span>
+          <div
+            className="team-analytics-week-dropdown"
+            onClick={() => setStartDropdownOpen(open => !open)}
+            ref={startDropdownRef}
+          >
+            {startWeek}
+            <span className="team-analytics-week-caret">{startDropdownOpen ? '▲' : '▼'}</span>
+            {startDropdownOpen && (
+              <div className="team-analytics-week-menu" onClick={(e) => e.stopPropagation()}>
+                {WEEKS.filter(w => w <= endWeek).map(week => (
+                  <div
+                    key={week}
+                    className={'team-analytics-week-option' + (startWeek === week ? ' team-analytics-week-option--active' : '')}
+                    onClick={() => { setStartWeek(week); setStartDropdownOpen(false); }}
+                  >
+                    {week}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <span className="team-analytics-range-sep">–</span>
+          <div
+            className="team-analytics-week-dropdown"
+            onClick={() => setEndDropdownOpen(open => !open)}
+            ref={endDropdownRef}
+          >
+            {endWeek}
+            <span className="team-analytics-week-caret">{endDropdownOpen ? '▲' : '▼'}</span>
+            {endDropdownOpen && (
+              <div className="team-analytics-week-menu" onClick={(e) => e.stopPropagation()}>
+                {WEEKS.filter(w => w >= startWeek).map(week => (
+                  <div
+                    key={week}
+                    className={'team-analytics-week-option' + (endWeek === week ? ' team-analytics-week-option--active' : '')}
+                    onClick={() => { setEndWeek(week); setEndDropdownOpen(false); }}
+                  >
+                    {week}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {showWeekInfo && (
+          <div className="team-analytics-note" title="Team Analytics updates after each NFL week is complete. Current week data appears once all games are final.">
+            Updates after each week is complete
+          </div>
+        )}
+      </div>
+
+      {scoreSummary && (
+        <div className="team-analytics-stat-grid">
+          <div className="team-analytics-stat">
+            <span className="team-analytics-stat-value">{fmt1(scoreSummary.avg)}</span>
+            <span className="team-analytics-stat-label">PPG</span>
+          </div>
+          <div className="team-analytics-stat">
+            <span className={`team-analytics-stat-value${scoreSummary.vsMed > 0 ? ' is-pos' : scoreSummary.vsMed < 0 ? ' is-neg' : ''}`}>
+              {fmtSigned(scoreSummary.vsMed)}
+            </span>
+            <span className="team-analytics-stat-label">vs median</span>
+          </div>
+          <div className="team-analytics-stat">
+            <span className="team-analytics-stat-value is-pos">{fmt1(scoreSummary.high.points)}</span>
+            <span className="team-analytics-stat-label">High · {formatWeekTick(scoreSummary.high.name)}</span>
+          </div>
+          <div className="team-analytics-stat">
+            <span className="team-analytics-stat-value is-neg">{fmt1(scoreSummary.low.points)}</span>
+            <span className="team-analytics-stat-label">Low · {formatWeekTick(scoreSummary.low.name)}</span>
+          </div>
         </div>
       )}
-      {/* Weeks Selector */}
-      <div className="team-scores-week-bar">
-        <span className="team-analytics-week-from">From</span>
-        <div
-          className="team-scores-week-dropdown team-analytics-week-dropdown-start"
-          onClick={() => setStartDropdownOpen(open => !open)}
-          ref={startDropdownRef}
-        >
-          Week {startWeek}
-          <span className="team-scores-week-dropdown-arrow">{startDropdownOpen ? '▲' : '▼'}</span>
-          {startDropdownOpen && (
-            <div className="team-scores-week-dropdown-list">
-              {WEEKS.filter(w => w <= endWeek).map(week => (
-                <div
-                  key={week}
-                  className={
-                    'team-scores-week-dropdown-option' +
-                    (startWeek === week ? ' team-scores-week-dropdown-option-active' : '')
-                  }
-                  onClick={() => { setStartWeek(week); setStartDropdownOpen(false); }}
-                >
-                  Week {week}
-                </div>
-              ))}
+
+      <section className="team-analytics-section">
+        <div className="team-analytics-section-label">Scoring</div>
+        <div className="team-analytics-score-grid">
+          <div className="team-analytics-card">
+            <div className="team-analytics-card-head">
+              <h3 className="team-analytics-card-title">Weekly scores</h3>
+              <p className="team-analytics-card-sub">Starter totals vs league ceiling, median, and floor</p>
             </div>
-          )}
-        </div>
-        <span className="team-analytics-week-to">to</span>
-        <div
-          className="team-scores-week-dropdown"
-          onClick={() => setEndDropdownOpen(open => !open)}
-          ref={endDropdownRef}
-        >
-          Week {endWeek}
-          <span className="team-scores-week-dropdown-arrow">{endDropdownOpen ? '▲' : '▼'}</span>
-          {endDropdownOpen && (
-            <div className="team-scores-week-dropdown-list">
-              {WEEKS.filter(w => w >= startWeek).map(week => (
-                <div
-                  key={week}
-                  className={
-                    'team-scores-week-dropdown-option' +
-                    (endWeek === week ? ' team-scores-week-dropdown-option-active' : '')
-                  }
-                  onClick={() => { setEndWeek(week); setEndDropdownOpen(false); }}
-                >
-                  Week {week}
-                </div>
-              ))}
+            <AnalyticsLineChart data={weeklyScoresData} lines={scoreLines} />
+          </div>
+          <div className="team-analytics-card">
+            <div className="team-analytics-card-head">
+              <h3 className="team-analytics-card-title">Season totals</h3>
+              <p className="team-analytics-card-sub">Cumulative points through each week</p>
             </div>
-          )}
+            <AnalyticsLineChart
+              data={cumulativeData}
+              lines={[
+                { dataKey: 'runningTotalPoints', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
+                { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
+                { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
+                { dataKey: 'leagueFloor', stroke: ANALYTICS_SERIES.floor, name: 'Floor', strokeDasharray: '5 5' },
+              ]}
+            />
+          </div>
         </div>
-      </div>
-      {/* Charts */}
-      {/* Weekly Scores chart (real data) */}
-      <div className="team-analytics-chart-container">
-        <h3 className="team-analytics-chart-title">Weekly Scores</h3>
-        <div className="team-analytics-chart-inner">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={weeklyScoresData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
-              <Legend />
-              <Line type="monotone" dataKey="points" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
-              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="team-analytics-card">
+          <div className="team-analytics-card-head">
+            <h3 className="team-analytics-card-title">Relative to league floor</h3>
+            <p className="team-analytics-card-sub">Gap over the lowest cumulative total, with the playoff bar</p>
+          </div>
+          <AnalyticsLineChart
+            data={relativeData}
+            lines={[
+              { dataKey: 'runningTotalPoints', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
+              { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
+              { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
+              { dataKey: 'playoffBar', stroke: ANALYTICS_SERIES.playoff, name: 'Playoff bar', strokeDasharray: '3 3' },
+            ]}
+            yTickFormatter={(v) => (v >= 0 ? `+${v}` : String(v))}
+            tooltipFormatter={(v) => (v >= 0 ? `+${v}` : v)}
+          />
         </div>
-      </div>
+      </section>
 
-      {/* Weekly Scores (Cumulative) chart */}
-      <div className="team-analytics-chart-container">
-        <h3 className="team-analytics-chart-title">Weekly Scores (Cumulative)</h3>
-        <div className="team-analytics-chart-inner">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={
-              weeklyStandings.map((weekArr, i) => {
-                // Sort by runningTotalPoints descending
-                const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
-                const user = sorted.find(x => x.rosterId === rosterId);
-                const runningArr = sorted.map(x => x.runningTotalPoints);
-                const leagueCeiling = runningArr.length ? runningArr[0] : 0;
-                const leagueFloor = runningArr.length ? runningArr[runningArr.length - 1] : 0;
-                // Median: average of 5th and 6th place (0-based: 4 and 5)
-                let leagueMedian = 0;
-                if (runningArr.length >= 6) {
-                  leagueMedian = (runningArr[4] + runningArr[5]) / 2;
-                } else if (runningArr.length > 0) {
-                  const mid = Math.floor(runningArr.length / 2);
-                  leagueMedian = runningArr[mid];
-                }
-                return {
-                  name: `Week ${adjustedStartWeek + i}`,
-                  runningTotalPoints: user ? user.runningTotalPoints : 0,
-                  leagueCeiling,
-                  leagueFloor,
-                  leagueMedian: Math.round(leagueMedian * 10) / 10,
-                };
-              })
-            } margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
-              <Legend />
-              {/* Area above playoff bar */}
-              <defs>
-                <linearGradient id="abovePlayoff" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#b3e5fc" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#b3e5fc" stopOpacity="0.05" />
-                </linearGradient>
-              </defs>
-              <defs>
-                <linearGradient id="betweenPlayoffAndCeiling" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#b3e5fc" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#b3e5fc" stopOpacity="0.05" />
-                </linearGradient>
-              </defs>
-              <Line type="monotone" dataKey="runningTotalPoints" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
-              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
-            </LineChart>
-          </ResponsiveContainer>
+      <section className="team-analytics-section">
+        <div className="team-analytics-section-label">Roster</div>
+        <PlayerBreakdownTable
+          weeksParsedData={weeksParsedData}
+          rosterId={rosterId}
+          startWeek={startWeek}
+          endWeek={endWeekForBreakdown}
+          playersData={playersData}
+          playerIdMap={playerIdMap}
+          STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
+          rosterPlayers={(rosters && rosters.find(r => Number(r.roster_id) === Number(rosterId)) ? (rosters.find(r => Number(r.roster_id) === Number(rosterId)).players || []) : [])}
+        />
+        <PositionBreakdownTable
+          weeksParsedData={weeksParsedData}
+          rosterId={rosterId}
+          startWeek={startWeek}
+          endWeek={endWeek}
+          STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
+          rosters={rosters}
+          users={users}
+          teamName={teamName}
+          searchParams={searchParams}
+        />
+      </section>
+
+      <section className="team-analytics-section">
+        <div className="team-analytics-section-label">By position</div>
+        <div className="team-analytics-pos-pills" role="tablist" aria-label="Starter slots">
+          {STARTER_POSITION_NAMES.map((name, idx) => (
+            <button
+              key={`${name}-${idx}`}
+              type="button"
+              role="tab"
+              aria-selected={activePos === idx}
+              className={'team-analytics-pos-pill' + (activePos === idx ? ' team-analytics-pos-pill--active' : '')}
+              onClick={() => setActivePos(idx)}
+            >
+              {name}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* Weekly Scores (Cumulative - Relative to League Floor) chart */}
-      <div className="team-analytics-chart-container">
-        <h3 className="team-analytics-chart-title">Weekly Scores (Cumulative - Relative to League Floor)</h3>
-        <div className="team-analytics-chart-inner">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={
-              weeklyStandings.map((weekArr, i) => {
-                // Sort by runningTotalPoints descending
-                const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
-                const user = sorted.find(x => x.rosterId === rosterId);
-                const runningArr = sorted.map(x => x.runningTotalPoints);
-                const leagueFloor = runningArr.length ? runningArr[runningArr.length - 1] : 0;
-                const leagueCeiling = runningArr.length ? (runningArr[0] - leagueFloor) : 0;
-                // Median: average of 5th and 6th place (0-based: 4 and 5)
-                let leagueMedian = 0;
-                if (runningArr.length >= 6) {
-                  leagueMedian = ((runningArr[4] + runningArr[5]) / 2) - leagueFloor;
-                } else if (runningArr.length > 0) {
-                  const mid = Math.floor(runningArr.length / 2);
-                  leagueMedian = runningArr[mid] - leagueFloor;
-                }
-                // Playoff Bar: average of 4th and 5th cumulative totals (0-based: 3 and 4),
-                // fallback to 4th if exactly 4 teams, else median if fewer
-                let playoffBarAbs = 0;
-                if (runningArr.length >= 5) {
-                  playoffBarAbs = (runningArr[3] + runningArr[4]) / 2;
-                } else if (runningArr.length >= 4) {
-                  playoffBarAbs = runningArr[3];
-                } else if (runningArr.length > 0) {
-                  playoffBarAbs = runningArr[Math.floor(runningArr.length / 2)];
-                }
-                const playoffBar = playoffBarAbs - leagueFloor;
-                return {
-                  name: `Week ${adjustedStartWeek + i}`,
-                  runningTotalPoints: user ? Math.round((user.runningTotalPoints - leagueFloor) * 10) / 10 : 0,
-                  leagueCeiling: Math.round(leagueCeiling * 10) / 10,
-                  leagueMedian: Math.round(leagueMedian * 10) / 10,
-                  playoffBar: Math.round(playoffBar * 10) / 10,
-                };
-              })
-            } margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis
-                tickFormatter={v => (v >= 0 ? `+${v}` : v)}
-              />
-              <Tooltip formatter={v => (v >= 0 ? `+${v}` : v)} contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
-              <Legend />
-              <Line type="monotone" dataKey="runningTotalPoints" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || "Your Score"} />
-              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="playoffBar" stroke="#FFD700" strokeWidth={2} name="Playoff Bar" dot={false} strokeDasharray="3 3" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Player Breakdown Table */}
-      <PlayerBreakdownTable
-        weeksParsedData={weeksParsedData}
-        rosterId={rosterId}
-        startWeek={startWeek}
-        endWeek={endWeekForBreakdown}
-        playersData={playersData}
-        playerIdMap={playerIdMap}
-        STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
-        rosterPlayers={(rosters && rosters.find(r => Number(r.roster_id) === Number(rosterId)) ? (rosters.find(r => Number(r.roster_id) === Number(rosterId)).players || []) : [])}
-      />
-
-      {/* Positional Averages Table */}
-      <PositionBreakdownTable
-        weeksParsedData={weeksParsedData}
-        rosterId={rosterId}
-        startWeek={startWeek}
-        endWeek={endWeek}
-        STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
-        rosters={rosters}
-        users={users}
-        teamName={teamName}
-        searchParams={searchParams}
-      />
-
-      {STARTER_POSITION_NAMES.map((_, idx) => (
         <PositionAnalytics
-          key={idx}
-          pos={idx}
+          pos={activePos}
           positionalBreakdown={positionalBreakdown}
           weeksParsedData={weeksParsedData}
           startWeek={startWeek}
@@ -553,7 +576,7 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
           playerIdMap={playerIdMap}
           playerColorMap={playerColorMap}
         />
-      ))}
+      </section>
     </div>
   );
 });

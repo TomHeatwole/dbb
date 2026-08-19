@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent }) {
+const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent, className }) {
   const [hovered, setHovered] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const hoverTimeout = React.useRef();
@@ -26,7 +26,7 @@ const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent 
         onMouseLeave={handleMouseLeave}
         style={{ display: 'inline-block', width: '100%' }}
       >
-        <span className="pos-avg-tooltip-hover-area">
+        <span className={`pos-avg-tooltip-hover-area${className ? ` ${className}` : ''}`}>
           {value}
         </span>
         {hovered && tooltipContent && (
@@ -54,16 +54,20 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
   }
 
   return (
-    <div className="pos-avg-table-container">
-      <h3 className="pos-avg-table-title">Positional Averages</h3>
-      <table className="pos-avg-table">
+    <div className="team-analytics-card team-analytics-table-card">
+      <div className="team-analytics-card-head">
+        <h3 className="team-analytics-card-title">Positional averages</h3>
+        <p className="team-analytics-card-sub">Starter-slot scoring vs the rest of the league</p>
+      </div>
+      <div className="team-analytics-table-scroll">
+      <table className="team-analytics-table">
         <thead>
           <tr>
             <th>Position</th>
-            <th>Team Avg</th>
-            <th>League Avg</th>
-            <th>League Ceiling</th>
-            <th>League Floor</th>
+            <th>Team</th>
+            <th>League</th>
+            <th>Ceiling</th>
+            <th>Floor</th>
           </tr>
         </thead>
         <tbody>
@@ -117,9 +121,10 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
 
             return (
               <tr key={posIdx}>
-                <td>{posLabel}</td>
+                <td className="team-analytics-table-label">{posLabel}</td>
                 <HoverInfoCell
                   value={userAvg.toFixed(1)}
+                  className={delta >= 0 ? 'team-analytics-num--pos' : 'team-analytics-num--neg'}
                   tooltipContent={
                     <>
                       League Avg: <span>{leagueAvg.toFixed(1)}</span><br />
@@ -189,6 +194,7 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 } 

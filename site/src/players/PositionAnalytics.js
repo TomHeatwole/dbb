@@ -1,13 +1,15 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 import PositionBadge from '../PositionBadge';
+import { AnalyticsLineChart, ANALYTICS_SERIES } from '../teams/AnalyticsCharts';
 
 const pieColors = [
-  '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF4444', '#A28FD0', '#FFB6B9', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#FF9AA2'
+  '#a5b4fc', '#34d399', '#fbbf24', '#fb923c', '#38bdf8', '#f472b6', '#2dd4bf', '#f87171',
+  '#c4b5fd', '#86efac', '#fcd34d', '#fdba74', '#7dd3fc', '#f9a8d4', '#5eead4', '#fca5a5',
 ];
 
 export default function PositionAnalytics({
@@ -23,7 +25,6 @@ export default function PositionAnalytics({
   playerColorMap
 }) {
   const isMobile = useIsMobile();
-  // Build line chart data for this position
   const chartData = [];
   for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
     const weekNum = startWeek + weekIdx;
@@ -57,7 +58,6 @@ export default function PositionAnalytics({
     });
   }
 
-  // Pie chart data for this position
   let breakdownData = [];
   if (positionalBreakdown && positionalBreakdown.length && playersData && playerIdMap) {
     const userTeam = positionalBreakdown.find(t => t.roster_id === rosterId);
@@ -79,86 +79,107 @@ export default function PositionAnalytics({
   }
 
   const posLabel = STARTER_POSITION_NAMES[pos] || `S${pos + 1}`;
+  const teamLineName = teamName ? `${teamName}` : `Your ${posLabel}`;
 
   return (
-    <>
-      {/* Line Chart */}
-      <div className="position-analytics-chart-container">
-        <h3 className="position-analytics-chart-title">{posLabel} Weekly Scores</h3>
-        <div className="position-analytics-chart-inner">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip contentStyle={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff' }} labelStyle={{ color: '#fff', fontWeight: 700 }} />
-              <Legend />
-              <Line type="monotone" dataKey="userScore" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} name={teamName || `Your ${posLabel}`} />
-              <Line type="monotone" dataKey="leagueCeiling" stroke="#00C49F" strokeWidth={2} name="League Ceiling" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueFloor" stroke="#FF8042" strokeWidth={2} name="League Floor" dot={false} strokeDasharray="6 6" />
-              <Line type="monotone" dataKey="leagueMedian" stroke="#0088FE" strokeWidth={2} name="League Median" dot={false} strokeDasharray="6 6" />
-            </LineChart>
-          </ResponsiveContainer>
+    <div className="team-analytics-pos-card">
+      <div className="team-analytics-pos-grid">
+        <div className="team-analytics-card team-analytics-card--plot">
+          <div className="team-analytics-card-head">
+            <h3 className="team-analytics-card-title">{posLabel} weekly scores</h3>
+            <p className="team-analytics-card-sub">Starter points at this slot vs the league each week</p>
+          </div>
+          <AnalyticsLineChart
+            data={chartData}
+            lines={[
+              { dataKey: 'userScore', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
+              { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
+              { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
+              { dataKey: 'leagueFloor', stroke: ANALYTICS_SERIES.floor, name: 'Floor', strokeDasharray: '5 5' },
+            ]}
+          />
         </div>
-      </div>
-      {/* Pie Chart */}
-      <div className="position-analytics-pie-container">
-        <h3 className="position-analytics-pie-title">{posLabel} Breakdown</h3>
-        <div className="position-analytics-pie-inner-flex">
-          {breakdownData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={breakdownData}
-                  dataKey="count"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={isMobile ? 150 : 120}
-                  labelLine={!isMobile}
-                  label={isMobile ? false : (({ name, count }) => `${name} (${count})`)}
-                >
-                  {breakdownData.map((entry, idx) => {
-                    const mapped = playerColorMap && playerColorMap[entry.playerId];
-                    const fallback = pieColors[idx % pieColors.length];
-                    const color = mapped || fallback;
-                    return (
-                      <Cell key={`cell-${entry.playerId}`} fill={color} />
-                    );
-                  })}
-                </Pie>
-                {isMobile ? <Legend /> : null}
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      const totalStarts = endWeek - startWeek + 1;
-                      const playerStarts = d.count;
-                      const startPct = totalStarts > 0 ? Math.round((playerStarts / totalStarts) * 1000) / 10 : 0;
-                      let avgScore = 0;
-                      if (d.count > 0 && d.cumulative_score !== undefined) {
-                        avgScore = Math.round((d.cumulative_score / d.count) * 10) / 10;
-                      }
+        <div className="team-analytics-card team-analytics-card--plot">
+          <div className="team-analytics-card-head">
+            <h3 className="team-analytics-card-title">{posLabel} starters</h3>
+            <p className="team-analytics-card-sub">Who filled this slot over the selected weeks</p>
+          </div>
+          <div className="team-analytics-pie-inner">
+            {breakdownData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={breakdownData}
+                    dataKey="count"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={isMobile ? 58 : 52}
+                    outerRadius={isMobile ? 92 : 84}
+                    paddingAngle={2}
+                    stroke="rgba(10, 12, 28, 0.6)"
+                    strokeWidth={2}
+                  >
+                    {breakdownData.map((entry, idx) => {
+                      const mapped = playerColorMap && playerColorMap[entry.playerId];
+                      const fallback = pieColors[idx % pieColors.length];
                       return (
-                        <div className="position-analytics-tooltip" style={{ backgroundColor: '#0f1430', border: '1px solid #3a4466', color: '#fff', borderRadius: '8px', padding: '8px 10px' }}>
-                          <img src={getPlayerLogoUrl(d.img)} alt={d.name} className="position-analytics-tooltip-img" />
-                          <div><b>{d.name}</b> <PositionBadge position={d.position} /></div>
-                          <div><b>{posLabel} starts:</b> {playerStarts}</div>
-                          <div><b>{posLabel} start percentage:</b> {startPct}%</div>
-                          <div><b>Avg score as {posLabel}:</b> {avgScore}</div>
-                        </div>
+                        <Cell key={`cell-${entry.playerId}`} fill={mapped || fallback} />
                       );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="position-analytics-no-data">No {posLabel} data available.</div>
-          )}
+                    })}
+                  </Pie>
+                  <Legend
+                    layout={isMobile ? 'horizontal' : 'vertical'}
+                    align={isMobile ? 'center' : 'right'}
+                    verticalAlign={isMobile ? 'bottom' : 'middle'}
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: 12, color: '#94a3b8', maxHeight: isMobile ? 72 : 220, overflow: 'auto' }}
+                    formatter={(value) => value}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0].payload;
+                        const totalStarts = endWeek - startWeek + 1;
+                        const playerStarts = d.count;
+                        const startPct = totalStarts > 0 ? Math.round((playerStarts / totalStarts) * 1000) / 10 : 0;
+                        let avgScore = 0;
+                        if (d.count > 0 && d.cumulative_score !== undefined) {
+                          avgScore = Math.round((d.cumulative_score / d.count) * 10) / 10;
+                        }
+                        return (
+                          <div className="team-analytics-tooltip">
+                            <img src={getPlayerLogoUrl(d.img)} alt="" className="team-analytics-tooltip-avatar" />
+                            <div className="team-analytics-tooltip-week">
+                              {d.name} <PositionBadge position={d.position} />
+                            </div>
+                            <div className="team-analytics-tooltip-row">
+                              <span className="team-analytics-tooltip-name">{posLabel} starts</span>
+                              <span className="team-analytics-tooltip-pts">{playerStarts}</span>
+                            </div>
+                            <div className="team-analytics-tooltip-row">
+                              <span className="team-analytics-tooltip-name">Share</span>
+                              <span className="team-analytics-tooltip-pts">{startPct}%</span>
+                            </div>
+                            <div className="team-analytics-tooltip-row">
+                              <span className="team-analytics-tooltip-name">Avg as {posLabel}</span>
+                              <span className="team-analytics-tooltip-pts">{avgScore}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="team-analytics-empty">No {posLabel} data for this range.</div>
+            )}
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
-} 
+}

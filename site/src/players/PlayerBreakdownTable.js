@@ -68,10 +68,13 @@ function PlayerBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, p
   }, [breakdown, playersData, playerIdMap, rosterPlayers, STARTER_POSITION_NAMES]);
 
   return (
-    <div className="pos-avg-table-container">
-      <h3 className="pos-avg-table-title">Player Breakdown</h3>
-      <div className="pos-avg-table-scroll">
-        <table className="pos-avg-table player-breakdown-table player-breakdown-compact">
+    <div className="team-analytics-card team-analytics-table-card">
+      <div className="team-analytics-card-head">
+        <h3 className="team-analytics-card-title">Player breakdown</h3>
+        <p className="team-analytics-card-sub">Starts, bench time, and scoring for everyone on the roster</p>
+      </div>
+      <div className="team-analytics-table-scroll">
+        <table className="team-analytics-table player-breakdown-table player-breakdown-compact">
           <thead>
             <tr>
               <th>Player</th>

@@ -1,0 +1,555 @@
+{
+  "bases": {
+    "ktc": {
+      "pairs": {
+        "QB/RB": {
+          "addon_hvorp_qb": 69.58,
+          "addon_hvorp_skill": 92.47,
+          "addon_ratio": 0.7524,
+          "replace_hvorp_qb": 73.55,
+          "replace_hvorp_skill": 94.59,
+          "replace_ratio": 0.7775,
+          "ratio_factor": 1.0334,
+          "qb_hvorp_factor": 1.0571,
+          "skill_hvorp_factor": 1.023,
+          "plugs_addon": 2344600,
+          "plugs_replace": 2500154
+        },
+        "QB/WR": {
+          "addon_hvorp_qb": 73.96,
+          "addon_hvorp_skill": 65.36,
+          "addon_ratio": 1.1317,
+          "replace_hvorp_qb": 77.94,
+          "replace_hvorp_skill": 64.99,
+          "replace_ratio": 1.1992,
+          "ratio_factor": 1.0597,
+          "qb_hvorp_factor": 1.0537,
+          "skill_hvorp_factor": 0.9944,
+          "plugs_addon": 3298400,
+          "plugs_replace": 3442917
+        },
+        "QB/TE": {
+          "addon_hvorp_qb": 57.44,
+          "addon_hvorp_skill": 56.54,
+          "addon_ratio": 1.0158,
+          "replace_hvorp_qb": 60.91,
+          "replace_hvorp_skill": 58.25,
+          "replace_ratio": 1.0457,
+          "ratio_factor": 1.0294,
+          "qb_hvorp_factor": 1.0605,
+          "skill_hvorp_factor": 1.0302,
+          "plugs_addon": 1246400,
+          "plugs_replace": 1225004
+        }
+      },
+      "skill_per_qb": {
+        "RB": {
+          "addon": 1.329,
+          "replace": 1.2861,
+          "factor": 0.9677
+        },
+        "WR": {
+          "addon": 0.8836,
+          "replace": 0.8339,
+          "factor": 0.9437
+        },
+        "TE": {
+          "addon": 0.9844,
+          "replace": 0.9563,
+          "factor": 0.9714
+        }
+      },
+      "bands": [
+        {
+          "band": "0-2000",
+          "n_addon": 434,
+          "n_replace": 433,
+          "by_pos": {
+            "RB": {
+              "addon": 0.818,
+              "replace": 0.781,
+              "addon_hvorp_qb": 25.6,
+              "replace_hvorp_qb": 24.9,
+              "addon_hvorp_skill": 31.3,
+              "replace_hvorp_skill": 31.9
+            },
+            "WR": {
+              "addon": 1.179,
+              "replace": 1.181,
+              "addon_hvorp_qb": 29.7,
+              "replace_hvorp_qb": 29.7,
+              "addon_hvorp_skill": 25.2,
+              "replace_hvorp_skill": 25.2
+            },
+            "TE": {
+              "addon": 0.975,
+              "replace": 0.963,
+              "addon_hvorp_qb": 25.8,
+              "replace_hvorp_qb": 25.8,
+              "addon_hvorp_skill": 26.4,
+              "replace_hvorp_skill": 26.8
+            }
+          }
+        },
+        {
+          "band": "2000-4000",
+          "n_addon": 690,
+          "n_replace": 690,
+          "by_pos": {
+            "RB": {
+              "addon": 0.943,
+              "replace": 0.945,
+              "addon_hvorp_qb": 57.6,
+              "replace_hvorp_qb": 59.8,
+              "addon_hvorp_skill": 61.1,
+              "replace_hvorp_skill": 63.2
+            },
+            "WR": {
+              "addon": 1.339,
+              "replace": 1.367,
+              "addon_hvorp_qb": 59.3,
+              "replace_hvorp_qb": 61.8,
+              "addon_hvorp_skill": 44.3,
+              "replace_hvorp_skill": 45.2
+            },
+            "TE": {
+              "addon": 1.141,
+              "replace": 1.135,
+              "addon_hvorp_qb": 51.8,
+              "replace_hvorp_qb": 53.7,
+              "addon_hvorp_skill": 45.4,
+              "replace_hvorp_skill": 47.3
+            }
+          }
+        },
+        {
+          "band": "4000-6000",
+          "n_addon": 509,
+          "n_replace": 509,
+          "by_pos": {
+            "RB": {
+              "addon": 0.628,
+              "replace": 0.646,
+              "addon_hvorp_qb": 73.9,
+              "replace_hvorp_qb": 78.6,
+              "addon_hvorp_skill": 117.7,
+              "replace_hvorp_skill": 121.7
+            },
+            "WR": {
+              "addon": 1.099,
+              "replace": 1.138,
+              "addon_hvorp_qb": 77.7,
+              "replace_hvorp_qb": 82.9,
+              "addon_hvorp_skill": 70.7,
+              "replace_hvorp_skill": 72.8
+            },
+            "TE": {
+              "addon": 1.021,
+              "replace": 1.061,
+              "addon_hvorp_qb": 77.6,
+              "replace_hvorp_qb": 83.3,
+              "addon_hvorp_skill": 76.0,
+              "replace_hvorp_skill": 78.5
+            }
+          }
+        },
+        {
+          "band": "6000-+",
+          "n_addon": 166,
+          "n_replace": 166,
+          "by_pos": {
+            "RB": {
+              "addon": 0.777,
+              "replace": 0.859,
+              "addon_hvorp_qb": 100.0,
+              "replace_hvorp_qb": 114.6,
+              "addon_hvorp_skill": 128.7,
+              "replace_hvorp_skill": 133.3
+            },
+            "WR": {
+              "addon": 1.054,
+              "replace": 1.201,
+              "addon_hvorp_qb": 106.2,
+              "replace_hvorp_qb": 123.0,
+              "addon_hvorp_skill": 100.8,
+              "replace_hvorp_skill": 102.4
+            },
+            "TE": {
+              "addon": 0.826,
+              "replace": 0.899,
+              "addon_hvorp_qb": 76.4,
+              "replace_hvorp_qb": 85.6,
+              "addon_hvorp_skill": 92.5,
+              "replace_hvorp_skill": 95.2
+            }
+          }
+        }
+      ],
+      "player_bands": [
+        {
+          "band": "<3k",
+          "n": 71,
+          "addon": 34.43,
+          "replace": 35.02,
+          "factor": 1.0172
+        },
+        {
+          "band": "3-5k",
+          "n": 52,
+          "addon": 66.31,
+          "replace": 69.96,
+          "factor": 1.055
+        },
+        {
+          "band": "5-7k",
+          "n": 40,
+          "addon": 82.64,
+          "replace": 93.36,
+          "factor": 1.1297
+        },
+        {
+          "band": "7k+",
+          "n": 28,
+          "addon": 120.74,
+          "replace": 138.4,
+          "factor": 1.1463
+        }
+      ],
+      "player_corr": 0.9939,
+      "player_n": 191
+    },
+    "comp": {
+      "pairs": {
+        "QB/RB": {
+          "addon_hvorp_qb": 70.09,
+          "addon_hvorp_skill": 104.46,
+          "addon_ratio": 0.671,
+          "replace_hvorp_qb": 77.44,
+          "replace_hvorp_skill": 109.72,
+          "replace_ratio": 0.7058,
+          "ratio_factor": 1.0519,
+          "qb_hvorp_factor": 1.1049,
+          "skill_hvorp_factor": 1.0503,
+          "plugs_addon": 1694800,
+          "plugs_replace": 1562257
+        },
+        "QB/WR": {
+          "addon_hvorp_qb": 75.26,
+          "addon_hvorp_skill": 70.21,
+          "addon_ratio": 1.072,
+          "replace_hvorp_qb": 83.81,
+          "replace_hvorp_skill": 71.21,
+          "replace_ratio": 1.1769,
+          "ratio_factor": 1.0979,
+          "qb_hvorp_factor": 1.1136,
+          "skill_hvorp_factor": 1.0143,
+          "plugs_addon": 2515600,
+          "plugs_replace": 2321189
+        },
+        "QB/TE": {
+          "addon_hvorp_qb": 64.1,
+          "addon_hvorp_skill": 58.33,
+          "addon_ratio": 1.0989,
+          "replace_hvorp_qb": 73.7,
+          "replace_hvorp_skill": 62.24,
+          "replace_ratio": 1.1842,
+          "ratio_factor": 1.0776,
+          "qb_hvorp_factor": 1.1498,
+          "skill_hvorp_factor": 1.0671,
+          "plugs_addon": 1010800,
+          "plugs_replace": 847903
+        }
+      },
+      "skill_per_qb": {
+        "RB": {
+          "addon": 1.4904,
+          "replace": 1.4168,
+          "factor": 0.9506
+        },
+        "WR": {
+          "addon": 0.9329,
+          "replace": 0.8497,
+          "factor": 0.9108
+        },
+        "TE": {
+          "addon": 0.91,
+          "replace": 0.8445,
+          "factor": 0.928
+        }
+      },
+      "bands": [
+        {
+          "band": "0-2000",
+          "n_addon": 373,
+          "n_replace": 373,
+          "by_pos": {
+            "RB": {
+              "addon": 0.502,
+              "replace": 0.507,
+              "addon_hvorp_qb": 20.2,
+              "replace_hvorp_qb": 20.9,
+              "addon_hvorp_skill": 40.4,
+              "replace_hvorp_skill": 41.2
+            },
+            "WR": {
+              "addon": 0.659,
+              "replace": 0.669,
+              "addon_hvorp_qb": 19.8,
+              "replace_hvorp_qb": 20.4,
+              "addon_hvorp_skill": 30.0,
+              "replace_hvorp_skill": 30.5
+            },
+            "TE": {
+              "addon": 0.739,
+              "replace": 0.733,
+              "addon_hvorp_qb": 21.2,
+              "replace_hvorp_qb": 21.8,
+              "addon_hvorp_skill": 28.7,
+              "replace_hvorp_skill": 29.7
+            }
+          }
+        },
+        {
+          "band": "2000-4000",
+          "n_addon": 393,
+          "n_replace": 393,
+          "by_pos": {
+            "RB": {
+              "addon": 0.832,
+              "replace": 0.848,
+              "addon_hvorp_qb": 56.8,
+              "replace_hvorp_qb": 60.4,
+              "addon_hvorp_skill": 68.2,
+              "replace_hvorp_skill": 71.2
+            },
+            "WR": {
+              "addon": 1.175,
+              "replace": 1.206,
+              "addon_hvorp_qb": 57.5,
+              "replace_hvorp_qb": 61.1,
+              "addon_hvorp_skill": 48.9,
+              "replace_hvorp_skill": 50.7
+            },
+            "TE": {
+              "addon": 1.08,
+              "replace": 1.091,
+              "addon_hvorp_qb": 51.8,
+              "replace_hvorp_qb": 55.0,
+              "addon_hvorp_skill": 47.9,
+              "replace_hvorp_skill": 50.4
+            }
+          }
+        },
+        {
+          "band": "4000-6000",
+          "n_addon": 463,
+          "n_replace": 463,
+          "by_pos": {
+            "RB": {
+              "addon": 0.634,
+              "replace": 0.668,
+              "addon_hvorp_qb": 74.1,
+              "replace_hvorp_qb": 81.3,
+              "addon_hvorp_skill": 117.0,
+              "replace_hvorp_skill": 121.8
+            },
+            "WR": {
+              "addon": 1.074,
+              "replace": 1.128,
+              "addon_hvorp_qb": 72.4,
+              "replace_hvorp_qb": 79.2,
+              "addon_hvorp_skill": 67.4,
+              "replace_hvorp_skill": 70.2
+            },
+            "TE": {
+              "addon": 1.184,
+              "replace": 1.238,
+              "addon_hvorp_qb": 76.7,
+              "replace_hvorp_qb": 84.0,
+              "addon_hvorp_skill": 64.7,
+              "replace_hvorp_skill": 67.9
+            }
+          }
+        },
+        {
+          "band": "6000-+",
+          "n_addon": 139,
+          "n_replace": 139,
+          "by_pos": {
+            "RB": {
+              "addon": 0.654,
+              "replace": 0.712,
+              "addon_hvorp_qb": 101.8,
+              "replace_hvorp_qb": 114.0,
+              "addon_hvorp_skill": 155.8,
+              "replace_hvorp_skill": 160.1
+            },
+            "WR": {
+              "addon": 1.053,
+              "replace": 1.197,
+              "addon_hvorp_qb": 106.3,
+              "replace_hvorp_qb": 123.9,
+              "addon_hvorp_skill": 100.9,
+              "replace_hvorp_skill": 103.5
+            },
+            "TE": {
+              "addon": 1.074,
+              "replace": 1.148,
+              "addon_hvorp_qb": 98.4,
+              "replace_hvorp_qb": 109.0,
+              "addon_hvorp_skill": 91.6,
+              "replace_hvorp_skill": 94.9
+            }
+          }
+        }
+      ],
+      "player_bands": [
+        {
+          "band": "<3k",
+          "n": 103,
+          "addon": 23.04,
+          "replace": 23.86,
+          "factor": 1.0358
+        },
+        {
+          "band": "3-5k",
+          "n": 51,
+          "addon": 61.93,
+          "replace": 67.1,
+          "factor": 1.0835
+        },
+        {
+          "band": "5-7k",
+          "n": 33,
+          "addon": 90.15,
+          "replace": 100.03,
+          "factor": 1.1096
+        },
+        {
+          "band": "7k+",
+          "n": 30,
+          "addon": 112.86,
+          "replace": 136.58,
+          "factor": 1.2102
+        }
+      ],
+      "player_corr": 0.9932,
+      "player_n": 217
+    }
+  },
+  "on_roster": {
+    "ktc": {
+      "<3k": {
+        "hit": 79,
+        "n": 79
+      },
+      "3-5k": {
+        "hit": 52,
+        "n": 52
+      },
+      "5-7k": {
+        "hit": 40,
+        "n": 40
+      },
+      "7k+": {
+        "hit": 35,
+        "n": 35
+      }
+    },
+    "comp": {
+      "<3k": {
+        "hit": 104,
+        "n": 104
+      },
+      "3-5k": {
+        "hit": 51,
+        "n": 51
+      },
+      "5-7k": {
+        "hit": 33,
+        "n": 33
+      },
+      "7k+": {
+        "hit": 32,
+        "n": 32
+      }
+    }
+  },
+  "player": {},
+  "years": {
+    "ktc": [
+      {
+        "year": "2021",
+        "qb_wr_addon": 1.05,
+        "qb_wr_replace": 1.0915,
+        "qb_rb_addon": 0.7109,
+        "qb_rb_replace": 0.696
+      },
+      {
+        "year": "2022",
+        "qb_wr_addon": 1.1695,
+        "qb_wr_replace": 1.1923,
+        "qb_rb_addon": 0.8309,
+        "qb_rb_replace": 0.8092
+      },
+      {
+        "year": "2023",
+        "qb_wr_addon": 1.0543,
+        "qb_wr_replace": 1.1266,
+        "qb_rb_addon": 0.8323,
+        "qb_rb_replace": 0.8752
+      },
+      {
+        "year": "2024",
+        "qb_wr_addon": 1.135,
+        "qb_wr_replace": 1.2138,
+        "qb_rb_addon": 0.832,
+        "qb_rb_replace": 0.8829
+      },
+      {
+        "year": "2025",
+        "qb_wr_addon": 1.2326,
+        "qb_wr_replace": 1.3604,
+        "qb_rb_addon": 0.5977,
+        "qb_rb_replace": 0.6537
+      }
+    ],
+    "comp": [
+      {
+        "year": "2021",
+        "qb_wr_addon": 0.8873,
+        "qb_wr_replace": 1.0216,
+        "qb_rb_addon": 0.7827,
+        "qb_rb_replace": 0.8141
+      },
+      {
+        "year": "2022",
+        "qb_wr_addon": 1.1687,
+        "qb_wr_replace": 1.3104,
+        "qb_rb_addon": 0.7086,
+        "qb_rb_replace": 0.7563
+      },
+      {
+        "year": "2023",
+        "qb_wr_addon": 1.0239,
+        "qb_wr_replace": 1.0752,
+        "qb_rb_addon": 0.724,
+        "qb_rb_replace": 0.7714
+      },
+      {
+        "year": "2024",
+        "qb_wr_addon": 1.0265,
+        "qb_wr_replace": 1.0938,
+        "qb_rb_addon": 0.5802,
+        "qb_rb_replace": 0.5793
+      },
+      {
+        "year": "2025",
+        "qb_wr_addon": 1.2424,
+        "qb_wr_replace": 1.3653,
+        "qb_rb_addon": 0.6113,
+        "qb_rb_replace": 0.6581
+      }
+    ]
+  }
+}
