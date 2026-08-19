@@ -12,9 +12,12 @@ import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import { decodeFutureScenario2, applyScenarioChanges } from '../scenarios/scenarioEncoding';
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 import {
-  loadCurrentHwangAdpRankMap,
-  loadHwangPositionMaxRanks,
-} from '../scenarios/hwangAdpLoader';
+  loadSimulatorRankMap,
+  loadSimulatorPositionMaxRanks,
+  normalizeRankSource,
+  rankSourceShortLabel,
+  DEFAULT_RANK_SOURCE,
+} from '../scenarios/simulatorRankSource';
 import { loadHistoricalOutcomeCatalog, getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
 import {
   prepareSimulatorContext,
@@ -58,6 +61,7 @@ function SimulatorRunPage() {
   const [iterations, setIterations] = useState(DEFAULT_ITERATIONS);
   const [variance, setVariance] = useState(DEFAULT_VARIANCE);
   const [monotone, setMonotone] = useState(DEFAULT_MONOTONE);
+  const [rankSource, setRankSource] = useState(DEFAULT_RANK_SOURCE);
 
   useEffect(() => {
     const decoded = decodeFutureScenario2(scenarioParam);
@@ -71,10 +75,12 @@ function SimulatorRunPage() {
     const runCount = decoded.n ?? DEFAULT_ITERATIONS;
     const runVariance = normalizeVariance(decoded.v);
     const runMonotone = normalizeMonotone(decoded.m);
+    const runRankSource = normalizeRankSource(decoded.rs ?? DEFAULT_RANK_SOURCE, seasonYear);
     setScenarioSeason(seasonYear);
     setIterations(runCount);
     setVariance(runVariance);
     setMonotone(runMonotone);
+    setRankSource(runRankSource);
 
     let cancelled = false;
 
@@ -87,8 +93,8 @@ function SimulatorRunPage() {
         const [rosterData, cfg, adpMap, maxRanks] = await Promise.all([
           loadOutcomeScenarioRosterData(seasonYear),
           fetch('/data/score_format.json').then((r) => r.json()).catch(() => null),
-          loadCurrentHwangAdpRankMap(seasonYear),
-          loadHwangPositionMaxRanks(seasonYear),
+          loadSimulatorRankMap(seasonYear, runRankSource),
+          loadSimulatorPositionMaxRanks(seasonYear, runRankSource),
         ]);
 
         if (cancelled) return;
@@ -205,7 +211,7 @@ function SimulatorRunPage() {
       <InfoPageWrapper
         title="Season Simulator"
         subtitle={scenarioSeason
-          ? `${scenarioSeason} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
+          ? `${scenarioSeason} ${rankSourceShortLabel(rankSource, scenarioSeason)} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
           : null}
         leftHeader={backLink}
       >

@@ -9,6 +9,11 @@
  *
  * Mirrors the browser loaders in site/src/scenarios/hwangAdpLoader.js and
  * site/src/scenarios/historicalOutcomeData.js.
+ *
+ * HwangAI / MCP must stay on Hwang ADP positional tags. The admin UI can
+ * optionally map current-season players through Redraft Dash ranks — that
+ * path is browser-only (simulatorRankSource.js) and must never be imported
+ * or parameterized here.
  */
 
 import { readFileSync } from 'fs';
@@ -251,6 +256,9 @@ export async function loadBasePointsByYear(years, neededIds, scoringConfig, play
  * Load every static + historical input the simulator needs for the current
  * season. Rosters are supplied by the caller (they come from the Sleeper
  * league API and may be modified for hypotheticals).
+ *
+ * Rank tags are always Hwang ADP. Do not add a Redraft Dash / custom-board
+ * rank source — HwangAI must not see or run that variant.
  */
 export async function loadSimulationInputs() {
   const playersData = loadPlayersData();

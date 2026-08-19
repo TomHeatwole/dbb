@@ -604,3 +604,26 @@ export function loadRedraftDashSnapshot() {
   }
   return snapshotDataPromise;
 }
+
+const LIVE_CUSTOM_BOARD_URL = '/data/redraft_dash/dbb_custom_rankings.csv';
+let rankBoardPromise = null;
+
+/**
+ * Custom board for positional ranks (QB5 / RB12 / …). Prefers the live local
+ * board when dbbp data is synced; otherwise the public snapshot.
+ */
+export function loadRedraftDashRankBoard() {
+  if (!rankBoardPromise) {
+    rankBoardPromise = (async () => {
+      const liveText = await fetchStaticText(LIVE_CUSTOM_BOARD_URL);
+      const liveBoard = parseCustomBoard(liveText);
+      if (liveBoard.length) return liveBoard;
+      const snap = await loadRedraftDashSnapshot();
+      return snap.customBoard || [];
+    })().catch((err) => {
+      rankBoardPromise = null;
+      throw err;
+    });
+  }
+  return rankBoardPromise;
+}

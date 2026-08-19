@@ -16,6 +16,7 @@ import { isValidPlayerId, sanitizeRoster, sanitizeRosters } from './scenarioUtil
 import { normalizeOutcomeScenarioYear, DEFAULT_OUTCOME_SCENARIO_YEAR } from './outcomeScenarioConfig';
 import { clampSimulatorIterations, DEFAULT_ITERATIONS } from './simulatorMonteCarlo';
 import { normalizeVariance, DEFAULT_VARIANCE, normalizeMonotone, DEFAULT_MONOTONE } from './outcomeDistribution';
+import { normalizeRankSource, DEFAULT_RANK_SOURCE, RANK_SOURCE_DASH } from './simulatorRankSource';
 
 export { sanitizeRoster, sanitizeRosters, isValidPlayerId };
 
@@ -172,6 +173,7 @@ export function decodeFutureScenario2(encoded) {
       n: obj.y === 'simulator' ? clampSimulatorIterations(obj.n) : undefined,
       v: obj.y === 'simulator' ? normalizeVariance(obj.v) : undefined,
       m: obj.y === 'simulator' ? normalizeMonotone(obj.m) : undefined,
+      rs: obj.y === 'simulator' ? normalizeRankSource(obj.rs, obj.sy) : undefined,
     };
   } catch {
     return null;
@@ -186,6 +188,7 @@ export function encodeSimulatorScenario(
     iterations = DEFAULT_ITERATIONS,
     variance = DEFAULT_VARIANCE,
     monotone = DEFAULT_MONOTONE,
+    rankSource = DEFAULT_RANK_SOURCE,
   } = {},
 ) {
   const changes = [];
@@ -203,14 +206,19 @@ export function encodeSimulatorScenario(
     }
   }
 
-  return btoa(JSON.stringify({
+  const sy = normalizeOutcomeScenarioYear(seasonYear);
+  const payload = {
     y: 'simulator',
-    sy: normalizeOutcomeScenarioYear(seasonYear),
+    sy,
     n: clampSimulatorIterations(iterations),
     v: normalizeVariance(variance),
     m: normalizeMonotone(monotone),
     c: changes,
-  }));
+  };
+  if (normalizeRankSource(rankSource, sy) === RANK_SOURCE_DASH) {
+    payload.rs = RANK_SOURCE_DASH;
+  }
+  return btoa(JSON.stringify(payload));
 }
 
 /**

@@ -23,13 +23,14 @@ const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b
 const TAB_OVERVIEW = 'Overview';
 const TAB_SCORES = 'Scores';
 const TAB_TEAM_ANALYTICS = 'Team Analytics';
-const TAB_PLAYER_ANALYTICS = 'Player Analytics';
-const tabOptions = [TAB_OVERVIEW, TAB_SCORES, TAB_TEAM_ANALYTICS, TAB_PLAYER_ANALYTICS];
+const TAB_HVORP_ANALYTICS = 'HVORP Analytics';
+const tabOptions = [TAB_OVERVIEW, TAB_SCORES, TAB_TEAM_ANALYTICS, TAB_HVORP_ANALYTICS];
 
 function resolveTeamTab(raw) {
   if (!raw) return null;
   if (raw === 'Summary' || raw === 'Roster') return TAB_OVERVIEW;
   if (raw === 'Analytics') return TAB_TEAM_ANALYTICS;
+  if (raw === 'Player Analytics') return TAB_HVORP_ANALYTICS;
   return tabOptions.find((option) => option.toLowerCase() === raw.toLowerCase()) || raw;
 }
 
@@ -96,7 +97,7 @@ function Teams2Detail() {
       changes.start_week = null;
       changes.end_week = null;
     }
-    if (selectedTab !== TAB_PLAYER_ANALYTICS) {
+    if (selectedTab !== TAB_HVORP_ANALYTICS) {
       changes.player = null;
     }
     updateQueryParams(changes);
@@ -432,11 +433,26 @@ function Teams2Detail() {
           {tabOptions.map(tab => (
             <button
               key={tab}
-              className={`teams2-tab${selectedTab === tab ? ' teams2-tab--active' : ''}`}
+              className={`teams2-tab${selectedTab === tab ? ' teams2-tab--active' : ''}${tab === TAB_HVORP_ANALYTICS ? ' teams2-tab--has-tip' : ''}`}
               onClick={() => setSelectedTab(tab)}
               type="button"
             >
               {tab}
+              {tab === TAB_HVORP_ANALYTICS && (
+                <span className="teams2-tab-tip" role="tooltip">
+                  <span className="teams2-tab-tip-title">HVORP</span>
+                  <span className="teams2-tab-tip-acro">
+                    <span className="teams2-tab-tip-init">H</span>wang{' '}
+                    <span className="teams2-tab-tip-init">V</span>alue{' '}
+                    <span className="teams2-tab-tip-init">O</span>ver{' '}
+                    <span className="teams2-tab-tip-init">R</span>eplacement{' '}
+                    <span className="teams2-tab-tip-init">P</span>layer
+                  </span>
+                  <span className="teams2-tab-tip-body">
+                    Points lost if a player weren&apos;t on the roster.
+                  </span>
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -472,10 +488,12 @@ function Teams2Detail() {
             updateQueryParams={updateQueryParams}
           />
         )}
-        {selectedTab === TAB_PLAYER_ANALYTICS && (
+        {selectedTab === TAB_HVORP_ANALYTICS && (
           <PlayerAnalytics
             weeksParsedData={weeksParsedData}
             roster={roster}
+            rosters={rosters}
+            teamName={teamName}
             playersData={playersData}
             playerIdMap={playerIdMap}
             season={season}

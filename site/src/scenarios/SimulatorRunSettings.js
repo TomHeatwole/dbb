@@ -7,9 +7,15 @@ import {
   SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS,
 } from './simulatorMonteCarlo';
 import { VARIANCE_LEVELS, DEFAULT_VARIANCE, MONOTONE_MODES, DEFAULT_MONOTONE } from './outcomeDistribution';
+import {
+  RANK_SOURCES,
+  RANK_SOURCE_ADP,
+  RANK_SOURCE_DASH,
+  DEFAULT_RANK_SOURCE,
+} from './simulatorRankSource';
 
 const PRESETS = [1000, 5000, 10000, 50000, 100000, 1_000_000];
-const POPOVER_WIDTH_PX = 280;
+const POPOVER_WIDTH_PX = 300;
 const POPOVER_GAP_PX = 7;
 const VIEWPORT_MARGIN_PX = 8;
 
@@ -44,6 +50,9 @@ function SimulatorRunSettings({
   onChangeVariance,
   monotone = DEFAULT_MONOTONE,
   onChangeMonotone,
+  rankSource = DEFAULT_RANK_SOURCE,
+  onChangeRankSource,
+  allowRedraftDash = false,
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(String(iterations ?? DEFAULT_ITERATIONS));
@@ -192,6 +201,32 @@ function SimulatorRunSettings({
           </div>
           <p className="simulator-run-settings-hint">
             {MONOTONE_MODES[monotone]?.description}
+          </p>
+        </>
+      )}
+      {allowRedraftDash && onChangeRankSource && (
+        <>
+          <div className="simulator-run-settings-label simulator-run-settings-variance-label">
+            Current-season ranks
+          </div>
+          <div className="simulator-run-settings-presets">
+            {[RANK_SOURCE_ADP, RANK_SOURCE_DASH].map((key) => (
+              <button
+                key={key}
+                type="button"
+                title={RANK_SOURCES[key].description}
+                className={
+                  'simulator-run-settings-preset' +
+                  (rankSource === key ? ' simulator-run-settings-preset--active' : '')
+                }
+                onClick={() => onChangeRankSource(key)}
+              >
+                {RANK_SOURCES[key].label}
+              </button>
+            ))}
+          </div>
+          <p className="simulator-run-settings-hint">
+            {RANK_SOURCES[rankSource]?.description} Historical outcome pools stay ADP-based.
           </p>
         </>
       )}

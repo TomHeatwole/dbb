@@ -20,11 +20,189 @@ the KTC-pair run does not rebuild the roster as a dynasty club.
 | Roster | 18-man BBM (drop 1 → 17-man HVORP base) | same | 27-man Hwang |
 
 Reproduce: `npx tsx scripts/run_hwang_true_sim_bbm.mjs 1 50` then
-`python scripts/analyze_hwang_true_sim_v3.py example_data/hwang_true_sim_bbm_50`.
+`python scripts/analyze_hwang_true_sim_skill_only.py example_data/hwang_true_sim_bbm_50`
+(QB-free) and `python scripts/analyze_hwang_true_sim_v3.py example_data/hwang_true_sim_bbm_50`
+(four-position, Superflex-contaminated — kept below for archive).
 
 Archetypes: Zero / Hero / Double-anchor / Robust × late-3QB / elite-2QB.
 
 ---
+
+## Skill-only results (QB excluded)
+
+QB is out of every comparison below. Numbers are **direct paired HVORP**:
+among equal-priced RB–WR (or RB–TE, WR–TE) pairs, total RB HVORP ÷ total WR
+HVORP. The 3-position network solve (no QB equations, geo mean of RB/WR/TE = 1)
+agrees to ~0.02.
+
+### Direct ratios
+
+| basis | format | **RB / WR** | **RB / TE** | **WR / TE** |
+|---|---|---|---|---|
+| ktc | Hwang | **1.47** | 1.33 | 0.85 |
+| ktc | Underdog | 1.22 | **1.58** | 1.21 |
+| ktc | Hwang ÷ Underdog | **1.20** | 0.84 | 0.71 |
+| **comp** | **Hwang** | **1.52** | **1.39** | **0.94** |
+| **comp** | **Underdog** | **1.27** | **1.63** | **1.33** |
+| **comp** | **Hwang ÷ Underdog** | **1.20** | **0.85** | **0.70** |
+
+Read:
+
+- **Equal-priced RBs beat WRs in both formats** — +27% Underdog, +52% Hwang
+  (comp pairs). That +27% is the market/longevity strand (still there on
+  WR-fronted BBM clubs). The extra +20% in the *ratio* is the format.
+- **Equal-priced RBs beat TEs even more in Underdog (+63%) than in Hwang
+  (+39%).** Hwang’s TE premium + extra TE-eligible flex reverses part of the
+  RB edge vs TE. Format factor 0.85: Hwang makes TEs *closer* to RBs.
+- **WRs vs TEs flips with the rules.** Underdog (0.5 PPR, no TEP): WR/TE =
+  1.33. Hwang (0 PPR, TE +0.5): WR/TE = 0.94. Format factor 0.70 — the
+  largest skill-position format effect, and it is WR-down / TE-up, not RB-up.
+
+KTC pairs tell the same story as comp (format factors 1.20 / 0.84 / 0.71).
+
+### 3-position network (geo mean RB·WR·TE = 1)
+
+| basis / format | RB | WR | TE |
+|---|---|---|---|
+| comp / Hwang | 1.29 | 0.85 | 0.92 |
+| comp / Underdog | 1.28 | 1.01 | 0.77 |
+| ktc / Hwang | 1.25 | 0.84 | 0.96 |
+| ktc / Underdog | 1.24 | 1.00 | 0.81 |
+
+RB’s *share of skill-position value* is the same in both formats (~1.25–1.29).
+Hwang does not make RBs more important vs the skill basket. It reprices WR
+down and TE up, which is why RB/WR rises 20% while RB vs the basket does not.
+
+### Skill-only curves
+
+`m(v) = c · (v/5000)^k`, **3-position mean gauge, skill-vs-skill pairs only.**
+Implied ratios at v=5000 match the direct matchups.
+
+**Competitor-adjusted pairs:**
+
+| format | RB | WR | TE | RB/WR @5k | RB/TE @5k | WR/TE @5k |
+|---|---|---|---|---|---|---|
+| Hwang | 1.271 · (v/5k)^+0.119 | 0.825 · (v/5k)^−0.144 | 0.953 · (v/5k)^+0.025 | 1.54 | 1.33 | 0.87 |
+| Underdog | 1.253 · (v/5k)^+0.187 | 0.990 · (v/5k)^−0.208 | 0.806 · (v/5k)^+0.022 | 1.27 | 1.55 | 1.23 |
+
+**Final KTC pairs:**
+
+| format | RB | WR | TE | RB/WR @5k | RB/TE @5k | WR/TE @5k |
+|---|---|---|---|---|---|---|
+| Hwang | 1.232 · (v/5k)^+0.235 | 0.837 · (v/5k)^−0.065 | 0.970 · (v/5k)^−0.171 | 1.47 | 1.27 | 0.86 |
+| Underdog | 1.214 · (v/5k)^+0.341 | 1.014 · (v/5k)^−0.110 | 0.812 · (v/5k)^−0.231 | 1.20 | 1.50 | 1.25 |
+
+Comp / Hwang @1k / 3k / 5k / 8k:
+
+| ratio | 1k | 3k | 5k | 8k |
+|---|---|---|---|---|
+| RB/WR | 1.01 | 1.36 | 1.54 | 1.74 |
+| RB/TE | 1.15 | 1.27 | 1.33 | 1.39 |
+| WR/TE | 1.14 | 0.94 | 0.87 | 0.80 |
+
+Cheap-band WRs hold up; expensive WRs are the ones Hwang (0 PPR) punishes.
+
+### By year (comp, Hwang / Underdog / factor)
+
+Every season: Hwang RB/WR > Underdog RB/WR, factor 1.14–1.24. WR/TE factor
+stuck at ~0.70.
+
+| year | RB/WR | RB/TE | WR/TE |
+|---|---|---|---|
+| 2021 | 1.40 / 1.20 / **1.17** | 1.25 / 1.59 / 0.79 | 0.88 / 1.31 / 0.67 |
+| 2022 | 1.51 / 1.22 / **1.24** | 1.54 / 1.74 / 0.89 | 1.16 / 1.62 / 0.72 |
+| 2023 | 1.31 / 1.07 / **1.22** | 1.19 / 1.38 / 0.87 | 0.92 / 1.31 / 0.70 |
+| 2024 | 1.55 / 1.28 / **1.21** | 1.47 / 1.65 / 0.89 | 0.95 / 1.34 / 0.71 |
+| 2025 | 2.09 / 1.83 / **1.14** | 1.51 / 1.84 / 0.82 | 0.82 / 1.14 / 0.72 |
+
+### By BBM archetype (comp)
+
+Saturation is a **regular-format** story. Hwang’s extra RB/flex slots flatten
+it. Direct RB/WR:
+
+| archetype | Hwang RB/WR | Underdog RB/WR |
+|---|---|---|
+| Zero RB + late 3QB | 1.64 | **1.62** |
+| Zero RB + elite 2QB | 1.63 | **1.62** |
+| Hero RB | 1.52–1.54 | 1.34–1.39 |
+| Double-anchor | 1.46–1.47 | 1.13–1.15 |
+| Robust RB | 1.48 | **1.02–1.04** |
+
+On Robust Underdog teams, equal-priced RB ≈ WR. On Zero-RB Underdog teams,
+RB still beats WR by 62% — the same as Hwang. The pooled Underdog RB/WR of
+1.27 is an average over a WR-fronted field; the pooled Hwang 1.52 is *not*
+an average of a much hungrier field, it is the extra slots + 0 PPR lifting
+every archetype’s RB/WR into the 1.46–1.64 band.
+
+Figures: `analysis/skill_only_ratios.png`, `analysis/skill_only_ratio_curves.png`.
+
+### Skill-only formulas to use
+
+For the Hwang SF board, ignore QB here and apply the **3-pos Hwang / comp**
+curve to RB/WR/TE (table above). Relative to an equal-priced skill player:
+
+- RB ≈ `1.271 · (v/5000)^+0.119`
+- WR ≈ `0.825 · (v/5000)^−0.144`
+- TE ≈ `0.953 · (v/5000)^+0.025`
+
+Format-only (Hwang ÷ Underdog), for a future-value dial that must not
+re-credit longevity:
+
+- RB vs WR: **× 1.20**
+- RB vs TE: **× 0.85**
+- WR vs TE: **× 0.70**
+
+---
+
+## Corrected format factor (the actual study)
+
+The section above scored **the same Underdog rosters** under both rule sets.
+That is the wrong experiment. The format factor we care about is:
+
+**Hwang dynasty clubs + Hwang scoring**  
+÷  
+**Underdog BBM clubs + Underdog scoring**
+
+Numerator is the trusted v3b dump (`hwang_true_sim_200_v3b`, Hwang format).
+Denominator is this dump’s Underdog format. QB still excluded. Reproduce:
+`python scripts/analyze_hwang_vs_underdog_format_factor.py`.
+
+### Direct ratios (comp / redraft-adjusted pairs)
+
+| | Hwang clubs + Hwang rules | Underdog clubs + Underdog rules | **factor** |
+|---|---|---|---|
+| RB / WR | 1.58 | 1.27 | **1.24** |
+| RB / TE | 1.47 | 1.63 | **0.90** |
+| WR / TE | 0.97 | 1.33 | **0.73** |
+
+KTC pairs: factors **1.23 / 0.91 / 0.74** — same story.
+
+### 3-position coefficients (geo mean RB·WR·TE = 1, then divide)
+
+These are the Hwang value adjustments vs a fair best-ball baseline:
+
+| | Hwang clubs | Underdog clubs | **Hwang ÷ Underdog** |
+|---|---|---|---|
+| RB | 1.33 | 1.28 | **1.04** |
+| WR | 0.85 | 1.01 | **0.84** |
+| TE | 0.89 | 0.77 | **1.15** |
+
+### Format-factor curves (comp), `m(v) = c · (v/5000)^k`
+
+| pos | Hwang clubs | Underdog clubs | **factor (apply this)** |
+|---|---|---|---|
+| RB | 1.288^+0.172 | 1.253^+0.187 | **1.028^(−0.015)** |
+| WR | 0.826^−0.211 | 0.990^−0.208 | **0.834^(−0.002)** |
+| TE | 0.940^+0.039 | 0.806^+0.022 | **1.166^(+0.017)** |
+
+Factor @1k / 3k / 5k / 8k: RB 1.05/1.04/1.03/1.02 · WR 0.84/0.84/0.83/0.83 · TE 1.13/1.16/1.17/1.18.
+
+QB is not in this table. Use the v3b Hwang / competitor-adjusted curve unchanged:
+`0.924 · (v/5000)^+0.173` (~0.92× at $5k).
+
+---
+
+## Four-position numbers (archive — Superflex leaks into the gauge)
 
 ## Headline numbers
 

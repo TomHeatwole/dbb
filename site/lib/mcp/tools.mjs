@@ -989,6 +989,7 @@ function countUnrankedByTeam(rosterMap, hwangAdpRankMap, playersData) {
 
 /**
  * Baseline Monte Carlo championship odds for the current season.
+ * Always ADP-ranked — HwangAI must not receive a Redraft Dash variant.
  */
 export async function getSeasonOdds(iterations) {
   const iters = Math.max(250, Math.min(3000, Math.round(Number(iterations) || DEFAULT_ITERATIONS)));

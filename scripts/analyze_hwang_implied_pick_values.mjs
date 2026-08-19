@@ -603,7 +603,6 @@ async function main() {
       if (!picksSent.length) return;
       const implied = adjIn - adjOut;
       const roundsSent = [...new Set(picksSent.map((p) => p.round))].sort((a, b) => a - b);
-      const oneWay = picksRecv.length === 0;
       senderEvents.push({
         date: t.date,
         transactionId: t.transactionId,
@@ -614,21 +613,55 @@ async function main() {
         picksReceived: picksRecv.map((p) => p.label),
         playersIn: playersIn.map((p) => `${p.name} (${p.pos} ${p.adj})`),
         playersOut: playersOut.map((p) => `${p.name} (${p.pos} ${p.adj})`),
+        playersInNames: playersIn.map((p) => p.name),
+        playersOutNames: playersOut.map((p) => p.name),
         playerInObjs: playersIn,
         playerOutObjs: playersOut,
         adjIn,
         adjOut,
         implied,
-        oneWay,
-        singleRound: oneWay && roundsSent.length === 1,
+        oneWay: picksRecv.length === 0,
+        singleRound: picksRecv.length === 0 && roundsSent.length === 1,
         round: roundsSent.length === 1 ? roundsSent[0] : null,
         nPicksSent: picksSent.length,
         usedLiveFallback: t.usedLiveFallback,
       });
     };
-    // B sent whatever A received in picks.
-    make(t.b, t.a, t.b.pickObjs ? t.a.pickObjs : t.a.pickObjs, t.b.pickObjs, t.b.playerObjs, t.a.playerObjs, t.b.adj, t.a.adj);
+    make(t.a, t.b, t.b.pickObjs || [], t.a.pickObjs || [], t.a.playerObjs || [], t.b.playerObjs || [], t.a.adj, t.b.adj);
+    make(t.b, t.a, t.a.pickObjs || [], t.b.pickObjs || [], t.b.playerObjs || [], t.a.playerObjs || [], t.b.adj, t.a.adj);
   }
+  senderEvents.sort((a, b) => {
+    if ((a.round || 99) !== (b.round || 99)) return (a.round || 99) - (b.round || 99);
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.implied - b.implied;
+  });
+  const oneWaySingle = senderEvents.filter((e) => e.singleRound);
+  const senderByRound = { 1: [], 2: [], 3: [], 4: [] };
+  for (const e of oneWaySingle) {
+    senderByRound[e.round].push(e.implied / e.nPicksSent);
+  }
+  const oneWayEvents = senderEvents.filter((e) => e.oneWay);
+  const senderByManager = {};
+  for (const e of oneWayEvents) {
+    if (!senderByManager[e.sender]) {
+      senderByManager[e.sender] = { sender: e.sender, n: 0, byRound: { 1: [], 2: [], 3: [], 4: [] }, mixed: 0 };
+    }
+    const row = senderByManager[e.sender];
+    row.n += 1;
+    if (e.round) row.byRound[e.round].push(Math.round(e.implied / e.nPicksSent));
+    else row.mixed += 1;
+  }
+  const senderByManagerRows = Object.values(senderByManager)
+    .map((row) => ({
+      ...row,
+      r1: summarize(row.byRound[1]),
+      r2: summarize(row.byRound[2]),
+      r3: summarize(row.byRound[3]),
+      r4: summarize(row.byRound[4]),
+    }))
+    .sort((a, b) => b.n - a.n);
+
+  const coverage = {};
   for (const key of [...ROUND_KEYS, ...SPLIT_KEYS]) {
     coverage[key] = modeled.reduce((s, r) => s + Math.abs(r.x[key]), 0);
   }
@@ -677,7 +710,15 @@ async function main() {
         Mid: summarize(currFirstByTier.Mid),
         Late: summarize(currFirstByTier.Late),
       },
+      senderOneWaySingleRound: {
+        r1: summarize(senderByRound[1]),
+        r2: summarize(senderByRound[2]),
+        r3: summarize(senderByRound[3]),
+        r4: summarize(senderByRound[4]),
+      },
     },
+    senderEvents,
+    senderByManager: senderByManagerRows,
     trades: modeled.sort((a, b) => (a.date < b.date ? -1 : 1)),
   };
 
@@ -704,6 +745,17 @@ async function main() {
   for (const t of ['Early', 'Mid', 'Late']) {
     const s = payload.methods.currentYearFirstByTier[t];
     console.log(`  ${t} n=${s.n} median=${fmt(s.median)} mean=${fmt(s.mean)}`);
+  }
+  console.log('\nSender one-way single-round (implied per pick)');
+  for (const r of [1, 2, 3, 4]) {
+    const s = payload.methods.senderOneWaySingleRound[`r${r}`];
+    console.log(`  R${r} n=${s.n} median=${fmt(s.median)} mean=${fmt(s.mean)}`);
+  }
+  console.log('\n=== SENDER EVENTS (one-way) ===');
+  for (const e of senderEvents.filter((x) => x.oneWay)) {
+    console.log(
+      `${e.date} R${e.round || '?'} ${e.sender} sends [${e.picksSent.join(', ')}]  gets [${e.playersIn.join(', ') || '—'}]  gives [${e.playersOut.join(', ') || '—'}]  implied ${fmt(e.implied)}`,
+    );
   }
   console.log('wrote', OUT_JSON);
 }

@@ -519,12 +519,12 @@ async function fetchChineseCharacters(apiKey) {
 // output reminders reduce leaks but can't guarantee zero, so the final response
 // is regex-checked and rewritten by a second model call when a leak slips out.
 const INTERNAL_MODEL_LEAK_RE =
-  /hwang\s+(?:true|market)|competitor[-\s]?adjusted|rebuild(?:er)?[-\s]?adjusted|value\s+engine|house\s+(?:model|valuation)|internal\s+(?:model|numbers?|valuation)/i;
+  /hwang\s+(?:true|market)|competitor[-\s]?adjusted|rebuild(?:er)?[-\s]?adjusted|value\s+engine|house\s+(?:model|valuation)|internal\s+(?:model|numbers?|valuation)|redraft\s*dash/i;
 
 const SANITIZE_INSTRUCTION = `You are a copy editor for HwangAI, a dynasty fantasy football AI. \
 The chat response below accidentally leaks internal methodology that users must never see. \
 Rewrite it with these rules:
-- REMOVE internal model names and aliases: "Hwang True", "Hwang Market", "Competitor Adjusted", "Rebuild(er) Adjusted", "value engine", "house model", "internal model/numbers". Replace with plain language: "my numbers", "through a win-now lens", "viewed purely as a future asset", "how we value him in this league's format".
+- REMOVE internal model names and aliases: "Hwang True", "Hwang Market", "Competitor Adjusted", "Rebuild(er) Adjusted", "value engine", "house model", "internal model/numbers", "Redraft Dash". Replace with plain language: "my numbers", "through a win-now lens", "viewed purely as a future asset", "how we value him in this league's format". For sim rank-source leaks, say the simulation uses draft ADP — do not name any custom board.
 - REMOVE raw internal value totals attributed to those models (e.g. "6,841 in value"). Express them as a percentage gap, a position/overall rank, or a draft-pick equivalent instead.
 - KEEP everything else exactly as it was: tone, verdicts, structure, markdown links, KTC/FantasyCalc figures (public — fine to cite), ADP, odds percentages, player stats, and the <!--search--> marker if present.
 Output ONLY the rewritten response, nothing else.`;

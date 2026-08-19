@@ -20,15 +20,40 @@ import { DATA_DIR, CURRENT_YEAR } from './config.mjs';
 import { normalisePlayerName } from './helpers.mjs';
 import { loadKtcData, loadFantasyCalcData, loadFfbData } from './dataLoader.mjs';
 
-// ─── Hwang position coefficients ─────────────────────────────────────────────
+// ─── Hwang position coefficients (keep in sync with hwangPositionCoefficients.js)
+
+export const HWANG_MULTIPLIER_VREF = 5000;
 
 export const HWANG_POSITION_COEFFICIENTS = {
-  market: { QB: 1.0, RB: 1.12, WR: 0.96, TE: 1.0 },
-  true:   { QB: 1.0, RB: 1.063, WR: 0.830, TE: 0.877 },
+  market: {
+    QB: 1.0,
+    RB: 1.12,
+    WR: 0.96,
+    TE: 1.0,
+  },
+  true: {
+    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    RB: { c: 1.112, k: -0.029, flat: 1.11 },
+    WR: { c: 0.899, k: 0.029, flat: 0.90 },
+    TE: { c: 0.976, k: 0.069, flat: 0.95 },
+  },
+  trueComp: {
+    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    RB: { c: 1.112, k: -0.011, flat: 1.12 },
+    WR: { c: 0.899, k: 0.011, flat: 0.90 },
+    TE: { c: 0.974, k: 0.050, flat: 0.96 },
+  },
 };
 
 /** Which coefficient set powers Hwang-Adjusted Competitor / Rebuild values. */
-export const HWANG_COMPOSITE_COEFFICIENT_KEY = 'true';
+export const HWANG_COMPOSITE_COEFFICIENT_KEY = 'trueComp';
+
+export function hwangMultiplierAt(entry, value) {
+  if (entry == null) return 1;
+  if (typeof entry === 'number') return entry;
+  const v = Math.max(Number(value) || 0, 100);
+  return entry.c * ((v / HWANG_MULTIPLIER_VREF) ** entry.k);
+}
 
 export function getHwangCoefficientMap(adjustmentKey) {
   const coeffs = HWANG_POSITION_COEFFICIENTS[adjustmentKey];
@@ -403,7 +428,7 @@ export function getStitchedKtcTepSfValue(entry) {
 export function applyHwangKtcAdjustment(baseValue, position, multipliers) {
   if (baseValue == null || !Number.isFinite(baseValue)) return null;
   const pos = (position || '').toUpperCase();
-  const multiplier = multipliers?.get(pos) ?? 1;
+  const multiplier = hwangMultiplierAt(multipliers?.get(pos), baseValue);
   return Math.round(baseValue * multiplier);
 }
 

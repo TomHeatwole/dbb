@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-04T00:19:36.679Z",
+  "generated": "2026-08-18T23:28:27.242Z",
   "windowSize": 5,
   "years": [
     2022,
@@ -20,30 +20,30 @@
     {
       "round": 1,
       "label": "First",
-      "avgTrueValue": 5262,
+      "avgTrueValue": 5042,
       "avgMarketValue": 5295,
-      "multiplier": 1.0306
+      "multiplier": 0.9875
     },
     {
       "round": 2,
       "label": "Second",
-      "avgTrueValue": 3113,
+      "avgTrueValue": 3167,
       "avgMarketValue": 3288,
-      "multiplier": 0.9681
+      "multiplier": 0.9836
     },
     {
       "round": 3,
       "label": "Third",
-      "avgTrueValue": 2257,
+      "avgTrueValue": 2346,
       "avgMarketValue": 2260,
-      "multiplier": 1.05
+      "multiplier": 1.1084
     },
     {
       "round": 4,
       "label": "Fourth",
-      "avgTrueValue": 1689,
+      "avgTrueValue": 1780,
       "avgMarketValue": 1600,
-      "multiplier": 1.1763
+      "multiplier": 1.2469
     }
   ],
   "tiers": [
@@ -53,9 +53,9 @@
       "round": 1,
       "roundOrd": "1st",
       "label": "Early 1st",
-      "avgTrueValue": 6923,
+      "avgTrueValue": 6210,
       "avgMarketValue": 6317,
-      "multiplier": 1.1333
+      "multiplier": 1.0206
     },
     {
       "key": "Mid 1st",
@@ -63,9 +63,9 @@
       "round": 1,
       "roundOrd": "1st",
       "label": "Mid 1st",
-      "avgTrueValue": 4772,
+      "avgTrueValue": 4781,
       "avgMarketValue": 5132,
-      "multiplier": 0.9717
+      "multiplier": 0.9684
     },
     {
       "key": "Late 1st",
@@ -73,9 +73,9 @@
       "round": 1,
       "roundOrd": "1st",
       "label": "Late 1st",
-      "avgTrueValue": 4090,
+      "avgTrueValue": 4133,
       "avgMarketValue": 4436,
-      "multiplier": 0.9527
+      "multiplier": 0.9628
     },
     {
       "key": "Early 2nd",
@@ -83,9 +83,9 @@
       "round": 2,
       "roundOrd": "2nd",
       "label": "Early 2nd",
-      "avgTrueValue": 3538,
+      "avgTrueValue": 3583,
       "avgMarketValue": 3641,
-      "multiplier": 0.9728
+      "multiplier": 0.997
     },
     {
       "key": "Mid 2nd",
@@ -93,9 +93,9 @@
       "round": 2,
       "roundOrd": "2nd",
       "label": "Mid 2nd",
-      "avgTrueValue": 3027,
+      "avgTrueValue": 3126,
       "avgMarketValue": 3257,
-      "multiplier": 0.9561
+      "multiplier": 0.9754
     },
     {
       "key": "Late 2nd",
@@ -103,9 +103,9 @@
       "round": 2,
       "roundOrd": "2nd",
       "label": "Late 2nd",
-      "avgTrueValue": 2774,
+      "avgTrueValue": 2791,
       "avgMarketValue": 2966,
-      "multiplier": 0.9754
+      "multiplier": 0.9761
     },
     {
       "key": "Early 3rd",
@@ -113,9 +113,9 @@
       "round": 3,
       "roundOrd": "3rd",
       "label": "Early 3rd",
-      "avgTrueValue": 2508,
+      "avgTrueValue": 2562,
       "avgMarketValue": 2435,
-      "multiplier": 1.0612
+      "multiplier": 1.085
     },
     {
       "key": "Mid 3rd",
@@ -123,9 +123,9 @@
       "round": 3,
       "roundOrd": "3rd",
       "label": "Mid 3rd",
-      "avgTrueValue": 2255,
+      "avgTrueValue": 2317,
       "avgMarketValue": 2265,
-      "multiplier": 1.0455
+      "multiplier": 1.0985
     },
     {
       "key": "Late 3rd",
@@ -133,9 +133,9 @@
       "round": 3,
       "roundOrd": "3rd",
       "label": "Late 3rd",
-      "avgTrueValue": 2006,
+      "avgTrueValue": 2159,
       "avgMarketValue": 2081,
-      "multiplier": 1.0418
+      "multiplier": 1.1456
     },
     {
       "key": "Early 4th",
@@ -143,9 +143,9 @@
       "round": 4,
       "roundOrd": "4th",
       "label": "Early 4th",
-      "avgTrueValue": 1851,
+      "avgTrueValue": 1965,
       "avgMarketValue": 1696,
-      "multiplier": 1.207
+      "multiplier": 1.2883
     },
     {
       "key": "Mid 4th",
@@ -153,9 +153,9 @@
       "round": 4,
       "roundOrd": "4th",
       "label": "Mid 4th",
-      "avgTrueValue": 1674,
+      "avgTrueValue": 1786,
       "avgMarketValue": 1620,
-      "multiplier": 1.1481
+      "multiplier": 1.2327
     },
     {
       "key": "Late 4th",
@@ -163,9 +163,9 @@
       "round": 4,
       "roundOrd": "4th",
       "label": "Late 4th",
-      "avgTrueValue": 1542,
+      "avgTrueValue": 1590,
       "avgMarketValue": 1484,
-      "multiplier": 1.1718
+      "multiplier": 1.2156
     }
   ],
   "slots": [
@@ -176,9 +176,9 @@
       "pickInRound": 1,
       "tier": "early",
       "tierLabel": "Early 1st",
-      "avgTrueValue": 9514,
+      "avgTrueValue": 7762,
       "avgMarketValue": 6317,
-      "multiplier": 1.4893
+      "multiplier": 1.2517
     },
     {
       "draftSlot": "1.02",
@@ -187,9 +187,9 @@
       "pickInRound": 2,
       "tier": "early",
       "tierLabel": "Early 1st",
-      "avgTrueValue": 7102,
+      "avgTrueValue": 6257,
       "avgMarketValue": 6317,
-      "multiplier": 1.1657
+      "multiplier": 1.0385
     },
     {
       "draftSlot": "1.03",
@@ -198,9 +198,9 @@
       "pickInRound": 3,
       "tier": "early",
       "tierLabel": "Early 1st",
-      "avgTrueValue": 5657,
+      "avgTrueValue": 5539,
       "avgMarketValue": 6317,
-      "multiplier": 0.9573
+      "multiplier": 0.9158
     },
     {
       "draftSlot": "1.04",
@@ -209,9 +209,9 @@
       "pickInRound": 4,
       "tier": "early",
       "tierLabel": "Early 1st",
-      "avgTrueValue": 5420,
+      "avgTrueValue": 5283,
       "avgMarketValue": 6317,
-      "multiplier": 0.9208
+      "multiplier": 0.8762
     },
     {
       "draftSlot": "1.05",
@@ -220,9 +220,9 @@
       "pickInRound": 5,
       "tier": "mid",
       "tierLabel": "Mid 1st",
-      "avgTrueValue": 5062,
+      "avgTrueValue": 5056,
       "avgMarketValue": 5132,
-      "multiplier": 1.0427
+      "multiplier": 1.031
     },
     {
       "draftSlot": "1.06",
@@ -231,9 +231,9 @@
       "pickInRound": 6,
       "tier": "mid",
       "tierLabel": "Mid 1st",
-      "avgTrueValue": 4861,
+      "avgTrueValue": 4844,
       "avgMarketValue": 5132,
-      "multiplier": 1.0019
+      "multiplier": 0.9756
     },
     {
       "draftSlot": "1.07",
@@ -242,9 +242,9 @@
       "pickInRound": 7,
       "tier": "mid",
       "tierLabel": "Mid 1st",
-      "avgTrueValue": 4661,
+      "avgTrueValue": 4713,
       "avgMarketValue": 5132,
-      "multiplier": 0.9392
+      "multiplier": 0.9532
     },
     {
       "draftSlot": "1.08",
@@ -253,9 +253,9 @@
       "pickInRound": 8,
       "tier": "mid",
       "tierLabel": "Mid 1st",
-      "avgTrueValue": 4506,
+      "avgTrueValue": 4512,
       "avgMarketValue": 5132,
-      "multiplier": 0.9028
+      "multiplier": 0.9143
     },
     {
       "draftSlot": "1.09",
@@ -264,9 +264,9 @@
       "pickInRound": 9,
       "tier": "late",
       "tierLabel": "Late 1st",
-      "avgTrueValue": 4397,
+      "avgTrueValue": 4352,
       "avgMarketValue": 4436,
-      "multiplier": 1.0264
+      "multiplier": 1.0108
     },
     {
       "draftSlot": "1.10",
@@ -275,9 +275,9 @@
       "pickInRound": 10,
       "tier": "late",
       "tierLabel": "Late 1st",
-      "avgTrueValue": 4198,
+      "avgTrueValue": 4215,
       "avgMarketValue": 4436,
-      "multiplier": 0.9869
+      "multiplier": 0.9786
     },
     {
       "draftSlot": "1.11",
@@ -286,9 +286,9 @@
       "pickInRound": 11,
       "tier": "late",
       "tierLabel": "Late 1st",
-      "avgTrueValue": 3980,
+      "avgTrueValue": 4049,
       "avgMarketValue": 4436,
-      "multiplier": 0.9312
+      "multiplier": 0.9509
     },
     {
       "draftSlot": "1.12",
@@ -297,9 +297,9 @@
       "pickInRound": 12,
       "tier": "late",
       "tierLabel": "Late 1st",
-      "avgTrueValue": 3786,
+      "avgTrueValue": 3918,
       "avgMarketValue": 4436,
-      "multiplier": 0.8659
+      "multiplier": 0.911
     },
     {
       "draftSlot": "2.01",
@@ -308,9 +308,9 @@
       "pickInRound": 1,
       "tier": "early",
       "tierLabel": "Early 2nd",
-      "avgTrueValue": 3696,
+      "avgTrueValue": 3775,
       "avgMarketValue": 3641,
-      "multiplier": 1.031
+      "multiplier": 1.0527
     },
     {
       "draftSlot": "2.02",
@@ -319,9 +319,9 @@
       "pickInRound": 2,
       "tier": "early",
       "tierLabel": "Early 2nd",
-      "avgTrueValue": 3593,
+      "avgTrueValue": 3644,
       "avgMarketValue": 3641,
-      "multiplier": 0.9948
+      "multiplier": 1.0077
     },
     {
       "draftSlot": "2.03",
@@ -330,9 +330,9 @@
       "pickInRound": 3,
       "tier": "early",
       "tierLabel": "Early 2nd",
-      "avgTrueValue": 3490,
+      "avgTrueValue": 3519,
       "avgMarketValue": 3641,
-      "multiplier": 0.9489
+      "multiplier": 0.978
     },
     {
       "draftSlot": "2.04",
@@ -341,9 +341,9 @@
       "pickInRound": 4,
       "tier": "early",
       "tierLabel": "Early 2nd",
-      "avgTrueValue": 3373,
+      "avgTrueValue": 3393,
       "avgMarketValue": 3641,
-      "multiplier": 0.9168
+      "multiplier": 0.95
     },
     {
       "draftSlot": "2.05",
@@ -352,9 +352,9 @@
       "pickInRound": 5,
       "tier": "mid",
       "tierLabel": "Mid 2nd",
-      "avgTrueValue": 3189,
+      "avgTrueValue": 3254,
       "avgMarketValue": 3257,
-      "multiplier": 0.9846
+      "multiplier": 0.9994
     },
     {
       "draftSlot": "2.06",
@@ -363,9 +363,9 @@
       "pickInRound": 6,
       "tier": "mid",
       "tierLabel": "Mid 2nd",
-      "avgTrueValue": 3036,
+      "avgTrueValue": 3170,
       "avgMarketValue": 3257,
-      "multiplier": 0.9613
+      "multiplier": 0.996
     },
     {
       "draftSlot": "2.07",
@@ -374,9 +374,9 @@
       "pickInRound": 7,
       "tier": "mid",
       "tierLabel": "Mid 2nd",
-      "avgTrueValue": 2971,
+      "avgTrueValue": 3104,
       "avgMarketValue": 3257,
-      "multiplier": 0.9496
+      "multiplier": 0.9721
     },
     {
       "draftSlot": "2.08",
@@ -385,9 +385,9 @@
       "pickInRound": 8,
       "tier": "mid",
       "tierLabel": "Mid 2nd",
-      "avgTrueValue": 2912,
+      "avgTrueValue": 2975,
       "avgMarketValue": 3257,
-      "multiplier": 0.9291
+      "multiplier": 0.9343
     },
     {
       "draftSlot": "2.09",
@@ -396,9 +396,9 @@
       "pickInRound": 9,
       "tier": "late",
       "tierLabel": "Late 2nd",
-      "avgTrueValue": 2862,
+      "avgTrueValue": 2863,
       "avgMarketValue": 2966,
-      "multiplier": 1.001
+      "multiplier": 1.002
     },
     {
       "draftSlot": "2.10",
@@ -407,9 +407,9 @@
       "pickInRound": 10,
       "tier": "late",
       "tierLabel": "Late 2nd",
-      "avgTrueValue": 2808,
+      "avgTrueValue": 2824,
       "avgMarketValue": 2966,
-      "multiplier": 0.9885
+      "multiplier": 0.996
     },
     {
       "draftSlot": "2.11",
@@ -418,9 +418,9 @@
       "pickInRound": 11,
       "tier": "late",
       "tierLabel": "Late 2nd",
-      "avgTrueValue": 2749,
+      "avgTrueValue": 2789,
       "avgMarketValue": 2966,
-      "multiplier": 0.9663
+      "multiplier": 0.9761
     },
     {
       "draftSlot": "2.12",
@@ -429,9 +429,9 @@
       "pickInRound": 12,
       "tier": "late",
       "tierLabel": "Late 2nd",
-      "avgTrueValue": 2676,
+      "avgTrueValue": 2690,
       "avgMarketValue": 2966,
-      "multiplier": 0.9454
+      "multiplier": 0.9309
     },
     {
       "draftSlot": "3.01",
@@ -440,9 +440,9 @@
       "pickInRound": 1,
       "tier": "early",
       "tierLabel": "Early 3rd",
-      "avgTrueValue": 2597,
+      "avgTrueValue": 2638,
       "avgMarketValue": 2435,
-      "multiplier": 1.1121
+      "multiplier": 1.1097
     },
     {
       "draftSlot": "3.02",
@@ -451,9 +451,9 @@
       "pickInRound": 2,
       "tier": "early",
       "tierLabel": "Early 3rd",
-      "avgTrueValue": 2550,
+      "avgTrueValue": 2603,
       "avgMarketValue": 2435,
-      "multiplier": 1.0825
+      "multiplier": 1.0928
     },
     {
       "draftSlot": "3.03",
@@ -462,9 +462,9 @@
       "pickInRound": 3,
       "tier": "early",
       "tierLabel": "Early 3rd",
-      "avgTrueValue": 2479,
+      "avgTrueValue": 2525,
       "avgMarketValue": 2435,
-      "multiplier": 1.0444
+      "multiplier": 1.0772
     },
     {
       "draftSlot": "3.04",
@@ -473,9 +473,9 @@
       "pickInRound": 4,
       "tier": "early",
       "tierLabel": "Early 3rd",
-      "avgTrueValue": 2408,
+      "avgTrueValue": 2481,
       "avgMarketValue": 2435,
-      "multiplier": 1.0053
+      "multiplier": 1.0608
     },
     {
       "draftSlot": "3.05",
@@ -484,9 +484,9 @@
       "pickInRound": 5,
       "tier": "mid",
       "tierLabel": "Mid 3rd",
-      "avgTrueValue": 2334,
+      "avgTrueValue": 2373,
       "avgMarketValue": 2265,
-      "multiplier": 1.0724
+      "multiplier": 1.1214
     },
     {
       "draftSlot": "3.06",
@@ -495,9 +495,9 @@
       "pickInRound": 6,
       "tier": "mid",
       "tierLabel": "Mid 3rd",
-      "avgTrueValue": 2273,
+      "avgTrueValue": 2344,
       "avgMarketValue": 2265,
-      "multiplier": 1.0521
+      "multiplier": 1.1038
     },
     {
       "draftSlot": "3.07",
@@ -506,9 +506,9 @@
       "pickInRound": 7,
       "tier": "mid",
       "tierLabel": "Mid 3rd",
-      "avgTrueValue": 2238,
+      "avgTrueValue": 2313,
       "avgMarketValue": 2265,
-      "multiplier": 1.038
+      "multiplier": 1.0905
     },
     {
       "draftSlot": "3.08",
@@ -517,9 +517,9 @@
       "pickInRound": 8,
       "tier": "mid",
       "tierLabel": "Mid 3rd",
-      "avgTrueValue": 2175,
+      "avgTrueValue": 2237,
       "avgMarketValue": 2265,
-      "multiplier": 1.0199
+      "multiplier": 1.0777
     },
     {
       "draftSlot": "3.09",
@@ -528,9 +528,9 @@
       "pickInRound": 9,
       "tier": "late",
       "tierLabel": "Late 3rd",
-      "avgTrueValue": 2074,
+      "avgTrueValue": 2220,
       "avgMarketValue": 2081,
-      "multiplier": 1.061
+      "multiplier": 1.1672
     },
     {
       "draftSlot": "3.10",
@@ -539,9 +539,9 @@
       "pickInRound": 10,
       "tier": "late",
       "tierLabel": "Late 3rd",
-      "avgTrueValue": 2011,
+      "avgTrueValue": 2171,
       "avgMarketValue": 2081,
-      "multiplier": 1.0495
+      "multiplier": 1.1581
     },
     {
       "draftSlot": "3.11",
@@ -550,9 +550,9 @@
       "pickInRound": 11,
       "tier": "late",
       "tierLabel": "Late 3rd",
-      "avgTrueValue": 1981,
+      "avgTrueValue": 2146,
       "avgMarketValue": 2081,
-      "multiplier": 1.0341
+      "multiplier": 1.1403
     },
     {
       "draftSlot": "3.12",
@@ -561,9 +561,9 @@
       "pickInRound": 12,
       "tier": "late",
       "tierLabel": "Late 3rd",
-      "avgTrueValue": 1958,
+      "avgTrueValue": 2100,
       "avgMarketValue": 2081,
-      "multiplier": 1.0231
+      "multiplier": 1.1158
     },
     {
       "draftSlot": "4.01",
@@ -572,9 +572,9 @@
       "pickInRound": 1,
       "tier": "early",
       "tierLabel": "Early 4th",
-      "avgTrueValue": 1938,
+      "avgTrueValue": 2057,
       "avgMarketValue": 1696,
-      "multiplier": 1.2494
+      "multiplier": 1.3373
     },
     {
       "draftSlot": "4.02",
@@ -583,9 +583,9 @@
       "pickInRound": 2,
       "tier": "early",
       "tierLabel": "Early 4th",
-      "avgTrueValue": 1849,
+      "avgTrueValue": 1981,
       "avgMarketValue": 1696,
-      "multiplier": 1.2058
+      "multiplier": 1.309
     },
     {
       "draftSlot": "4.03",
@@ -594,9 +594,9 @@
       "pickInRound": 3,
       "tier": "early",
       "tierLabel": "Early 4th",
-      "avgTrueValue": 1832,
+      "avgTrueValue": 1935,
       "avgMarketValue": 1696,
-      "multiplier": 1.1952
+      "multiplier": 1.2683
     },
     {
       "draftSlot": "4.04",
@@ -605,9 +605,9 @@
       "pickInRound": 4,
       "tier": "early",
       "tierLabel": "Early 4th",
-      "avgTrueValue": 1787,
+      "avgTrueValue": 1887,
       "avgMarketValue": 1696,
-      "multiplier": 1.1763
+      "multiplier": 1.2376
     },
     {
       "draftSlot": "4.05",
@@ -616,9 +616,9 @@
       "pickInRound": 5,
       "tier": "mid",
       "tierLabel": "Mid 4th",
-      "avgTrueValue": 1733,
+      "avgTrueValue": 1872,
       "avgMarketValue": 1620,
-      "multiplier": 1.1877
+      "multiplier": 1.2883
     },
     {
       "draftSlot": "4.06",
@@ -627,9 +627,9 @@
       "pickInRound": 6,
       "tier": "mid",
       "tierLabel": "Mid 4th",
-      "avgTrueValue": 1676,
+      "avgTrueValue": 1817,
       "avgMarketValue": 1620,
-      "multiplier": 1.1531
+      "multiplier": 1.2599
     },
     {
       "draftSlot": "4.07",
@@ -638,9 +638,9 @@
       "pickInRound": 7,
       "tier": "mid",
       "tierLabel": "Mid 4th",
-      "avgTrueValue": 1657,
+      "avgTrueValue": 1767,
       "avgMarketValue": 1620,
-      "multiplier": 1.1352
+      "multiplier": 1.2173
     },
     {
       "draftSlot": "4.08",
@@ -649,9 +649,9 @@
       "pickInRound": 8,
       "tier": "mid",
       "tierLabel": "Mid 4th",
-      "avgTrueValue": 1630,
+      "avgTrueValue": 1687,
       "avgMarketValue": 1620,
-      "multiplier": 1.1167
+      "multiplier": 1.1654
     },
     {
       "draftSlot": "4.09",
@@ -660,9 +660,9 @@
       "pickInRound": 9,
       "tier": "late",
       "tierLabel": "Late 4th",
-      "avgTrueValue": 1578,
+      "avgTrueValue": 1644,
       "avgMarketValue": 1484,
-      "multiplier": 1.2001
+      "multiplier": 1.2419
     },
     {
       "draftSlot": "4.10",
@@ -671,9 +671,9 @@
       "pickInRound": 10,
       "tier": "late",
       "tierLabel": "Late 4th",
-      "avgTrueValue": 1557,
+      "avgTrueValue": 1592,
       "avgMarketValue": 1484,
-      "multiplier": 1.1826
+      "multiplier": 1.2244
     },
     {
       "draftSlot": "4.11",
@@ -682,9 +682,9 @@
       "pickInRound": 11,
       "tier": "late",
       "tierLabel": "Late 4th",
-      "avgTrueValue": 1526,
+      "avgTrueValue": 1571,
       "avgMarketValue": 1484,
-      "multiplier": 1.1611
+      "multiplier": 1.2035
     },
     {
       "draftSlot": "4.12",
@@ -693,143 +693,143 @@
       "pickInRound": 12,
       "tier": "late",
       "tierLabel": "Late 4th",
-      "avgTrueValue": 1506,
+      "avgTrueValue": 1553,
       "avgMarketValue": 1484,
-      "multiplier": 1.1449
+      "multiplier": 1.1914
     }
   ],
   "multiplierByTier": {
-    "Early 1st": 1.1333,
-    "Mid 1st": 0.9717,
-    "Late 1st": 0.9527,
-    "Early 2nd": 0.9728,
-    "Mid 2nd": 0.9561,
-    "Late 2nd": 0.9754,
-    "Early 3rd": 1.0612,
-    "Mid 3rd": 1.0455,
-    "Late 3rd": 1.0418,
-    "Early 4th": 1.207,
-    "Mid 4th": 1.1481,
-    "Late 4th": 1.1718
+    "Early 1st": 1.0206,
+    "Mid 1st": 0.9684,
+    "Late 1st": 0.9628,
+    "Early 2nd": 0.997,
+    "Mid 2nd": 0.9754,
+    "Late 2nd": 0.9761,
+    "Early 3rd": 1.085,
+    "Mid 3rd": 1.0985,
+    "Late 3rd": 1.1456,
+    "Early 4th": 1.2883,
+    "Mid 4th": 1.2327,
+    "Late 4th": 1.2156
   },
   "avgTrueByTier": {
-    "Early 1st": 6923,
-    "Mid 1st": 4772,
-    "Late 1st": 4090,
-    "Early 2nd": 3538,
-    "Mid 2nd": 3027,
-    "Late 2nd": 2774,
-    "Early 3rd": 2508,
-    "Mid 3rd": 2255,
-    "Late 3rd": 2006,
-    "Early 4th": 1851,
-    "Mid 4th": 1674,
-    "Late 4th": 1542
+    "Early 1st": 6210,
+    "Mid 1st": 4781,
+    "Late 1st": 4133,
+    "Early 2nd": 3583,
+    "Mid 2nd": 3126,
+    "Late 2nd": 2791,
+    "Early 3rd": 2562,
+    "Mid 3rd": 2317,
+    "Late 3rd": 2159,
+    "Early 4th": 1965,
+    "Mid 4th": 1786,
+    "Late 4th": 1590
   },
   "multiplierBySlot": {
-    "1.01": 1.4893,
-    "1.02": 1.1657,
-    "1.03": 0.9573,
-    "1.04": 0.9208,
-    "1.05": 1.0427,
-    "1.06": 1.0019,
-    "1.07": 0.9392,
-    "1.08": 0.9028,
-    "1.09": 1.0264,
-    "1.10": 0.9869,
-    "1.11": 0.9312,
-    "1.12": 0.8659,
-    "2.01": 1.031,
-    "2.02": 0.9948,
-    "2.03": 0.9489,
-    "2.04": 0.9168,
-    "2.05": 0.9846,
-    "2.06": 0.9613,
-    "2.07": 0.9496,
-    "2.08": 0.9291,
-    "2.09": 1.001,
-    "2.10": 0.9885,
-    "2.11": 0.9663,
-    "2.12": 0.9454,
-    "3.01": 1.1121,
-    "3.02": 1.0825,
-    "3.03": 1.0444,
-    "3.04": 1.0053,
-    "3.05": 1.0724,
-    "3.06": 1.0521,
-    "3.07": 1.038,
-    "3.08": 1.0199,
-    "3.09": 1.061,
-    "3.10": 1.0495,
-    "3.11": 1.0341,
-    "3.12": 1.0231,
-    "4.01": 1.2494,
-    "4.02": 1.2058,
-    "4.03": 1.1952,
-    "4.04": 1.1763,
-    "4.05": 1.1877,
-    "4.06": 1.1531,
-    "4.07": 1.1352,
-    "4.08": 1.1167,
-    "4.09": 1.2001,
-    "4.10": 1.1826,
-    "4.11": 1.1611,
-    "4.12": 1.1449
+    "1.01": 1.2517,
+    "1.02": 1.0385,
+    "1.03": 0.9158,
+    "1.04": 0.8762,
+    "1.05": 1.031,
+    "1.06": 0.9756,
+    "1.07": 0.9532,
+    "1.08": 0.9143,
+    "1.09": 1.0108,
+    "1.10": 0.9786,
+    "1.11": 0.9509,
+    "1.12": 0.911,
+    "2.01": 1.0527,
+    "2.02": 1.0077,
+    "2.03": 0.978,
+    "2.04": 0.95,
+    "2.05": 0.9994,
+    "2.06": 0.996,
+    "2.07": 0.9721,
+    "2.08": 0.9343,
+    "2.09": 1.002,
+    "2.10": 0.996,
+    "2.11": 0.9761,
+    "2.12": 0.9309,
+    "3.01": 1.1097,
+    "3.02": 1.0928,
+    "3.03": 1.0772,
+    "3.04": 1.0608,
+    "3.05": 1.1214,
+    "3.06": 1.1038,
+    "3.07": 1.0905,
+    "3.08": 1.0777,
+    "3.09": 1.1672,
+    "3.10": 1.1581,
+    "3.11": 1.1403,
+    "3.12": 1.1158,
+    "4.01": 1.3373,
+    "4.02": 1.309,
+    "4.03": 1.2683,
+    "4.04": 1.2376,
+    "4.05": 1.2883,
+    "4.06": 1.2599,
+    "4.07": 1.2173,
+    "4.08": 1.1654,
+    "4.09": 1.2419,
+    "4.10": 1.2244,
+    "4.11": 1.2035,
+    "4.12": 1.1914
   },
   "avgTrueBySlot": {
-    "1.01": 9514,
-    "1.02": 7102,
-    "1.03": 5657,
-    "1.04": 5420,
-    "1.05": 5062,
-    "1.06": 4861,
-    "1.07": 4661,
-    "1.08": 4506,
-    "1.09": 4397,
-    "1.10": 4198,
-    "1.11": 3980,
-    "1.12": 3786,
-    "2.01": 3696,
-    "2.02": 3593,
-    "2.03": 3490,
-    "2.04": 3373,
-    "2.05": 3189,
-    "2.06": 3036,
-    "2.07": 2971,
-    "2.08": 2912,
-    "2.09": 2862,
-    "2.10": 2808,
-    "2.11": 2749,
-    "2.12": 2676,
-    "3.01": 2597,
-    "3.02": 2550,
-    "3.03": 2479,
-    "3.04": 2408,
-    "3.05": 2334,
-    "3.06": 2273,
-    "3.07": 2238,
-    "3.08": 2175,
-    "3.09": 2074,
-    "3.10": 2011,
-    "3.11": 1981,
-    "3.12": 1958,
-    "4.01": 1938,
-    "4.02": 1849,
-    "4.03": 1832,
-    "4.04": 1787,
-    "4.05": 1733,
-    "4.06": 1676,
-    "4.07": 1657,
-    "4.08": 1630,
-    "4.09": 1578,
-    "4.10": 1557,
-    "4.11": 1526,
-    "4.12": 1506
+    "1.01": 7762,
+    "1.02": 6257,
+    "1.03": 5539,
+    "1.04": 5283,
+    "1.05": 5056,
+    "1.06": 4844,
+    "1.07": 4713,
+    "1.08": 4512,
+    "1.09": 4352,
+    "1.10": 4215,
+    "1.11": 4049,
+    "1.12": 3918,
+    "2.01": 3775,
+    "2.02": 3644,
+    "2.03": 3519,
+    "2.04": 3393,
+    "2.05": 3254,
+    "2.06": 3170,
+    "2.07": 3104,
+    "2.08": 2975,
+    "2.09": 2863,
+    "2.10": 2824,
+    "2.11": 2789,
+    "2.12": 2690,
+    "3.01": 2638,
+    "3.02": 2603,
+    "3.03": 2525,
+    "3.04": 2481,
+    "3.05": 2373,
+    "3.06": 2344,
+    "3.07": 2313,
+    "3.08": 2237,
+    "3.09": 2220,
+    "3.10": 2171,
+    "3.11": 2146,
+    "3.12": 2100,
+    "4.01": 2057,
+    "4.02": 1981,
+    "4.03": 1935,
+    "4.04": 1887,
+    "4.05": 1872,
+    "4.06": 1817,
+    "4.07": 1767,
+    "4.08": 1687,
+    "4.09": 1644,
+    "4.10": 1592,
+    "4.11": 1571,
+    "4.12": 1553
   },
   "multiplierByRound": {
-    "1": 1.0306,
-    "2": 0.9681,
-    "3": 1.05,
-    "4": 1.1763
+    "1": 0.9875,
+    "2": 0.9836,
+    "3": 1.1084,
+    "4": 1.2469
   }
 }

@@ -16,6 +16,14 @@ import {
   buildTopPlayersFromHwangAdp,
 } from '../scenarios/hwangAdpLoader';
 import {
+  DEFAULT_RANK_SOURCE,
+  RANK_SOURCE_DASH,
+  isCurrentSeasonRankDashAllowed,
+  loadRedraftDashRankRows,
+  normalizeRankSource,
+  rankSourceShortLabel,
+} from '../scenarios/simulatorRankSource';
+import {
   encodeSimulatorScenario,
   decodeFutureScenario2,
   applyScenarioChanges,
@@ -37,9 +45,12 @@ import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 const OG_TITLE = 'Season Simulator';
 const OG_DESCRIPTION = 'Run outcome-roll simulations and see championship odds.';
 
-function SimulatorTooltip({ season, iterations }) {
+function SimulatorTooltip({ season, iterations, rankSource }) {
   const years = getOutcomeHistoryYears(season);
   const yearLabel = years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : 'past seasons';
+  const rankLabel = rankSource === RANK_SOURCE_DASH
+    ? 'Redraft Dash positional rank'
+    : `${season} Hwang ADP`;
 
   return (
     <span className="info-icon scenario-builder-tooltip" aria-label="About the Season Simulator">
@@ -49,7 +60,7 @@ function SimulatorTooltip({ season, iterations }) {
           <div className="scenario-builder-tooltip-body">
             <p style={{ margin: '0 0 0.6em 0' }}>
               Same outcome engine as Future Scenarios v2 — each player gets a random
-              percentile roll from their {season} Hwang ADP ±2 historical pool ({yearLabel}),
+              percentile roll from their {rankLabel} ±2 historical pool ({yearLabel}),
               densified with synthetic in-between seasons, for weeks 1–14. Playoff weeks
               15–17 are rolled independently from real historical playoffs of similar
               regular-season scorers.
@@ -80,7 +91,6 @@ function SimulatorBuilderPage() {
 
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
-  const [topPlayersBySeason, setTopPlayersBySeason] = useState([]);
   const [teamsForGrid, setTeamsForGrid] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,6 +114,12 @@ function SimulatorBuilderPage() {
     const pre = pendingScenarioRef.current;
     return normalizeMonotone(pre?.m ?? DEFAULT_MONOTONE);
   });
+  const [rankSource, setRankSource] = useState(() => {
+    const pre = pendingScenarioRef.current;
+    return normalizeRankSource(pre?.rs ?? DEFAULT_RANK_SOURCE, pre?.sy);
+  });
+  const [hwangRankRows, setHwangRankRows] = useState([]);
+  const [dashRankRows, setDashRankRows] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,22 +132,23 @@ function SimulatorBuilderPage() {
       setLoading(true);
       setError(null);
       try {
-        const [rosterData, players, hwangRows] = await Promise.all([
+        const [rosterData, players, hwangRows, dashRows] = await Promise.all([
           loadOutcomeScenarioRosterData(season),
           fetch('/data/players.txt').then((r) => r.json()).catch(() => null),
           loadHwangAdpRowsForYear(season).catch(() => []),
+          isCurrentSeasonRankDashAllowed(season)
+            ? loadRedraftDashRankRows().catch(() => [])
+            : Promise.resolve([]),
         ]);
 
         if (cancelled) return;
 
         const { teams, originalRosters: initial, idMap } = rosterData;
-        const topPlayers = players && idMap
-          ? buildTopPlayersFromHwangAdp(hwangRows, players, idMap, getPlayerInfo)
-          : [];
 
         setPlayersData(players);
         setPlayerIdMap(idMap);
-        setTopPlayersBySeason(topPlayers);
+        setHwangRankRows(hwangRows);
+        setDashRankRows(dashRows);
         setTeamsForGrid(teams);
 
         const storedEncoded = sessionStorage.getItem('pendingSimulatorBuilderScenario');
@@ -145,6 +162,7 @@ function SimulatorBuilderPage() {
           if (pending.n != null) setIterations(pending.n);
           if (pending.v != null) setVariance(normalizeVariance(pending.v));
           if (pending.m != null) setMonotone(normalizeMonotone(pending.m));
+          if (pending.rs != null) setRankSource(normalizeRankSource(pending.rs, season));
           if (Array.isArray(pending.c) && pending.c.length > 0) {
             setScenarioRosters(sanitizeRosters(applyScenarioChanges(initial, pending.c)));
             setSearchParams((prev) => {
@@ -185,6 +203,24 @@ function SimulatorBuilderPage() {
     });
   }, [loading, teamsForGrid.length]);
 
+  useEffect(() => {
+    if (loading) return;
+    setRankSource((prev) => {
+      if (prev === RANK_SOURCE_DASH && dashRankRows.length === 0) return DEFAULT_RANK_SOURCE;
+      return normalizeRankSource(prev, season);
+    });
+  }, [loading, season, dashRankRows.length]);
+
+  const topPlayersBySeason = useMemo(() => {
+    if (!playersData || !playerIdMap) return [];
+    const rows = rankSource === RANK_SOURCE_DASH && dashRankRows.length > 0
+      ? dashRankRows
+      : hwangRankRows;
+    return buildTopPlayersFromHwangAdp(rows, playersData, playerIdMap, getPlayerInfo);
+  }, [rankSource, dashRankRows, hwangRankRows, playersData, playerIdMap]);
+
+  const dashRanksAvailable = isCurrentSeasonRankDashAllowed(season) && dashRankRows.length > 0;
+
   const handleSelectTeam = (rosterId) => setSelectedRosterId(rosterId);
 
   const handleRevert = (rosterId, playerId, type) => {
@@ -221,6 +257,7 @@ function SimulatorBuilderPage() {
       iterations,
       variance,
       monotone,
+      rankSource,
     });
     navigate(`?state=run&scenario=${encodeURIComponent(encoded)}`);
   };
@@ -237,9 +274,15 @@ function SimulatorBuilderPage() {
 
   const leftHeader = (
     <div className="outcome-scenario-header-meta">
-      <OutcomeScenarioSeasonDropdown season={season} onSeasonChange={setSeason} />
+      <OutcomeScenarioSeasonDropdown
+        season={season}
+        onSeasonChange={(next) => {
+          setSeason(next);
+          setRankSource((prev) => normalizeRankSource(prev, next));
+        }}
+      />
       <span className="future-scenario-proj-label">
-        {season} ADP · outcomes {historyLabel}
+        {season} {rankSourceShortLabel(rankSource, season)} · outcomes {historyLabel}
       </span>
     </div>
   );
@@ -248,7 +291,7 @@ function SimulatorBuilderPage() {
     <>
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
       <InfoPageWrapper
-        title={<>Season Simulator <SimulatorTooltip season={season} iterations={iterations} /></>}
+        title={<>Season Simulator <SimulatorTooltip season={season} iterations={iterations} rankSource={rankSource} /></>}
         subtitle={null}
         leftHeader={leftHeader}
       >
@@ -296,6 +339,9 @@ function SimulatorBuilderPage() {
                     onChangeVariance={setVariance}
                     monotone={monotone}
                     onChangeMonotone={setMonotone}
+                    rankSource={rankSource}
+                    onChangeRankSource={setRankSource}
+                    allowRedraftDash={dashRanksAvailable}
                   />
                 </div>
               </div>

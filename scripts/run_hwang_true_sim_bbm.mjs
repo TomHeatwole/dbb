@@ -14,10 +14,11 @@
  *
  * Formats:
  *   hwang    1QB/3RB/3WR/1TE/2FLEX/1SF · 0 PPR · TE +0.5
- *   regular  true Underdog: 1QB/2RB/3WR/1TE/1FLEX · 0.5 PPR · no TEP · no SF
+ *   regular  1QB/2RB/3WR/1TE/1FLEX · 0.5 PPR · TEP from BBM_TEP (default 0) · no SF
  *
  * Usage:
  *   npx tsx scripts/run_hwang_true_sim_bbm.mjs [seed] [builds] [outDir]
+ *   BBM_ONLY_REGULAR=1 BBM_TEP=0.5 npx tsx scripts/run_hwang_true_sim_bbm.mjs 1 50 outDir
  */
 import fs from 'fs';
 import path from 'path';
@@ -30,6 +31,8 @@ const OUT_DIR = process.argv[4]
 const SEED = Number(process.argv[2]) || 1;
 const BUILDS = Number(process.argv[3]) || 50;
 const JITTER = 10;
+const TEP = process.env.BBM_TEP != null ? Number(process.env.BBM_TEP) : 0;
+const ONLY_REGULAR = process.env.BBM_ONLY_REGULAR === '1';
 const ARCH_CSV = path.join(ROOT, 'example_data', 'underdog_bbm_archetype_rosters.csv');
 const ARCH_META = JSON.stringify({
   generatedAt: new Date().toISOString(),
@@ -76,9 +79,9 @@ const FORMATS = [
     name: 'regular',
     slotCounts: { QB: 1, RB: 2, WR: 3, TE: 1, FLEX: 1, SUPER: 0 },
     ppr: 0.5,
-    tePremium: 0,
+    tePremium: TEP,
   },
-];
+].filter((f) => !ONLY_REGULAR || f.name === 'regular');
 const BASES = ['ktc', 'comp'];
 
 function csvCell(value) {
@@ -237,14 +240,16 @@ console.log('\n=== Multipliers (mean-grounded, weighted, full comparison network
 for (const { basis, format, results } of runs) {
   console.log(`${basis} / ${format.name}:`, results.overall.multipliers);
 }
-for (const basis of BASES) {
-  const h = runs.find((r) => r.basis === basis && r.format.name === 'hwang');
-  const g = runs.find((r) => r.basis === basis && r.format.name === 'regular');
-  console.log(`\n=== ${basis}: format factors (hwang ÷ regular) ===`);
-  for (const pos of ['QB', 'RB', 'WR', 'TE']) {
-    const fa = h.results.overall.multipliers[pos];
-    const fb = g.results.overall.multipliers[pos];
-    console.log(`  ${pos}: ${(fa / fb).toFixed(3)}`);
+if (!ONLY_REGULAR) {
+  for (const basis of BASES) {
+    const h = runs.find((r) => r.basis === basis && r.format.name === 'hwang');
+    const g = runs.find((r) => r.basis === basis && r.format.name === 'regular');
+    console.log(`\n=== ${basis}: format factors (hwang ÷ regular) ===`);
+    for (const pos of ['QB', 'RB', 'WR', 'TE']) {
+      const fa = h.results.overall.multipliers[pos];
+      const fb = g.results.overall.multipliers[pos];
+      console.log(`  ${pos}: ${(fa / fb).toFixed(3)}`);
+    }
   }
 }
 console.log('\nDone.');

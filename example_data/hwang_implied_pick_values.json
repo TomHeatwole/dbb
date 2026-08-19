@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T22:11:43.735Z",
+  "generatedAt": "2026-08-18T22:38:17.777Z",
   "posMult": {
     "QB": 0.99,
     "RB": 1.04,
@@ -61,27 +61,27 @@
       "rmse": 1727.8770074955605,
       "ci": {
         "r1": {
-          "p05": 1566.3386812329293,
-          "p50": 2438.4836636184527,
-          "p95": 3585.10779921552,
+          "p05": 1565.1532901823205,
+          "p50": 2491.7520599223135,
+          "p95": 3661.7784404045924,
           "n": 400
         },
         "r2": {
-          "p05": 1086.584000745446,
-          "p50": 1725.0250213728943,
-          "p95": 2451.155382341209,
+          "p05": 1061.0141757706033,
+          "p50": 1677.205429410978,
+          "p95": 2418.730477770405,
           "n": 400
         },
         "r3": {
-          "p05": 870.1648037258815,
-          "p50": 1430.8776954742082,
-          "p95": 2039.6861827096404,
+          "p05": 826.0303501524617,
+          "p50": 1427.7024077784858,
+          "p95": 2060.348398236512,
           "n": 400
         },
         "r4": {
-          "p05": 434.0500168038782,
-          "p50": 1322.004139445994,
-          "p95": 2125.8146875,
+          "p05": 468.41712631578963,
+          "p50": 1361.921486283652,
+          "p95": 2342.8579820404093,
           "n": 400
         }
       }
@@ -144,52 +144,52 @@
       "rmse": 1633.5798955640817,
       "ci": {
         "r1_mid": {
-          "p05": 4812.419646550336,
-          "p50": 6566.817290051076,
-          "p95": 7771.944387204983,
-          "n": 131
+          "p05": 4989.369241102081,
+          "p50": 6414.761897533405,
+          "p95": 7836.811359480039,
+          "n": 145
         },
         "r1_late": {
-          "p05": 4098.419646550336,
-          "p50": 5852.817290051076,
-          "p95": 7057.944387204983,
-          "n": 131
+          "p05": 4275.369241102081,
+          "p50": 5700.761897533405,
+          "p95": 7122.811359480039,
+          "n": 145
         },
         "r1_future": {
-          "p05": 1710.333754066072,
-          "p50": 2543.8441553812368,
-          "p95": 3343.4181655196758,
-          "n": 131
+          "p05": 1614.370144097094,
+          "p50": 2474.9463870967734,
+          "p95": 3571.8212704368243,
+          "n": 145
         },
         "r2_curr": {
           "p05": 3375.04,
-          "p50": 3730.513333333334,
+          "p50": 3724.2160000000003,
           "p95": 4054.5,
-          "n": 131
+          "n": 145
         },
         "r2_future": {
-          "p05": 685.0638890161426,
-          "p50": 1486.1420889916212,
-          "p95": 2276.6068930781407,
-          "n": 131
+          "p05": 695.8305987589654,
+          "p50": 1439.9669207881511,
+          "p95": 2307.14,
+          "n": 145
         },
         "r3_curr": {
           "p05": 0,
-          "p50": 413.88296141542105,
-          "p95": 2074.0303537509512,
-          "n": 131
+          "p50": 444.1904465177679,
+          "p95": 1719.559749204907,
+          "n": 145
         },
         "r3_future": {
-          "p05": 895.2069059495275,
-          "p50": 1513.4799999999998,
-          "p95": 2174.6890388376646,
-          "n": 131
+          "p05": 613.0744527813056,
+          "p50": 1461.6754377119012,
+          "p95": 2128.5780648684586,
+          "n": 145
         },
         "r4_future": {
-          "p05": 134.59298366123653,
-          "p50": 1367.425459521378,
-          "p95": 2400.500014509839,
-          "n": 131
+          "p05": 415.253381924198,
+          "p50": 1398.5267927397663,
+          "p95": 2495.7128030419954,
+          "n": 145
         }
       }
     },
@@ -263,8 +263,4252 @@
       "Late": {
         "n": 0
       }
+    },
+    "senderOneWaySingleRound": {
+      "r1": {
+        "n": 7,
+        "mean": 2789.5671428571427,
+        "median": 1744.6599999999999,
+        "min": 1077.7799999999997,
+        "max": 6963.99
+      },
+      "r2": {
+        "n": 12,
+        "mean": 2155.8508333333334,
+        "median": 2382.84,
+        "min": -331.3699999999999,
+        "max": 4054.5
+      },
+      "r3": {
+        "n": 7,
+        "mean": 1319.9314285714286,
+        "median": 1428.56,
+        "min": 148,
+        "max": 2490.8
+      },
+      "r4": {
+        "n": 4,
+        "mean": 1534.58,
+        "median": 1605.32,
+        "min": -723.6399999999999,
+        "max": 3651.3199999999997
+      }
     }
   },
+  "senderEvents": [
+    {
+      "date": "2024-08-01",
+      "transactionId": "1124851150441828352",
+      "sender": "Let James Cook",
+      "receiver": "Trey Trey",
+      "picksSent": [
+        "2025 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 1st",
+          "round": 1,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "George Kittle (TE 4186)",
+        "Devin Singletary (RB 2721)",
+        "Kenneth Walker (RB 4832)",
+        "Isiah Pacheco (RB 4954)"
+      ],
+      "playersOut": [
+        "Trey McBride (TE 6390)",
+        "Jonathon Brooks (RB 4946)",
+        "Kimani Vidal (RB 2291)"
+      ],
+      "playersInNames": [
+        "George Kittle",
+        "Devin Singletary",
+        "Kenneth Walker",
+        "Isiah Pacheco"
+      ],
+      "playersOutNames": [
+        "Trey McBride",
+        "Jonathon Brooks",
+        "Kimani Vidal"
+      ],
+      "playerInObjs": [
+        {
+          "name": "George Kittle",
+          "pos": "TE",
+          "adj": 4186
+        },
+        {
+          "name": "Devin Singletary",
+          "pos": "RB",
+          "adj": 2721
+        },
+        {
+          "name": "Kenneth Walker",
+          "pos": "RB",
+          "adj": 4832
+        },
+        {
+          "name": "Isiah Pacheco",
+          "pos": "RB",
+          "adj": 4954
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Trey McBride",
+          "pos": "TE",
+          "adj": 6390
+        },
+        {
+          "name": "Jonathon Brooks",
+          "pos": "RB",
+          "adj": 4946
+        },
+        {
+          "name": "Kimani Vidal",
+          "pos": "RB",
+          "adj": 2291
+        }
+      ],
+      "adjIn": 16691.940000000002,
+      "adjOut": 14960.940000000002,
+      "implied": 1731,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2024-08-02",
+      "transactionId": "1125165568560181248",
+      "sender": "Trey Trey",
+      "receiver": "Age is just a number",
+      "picksSent": [
+        "2025 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 1st",
+          "round": 1,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2025 1st"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-02",
+      "transactionId": "1125165568560181248",
+      "sender": "Age is just a number",
+      "receiver": "Trey Trey",
+      "picksSent": [
+        "2025 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 1st",
+          "round": 1,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2025 1st"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-19",
+      "transactionId": "1131437938786570240",
+      "sender": "Adam(s) and Steve(nson)",
+      "receiver": "KobeCopters",
+      "picksSent": [
+        "2027 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 1st",
+          "round": 1,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2025 4th"
+      ],
+      "playersIn": [
+        "Evan Engram (TE 3819)"
+      ],
+      "playersOut": [
+        "Juwan Johnson (TE 1728)"
+      ],
+      "playersInNames": [
+        "Evan Engram"
+      ],
+      "playersOutNames": [
+        "Juwan Johnson"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Evan Engram",
+          "pos": "TE",
+          "adj": 3819
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Juwan Johnson",
+          "pos": "TE",
+          "adj": 1728
+        }
+      ],
+      "adjIn": 3819.1800000000003,
+      "adjOut": 1727.8000000000002,
+      "implied": 2091.38,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-02-19",
+      "transactionId": "1197996779048534016",
+      "sender": "The Ladds",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2025 1.10 (Late)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 1.10 (Late)",
+          "round": 1,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Late",
+          "slot": 10
+        }
+      ],
+      "picksReceived": [
+        "2025 1.06 (Mid)"
+      ],
+      "playersIn": [
+        "Chris Olave (WR 4704)"
+      ],
+      "playersOut": [
+        "Rome Odunze (WR 5418)"
+      ],
+      "playersInNames": [
+        "Chris Olave"
+      ],
+      "playersOutNames": [
+        "Rome Odunze"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Chris Olave",
+          "pos": "WR",
+          "adj": 4704
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Rome Odunze",
+          "pos": "WR",
+          "adj": 5418
+        }
+      ],
+      "adjIn": 4704,
+      "adjOut": 5418,
+      "implied": -714,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-02-19",
+      "transactionId": "1197996779048534016",
+      "sender": "Sell for Sellers",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2025 1.06 (Mid)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 1.06 (Mid)",
+          "round": 1,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Mid",
+          "slot": 6
+        }
+      ],
+      "picksReceived": [
+        "2025 1.10 (Late)"
+      ],
+      "playersIn": [
+        "Rome Odunze (WR 5418)"
+      ],
+      "playersOut": [
+        "Chris Olave (WR 4704)"
+      ],
+      "playersInNames": [
+        "Rome Odunze"
+      ],
+      "playersOutNames": [
+        "Chris Olave"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Rome Odunze",
+          "pos": "WR",
+          "adj": 5418
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Chris Olave",
+          "pos": "WR",
+          "adj": 4704
+        }
+      ],
+      "adjIn": 5418,
+      "adjOut": 4704,
+      "implied": 714,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-02-21",
+      "transactionId": "1198701786462949376",
+      "sender": "Drake & Bake",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2026 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 1st",
+          "round": 1,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Trey McBride (TE 7606)"
+      ],
+      "playersOut": [
+        "Jordan Love (QB 6328)"
+      ],
+      "playersInNames": [
+        "Trey McBride"
+      ],
+      "playersOutNames": [
+        "Jordan Love"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Trey McBride",
+          "pos": "TE",
+          "adj": 7606
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Jordan Love",
+          "pos": "QB",
+          "adj": 6328
+        }
+      ],
+      "adjIn": 7605.5,
+      "adjOut": 6328.08,
+      "implied": 1277.42,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-03-13",
+      "transactionId": "1205943762094665728",
+      "sender": "Eat It While She Sleeper",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2026 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 1st",
+          "round": 1,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 4th"
+      ],
+      "playersIn": [
+        "Justin Jefferson (WR 9454)"
+      ],
+      "playersOut": [
+        "Malik Nabers (WR 8330)"
+      ],
+      "playersInNames": [
+        "Justin Jefferson"
+      ],
+      "playersOutNames": [
+        "Malik Nabers"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Justin Jefferson",
+          "pos": "WR",
+          "adj": 9454
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Malik Nabers",
+          "pos": "WR",
+          "adj": 8330
+        }
+      ],
+      "adjIn": 9454,
+      "adjOut": 8330,
+      "implied": 1124,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-05-24",
+      "transactionId": "1232208190070853632",
+      "sender": "House of Hwang",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2028 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 1st",
+          "round": 1,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Tua Tagovailoa (QB 3982)"
+      ],
+      "playersOut": [
+        "Jalen McMillan (WR 2904)"
+      ],
+      "playersInNames": [
+        "Tua Tagovailoa"
+      ],
+      "playersOutNames": [
+        "Jalen McMillan"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Tua Tagovailoa",
+          "pos": "QB",
+          "adj": 3982
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Jalen McMillan",
+          "pos": "WR",
+          "adj": 2904
+        }
+      ],
+      "adjIn": 3981.7799999999997,
+      "adjOut": 2904,
+      "implied": 1077.7799999999997,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-08-28",
+      "transactionId": "1266780405088915456",
+      "sender": "aidsonballs",
+      "receiver": "Eat It While She Sleeper",
+      "picksSent": [
+        "2027 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 1st",
+          "round": 1,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 2nd"
+      ],
+      "playersIn": [
+        "Tyler Allgeier (RB 2546)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Tyler Allgeier"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Tyler Allgeier",
+          "pos": "RB",
+          "adj": 2546
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 2545.92,
+      "adjOut": 0,
+      "implied": 2545.92,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-03-18",
+      "transactionId": "1340121724494045184",
+      "sender": "MrZaccheaus",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2028 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 1st",
+          "round": 1,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Mac Jones (QB 2941)",
+        "Dalton Kincaid (TE 4023)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Mac Jones",
+        "Dalton Kincaid"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Mac Jones",
+          "pos": "QB",
+          "adj": 2941
+        },
+        {
+          "name": "Dalton Kincaid",
+          "pos": "TE",
+          "adj": 4023
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 6963.99,
+      "adjOut": 0,
+      "implied": 6963.99,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-05-24",
+      "transactionId": "1364355048007557120",
+      "sender": "PUPpy Bowl",
+      "receiver": "House of Hwang",
+      "picksSent": [
+        "2028 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 1st",
+          "round": 1,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2029 1st"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-05-24",
+      "transactionId": "1364355048007557120",
+      "sender": "House of Hwang",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2029 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2029 1st",
+          "round": 1,
+          "season": "2029",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2028 1st"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-06-23",
+      "transactionId": "1375254828879450112",
+      "sender": "The Ladds",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2027 1st",
+        "2027 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 1st",
+          "round": 1,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2027 1st",
+          "round": 1,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "RJ Harvey (RB 3514)",
+        "Jeremiyah Love (RB 7778)"
+      ],
+      "playersOut": [
+        "Alec Pierce (WR 4032)",
+        "Denzel Boston (WR 3771)"
+      ],
+      "playersInNames": [
+        "RJ Harvey",
+        "Jeremiyah Love"
+      ],
+      "playersOutNames": [
+        "Alec Pierce",
+        "Denzel Boston"
+      ],
+      "playerInObjs": [
+        {
+          "name": "RJ Harvey",
+          "pos": "RB",
+          "adj": 3514
+        },
+        {
+          "name": "Jeremiyah Love",
+          "pos": "RB",
+          "adj": 7778
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Alec Pierce",
+          "pos": "WR",
+          "adj": 4032
+        },
+        {
+          "name": "Denzel Boston",
+          "pos": "WR",
+          "adj": 3771
+        }
+      ],
+      "adjIn": 11292.32,
+      "adjOut": 7803,
+      "implied": 3489.3199999999997,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 1,
+      "nPicksSent": 2,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-07-26",
+      "transactionId": "1387196971852238849",
+      "sender": "DrakeHigginsAchane ²",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2028 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 1st",
+          "round": 1,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Jake Ferguson (TE 3431)",
+        "Alec Pierce (WR 4032)",
+        "Jayden Higgins (WR 3437)"
+      ],
+      "playersOut": [
+        "Oronde Gadsden (TE 3865)",
+        "Jaylin Noel (WR 2556)"
+      ],
+      "playersInNames": [
+        "Jake Ferguson",
+        "Alec Pierce",
+        "Jayden Higgins"
+      ],
+      "playersOutNames": [
+        "Oronde Gadsden",
+        "Jaylin Noel"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Jake Ferguson",
+          "pos": "TE",
+          "adj": 3431
+        },
+        {
+          "name": "Alec Pierce",
+          "pos": "WR",
+          "adj": 4032
+        },
+        {
+          "name": "Jayden Higgins",
+          "pos": "WR",
+          "adj": 3437
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Oronde Gadsden",
+          "pos": "TE",
+          "adj": 3865
+        },
+        {
+          "name": "Jaylin Noel",
+          "pos": "WR",
+          "adj": 2556
+        }
+      ],
+      "adjIn": 10900.220000000001,
+      "adjOut": 6420.76,
+      "implied": 4479.460000000001,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-07-29",
+      "transactionId": "1388062969669103616",
+      "sender": "House of Hwang",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2028 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 1st",
+          "round": 1,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Rome Odunze (WR 5368)"
+      ],
+      "playersOut": [
+        "Gunnar Helm (TE 3115)"
+      ],
+      "playersInNames": [
+        "Rome Odunze"
+      ],
+      "playersOutNames": [
+        "Gunnar Helm"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Rome Odunze",
+          "pos": "WR",
+          "adj": 5368
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Gunnar Helm",
+          "pos": "TE",
+          "adj": 3115
+        }
+      ],
+      "adjIn": 5368,
+      "adjOut": 3115.34,
+      "implied": 2252.66,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-08-03",
+      "transactionId": "1390127290549018624",
+      "sender": "Eat It While She Sleeper",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2027 1st"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 1st",
+          "round": 1,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2027 3rd"
+      ],
+      "playersIn": [
+        "Jadarian Price (RB 5141)"
+      ],
+      "playersOut": [
+        "Cole Kmet (TE 2142)"
+      ],
+      "playersInNames": [
+        "Jadarian Price"
+      ],
+      "playersOutNames": [
+        "Cole Kmet"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Jadarian Price",
+          "pos": "RB",
+          "adj": 5141
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Cole Kmet",
+          "pos": "TE",
+          "adj": 2142
+        }
+      ],
+      "adjIn": 5140.72,
+      "adjOut": 2142.26,
+      "implied": 2998.46,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 1,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2024-08-05",
+      "transactionId": "1126351704007467008",
+      "sender": "Adam(s) and Steve(nson)",
+      "receiver": "Let James Cook",
+      "picksSent": [
+        "2025 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 2nd",
+          "round": 2,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Davante Adams (WR 3911)",
+        "Kenneth Walker (RB 4843)"
+      ],
+      "playersOut": [
+        "Rome Odunze (WR 5650)"
+      ],
+      "playersInNames": [
+        "Davante Adams",
+        "Kenneth Walker"
+      ],
+      "playersOutNames": [
+        "Rome Odunze"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Davante Adams",
+          "pos": "WR",
+          "adj": 3911
+        },
+        {
+          "name": "Kenneth Walker",
+          "pos": "RB",
+          "adj": 4843
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Rome Odunze",
+          "pos": "WR",
+          "adj": 5650
+        }
+      ],
+      "adjIn": 8754.279999999999,
+      "adjOut": 6118.279999999999,
+      "implied": 2636,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-06",
+      "transactionId": "1126406263807574016",
+      "sender": "Let James Cook",
+      "receiver": "KobeCopters",
+      "picksSent": [
+        "2025 2nd",
+        "2025 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 2nd",
+          "round": 2,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2025 2nd",
+          "round": 2,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Derrick Henry (RB 3763)",
+        "Brian Thomas (WR 4342)"
+      ],
+      "playersOut": [
+        "Rome Odunze (WR 5701)"
+      ],
+      "playersInNames": [
+        "Derrick Henry",
+        "Brian Thomas"
+      ],
+      "playersOutNames": [
+        "Rome Odunze"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Derrick Henry",
+          "pos": "RB",
+          "adj": 3763
+        },
+        {
+          "name": "Brian Thomas",
+          "pos": "WR",
+          "adj": 4342
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Rome Odunze",
+          "pos": "WR",
+          "adj": 5701
+        }
+      ],
+      "adjIn": 8104.72,
+      "adjOut": 6904.72,
+      "implied": 1200,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-13",
+      "transactionId": "1129274305898024960",
+      "sender": "Trey Trey",
+      "receiver": "seanjcrow",
+      "picksSent": [
+        "2026 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 2nd",
+          "round": 2,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Drew Lock (QB 1174)",
+        "Drake Maye (QB 4703)"
+      ],
+      "playersOut": [
+        "Matthew Stafford (QB 3168)",
+        "Keenan Allen (WR 3041)"
+      ],
+      "playersInNames": [
+        "Drew Lock",
+        "Drake Maye"
+      ],
+      "playersOutNames": [
+        "Matthew Stafford",
+        "Keenan Allen"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Drew Lock",
+          "pos": "QB",
+          "adj": 1174
+        },
+        {
+          "name": "Drake Maye",
+          "pos": "QB",
+          "adj": 4703
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Matthew Stafford",
+          "pos": "QB",
+          "adj": 3168
+        },
+        {
+          "name": "Keenan Allen",
+          "pos": "WR",
+          "adj": 3041
+        }
+      ],
+      "adjIn": 5877.63,
+      "adjOut": 6209,
+      "implied": -331.3699999999999,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-02-18",
+      "transactionId": "1197722968499695616",
+      "sender": "The Boomers",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2027 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 2nd",
+          "round": 2,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 2nd"
+      ],
+      "playersIn": [
+        "Joe Burrow (QB 8252)",
+        "Garrett Wilson (WR 6272)",
+        "Ja'Lynn Polk (WR 2110)"
+      ],
+      "playersOut": [
+        "Justin Jefferson (WR 9279)",
+        "Brock Purdy (QB 5519)"
+      ],
+      "playersInNames": [
+        "Joe Burrow",
+        "Garrett Wilson",
+        "Ja'Lynn Polk"
+      ],
+      "playersOutNames": [
+        "Justin Jefferson",
+        "Brock Purdy"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Joe Burrow",
+          "pos": "QB",
+          "adj": 8252
+        },
+        {
+          "name": "Garrett Wilson",
+          "pos": "WR",
+          "adj": 6272
+        },
+        {
+          "name": "Ja'Lynn Polk",
+          "pos": "WR",
+          "adj": 2110
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Justin Jefferson",
+          "pos": "WR",
+          "adj": 9279
+        },
+        {
+          "name": "Brock Purdy",
+          "pos": "QB",
+          "adj": 5519
+        }
+      ],
+      "adjIn": 16633.65,
+      "adjOut": 18142.65,
+      "implied": -1509,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-02-18",
+      "transactionId": "1197722968499695616",
+      "sender": "The Ladds",
+      "receiver": "The Boomers",
+      "picksSent": [
+        "2026 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 2nd",
+          "round": 2,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2027 2nd"
+      ],
+      "playersIn": [
+        "Justin Jefferson (WR 9279)",
+        "Brock Purdy (QB 5519)"
+      ],
+      "playersOut": [
+        "Joe Burrow (QB 8252)",
+        "Garrett Wilson (WR 6272)",
+        "Ja'Lynn Polk (WR 2110)"
+      ],
+      "playersInNames": [
+        "Justin Jefferson",
+        "Brock Purdy"
+      ],
+      "playersOutNames": [
+        "Joe Burrow",
+        "Garrett Wilson",
+        "Ja'Lynn Polk"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Justin Jefferson",
+          "pos": "WR",
+          "adj": 9279
+        },
+        {
+          "name": "Brock Purdy",
+          "pos": "QB",
+          "adj": 5519
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Joe Burrow",
+          "pos": "QB",
+          "adj": 8252
+        },
+        {
+          "name": "Garrett Wilson",
+          "pos": "WR",
+          "adj": 6272
+        },
+        {
+          "name": "Ja'Lynn Polk",
+          "pos": "WR",
+          "adj": 2110
+        }
+      ],
+      "adjIn": 18142.65,
+      "adjOut": 16633.65,
+      "implied": 1509,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-05-20",
+      "transactionId": "1230665515119157248",
+      "sender": "Sell for Sellers",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2025 2.02 (Early)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 2.02 (Early)",
+          "round": 2,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Early",
+          "slot": 2
+        }
+      ],
+      "picksReceived": [
+        "2025 3.10 (Late)",
+        "2025 2.06 (Mid)"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-07-28",
+      "transactionId": "1255588777326288896",
+      "sender": "House of Hwang",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2028 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 2nd",
+          "round": 2,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Tucker Kraft (TE 4011)"
+      ],
+      "playersOut": [
+        "Devin Neal (RB 1881)"
+      ],
+      "playersInNames": [
+        "Tucker Kraft"
+      ],
+      "playersOutNames": [
+        "Devin Neal"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Tucker Kraft",
+          "pos": "TE",
+          "adj": 4011
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Devin Neal",
+          "pos": "RB",
+          "adj": 1881
+        }
+      ],
+      "adjIn": 4011.0400000000004,
+      "adjOut": 1881.3600000000001,
+      "implied": 2129.6800000000003,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2025-08-28",
+      "transactionId": "1266780405088915456",
+      "sender": "Eat It While She Sleeper",
+      "receiver": "aidsonballs",
+      "picksSent": [
+        "2026 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 2nd",
+          "round": 2,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2027 1st"
+      ],
+      "playersIn": [],
+      "playersOut": [
+        "Tyler Allgeier (RB 2546)"
+      ],
+      "playersInNames": [],
+      "playersOutNames": [
+        "Tyler Allgeier"
+      ],
+      "playerInObjs": [],
+      "playerOutObjs": [
+        {
+          "name": "Tyler Allgeier",
+          "pos": "RB",
+          "adj": 2546
+        }
+      ],
+      "adjIn": 0,
+      "adjOut": 2545.92,
+      "implied": -2545.92,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-02-20",
+      "transactionId": "1330585014005428224",
+      "sender": "PUPpy Bowl",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2026 2.02 (Early)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 2.02 (Early)",
+          "round": 2,
+          "season": "2026",
+          "currentYear": true,
+          "tier": "Early",
+          "slot": 2
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Jake Ferguson (TE 4055)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Jake Ferguson"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Jake Ferguson",
+          "pos": "TE",
+          "adj": 4055
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 4054.5,
+      "adjOut": 0,
+      "implied": 4054.5,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-02-22",
+      "transactionId": "1331363677063909376",
+      "sender": "DrakeHigginsAchane ²",
+      "receiver": "Eat It While She Sleeper",
+      "picksSent": [
+        "2027 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 2nd",
+          "round": 2,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Jordan Addison (WR 3999)"
+      ],
+      "playersOut": [
+        "Tony Pollard (RB 2791)"
+      ],
+      "playersInNames": [
+        "Jordan Addison"
+      ],
+      "playersOutNames": [
+        "Tony Pollard"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Jordan Addison",
+          "pos": "WR",
+          "adj": 3999
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Tony Pollard",
+          "pos": "RB",
+          "adj": 2791
+        }
+      ],
+      "adjIn": 3999,
+      "adjOut": 2791.36,
+      "implied": 1207.6399999999999,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-02-24",
+      "transactionId": "1332241788273950720",
+      "sender": "MrZaccheaus",
+      "receiver": "Eat It While She Sleeper",
+      "picksSent": [
+        "2028 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 2nd",
+          "round": 2,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Kayshon Boutte (WR 2973)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Kayshon Boutte"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Kayshon Boutte",
+          "pos": "WR",
+          "adj": 2973
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 2973,
+      "adjOut": 0,
+      "implied": 2973,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-04-11",
+      "transactionId": "1348672295966617600",
+      "sender": "seanjcrow",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2027 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 2nd",
+          "round": 2,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "George Pickens (WR 6022)"
+      ],
+      "playersOut": [
+        "Travis Etienne (RB 4847)"
+      ],
+      "playersInNames": [
+        "George Pickens"
+      ],
+      "playersOutNames": [
+        "Travis Etienne"
+      ],
+      "playerInObjs": [
+        {
+          "name": "George Pickens",
+          "pos": "WR",
+          "adj": 6022
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Travis Etienne",
+          "pos": "RB",
+          "adj": 4847
+        }
+      ],
+      "adjIn": 6022,
+      "adjOut": 4847.4400000000005,
+      "implied": 1174.5599999999995,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-05-21",
+      "transactionId": "1363388634257973248",
+      "sender": "PUPpy Bowl",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2028 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 2nd",
+          "round": 2,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Zach Charbonnet (RB 3491)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Zach Charbonnet"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Zach Charbonnet",
+          "pos": "RB",
+          "adj": 3491
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 3491.28,
+      "adjOut": 0,
+      "implied": 3491.28,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-05-21",
+      "transactionId": "1363322601182593024",
+      "sender": "MrZaccheaus",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2026 2.05 (Mid)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 2.05 (Mid)",
+          "round": 2,
+          "season": "2026",
+          "currentYear": true,
+          "tier": "Mid",
+          "slot": 5
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Romeo Doubs (WR 3273)",
+        "Marvin Harrison (WR 5120)"
+      ],
+      "playersOut": [
+        "Mac Jones (QB 2651)",
+        "Keon Coleman (WR 2449)",
+        "Jaylen Wright (RB 2325)"
+      ],
+      "playersInNames": [
+        "Romeo Doubs",
+        "Marvin Harrison"
+      ],
+      "playersOutNames": [
+        "Mac Jones",
+        "Keon Coleman",
+        "Jaylen Wright"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Romeo Doubs",
+          "pos": "WR",
+          "adj": 3273
+        },
+        {
+          "name": "Marvin Harrison",
+          "pos": "WR",
+          "adj": 5120
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Mac Jones",
+          "pos": "QB",
+          "adj": 2651
+        },
+        {
+          "name": "Keon Coleman",
+          "pos": "WR",
+          "adj": 2449
+        },
+        {
+          "name": "Jaylen Wright",
+          "pos": "RB",
+          "adj": 2325
+        }
+      ],
+      "adjIn": 11187.66,
+      "adjOut": 7425.66,
+      "implied": 3762,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-06-21",
+      "transactionId": "1374620013637435392",
+      "sender": "Eat It While She Sleeper",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2027 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 2nd",
+          "round": 2,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Kenyon Sadiq (TE 4891)"
+      ],
+      "playersOut": [
+        "Josh Downs (WR 3652)"
+      ],
+      "playersInNames": [
+        "Kenyon Sadiq"
+      ],
+      "playersOutNames": [
+        "Josh Downs"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Kenyon Sadiq",
+          "pos": "TE",
+          "adj": 4891
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Josh Downs",
+          "pos": "WR",
+          "adj": 3652
+        }
+      ],
+      "adjIn": 4890.84,
+      "adjOut": 3652,
+      "implied": 1238.8400000000001,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-06-21",
+      "transactionId": "1374620081799041024",
+      "sender": "The Ladds",
+      "receiver": "seanjcrow",
+      "picksSent": [
+        "2028 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 2nd",
+          "round": 2,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Mark Andrews (TE 2934)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Mark Andrews"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Mark Andrews",
+          "pos": "TE",
+          "adj": 2934
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 2934.08,
+      "adjOut": 0,
+      "implied": 2934.08,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 2,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-07-26",
+      "transactionId": "1122569774858424320",
+      "sender": "Here Comes the Sun God",
+      "receiver": "KobeCopters",
+      "picksSent": [
+        "2026 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 3rd",
+          "round": 3,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Michael Pittman (WR 5128)"
+      ],
+      "playersOut": [
+        "George Pickens (WR 4980)"
+      ],
+      "playersInNames": [
+        "Michael Pittman"
+      ],
+      "playersOutNames": [
+        "George Pickens"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Michael Pittman",
+          "pos": "WR",
+          "adj": 5128
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "George Pickens",
+          "pos": "WR",
+          "adj": 4980
+        }
+      ],
+      "adjIn": 5128,
+      "adjOut": 4980,
+      "implied": 148,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-09",
+      "transactionId": "1127719540193964032",
+      "sender": "Eat It While She Sleeper",
+      "receiver": "The Boomers",
+      "picksSent": [
+        "2026 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 3rd",
+          "round": 3,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 1st",
+        "2026 2nd"
+      ],
+      "playersIn": [],
+      "playersOut": [
+        "Kyren Williams (RB 5270)"
+      ],
+      "playersInNames": [],
+      "playersOutNames": [
+        "Kyren Williams"
+      ],
+      "playerInObjs": [],
+      "playerOutObjs": [
+        {
+          "name": "Kyren Williams",
+          "pos": "RB",
+          "adj": 5270
+        }
+      ],
+      "adjIn": 0,
+      "adjOut": 5269.68,
+      "implied": -5269.68,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-09-03",
+      "transactionId": "1136718531543855104",
+      "sender": "Let James Cook",
+      "receiver": "KobeCopters",
+      "picksSent": [
+        "2025 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 3rd",
+          "round": 3,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Chuba Hubbard (RB 2491)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Chuba Hubbard"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Chuba Hubbard",
+          "pos": "RB",
+          "adj": 2491
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 2490.8,
+      "adjOut": 0,
+      "implied": 2490.8,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-03-05",
+      "transactionId": "1203043131860209664",
+      "sender": "PUPpy Bowl",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2025 3.03 (Early)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 3.03 (Early)",
+          "round": 3,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Early",
+          "slot": 3
+        }
+      ],
+      "picksReceived": [
+        "2025 2.10 (Late)",
+        "2025 3.10 (Late)"
+      ],
+      "playersIn": [],
+      "playersOut": [
+        "Jonnu Smith (TE 3375)"
+      ],
+      "playersInNames": [],
+      "playersOutNames": [
+        "Jonnu Smith"
+      ],
+      "playerInObjs": [],
+      "playerOutObjs": [
+        {
+          "name": "Jonnu Smith",
+          "pos": "TE",
+          "adj": 3375
+        }
+      ],
+      "adjIn": 0,
+      "adjOut": 3375.04,
+      "implied": -3375.04,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-03-08",
+      "transactionId": "1204230308669444096",
+      "sender": "House of Hwang",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2027 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 3rd",
+          "round": 3,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Juwan Johnson (TE 1985)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Juwan Johnson"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Juwan Johnson",
+          "pos": "TE",
+          "adj": 1985
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 1985.38,
+      "adjOut": 0,
+      "implied": 1985.38,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-06-03",
+      "transactionId": "1235743440147337216",
+      "sender": "Drake & Bake",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2026 3rd",
+        "2027 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 3rd",
+          "round": 3,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2027 3rd",
+          "round": 3,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Stefon Diggs (WR 2708)",
+        "Calvin Ridley (WR 2879)"
+      ],
+      "playersOut": [
+        "Jordan James (RB 2167)"
+      ],
+      "playersInNames": [
+        "Stefon Diggs",
+        "Calvin Ridley"
+      ],
+      "playersOutNames": [
+        "Jordan James"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Stefon Diggs",
+          "pos": "WR",
+          "adj": 2708
+        },
+        {
+          "name": "Calvin Ridley",
+          "pos": "WR",
+          "adj": 2879
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Jordan James",
+          "pos": "RB",
+          "adj": 2167
+        }
+      ],
+      "adjIn": 5587,
+      "adjOut": 2167.36,
+      "implied": 3419.64,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 3,
+      "nPicksSent": 2,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2025-07-29",
+      "transactionId": "1256070441630433280",
+      "sender": "aidsonballs",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2026 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 3rd",
+          "round": 3,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Michael Pittman (WR 3234)"
+      ],
+      "playersOut": [
+        "Brashard Smith (RB 1805)"
+      ],
+      "playersInNames": [
+        "Michael Pittman"
+      ],
+      "playersOutNames": [
+        "Brashard Smith"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Michael Pittman",
+          "pos": "WR",
+          "adj": 3234
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Brashard Smith",
+          "pos": "RB",
+          "adj": 1805
+        }
+      ],
+      "adjIn": 3234,
+      "adjOut": 1805.44,
+      "implied": 1428.56,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2025-07-31",
+      "transactionId": "1256646379808227328",
+      "sender": "Drake & Bake",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2028 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 3rd",
+          "round": 3,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Jauan Jennings (WR 3110)"
+      ],
+      "playersOut": [
+        "Elic Ayomanor (WR 2386)"
+      ],
+      "playersInNames": [
+        "Jauan Jennings"
+      ],
+      "playersOutNames": [
+        "Elic Ayomanor"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Jauan Jennings",
+          "pos": "WR",
+          "adj": 3110
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Elic Ayomanor",
+          "pos": "WR",
+          "adj": 2386
+        }
+      ],
+      "adjIn": 3110,
+      "adjOut": 2386,
+      "implied": 724,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2025-09-01",
+      "transactionId": "1268110333210275840",
+      "sender": "PUPpy Bowl",
+      "receiver": "Lord Pittsy Flacco Joedy",
+      "picksSent": [
+        "2026 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 3rd",
+          "round": 3,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 4th"
+      ],
+      "playersIn": [
+        "Jalen Coker (WR 3235)"
+      ],
+      "playersOut": [
+        "Joe Flacco (QB 1551)"
+      ],
+      "playersInNames": [
+        "Jalen Coker"
+      ],
+      "playersOutNames": [
+        "Joe Flacco"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Jalen Coker",
+          "pos": "WR",
+          "adj": 3235
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Joe Flacco",
+          "pos": "QB",
+          "adj": 1551
+        }
+      ],
+      "adjIn": 3235,
+      "adjOut": 1551.33,
+      "implied": 1683.67,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-06-11",
+      "transactionId": "1370820871303725056",
+      "sender": "House of Hwang",
+      "receiver": "The Boomers",
+      "picksSent": [
+        "2029 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2029 3rd",
+          "round": 3,
+          "season": "2029",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Rachaad White (RB 2861)"
+      ],
+      "playersOut": [
+        "Kaleb Johnson (RB 2108)"
+      ],
+      "playersInNames": [
+        "Rachaad White"
+      ],
+      "playersOutNames": [
+        "Kaleb Johnson"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Rachaad White",
+          "pos": "RB",
+          "adj": 2861
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Kaleb Johnson",
+          "pos": "RB",
+          "adj": 2108
+        }
+      ],
+      "adjIn": 2861.04,
+      "adjOut": 2108.08,
+      "implied": 752.96,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-08-03",
+      "transactionId": "1390127290549018624",
+      "sender": "PUPpy Bowl",
+      "receiver": "Eat It While She Sleeper",
+      "picksSent": [
+        "2027 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 3rd",
+          "round": 3,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2027 1st"
+      ],
+      "playersIn": [
+        "Cole Kmet (TE 2142)"
+      ],
+      "playersOut": [
+        "Jadarian Price (RB 5141)"
+      ],
+      "playersInNames": [
+        "Cole Kmet"
+      ],
+      "playersOutNames": [
+        "Jadarian Price"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Cole Kmet",
+          "pos": "TE",
+          "adj": 2142
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Jadarian Price",
+          "pos": "RB",
+          "adj": 5141
+        }
+      ],
+      "adjIn": 2142.26,
+      "adjOut": 5140.72,
+      "implied": -2998.46,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 3,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2024-08-19",
+      "transactionId": "1131437938786570240",
+      "sender": "KobeCopters",
+      "receiver": "Adam(s) and Steve(nson)",
+      "picksSent": [
+        "2025 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 4th",
+          "round": 4,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2027 1st"
+      ],
+      "playersIn": [
+        "Juwan Johnson (TE 1728)"
+      ],
+      "playersOut": [
+        "Evan Engram (TE 3819)"
+      ],
+      "playersInNames": [
+        "Juwan Johnson"
+      ],
+      "playersOutNames": [
+        "Evan Engram"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Juwan Johnson",
+          "pos": "TE",
+          "adj": 1728
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Evan Engram",
+          "pos": "TE",
+          "adj": 3819
+        }
+      ],
+      "adjIn": 1727.8000000000002,
+      "adjOut": 3819.1800000000003,
+      "implied": -2091.38,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-03-13",
+      "transactionId": "1205943762094665728",
+      "sender": "The Ladds",
+      "receiver": "Eat It While She Sleeper",
+      "picksSent": [
+        "2026 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 4th",
+          "round": 4,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 1st"
+      ],
+      "playersIn": [
+        "Malik Nabers (WR 8330)"
+      ],
+      "playersOut": [
+        "Justin Jefferson (WR 9454)"
+      ],
+      "playersInNames": [
+        "Malik Nabers"
+      ],
+      "playersOutNames": [
+        "Justin Jefferson"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Malik Nabers",
+          "pos": "WR",
+          "adj": 8330
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Justin Jefferson",
+          "pos": "WR",
+          "adj": 9454
+        }
+      ],
+      "adjIn": 8330,
+      "adjOut": 9454,
+      "implied": -1124,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-06-09",
+      "transactionId": "1237901866403115008",
+      "sender": "The Ladds",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2027 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 4th",
+          "round": 4,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Jaylen Warren (RB 2996)",
+        "Tyjae Spears (RB 2914)"
+      ],
+      "playersOut": [
+        "Jack Bech (WR 2259)"
+      ],
+      "playersInNames": [
+        "Jaylen Warren",
+        "Tyjae Spears"
+      ],
+      "playersOutNames": [
+        "Jack Bech"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Jaylen Warren",
+          "pos": "RB",
+          "adj": 2996
+        },
+        {
+          "name": "Tyjae Spears",
+          "pos": "RB",
+          "adj": 2914
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Jack Bech",
+          "pos": "WR",
+          "adj": 2259
+        }
+      ],
+      "adjIn": 5910.32,
+      "adjOut": 2259,
+      "implied": 3651.3199999999997,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2025-06-13",
+      "transactionId": "1239208919729979392",
+      "sender": "seanjcrow",
+      "receiver": "Drake & Bake",
+      "picksSent": [
+        "2026 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 4th",
+          "round": 4,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Jayden Reed (WR 3683)"
+      ],
+      "playersOut": [
+        "Matthew Stafford (QB 3085)"
+      ],
+      "playersInNames": [
+        "Jayden Reed"
+      ],
+      "playersOutNames": [
+        "Matthew Stafford"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Jayden Reed",
+          "pos": "WR",
+          "adj": 3683
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Matthew Stafford",
+          "pos": "QB",
+          "adj": 3085
+        }
+      ],
+      "adjIn": 3683,
+      "adjOut": 3084.84,
+      "implied": 598.1599999999999,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-07-14",
+      "transactionId": "1250584646735904768",
+      "sender": "Sell for Sellers",
+      "receiver": "Lord Pittsy Flacco Joedy",
+      "picksSent": [
+        "2026 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 4th",
+          "round": 4,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 1st",
+        "2027 2nd",
+        "2028 2nd"
+      ],
+      "playersIn": [
+        "Sam Howell (QB 1403)"
+      ],
+      "playersOut": [
+        "Justin Herbert (QB 6424)"
+      ],
+      "playersInNames": [
+        "Sam Howell"
+      ],
+      "playersOutNames": [
+        "Justin Herbert"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Sam Howell",
+          "pos": "QB",
+          "adj": 1403
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Justin Herbert",
+          "pos": "QB",
+          "adj": 6424
+        }
+      ],
+      "adjIn": 1402.83,
+      "adjOut": 6424.11,
+      "implied": -5021.28,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-08-02",
+      "transactionId": "1257395766696095744",
+      "sender": "Sell for Sellers",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2027 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 4th",
+          "round": 4,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Devin Neal (RB 1881)"
+      ],
+      "playersOut": [
+        "Isaac TeSlaa (WR 2605)"
+      ],
+      "playersInNames": [
+        "Devin Neal"
+      ],
+      "playersOutNames": [
+        "Isaac TeSlaa"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Devin Neal",
+          "pos": "RB",
+          "adj": 1881
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Isaac TeSlaa",
+          "pos": "WR",
+          "adj": 2605
+        }
+      ],
+      "adjIn": 1881.3600000000001,
+      "adjOut": 2605,
+      "implied": -723.6399999999999,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2025-09-01",
+      "transactionId": "1268110333210275840",
+      "sender": "Lord Pittsy Flacco Joedy",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2026 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 4th",
+          "round": 4,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 3rd"
+      ],
+      "playersIn": [
+        "Joe Flacco (QB 1551)"
+      ],
+      "playersOut": [
+        "Jalen Coker (WR 3235)"
+      ],
+      "playersInNames": [
+        "Joe Flacco"
+      ],
+      "playersOutNames": [
+        "Jalen Coker"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Joe Flacco",
+          "pos": "QB",
+          "adj": 1551
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Jalen Coker",
+          "pos": "WR",
+          "adj": 3235
+        }
+      ],
+      "adjIn": 1551.33,
+      "adjOut": 3235,
+      "implied": -1683.67,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-02-09",
+      "transactionId": "1326609485212454912",
+      "sender": "PUPpy Bowl",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2028 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 4th",
+          "round": 4,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2028 4th"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-02-09",
+      "transactionId": "1326609485212454912",
+      "sender": "Sell for Sellers",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2028 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 4th",
+          "round": 4,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2028 4th"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-02-20",
+      "transactionId": "1330785180641693696",
+      "sender": "DrakeHigginsAchane ²",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2027 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 4th",
+          "round": 4,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Sean Tucker (RB 2612)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Sean Tucker"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Sean Tucker",
+          "pos": "RB",
+          "adj": 2612
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 2612.48,
+      "adjOut": 0,
+      "implied": 2612.48,
+      "oneWay": true,
+      "singleRound": true,
+      "round": 4,
+      "nPicksSent": 1,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-03",
+      "transactionId": "1125594177087033344",
+      "sender": "Age is just a number",
+      "receiver": "KobeCopters",
+      "picksSent": [
+        "2025 1st",
+        "2025 2nd",
+        "2026 1st",
+        "2026 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 1st",
+          "round": 1,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2025 2nd",
+          "round": 2,
+          "season": "2025",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2026 1st",
+          "round": 1,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2026 2nd",
+          "round": 2,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Ja'Marr Chase (WR 8724)"
+      ],
+      "playersOut": [
+        "Drake London (WR 5905)"
+      ],
+      "playersInNames": [
+        "Ja'Marr Chase"
+      ],
+      "playersOutNames": [
+        "Drake London"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Ja'Marr Chase",
+          "pos": "WR",
+          "adj": 8724
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Drake London",
+          "pos": "WR",
+          "adj": 5905
+        }
+      ],
+      "adjIn": 8724,
+      "adjOut": 5905,
+      "implied": 2819,
+      "oneWay": true,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 4,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-09",
+      "transactionId": "1127719540193964032",
+      "sender": "The Boomers",
+      "receiver": "Eat It While She Sleeper",
+      "picksSent": [
+        "2026 1st",
+        "2026 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 1st",
+          "round": 1,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2026 2nd",
+          "round": 2,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 3rd"
+      ],
+      "playersIn": [
+        "Kyren Williams (RB 5270)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Kyren Williams"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Kyren Williams",
+          "pos": "RB",
+          "adj": 5270
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 5269.68,
+      "adjOut": 0,
+      "implied": 5269.68,
+      "oneWay": false,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2024-08-25",
+      "transactionId": "1133504846897807360",
+      "sender": "Age is just a number",
+      "receiver": "The Boomers",
+      "picksSent": [
+        "2027 1st",
+        "2027 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2027 1st",
+          "round": 1,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2027 2nd",
+          "round": 2,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Kyren Williams (RB 5385)"
+      ],
+      "playersOut": [
+        "Justice Hill (RB 1592)"
+      ],
+      "playersInNames": [
+        "Kyren Williams"
+      ],
+      "playersOutNames": [
+        "Justice Hill"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Kyren Williams",
+          "pos": "RB",
+          "adj": 5385
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Justice Hill",
+          "pos": "RB",
+          "adj": 1592
+        }
+      ],
+      "adjIn": 5385.12,
+      "adjOut": 1592.24,
+      "implied": 3792.88,
+      "oneWay": true,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-03-05",
+      "transactionId": "1203043131860209664",
+      "sender": "The Ladds",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2025 2.10 (Late)",
+        "2025 3.10 (Late)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 2.10 (Late)",
+          "round": 2,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Late",
+          "slot": 10
+        },
+        {
+          "label": "2025 3.10 (Late)",
+          "round": 3,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Late",
+          "slot": 10
+        }
+      ],
+      "picksReceived": [
+        "2025 3.03 (Early)"
+      ],
+      "playersIn": [
+        "Jonnu Smith (TE 3375)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Jonnu Smith"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Jonnu Smith",
+          "pos": "TE",
+          "adj": 3375
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 3375.04,
+      "adjOut": 0,
+      "implied": 3375.04,
+      "oneWay": false,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-05-12",
+      "transactionId": "1227819085912358912",
+      "sender": "PUPpy Bowl",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2025 1.08 (Late)",
+        "2025 3.06 (Mid)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 1.08 (Late)",
+          "round": 1,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Late",
+          "slot": 8
+        },
+        {
+          "label": "2025 3.06 (Mid)",
+          "round": 3,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Mid",
+          "slot": 6
+        }
+      ],
+      "picksReceived": [
+        "2026 1st",
+        "2025 2.06 (Mid)"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-05-12",
+      "transactionId": "1227819085912358912",
+      "sender": "The Ladds",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2026 1st",
+        "2025 2.06 (Mid)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 1st",
+          "round": 1,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2025 2.06 (Mid)",
+          "round": 2,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Mid",
+          "slot": 6
+        }
+      ],
+      "picksReceived": [
+        "2025 1.08 (Late)",
+        "2025 3.06 (Mid)"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-05-20",
+      "transactionId": "1230665515119157248",
+      "sender": "PUPpy Bowl",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2025 3.10 (Late)",
+        "2025 2.06 (Mid)"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2025 3.10 (Late)",
+          "round": 3,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Late",
+          "slot": 10
+        },
+        {
+          "label": "2025 2.06 (Mid)",
+          "round": 2,
+          "season": "2025",
+          "currentYear": true,
+          "tier": "Mid",
+          "slot": 6
+        }
+      ],
+      "picksReceived": [
+        "2025 2.02 (Early)"
+      ],
+      "playersIn": [],
+      "playersOut": [],
+      "playersInNames": [],
+      "playersOutNames": [],
+      "playerInObjs": [],
+      "playerOutObjs": [],
+      "adjIn": 0,
+      "adjOut": 0,
+      "implied": 0,
+      "oneWay": false,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-07-14",
+      "transactionId": "1250584646735904768",
+      "sender": "Lord Pittsy Flacco Joedy",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2026 1st",
+        "2027 2nd",
+        "2028 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 1st",
+          "round": 1,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2027 2nd",
+          "round": 2,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2028 2nd",
+          "round": 2,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [
+        "2026 4th"
+      ],
+      "playersIn": [
+        "Justin Herbert (QB 6424)"
+      ],
+      "playersOut": [
+        "Sam Howell (QB 1403)"
+      ],
+      "playersInNames": [
+        "Justin Herbert"
+      ],
+      "playersOutNames": [
+        "Sam Howell"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Justin Herbert",
+          "pos": "QB",
+          "adj": 6424
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Sam Howell",
+          "pos": "QB",
+          "adj": 1403
+        }
+      ],
+      "adjIn": 6424.11,
+      "adjOut": 1402.83,
+      "implied": 5021.28,
+      "oneWay": false,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 3,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-07-25",
+      "transactionId": "1254496856474406912",
+      "sender": "Drake & Bake",
+      "receiver": "PUPpy Bowl",
+      "picksSent": [
+        "2026 4th",
+        "2026 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 4th",
+          "round": 4,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2026 2nd",
+          "round": 2,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Hunter Henry (TE 2462)",
+        "Ray Davis (RB 2782)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Hunter Henry",
+        "Ray Davis"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Hunter Henry",
+          "pos": "TE",
+          "adj": 2462
+        },
+        {
+          "name": "Ray Davis",
+          "pos": "RB",
+          "adj": 2782
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 5244.38,
+      "adjOut": 0,
+      "implied": 5244.38,
+      "oneWay": true,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2025-07-28",
+      "transactionId": "1255683578860154880",
+      "sender": "aidsonballs",
+      "receiver": "The Boomers",
+      "picksSent": [
+        "2026 1st",
+        "2027 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 1st",
+          "round": 1,
+          "season": "2026",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2027 3rd",
+          "round": 3,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Saquon Barkley (RB 6596)"
+      ],
+      "playersOut": [
+        "Chuba Hubbard (RB 4317)"
+      ],
+      "playersInNames": [
+        "Saquon Barkley"
+      ],
+      "playersOutNames": [
+        "Chuba Hubbard"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Saquon Barkley",
+          "pos": "RB",
+          "adj": 6596
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Chuba Hubbard",
+          "pos": "RB",
+          "adj": 4317
+        }
+      ],
+      "adjIn": 6595.68,
+      "adjOut": 4317.04,
+      "implied": 2278.6400000000003,
+      "oneWay": true,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": false
+    },
+    {
+      "date": "2026-03-26",
+      "transactionId": "1343080565980528640",
+      "sender": "House of Hwang",
+      "receiver": "Sell for Sellers",
+      "picksSent": [
+        "2026 3.07 (Mid)",
+        "2027 4th"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2026 3.07 (Mid)",
+          "round": 3,
+          "season": "2026",
+          "currentYear": true,
+          "tier": "Mid",
+          "slot": 7
+        },
+        {
+          "label": "2027 4th",
+          "round": 4,
+          "season": "2027",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Tory Horton (WR 2531)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Tory Horton"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Tory Horton",
+          "pos": "WR",
+          "adj": 2531
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 2531,
+      "adjOut": 0,
+      "implied": 2531,
+      "oneWay": true,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-05-21",
+      "transactionId": "1363353724327567360",
+      "sender": "House of Hwang",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2028 3rd",
+        "2029 2nd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2028 3rd",
+          "round": 3,
+          "season": "2028",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2029 2nd",
+          "round": 2,
+          "season": "2029",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Quentin Johnston (WR 3299)",
+        "Kaleb Johnson (RB 2108)"
+      ],
+      "playersOut": [],
+      "playersInNames": [
+        "Quentin Johnston",
+        "Kaleb Johnson"
+      ],
+      "playersOutNames": [],
+      "playerInObjs": [
+        {
+          "name": "Quentin Johnston",
+          "pos": "WR",
+          "adj": 3299
+        },
+        {
+          "name": "Kaleb Johnson",
+          "pos": "RB",
+          "adj": 2108
+        }
+      ],
+      "playerOutObjs": [],
+      "adjIn": 5407.08,
+      "adjOut": 0,
+      "implied": 5407.08,
+      "oneWay": true,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": true
+    },
+    {
+      "date": "2026-08-08",
+      "transactionId": "1391798843351269376",
+      "sender": "DrakeHigginsAchane ²",
+      "receiver": "The Ladds",
+      "picksSent": [
+        "2029 1st",
+        "2029 3rd"
+      ],
+      "picksSentObjs": [
+        {
+          "label": "2029 1st",
+          "round": 1,
+          "season": "2029",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        },
+        {
+          "label": "2029 3rd",
+          "round": 3,
+          "season": "2029",
+          "currentYear": false,
+          "tier": null,
+          "slot": null
+        }
+      ],
+      "picksReceived": [],
+      "playersIn": [
+        "Travis Etienne (RB 4688)",
+        "Drake Maye (QB 9312)",
+        "Malik Washington (WR 2528)",
+        "Eli Raridon (TE 2975)"
+      ],
+      "playersOut": [
+        "Baker Mayfield (QB 4696)",
+        "Omarion Hampton (RB 7173)"
+      ],
+      "playersInNames": [
+        "Travis Etienne",
+        "Drake Maye",
+        "Malik Washington",
+        "Eli Raridon"
+      ],
+      "playersOutNames": [
+        "Baker Mayfield",
+        "Omarion Hampton"
+      ],
+      "playerInObjs": [
+        {
+          "name": "Travis Etienne",
+          "pos": "RB",
+          "adj": 4688
+        },
+        {
+          "name": "Drake Maye",
+          "pos": "QB",
+          "adj": 9312
+        },
+        {
+          "name": "Malik Washington",
+          "pos": "WR",
+          "adj": 2528
+        },
+        {
+          "name": "Eli Raridon",
+          "pos": "TE",
+          "adj": 2975
+        }
+      ],
+      "playerOutObjs": [
+        {
+          "name": "Baker Mayfield",
+          "pos": "QB",
+          "adj": 4696
+        },
+        {
+          "name": "Omarion Hampton",
+          "pos": "RB",
+          "adj": 7173
+        }
+      ],
+      "adjIn": 19503.68,
+      "adjOut": 11868.45,
+      "implied": 7635.23,
+      "oneWay": true,
+      "singleRound": false,
+      "round": null,
+      "nPicksSent": 2,
+      "usedLiveFallback": true
+    }
+  ],
+  "senderByManager": [
+    {
+      "sender": "House of Hwang",
+      "n": 7,
+      "byRound": {
+        "1": [
+          1078,
+          2253
+        ],
+        "2": [
+          2130
+        ],
+        "3": [
+          1985,
+          753
+        ],
+        "4": []
+      },
+      "mixed": 2,
+      "r1": {
+        "n": 2,
+        "mean": 1665.5,
+        "median": 1665.5,
+        "min": 1078,
+        "max": 2253
+      },
+      "r2": {
+        "n": 1,
+        "mean": 2130,
+        "median": 2130,
+        "min": 2130,
+        "max": 2130
+      },
+      "r3": {
+        "n": 2,
+        "mean": 1369,
+        "median": 1369,
+        "min": 753,
+        "max": 1985
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "Drake & Bake",
+      "n": 4,
+      "byRound": {
+        "1": [
+          1277
+        ],
+        "2": [],
+        "3": [
+          1710,
+          724
+        ],
+        "4": []
+      },
+      "mixed": 1,
+      "r1": {
+        "n": 1,
+        "mean": 1277,
+        "median": 1277,
+        "min": 1277,
+        "max": 1277
+      },
+      "r2": {
+        "n": 0
+      },
+      "r3": {
+        "n": 2,
+        "mean": 1217,
+        "median": 1217,
+        "min": 724,
+        "max": 1710
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "DrakeHigginsAchane ²",
+      "n": 4,
+      "byRound": {
+        "1": [
+          4479
+        ],
+        "2": [
+          1208
+        ],
+        "3": [],
+        "4": [
+          2612
+        ]
+      },
+      "mixed": 1,
+      "r1": {
+        "n": 1,
+        "mean": 4479,
+        "median": 4479,
+        "min": 4479,
+        "max": 4479
+      },
+      "r2": {
+        "n": 1,
+        "mean": 1208,
+        "median": 1208,
+        "min": 1208,
+        "max": 1208
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 1,
+        "mean": 2612,
+        "median": 2612,
+        "min": 2612,
+        "max": 2612
+      }
+    },
+    {
+      "sender": "Let James Cook",
+      "n": 3,
+      "byRound": {
+        "1": [
+          1731
+        ],
+        "2": [
+          600
+        ],
+        "3": [
+          2491
+        ],
+        "4": []
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 1,
+        "mean": 1731,
+        "median": 1731,
+        "min": 1731,
+        "max": 1731
+      },
+      "r2": {
+        "n": 1,
+        "mean": 600,
+        "median": 600,
+        "min": 600,
+        "max": 600
+      },
+      "r3": {
+        "n": 1,
+        "mean": 2491,
+        "median": 2491,
+        "min": 2491,
+        "max": 2491
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "MrZaccheaus",
+      "n": 3,
+      "byRound": {
+        "1": [
+          6964
+        ],
+        "2": [
+          2973,
+          3762
+        ],
+        "3": [],
+        "4": []
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 1,
+        "mean": 6964,
+        "median": 6964,
+        "min": 6964,
+        "max": 6964
+      },
+      "r2": {
+        "n": 2,
+        "mean": 3367.5,
+        "median": 3367.5,
+        "min": 2973,
+        "max": 3762
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "The Ladds",
+      "n": 3,
+      "byRound": {
+        "1": [
+          1745
+        ],
+        "2": [
+          2934
+        ],
+        "3": [],
+        "4": [
+          3651
+        ]
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 1,
+        "mean": 1745,
+        "median": 1745,
+        "min": 1745,
+        "max": 1745
+      },
+      "r2": {
+        "n": 1,
+        "mean": 2934,
+        "median": 2934,
+        "min": 2934,
+        "max": 2934
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 1,
+        "mean": 3651,
+        "median": 3651,
+        "min": 3651,
+        "max": 3651
+      }
+    },
+    {
+      "sender": "PUPpy Bowl",
+      "n": 2,
+      "byRound": {
+        "1": [],
+        "2": [
+          4055,
+          3491
+        ],
+        "3": [],
+        "4": []
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 2,
+        "mean": 3773,
+        "median": 3773,
+        "min": 3491,
+        "max": 4055
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "seanjcrow",
+      "n": 2,
+      "byRound": {
+        "1": [],
+        "2": [
+          1175
+        ],
+        "3": [],
+        "4": [
+          598
+        ]
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 1,
+        "mean": 1175,
+        "median": 1175,
+        "min": 1175,
+        "max": 1175
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 1,
+        "mean": 598,
+        "median": 598,
+        "min": 598,
+        "max": 598
+      }
+    },
+    {
+      "sender": "aidsonballs",
+      "n": 2,
+      "byRound": {
+        "1": [],
+        "2": [],
+        "3": [
+          1429
+        ],
+        "4": []
+      },
+      "mixed": 1,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 0
+      },
+      "r3": {
+        "n": 1,
+        "mean": 1429,
+        "median": 1429,
+        "min": 1429,
+        "max": 1429
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "Age is just a number",
+      "n": 2,
+      "byRound": {
+        "1": [],
+        "2": [],
+        "3": [],
+        "4": []
+      },
+      "mixed": 2,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 0
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "Adam(s) and Steve(nson)",
+      "n": 1,
+      "byRound": {
+        "1": [],
+        "2": [
+          2636
+        ],
+        "3": [],
+        "4": []
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 1,
+        "mean": 2636,
+        "median": 2636,
+        "min": 2636,
+        "max": 2636
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "Trey Trey",
+      "n": 1,
+      "byRound": {
+        "1": [],
+        "2": [
+          -331
+        ],
+        "3": [],
+        "4": []
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 1,
+        "mean": -331,
+        "median": -331,
+        "min": -331,
+        "max": -331
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "Eat It While She Sleeper",
+      "n": 1,
+      "byRound": {
+        "1": [],
+        "2": [
+          1239
+        ],
+        "3": [],
+        "4": []
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 1,
+        "mean": 1239,
+        "median": 1239,
+        "min": 1239,
+        "max": 1239
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "Here Comes the Sun God",
+      "n": 1,
+      "byRound": {
+        "1": [],
+        "2": [],
+        "3": [
+          148
+        ],
+        "4": []
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 0
+      },
+      "r3": {
+        "n": 1,
+        "mean": 148,
+        "median": 148,
+        "min": 148,
+        "max": 148
+      },
+      "r4": {
+        "n": 0
+      }
+    },
+    {
+      "sender": "Sell for Sellers",
+      "n": 1,
+      "byRound": {
+        "1": [],
+        "2": [],
+        "3": [],
+        "4": [
+          -724
+        ]
+      },
+      "mixed": 0,
+      "r1": {
+        "n": 0
+      },
+      "r2": {
+        "n": 0
+      },
+      "r3": {
+        "n": 0
+      },
+      "r4": {
+        "n": 1,
+        "mean": -724,
+        "median": -724,
+        "min": -724,
+        "max": -724
+      }
+    }
+  ],
   "trades": [
     {
       "season": "2024",
@@ -278,7 +4522,24 @@
         "picks": [
           "2026 3rd"
         ],
-        "adj": 4980
+        "adj": 4980,
+        "playerObjs": [
+          {
+            "name": "George Pickens",
+            "pos": "WR",
+            "adj": 4980
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 3rd",
+            "round": 3,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Here Comes the Sun God",
@@ -286,7 +4547,15 @@
           "Michael Pittman (WR 5128)"
         ],
         "picks": [],
-        "adj": 5128
+        "adj": 5128,
+        "playerObjs": [
+          {
+            "name": "Michael Pittman",
+            "pos": "WR",
+            "adj": 5128
+          }
+        ],
+        "pickObjs": []
       },
       "y": 148,
       "x": {
@@ -333,7 +4602,34 @@
         "picks": [
           "2025 1st"
         ],
-        "adj": 14960.940000000002
+        "adj": 14960.940000000002,
+        "playerObjs": [
+          {
+            "name": "Trey McBride",
+            "pos": "TE",
+            "adj": 6390
+          },
+          {
+            "name": "Jonathon Brooks",
+            "pos": "RB",
+            "adj": 4946
+          },
+          {
+            "name": "Kimani Vidal",
+            "pos": "RB",
+            "adj": 2291
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 1st",
+            "round": 1,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Let James Cook",
@@ -344,7 +4640,30 @@
           "Isiah Pacheco (RB 4954)"
         ],
         "picks": [],
-        "adj": 16691.940000000002
+        "adj": 16691.940000000002,
+        "playerObjs": [
+          {
+            "name": "George Kittle",
+            "pos": "TE",
+            "adj": 4186
+          },
+          {
+            "name": "Devin Singletary",
+            "pos": "RB",
+            "adj": 2721
+          },
+          {
+            "name": "Kenneth Walker",
+            "pos": "RB",
+            "adj": 4832
+          },
+          {
+            "name": "Isiah Pacheco",
+            "pos": "RB",
+            "adj": 4954
+          }
+        ],
+        "pickObjs": []
       },
       "y": 1731,
       "x": {
@@ -387,7 +4706,18 @@
         "picks": [
           "2025 1st"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2025 1st",
+            "round": 1,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Age is just a number",
@@ -395,7 +4725,18 @@
         "picks": [
           "2025 1st"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2025 1st",
+            "round": 1,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 0,
       "x": {
@@ -436,7 +4777,15 @@
           "Ja'Marr Chase (WR 8724)"
         ],
         "picks": [],
-        "adj": 8724
+        "adj": 8724,
+        "playerObjs": [
+          {
+            "name": "Ja'Marr Chase",
+            "pos": "WR",
+            "adj": 8724
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "KobeCopters",
@@ -449,7 +4798,48 @@
           "2026 1st",
           "2026 2nd"
         ],
-        "adj": 5905
+        "adj": 5905,
+        "playerObjs": [
+          {
+            "name": "Drake London",
+            "pos": "WR",
+            "adj": 5905
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 1st",
+            "round": 1,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2025 2nd",
+            "round": 2,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2026 1st",
+            "round": 1,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2026 2nd",
+            "round": 2,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2819,
       "x": {
@@ -496,7 +4886,24 @@
         "picks": [
           "2025 2nd"
         ],
-        "adj": 6118.279999999999
+        "adj": 6118.279999999999,
+        "playerObjs": [
+          {
+            "name": "Rome Odunze",
+            "pos": "WR",
+            "adj": 5650
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 2nd",
+            "round": 2,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Adam(s) and Steve(nson)",
@@ -505,7 +4912,20 @@
           "Kenneth Walker (RB 4843)"
         ],
         "picks": [],
-        "adj": 8754.279999999999
+        "adj": 8754.279999999999,
+        "playerObjs": [
+          {
+            "name": "Davante Adams",
+            "pos": "WR",
+            "adj": 3911
+          },
+          {
+            "name": "Kenneth Walker",
+            "pos": "RB",
+            "adj": 4843
+          }
+        ],
+        "pickObjs": []
       },
       "y": 2636,
       "x": {
@@ -549,7 +4969,20 @@
           "Brian Thomas (WR 4342)"
         ],
         "picks": [],
-        "adj": 8104.72
+        "adj": 8104.72,
+        "playerObjs": [
+          {
+            "name": "Derrick Henry",
+            "pos": "RB",
+            "adj": 3763
+          },
+          {
+            "name": "Brian Thomas",
+            "pos": "WR",
+            "adj": 4342
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "KobeCopters",
@@ -560,7 +4993,32 @@
           "2025 2nd",
           "2025 2nd"
         ],
-        "adj": 6904.72
+        "adj": 6904.72,
+        "playerObjs": [
+          {
+            "name": "Rome Odunze",
+            "pos": "WR",
+            "adj": 5701
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 2nd",
+            "round": 2,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2025 2nd",
+            "round": 2,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -1200,
       "x": {
@@ -605,7 +5063,24 @@
         "picks": [
           "2026 3rd"
         ],
-        "adj": 5269.68
+        "adj": 5269.68,
+        "playerObjs": [
+          {
+            "name": "Kyren Williams",
+            "pos": "RB",
+            "adj": 5270
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 3rd",
+            "round": 3,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Eat It While She Sleeper",
@@ -614,7 +5089,26 @@
           "2026 1st",
           "2026 2nd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2026 1st",
+            "round": 1,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2026 2nd",
+            "round": 2,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -5269.68,
       "x": {
@@ -662,7 +5156,20 @@
           "Drake Maye (QB 4703)"
         ],
         "picks": [],
-        "adj": 5877.63
+        "adj": 5877.63,
+        "playerObjs": [
+          {
+            "name": "Drew Lock",
+            "pos": "QB",
+            "adj": 1174
+          },
+          {
+            "name": "Drake Maye",
+            "pos": "QB",
+            "adj": 4703
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "seanjcrow",
@@ -673,7 +5180,29 @@
         "picks": [
           "2026 2nd"
         ],
-        "adj": 6209
+        "adj": 6209,
+        "playerObjs": [
+          {
+            "name": "Matthew Stafford",
+            "pos": "QB",
+            "adj": 3168
+          },
+          {
+            "name": "Keenan Allen",
+            "pos": "WR",
+            "adj": 3041
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 2nd",
+            "round": 2,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 331.3699999999999,
       "x": {
@@ -718,7 +5247,24 @@
         "picks": [
           "2027 1st"
         ],
-        "adj": 1727.8000000000002
+        "adj": 1727.8000000000002,
+        "playerObjs": [
+          {
+            "name": "Juwan Johnson",
+            "pos": "TE",
+            "adj": 1728
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 1st",
+            "round": 1,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Adam(s) and Steve(nson)",
@@ -728,7 +5274,24 @@
         "picks": [
           "2025 4th"
         ],
-        "adj": 3819.1800000000003
+        "adj": 3819.1800000000003,
+        "playerObjs": [
+          {
+            "name": "Evan Engram",
+            "pos": "TE",
+            "adj": 3819
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 4th",
+            "round": 4,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 2091.38,
       "x": {
@@ -776,7 +5339,32 @@
           "2027 1st",
           "2027 2nd"
         ],
-        "adj": 1592.24
+        "adj": 1592.24,
+        "playerObjs": [
+          {
+            "name": "Justice Hill",
+            "pos": "RB",
+            "adj": 1592
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 1st",
+            "round": 1,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2027 2nd",
+            "round": 2,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Age is just a number",
@@ -784,7 +5372,15 @@
           "Kyren Williams (RB 5385)"
         ],
         "picks": [],
-        "adj": 5385.12
+        "adj": 5385.12,
+        "playerObjs": [
+          {
+            "name": "Kyren Williams",
+            "pos": "RB",
+            "adj": 5385
+          }
+        ],
+        "pickObjs": []
       },
       "y": 3792.88,
       "x": {
@@ -829,7 +5425,15 @@
           "Chuba Hubbard (RB 2491)"
         ],
         "picks": [],
-        "adj": 2490.8
+        "adj": 2490.8,
+        "playerObjs": [
+          {
+            "name": "Chuba Hubbard",
+            "pos": "RB",
+            "adj": 2491
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "KobeCopters",
@@ -837,7 +5441,18 @@
         "picks": [
           "2025 3rd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2025 3rd",
+            "round": 3,
+            "season": "2025",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2490.8,
       "x": {
@@ -884,7 +5499,34 @@
         "picks": [
           "2026 2nd"
         ],
-        "adj": 16633.65
+        "adj": 16633.65,
+        "playerObjs": [
+          {
+            "name": "Joe Burrow",
+            "pos": "QB",
+            "adj": 8252
+          },
+          {
+            "name": "Garrett Wilson",
+            "pos": "WR",
+            "adj": 6272
+          },
+          {
+            "name": "Ja'Lynn Polk",
+            "pos": "WR",
+            "adj": 2110
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 2nd",
+            "round": 2,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "The Ladds",
@@ -895,7 +5537,29 @@
         "picks": [
           "2027 2nd"
         ],
-        "adj": 18142.65
+        "adj": 18142.65,
+        "playerObjs": [
+          {
+            "name": "Justin Jefferson",
+            "pos": "WR",
+            "adj": 9279
+          },
+          {
+            "name": "Brock Purdy",
+            "pos": "QB",
+            "adj": 5519
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 2nd",
+            "round": 2,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 1509,
       "x": {
@@ -938,7 +5602,24 @@
         "picks": [
           "2025 1.06 (Mid)"
         ],
-        "adj": 4704
+        "adj": 4704,
+        "playerObjs": [
+          {
+            "name": "Chris Olave",
+            "pos": "WR",
+            "adj": 4704
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 1.06 (Mid)",
+            "round": 1,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Mid",
+            "slot": 6
+          }
+        ]
       },
       "b": {
         "team": "Sell for Sellers",
@@ -948,7 +5629,24 @@
         "picks": [
           "2025 1.10 (Late)"
         ],
-        "adj": 5418
+        "adj": 5418,
+        "playerObjs": [
+          {
+            "name": "Rome Odunze",
+            "pos": "WR",
+            "adj": 5418
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 1.10 (Late)",
+            "round": 1,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Late",
+            "slot": 10
+          }
+        ]
       },
       "y": 714,
       "x": {
@@ -991,7 +5689,24 @@
         "picks": [
           "2026 1st"
         ],
-        "adj": 6328.08
+        "adj": 6328.08,
+        "playerObjs": [
+          {
+            "name": "Jordan Love",
+            "pos": "QB",
+            "adj": 6328
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 1st",
+            "round": 1,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Drake & Bake",
@@ -999,7 +5714,15 @@
           "Trey McBride (TE 7606)"
         ],
         "picks": [],
-        "adj": 7605.5
+        "adj": 7605.5,
+        "playerObjs": [
+          {
+            "name": "Trey McBride",
+            "pos": "TE",
+            "adj": 7606
+          }
+        ],
+        "pickObjs": []
       },
       "y": 1277.42,
       "x": {
@@ -1043,7 +5766,26 @@
           "2025 2.10 (Late)",
           "2025 3.10 (Late)"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2025 2.10 (Late)",
+            "round": 2,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Late",
+            "slot": 10
+          },
+          {
+            "label": "2025 3.10 (Late)",
+            "round": 3,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Late",
+            "slot": 10
+          }
+        ]
       },
       "b": {
         "team": "The Ladds",
@@ -1053,7 +5795,24 @@
         "picks": [
           "2025 3.03 (Early)"
         ],
-        "adj": 3375.04
+        "adj": 3375.04,
+        "playerObjs": [
+          {
+            "name": "Jonnu Smith",
+            "pos": "TE",
+            "adj": 3375
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2025 3.03 (Early)",
+            "round": 3,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Early",
+            "slot": 3
+          }
+        ]
       },
       "y": 3375.04,
       "x": {
@@ -1097,7 +5856,18 @@
         "picks": [
           "2027 3rd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2027 3rd",
+            "round": 3,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "House of Hwang",
@@ -1105,7 +5875,15 @@
           "Juwan Johnson (TE 1985)"
         ],
         "picks": [],
-        "adj": 1985.38
+        "adj": 1985.38,
+        "playerObjs": [
+          {
+            "name": "Juwan Johnson",
+            "pos": "TE",
+            "adj": 1985
+          }
+        ],
+        "pickObjs": []
       },
       "y": 1985.38,
       "x": {
@@ -1150,7 +5928,24 @@
         "picks": [
           "2026 1st"
         ],
-        "adj": 8330
+        "adj": 8330,
+        "playerObjs": [
+          {
+            "name": "Malik Nabers",
+            "pos": "WR",
+            "adj": 8330
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 1st",
+            "round": 1,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Eat It While She Sleeper",
@@ -1160,7 +5955,24 @@
         "picks": [
           "2026 4th"
         ],
-        "adj": 9454
+        "adj": 9454,
+        "playerObjs": [
+          {
+            "name": "Justin Jefferson",
+            "pos": "WR",
+            "adj": 9454
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 4th",
+            "round": 4,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 1124,
       "x": {
@@ -1206,7 +6018,26 @@
           "2026 1st",
           "2025 2.06 (Mid)"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2026 1st",
+            "round": 1,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2025 2.06 (Mid)",
+            "round": 2,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Mid",
+            "slot": 6
+          }
+        ]
       },
       "b": {
         "team": "The Ladds",
@@ -1215,7 +6046,26 @@
           "2025 1.08 (Late)",
           "2025 3.06 (Mid)"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2025 1.08 (Late)",
+            "round": 1,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Late",
+            "slot": 8
+          },
+          {
+            "label": "2025 3.06 (Mid)",
+            "round": 3,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Mid",
+            "slot": 6
+          }
+        ]
       },
       "y": 0,
       "x": {
@@ -1261,7 +6111,18 @@
         "picks": [
           "2025 2.02 (Early)"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2025 2.02 (Early)",
+            "round": 2,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Early",
+            "slot": 2
+          }
+        ]
       },
       "b": {
         "team": "Sell for Sellers",
@@ -1270,7 +6131,26 @@
           "2025 3.10 (Late)",
           "2025 2.06 (Mid)"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2025 3.10 (Late)",
+            "round": 3,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Late",
+            "slot": 10
+          },
+          {
+            "label": "2025 2.06 (Mid)",
+            "round": 2,
+            "season": "2025",
+            "currentYear": true,
+            "tier": "Mid",
+            "slot": 6
+          }
+        ]
       },
       "y": 0,
       "x": {
@@ -1316,7 +6196,24 @@
         "picks": [
           "2028 1st"
         ],
-        "adj": 2904
+        "adj": 2904,
+        "playerObjs": [
+          {
+            "name": "Jalen McMillan",
+            "pos": "WR",
+            "adj": 2904
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2028 1st",
+            "round": 1,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "House of Hwang",
@@ -1324,7 +6221,15 @@
           "Tua Tagovailoa (QB 3982)"
         ],
         "picks": [],
-        "adj": 3981.7799999999997
+        "adj": 3981.7799999999997,
+        "playerObjs": [
+          {
+            "name": "Tua Tagovailoa",
+            "pos": "QB",
+            "adj": 3982
+          }
+        ],
+        "pickObjs": []
       },
       "y": 1077.7799999999997,
       "x": {
@@ -1368,7 +6273,20 @@
           "Calvin Ridley (WR 2879)"
         ],
         "picks": [],
-        "adj": 5587
+        "adj": 5587,
+        "playerObjs": [
+          {
+            "name": "Stefon Diggs",
+            "pos": "WR",
+            "adj": 2708
+          },
+          {
+            "name": "Calvin Ridley",
+            "pos": "WR",
+            "adj": 2879
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -1379,7 +6297,32 @@
           "2026 3rd",
           "2027 3rd"
         ],
-        "adj": 2167.36
+        "adj": 2167.36,
+        "playerObjs": [
+          {
+            "name": "Jordan James",
+            "pos": "RB",
+            "adj": 2167
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 3rd",
+            "round": 3,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2027 3rd",
+            "round": 3,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -3419.64,
       "x": {
@@ -1423,7 +6366,20 @@
           "Tyjae Spears (RB 2914)"
         ],
         "picks": [],
-        "adj": 5910.32
+        "adj": 5910.32,
+        "playerObjs": [
+          {
+            "name": "Jaylen Warren",
+            "pos": "RB",
+            "adj": 2996
+          },
+          {
+            "name": "Tyjae Spears",
+            "pos": "RB",
+            "adj": 2914
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -1433,7 +6389,24 @@
         "picks": [
           "2027 4th"
         ],
-        "adj": 2259
+        "adj": 2259,
+        "playerObjs": [
+          {
+            "name": "Jack Bech",
+            "pos": "WR",
+            "adj": 2259
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 4th",
+            "round": 4,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -3651.3199999999997,
       "x": {
@@ -1476,7 +6449,15 @@
           "Jayden Reed (WR 3683)"
         ],
         "picks": [],
-        "adj": 3683
+        "adj": 3683,
+        "playerObjs": [
+          {
+            "name": "Jayden Reed",
+            "pos": "WR",
+            "adj": 3683
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Drake & Bake",
@@ -1486,7 +6467,24 @@
         "picks": [
           "2026 4th"
         ],
-        "adj": 3084.84
+        "adj": 3084.84,
+        "playerObjs": [
+          {
+            "name": "Matthew Stafford",
+            "pos": "QB",
+            "adj": 3085
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 4th",
+            "round": 4,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -598.1599999999999,
       "x": {
@@ -1531,7 +6529,24 @@
         "picks": [
           "2026 4th"
         ],
-        "adj": 6424.11
+        "adj": 6424.11,
+        "playerObjs": [
+          {
+            "name": "Justin Herbert",
+            "pos": "QB",
+            "adj": 6424
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 4th",
+            "round": 4,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Sell for Sellers",
@@ -1543,7 +6558,40 @@
           "2027 2nd",
           "2028 2nd"
         ],
-        "adj": 1402.83
+        "adj": 1402.83,
+        "playerObjs": [
+          {
+            "name": "Sam Howell",
+            "pos": "QB",
+            "adj": 1403
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 1st",
+            "round": 1,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2027 2nd",
+            "round": 2,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2028 2nd",
+            "round": 2,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -5021.28,
       "x": {
@@ -1591,7 +6639,26 @@
           "2026 4th",
           "2026 2nd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2026 4th",
+            "round": 4,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2026 2nd",
+            "round": 2,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Drake & Bake",
@@ -1600,7 +6667,20 @@
           "Ray Davis (RB 2782)"
         ],
         "picks": [],
-        "adj": 5244.38
+        "adj": 5244.38,
+        "playerObjs": [
+          {
+            "name": "Hunter Henry",
+            "pos": "TE",
+            "adj": 2462
+          },
+          {
+            "name": "Ray Davis",
+            "pos": "RB",
+            "adj": 2782
+          }
+        ],
+        "pickObjs": []
       },
       "y": 5244.38,
       "x": {
@@ -1645,7 +6725,15 @@
           "Saquon Barkley (RB 6596)"
         ],
         "picks": [],
-        "adj": 6595.68
+        "adj": 6595.68,
+        "playerObjs": [
+          {
+            "name": "Saquon Barkley",
+            "pos": "RB",
+            "adj": 6596
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "The Boomers",
@@ -1656,7 +6744,32 @@
           "2026 1st",
           "2027 3rd"
         ],
-        "adj": 4317.04
+        "adj": 4317.04,
+        "playerObjs": [
+          {
+            "name": "Chuba Hubbard",
+            "pos": "RB",
+            "adj": 4317
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 1st",
+            "round": 1,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2027 3rd",
+            "round": 3,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2278.6400000000003,
       "x": {
@@ -1703,7 +6816,24 @@
         "picks": [
           "2028 2nd"
         ],
-        "adj": 1881.3600000000001
+        "adj": 1881.3600000000001,
+        "playerObjs": [
+          {
+            "name": "Devin Neal",
+            "pos": "RB",
+            "adj": 1881
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2028 2nd",
+            "round": 2,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "House of Hwang",
@@ -1711,7 +6841,15 @@
           "Tucker Kraft (TE 4011)"
         ],
         "picks": [],
-        "adj": 4011.0400000000004
+        "adj": 4011.0400000000004,
+        "playerObjs": [
+          {
+            "name": "Tucker Kraft",
+            "pos": "TE",
+            "adj": 4011
+          }
+        ],
+        "pickObjs": []
       },
       "y": 2129.6800000000003,
       "x": {
@@ -1754,7 +6892,15 @@
           "Michael Pittman (WR 3234)"
         ],
         "picks": [],
-        "adj": 3234
+        "adj": 3234,
+        "playerObjs": [
+          {
+            "name": "Michael Pittman",
+            "pos": "WR",
+            "adj": 3234
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -1764,7 +6910,24 @@
         "picks": [
           "2026 3rd"
         ],
-        "adj": 1805.44
+        "adj": 1805.44,
+        "playerObjs": [
+          {
+            "name": "Brashard Smith",
+            "pos": "RB",
+            "adj": 1805
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 3rd",
+            "round": 3,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -1428.56,
       "x": {
@@ -1807,7 +6970,15 @@
           "Jauan Jennings (WR 3110)"
         ],
         "picks": [],
-        "adj": 3110
+        "adj": 3110,
+        "playerObjs": [
+          {
+            "name": "Jauan Jennings",
+            "pos": "WR",
+            "adj": 3110
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -1817,7 +6988,24 @@
         "picks": [
           "2028 3rd"
         ],
-        "adj": 2386
+        "adj": 2386,
+        "playerObjs": [
+          {
+            "name": "Elic Ayomanor",
+            "pos": "WR",
+            "adj": 2386
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2028 3rd",
+            "round": 3,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -724,
       "x": {
@@ -1862,7 +7050,24 @@
         "picks": [
           "2027 4th"
         ],
-        "adj": 2605
+        "adj": 2605,
+        "playerObjs": [
+          {
+            "name": "Isaac TeSlaa",
+            "pos": "WR",
+            "adj": 2605
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 4th",
+            "round": 4,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Sell for Sellers",
@@ -1870,7 +7075,15 @@
           "Devin Neal (RB 1881)"
         ],
         "picks": [],
-        "adj": 1881.3600000000001
+        "adj": 1881.3600000000001,
+        "playerObjs": [
+          {
+            "name": "Devin Neal",
+            "pos": "RB",
+            "adj": 1881
+          }
+        ],
+        "pickObjs": []
       },
       "y": -723.6399999999999,
       "x": {
@@ -1915,7 +7128,24 @@
         "picks": [
           "2026 2nd"
         ],
-        "adj": 2545.92
+        "adj": 2545.92,
+        "playerObjs": [
+          {
+            "name": "Tyler Allgeier",
+            "pos": "RB",
+            "adj": 2546
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 2nd",
+            "round": 2,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Eat It While She Sleeper",
@@ -1923,7 +7153,18 @@
         "picks": [
           "2027 1st"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2027 1st",
+            "round": 1,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2545.92,
       "x": {
@@ -1970,7 +7211,24 @@
         "picks": [
           "2026 4th"
         ],
-        "adj": 3235
+        "adj": 3235,
+        "playerObjs": [
+          {
+            "name": "Jalen Coker",
+            "pos": "WR",
+            "adj": 3235
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 4th",
+            "round": 4,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Lord Pittsy Flacco Joedy",
@@ -1980,7 +7238,24 @@
         "picks": [
           "2026 3rd"
         ],
-        "adj": 1551.33
+        "adj": 1551.33,
+        "playerObjs": [
+          {
+            "name": "Joe Flacco",
+            "pos": "QB",
+            "adj": 1551
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 3rd",
+            "round": 3,
+            "season": "2026",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -1683.67,
       "x": {
@@ -2025,7 +7300,18 @@
         "picks": [
           "2028 4th"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 4th",
+            "round": 4,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Sell for Sellers",
@@ -2033,7 +7319,18 @@
         "picks": [
           "2028 4th"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 4th",
+            "round": 4,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 0,
       "x": {
@@ -2074,7 +7371,15 @@
           "Sean Tucker (RB 2612)"
         ],
         "picks": [],
-        "adj": 2612.48
+        "adj": 2612.48,
+        "playerObjs": [
+          {
+            "name": "Sean Tucker",
+            "pos": "RB",
+            "adj": 2612
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -2082,7 +7387,18 @@
         "picks": [
           "2027 4th"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2027 4th",
+            "round": 4,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2612.48,
       "x": {
@@ -2125,7 +7441,15 @@
           "Jake Ferguson (TE 4055)"
         ],
         "picks": [],
-        "adj": 4054.5
+        "adj": 4054.5,
+        "playerObjs": [
+          {
+            "name": "Jake Ferguson",
+            "pos": "TE",
+            "adj": 4055
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "The Ladds",
@@ -2133,7 +7457,18 @@
         "picks": [
           "2026 2.02 (Early)"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2026 2.02 (Early)",
+            "round": 2,
+            "season": "2026",
+            "currentYear": true,
+            "tier": "Early",
+            "slot": 2
+          }
+        ]
       },
       "y": -4054.5,
       "x": {
@@ -2176,7 +7511,15 @@
           "Jordan Addison (WR 3999)"
         ],
         "picks": [],
-        "adj": 3999
+        "adj": 3999,
+        "playerObjs": [
+          {
+            "name": "Jordan Addison",
+            "pos": "WR",
+            "adj": 3999
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Eat It While She Sleeper",
@@ -2186,7 +7529,24 @@
         "picks": [
           "2027 2nd"
         ],
-        "adj": 2791.36
+        "adj": 2791.36,
+        "playerObjs": [
+          {
+            "name": "Tony Pollard",
+            "pos": "RB",
+            "adj": 2791
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 2nd",
+            "round": 2,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -1207.6399999999999,
       "x": {
@@ -2229,7 +7589,15 @@
           "Kayshon Boutte (WR 2973)"
         ],
         "picks": [],
-        "adj": 2973
+        "adj": 2973,
+        "playerObjs": [
+          {
+            "name": "Kayshon Boutte",
+            "pos": "WR",
+            "adj": 2973
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Eat It While She Sleeper",
@@ -2237,7 +7605,18 @@
         "picks": [
           "2028 2nd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 2nd",
+            "round": 2,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2973,
       "x": {
@@ -2281,7 +7660,20 @@
           "Dalton Kincaid (TE 4023)"
         ],
         "picks": [],
-        "adj": 6963.99
+        "adj": 6963.99,
+        "playerObjs": [
+          {
+            "name": "Mac Jones",
+            "pos": "QB",
+            "adj": 2941
+          },
+          {
+            "name": "Dalton Kincaid",
+            "pos": "TE",
+            "adj": 4023
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "The Ladds",
@@ -2289,7 +7681,18 @@
         "picks": [
           "2028 1st"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 1st",
+            "round": 1,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -6963.99,
       "x": {
@@ -2332,7 +7735,15 @@
           "Tory Horton (WR 2531)"
         ],
         "picks": [],
-        "adj": 2531
+        "adj": 2531,
+        "playerObjs": [
+          {
+            "name": "Tory Horton",
+            "pos": "WR",
+            "adj": 2531
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -2341,7 +7752,26 @@
           "2026 3.07 (Mid)",
           "2027 4th"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2026 3.07 (Mid)",
+            "round": 3,
+            "season": "2026",
+            "currentYear": true,
+            "tier": "Mid",
+            "slot": 7
+          },
+          {
+            "label": "2027 4th",
+            "round": 4,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2531,
       "x": {
@@ -2386,7 +7816,15 @@
           "George Pickens (WR 6022)"
         ],
         "picks": [],
-        "adj": 6022
+        "adj": 6022,
+        "playerObjs": [
+          {
+            "name": "George Pickens",
+            "pos": "WR",
+            "adj": 6022
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "The Ladds",
@@ -2396,7 +7834,24 @@
         "picks": [
           "2027 2nd"
         ],
-        "adj": 4847.4400000000005
+        "adj": 4847.4400000000005,
+        "playerObjs": [
+          {
+            "name": "Travis Etienne",
+            "pos": "RB",
+            "adj": 4847
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 2nd",
+            "round": 2,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -1174.5599999999995,
       "x": {
@@ -2439,7 +7894,15 @@
           "Zach Charbonnet (RB 3491)"
         ],
         "picks": [],
-        "adj": 3491.28
+        "adj": 3491.28,
+        "playerObjs": [
+          {
+            "name": "Zach Charbonnet",
+            "pos": "RB",
+            "adj": 3491
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "The Ladds",
@@ -2447,7 +7910,18 @@
         "picks": [
           "2028 2nd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 2nd",
+            "round": 2,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -3491.28,
       "x": {
@@ -2491,7 +7965,20 @@
           "Kaleb Johnson (RB 2108)"
         ],
         "picks": [],
-        "adj": 5407.08
+        "adj": 5407.08,
+        "playerObjs": [
+          {
+            "name": "Quentin Johnston",
+            "pos": "WR",
+            "adj": 3299
+          },
+          {
+            "name": "Kaleb Johnson",
+            "pos": "RB",
+            "adj": 2108
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "The Ladds",
@@ -2500,7 +7987,26 @@
           "2028 3rd",
           "2029 2nd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 3rd",
+            "round": 3,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2029 2nd",
+            "round": 2,
+            "season": "2029",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -5407.08,
       "x": {
@@ -2549,7 +8055,34 @@
         "picks": [
           "2026 2.05 (Mid)"
         ],
-        "adj": 7425.66
+        "adj": 7425.66,
+        "playerObjs": [
+          {
+            "name": "Mac Jones",
+            "pos": "QB",
+            "adj": 2651
+          },
+          {
+            "name": "Keon Coleman",
+            "pos": "WR",
+            "adj": 2449
+          },
+          {
+            "name": "Jaylen Wright",
+            "pos": "RB",
+            "adj": 2325
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2026 2.05 (Mid)",
+            "round": 2,
+            "season": "2026",
+            "currentYear": true,
+            "tier": "Mid",
+            "slot": 5
+          }
+        ]
       },
       "b": {
         "team": "MrZaccheaus",
@@ -2558,7 +8091,20 @@
           "Marvin Harrison (WR 5120)"
         ],
         "picks": [],
-        "adj": 11187.66
+        "adj": 11187.66,
+        "playerObjs": [
+          {
+            "name": "Romeo Doubs",
+            "pos": "WR",
+            "adj": 3273
+          },
+          {
+            "name": "Marvin Harrison",
+            "pos": "WR",
+            "adj": 5120
+          }
+        ],
+        "pickObjs": []
       },
       "y": 3762,
       "x": {
@@ -2601,7 +8147,18 @@
         "picks": [
           "2029 1st"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2029 1st",
+            "round": 1,
+            "season": "2029",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "House of Hwang",
@@ -2609,7 +8166,18 @@
         "picks": [
           "2028 1st"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 1st",
+            "round": 1,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 0,
       "x": {
@@ -2652,7 +8220,24 @@
         "picks": [
           "2029 3rd"
         ],
-        "adj": 2108.08
+        "adj": 2108.08,
+        "playerObjs": [
+          {
+            "name": "Kaleb Johnson",
+            "pos": "RB",
+            "adj": 2108
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2029 3rd",
+            "round": 3,
+            "season": "2029",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "House of Hwang",
@@ -2660,7 +8245,15 @@
           "Rachaad White (RB 2861)"
         ],
         "picks": [],
-        "adj": 2861.04
+        "adj": 2861.04,
+        "playerObjs": [
+          {
+            "name": "Rachaad White",
+            "pos": "RB",
+            "adj": 2861
+          }
+        ],
+        "pickObjs": []
       },
       "y": 752.96,
       "x": {
@@ -2703,7 +8296,18 @@
         "picks": [
           "2028 2nd"
         ],
-        "adj": 0
+        "adj": 0,
+        "playerObjs": [],
+        "pickObjs": [
+          {
+            "label": "2028 2nd",
+            "round": 2,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "The Ladds",
@@ -2711,7 +8315,15 @@
           "Mark Andrews (TE 2934)"
         ],
         "picks": [],
-        "adj": 2934.08
+        "adj": 2934.08,
+        "playerObjs": [
+          {
+            "name": "Mark Andrews",
+            "pos": "TE",
+            "adj": 2934
+          }
+        ],
+        "pickObjs": []
       },
       "y": 2934.08,
       "x": {
@@ -2756,7 +8368,24 @@
         "picks": [
           "2027 2nd"
         ],
-        "adj": 3652
+        "adj": 3652,
+        "playerObjs": [
+          {
+            "name": "Josh Downs",
+            "pos": "WR",
+            "adj": 3652
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 2nd",
+            "round": 2,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Eat It While She Sleeper",
@@ -2764,7 +8393,15 @@
           "Kenyon Sadiq (TE 4891)"
         ],
         "picks": [],
-        "adj": 4890.84
+        "adj": 4890.84,
+        "playerObjs": [
+          {
+            "name": "Kenyon Sadiq",
+            "pos": "TE",
+            "adj": 4891
+          }
+        ],
+        "pickObjs": []
       },
       "y": 1238.8400000000001,
       "x": {
@@ -2808,7 +8445,20 @@
           "Jeremiyah Love (RB 7778)"
         ],
         "picks": [],
-        "adj": 11292.32
+        "adj": 11292.32,
+        "playerObjs": [
+          {
+            "name": "RJ Harvey",
+            "pos": "RB",
+            "adj": 3514
+          },
+          {
+            "name": "Jeremiyah Love",
+            "pos": "RB",
+            "adj": 7778
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -2820,7 +8470,37 @@
           "2027 1st",
           "2027 1st"
         ],
-        "adj": 7803
+        "adj": 7803,
+        "playerObjs": [
+          {
+            "name": "Alec Pierce",
+            "pos": "WR",
+            "adj": 4032
+          },
+          {
+            "name": "Denzel Boston",
+            "pos": "WR",
+            "adj": 3771
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 1st",
+            "round": 1,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2027 1st",
+            "round": 1,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -3489.3199999999997,
       "x": {
@@ -2865,7 +8545,25 @@
           "Jayden Higgins (WR 3437)"
         ],
         "picks": [],
-        "adj": 10900.220000000001
+        "adj": 10900.220000000001,
+        "playerObjs": [
+          {
+            "name": "Jake Ferguson",
+            "pos": "TE",
+            "adj": 3431
+          },
+          {
+            "name": "Alec Pierce",
+            "pos": "WR",
+            "adj": 4032
+          },
+          {
+            "name": "Jayden Higgins",
+            "pos": "WR",
+            "adj": 3437
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -2876,7 +8574,29 @@
         "picks": [
           "2028 1st"
         ],
-        "adj": 6420.76
+        "adj": 6420.76,
+        "playerObjs": [
+          {
+            "name": "Oronde Gadsden",
+            "pos": "TE",
+            "adj": 3865
+          },
+          {
+            "name": "Jaylin Noel",
+            "pos": "WR",
+            "adj": 2556
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2028 1st",
+            "round": 1,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -4479.460000000001,
       "x": {
@@ -2919,7 +8639,15 @@
           "Rome Odunze (WR 5368)"
         ],
         "picks": [],
-        "adj": 5368
+        "adj": 5368,
+        "playerObjs": [
+          {
+            "name": "Rome Odunze",
+            "pos": "WR",
+            "adj": 5368
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "Sell for Sellers",
@@ -2929,7 +8657,24 @@
         "picks": [
           "2028 1st"
         ],
-        "adj": 3115.34
+        "adj": 3115.34,
+        "playerObjs": [
+          {
+            "name": "Gunnar Helm",
+            "pos": "TE",
+            "adj": 3115
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2028 1st",
+            "round": 1,
+            "season": "2028",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -2252.66,
       "x": {
@@ -2974,7 +8719,24 @@
         "picks": [
           "2027 1st"
         ],
-        "adj": 2142.26
+        "adj": 2142.26,
+        "playerObjs": [
+          {
+            "name": "Cole Kmet",
+            "pos": "TE",
+            "adj": 2142
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 1st",
+            "round": 1,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "b": {
         "team": "Eat It While She Sleeper",
@@ -2984,7 +8746,24 @@
         "picks": [
           "2027 3rd"
         ],
-        "adj": 5140.72
+        "adj": 5140.72,
+        "playerObjs": [
+          {
+            "name": "Jadarian Price",
+            "pos": "RB",
+            "adj": 5141
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2027 3rd",
+            "round": 3,
+            "season": "2027",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": 2998.46,
       "x": {
@@ -3032,7 +8811,30 @@
           "Eli Raridon (TE 2975)"
         ],
         "picks": [],
-        "adj": 19503.68
+        "adj": 19503.68,
+        "playerObjs": [
+          {
+            "name": "Travis Etienne",
+            "pos": "RB",
+            "adj": 4688
+          },
+          {
+            "name": "Drake Maye",
+            "pos": "QB",
+            "adj": 9312
+          },
+          {
+            "name": "Malik Washington",
+            "pos": "WR",
+            "adj": 2528
+          },
+          {
+            "name": "Eli Raridon",
+            "pos": "TE",
+            "adj": 2975
+          }
+        ],
+        "pickObjs": []
       },
       "b": {
         "team": "The Ladds",
@@ -3044,7 +8846,37 @@
           "2029 1st",
           "2029 3rd"
         ],
-        "adj": 11868.45
+        "adj": 11868.45,
+        "playerObjs": [
+          {
+            "name": "Baker Mayfield",
+            "pos": "QB",
+            "adj": 4696
+          },
+          {
+            "name": "Omarion Hampton",
+            "pos": "RB",
+            "adj": 7173
+          }
+        ],
+        "pickObjs": [
+          {
+            "label": "2029 1st",
+            "round": 1,
+            "season": "2029",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          },
+          {
+            "label": "2029 3rd",
+            "round": 3,
+            "season": "2029",
+            "currentYear": false,
+            "tier": null,
+            "slot": null
+          }
+        ]
       },
       "y": -7635.23,
       "x": {

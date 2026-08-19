@@ -15,11 +15,13 @@ import { fileURLToPath } from 'url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = join(ROOT, 'site/public/data');
 
+// Keep in sync with HWANG_POSITION_COEFFICIENTS.true in
+// site/src/lookups/hwangPositionCoefficients.js
 const TRUE_COEFFS = {
   QB: { c: 0.932, k: -0.175 },
-  RB: { c: 1.263, k: 0.345 },
-  WR: { c: 0.866, k: -0.030 },
-  TE: { c: 0.981, k: -0.140 },
+  RB: { c: 1.112, k: -0.029 },
+  WR: { c: 0.899, k: 0.029 },
+  TE: { c: 0.976, k: 0.069 },
 };
 const VREF = 5000;
 const TEAMS = 12;

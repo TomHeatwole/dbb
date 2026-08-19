@@ -7,15 +7,22 @@
  *
  * A coefficient is either:
  *   - a flat number (value × m), or
- *   - a power-law curve { c, k } meaning m(v) = c · (v/5000)^k — the fitted
- *     output of the Hwang True Simulator (mean-grounded: 1.0 = the average
- *     same-priced player; value- and points-weighted least squares over
- *     2021–2025, 200 builds × 19 archetypes).
+ *   - a power-law curve { c, k } meaning m(v) = c · (v/5000)^k.
  *
- * `true` is fitted against Final KTC prices (apply to KTC values).
- * `trueComp` is fitted against competitor-adjusted prices (apply to
- * Competitor/Rebuild bases) — that's what HWANG_COMPOSITE_COEFFICIENT_KEY
- * selects.
+ * Skill positions (RB / WR / TE) are the Hwang ÷ Underdog format factor:
+ *   numerator   Hwang clubs + Hwang scoring          (v3b, format=hwang)
+ *   denominator Underdog BBM clubs + UD lineup/PPR
+ *               + TE premium 0.5                     (bbm_50_tep)
+ * RB/WR are fit from the RB-vs-WR pair curve only (geo-mean 1 between
+ * them). TE is then fit against that gauge so no-TEP Underdog cannot
+ * manufacture a TE bump. QB has no valid 1QB Underdog denominator;
+ * it is the Hwang True Simulator curve on Final KTC (v3b `true.QB`).
+ *
+ * `true` uses the KTC-basis format-factor fit (apply to KTC values).
+ * `trueComp` uses the competitor-basis format-factor fit (apply to
+ * Competitor/Rebuild bases). QB is the same KTC-basis Hwang curve on
+ * both. Regenerate skill coeffs with:
+ *   python scripts/fit_hwang_format_factor_coeffs.py
  *
  * HWANG_COMPOSITE_COEFFICIENT_KEY picks which set is applied on top of
  * Competitor / Rebuild bases. Change that key (or the numbers) in this file only.
@@ -30,24 +37,22 @@ export const HWANG_POSITION_COEFFICIENTS = {
     WR: 0.96,
     TE: 1.0,
   },
-  // Hwang True Simulator v3b fit, Final KTC basis (Hwang format).
-  // `flat` is the baseline (value-independent) multiplier from the same fit,
-  // shown alongside the formula as a mental-math approximation.
+  // Format factor on KTC basis (Hwang ÷ Underdog+TEP), plus Hwang-from-KTC QB.
+  // `flat` is the value-independent mental-math version of the same split.
   true: {
     QB: { c: 0.932, k: -0.175, flat: 0.97 },
-    RB: { c: 1.263, k: 0.345, flat: 1.30 },
-    WR: { c: 0.866, k: -0.030, flat: 0.85 },
-    TE: { c: 0.981, k: -0.140, flat: 0.94 },
+    RB: { c: 1.112, k: -0.029, flat: 1.11 },
+    WR: { c: 0.899, k: 0.029, flat: 0.90 },
+    TE: { c: 0.976, k: 0.069, flat: 0.95 },
   },
-  // Hwang True Simulator v3b fit, competitor-adjusted basis (Hwang format),
-  // iterated to the simulation fixed point (equilibrium iteration 2, Aug 2026):
-  // re-running the sim on these prices shows flat residuals within ±2% at
-  // every position. See hwang_true_sim_validation_report_v3b.md addendum.
+  // Same recipe on the competitor-adjusted board. Skill curves are nearly
+  // flat; QB is still the KTC-basis Hwang measurement (no SF best-ball
+  // baseline exists to make a QB format factor).
   trueComp: {
-    QB: { c: 0.924, k: 0.173, flat: 0.97 },
-    RB: { c: 1.405, k: 0.121, flat: 1.43 },
-    WR: { c: 0.867, k: -0.235, flat: 0.87 },
-    TE: { c: 0.888, k: -0.059, flat: 0.84 },
+    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    RB: { c: 1.112, k: -0.011, flat: 1.12 },
+    WR: { c: 0.899, k: 0.011, flat: 0.90 },
+    TE: { c: 0.974, k: 0.050, flat: 0.96 },
   },
 };
 

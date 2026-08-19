@@ -10,6 +10,9 @@
   ],
   "start_url": ".",
   "display": "standalone",
+  "display_override": ["browser"],
+  "handle_links": "not-preferred",
+  "capture_links": "none",
   "theme_color": "#000000",
   "background_color": "#ffffff"
 }

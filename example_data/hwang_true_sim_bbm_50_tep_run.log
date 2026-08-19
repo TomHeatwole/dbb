@@ -1,0 +1,43 @@
+
+Running basis="ktc" format="regular" (50 builds, seed 1)…
+  0% 2021: fetching weekly stats…
+  10% 2021: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/207)
+  20% 2021: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  30% 2022: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/270)
+  40% 2022: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  50% 2023: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/291)
+  60% 2023: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  70% 2024: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/288)
+  80% 2024: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  90% 2025: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/276)
+  100% 2025: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  done in 33s
+
+Running basis="comp" format="regular" (50 builds, seed 1)…
+  0% 2021: fetching weekly stats…
+  10% 2021: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/193)
+  20% 2021: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  30% 2022: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/272)
+  40% 2022: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  50% 2023: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/291)
+  60% 2023: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  70% 2024: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/290)
+  80% 2024: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  90% 2025: 2026 #4 — Double-anchor + elite 2QB — build 42/50 — plugging in candidates (60/282)
+  100% 2025: 2026 #8 — Robust RB + elite 2QB — build 50/50 — done
+  done in 22s
+
+Writing CSVs to example_data/hwang_true_sim_bbm_50_tep/
+  wrote config.csv: 2 rows (0.0 MB)
+  wrote years.csv: 10 rows (0.0 MB)
+  wrote matchups.csv: 552 rows (0.0 MB)
+  wrote candidates.csv: 2,725 rows (0.1 MB)
+  wrote pairs.csv: 9,131 rows (0.3 MB)
+  wrote archetype_player_hvorp.csv: 22,540 rows (1.1 MB)
+  wrote build_players.csv: 14,400 rows (1.7 MB)
+
+=== Multipliers (mean-grounded, weighted, full comparison network) ===
+ktc / regular: { QB: 0.453, RB: 1.476, WR: 1.196, TE: 1.25 }
+comp / regular: { QB: 0.465, RB: 1.529, WR: 1.199, TE: 1.173 }
+
+Done.

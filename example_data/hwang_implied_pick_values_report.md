@@ -173,7 +173,91 @@ Until more 1.01–1.03 deals exist, the honest current-year split is:
 
 ---
 
-## 6. Methods (detail)
+## 6. Sender-centric: whoever sent the pick
+
+OLS treats pick value as a league constant. The identification here is
+different: **the manager who sent the pick revealed a price**, equal to the
+net player value they took in.
+
+`implied(picks sent) = adj(players in) − adj(players out)`
+
+Only **one-way** sends (no pick coming back). If a 4th comes back with
+Jefferson, the residual is `1st − 4th`, not a 1st. That drops 30 two-way
+sender events and leaves **37 one-way** (30 of them a single round).
+
+### Future 1sts, by the player they bought
+
+| date | sender | pick | got | gave | implied |
+|---|---|---|---|---|---:|
+| 2026-03-18 | MrZaccheaus | 2028 1st | Mac Jones, Dalton Kincaid | — | **6,964** |
+| 2026-07-26 | DrakeHigginsAchane ² | 2028 1st | Ferguson, Pierce, Higgins | Gadsden, Noel | **4,479** |
+| 2026-06-23 | The Ladds | 2027 1st ×2 | RJ Harvey, Jeremiyah Love | Pierce, Boston | 3,489 (1,745/pick) |
+| 2026-07-29 | House of Hwang | 2028 1st | Rome Odunze | Gunnar Helm | **2,253** |
+| 2024-08-01 | Let James Cook | 2025 1st | Kittle, Singletary, Walker, Pacheco | McBride, Brooks, Vidal | 1,731 |
+| 2025-02-21 | Drake & Bake | 2026 1st | Trey McBride | Jordan Love | **1,277** |
+| 2025-05-24 | House of Hwang | 2028 1st | Tua Tagovailoa | Jalen McMillan | **1,078** |
+
+Same asset class, 1,078 to 6,964 depending on **who sent it and who they
+were buying**. House of Hwang himself has sent two 2028 1sts at 1,078
+(Tua) and 2,253 (Odunze). The OLS 2,410 is a pool across those deals, not
+what any one sender paid.
+
+### 2nds (one-way, per pick)
+
+| date | sender | pick | got | gave | implied |
+|---|---|---|---|---|---:|
+| 2026-02-20 | PUPpy Bowl | 2026 2.02 | Jake Ferguson | — | **4,055** |
+| 2026-05-21 | MrZaccheaus | 2026 2.05 | Doubs, MHJ | Mac Jones, Coleman, Wright | 3,762 |
+| 2026-05-21 | PUPpy Bowl | 2028 2nd | Zach Charbonnet | — | 3,491 |
+| 2026-02-24 | MrZaccheaus | 2028 2nd | Kayshon Boutte | — | 2,973 |
+| 2026-06-21 | The Ladds | 2028 2nd | Mark Andrews | — | 2,934 |
+| 2024-08-05 | Adam(s) and Steve(nson) | 2025 2nd | Adams, Walker | Odunze | 2,636 |
+| 2025-07-28 | House of Hwang | 2028 2nd | Tucker Kraft | Devin Neal | 2,130 |
+| 2026-06-21 | Eat It While She Sleeper | 2027 2nd | Kenyon Sadiq | Josh Downs | 1,239 |
+| 2026-02-22 | DrakeHigginsAchane ² | 2027 2nd | Jordan Addison | Tony Pollard | 1,208 |
+| 2026-04-11 | seanjcrow | 2027 2nd | George Pickens | Etienne | 1,175 |
+| 2024-08-06 | Let James Cook | 2025 2nd ×2 | Henry, BTJ | Odunze | 1,200 (600/pick) |
+| 2024-08-13 | Trey Trey | 2026 2nd | Lock, Maye | Stafford, Keenan | **-331** |
+
+Current **2.02 for Ferguson** is not a future 2nd. PUPpy Bowl and
+MrZaccheaus pay ~3k for 2nds as player substitutes. Contenders sending a
+2nd for a win-now piece (Pickens, Addison, Sadiq) print closer to 1,200.
+
+### 3rds / 4ths (one-way, per pick)
+
+| date | sender | pick | got | gave | implied |
+|---|---|---|---|---|---:|
+| 2024-09-03 | Let James Cook | 2025 3rd | Chuba Hubbard | — | 2,491 |
+| 2025-03-08 | House of Hwang | 2027 3rd | Juwan Johnson | — | 1,985 |
+| 2025-06-03 | Drake & Bake | 2026+2027 3rd | Diggs, Ridley | Jordan James | 3,420 (1,710/pick) |
+| 2025-07-29 | aidsonballs | 2026 3rd | Pittman | Brashard Smith | 1,429 |
+| 2026-06-11 | House of Hwang | 2029 3rd | Rachaad White | Kaleb Johnson | 753 |
+| 2025-07-31 | Drake & Bake | 2028 3rd | Jauan Jennings | Ayomanor | 724 |
+| 2024-07-26 | Here Comes the Sun God | 2026 3rd | Pittman | Pickens | 148 |
+| 2025-06-09 | The Ladds | 2027 4th | Warren, Spears | Jack Bech | 3,651 |
+| 2026-02-20 | DrakeHigginsAchane ² | 2027 4th | Sean Tucker | — | 2,612 |
+| 2025-06-13 | seanjcrow | 2026 4th | Jayden Reed | Stafford | 598 |
+| 2025-08-02 | Sell for Sellers | 2027 4th | Devin Neal | TeSlaa | -724 |
+
+### By manager (one-way sends)
+
+| sender | n | 1sts (per pick) | 2nds | 3rds | 4ths |
+|---|---:|---|---|---|---|
+| House of Hwang | 7 | 1,078 / 2,253 | 2,130 | 1,985 / 753 | — |
+| Drake & Bake | 4 | 1,277 | — | 1,710 / 724 | — |
+| DrakeHigginsAchane ² | 4 | 4,479 | 1,208 | — | 2,612 |
+| Let James Cook | 3 | 1,731 | 600 | 2,491 | — |
+| MrZaccheaus | 3 | 6,964 | 2,973 / 3,762 | — | — |
+| The Ladds | 3 | 1,745 | 2,934 | — | 3,651 |
+| PUPpy Bowl | 2 | — | 4,055 / 3,491 | — | — |
+
+MrZaccheaus and PUPpy Bowl are the high-pick-price senders (they spend
+picks as if they were mid-tier players). Drake & Bake and Hwang’s Tua deal
+are the low-1st senders (they move a 1st as a sweetener on a player swap).
+
+---
+
+## 7. Methods (detail)
 
 - Position multipliers: pass-2 mixed-position KTC-weighted ratios.
 - VA: `site/src/tradeCalculator/ktcValueAdjustment.js`, player values only.

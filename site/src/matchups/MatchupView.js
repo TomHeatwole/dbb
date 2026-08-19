@@ -722,7 +722,7 @@ function MatchupView({
       const nameNode = (
         <span className="player-name">
           {playerName}
-          {info && info.position ? <> <PositionBadge position={info.position} /></> : ''}
+          {info && info.position && !isMobileView ? <> <PositionBadge position={info.position} /></> : ''}
           {teamAbbr ? <span className="team-scores-game-cell team-scores-team-abbr">{teamAbbr}</span> : null}
           {injuryBadge}
         </span>

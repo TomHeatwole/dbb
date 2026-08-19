@@ -1,0 +1,3 @@
+value_basis,construction_basis,format,qb,rb,wr,te,flex,superflex,ppr,te_premium,builds_per_archetype,jitter_pct,seed,years,archetype_count,grounding,value_weight_pairs,points_weight_builds,pair_tolerance_pct,top_rank,ktc_as_of,hvorp_method
+ktc,comp,regular,1,2,3,1,1,0,0.5,0.5,50,10,1,2021|2022|2023|2024|2025,8,mean,1,1,5,300,,"roster-context optimal starter totals (17 weeks, add-on / leave-one-out)"
+comp,comp,regular,1,2,3,1,1,0,0.5,0.5,50,10,1,2021|2022|2023|2024|2025,8,mean,1,1,5,300,,"roster-context optimal starter totals (17 weeks, add-on / leave-one-out)"
