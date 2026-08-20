@@ -42,7 +42,18 @@ const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent,
   );
 });
 
-export default function PositionBreakdownTable({ weeksParsedData, rosterId, startWeek, endWeek, STARTER_POSITION_NAMES, rosters, users, searchParams }) {
+export default function PositionBreakdownTable({
+  weeksParsedData,
+  rosterId,
+  startWeek,
+  endWeek,
+  STARTER_POSITION_NAMES,
+  rosters,
+  users,
+  searchParams,
+  selectedPos,
+  onSelectPosition,
+}) {
   function getTeamName(rid) {
     if (!rosters || !users) return `Team ${rid}`;
     const roster = rosters.find(r => Number(r.roster_id) === Number(rid));
@@ -57,7 +68,7 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
     <div className="team-analytics-card team-analytics-table-card">
       <div className="team-analytics-card-head">
         <h3 className="team-analytics-card-title">Positional averages</h3>
-        <p className="team-analytics-card-sub">Starter-slot scoring vs the rest of the league</p>
+        <p className="team-analytics-card-sub">Click a slot to inspect weekly scoring and who started there</p>
       </div>
       <div className="team-analytics-table-scroll">
       <table className="team-analytics-table">
@@ -120,7 +131,15 @@ export default function PositionBreakdownTable({ weeksParsedData, rosterId, star
             const delta = leagueAvg === 0 ? 0 : ((userAvg - leagueAvg) / leagueAvg) * 100;
 
             return (
-              <tr key={posIdx}>
+              <tr
+                key={posIdx}
+                className={
+                  'team-analytics-pos-row' +
+                  (selectedPos === posIdx ? ' team-analytics-pos-row--selected' : '') +
+                  (onSelectPosition ? ' team-analytics-pos-row--clickable' : '')
+                }
+                onClick={onSelectPosition ? () => onSelectPosition(posIdx) : undefined}
+              >
                 <td className="team-analytics-table-label">{posLabel}</td>
                 <HoverInfoCell
                   value={userAvg.toFixed(1)}

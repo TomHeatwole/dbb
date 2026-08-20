@@ -5,9 +5,8 @@ import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import PositionAnalytics from '../players/PositionAnalytics';
 import PositionBreakdownTable from '../players/PositionBreakdownTable';
-import PlayerBreakdownTable from '../players/PlayerBreakdownTable';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
-import { getDefaultDisplayWeek, CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
+import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
 import { AnalyticsLineChart, ANALYTICS_SERIES, formatWeekTick } from './AnalyticsCharts';
 
@@ -249,22 +248,6 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     return map;
   }, [positionalBreakdown, rosterId]);
 
-  // Compute clamped end week for PlayerBreakdownTable
-  const endWeekForBreakdown = useMemo(() => {
-    // Determine current vs previous season robustly:
-    // - If an explicit year is provided and it's not the current year -> previous
-    // - If no year provided but endWeek >= 17 (typical for archived seasons) -> treat as previous
-    // - Otherwise treat as current
-    const explicitYear = urlYear ? String(urlYear) : null;
-    const isExplicitCurrent = explicitYear ? (explicitYear === String(CURRENT_YEAR)) : null;
-    const treatAsPrevious = (isExplicitCurrent === false) || (!explicitYear && endWeek >= 17);
-    if (!treatAsPrevious) {
-      const completed = getCompletedWeeksCount(explicitYear);
-      return Math.max(0, Math.min(endWeek, Number.isFinite(completed) ? completed : 0));
-    }
-    return endWeek;
-  }, [endWeek, urlYear]);
-
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
@@ -331,28 +314,6 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
     });
     return { avg, vsMed, high, low };
   })();
-
-  const cumulativeData = weeklyStandings.map((weekArr, i) => {
-    const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
-    const user = sorted.find(x => x.rosterId === rosterId);
-    const runningArr = sorted.map(x => x.runningTotalPoints);
-    const leagueCeiling = runningArr.length ? runningArr[0] : 0;
-    const leagueFloor = runningArr.length ? runningArr[runningArr.length - 1] : 0;
-    let leagueMedian = 0;
-    if (runningArr.length >= 6) {
-      leagueMedian = (runningArr[4] + runningArr[5]) / 2;
-    } else if (runningArr.length > 0) {
-      const mid = Math.floor(runningArr.length / 2);
-      leagueMedian = runningArr[mid];
-    }
-    return {
-      name: `Week ${adjustedStartWeek + i}`,
-      runningTotalPoints: user ? user.runningTotalPoints : 0,
-      leagueCeiling,
-      leagueFloor,
-      leagueMedian: Math.round(leagueMedian * 10) / 10,
-    };
-  });
 
   const relativeData = weeklyStandings.map((weekArr, i) => {
     const sorted = [...weekArr].sort((a, b) => b.runningTotalPoints - a.runningTotalPoints);
@@ -490,92 +451,53 @@ const TeamAnalytics = forwardRef(function TeamAnalytics({ weeksParsedData, teamN
           </div>
           <div className="team-analytics-card">
             <div className="team-analytics-card-head">
-              <h3 className="team-analytics-card-title">Season totals</h3>
-              <p className="team-analytics-card-sub">Cumulative points through each week</p>
+              <h3 className="team-analytics-card-title">Relative to league floor</h3>
+              <p className="team-analytics-card-sub">Cumulative gap over the lowest total, with the playoff bar</p>
             </div>
             <AnalyticsLineChart
-              data={cumulativeData}
+              data={relativeData}
               lines={[
                 { dataKey: 'runningTotalPoints', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
                 { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
                 { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
-                { dataKey: 'leagueFloor', stroke: ANALYTICS_SERIES.floor, name: 'Floor', strokeDasharray: '5 5' },
+                { dataKey: 'playoffBar', stroke: ANALYTICS_SERIES.playoff, name: 'Playoff bar', strokeDasharray: '3 3' },
               ]}
+              yTickFormatter={(v) => (v >= 0 ? `+${v}` : String(v))}
+              tooltipFormatter={(v) => (v >= 0 ? `+${v}` : v)}
             />
           </div>
         </div>
-        <div className="team-analytics-card">
-          <div className="team-analytics-card-head">
-            <h3 className="team-analytics-card-title">Relative to league floor</h3>
-            <p className="team-analytics-card-sub">Gap over the lowest cumulative total, with the playoff bar</p>
-          </div>
-          <AnalyticsLineChart
-            data={relativeData}
-            lines={[
-              { dataKey: 'runningTotalPoints', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
-              { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
-              { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
-              { dataKey: 'playoffBar', stroke: ANALYTICS_SERIES.playoff, name: 'Playoff bar', strokeDasharray: '3 3' },
-            ]}
-            yTickFormatter={(v) => (v >= 0 ? `+${v}` : String(v))}
-            tooltipFormatter={(v) => (v >= 0 ? `+${v}` : v)}
+      </section>
+
+      <section className="team-analytics-section">
+        <div className="team-analytics-section-label">Positions</div>
+        <div className="team-analytics-positions-layout">
+          <PositionBreakdownTable
+            weeksParsedData={weeksParsedData}
+            rosterId={rosterId}
+            startWeek={startWeek}
+            endWeek={endWeek}
+            STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
+            rosters={rosters}
+            users={users}
+            teamName={teamName}
+            searchParams={searchParams}
+            selectedPos={activePos}
+            onSelectPosition={setActivePos}
+          />
+          <PositionAnalytics
+            pos={activePos}
+            positionalBreakdown={positionalBreakdown}
+            weeksParsedData={weeksParsedData}
+            startWeek={startWeek}
+            endWeek={endWeek}
+            rosterId={rosterId}
+            teamName={teamName}
+            playersData={playersData}
+            playerIdMap={playerIdMap}
+            playerColorMap={playerColorMap}
           />
         </div>
-      </section>
-
-      <section className="team-analytics-section">
-        <div className="team-analytics-section-label">Roster</div>
-        <PlayerBreakdownTable
-          weeksParsedData={weeksParsedData}
-          rosterId={rosterId}
-          startWeek={startWeek}
-          endWeek={endWeekForBreakdown}
-          playersData={playersData}
-          playerIdMap={playerIdMap}
-          STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
-          rosterPlayers={(rosters && rosters.find(r => Number(r.roster_id) === Number(rosterId)) ? (rosters.find(r => Number(r.roster_id) === Number(rosterId)).players || []) : [])}
-        />
-        <PositionBreakdownTable
-          weeksParsedData={weeksParsedData}
-          rosterId={rosterId}
-          startWeek={startWeek}
-          endWeek={endWeek}
-          STARTER_POSITION_NAMES={STARTER_POSITION_NAMES}
-          rosters={rosters}
-          users={users}
-          teamName={teamName}
-          searchParams={searchParams}
-        />
-      </section>
-
-      <section className="team-analytics-section">
-        <div className="team-analytics-section-label">By position</div>
-        <div className="team-analytics-pos-pills" role="tablist" aria-label="Starter slots">
-          {STARTER_POSITION_NAMES.map((name, idx) => (
-            <button
-              key={`${name}-${idx}`}
-              type="button"
-              role="tab"
-              aria-selected={activePos === idx}
-              className={'team-analytics-pos-pill' + (activePos === idx ? ' team-analytics-pos-pill--active' : '')}
-              onClick={() => setActivePos(idx)}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
-        <PositionAnalytics
-          pos={activePos}
-          positionalBreakdown={positionalBreakdown}
-          weeksParsedData={weeksParsedData}
-          startWeek={startWeek}
-          endWeek={endWeek}
-          rosterId={rosterId}
-          teamName={teamName}
-          playersData={playersData}
-          playerIdMap={playerIdMap}
-          playerColorMap={playerColorMap}
-        />
       </section>
     </div>
   );

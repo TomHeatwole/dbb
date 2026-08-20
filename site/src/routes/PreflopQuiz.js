@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { defaultMix, generateQuestion, generateQuiz, getSpotCounts, shuffleItems } from '../poker/quiz';
 import { PokerTable, HandGrid, ActionButtons } from './PreflopShared';
 import PreflopResults from './PreflopResults';
@@ -91,6 +91,16 @@ export default function PreflopQuiz({ onExit }) {
     guesses[i] && guesses[i] === q.correctAction ? sum + 1 : sum
   ), 0);
   const missed = questions.filter((q, i) => guesses[i] && guesses[i] !== q.correctAction);
+
+  useEffect(() => {
+    if (phase !== 'play') return undefined;
+    const onBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [phase]);
 
   const handleMix = (id, value) => {
     setMix(prev => ({ ...prev, [id]: value }));

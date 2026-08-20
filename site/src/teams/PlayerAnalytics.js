@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import NewTabLink from '../components/NewTabLink';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
-import { getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
+import { getPlayerSeasonTotalsMap, getTeamPlayerBreakdown } from '../scores/ScoresParser';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { CURRENT_YEAR, getCompletedWeeksCount, isPreSeason as isPreSeasonYear } from '../utils/DateHelper';
 import {
@@ -19,6 +19,7 @@ import { isFeatureEnabled, MAIN_FEATURES } from '../utils/featureToggles';
 import LoadingState from '../LoadingState';
 import PositionBadge from '../PositionBadge';
 import useIsMobile from '../hooks/useIsMobile';
+import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 
 function fmtNum(v, digits = 1) {
   if (v == null || !Number.isFinite(v)) return '—';
@@ -323,7 +324,9 @@ function PlayerAnalytics({
     [weeksParsedData],
   );
 
-  const rows = useMemo(() => {
+  const weekCount = String(season) === String(CURRENT_YEAR) ? completedWeeks : 17;
+
+  const hvorpRows = useMemo(() => {
     if (!playersData || !playerIdMap) return [];
     return computeTeamPlayerHvorpStats({
       rosterPlayerIds: roster?.players || [],
@@ -331,9 +334,43 @@ function PlayerAnalytics({
       playersData,
       playerIdMap,
       playerSeasonTotalsMap,
-      weekCount: String(season) === String(CURRENT_YEAR) ? completedWeeks : 17,
+      weekCount,
     });
-  }, [roster, weeksParsedData, playersData, playerIdMap, playerSeasonTotalsMap, season, completedWeeks]);
+  }, [roster, weeksParsedData, playersData, playerIdMap, playerSeasonTotalsMap, weekCount]);
+
+  const lineupBreakdown = useMemo(() => {
+    const rid = Number(roster?.roster_id);
+    if (!Number.isFinite(rid) || !weeksParsedData) return {};
+    const end = Math.max(0, weekCount);
+    if (end < 1) return {};
+    return getTeamPlayerBreakdown(weeksParsedData, rid, 1, end);
+  }, [roster, weeksParsedData, weekCount]);
+
+  const rows = useMemo(() => {
+    return hvorpRows.map((row) => {
+      const d = lineupBreakdown[row.playerId] || lineupBreakdown[String(row.playerId)];
+      const starts = d?.starts ?? row.weeksStarted ?? 0;
+      const bench = d?.bench ?? 0;
+      const appearances = starts + bench;
+      const avgStarterPts = d && starts > 0 ? (d.starterPointsSum / starts) : 0;
+      const avgBenchPts = d && bench > 0 ? (d.benchPointsSum / bench) : 0;
+      const totalPts = (d?.starterPointsSum || 0) + (d?.benchPointsSum || 0);
+      const avgTotalPts = appearances > 0
+        ? (totalPts / appearances)
+        : (row.ppg || 0);
+      return {
+        ...row,
+        starts,
+        bench,
+        startRate: appearances > 0 ? starts / appearances : 0,
+        benchRate: appearances > 0 ? bench / appearances : 0,
+        avgStarterPts,
+        avgBenchPts,
+        avgTotalPts,
+        slotCountsArr: Array.isArray(d?.startedPositionsCounts) ? d.startedPositionsCounts : [],
+      };
+    });
+  }, [hvorpRows, lineupBreakdown]);
 
   const selectedRow = useMemo(() => {
     const fromUrl = rows.find((r) => String(r.playerId) === String(selectedPlayerId));
@@ -477,8 +514,15 @@ function PlayerAnalyticsTop({ row, playersData, playerIdMap, season, completedWe
               { label: 'Pts', value: fmtNum(row.totalScore) },
               { label: 'PPG', value: fmtNum(row.ppg, 2) },
               { label: 'Yoff', value: fmtNum(yoff), tone: hvorpTone(yoff) },
-              { label: 'GP', value: String(row.gamesPlayed) },
-              { label: 'Starts', value: String(row.weeksStarted) },
+              {
+                label: 'Starts',
+                value: String(row.starts ?? row.weeksStarted ?? 0),
+                tip: startsTipLines(row),
+              },
+              { label: 'Bench', value: String(row.bench ?? 0) },
+              { label: 'Avg', value: fmtNum(row.avgTotalPts ?? row.ppg) },
+              { label: 'Avg Start', value: fmtNum(row.avgStarterPts) },
+              { label: 'Avg Bench', value: fmtNum(row.avgBenchPts) },
             ]}
           />
         )}
@@ -622,6 +666,26 @@ function CompactStatBar({ items }) {
   );
 }
 
+function startsTipLines(row) {
+  if (!row) return [];
+  const starts = row.starts ?? row.weeksStarted ?? 0;
+  const lines = [`${starts} start${starts === 1 ? '' : 's'}`];
+  if (Array.isArray(row.slotCountsArr) && starts > 0) {
+    STARTER_POSITION_NAMES.forEach((label, idx) => {
+      const count = row.slotCountsArr[idx] || 0;
+      if (!count) return;
+      const pct = Math.round((count / starts) * 1000) / 10;
+      lines.push(`${label} ×${count} (${pct}%)`);
+    });
+  } else {
+    const slots = Object.entries(row.slotCounts || {})
+      .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+      .map(([slot, n]) => `${slot} ×${n}`);
+    if (slots.length) lines.push(...slots);
+  }
+  return lines;
+}
+
 function PlayerAnalyticsBoard({
   rows,
   selectedPlayerId,
@@ -688,6 +752,28 @@ function PlayerAnalyticsBoard({
   );
 }
 
+const HVORP_SORT_COLUMNS = [
+  { key: 'name', label: 'Player', align: 'left', title: null, defaultDir: 'asc' },
+  { key: 'hvorp', label: 'HVORP', align: 'num', title: 'Hwang value over replacement — starter points lost if this player were off the roster', defaultDir: 'desc' },
+  { key: 'hvorpPerGame', label: '/G', align: 'num', title: 'HVORP divided by games with a score', defaultDir: 'desc' },
+  { key: 'totalScore', label: 'Pts', align: 'num', title: null, defaultDir: 'desc' },
+  { key: 'yoff', label: 'Yoff', align: 'num', title: `HVORP in weeks ${PLAYOFF_START_WEEK}–17`, defaultDir: 'desc' },
+];
+
+function sortValueForRow(row, key, playersData, playerIdMap, season, completedWeeks) {
+  if (key === 'name') {
+    const info = getPlayerInfo(row.playerId, playersData, playerIdMap);
+    return (info?.name || String(row.playerId)).toLowerCase();
+  }
+  if (key === 'yoff') {
+    const yoff = playoffHvorpDisplay(row, season, completedWeeks);
+    return yoff == null || !Number.isFinite(yoff) ? null : yoff;
+  }
+  const v = row[key];
+  if (v == null || !Number.isFinite(v)) return null;
+  return v;
+}
+
 function PlayerAnalyticsTable({
   rows,
   playersData,
@@ -696,29 +782,68 @@ function PlayerAnalyticsTable({
   completedWeeks,
   onSelect,
 }) {
+  const [sortKey, setSortKey] = useState('hvorp');
+  const [sortDir, setSortDir] = useState('desc');
+
+  const sortedRows = useMemo(() => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = sortValueForRow(a, sortKey, playersData, playerIdMap, season, completedWeeks);
+      const bv = sortValueForRow(b, sortKey, playersData, playerIdMap, season, completedWeeks);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === 'string' || typeof bv === 'string') {
+        return String(av).localeCompare(String(bv)) * dir;
+      }
+      if (av !== bv) return (av < bv ? -1 : 1) * dir;
+      if (a.hvorp !== b.hvorp) return b.hvorp - a.hvorp;
+      const an = getPlayerInfo(a.playerId, playersData, playerIdMap)?.name || '';
+      const bn = getPlayerInfo(b.playerId, playersData, playerIdMap)?.name || '';
+      return an.localeCompare(bn);
+    });
+  }, [rows, sortKey, sortDir, playersData, playerIdMap, season, completedWeeks]);
+
+  const handleSort = (key, defaultDir) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(defaultDir);
+    }
+  };
+
   return (
     <div className="player-analytics-table-scroll">
       <table className="player-analytics-table">
         <thead>
           <tr>
             <th className="player-analytics-th-rank">#</th>
-            <th>Player</th>
-            <th className="player-analytics-th-num" title="Hwang value over replacement — starter points lost if this player were off the roster">
-              HVORP
-            </th>
-            <th className="player-analytics-th-num" title="HVORP divided by games with a score">
-              HVORP/G
-            </th>
-            <th className="player-analytics-th-num">Pts</th>
-            <th className="player-analytics-th-num" title={`HVORP in weeks ${PLAYOFF_START_WEEK}–17`}>
-              Yoff HVORP
-            </th>
-            <th className="player-analytics-th-num">GP</th>
-            <th className="player-analytics-th-num">Starts</th>
+            {HVORP_SORT_COLUMNS.map((col) => {
+              const active = sortKey === col.key;
+              return (
+                <th
+                  key={col.key}
+                  className={
+                    (col.align === 'num' ? 'player-analytics-th-num ' : '') +
+                    'player-analytics-th-sortable' +
+                    (active ? ' player-analytics-th-sortable--active' : '')
+                  }
+                  title={col.title || undefined}
+                  onClick={() => handleSort(col.key, col.defaultDir)}
+                  aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                >
+                  {col.label}
+                  <span className="player-analytics-sort-arrow" aria-hidden="true">
+                    {active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                  </span>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, idx) => {
+          {sortedRows.map((row, idx) => {
             const info = getPlayerInfo(row.playerId, playersData, playerIdMap);
             const name = info?.name || row.playerId;
             const pos = info?.position || '';
@@ -745,8 +870,6 @@ function PlayerAnalyticsTable({
                 <td className={`player-analytics-num ${hvorpTone(row.hvorpPerGame)}`}>{fmtNum(row.hvorpPerGame, 2)}</td>
                 <td className="player-analytics-num">{fmtNum(row.totalScore)}</td>
                 <td className={`player-analytics-num ${hvorpTone(yoff)}`}>{fmtNum(yoff)}</td>
-                <td className="player-analytics-num">{row.gamesPlayed}</td>
-                <td className="player-analytics-num">{row.weeksStarted}</td>
               </tr>
             );
           })}
@@ -801,8 +924,15 @@ function PlayerAnalyticsDetail({ row, playersData, playerIdMap, season, complete
           { label: 'Pts', value: fmtNum(row.totalScore) },
           { label: 'PPG', value: fmtNum(row.ppg, 2) },
           { label: 'Yoff', value: fmtNum(yoff), tone: hvorpTone(yoff) },
-          { label: 'GP', value: String(row.gamesPlayed) },
-          { label: 'Starts', value: String(row.weeksStarted) },
+          {
+            label: 'Starts',
+            value: String(row.starts ?? row.weeksStarted ?? 0),
+            tip: startsTipLines(row),
+          },
+          { label: 'Bench', value: String(row.bench ?? 0) },
+          { label: 'Avg', value: fmtNum(row.avgTotalPts ?? row.ppg) },
+          { label: 'Avg Start', value: fmtNum(row.avgStarterPts) },
+          { label: 'Avg Bench', value: fmtNum(row.avgBenchPts) },
         ]}
       />
 

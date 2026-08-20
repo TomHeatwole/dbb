@@ -26,6 +26,7 @@ import useIsPwa from '../hooks/useIsPwa';
 import { getCurrentNFLWeek, isCurrentWeekCompleted, isPreSeason } from '../utils/DateHelper';
 import { HOME_OFFSEASON_OVERRIDE } from '../utils/global_constants';
 import { fetchRookieDraftComplete } from '../lookups/TeamLookup';
+import './Home.css';
 
 function HomePage() {
   const isMobile = useIsMobile();
@@ -77,7 +78,7 @@ function HomePage() {
   // Show loading state while determining which week to display
   if (homePageCurrentWeek === null) {
     return (
-      <main className="home-main">
+      <main className="home-main home-dashboard">
         <LoadingState label="Loading…" ariaLabel="Loading home page" />
       </main>
     );
@@ -101,7 +102,7 @@ function HomePage() {
   if (isOffSeasonHome) {
     if (isMobile) {
       return (
-        <main className="home-main">
+        <main className="home-main home-dashboard">
           <div className="home-cards-grid home-cards-grid--single">
             {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
             <Week1CountdownCard />
@@ -122,7 +123,7 @@ function HomePage() {
     // Desktop: keep the split-column layout. Put the countdown full-width on top,
     // then render the remaining cards side-by-side.
     return (
-      <main className="home-main">
+      <main className="home-main home-dashboard">
         <div className="home-cards-grid">
           <Week1CountdownCard />
           <div className="home-cards-grid--split">
@@ -183,7 +184,7 @@ function HomePage() {
     // 7) Commissioner Note
     // 8) Podcast
     return (
-      <main className="home-main">
+      <main className="home-main home-dashboard">
         <div className="home-cards-grid home-cards-grid--single">
           {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
           <AuthHomeCard />
@@ -218,7 +219,7 @@ function HomePage() {
   //  - Commissioner Note
 
   return (
-    <main className="home-main">
+    <main className="home-main home-dashboard">
       <div className="home-cards-grid">
         {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
         <div className="home-cards-grid--split">
@@ -244,5 +245,3 @@ function HomePage() {
 }
 
 export default HomePage;
-
-

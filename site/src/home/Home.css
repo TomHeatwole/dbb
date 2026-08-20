@@ -1,0 +1,472 @@
+/* Home page card makeover — scoped under .home-dashboard.
+   Classic navy palette + refined spacing / chrome. */
+
+.home-dashboard {
+  --ah-surface: #1a365d;
+  --ah-surface-raised: rgba(0, 0, 0, 0.18);
+  --ah-surface-soft: rgba(255, 255, 255, 0.05);
+  --ah-border: rgba(148, 180, 255, 0.6);
+  --ah-border-strong: rgba(148, 180, 255, 0.85);
+  --ah-text: #e2e8f0;
+  --ah-muted: rgba(226, 232, 240, 0.55);
+  --ah-muted-2: rgba(226, 232, 240, 0.85);
+  --ah-link: #90cdf4;
+  --ah-gold: rgba(236, 201, 75, 0.95);
+  --ah-green: rgba(74, 222, 128, 0.7);
+  --ah-green-soft: rgba(74, 222, 128, 0.14);
+  --ah-radius: 0.85rem;
+  --ah-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  justify-content: flex-start;
+}
+
+.home-dashboard .home-cards-grid {
+  max-width: 74rem;
+  padding: 1.35rem 1.35rem 3.25rem;
+  gap: 0;
+}
+
+.home-dashboard .home-cards-grid--split {
+  gap: 1.15rem;
+}
+
+.home-dashboard .home-cards-column {
+  gap: 0;
+}
+
+/* ── Card chrome ─────────────────────────────────────────────────────────── */
+
+.home-dashboard .home-card {
+  --home-card-title-font-size: 1.02rem;
+  --home-card-title-margin-bottom: 0.55rem;
+  --home-card-body-font-size: 0.92rem;
+  --home-card-inner-gap: 0.65rem;
+
+  margin: 0 0 1.1rem;
+  padding: 1.05rem 1.1rem 1.1rem;
+  background: var(--ah-surface);
+  border: 1px solid var(--ah-border);
+  border-radius: var(--ah-radius);
+  box-shadow: var(--ah-shadow);
+  color: var(--ah-text);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+  animation: home-card-fade-up 0.5s ease both;
+}
+
+.home-dashboard .home-cards-column--left > .home-card:nth-child(1),
+.home-dashboard .home-cards-column--right > .home-card:nth-child(1),
+.home-dashboard .home-cards-grid--single > .home-card:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.home-dashboard .home-cards-column--left > .home-card:nth-child(2),
+.home-dashboard .home-cards-column--right > .home-card:nth-child(2),
+.home-dashboard .home-cards-grid--single > .home-card:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.home-dashboard .home-cards-column--left > .home-card:nth-child(3),
+.home-dashboard .home-cards-column--right > .home-card:nth-child(3),
+.home-dashboard .home-cards-grid--single > .home-card:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.home-dashboard .home-cards-column--left > .home-card:nth-child(4),
+.home-dashboard .home-cards-column--right > .home-card:nth-child(4),
+.home-dashboard .home-cards-grid--single > .home-card:nth-child(4) {
+  animation-delay: 0.16s;
+}
+.home-dashboard .home-cards-column--left > .home-card:nth-child(5),
+.home-dashboard .home-cards-column--right > .home-card:nth-child(5),
+.home-dashboard .home-cards-grid--single > .home-card:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-dashboard .home-card:hover {
+    border-color: var(--ah-border-strong);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+    transform: translateY(-1px);
+  }
+}
+
+.home-dashboard .home-card-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #edf2f7;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(148, 180, 255, 0.28);
+}
+
+.home-dashboard .home-card-title-row {
+  align-items: center;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(148, 180, 255, 0.28);
+  margin-bottom: 0.15rem;
+}
+
+.home-dashboard .home-card-title-row .home-card-title {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.home-dashboard .home-card-dismiss {
+  color: rgba(226, 232, 240, 0.95);
+  font-size: 1.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-dashboard .home-card-dismiss:hover {
+  color: #fff;
+  background: rgba(148, 180, 255, 0.14);
+}
+
+.home-dashboard .home-card-body {
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.home-dashboard .home-inline-link-button {
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.home-dashboard .home-inline-link-button:hover {
+  color: #fff;
+}
+
+.home-dashboard .home-inline-link-button--centered {
+  max-width: none;
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 180, 255, 0.55);
+  background: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.home-dashboard .home-inline-link-button--centered:hover {
+  background: rgba(0, 0, 0, 0.18);
+  border-color: rgba(148, 180, 255, 0.75);
+}
+
+/* Footer CTAs */
+.home-dashboard .active-playoffs-link-row {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 180, 255, 0.22);
+}
+
+.home-dashboard .active-playoffs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(148, 180, 255, 0.4);
+  color: var(--ah-link);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.home-dashboard .active-playoffs-link:hover {
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(148, 180, 255, 0.65);
+  color: #bee3f8;
+  text-decoration: none;
+}
+
+/* ── Auth / your team ────────────────────────────────────────────────────── */
+
+.home-dashboard .login-home-card,
+.home-dashboard .your-team-home-card {
+  border-color: var(--ah-green);
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.16), var(--ah-shadow);
+}
+
+.home-dashboard .login-home-card-copy {
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.home-dashboard .login-home-signin-btn {
+  border-radius: 0.65rem;
+  border: 1px solid rgba(74, 222, 128, 0.55);
+  background: var(--ah-green-soft);
+  color: #ecfdf3;
+  font-weight: 700;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.home-dashboard .login-home-signin-btn:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.22);
+  border-color: rgba(74, 222, 128, 0.85);
+  transform: translateY(-1px);
+}
+
+.home-dashboard .your-team-home-assets-title {
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.home-dashboard .your-team-home-asset-value {
+  color: #4ade80;
+}
+
+/* ── Week 1 countdown ────────────────────────────────────────────────────── */
+
+.home-dashboard .week1-countdown-card {
+  background: linear-gradient(135deg, rgba(26, 54, 93, 1) 0%, rgba(45, 55, 72, 1) 100%);
+  border-color: rgba(236, 201, 75, 0.65);
+}
+
+.home-dashboard .week1-countdown-seg {
+  background: var(--ah-surface-raised);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.7rem;
+  padding: 0.7rem 0.75rem;
+}
+
+.home-dashboard .week1-countdown-val {
+  font-size: 1.45rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.home-dashboard .week1-countdown-label {
+  color: rgba(226, 232, 240, 0.85);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+
+.home-dashboard .week1-countdown-kickoff {
+  color: rgba(226, 232, 240, 0.9);
+  font-weight: 700;
+}
+
+.home-dashboard .week1-countdown-complete {
+  color: var(--ah-gold);
+}
+
+/* ── Nested tiles (trades, lists, race rows) ─────────────────────────────── */
+
+.home-dashboard .recent-trades-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.65rem;
+  padding: 0.7rem 0.75rem;
+}
+
+.home-dashboard .recent-trades-date {
+  color: rgba(226, 232, 240, 0.45);
+}
+
+.home-dashboard .recent-trades-receives-label {
+  color: rgba(148, 180, 255, 0.75);
+}
+
+.home-dashboard .recent-trades-see-more {
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 180, 255, 0.4);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.home-dashboard .previous-year-recap-link {
+  border-radius: 0.55rem;
+  transition: background 0.15s ease;
+}
+
+.home-dashboard .previous-year-recap-link:hover {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.home-dashboard .hot-team-avatar,
+.home-dashboard .active-playoffs-avatar,
+.home-dashboard .previous-year-recap-avatar,
+.home-dashboard .recent-trades-team-avatar {
+  box-shadow: 0 0 0 1px rgba(148, 180, 255, 0.35);
+}
+
+.home-dashboard .hot-team-team-name,
+.home-dashboard .active-playoffs-team-name,
+.home-dashboard .previous-year-recap-name {
+  color: #edf2f7;
+}
+
+.home-dashboard .current-playoff-picture-caption {
+  color: #cbd5f5;
+}
+
+.home-dashboard .active-playoffs-row,
+.home-dashboard .tank-race-team-row--clickable,
+.home-dashboard .top-pf-team-row--clickable,
+.home-dashboard .week-stars-team-row,
+.home-dashboard .bubble-team-row {
+  border-radius: 0.55rem;
+}
+
+.home-dashboard .active-playoffs-row {
+  background: rgba(11, 18, 35, 0.98);
+  border: 1px solid rgba(88, 115, 180, 0.7);
+}
+
+.home-dashboard .tank-race-team-row--clickable:hover,
+.home-dashboard .top-pf-team-row--clickable:hover,
+.home-dashboard .hot-team-score-line--clickable:hover {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.home-dashboard .hot-team-week-label,
+.home-dashboard .hot-team-trend-week {
+  color: #a0aec0;
+}
+
+.home-dashboard .hot-team-score {
+  color: #f6e05e;
+}
+
+.home-dashboard .hot-team-trend-bar {
+  background: #2d3748;
+}
+
+.home-dashboard .hot-team-trend-bar--mid {
+  background: #63b3ed;
+}
+
+.home-dashboard .hot-team-trend-bar--high {
+  background: #f6e05e;
+}
+
+.home-dashboard .draft-recap-round-select {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  font-weight: 700;
+}
+
+.home-dashboard .draft-recap-pick {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.home-dashboard .draft-recap-pick-num {
+  color: rgba(226, 232, 240, 0.65);
+  font-weight: 700;
+}
+
+.home-dashboard .trending-fa-list,
+.home-dashboard .trending-free-agents-list {
+  gap: 0.35rem;
+}
+
+.home-dashboard .active-playoffs-vs {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.home-dashboard .active-playoffs-status,
+.home-dashboard .previous-year-recap-status,
+.home-dashboard .recent-trades-status {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.home-dashboard .active-playoffs-status--error,
+.home-dashboard .previous-year-recap-status--error,
+.home-dashboard .recent-trades-status--error,
+.home-dashboard .login-home-card-error {
+  color: rgba(254, 178, 178, 0.95);
+}
+
+/* Race / bubble / PF tables — quieter chrome */
+.home-dashboard .tank-race-table,
+.home-dashboard .top-pf-table,
+.home-dashboard .bubble-table,
+.home-dashboard .rookie-draft-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.home-dashboard .rookie-draft-table thead th {
+  color: rgba(226, 232, 240, 0.65);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom-color: rgba(148, 180, 255, 0.35);
+}
+
+.home-dashboard .commissioner-note-toggle,
+.home-dashboard .commissioner-note-link {
+  color: var(--ah-link);
+}
+
+.home-dashboard .commissioner-note-content {
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.home-dashboard .hwang-ai-card-prompt {
+  color: #94a3b8;
+}
+
+.home-dashboard .hwang-ai-card-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.65rem;
+}
+
+.home-dashboard .hwang-ai-card-input:focus {
+  border-color: rgba(174, 78, 2, 0.6);
+  box-shadow: 0 0 0 3px rgba(174, 78, 2, 0.08);
+}
+
+.home-dashboard .ios-shortcut-preview-image,
+.home-dashboard .ios-shortcut-step-image {
+  border-color: rgba(148, 180, 255, 0.45);
+  box-shadow: var(--ah-shadow);
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────────── */
+
+@keyframes home-card-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.45rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-dashboard .home-card {
+    animation: none;
+  }
+
+  .home-dashboard .home-card,
+  .home-dashboard .login-home-signin-btn {
+    transition: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .home-dashboard .home-card:hover {
+      transform: none;
+    }
+  }
+}
+
+@media (max-width: 50em) {
+  .home-dashboard .home-cards-grid {
+    padding: 0.85rem 0.85rem 2.75rem;
+  }
+
+  .home-dashboard .home-card {
+    margin-bottom: 0.9rem;
+    padding: 0.95rem 0.95rem 1rem;
+  }
+}

@@ -82,104 +82,102 @@ export default function PositionAnalytics({
   const teamLineName = teamName ? `${teamName}` : `Your ${posLabel}`;
 
   return (
-    <div className="team-analytics-pos-card">
-      <div className="team-analytics-pos-grid">
-        <div className="team-analytics-card team-analytics-card--plot">
-          <div className="team-analytics-card-head">
-            <h3 className="team-analytics-card-title">{posLabel} weekly scores</h3>
-            <p className="team-analytics-card-sub">Starter points at this slot vs the league each week</p>
-          </div>
-          <AnalyticsLineChart
-            data={chartData}
-            lines={[
-              { dataKey: 'userScore', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
-              { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
-              { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
-              { dataKey: 'leagueFloor', stroke: ANALYTICS_SERIES.floor, name: 'Floor', strokeDasharray: '5 5' },
-            ]}
-          />
+    <>
+      <div className="team-analytics-card team-analytics-pos-pie">
+        <div className="team-analytics-card-head">
+          <h3 className="team-analytics-card-title">{posLabel} starters</h3>
+          <p className="team-analytics-card-sub">Who filled this slot over the selected weeks</p>
         </div>
-        <div className="team-analytics-card team-analytics-card--plot">
-          <div className="team-analytics-card-head">
-            <h3 className="team-analytics-card-title">{posLabel} starters</h3>
-            <p className="team-analytics-card-sub">Who filled this slot over the selected weeks</p>
-          </div>
-          <div className="team-analytics-pie-inner">
-            {breakdownData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={breakdownData}
-                    dataKey="count"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={isMobile ? 58 : 52}
-                    outerRadius={isMobile ? 92 : 84}
-                    paddingAngle={2}
-                    stroke="rgba(10, 12, 28, 0.6)"
-                    strokeWidth={2}
-                  >
-                    {breakdownData.map((entry, idx) => {
-                      const mapped = playerColorMap && playerColorMap[entry.playerId];
-                      const fallback = pieColors[idx % pieColors.length];
-                      return (
-                        <Cell key={`cell-${entry.playerId}`} fill={mapped || fallback} />
-                      );
-                    })}
-                  </Pie>
-                  <Legend
-                    layout={isMobile ? 'horizontal' : 'vertical'}
-                    align={isMobile ? 'center' : 'right'}
-                    verticalAlign={isMobile ? 'bottom' : 'middle'}
-                    iconType="circle"
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: 12, color: '#94a3b8', maxHeight: isMobile ? 72 : 220, overflow: 'auto' }}
-                    formatter={(value) => value}
-                  />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const d = payload[0].payload;
-                        const totalStarts = endWeek - startWeek + 1;
-                        const playerStarts = d.count;
-                        const startPct = totalStarts > 0 ? Math.round((playerStarts / totalStarts) * 1000) / 10 : 0;
-                        let avgScore = 0;
-                        if (d.count > 0 && d.cumulative_score !== undefined) {
-                          avgScore = Math.round((d.cumulative_score / d.count) * 10) / 10;
-                        }
-                        return (
-                          <div className="team-analytics-tooltip">
-                            <img src={getPlayerLogoUrl(d.img)} alt="" className="team-analytics-tooltip-avatar" />
-                            <div className="team-analytics-tooltip-week">
-                              {d.name} <PositionBadge position={d.position} />
-                            </div>
-                            <div className="team-analytics-tooltip-row">
-                              <span className="team-analytics-tooltip-name">{posLabel} starts</span>
-                              <span className="team-analytics-tooltip-pts">{playerStarts}</span>
-                            </div>
-                            <div className="team-analytics-tooltip-row">
-                              <span className="team-analytics-tooltip-name">Share</span>
-                              <span className="team-analytics-tooltip-pts">{startPct}%</span>
-                            </div>
-                            <div className="team-analytics-tooltip-row">
-                              <span className="team-analytics-tooltip-name">Avg as {posLabel}</span>
-                              <span className="team-analytics-tooltip-pts">{avgScore}</span>
-                            </div>
-                          </div>
-                        );
+        <div className="team-analytics-pie-inner">
+          {breakdownData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={breakdownData}
+                  dataKey="count"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={isMobile ? 48 : 56}
+                  outerRadius={isMobile ? 78 : 88}
+                  paddingAngle={2}
+                  stroke="rgba(10, 12, 28, 0.6)"
+                  strokeWidth={2}
+                >
+                  {breakdownData.map((entry, idx) => {
+                    const mapped = playerColorMap && playerColorMap[entry.playerId];
+                    const fallback = pieColors[idx % pieColors.length];
+                    return (
+                      <Cell key={`cell-${entry.playerId}`} fill={mapped || fallback} />
+                    );
+                  })}
+                </Pie>
+                <Legend
+                  layout="horizontal"
+                  align="center"
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ fontSize: 11, color: '#94a3b8', maxHeight: 64, overflow: 'auto' }}
+                  formatter={(value) => value}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      const totalStarts = endWeek - startWeek + 1;
+                      const playerStarts = d.count;
+                      const startPct = totalStarts > 0 ? Math.round((playerStarts / totalStarts) * 1000) / 10 : 0;
+                      let avgScore = 0;
+                      if (d.count > 0 && d.cumulative_score !== undefined) {
+                        avgScore = Math.round((d.cumulative_score / d.count) * 10) / 10;
                       }
-                      return null;
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="team-analytics-empty">No {posLabel} data for this range.</div>
-            )}
-          </div>
+                      return (
+                        <div className="team-analytics-tooltip">
+                          <img src={getPlayerLogoUrl(d.img)} alt="" className="team-analytics-tooltip-avatar" />
+                          <div className="team-analytics-tooltip-week">
+                            {d.name} <PositionBadge position={d.position} />
+                          </div>
+                          <div className="team-analytics-tooltip-row">
+                            <span className="team-analytics-tooltip-name">{posLabel} starts</span>
+                            <span className="team-analytics-tooltip-pts">{playerStarts}</span>
+                          </div>
+                          <div className="team-analytics-tooltip-row">
+                            <span className="team-analytics-tooltip-name">Share</span>
+                            <span className="team-analytics-tooltip-pts">{startPct}%</span>
+                          </div>
+                          <div className="team-analytics-tooltip-row">
+                            <span className="team-analytics-tooltip-name">Avg as {posLabel}</span>
+                            <span className="team-analytics-tooltip-pts">{avgScore}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="team-analytics-empty">No {posLabel} data for this range.</div>
+          )}
         </div>
       </div>
-    </div>
+      <div className="team-analytics-card team-analytics-pos-line">
+        <div className="team-analytics-card-head">
+          <h3 className="team-analytics-card-title">{posLabel} weekly scores</h3>
+          <p className="team-analytics-card-sub">Starter points at this slot vs the league each week</p>
+        </div>
+        <AnalyticsLineChart
+          data={chartData}
+          lines={[
+            { dataKey: 'userScore', stroke: ANALYTICS_SERIES.team, name: teamLineName, activeDot: { r: 5 } },
+            { dataKey: 'leagueCeiling', stroke: ANALYTICS_SERIES.ceiling, name: 'Ceiling', strokeDasharray: '5 5' },
+            { dataKey: 'leagueMedian', stroke: ANALYTICS_SERIES.median, name: 'Median', strokeDasharray: '5 5' },
+            { dataKey: 'leagueFloor', stroke: ANALYTICS_SERIES.floor, name: 'Floor', strokeDasharray: '5 5' },
+          ]}
+        />
+      </div>
+    </>
   );
 }

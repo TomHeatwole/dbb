@@ -14,6 +14,7 @@
  * same row.
  */
 import { findBestPlayerMatch, normalisePlayerName } from '../utils/playerNameMatcher';
+import { attachJamlAdp } from './redraftDashJamlAdp';
 
 const MANIFEST_URL = '/data/redraft_dash/manifest.json';
 
@@ -316,6 +317,8 @@ function parseEtrDefenses(text) {
   const rankIdx = header.indexOf('rank_2qb_half');
   const posRankIdx = header.indexOf('pos_rank_2qb_half');
   const tierIdx = header.indexOf('tier_2qb_half');
+  // Prefer 2QB ADP when present; fall back to half-PPR market ADP.
+  const adpIdx = headerIndex(header, ['adp_2qb', 'adp_half', 'adp_ppr']);
   if (nameIdx === -1 || rankIdx === -1) return [];
 
   const rows = [];
@@ -328,12 +331,14 @@ function parseEtrDefenses(text) {
     if (!name || !Number.isFinite(rank)) continue;
     const posRank = posRankIdx !== -1 ? Number(cells[posRankIdx]) : NaN;
     const tier = tierIdx !== -1 ? Number(cells[tierIdx]) : NaN;
+    const adp = adpIdx !== -1 ? Number(cells[adpIdx]) : NaN;
     rows.push({
       name,
       team: teamIdx !== -1 ? (cells[teamIdx] || '').toUpperCase() : '',
       etrRank: rank,
       posRank: Number.isFinite(posRank) ? posRank : rows.length + 1,
       tier: Number.isFinite(tier) ? tier : null,
+      adp: Number.isFinite(adp) ? adp : null,
     });
   }
   rows.sort((a, b) => a.etrRank - b.etrRank || a.posRank - b.posRank);
@@ -370,6 +375,7 @@ function attachAdpToCustomBoard(customBoard, yafsbText) {
       ?? byName.get(normalisePlayerName(p.name))
       ?? null;
   }
+  attachJamlAdp(customBoard);
 }
 
 /**
@@ -572,6 +578,7 @@ async function loadRedraftDashSnapshotUncached() {
     fetchStaticText(SNAPSHOT_META_URL),
   ]);
   const customBoard = parseSnapshotBoard(csvText);
+  attachJamlAdp(customBoard);
   let season = 2026;
   let generatedAt = null;
   if (metaText) {

@@ -154,6 +154,7 @@ function AppInner() {
       <Route path="/team/:id" element={<Teams2Page />} />
       <Route path="/teams" element={<Teams2Page />} />
       <Route path="/home/" element={<HomePage />} />
+      <Route path="/althome/" element={<Navigate to="/home/" replace />} />
       <Route path="/oldhome/" element={<OldHomePage />} />
       <Route path="/standings" element={<LeagueStandings />} />
       <Route path="/Scores/Week" element={<LeagueScores />} />

@@ -2,7 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import LoadingState from '../LoadingState';
 import PositionBadge from '../PositionBadge';
 import { loadRedraftDashData, loadRedraftDashSnapshot } from './redraftDashLoader';
+import RedraftDashAdpView from './RedraftDashAdpView';
+import RedraftDashMockDraft from './RedraftDashMockDraft';
 import RedraftDashTierView from './RedraftDashTierView';
+import { ADP_MODES, DEFAULT_ADP_MODE, resolveMarketAdp } from './redraftDashJamlAdp';
+import { PUNTER_RANKINGS } from './redraftDashMockDraftLogic';
 
 const LOCAL_POSITION_FILTERS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST', 'P'];
 const PUBLIC_POSITION_FILTERS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'P'];
@@ -21,27 +25,18 @@ function positionFilterLabel(pos) {
   return pos;
 }
 
-const PUNTER_RANKINGS = [
-  { rank: 1, name: 'Corey Bojorquez', team: 'CLE', note: 'P2 historical (4.42 ppg), worst projected offense (5.5 wins), 5.4 punts/gm' },
-  { rank: 2, name: 'Logan Cooke', team: 'JAX', note: 'P3 historical (4.32 ppg), 48.6 avg distance, elite in20 rate' },
-  { rank: 3, name: 'Tommy Townsend', team: 'HOU', note: 'P4 historical (4.31 ppg), led league in inside-20s in 2024 (39)' },
-  { rank: 4, name: 'Ryan Rehkow', team: 'CIN', note: 'P1 in 2025 (4.41 ppg), 49.5 avg distance, strong in20' },
-  { rank: 5, name: 'Tory Taylor', team: 'CHI', note: 'Most consistent — lowest std dev (1.30), zero 0-pt weeks in 34 games' },
-  { rank: 6, name: 'AJ Cole', team: 'LV', note: 'P8 historical (4.22 ppg), Raiders at 5.5 wins — massive volume ceiling' },
-  { rank: 7, name: 'Michael Dickson', team: 'SEA', note: 'P7 historical (4.24 ppg), never scored zero, elite per-punt' },
-  { rank: 8, name: 'Jordan Stout', team: 'NYG', note: 'Strong leg from BAL, inherits Giants volume (5.5 wins)' },
-  { rank: 9, name: 'Austin McNamara', team: 'NYJ', note: 'Jets at 5.5 wins — terrible offense, tons of punting' },
-  { rank: 10, name: 'Bradley Pinion', team: 'MIA', note: 'Led league in inside-20s in 2025 (34), Dolphins at 3.5 wins' },
-];
-
 const LOCAL_VIEWS = [
   { id: 'table', label: 'Sources table' },
   { id: 'tiers', label: 'View by tier' },
+  { id: 'adp', label: 'View by ADP' },
+  { id: 'mock', label: 'Mock draft' },
 ];
 
 const PUBLIC_VIEWS = [
   { id: 'table', label: 'Rankings' },
   { id: 'tiers', label: 'View by tier' },
+  { id: 'adp', label: 'View by ADP' },
+  { id: 'mock', label: 'Mock draft' },
 ];
 
 function formatRank(rank) {
@@ -65,6 +60,7 @@ function RedraftDash() {
   const [dataset, setDataset] = useState(null);
   const [positionFilter, setPositionFilter] = useState('ALL');
   const [view, setView] = useState('table');
+  const [adpMode, setAdpMode] = useState(DEFAULT_ADP_MODE);
   const [sortKey, setSortKey] = useState('avgRank');
   const [sortDir, setSortDir] = useState('asc');
 
@@ -107,7 +103,7 @@ function RedraftDash() {
         : board.filter((p) => p.position === positionFilter);
       const getValue = (player) => {
         if (sortKey === 'name') return player.name.toLowerCase();
-        if (sortKey === 'adp') return player.adp;
+        if (sortKey === 'adp') return resolveMarketAdp(player, adpMode);
         return player.rank;
       };
       return [...filtered].sort((a, b) => {
@@ -142,7 +138,7 @@ function RedraftDash() {
       if (va > vb) return sortDir === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [data, isPublic, positionFilter, sortKey, sortDir]);
+  }, [data, isPublic, positionFilter, sortKey, sortDir, adpMode]);
 
   if (error) {
     return <div className="rv-error">Redraft Dash failed to load: {error}</div>;
@@ -189,7 +185,7 @@ function RedraftDash() {
 
   const localUnavailable = !isPublic && !data.available;
   const publicUnavailable = isPublic && !data.available;
-  const sideTab = SIDE_TABS.has(positionFilter);
+  const sideTab = view !== 'mock' && SIDE_TABS.has(positionFilter);
   const listCount = positionFilter === 'P'
     ? PUNTER_RANKINGS.length
     : positionFilter === 'DST'
@@ -235,6 +231,7 @@ function RedraftDash() {
           </div>
         </div>
         )}
+        {view !== 'mock' && (
         <div className="rv-field">
           <span className="rv-label">Position</span>
           <select
@@ -247,6 +244,26 @@ function RedraftDash() {
             ))}
           </select>
         </div>
+        )}
+        {!localUnavailable && !publicUnavailable && (view === 'tiers' || view === 'adp' || view === 'mock' || (isPublic && view === 'table')) && (
+        <div className="rv-field">
+          <span className="rv-label">ADP market</span>
+          <div className="rdd-view-toggle" title="JAML compresses QB ADP for a league that takes ~5–6 QBs in R1">
+            {ADP_MODES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={`rdd-view-btn${adpMode === m.id ? ' rdd-view-btn--active' : ''}`}
+                onClick={() => setAdpMode(m.id)}
+                title={m.description}
+              >
+                {m.shortLabel}
+              </button>
+            ))}
+          </div>
+        </div>
+        )}
+        {view !== 'mock' && (
         <p className="rv-meta rdd-source-meta">
           {data.season} redraft · {listCount} {positionFilter === 'DST' ? 'defenses' : 'players'}
           {isPublic ? ' · public snapshot' : null}
@@ -265,9 +282,10 @@ function RedraftDash() {
             </>
           )}
         </p>
+        )}
       </div>
 
-      {isPublic ? (
+      {view !== 'mock' && (isPublic ? (
         <div className="rdd-privacy-note">
           Public snapshot of the DBB custom board — overall rank and Sleeper SF ADP only.
           Per-source ranks from private boards are not included.
@@ -281,7 +299,7 @@ function RedraftDash() {
           Private sources load from <code>dbbp/</code> at startup — they never ship with the public deploy.
           Public baselines (FP ECR, Gibbs, YAFSB SF ADP) ship with the site.
         </div>
-      )}
+      ))}
 
       {localUnavailable && (
         <div className="rdd-unavailable">
@@ -307,7 +325,7 @@ function RedraftDash() {
         </div>
       )}
 
-      {positionFilter === 'P' && (
+      {view !== 'mock' && positionFilter === 'P' && (
         <div className="rdd-punter-list">
           <p className="rdd-punter-note">
             Punter scoring: avg distance &gt;40 = 1pt, &gt;42 = 2pt, &gt;44 = 3pt, + 1pt per punt inside opponent&apos;s 20.
@@ -337,7 +355,7 @@ function RedraftDash() {
         </div>
       )}
 
-      {!isPublic && positionFilter === 'DST' && (
+      {view !== 'mock' && !isPublic && positionFilter === 'DST' && (
         <div className="rdd-punter-list">
           <p className="rdd-punter-note">
             ETR superflex (2QB half-PPR) defense ranks. Defenses stay off the overall
@@ -373,11 +391,30 @@ function RedraftDash() {
         </div>
       )}
 
+      {!localUnavailable && !publicUnavailable && view === 'mock' && (
+        <RedraftDashMockDraft
+          players={data.customBoard || []}
+          defenses={localData?.defenses || []}
+          publicMode={isPublic}
+          adpMode={adpMode}
+        />
+      )}
+
       {!localUnavailable && !publicUnavailable && positionFilter !== 'P' && positionFilter !== 'DST' && view === 'tiers' && (
         <RedraftDashTierView
           players={data.customBoard || []}
           positionFilter={positionFilter}
           publicMode={isPublic}
+          adpMode={adpMode}
+        />
+      )}
+
+      {!localUnavailable && !publicUnavailable && positionFilter !== 'P' && positionFilter !== 'DST' && view === 'adp' && (
+        <RedraftDashAdpView
+          players={data.customBoard || []}
+          positionFilter={positionFilter}
+          publicMode={isPublic}
+          adpMode={adpMode}
         />
       )}
 
@@ -441,7 +478,7 @@ function RedraftDash() {
               {renderSortableTh('name', 'Player', 'rv-th-name')}
               <th className="rv-th rv-th-pos">Pos</th>
               <th className="rv-th rv-th-team">Team</th>
-              {renderSortableTh('adp', 'ADP', 'rdd-th-rank')}
+              {renderSortableTh('adp', adpMode === 'jaml' ? 'JAML ADP' : 'YAFSB ADP', 'rdd-th-rank')}
             </tr>
           </thead>
           <tbody>
@@ -451,7 +488,7 @@ function RedraftDash() {
                 <td className="rv-td rv-td-name">{player.name}</td>
                 <td className="rv-td rv-td-pos"><PositionBadge position={player.position} /></td>
                 <td className="rv-td rv-td-team">{player.team || '—'}</td>
-                <td className="rv-td rdd-td-rank">{formatAdp(player.adp)}</td>
+                <td className="rv-td rdd-td-rank">{formatAdp(resolveMarketAdp(player, adpMode))}</td>
               </tr>
             ))}
           </tbody>
