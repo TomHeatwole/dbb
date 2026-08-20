@@ -30,10 +30,15 @@ function HwangAICard() {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title hwang-ai-card-title">
-          <img src={LOGO} alt="" className="hwang-ai-card-title-logo" aria-hidden="true" />
-          HwangAI
-        </h2>
+        <div className="home-card-title-row">
+          <h2 className="home-card-title hwang-ai-card-title">
+            <img src={LOGO} alt="" className="hwang-ai-card-title-logo" aria-hidden="true" />
+            HwangAI
+          </h2>
+          <Link className="active-playoffs-link" to="/hwangai">
+            Open HwangAI →
+          </Link>
+        </div>
         <div className="hwang-ai-card-prompt">
           Ask me anything — trade values, league history, waiver pickups, dynasty strategy, NFL news, etc.
         </div>
@@ -54,11 +59,6 @@ function HwangAICard() {
           >
             ↑
           </button>
-        </div>
-        <div className="active-playoffs-link-row">
-          <Link className="active-playoffs-link" to="/hwangai">
-            Open HwangAI →
-          </Link>
         </div>
       </div>
     </HomeCard>

@@ -420,16 +420,13 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">🖼️ Current Playoff Picture</h2>
-        {body}
-        <div className="active-playoffs-link-row">
-          <Link
-            className="active-playoffs-link"
-            to="/Standings"
-          >
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">🖼️ Current Playoff Picture</h2>
+          <Link className="active-playoffs-link" to="/Standings">
             View Standings →
           </Link>
         </div>
+        {body}
       </div>
     </HomeCard>
   );

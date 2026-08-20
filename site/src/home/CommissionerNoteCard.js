@@ -89,9 +89,6 @@ function CommissionerNoteCard() {
             See Less
           </button>
         )}
-        <Link to="/Notes" className="commissioner-note-link">
-          Commissioner Notes →
-        </Link>
       </>
     );
   } else {
@@ -105,7 +102,12 @@ function CommissionerNoteCard() {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">📝 Commissioner Note</h2>
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">📝 Commissioner Note</h2>
+          <Link to="/Notes" className="active-playoffs-link">
+            Commissioner Notes →
+          </Link>
+        </div>
         {body}
       </div>
     </HomeCard>

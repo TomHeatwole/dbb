@@ -109,9 +109,9 @@ function HomePage() {
             <AuthHomeCard />
             <PreviousYearRecapCard />
             <RecentTradesCard />
-            <TrendingFreeAgentsCard />
-            {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
             <LeagueHistoryCard />
+            {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
+            <TrendingFreeAgentsCard />
             <HwangAICard />
             <CommissionerNoteCard />
             <PodcastCard />
@@ -130,13 +130,13 @@ function HomePage() {
             <div className="home-cards-column home-cards-column--left">
               <AuthHomeCard />
               <RecentTradesCard />
-              <TrendingFreeAgentsCard />
+              <LeagueHistoryCard />
               <PodcastCard />
             </div>
             <div className="home-cards-column home-cards-column--right">
               <PreviousYearRecapCard />
               {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
-              <LeagueHistoryCard />
+              <TrendingFreeAgentsCard />
               <HwangAICard />
               <CommissionerNoteCard />
             </div>
@@ -216,6 +216,7 @@ function HomePage() {
   //  - Hot Team Alert
   //  - On the Bubble (if before week 14)
   //  - Week 14 Top Scores
+  //  - HwangAI
   //  - Commissioner Note
 
   return (

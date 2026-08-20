@@ -525,20 +525,20 @@ function TopPFRaceCard({ currentWeekOverride = null }) {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">
-          📈 Top PF Race
-        </h2>
-        {body}
-        {topTeams && topTeams.length === 2 && (
-          <div className="active-playoffs-link-row">
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">
+            📈 Top PF Race
+          </h2>
+          {topTeams && topTeams.length === 2 ? (
             <Link
               className="active-playoffs-link"
               to={`/h2h?a=${topTeams[0].rosterId}&b=${topTeams[1].rosterId}`}
             >
               View Head To Head →
             </Link>
-          </div>
-        )}
+          ) : null}
+        </div>
+        {body}
       </div>
     </HomeCard>
   );

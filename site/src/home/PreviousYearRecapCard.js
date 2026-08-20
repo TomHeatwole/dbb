@@ -315,13 +315,13 @@ function PreviousYearRecapCard() {
   return (
     <HomeCard className="previous-year-recap-card">
       <div className="home-card-inner">
-        <h2 className="home-card-title">{title}</h2>
-        <div className="home-card-body">{body}</div>
-        <div className="active-playoffs-link-row">
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">{title}</h2>
           <Link className="active-playoffs-link" to={`/yoffs?year=${displaySeason}&format=bracket&tab=Bracket`}>
             View Playoffs →
           </Link>
         </div>
+        <div className="home-card-body">{body}</div>
       </div>
     </HomeCard>
   );

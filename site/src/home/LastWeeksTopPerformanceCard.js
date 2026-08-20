@@ -300,15 +300,15 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">
-          {title}
-        </h2>
-        {body}
-        <div className="active-playoffs-link-row">
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">
+            {title}
+          </h2>
           <Link className="active-playoffs-link" to={scoresLinkTo}>
             {scoresLinkLabel}
           </Link>
         </div>
+        {body}
       </div>
       {modal && createPortal(modal, document.body)}
     </HomeCard>

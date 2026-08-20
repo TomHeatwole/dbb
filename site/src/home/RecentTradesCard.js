@@ -173,15 +173,15 @@ function RecentTradesCard() {
     <>
       <HomeCard className="recent-trades-card">
         <div className="home-card-inner">
-          <h2 className="home-card-title">🤝 Recent Trades</h2>
-          <div className="home-card-body">{body}</div>
-          {showLink && (
-            <div className="active-playoffs-link-row">
+          <div className="home-card-title-row">
+            <h2 className="home-card-title">🤝 Recent Trades</h2>
+            {showLink ? (
               <Link className="active-playoffs-link" to="/trades">
                 {hasMore ? 'See all trades →' : 'Trade history →'}
               </Link>
-            </div>
-          )}
+            ) : null}
+          </div>
+          <div className="home-card-body">{body}</div>
         </div>
       </HomeCard>
       {modal && createPortal(modal, document.body)}

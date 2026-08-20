@@ -124,7 +124,12 @@ function LeagueHistoryCard() {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">📜 League History</h2>
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">📜 League History</h2>
+          <Link className="active-playoffs-link" to="/league-history">
+            View Full History →
+          </Link>
+        </div>
         <div className="home-card-body">
           {loading && <LoadingState label="Loading…" ariaLabel="Loading history" />}
 
@@ -206,11 +211,6 @@ function LeagueHistoryCard() {
               })}
             </div>
           )}
-        </div>
-        <div className="active-playoffs-link-row">
-          <Link className="active-playoffs-link" to="/league-history">
-            View Full History →
-          </Link>
         </div>
       </div>
     </HomeCard>

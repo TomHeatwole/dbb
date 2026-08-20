@@ -607,20 +607,17 @@ function BubbleCard({ currentWeekOverride = null }) {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">
-          🫧 On the Bubble
-        </h2>
-        {body}
-        {bubbleTeams && bubbleTeams.length > 0 && (
-          <div className="active-playoffs-link-row">
-            <Link
-              className="active-playoffs-link"
-              to="/Standings"
-            >
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">
+            🫧 On the Bubble
+          </h2>
+          {bubbleTeams && bubbleTeams.length > 0 ? (
+            <Link className="active-playoffs-link" to="/Standings">
               View Standings →
             </Link>
-          </div>
-        )}
+          ) : null}
+        </div>
+        {body}
       </div>
     </HomeCard>
   );

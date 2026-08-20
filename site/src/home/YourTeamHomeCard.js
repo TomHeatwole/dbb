@@ -243,11 +243,6 @@ function YourTeamHomeCard() {
             )}
           </div>
         </div>
-        <div className="active-playoffs-link-row your-team-home-link-row">
-          <Link className="active-playoffs-link" to={`/team/${team.rosterId}`}>
-            Open your team →
-          </Link>
-        </div>
       </>
     );
   }
@@ -256,10 +251,17 @@ function YourTeamHomeCard() {
     <>
       <HomeCard className="your-team-home-card">
         <div className="home-card-inner">
-          <h2 className="home-card-title login-home-card-title">
-            <img src={SLEEPER_BOT} alt="" className="login-home-card-title-logo" aria-hidden="true" />
-            Your Team
-          </h2>
+          <div className="home-card-title-row">
+            <h2 className="home-card-title login-home-card-title">
+              <img src={SLEEPER_BOT} alt="" className="login-home-card-title-logo" aria-hidden="true" />
+              Your Team
+            </h2>
+            {team?.rosterId ? (
+              <Link className="active-playoffs-link" to={`/team/${team.rosterId}`}>
+                Open your team →
+              </Link>
+            ) : null}
+          </div>
           {body}
         </div>
       </HomeCard>

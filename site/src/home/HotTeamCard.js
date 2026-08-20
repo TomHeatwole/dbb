@@ -274,18 +274,18 @@ function HotTeamCard({ currentWeekOverride = null }) {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">🔥 Hot Team Alert</h2>
-        {body}
-        {hotTeam && (
-          <div className="active-playoffs-link-row">
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">🔥 Hot Team Alert</h2>
+          {hotTeam ? (
             <Link
               className="active-playoffs-link"
               to={`/team/${hotTeam.rosterId}`}
             >
               View Team →
             </Link>
-          </div>
-        )}
+          ) : null}
+        </div>
+        {body}
       </div>
     </HomeCard>
   );

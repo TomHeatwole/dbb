@@ -372,13 +372,13 @@ function ChampionshipCard() {
   return (
     <HomeCard>
       <div className="home-card-inner">
-        <h2 className="home-card-title">🏆 Championship</h2>
-        {body}
-        <div className="active-playoffs-link-row">
+        <div className="home-card-title-row">
+          <h2 className="home-card-title">🏆 Championship</h2>
           <Link className="active-playoffs-link" to="/yoffs">
             Go to Playoffs →
           </Link>
         </div>
+        {body}
       </div>
     </HomeCard>
   );
