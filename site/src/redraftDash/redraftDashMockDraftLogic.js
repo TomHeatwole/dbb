@@ -227,9 +227,12 @@ function needAdjustment(player, counts, holes, pickIndex) {
   let adj = 0;
 
   if (fillsStarterNeed(pos, holes)) {
-    // Prefer plugging open starter slots, stronger late when holes remain
+    // Prefer plugging open starter slots, stronger late when holes remain.
+    // No extra QB bonus here: the board is already superflex-adjusted and the
+    // ADP lean models QB-hungry market behavior, so a flat QB thumb on the
+    // scale just overrides board order (it made CPUs take Lamar over Gibbs
+    // at pick 2 in "GTO tiers" mode).
     adj -= round >= 10 ? 18 : 8;
-    if (pos === 'QB' && holes.QB > 0 && round <= 8) adj -= 6;
   } else if (FLEX_ELIGIBLE.has(pos) && holes.FLEX > 0) {
     adj -= 5;
   }

@@ -2199,16 +2199,40 @@
   }
 }
 
-/* Sidebar unroll animation for Home page */
+/* Sidebar unroll animation for Home page.
+   max-height reveals a flex-growing parchment (bottom roller travels down).
+   Nav is laid out at final size and clipped, so links stay painted on the
+   scroll instead of redistributing as the body gets taller. */
 .scroll-animating .scroll-body {
   max-height: 0;
   overflow: hidden;
   animation: scroll-body-unroll 2.5s linear forwards;
 }
 
+.scroll-animating .scroll-body > nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Final open body height: sidebar minus top/bottom rollers */
+  height: calc(100vh - 64px - 7.5rem);
+}
+
 @keyframes scroll-body-unroll {
   0% { max-height: 0; }
   100% { max-height: 100vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-animating .scroll-body {
+    animation: none;
+    max-height: none;
+  }
+
+  .scroll-animating .scroll-body > nav {
+    position: relative;
+    height: auto;
+  }
 } 
 
 /* Home page main container */
