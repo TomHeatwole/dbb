@@ -400,9 +400,9 @@ const VS_4BET = {
     ...fill(['AA','AKs','AQs','AJs','AKo','AQo','KQo'], 'AI'),
     ...fill(['A9s','A8s','A7s','A6s','KK','KQs','QJo','JTo'], 'C')
   }),
-  // SB vs UTG 4B: F 95.32%, R 0.45%, C 0.45%
+  // SB vs UTG 4B: F 95.32%, R 0.45%, C 0.45%  (printed absolute %; chart raises AA/AKo/KK)
   'SB vs UTG 4B': makeGrid({
-    ...fill(['KK'], 'AI'),
+    ...fill(['AA','AKo','KK'], 'AI'),
     ...fill(['QQ'], 'C')
   }),
   // BB vs UTG 4B: R 0.9%, C 0.75%, F 98.34%
@@ -432,7 +432,7 @@ const VS_4BET = {
   }),
   // SB vs UTG+1 4B: C 1.51%, F 93.97%, R 1.36%
   'SB vs UTG+1 4B': makeGrid({
-    ...fill(['AKo','KK'], 'AI'),
+    ...fill(['AA','AKo','KK'], 'AI'),
     ...fill(['AKs','AQs','QQ','JJ'], 'C')
   }),
   // BB vs UTG+1 4B: R 1.81%, C 1.06%, F 97.13%
@@ -452,17 +452,17 @@ const VS_4BET = {
   }),
   // BTN vs LJ 4B: C 1.66%, F 96.98%, R 1.36%
   'BTN vs LJ 4B': makeGrid({
-    ...fill(['AKo','KK'], 'AI'),
-    ...fill(['AA','AKs','QQ','JJ'], 'C')
+    ...fill(['AA','AKo','KK'], 'AI'),
+    ...fill(['AKs','QQ','JJ'], 'C')
   }),
   // SB vs LJ 4B: R 4.07%, C 3.77%, F 91.86%
   'SB vs LJ 4B': makeGrid({
     ...fill(['AA','AKs','AQs','AJs','AKo','AQo','KQo'], 'AI'),
     ...fill(['A9s','A8s','A7s','A6s','KK','KQs','QJo','JTo'], 'C')
   }),
-  // BB vs LJ 4B: C 1.51%, F 93.51%, R 1.81%
+  // BB vs LJ 4B: C 1.51%, F 93.51%, R 1.81%  (printed %; AA+AKs are raise on the chart)
   'BB vs LJ 4B': makeGrid({
-    ...fill(['AKo','KK','QQ'], 'AI'),
+    ...fill(['AA','AKs','AKo','KK','QQ'], 'AI'),
     ...fill(['AQs','AJs','JJ','TT'], 'C')
   }),
   // CO vs HJ 4B: R 1.81%, C 1.81%, F 96.38%
@@ -492,7 +492,7 @@ const VS_4BET = {
   }),
   // SB vs CO 4B: C 0.9%, F 93.51%, R 2.71%
   'SB vs CO 4B': makeGrid({
-    ...fill(['AKo','KK','QQ','JJ','TT'], 'AI'),
+    ...fill(['AA','AKs','AKo','KK','QQ','JJ','TT'], 'AI'),
     ...fill(['AQs','AJs','KQs'], 'C')
   }),
   // BB vs CO 4B: R 3.47%, C 1.81%, F 94.72%

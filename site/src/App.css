@@ -3466,6 +3466,100 @@
   font-weight: 800;
 }
 
+/* Recent Waivers card */
+.recent-waivers-card {
+  /* intentionally inherits default home-card border */
+}
+
+.recent-waivers-item {
+  padding: 0.4rem 0.55rem;
+}
+
+.recent-waivers-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+}
+
+.recent-waivers-team {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.recent-waivers-moves {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.4rem;
+  min-width: 0;
+}
+
+.recent-waivers-player {
+  appearance: none;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  text-align: left;
+  padding: 0.1rem 0.15rem;
+  margin: 0;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  color: inherit;
+  min-width: 0;
+}
+
+.recent-waivers-player:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.recent-waivers-tone {
+  flex: 0 0 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
+.recent-waivers-player--add .recent-waivers-tone {
+  color: #4ade80;
+}
+
+.recent-waivers-player--drop .recent-waivers-tone {
+  color: rgba(254, 178, 178, 0.95);
+}
+
+.recent-waivers-pos {
+  display: inline-flex;
+  align-items: center;
+}
+
+.recent-waivers-bid {
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: rgba(148, 180, 255, 0.9);
+  white-space: nowrap;
+}
+
+.recent-waivers-header-date {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.45);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.recent-waivers-team--me .recent-trades-team-name {
+  color: #4ade80;
+}
+
 /* Recent Trades card */
 .recent-trades-card {
   /* intentionally inherits default home-card border */
@@ -19546,6 +19640,437 @@ body.modal-open {
 
   .rddm-draft-cta {
     grid-row: 1 / span 2;
+  }
+}
+
+/* ── Redraft Dash: printable cheat sheets ────────────────────────────────── */
+
+.rddp-root {
+  color: #111;
+  background: #fff;
+  max-width: 52rem;
+}
+
+.rddp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #333;
+}
+
+.rddp-print-btn {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #222;
+  border-radius: 6px;
+  background: #111;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rddp-print-btn:hover {
+  background: #333;
+}
+
+.rddp-toolbar-copy {
+  margin: 0;
+  flex: 1;
+  min-width: 14rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #444;
+}
+
+.rddp-sheet {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  line-height: 1.25;
+  color: #000;
+  background: #fff;
+}
+
+.rddp-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Approximate letter printable area so the watermark centers on the sheet, not the text block */
+  min-height: 10.2in;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 0.85rem 1rem;
+  border: 1px dashed #999;
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.rddp-page--cover {
+  justify-content: stretch;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+
+.rddp-root--cover {
+  max-width: 52rem;
+}
+
+/* Cover/printable sheets already brand themselves — don't stack the site watermark. */
+.main-content-shared:has(.rdd-root--printable) > .watermark-bg,
+.main-content:has(.rdd-root--printable) > .watermark-bg,
+.mobile-main-content:has(.rdd-root--printable) > .watermark-bg,
+.tablet-main-content:has(.rdd-root--printable) > .watermark-bg {
+  display: none;
+}
+
+.rddp-cover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  min-height: 100%;
+  flex: 1 1 auto;
+  text-align: center;
+  padding: 0 0 0.45in;
+  box-sizing: border-box;
+}
+
+.rddp-cover-logo {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Crop the PNG's black letterboxing so the green field fills the page. */
+  object-fit: cover;
+  object-position: center center;
+  opacity: 0.62;
+  pointer-events: none;
+  user-select: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.rddp-cover-title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.08in;
+  color: #0a0a0a;
+  line-height: 0.95;
+  text-shadow:
+    0 0 0.18in #fff,
+    0 0 0.35in #fff,
+    0 1px 0 #fff;
+}
+
+.rddp-cover-title-brand {
+  font-family: 'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 36pt;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.rddp-cover-title-guide {
+  font-family: 'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 48pt;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.rddp-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(96%, 34rem);
+  height: auto;
+  opacity: 0.14;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
+}
+
+.rddp-page-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.15rem;
+  border-bottom: 1.5px solid #000;
+  flex-shrink: 0;
+}
+
+.rddp-page-body {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+}
+
+.rddp-section-title {
+  margin: 0;
+  font-size: 11pt;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rddp-page-label {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #333;
+}
+
+.rddp-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.rddp-col {
+  min-width: 0;
+}
+
+.rddp-tier {
+  margin-bottom: 0.5rem;
+}
+
+.rddp-tier-h {
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #000;
+  margin-bottom: 0.15rem;
+  padding-bottom: 0.05rem;
+}
+
+.rddp-line {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(4.5rem, 1.35fr) 3.2rem 2.7rem 1.4rem minmax(5.5rem, 1.6fr);
+  align-items: baseline;
+  gap: 0.22rem;
+  padding: 0.08rem 0;
+  border-bottom: 0.4px solid #ccc;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.rddp-line--simple {
+  grid-template-columns: 1.4rem minmax(5rem, 1.5fr) 2.2rem;
+}
+
+.rddp-rank {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+}
+
+.rddp-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rddp-pos {
+  font-size: 7pt;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rddp-adp {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rddp-adp-d {
+  margin-left: 0.12rem;
+  font-size: 6.5pt;
+}
+
+.rddp-val {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 7pt;
+}
+
+.rddp-src {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.12rem 0.28rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 6.5pt;
+  letter-spacing: 0.01em;
+}
+
+.rddp-src--empty {
+  color: #666;
+}
+
+.rddp-src-item--miss {
+  opacity: 0.35;
+}
+
+.rddp-special-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.rddp-special-grid .rddp-line {
+  grid-template-columns: 1.4rem minmax(4.2rem, 1.4fr) 2.2rem 2.5rem 1.3rem minmax(3.5rem, 1.2fr);
+}
+
+.rddp-special-grid .rddp-line--simple {
+  grid-template-columns: 1.4rem minmax(5rem, 1.5fr) 2.2rem;
+}
+
+@media (max-width: 700px) {
+  .rddp-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .rddp-special-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0.4in;
+  }
+
+  .background-bg,
+  .watermark-bg,
+  .sidebar,
+  .scroll-sidebar,
+  .mobile-top-nav,
+  .info-header-left-abs,
+  .info-page-header,
+  .mobile-home-link-abs,
+  .rddp-no-print,
+  .rv-controls {
+    display: none !important;
+  }
+
+  .App,
+  .content-wrapper,
+  .main-content-shared,
+  .main-content,
+  .info-shared,
+  .info-container,
+  .info-rel,
+  .rv-root,
+  .rdd-root,
+  .rddp-root {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .rddp-sheet {
+    font-size: 7.5pt;
+  }
+
+  .rddp-page {
+    break-after: page;
+    page-break-after: always;
+    margin: 0;
+    padding: 0;
+    border: none;
+    overflow: visible;
+    /* At least one full printable leaf so the watermark centers on the page */
+    min-height: calc(11in - 0.8in);
+    height: auto;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .rddp-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .rddp-page--cover {
+    justify-content: stretch;
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .rddp-cover {
+    padding: 0 0 0.35in;
+  }
+
+  .rddp-cover-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.62;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .rddp-cover-title-brand {
+    font-size: 32pt;
+  }
+
+  .rddp-cover-title-guide {
+    font-size: 44pt;
+  }
+
+  .rddp-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(92%, 6.5in);
+    opacity: 0.12;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .rddp-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .rddp-section-title {
+    font-size: 10pt;
+  }
+
+  .rddp-line {
+    border-bottom-color: #bbb;
+  }
+
+  .rddp-special-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
   }
 }
 

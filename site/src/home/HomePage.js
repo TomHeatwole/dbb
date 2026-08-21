@@ -13,6 +13,7 @@ import Week1CountdownCard from './Week1CountdownCard';
 import AuthHomeCard from './AuthHomeCard';
 import PreviousYearRecapCard from './PreviousYearRecapCard';
 import RecentTradesCard from './RecentTradesCard';
+import RecentWaiversCard from './RecentWaiversCard';
 import RookieDraftCard from './RookieDraftCard';
 import RookieDraftRecapCard from './RookieDraftRecapCard';
 import IosShortcutNoticeCard from './IosShortcutNoticeCard';
@@ -109,8 +110,9 @@ function HomePage() {
             <AuthHomeCard />
             <PreviousYearRecapCard />
             <RecentTradesCard />
-            <LeagueHistoryCard />
+            <RecentWaiversCard />
             {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
+            <LeagueHistoryCard />
             <TrendingFreeAgentsCard />
             <HwangAICard />
             <CommissionerNoteCard />
@@ -130,13 +132,14 @@ function HomePage() {
             <div className="home-cards-column home-cards-column--left">
               <AuthHomeCard />
               <RecentTradesCard />
-              <LeagueHistoryCard />
+              <RecentWaiversCard />
+              <TrendingFreeAgentsCard />
               <PodcastCard />
             </div>
             <div className="home-cards-column home-cards-column--right">
               <PreviousYearRecapCard />
               {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
-              <TrendingFreeAgentsCard />
+              <LeagueHistoryCard />
               <HwangAICard />
               <CommissionerNoteCard />
             </div>

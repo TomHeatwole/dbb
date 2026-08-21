@@ -4,6 +4,8 @@ import PositionBadge from '../PositionBadge';
 import { loadRedraftDashData, loadRedraftDashSnapshot } from './redraftDashLoader';
 import RedraftDashAdpView from './RedraftDashAdpView';
 import RedraftDashMockDraft from './RedraftDashMockDraft';
+import RedraftDashCover from './RedraftDashCover';
+import RedraftDashPrintable from './RedraftDashPrintable';
 import RedraftDashTierView from './RedraftDashTierView';
 import { ADP_MODES, DEFAULT_ADP_MODE, resolveMarketAdp } from './redraftDashJamlAdp';
 import { PUNTER_RANKINGS } from './redraftDashMockDraftLogic';
@@ -30,6 +32,8 @@ const LOCAL_VIEWS = [
   { id: 'tiers', label: 'View by tier' },
   { id: 'adp', label: 'View by ADP' },
   { id: 'mock', label: 'Mock draft' },
+  { id: 'printable', label: 'Printable' },
+  { id: 'cover', label: 'Title page' },
 ];
 
 const PUBLIC_VIEWS = [
@@ -37,6 +41,8 @@ const PUBLIC_VIEWS = [
   { id: 'tiers', label: 'View by tier' },
   { id: 'adp', label: 'View by ADP' },
   { id: 'mock', label: 'Mock draft' },
+  { id: 'printable', label: 'Printable' },
+  { id: 'cover', label: 'Title page' },
 ];
 
 function formatRank(rank) {
@@ -185,7 +191,8 @@ function RedraftDash() {
 
   const localUnavailable = !isPublic && !data.available;
   const publicUnavailable = isPublic && !data.available;
-  const sideTab = view !== 'mock' && SIDE_TABS.has(positionFilter);
+  const hideListChrome = view === 'mock' || view === 'printable' || view === 'cover';
+  const sideTab = !hideListChrome && SIDE_TABS.has(positionFilter);
   const listCount = positionFilter === 'P'
     ? PUNTER_RANKINGS.length
     : positionFilter === 'DST'
@@ -197,8 +204,8 @@ function RedraftDash() {
         : sortedPlayers.length;
 
   return (
-    <div className="rv-root rdd-root">
-      <div className="rv-controls">
+    <div className={`rv-root rdd-root${(view === 'printable' || view === 'cover') ? ' rdd-root--printable' : ''}`}>
+      <div className="rv-controls rddp-no-print">
         <div className="rv-field">
           <span className="rv-label">Dataset</span>
           <div className="rdd-view-toggle">
@@ -231,7 +238,7 @@ function RedraftDash() {
           </div>
         </div>
         )}
-        {view !== 'mock' && (
+        {!hideListChrome && (
         <div className="rv-field">
           <span className="rv-label">Position</span>
           <select
@@ -245,7 +252,7 @@ function RedraftDash() {
           </select>
         </div>
         )}
-        {!localUnavailable && !publicUnavailable && (view === 'tiers' || view === 'adp' || view === 'mock' || (isPublic && view === 'table')) && (
+        {!localUnavailable && !publicUnavailable && (view === 'tiers' || view === 'adp' || view === 'mock' || view === 'printable' || (isPublic && view === 'table')) && (
         <div className="rv-field">
           <span className="rv-label">ADP market</span>
           <div className="rdd-view-toggle" title="JAML compresses QB ADP for a league that takes ~5–6 QBs in R1">
@@ -263,7 +270,7 @@ function RedraftDash() {
           </div>
         </div>
         )}
-        {view !== 'mock' && (
+        {!hideListChrome && (
         <p className="rv-meta rdd-source-meta">
           {data.season} redraft · {listCount} {positionFilter === 'DST' ? 'defenses' : 'players'}
           {isPublic ? ' · public snapshot' : null}
@@ -285,7 +292,7 @@ function RedraftDash() {
         )}
       </div>
 
-      {view !== 'mock' && (isPublic ? (
+      {!hideListChrome && (isPublic ? (
         <div className="rdd-privacy-note">
           Public snapshot of the DBB custom board — overall rank and Sleeper SF ADP only.
           Per-source ranks from private boards are not included.
@@ -325,7 +332,7 @@ function RedraftDash() {
         </div>
       )}
 
-      {view !== 'mock' && positionFilter === 'P' && (
+      {!hideListChrome && positionFilter === 'P' && (
         <div className="rdd-punter-list">
           <p className="rdd-punter-note">
             Punter scoring: avg distance &gt;40 = 1pt, &gt;42 = 2pt, &gt;44 = 3pt, + 1pt per punt inside opponent&apos;s 20.
@@ -355,7 +362,7 @@ function RedraftDash() {
         </div>
       )}
 
-      {view !== 'mock' && !isPublic && positionFilter === 'DST' && (
+      {!hideListChrome && !isPublic && positionFilter === 'DST' && (
         <div className="rdd-punter-list">
           <p className="rdd-punter-note">
             ETR superflex (2QB half-PPR) defense ranks. Defenses stay off the overall
@@ -398,6 +405,19 @@ function RedraftDash() {
           publicMode={isPublic}
           adpMode={adpMode}
         />
+      )}
+
+      {!localUnavailable && !publicUnavailable && view === 'printable' && (
+        <RedraftDashPrintable
+          players={data.customBoard || []}
+          defenses={localData?.defenses || data.defenses || []}
+          publicMode={isPublic}
+          adpMode={adpMode}
+        />
+      )}
+
+      {!localUnavailable && !publicUnavailable && view === 'cover' && (
+        <RedraftDashCover />
       )}
 
       {!localUnavailable && !publicUnavailable && positionFilter !== 'P' && positionFilter !== 'DST' && view === 'tiers' && (

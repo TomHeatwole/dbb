@@ -68,7 +68,7 @@ Bo Melton,0,1244,bo-melton-1244,8204,Bo Melton,WR,GBP,exact,exact
 Bo Nix,0,1553,bo-nix-1553,11563,Bo Nix,QB,DEN,exact,exact
 Boston Scott,0,,,5122,Boston Scott,RB,,no_ktc,exact
 Braelon Allen,0,1567,braelon-allen-1567,11576,Braelon Allen,RB,NYJ,exact,exact
-Brandin Cooks,0,,,2197,Brandin Cooks,WR,,no_ktc,exact
+Brandin Cooks,0,307,brandin-cooks-307,2197,Brandin Cooks,WR,BUF,exact,exact
 Brandon Aiyuk,0,538,brandon-aiyuk-538,6803,Brandon Aiyuk,WR,SFO,exact,exact
 Brandon Powell,0,,,5695,Brandon Powell,WR,,no_ktc,exact
 Braxton Berrios,0,,,5121,Braxton Berrios,WR,NYG,no_ktc,exact
@@ -120,7 +120,7 @@ Courtland Sutton,0,226,courtland-sutton-226,5045,Courtland Sutton,WR,DEN,exact,e
 Craig Reynolds,0,,,6659,Craig Reynolds,RB,WAS,no_ktc,exact
 Curtis Samuel,0,,,4082,Curtis Samuel,WR,,no_ktc,exact
 D'Andre Swift,0,639,d-andre-swift-639,6790,D'Andre Swift,RB,CHI,exact,exact
-D'Ernest Johnson,0,,,6694,D'Ernest Johnson,RB,,no_ktc,exact
+D'Ernest Johnson,0,,,6694,D'Ernest Johnson,RB,TEN,no_ktc,exact
 D'Onta Foreman,0,,,4111,D'Onta Foreman,RB,,no_ktc,exact
 D.J. Chark,0,,,4951,DJ Chark,WR,,no_ktc,normalised
 D.J. Moore,0,304,dj-moore-304,4983,DJ Moore,WR,BUF,exact,normalised
@@ -181,7 +181,7 @@ Drew Sample,0,,,6001,Drew Sample,TE,CIN,no_ktc,exact
 Durham Smythe,0,,,5008,Durham Smythe,TE,BAL,no_ktc,exact
 Dyami Brown,0,1069,dyami-brown-1069,7587,Dyami Brown,WR,WAS,exact,exact
 Elijah Higgins,0,1469,elijah-higgins-1469,10231,Elijah Higgins,TE,ARI,exact,exact
-Elijah Mitchell,0,1013,elijah-mitchell-1013,7561,Elijah Mitchell,RB,FA,exact,exact
+Elijah Mitchell,0,,,7561,Elijah Mitchell,RB,,no_ktc,exact
 Elijah Moore,0,1012,elijah-moore-1012,7596,Elijah Moore,WR,PHI,exact,exact
 Emanuel Wilson,0,1515,emanuel-wilson-1515,11435,Emanuel Wilson,RB,SEA,exact,exact
 Emari Demercado,0,1481,emari-demercado-1481,11199,Emari Demercado,RB,KCC,exact,exact
@@ -265,9 +265,9 @@ Jaylen Warren,0,1201,jaylen-warren-1201,8228,Jaylen Warren,RB,PIT,exact,exact
 Jaylen Wright,0,1581,jaylen-wright-1581,11643,Jaylen Wright,RB,MIA,exact,exact
 Jeffery Wilson,0,,,5284,Jeff Wilson,RB,,no_ktc,alias
 Jelani Woods,0,,,8219,Jelani Woods,TE,NYJ,no_ktc,exact
-Jeremy Ruckert,0,,,8145,Jeremy Ruckert,TE,NYJ,no_ktc,exact
+Jeremy Ruckert,0,1255,jeremy-ruckert-1255,8145,Jeremy Ruckert,TE,NYJ,exact,exact
 Jerick McKinnon,0,,,2161,Jerick McKinnon,RB,,no_ktc,exact
-Jermaine Burton,0,,,11640,Jermaine Burton,WR,,no_ktc,exact
+Jermaine Burton,0,1603,jermaine-burton-1603,11640,Jermaine Burton,WR,FA,exact,exact
 Jerome Ford,0,1229,jerome-ford-1229,8143,Jerome Ford,RB,WAS,exact,exact
 Jerry Jeudy,0,545,jerry-jeudy-545,6783,Jerry Jeudy,WR,CLE,exact,exact
 Jimmy Garoppolo,0,,,1837,Jimmy Garoppolo,QB,,no_ktc,exact
@@ -294,7 +294,7 @@ Josh Palmer,0,,,7670,Joshua Palmer,WR,BUF,no_ktc,alias
 Josh Reynolds,0,,,4171,Josh Reynolds,WR,,no_ktc,exact
 Joshua Dobbs,0,,,4179,Joshua Dobbs,QB,DET,no_ktc,exact
 Joshua Kelley,0,,,7045,Joshua Kelley,RB,,no_ktc,exact
-JuJu Smith-Schuster,0,,,4040,JuJu Smith-Schuster,WR,NYG,no_ktc,exact
+JuJu Smith-Schuster,0,,,4040,JuJu Smith-Schuster,WR,,no_ktc,exact
 Julius Chestnut,0,,,8254,Julius Chestnut,RB,TEN,no_ktc,exact
 Justice Hill,0,368,justice-hill-368,5995,Justice Hill,RB,BAL,exact,exact
 Justin Fields,0,1015,justin-fields-1015,7591,Justin Fields,QB,KCC,exact,exact
@@ -385,7 +385,7 @@ Noah Brown,0,776,noah-brown-776,4234,Noah Brown,WR,LVR,exact,exact
 Noah Fant,0,243,noah-fant-243,5857,Noah Fant,TE,NOS,exact,exact
 Noah Gray,0,1059,noah-gray-1059,7828,Noah Gray,TE,KCC,exact,exact
 Nyheim Hines,0,,,5347,Nyheim Miller-Hines,RB,,no_ktc,alias
-Odell Beckham,0,279,odell-beckham-279,2078,Odell Beckham,WR,NYG,exact,exact
+Odell Beckham,0,,,2078,Odell Beckham,WR,NYG,no_ktc,exact
 Olamide Zaccheaus,0,609,olamide-zaccheaus-609,6271,Olamide Zaccheaus,WR,ATL,exact,exact
 Parker Washington,0,1445,parker-washington-1445,9487,Parker Washington,WR,JAC,exact,exact
 Parris Campbell,0,,,5880,Parris Campbell,WR,,no_ktc,exact
@@ -437,7 +437,7 @@ Tank Bigsby,0,1401,tank-bigsby-1401,9225,Tank Bigsby,RB,PHI,exact,exact
 Tank Dell,0,1438,tank-dell-1438,9502,Tank Dell,WR,HOU,exact,exact
 Tanner Hudson,0,,,5409,Tanner Hudson,TE,CIN,no_ktc,exact
 Taylor Heinicke,0,,,2711,Taylor Heinicke,QB,,no_ktc,exact
-Taysom Hill,0,150,taysom-hill-150,4381,Taysom Hill,TE,FA,exact,exact
+Taysom Hill,0,,,4381,Taysom Hill,TE,,no_ktc,exact
 Teagan Quitoriano,0,,,8227,Teagan Quitoriano,TE,ARI,no_ktc,exact
 Tee Higgins,0,543,tee-higgins-543,6801,Tee Higgins,WR,CIN,exact,exact
 Terrace Marshall,0,,,7565,Terrace Marshall,WR,MIA,no_ktc,exact
@@ -466,7 +466,7 @@ Tutu Atwell,0,1078,tutu-atwell-1078,7562,Tutu Atwell,WR,MIA,exact,exact
 Ty Chandler,0,1182,ty-chandler-1182,8230,Ty Chandler,RB,NOS,exact,exact
 Ty Johnson,0,6,ty-johnson-6,6039,Ty Johnson,RB,BUF,exact,exact
 Tyjae Spears,0,1417,tyjae-spears-1417,9508,Tyjae Spears,RB,TEN,exact,exact
-Tylan Wallace,0,,,7595,Tylan Wallace,WR,CLE,no_ktc,exact
+Tylan Wallace,0,1008,tylan-wallace-1008,7595,Tylan Wallace,WR,CLE,exact,exact
 Tyler Allgeier,0,1228,tyler-allgeier-1228,8132,Tyler Allgeier,RB,ARI,exact,exact
 Tyler Badie,0,1206,tyler-badie-1206,8208,Tyler Badie,RB,DEN,exact,exact
 Tyler Boyd,0,,,3225,Tyler Boyd,WR,,no_ktc,exact
