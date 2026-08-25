@@ -33,9 +33,32 @@ const userAvatarCustomCache = new Map();
 const leagueUsersCache = new Map();
 
 /**
- * Sleeper default profile avatars (colored Sleeperbots) are served as image/webp.
- * Custom uploads are jpeg/png/gif/octet-stream. Uses a 1-byte Range GET (CDN allows CORS GET).
+ * Sleeper default profile avatars (colored Sleeperbots) are consistently sized
+ * 168x168 or ~498x500. Custom uploads use other dimensions (280, 400, 1024, …).
+ * Uses Image() naturalWidth/Height so we don't depend on CDN CORS/Range headers.
  */
+function loadAvatarDimensions(url) {
+  return new Promise((resolve) => {
+    if (typeof Image === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+function isSleeperbotDimensions(dims) {
+  if (!dims) return false;
+  const { w, h } = dims;
+  if (w === 168 && h === 168) return true;
+  // Older full-size Sleeperbots are 498x500 (occasionally reported as 500x500).
+  if ((w === 498 || w === 500) && (h === 498 || h === 500)) return true;
+  return false;
+}
+
 async function isCustomUserAvatar(avatarVal) {
   if (!avatarVal) return false;
   if (typeof avatarVal === 'string' && avatarVal.startsWith('http')) {
@@ -50,16 +73,23 @@ async function isCustomUserAvatar(avatarVal) {
 
   const url = getAvatarUrl(avatarVal);
   try {
-    const res = await fetch(url, { headers: { Range: 'bytes=0-0' } });
-    const ct = (res.headers.get('content-type') || '').toLowerCase();
-    // Treat webp as Sleeper-default; anything else (or unknown) as custom so we don't
-    // incorrectly replace a real upload with the team logo on flaky responses.
-    const isCustom = Boolean(ct) && !ct.includes('image/webp');
+    let isCustom;
+    const dims = await loadAvatarDimensions(url);
+    if (dims) {
+      isCustom = !isSleeperbotDimensions(dims);
+    } else {
+      // Non-browser / image-load failure fallback: content-type (defaults are webp).
+      const res = await fetch(url);
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      try { res.body?.cancel?.(); } catch (_) {}
+      isCustom = Boolean(ct) && !ct.includes('image/webp');
+    }
     userAvatarCustomCache.set(cacheKey, isCustom);
     return isCustom;
   } catch (_) {
-    userAvatarCustomCache.set(cacheKey, true);
-    return true;
+    // Fail soft: treat as non-custom so team / later-season logos can substitute.
+    userAvatarCustomCache.set(cacheKey, false);
+    return false;
   }
 }
 

@@ -11,7 +11,7 @@ import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { formatTradeDate } from '../trades/TradeComponents';
-import { findMyRosterId, isMyRoster, useAuthUser } from '../hooks/useAuthUser';
+import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
 /** Complete waivers from the most recent processing run (same status_updated). */
 function filterLatestWaiverRun(raw) {
@@ -82,10 +82,10 @@ function WaiverItem({ txn, rosterMap, players, idMap, onPlayerClick, myRosterId 
   const bidLabel = Number.isFinite(Number(bid)) ? `$${Number(bid)}` : null;
 
   return (
-    <div className="recent-trades-item recent-waivers-item">
+    <div className={`recent-trades-item recent-waivers-item${mine ? ' recent-waivers-item--me' : ''}`}>
       <div className="recent-waivers-row">
         <Link
-          className={`recent-trades-team-header recent-waivers-team${mine ? ' recent-waivers-team--me' : ''}`}
+          className="recent-trades-team-header recent-waivers-team"
           to={`/team/${rosterId}`}
           target="_blank"
           rel="noopener noreferrer"
@@ -129,7 +129,7 @@ function WaiverItem({ txn, rosterMap, players, idMap, onPlayerClick, myRosterId 
 }
 
 function RecentWaiversCard() {
-  const { user: authUser } = useAuthUser();
+  const myRosterId = useMyCurrentRosterId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [waivers, setWaivers] = useState([]);
@@ -211,14 +211,6 @@ function RecentWaiversCard() {
       cancelled = true;
     };
   }, []);
-
-  const rosterList = rosterMap
-    ? Object.values(rosterMap).map((info) => info?.roster).filter(Boolean)
-    : [];
-  const userList = rosterMap
-    ? Object.values(rosterMap).map((info) => info?.user).filter(Boolean)
-    : [];
-  const myRosterId = findMyRosterId(rosterList, userList, authUser);
 
   const modal = selectedPlayer ? (
     <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>

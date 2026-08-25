@@ -3580,10 +3580,6 @@
   white-space: nowrap;
 }
 
-.recent-waivers-team--me .recent-trades-team-name {
-  color: #4ade80;
-}
-
 /* Recent Trades card */
 .recent-trades-card {
   /* intentionally inherits default home-card border */
@@ -20349,6 +20345,7 @@ body.modal-open {
 .last-week-team--me,
 .recap-team--me,
 .rookie-draft-row--me,
+.recent-waivers-item--me,
 .league-history-me {
   color: #4ade80;
 }
@@ -20390,6 +20387,7 @@ body.modal-open {
 .h2h-web-card--me .h2h-web-avatar,
 .h2h-web-card--me .dynasty-roster-avatar,
 .recent-trades-side--me .recent-trades-team-avatar,
+.recent-waivers-item--me .recent-trades-team-avatar,
 .home-race-row--me .tank-race-avatar,
 .home-race-row--me .top-pf-avatar,
 .hot-team-header--me .hot-team-avatar,

@@ -1,0 +1,141 @@
+{
+  "iterations": 10000,
+  "results": [
+    {
+      "rosterId": 10,
+      "winPct": 16.4,
+      "playoffPct": 56.67,
+      "top3Pct": 44.39,
+      "avgFinish": 4.3984000000000005,
+      "avgRegSeason": 1665.6858200000004,
+      "avgPlayoff": 343.74291999999974,
+      "avgTotalScore": 2007.735599999999,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 3,
+      "winPct": 15.31,
+      "playoffPct": 55.07000000000001,
+      "top3Pct": 42.95,
+      "avgFinish": 4.4498,
+      "avgRegSeason": 1660.5272800000091,
+      "avgPlayoff": 343.0607599999998,
+      "avgTotalScore": 2003.2872600000028,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 7,
+      "winPct": 13.41,
+      "playoffPct": 50.5,
+      "top3Pct": 38.84,
+      "avgFinish": 4.7683,
+      "avgRegSeason": 1644.2340600000011,
+      "avgPlayoff": 339.2116999999995,
+      "avgTotalScore": 1985.7778400000034,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 4,
+      "winPct": 12.829999999999998,
+      "playoffPct": 54.09,
+      "top3Pct": 40.150000000000006,
+      "avgFinish": 4.5911,
+      "avgRegSeason": 1658.1466400000002,
+      "avgPlayoff": 338.2686000000007,
+      "avgTotalScore": 1996.1697,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 8,
+      "winPct": 10.969999999999999,
+      "playoffPct": 44.72,
+      "top3Pct": 33.44,
+      "avgFinish": 5.1582,
+      "avgRegSeason": 1628.2055999999984,
+      "avgPlayoff": 335.793100000001,
+      "avgTotalScore": 1962.813780000001,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 2,
+      "winPct": 8.190000000000001,
+      "playoffPct": 32.81,
+      "top3Pct": 24.75,
+      "avgFinish": 6.106199999999999,
+      "avgRegSeason": 1576.5660200000038,
+      "avgPlayoff": 330.07694000000015,
+      "avgTotalScore": 1907.9974400000026,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 6,
+      "winPct": 6.1899999999999995,
+      "playoffPct": 26.99,
+      "top3Pct": 19.52,
+      "avgFinish": 6.4108,
+      "avgRegSeason": 1565.6883600000006,
+      "avgPlayoff": 323.1320199999989,
+      "avgTotalScore": 1890.8909399999973,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 1,
+      "winPct": 5.88,
+      "playoffPct": 26.54,
+      "top3Pct": 19.27,
+      "avgFinish": 6.3061,
+      "avgRegSeason": 1573.1324000000027,
+      "avgPlayoff": 326.63335999999987,
+      "avgTotalScore": 1898.724560000001,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 9,
+      "winPct": 5.68,
+      "playoffPct": 26.39,
+      "top3Pct": 18.630000000000003,
+      "avgFinish": 6.404999999999999,
+      "avgRegSeason": 1564.7194999999997,
+      "avgPlayoff": 321.7283599999993,
+      "avgTotalScore": 1890.6935899999994,
+      "avgRegSeasonScore": 0
+    },
+    {
+      "rosterId": 5,
+      "winPct": 5.14,
+      "playoffPct": 26.22,
+      "top3Pct": 18.06,
+      "avgFinish": 6.4061,
+      "avgRegSeason": 1570.4441600000002,
+      "avgPlayoff": 321.2330400000004,
+      "avgTotalScore": 1892.2182099999986,
+      "avgRegSeasonScore": 0
+    }
+  ],
+  "teamNames": {
+    "1": "CIZ",
+    "2": "MIKE",
+    "3": "BRACK",
+    "4": "Aidan",
+    "5": "Drew",
+    "6": "CAM",
+    "7": "Davis",
+    "8": "Alex",
+    "9": "Andrew",
+    "10": "TOM"
+  },
+  "unmatched": [],
+  "rankedCount": 160,
+  "emptyPools": 0,
+  "slots": [
+    "QB1",
+    "RB1",
+    "RB2",
+    "WR1",
+    "WR2",
+    "WR3",
+    "TE1",
+    "FLEX1",
+    "SUPER"
+  ]
+}

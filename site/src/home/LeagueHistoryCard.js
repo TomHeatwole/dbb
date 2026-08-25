@@ -31,12 +31,13 @@ function teamPageHref(rosterId, year) {
 
 function getOwnerAvatarUrl(user) {
   if (!user) return null;
-  return user.user_avatar_url || user.avatar_url || null;
+  // user_avatar_url is already enriched (custom profile, else team / later-season logo).
+  return user.user_avatar_url || user.avatar_url || user.team_avatar_url || null;
 }
 
 function getTeamAvatarUrl(user) {
   if (!user) return null;
-  return user.team_avatar_url || null;
+  return user.team_avatar_url || user.user_avatar_url || user.avatar_url || null;
 }
 
 function TeamAvatar({ url, name, className }) {
@@ -143,6 +144,15 @@ function LeagueHistoryCard() {
                 const champ = season.top4.find((team) => team.place === 1) || season.top4[0];
                 const rest = season.top4.filter((team) => team.place !== champ?.place);
                 const champIsMe = champ ? isMyRoster(champ.rosterId, myRosterId) : false;
+                const champMainAvatar = champ
+                  ? (champ.teamAvatarUrl || champ.ownerAvatarUrl)
+                  : null;
+                const champOwnerAvatar =
+                  champ &&
+                  champ.ownerAvatarUrl &&
+                  champ.ownerAvatarUrl !== champMainAvatar
+                    ? champ.ownerAvatarUrl
+                    : null;
 
                 return (
                   <div key={season.year} className="lh-card-season">
@@ -156,18 +166,20 @@ function LeagueHistoryCard() {
                         >
                           <span className="lh-card-champ-trophy" aria-hidden="true">🏆</span>
                           <TeamAvatar
-                            url={champ.teamAvatarUrl || champ.ownerAvatarUrl}
+                            url={champMainAvatar}
                             name={champ.teamName}
                             className="lh-card-champ-avatar"
                           />
                           <div className="lh-card-champ-copy">
                             <div className="lh-card-champ-name">{champ.teamName}</div>
                             <div className="lh-card-champ-owner">
-                              <TeamAvatar
-                                url={champ.ownerAvatarUrl}
-                                name={champ.name}
-                                className="lh-card-champ-owner-avatar"
-                              />
+                              {champOwnerAvatar ? (
+                                <TeamAvatar
+                                  url={champOwnerAvatar}
+                                  name={champ.name}
+                                  className="lh-card-champ-owner-avatar"
+                                />
+                              ) : null}
                               <span className="lh-card-champ-owner-name">
                                 {champ.name}
                                 {champIsMe ? <span className="me-chip">YOU</span> : null}
@@ -190,7 +202,7 @@ function LeagueHistoryCard() {
                               title={`${placeLabel(team.place)} · ${team.name}`}
                             >
                               <TeamAvatar
-                                url={team.ownerAvatarUrl || team.teamAvatarUrl}
+                                url={team.teamAvatarUrl || team.ownerAvatarUrl}
                                 name={team.name}
                                 className={`lh-card-rest-avatar lh-card-rest-avatar--p${team.place}`}
                               />
