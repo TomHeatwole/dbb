@@ -19758,12 +19758,12 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   width: 100%;
   min-height: 100%;
   flex: 1 1 auto;
   text-align: center;
-  padding: 0 0 0.45in;
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -19784,9 +19784,13 @@ body.modal-open {
 }
 
 .rddp-cover-title {
-  position: relative;
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1;
   margin: 0;
+  width: 92%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19801,7 +19805,7 @@ body.modal-open {
 
 .rddp-cover-title-brand {
   font-family: 'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 36pt;
+  font-size: 42pt;
   font-weight: 900;
   letter-spacing: -0.02em;
   text-wrap: balance;
@@ -19809,7 +19813,7 @@ body.modal-open {
 
 .rddp-cover-title-guide {
   font-family: 'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 48pt;
+  font-size: 55pt;
   font-weight: 900;
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -19969,6 +19973,62 @@ body.modal-open {
   grid-template-columns: 1.4rem minmax(5rem, 1.5fr) 2.2rem;
 }
 
+/* Dense ADP scratch sheets (end of guide) — checkboxes for crossing off */
+.rddp-adp-grid {
+  display: grid;
+  gap: 0.55rem 0.7rem;
+  align-items: start;
+}
+
+.rddp-adp-col {
+  min-width: 0;
+}
+
+.rddp-adp-line {
+  display: grid;
+  grid-template-columns: 0.55rem 2.1rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.18rem;
+  padding: 0.1rem 0;
+  border-bottom: 0.4px solid #ccc;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.rddp-adp-line--pos {
+  grid-template-columns: 0.55rem 2.1rem minmax(0, 1fr) auto;
+}
+
+.rddp-adp-box {
+  width: 0.48rem;
+  height: 0.48rem;
+  border: 1px solid #222;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.rddp-adp-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 7pt;
+  font-weight: 700;
+  text-align: right;
+}
+
+.rddp-adp-name {
+  font-weight: 600;
+  font-size: 7.5pt;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rddp-adp-pos {
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: #333;
+  letter-spacing: 0.02em;
+}
+
 @media (max-width: 700px) {
   .rddp-cols {
     grid-template-columns: 1fr;
@@ -20047,7 +20107,11 @@ body.modal-open {
   }
 
   .rddp-cover {
-    padding: 0 0 0.35in;
+    padding: 0;
+  }
+
+  .rddp-cover-title {
+    top: 26%;
   }
 
   .rddp-cover-logo {
@@ -20060,11 +20124,11 @@ body.modal-open {
   }
 
   .rddp-cover-title-brand {
-    font-size: 32pt;
+    font-size: 37pt;
   }
 
   .rddp-cover-title-guide {
-    font-size: 44pt;
+    font-size: 51pt;
   }
 
   .rddp-watermark {
@@ -20095,6 +20159,22 @@ body.modal-open {
   .rddp-special-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
+  }
+
+  .rddp-adp-grid {
+    gap: 0.4rem 0.55rem;
+  }
+
+  .rddp-adp-line {
+    border-bottom-color: #bbb;
+  }
+
+  .rddp-adp-num {
+    font-size: 6.5pt;
+  }
+
+  .rddp-adp-name {
+    font-size: 7pt;
   }
 }
 

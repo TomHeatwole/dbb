@@ -24,6 +24,10 @@ const PLAYERS_PER_PAGE = 44;
 /** Overall + skill sheets only cover this deep — late specialists stay on their own page. */
 const PRINT_DEPTH = 220;
 
+/** Raw ADP scratch lists at the end of the guide (crossing off during draft). */
+const ADP_SCRATCH_SKILL_COUNT = 100;
+const ADP_SCRATCH_COLS = 4;
+
 function shortName(name) {
   if (!name) return '';
   const parts = String(name).trim().split(/\s+/);
@@ -246,6 +250,51 @@ function PrintPage({ title, pageLabel, children }) {
   );
 }
 
+/** Split into N columns top-to-bottom (column-major) for dense scratch lists. */
+function splitNColumns(items, cols) {
+  if (!items.length) return [];
+  const perCol = Math.ceil(items.length / cols);
+  const columns = [];
+  for (let c = 0; c < cols; c += 1) {
+    columns.push(items.slice(c * perCol, (c + 1) * perCol));
+  }
+  return columns.filter((col) => col.length > 0);
+}
+
+function AdpScratchLine({ player, adp, showPos }) {
+  return (
+    <div className={`rddp-adp-line${showPos ? ' rddp-adp-line--pos' : ''}`}>
+      <span className="rddp-adp-box" aria-hidden="true" />
+      <span className="rddp-adp-num">{formatAdpCompact(adp)}</span>
+      <span className="rddp-adp-name" title={player.name}>{shortName(player.name)}</span>
+      {showPos ? <span className="rddp-adp-pos">{player.position}</span> : null}
+    </div>
+  );
+}
+
+function AdpScratchGrid({ rows, cols = ADP_SCRATCH_COLS, showPos = false }) {
+  const columns = splitNColumns(rows, cols);
+  return (
+    <div
+      className="rddp-adp-grid"
+      style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
+    >
+      {columns.map((col, i) => (
+        <div key={i} className="rddp-adp-col">
+          {col.map(({ player, adp }) => (
+            <AdpScratchLine
+              key={player.sleeperId || `${player.position}:${player.name}`}
+              player={player}
+              adp={adp}
+              showPos={showPos}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function pageRangeLabel(players, rankField, pageIndex, pageCount) {
   if (!players.length) return null;
   const first = players[0][rankField] ?? players[0].rank;
@@ -323,11 +372,30 @@ function RedraftDashPrintable({
       }))
   ), [defenses]);
 
+  /** QB ADP list + top-100 skill ADP — separate so QB run rate is obvious mid-draft. */
+  const adpScratch = useMemo(() => {
+    const withAdp = [];
+    for (const p of players) {
+      const pos = String(p.position || '').toUpperCase();
+      if (pos !== 'QB' && pos !== 'RB' && pos !== 'WR' && pos !== 'TE') continue;
+      const adp = resolveMarketAdp(p, adpMode);
+      if (adp == null || !Number.isFinite(adp)) continue;
+      withAdp.push({ player: p, adp });
+    }
+    withAdp.sort((a, b) => a.adp - b.adp || (a.player.rank ?? 999) - (b.player.rank ?? 999));
+    const qbs = withAdp.filter((r) => String(r.player.position).toUpperCase() === 'QB');
+    const skill = withAdp
+      .filter((r) => String(r.player.position).toUpperCase() !== 'QB')
+      .slice(0, ADP_SCRATCH_SKILL_COUNT);
+    return { qbs, skill };
+  }, [players, adpMode]);
+
   const handlePrint = () => {
     window.print();
   };
 
-  const totalPages = overallPages.length + positionalPages.length + 1;
+  const adpScratchPages = (adpScratch.qbs.length ? 1 : 0) + (adpScratch.skill.length ? 1 : 0);
+  const totalPages = overallPages.length + positionalPages.length + 1 + adpScratchPages;
 
   if (!players.length) {
     return (
@@ -351,7 +419,8 @@ function RedraftDashPrintable({
           {hasSources
             ? ' Letters: C / Z / G / E / F (not expanded on paper).'
             : ' Switch to Local for per-source letter codes — this board has none.'}
-          {' '}ADP follows the {adpMode === 'jaml' ? 'JAML' : 'YAFSB'} toggle.
+          {' '}Ends with raw {adpMode === 'jaml' ? 'JAML' : 'YAFSB'} ADP scratch sheets
+          (QBs separate, top {ADP_SCRATCH_SKILL_COUNT} RB/WR/TE).
           {' '}In the print dialog, turn off “Headers and footers” and turn on “Background graphics” for the watermark.
         </p>
       </div>
@@ -411,6 +480,24 @@ function RedraftDashPrintable({
             <SimpleTop10 title="DST" rows={topDst} />
           </div>
         </PrintPage>
+
+        {adpScratch.qbs.length > 0 && (
+          <PrintPage
+            title="ADP · QB"
+            pageLabel={`${adpScratch.qbs.length} · cross off`}
+          >
+            <AdpScratchGrid rows={adpScratch.qbs} cols={ADP_SCRATCH_COLS} showPos={false} />
+          </PrintPage>
+        )}
+
+        {adpScratch.skill.length > 0 && (
+          <PrintPage
+            title="ADP · RB / WR / TE"
+            pageLabel={`top ${adpScratch.skill.length} · cross off`}
+          >
+            <AdpScratchGrid rows={adpScratch.skill} cols={ADP_SCRATCH_COLS} showPos />
+          </PrintPage>
+        )}
       </div>
     </div>
   );

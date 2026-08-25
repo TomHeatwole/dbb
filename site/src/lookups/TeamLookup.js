@@ -9,12 +9,145 @@ function getAvatarUrl(avatarVal) {
   return `https://sleepercdn.com/avatars/${avatarVal}`;
 }
 
-export async function fetchTeamData(season = getCurrentYear()) {
+function getLeagueIdForSeason(season) {
   const currentYear = String(getCurrentYear());
   const normalizedSeason = String(season);
-  // Prefer PREVIOUS_YEARS when that season exists (handles pre-season when LEAGUE_ID
-  // is already the new year but we want last year's data).
-  const leagueId = PREVIOUS_YEARS[normalizedSeason] ?? (normalizedSeason === currentYear ? LEAGUE_ID : null);
+  return PREVIOUS_YEARS[normalizedSeason] ?? (normalizedSeason === currentYear ? LEAGUE_ID : null);
+}
+
+/** All known season years, newest first (current + PREVIOUS_YEARS). */
+function getAllSeasonYearsNewestFirst() {
+  const currentYear = String(getCurrentYear());
+  const years = new Set([currentYear, ...Object.keys(PREVIOUS_YEARS || {})]);
+  return [...years].sort((a, b) => Number(b) - Number(a));
+}
+
+/** Custom team logos live under /uploads/; Sleeper defaults use /images/.../avatar_default_*. */
+function isCustomTeamAvatarUrl(url) {
+  return typeof url === 'string' && url.includes('/uploads/');
+}
+
+// avatar id|url -> whether it is a user-uploaded (non-default) profile image
+const userAvatarCustomCache = new Map();
+// leagueId -> Promise<users[]>
+const leagueUsersCache = new Map();
+
+/**
+ * Sleeper default profile avatars (colored Sleeperbots) are served as image/webp.
+ * Custom uploads are jpeg/png/gif/octet-stream. Uses a 1-byte Range GET (CDN allows CORS GET).
+ */
+async function isCustomUserAvatar(avatarVal) {
+  if (!avatarVal) return false;
+  if (typeof avatarVal === 'string' && avatarVal.startsWith('http')) {
+    if (avatarVal.includes('/uploads/')) return true;
+    if (avatarVal.includes('avatar_default_') || avatarVal.includes('/images/')) return false;
+  }
+
+  const cacheKey = String(avatarVal);
+  if (userAvatarCustomCache.has(cacheKey)) {
+    return userAvatarCustomCache.get(cacheKey);
+  }
+
+  const url = getAvatarUrl(avatarVal);
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-0' } });
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    // Treat webp as Sleeper-default; anything else (or unknown) as custom so we don't
+    // incorrectly replace a real upload with the team logo on flaky responses.
+    const isCustom = Boolean(ct) && !ct.includes('image/webp');
+    userAvatarCustomCache.set(cacheKey, isCustom);
+    return isCustom;
+  } catch (_) {
+    userAvatarCustomCache.set(cacheKey, true);
+    return true;
+  }
+}
+
+async function fetchLeagueUsers(leagueId) {
+  if (!leagueId) return [];
+  const cached = leagueUsersCache.get(leagueId);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    const usersRes = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/users`);
+    if (usersRes.status === 429) {
+      try { await recordRateLimitHit('sleeper'); } catch (_) {}
+    }
+    if (!usersRes.ok) throw new Error('Failed to fetch users');
+    const users = await usersRes.json();
+    return Array.isArray(users) ? users : [];
+  })();
+
+  leagueUsersCache.set(leagueId, promise);
+  try {
+    return await promise;
+  } catch (err) {
+    leagueUsersCache.delete(leagueId);
+    throw err;
+  }
+}
+
+/**
+ * For each user_id, the most recent custom team logo and custom profile avatar
+ * from seasons newer than `fromSeason` (so 2024 can inherit 2025/2026 logos).
+ * @returns {Promise<Map<string, { customTeamUrl: string|null, customUserAvatarUrl: string|null }>>}
+ */
+async function getLaterSeasonCustomLogosByUserId(fromSeason) {
+  const fromYear = Number(fromSeason);
+  const laterYears = getAllSeasonYearsNewestFirst().filter((y) => Number(y) > fromYear);
+  const byUserId = new Map();
+  if (!laterYears.length) return byUserId;
+
+  const seasonUsers = await Promise.all(
+    laterYears.map(async (year) => {
+      const leagueId = getLeagueIdForSeason(year);
+      if (!leagueId) return [];
+      try {
+        return await fetchLeagueUsers(leagueId);
+      } catch (_) {
+        return [];
+      }
+    })
+  );
+
+  const avatarVals = new Set();
+  for (const users of seasonUsers) {
+    for (const user of users) {
+      if (user && user.avatar) avatarVals.add(user.avatar);
+    }
+  }
+  await Promise.all([...avatarVals].map((avatar) => isCustomUserAvatar(avatar)));
+
+  // laterYears is newest-first; first write wins => most recent custom logo.
+  for (let i = 0; i < laterYears.length; i++) {
+    const users = seasonUsers[i] || [];
+    for (const user of users) {
+      if (!user || user.user_id == null) continue;
+      const uid = String(user.user_id);
+      let entry = byUserId.get(uid);
+      if (!entry) {
+        entry = { customTeamUrl: null, customUserAvatarUrl: null };
+        byUserId.set(uid, entry);
+      }
+
+      const teamMeta = user.metadata ? (user.metadata.avatar || user.metadata.team_avatar) : null;
+      const teamUrl = getAvatarUrl(teamMeta);
+      if (!entry.customTeamUrl && isCustomTeamAvatarUrl(teamUrl)) {
+        entry.customTeamUrl = teamUrl;
+      }
+
+      if (!entry.customUserAvatarUrl && (await isCustomUserAvatar(user.avatar))) {
+        entry.customUserAvatarUrl = getAvatarUrl(user.avatar);
+      }
+    }
+  }
+
+  return byUserId;
+}
+
+export async function fetchTeamData(season = getCurrentYear()) {
+  const normalizedSeason = String(season);
+  const leagueId = getLeagueIdForSeason(normalizedSeason);
   if (!leagueId) {
     throw new Error(`No league ID found for season ${normalizedSeason}`);
   }
@@ -27,13 +160,8 @@ export async function fetchTeamData(season = getCurrentYear()) {
   if (!rosterRes.ok) throw new Error('Failed to fetch rosters');
   const rosters = await rosterRes.json();
 
-  // Fetch users
-  const usersRes = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/users`);
-  if (usersRes.status === 429) {
-    try { await recordRateLimitHit('sleeper'); } catch (_) {}
-  }
-  if (!usersRes.ok) throw new Error('Failed to fetch users');
-  const users = await usersRes.json();
+  // Fetch users (shared cache so later-season logo lookup can reuse this)
+  const users = [...(await fetchLeagueUsers(leagueId))];
 
   for (const roster of rosters) {
     const override = PREVIOUS_ROSTER_OVERRIDES[season] && PREVIOUS_ROSTER_OVERRIDES[season][roster.roster_id];
@@ -52,14 +180,44 @@ export async function fetchTeamData(season = getCurrentYear()) {
     }
   }
 
+  // Classify unique profile avatars once (default Sleeperbot vs custom upload).
+  const uniqueAvatars = [...new Set(users.map((u) => u && u.avatar).filter(Boolean))];
+  await Promise.all(uniqueAvatars.map((avatar) => isCustomUserAvatar(avatar)));
+
+  // Older seasons can inherit custom logos from newer seasons for the same user_id.
+  const laterLogosByUserId = await getLaterSeasonCustomLogosByUserId(normalizedSeason);
+
   for (const user of users) {
-    const userAvatarUrl = getAvatarUrl(user.avatar);
+    const rawUserAvatarUrl = getAvatarUrl(user.avatar);
     const teamMetaAvatar = user && user.metadata ? (user.metadata.avatar || user.metadata.team_avatar) : null;
-    const teamAvatarUrl = getAvatarUrl(teamMetaAvatar);
+    const seasonTeamAvatarUrl = getAvatarUrl(teamMetaAvatar);
+    const later = user && user.user_id != null
+      ? laterLogosByUserId.get(String(user.user_id))
+      : null;
+
+    // Prefer this season's custom team logo; otherwise a newer season's custom team logo.
+    const teamAvatarUrl = isCustomTeamAvatarUrl(seasonTeamAvatarUrl)
+      ? seasonTeamAvatarUrl
+      : (later && later.customTeamUrl) || seasonTeamAvatarUrl;
+
+    const teamIsCustom = isCustomTeamAvatarUrl(teamAvatarUrl);
+    const userIsCustom = await isCustomUserAvatar(user.avatar);
+
+    // User-logo slots: this season's custom profile > a newer season's custom
+    // profile > custom team logo (this season or newer) > raw Sleeper default.
+    let effectiveUserAvatarUrl = rawUserAvatarUrl;
+    if (userIsCustom) {
+      effectiveUserAvatarUrl = rawUserAvatarUrl;
+    } else if (later && later.customUserAvatarUrl) {
+      effectiveUserAvatarUrl = later.customUserAvatarUrl;
+    } else if (teamIsCustom) {
+      effectiveUserAvatarUrl = teamAvatarUrl;
+    }
+
     // Preserve existing field for backward-compat
-    user.avatar_url = userAvatarUrl;
+    user.avatar_url = effectiveUserAvatarUrl;
     // New explicit fields
-    user.user_avatar_url = userAvatarUrl;
+    user.user_avatar_url = effectiveUserAvatarUrl;
     user.team_avatar_url = teamAvatarUrl;
   }
 
