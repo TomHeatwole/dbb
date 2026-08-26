@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import { fetchLeagueDrafts, fetchDraft, fetchDraftPicks, fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
@@ -16,6 +18,25 @@ function RookieDraftRecapCard() {
   const [error, setError] = useState(null);
   const [rounds, setRounds] = useState(null);
   const [selectedRound, setSelectedRound] = useState(1);
+  const [teamData, setTeamData] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [selectedPlayer]);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') setSelectedPlayer(null);
+    }
+    if (selectedPlayer) document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selectedPlayer]);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +50,7 @@ function RookieDraftRecapCard() {
         if (!draftSummary) throw new Error('No completed draft found');
 
         // Fetch the full draft object (the list endpoint omits slot_to_roster_id)
-        const [fullDraft, rawPicks, teamData, players, idMap] = await Promise.all([
+        const [fullDraft, rawPicks, nextTeamData, players, idMap] = await Promise.all([
           fetchDraft(draftSummary.draft_id),
           fetchDraftPicks(draftSummary.draft_id),
           fetchTeamData(CURRENT_YEAR),
@@ -41,7 +62,7 @@ function RookieDraftRecapCard() {
 
         if (!rawPicks.length) throw new Error('No picks found');
 
-        const rosterMap = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
+        const rosterMap = buildRosterIdToTeamInfoMap(nextTeamData.rosters, nextTeamData.users);
 
         // slot_to_roster_id maps draft slot string -> original roster_id
         const slotToRoster = fullDraft.slot_to_roster_id || {};
@@ -68,6 +89,17 @@ function RookieDraftRecapCard() {
                 photoUrl = `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${espnId}.png`;
               }
             }
+
+            const playerInfo = p.player_id
+              ? {
+                  ...(info || {}),
+                  player_id: String(p.player_id),
+                  name: playerName,
+                  position,
+                  team: nflTeam || info?.team || null,
+                  espn_photo_url: photoUrl,
+                }
+              : null;
 
             // Drafting team info
             const teamInfo = rosterId != null ? (rosterMap[rosterId] || rosterMap[String(rosterId)]) : null;
@@ -96,6 +128,7 @@ function RookieDraftRecapCard() {
               position,
               nflTeam,
               photoUrl,
+              playerInfo,
               rosterId,
               teamName,
               teamAvatarUrl,
@@ -116,6 +149,7 @@ function RookieDraftRecapCard() {
           .map((r) => ({ round: r, picks: roundMap[r] }));
 
         if (!cancelled) {
+          setTeamData(nextTeamData);
           setRounds(roundList);
           setLoading(false);
         }
@@ -133,6 +167,24 @@ function RookieDraftRecapCard() {
   }, []);
 
   const title = `🏈 ${CURRENT_YEAR} Rookie Draft Recap`;
+
+  const modal = selectedPlayer ? (
+    <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
+      <div
+        className="player-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <PlayerWeeklyScores
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          rosters={teamData?.rosters || []}
+          users={teamData?.users || []}
+        />
+      </div>
+    </div>
+  ) : null;
 
   let body = null;
   if (loading) {
@@ -157,28 +209,35 @@ function RookieDraftRecapCard() {
         </select>
         <div className="draft-recap-pick-list">
           {activeRound.picks.map((pick) => {
-            
             const letterOverlay =
               LOGO_LETTER_OVERLAY &&
               pick.rosterId != null &&
               Object.prototype.hasOwnProperty.call(LOGO_LETTER_OVERLAY, String(pick.rosterId))
                 ? String(LOGO_LETTER_OVERLAY[String(pick.rosterId)] || '').trim()
                 : '';
+            const canOpenPlayer = !!pick.playerInfo;
             return (
               <div key={pick.pickLabel} className="draft-recap-pick">
                 <span className="draft-recap-pick-num">{pick.pickLabel}</span>
-                <img
-                  className="draft-recap-player-photo"
-                  src={getPlayerLogoUrl(pick.photoUrl)}
-                  alt=""
-                />
-                <div className="draft-recap-player-info">
-                  <span className="draft-recap-player-name">{pick.playerName}</span>
-                  <span className="draft-recap-player-meta">
-                    <PositionBadge position={pick.position} />
-                    {pick.nflTeam && <span className="draft-recap-nfl-team">{pick.nflTeam}</span>}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  className="draft-recap-player-btn"
+                  disabled={!canOpenPlayer}
+                  onClick={() => canOpenPlayer && setSelectedPlayer(pick.playerInfo)}
+                >
+                  <img
+                    className="draft-recap-player-photo"
+                    src={getPlayerLogoUrl(pick.photoUrl)}
+                    alt=""
+                  />
+                  <div className="draft-recap-player-info">
+                    <span className="draft-recap-player-name">{pick.playerName}</span>
+                    <span className="draft-recap-player-meta">
+                      <PositionBadge position={pick.position} />
+                      {pick.nflTeam && <span className="draft-recap-nfl-team">{pick.nflTeam}</span>}
+                    </span>
+                  </div>
+                </button>
                 <span className="draft-recap-traded-slot">
                   {pick.isTraded ? (
                     <span
@@ -212,12 +271,15 @@ function RookieDraftRecapCard() {
   }
 
   return (
-    <HomeCard>
-      <div className="home-card-inner">
-        <h2 className="home-card-title">{title}</h2>
-        <div className="home-card-body">{body}</div>
-      </div>
-    </HomeCard>
+    <>
+      <HomeCard>
+        <div className="home-card-inner">
+          <h2 className="home-card-title">{title}</h2>
+          <div className="home-card-body">{body}</div>
+        </div>
+      </HomeCard>
+      {modal && createPortal(modal, document.body)}
+    </>
   );
 }
 

@@ -42,6 +42,7 @@ function RedraftDashMockDraft({
   defenses = [],
   publicMode = false,
   adpMode = DEFAULT_ADP_MODE,
+  format = 'superflex',
 }) {
   const pool = useMemo(
     () => buildDraftPool(players, defenses, adpMode),
@@ -67,7 +68,7 @@ function RedraftDashMockDraft({
   const rosters = useMemo(() => rostersFromPicks(picks), [picks]);
   const myRoster = rosters[userTeamIndex] || [];
   const myCounts = countPositions(myRoster);
-  const myHoles = starterHoles(myCounts);
+  const myHoles = starterHoles(myCounts, format);
 
   const boardByRound = useMemo(() => {
     const grid = Array.from({ length: ROSTER_SIZE }, () => Array(TEAM_COUNT).fill(null));
@@ -153,6 +154,7 @@ function RedraftDashMockDraft({
       startPickIndex: fromIndex,
       userTeamIndex,
       adpLean,
+      format,
     });
     const merged = newPicks.length ? [...existingPicks, ...newPicks] : existingPicks;
     setPicks(merged);
@@ -171,6 +173,7 @@ function RedraftDashMockDraft({
       startPickIndex: 0,
       userTeamIndex,
       adpLean,
+      format,
     });
     setPicks(newPicks);
     setPickIndex(nextPickIndex);
@@ -221,7 +224,7 @@ function RedraftDashMockDraft({
         <div className="rddm-setup">
           <h3 className="rddm-setup-title">Mock draft</h3>
           <p className="rddm-setup-copy">
-            10-team snake · 19 rounds · 2QB / 2RB / 3WR / 1FLEX / K / P / DST.
+            10-team snake · 19 rounds · {format === '1qb' ? '1QB' : '2QB'} / 2RB / 3WR / 1FLEX / K / P / DST.
             Opponents pick instantly; you only take your own turns.
           </p>
 

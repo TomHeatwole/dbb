@@ -62,24 +62,54 @@ const GIBBS_SOURCE = {
 };
 
 /**
- * The formula inputs behind the DBB Custom board (dbb_custom_rankings.csv),
- * in blend-weight order. `column` is the CSV column carrying that source's
- * equivalent-SF rank for the player (1QB sources are pre-converted to the
- * SF scale by the build script, so all five are directly comparable).
+ * The formula inputs behind the DBB Custom board, in blend-weight order.
+ * Superflex columns are equivalent-SF ranks (1QB sources pre-converted).
+ * 1QB columns are native overall ranks from the matching 1QB sources.
  */
-export const CUSTOM_BOARD_SOURCES = [
-  { id: 'etr', label: 'ETR', column: 'etr_sf', weight: 30 },
-  { id: 'lrdg', label: 'LRDG', column: 'lrdg_eq', weight: 22.5 },
-  { id: 'gibbs', label: 'Gibbs', column: 'gibbs_eq', weight: 22.5 },
-  { id: 'ecr', label: 'ECR', column: 'ecr_sf', weight: 12.5 },
-  { id: 'ffb', label: 'FFB', column: 'udk_sf', weight: 12.5 },
+export const CUSTOM_BOARD_SOURCES = {
+  superflex: [
+    { id: 'etr', label: 'ETR', column: 'etr_sf', weight: 30 },
+    { id: 'lrdg', label: 'LRDG', column: 'lrdg_eq', weight: 22.5 },
+    { id: 'gibbs', label: 'Gibbs', column: 'gibbs_eq', weight: 22.5 },
+    { id: 'ecr', label: 'ECR', column: 'ecr_sf', weight: 12.5 },
+    { id: 'ffb', label: 'FFB', column: 'udk_sf', weight: 12.5 },
+  ],
+  '1qb': [
+    { id: 'etr', label: 'ETR', column: 'etr_1qb', weight: 30 },
+    { id: 'lrdg', label: 'LRDG', column: 'lrdg', weight: 22.5 },
+    { id: 'gibbs', label: 'Gibbs', column: 'gibbs', weight: 22.5 },
+    { id: 'ecr', label: 'ECR', column: 'ecr_1qb', weight: 12.5 },
+    { id: 'ffb', label: 'FFB', column: 'udk_1qb', weight: 12.5 },
+  ],
+};
+
+export const DRAFT_FORMATS = [
+  { id: 'superflex', label: 'Superflex', shortLabel: 'SF' },
+  { id: '1qb', label: '1QB', shortLabel: '1QB' },
 ];
+
+export const DEFAULT_DRAFT_FORMAT = 'superflex';
 
 let dashDataPromise = null;
 let snapshotDataPromise = null;
 
-const SNAPSHOT_CSV_URL = '/data/redraft_dash_snapshot.csv';
-const SNAPSHOT_META_URL = '/data/redraft_dash_snapshot_meta.json';
+const SNAPSHOT_URLS = {
+  superflex: {
+    csv: '/data/redraft_dash_snapshot.csv',
+    meta: '/data/redraft_dash_snapshot_meta.json',
+  },
+  '1qb': {
+    csv: '/data/redraft_dash_snapshot_1qb.csv',
+    meta: '/data/redraft_dash_snapshot_1qb_meta.json',
+  },
+};
+
+const CUSTOM_BOARD_URLS = {
+  superflex: '/data/redraft_dash/dbb_custom_rankings.csv',
+  '1qb': '/data/redraft_dash/dbb_custom_rankings_1qb.csv',
+};
+
+const FP_ADP_HALF_URL = '/data/adp/fantasypros_adp_half_2026.csv';
 
 /** Quote-aware CSV row parser (same convention as the other loaders). */
 function parseCsvRow(line) {
@@ -244,10 +274,9 @@ function buildGibbsImpliedRows(ecrText, deltasText) {
 
 /**
  * Parse the DBB Custom board with its full column set (tiers, value score,
- * per-source equivalent-SF ranks) for the tier view. Returns [] when the
- * file is absent (public deploys).
+ * per-source ranks) for the tier view. Returns [] when the file is absent.
  */
-function parseCustomBoard(text) {
+function parseCustomBoard(text, format = DEFAULT_DRAFT_FORMAT) {
   if (!text) return [];
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
   if (lines.length < 2) return [];
@@ -266,7 +295,8 @@ function parseCustomBoard(text) {
     sleeperId: col('sleeper_id'),
   };
   if (idx.rank === -1 || idx.player === -1 || idx.tier === -1) return [];
-  const sourceIdx = CUSTOM_BOARD_SOURCES.map((s) => col(s.column));
+  const sources = CUSTOM_BOARD_SOURCES[format] || CUSTOM_BOARD_SOURCES.superflex;
+  const sourceIdx = sources.map((s) => col(s.column));
 
   const num = (cells, i) => {
     if (i === -1) return null;
@@ -281,7 +311,7 @@ function parseCustomBoard(text) {
     const name = cells[idx.player] || '';
     if (!name || rank == null) continue;
     const sourceRanks = {};
-    CUSTOM_BOARD_SOURCES.forEach((s, j) => {
+    sources.forEach((s, j) => {
       sourceRanks[s.id] = num(cells, sourceIdx[j]);
     });
     players.push({
@@ -295,7 +325,8 @@ function parseCustomBoard(text) {
       value: num(cells, idx.value),
       coverage: num(cells, idx.coverage),
       sleeperId: idx.sleeperId !== -1 ? (cells[idx.sleeperId] || '') : '',
-      adp: null, // attached later from the YAFSB SF ADP file
+      adp: null, // attached later from the format-matched ADP file
+      format,
       sourceRanks,
     });
   }
@@ -303,10 +334,10 @@ function parseCustomBoard(text) {
 }
 
 /**
- * ETR 2QB/half defense ranks from etr_tiers.csv. Defenses stay off the
- * overall board — the dash renders them on a separate tab like punters.
+ * ETR defense ranks from etr_tiers.csv. Defenses stay off the overall board.
+ * Superflex uses 2QB-half columns; 1QB uses half-PPR columns.
  */
-function parseEtrDefenses(text) {
+function parseEtrDefenses(text, format = DEFAULT_DRAFT_FORMAT) {
   if (!text) return [];
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
   if (lines.length < 2) return [];
@@ -314,11 +345,13 @@ function parseEtrDefenses(text) {
   const nameIdx = headerIndex(header, ['name', 'player']);
   const posIdx = header.indexOf('position');
   const teamIdx = header.indexOf('team');
-  const rankIdx = header.indexOf('rank_2qb_half');
-  const posRankIdx = header.indexOf('pos_rank_2qb_half');
-  const tierIdx = header.indexOf('tier_2qb_half');
-  // Prefer 2QB ADP when present; fall back to half-PPR market ADP.
-  const adpIdx = headerIndex(header, ['adp_2qb', 'adp_half', 'adp_ppr']);
+  const isSf = format !== '1qb';
+  const rankIdx = header.indexOf(isSf ? 'rank_2qb_half' : 'rank_half');
+  const posRankIdx = header.indexOf(isSf ? 'pos_rank_2qb_half' : 'pos_rank_half');
+  const tierIdx = header.indexOf(isSf ? 'tier_2qb_half' : 'tier_half');
+  const adpIdx = isSf
+    ? headerIndex(header, ['adp_2qb', 'adp_half', 'adp_ppr'])
+    : headerIndex(header, ['adp_half', 'adp_ppr', 'adp_2qb']);
   if (nameIdx === -1 || rankIdx === -1) return [];
 
   const rows = [];
@@ -346,17 +379,16 @@ function parseEtrDefenses(text) {
 }
 
 /**
- * Attach Sleeper superflex ADP (YAFSB file) to the custom board so the tier
- * view can show market cost vs our rank. ADP is display-only — it is never an
- * input to the blend. Joined on sleeper_id with a normalised-name fallback.
+ * Attach market ADP to a custom board. Superflex uses YAFSB SF (+ JAML);
+ * 1QB uses FantasyPros half ADP (no JAML — that compression is SF-only).
  */
-function attachAdpToCustomBoard(customBoard, yafsbText) {
-  if (!customBoard.length || !yafsbText) return;
-  const lines = yafsbText.split(/\r?\n/).filter((l) => l.trim() !== '');
+function attachAdpFromCsv(customBoard, adpText, { adpField = 'adp', applyJaml = true } = {}) {
+  if (!customBoard.length || !adpText) return;
+  const lines = adpText.split(/\r?\n/).filter((l) => l.trim() !== '');
   if (lines.length < 2) return;
   const header = parseCsvRow(lines[0]).map((h) => h.toLowerCase());
-  const adpIdx = header.indexOf('adp');
-  const nameIdx = header.indexOf('player');
+  const adpIdx = headerIndex(header, [adpField, 'adp', 'avg']);
+  const nameIdx = headerIndex(header, ['player', 'name']);
   const sleeperIdx = header.indexOf('sleeper_id');
   if (adpIdx === -1 || nameIdx === -1) return;
 
@@ -374,8 +406,17 @@ function attachAdpToCustomBoard(customBoard, yafsbText) {
     p.adp = (p.sleeperId ? bySleeper.get(p.sleeperId) : undefined)
       ?? byName.get(normalisePlayerName(p.name))
       ?? null;
+    p.rawAdp = p.adp;
   }
-  attachJamlAdp(customBoard);
+  if (applyJaml) attachJamlAdp(customBoard);
+  else {
+    for (const p of customBoard) p.jamlAdp = null;
+  }
+}
+
+/** @deprecated prefer attachAdpFromCsv — kept name for clarity at call sites */
+function attachAdpToCustomBoard(customBoard, yafsbText) {
+  attachAdpFromCsv(customBoard, yafsbText, { adpField: 'adp', applyJaml: true });
 }
 
 /**
@@ -437,14 +478,26 @@ async function loadRedraftDashDataUncached() {
   };
 
   // Private sources from the dbbp manifest (absent on public deploys)
-  let customBoard = [];
+  const customBoards = { superflex: [], '1qb': [] };
   if (manifest) {
     const csvTexts = await Promise.all(
       manifest.sources.map((s) => fetchStaticText(`/data/redraft_dash/${s.file}`))
     );
     const customIdx = manifest.sources.findIndex((s) => s.id === 'dbb_custom');
-    if (customIdx !== -1) customBoard = parseCustomBoard(csvTexts[customIdx]);
+    if (customIdx !== -1) {
+      customBoards.superflex = parseCustomBoard(csvTexts[customIdx], 'superflex');
+    }
+    const custom1qbIdx = manifest.sources.findIndex((s) => s.id === 'dbb_custom_1qb');
+    if (custom1qbIdx !== -1) {
+      customBoards['1qb'] = parseCustomBoard(csvTexts[custom1qbIdx], '1qb');
+    } else {
+      // Manifest may lag a sync — try the known path directly.
+      const text = await fetchStaticText(CUSTOM_BOARD_URLS['1qb']);
+      customBoards['1qb'] = parseCustomBoard(text, '1qb');
+    }
     manifest.sources.forEach((source, i) => {
+      // Dual custom boards are for the format toggle, not the sources table.
+      if (source.id === 'dbb_custom' || source.id === 'dbb_custom_1qb') return;
       const text = csvTexts[i];
       addSource(
         {
@@ -463,9 +516,10 @@ async function loadRedraftDashDataUncached() {
   }
 
   // Public sources shipped with the dbb repo
-  const [publicTexts, gibbsDeltasText] = await Promise.all([
+  const [publicTexts, gibbsDeltasText, fpAdpText] = await Promise.all([
     Promise.all(PUBLIC_SOURCES.map((s) => fetchStaticText(s.url))),
     fetchStaticText('/data/gibbs_deltas.csv'),
+    fetchStaticText(FP_ADP_HALF_URL),
   ]);
   PUBLIC_SOURCES.forEach((source, i) => {
     const text = publicTexts[i];
@@ -473,12 +527,16 @@ async function loadRedraftDashDataUncached() {
     addSource(meta, text ? parseSourceCsv(text) : [], !text);
   });
 
-  // Market ADP overlay for the custom board (display-only, not a blend input)
+  // Market ADP overlays (display-only, not blend inputs)
   const yafsbText = publicTexts[PUBLIC_SOURCES.findIndex((s) => s.id === 'yafsb_adp_half_sf')];
-  attachAdpToCustomBoard(customBoard, yafsbText);
+  attachAdpToCustomBoard(customBoards.superflex, yafsbText);
+  attachAdpFromCsv(customBoards['1qb'], fpAdpText, { adpField: 'avg', applyJaml: false });
 
   const etrTiersText = await fetchStaticText('/data/redraft_dash/etr/etr_tiers.csv');
-  const defenses = parseEtrDefenses(etrTiersText);
+  const defensesByFormat = {
+    superflex: parseEtrDefenses(etrTiersText, 'superflex'),
+    '1qb': parseEtrDefenses(etrTiersText, '1qb'),
+  };
 
   // Derived: Gibbs implied board = ECR half baseline + his deltas
   const ecrHalfText = publicTexts[PUBLIC_SOURCES.findIndex((s) => s.id === 'fp_ecr_half')];
@@ -490,13 +548,16 @@ async function loadRedraftDashDataUncached() {
   players.sort((a, b) => (a.avgRank ?? Infinity) - (b.avgRank ?? Infinity));
 
   return {
-    available: sourceRows.length > 0,
+    available: sourceRows.length > 0 || customBoards.superflex.length > 0,
     privateMissing: !manifest,
     season: manifest?.season ?? 2026,
     sources,
     players,
-    customBoard,
-    defenses,
+    // Back-compat: customBoard is the SF board; prefer customBoards[format].
+    customBoard: customBoards.superflex,
+    customBoards,
+    defenses: defensesByFormat.superflex,
+    defensesByFormat,
   };
 }
 
@@ -573,28 +634,45 @@ function parseSnapshotBoard(text) {
 }
 
 async function loadRedraftDashSnapshotUncached() {
-  const [csvText, metaText] = await Promise.all([
-    fetchStaticText(SNAPSHOT_CSV_URL),
-    fetchStaticText(SNAPSHOT_META_URL),
+  const [sfCsv, sfMeta, oneQbCsv, oneQbMeta] = await Promise.all([
+    fetchStaticText(SNAPSHOT_URLS.superflex.csv),
+    fetchStaticText(SNAPSHOT_URLS.superflex.meta),
+    fetchStaticText(SNAPSHOT_URLS['1qb'].csv),
+    fetchStaticText(SNAPSHOT_URLS['1qb'].meta),
   ]);
-  const customBoard = parseSnapshotBoard(csvText);
-  attachJamlAdp(customBoard);
+
+  const customBoards = {
+    superflex: parseSnapshotBoard(sfCsv),
+    '1qb': parseSnapshotBoard(oneQbCsv),
+  };
+  for (const p of customBoards.superflex) p.format = 'superflex';
+  for (const p of customBoards['1qb']) p.format = '1qb';
+  attachJamlAdp(customBoards.superflex);
+  // 1QB snapshot ADP is already FP half — no JAML.
+  for (const p of customBoards['1qb']) {
+    p.rawAdp = p.adp;
+    p.jamlAdp = null;
+  }
+
   let season = 2026;
   let generatedAt = null;
-  if (metaText) {
+  for (const metaText of [sfMeta, oneQbMeta]) {
+    if (!metaText) continue;
     try {
       const meta = JSON.parse(metaText);
       if (Number.isFinite(Number(meta.season))) season = Number(meta.season);
-      generatedAt = meta.generatedAt || null;
+      if (meta.generatedAt) generatedAt = meta.generatedAt;
     } catch (err) {
       // ignore malformed meta — the CSV is the source of truth
     }
   }
+
   return {
-    available: customBoard.length > 0,
+    available: customBoards.superflex.length > 0 || customBoards['1qb'].length > 0,
     season,
     generatedAt,
-    customBoard,
+    customBoard: customBoards.superflex,
+    customBoards,
   };
 }
 
@@ -617,16 +695,17 @@ let rankBoardPromise = null;
 
 /**
  * Custom board for positional ranks (QB5 / RB12 / …). Prefers the live local
- * board when dbbp data is synced; otherwise the public snapshot.
+ * SF board when dbbp data is synced; otherwise the public SF snapshot.
+ * (Simulator still assumes superflex for now.)
  */
 export function loadRedraftDashRankBoard() {
   if (!rankBoardPromise) {
     rankBoardPromise = (async () => {
       const liveText = await fetchStaticText(LIVE_CUSTOM_BOARD_URL);
-      const liveBoard = parseCustomBoard(liveText);
+      const liveBoard = parseCustomBoard(liveText, 'superflex');
       if (liveBoard.length) return liveBoard;
       const snap = await loadRedraftDashSnapshot();
-      return snap.customBoard || [];
+      return snap.customBoards?.superflex || snap.customBoard || [];
     })().catch((err) => {
       rankBoardPromise = null;
       throw err;

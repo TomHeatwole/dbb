@@ -2,12 +2,13 @@
  * Pure mock-draft helpers for Redraft Dash.
  *
  * 10-team snake, 19 rounds. Starting lineup:
- *   2 QB · 2 RB · 3 WR · 1 FLEX (RB/WR/TE) · 1 K · 1 P · 1 DST
- * Remaining 8 spots are bench (soft positional caps).
+ *   Superflex: 2 QB · 2 RB · 3 WR · 1 FLEX (RB/WR/TE) · 1 K · 1 P · 1 DST
+ *   1QB:       1 QB · 2 RB · 3 WR · 1 FLEX (RB/WR/TE) · 1 K · 1 P · 1 DST
+ * Remaining spots are bench (soft positional caps).
  *
  * CPU teams blend market ADP (exploitative) vs our custom-board rank (GTO) per
  * the slider, then inject 5–10% noise and apply roster-need heuristics so they
- * don't e.g. take a 3rd QB late after already filling two.
+ * don't e.g. take a 3rd QB late after already filling starters.
  */
 
 import { DEFAULT_ADP_MODE, resolveMarketAdp } from './redraftDashJamlAdp';
@@ -36,6 +37,16 @@ export const SOFT_CAPS = {
   P: 1,
   DST: 1,
 };
+
+export function starterCountsForFormat(format = 'superflex') {
+  if (format === '1qb') return { ...STARTER_COUNTS, QB: 1 };
+  return STARTER_COUNTS;
+}
+
+export function softCapsForFormat(format = 'superflex') {
+  if (format === '1qb') return { ...SOFT_CAPS, QB: 2 };
+  return SOFT_CAPS;
+}
 
 export const FLEX_ELIGIBLE = new Set(['RB', 'WR', 'TE']);
 
@@ -177,18 +188,19 @@ export function countPositions(roster) {
 }
 
 /** How many starter holes remain (FLEX counted after RB/WR starters). */
-export function starterHoles(counts) {
-  const qb = Math.max(0, STARTER_COUNTS.QB - counts.QB);
-  const rb = Math.max(0, STARTER_COUNTS.RB - counts.RB);
-  const wr = Math.max(0, STARTER_COUNTS.WR - counts.WR);
-  const k = Math.max(0, STARTER_COUNTS.K - counts.K);
-  const punter = Math.max(0, STARTER_COUNTS.P - counts.P);
-  const dst = Math.max(0, STARTER_COUNTS.DST - counts.DST);
+export function starterHoles(counts, format = 'superflex') {
+  const starters = starterCountsForFormat(format);
+  const qb = Math.max(0, starters.QB - counts.QB);
+  const rb = Math.max(0, starters.RB - counts.RB);
+  const wr = Math.max(0, starters.WR - counts.WR);
+  const k = Math.max(0, starters.K - counts.K);
+  const punter = Math.max(0, starters.P - counts.P);
+  const dst = Math.max(0, starters.DST - counts.DST);
 
-  const rbExtra = Math.max(0, counts.RB - STARTER_COUNTS.RB);
-  const wrExtra = Math.max(0, counts.WR - STARTER_COUNTS.WR);
+  const rbExtra = Math.max(0, counts.RB - starters.RB);
+  const wrExtra = Math.max(0, counts.WR - starters.WR);
   const flexFilled = Math.min(1, rbExtra + wrExtra + counts.TE);
-  const flex = Math.max(0, STARTER_COUNTS.FLEX - flexFilled);
+  const flex = Math.max(0, starters.FLEX - flexFilled);
 
   return { QB: qb, RB: rb, WR: wr, FLEX: flex, K: k, P: punter, DST: dst };
 }
@@ -200,8 +212,8 @@ function fillsStarterNeed(position, holes) {
 }
 
 /** Hard eligibility: soft cap + never a 2nd K/P/DST. */
-export function isEligible(position, counts) {
-  const cap = SOFT_CAPS[position];
+export function isEligible(position, counts, format = 'superflex') {
+  const cap = softCapsForFormat(format)[position];
   if (cap == null) return true;
   return (counts[position] || 0) < cap;
 }
@@ -220,25 +232,25 @@ function blendedCost(player, adpLean) {
 /**
  * Roster / round heuristics on top of blended cost. Positive = less attractive.
  */
-function needAdjustment(player, counts, holes, pickIndex) {
+function needAdjustment(player, counts, holes, pickIndex, format = 'superflex') {
   const pos = player.position;
   const round = roundOfPick(pickIndex);
   const rostered = counts[pos] || 0;
+  const starters = starterCountsForFormat(format);
   let adj = 0;
 
   if (fillsStarterNeed(pos, holes)) {
     // Prefer plugging open starter slots, stronger late when holes remain.
-    // No extra QB bonus here: the board is already superflex-adjusted and the
-    // ADP lean models QB-hungry market behavior, so a flat QB thumb on the
-    // scale just overrides board order (it made CPUs take Lamar over Gibbs
-    // at pick 2 in "GTO tiers" mode).
+    // No extra QB bonus here: the board is already format-adjusted and the
+    // ADP lean models market QB hunger, so a flat QB thumb on the scale just
+    // overrides board order.
     adj -= round >= 10 ? 18 : 8;
   } else if (FLEX_ELIGIBLE.has(pos) && holes.FLEX > 0) {
     adj -= 5;
   }
 
-  // Extra QB after two starters: only as rare late upside, never early
-  if (pos === 'QB' && rostered >= STARTER_COUNTS.QB) {
+  // Extra QB after starters filled: only as rare late upside, never early
+  if (pos === 'QB' && rostered >= starters.QB) {
     if (round < 11) adj += 55;
     else if (round < 15) adj += 28;
     else adj += 12;
@@ -279,10 +291,10 @@ function needAdjustment(player, counts, holes, pickIndex) {
  * Pick one CPU player from the available pool.
  * @param {number} adpLean 0 = GTO tiers, 1 = ADP
  */
-export function chooseCpuPick(available, roster, pickIndex, adpLean, rng = Math.random) {
+export function chooseCpuPick(available, roster, pickIndex, adpLean, rng = Math.random, format = 'superflex') {
   const counts = countPositions(roster);
-  const holes = starterHoles(counts);
-  const eligible = available.filter((p) => isEligible(p.position, counts));
+  const holes = starterHoles(counts, format);
+  const eligible = available.filter((p) => isEligible(p.position, counts, format));
   if (!eligible.length) return null;
 
   let best = null;
@@ -293,7 +305,7 @@ export function chooseCpuPick(available, roster, pickIndex, adpLean, rng = Math.
     // 5–10% injected variance per evaluation
     const variance = 0.05 + rng() * 0.05;
     const noise = 1 + (rng() * 2 - 1) * variance;
-    const score = base * noise + needAdjustment(player, counts, holes, pickIndex);
+    const score = base * noise + needAdjustment(player, counts, holes, pickIndex, format);
     if (score < bestScore) {
       bestScore = score;
       best = player;
@@ -313,6 +325,7 @@ export function runCpuUntilUserTurn({
   startPickIndex,
   userTeamIndex,
   adpLean,
+  format = 'superflex',
   rng = Math.random,
 }) {
   const draftedIds = new Set(picks.map((p) => playerKey(p.player)));
@@ -329,7 +342,7 @@ export function runCpuUntilUserTurn({
     const teamIndex = teamForPick(pickIndex);
     if (teamIndex === userTeamIndex) break;
 
-    const player = chooseCpuPick(available, rosters[teamIndex], pickIndex, adpLean, rng);
+    const player = chooseCpuPick(available, rosters[teamIndex], pickIndex, adpLean, rng, format);
     if (!player) break;
 
     const entry = {

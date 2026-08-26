@@ -20,17 +20,34 @@ export const ADP_MODES = [
     id: 'jaml',
     label: 'JAML ADP',
     shortLabel: 'JAML',
+    formats: ['superflex'],
     description: 'QB-compressed market for JAML (~5–6 QBs in R1; both slots mostly filled by R5).',
   },
   {
     id: 'yafsb',
     label: 'YAFSB SF',
     shortLabel: 'YAFSB',
+    formats: ['superflex'],
     description: 'Raw Sleeper superflex ADP from YAFSB (unadjusted).',
+  },
+  {
+    id: 'fp',
+    label: 'FP Half ADP',
+    shortLabel: 'FP ADP',
+    formats: ['1qb'],
+    description: 'FantasyPros half-PPR 1QB ADP (market cost for non-superflex).',
   },
 ];
 
 export const DEFAULT_ADP_MODE = 'jaml';
+
+export function defaultAdpModeForFormat(format) {
+  return format === '1qb' ? 'fp' : DEFAULT_ADP_MODE;
+}
+
+export function adpModesForFormat(format) {
+  return ADP_MODES.filter((m) => (m.formats || ['superflex']).includes(format));
+}
 
 /** Josh Allen → 1.0, Lamar Jackson → 2.0 (Sleeper IDs + name fallback). */
 const JAML_PINNED_QBS = [
@@ -78,6 +95,6 @@ export function attachJamlAdp(players) {
 /** Resolve the market ADP used for sorting / smash-fade under the active mode. */
 export function resolveMarketAdp(player, adpMode = DEFAULT_ADP_MODE) {
   if (!player) return null;
-  if (adpMode === 'yafsb') return player.rawAdp ?? player.adp ?? null;
+  if (adpMode === 'yafsb' || adpMode === 'fp') return player.rawAdp ?? player.adp ?? null;
   return player.jamlAdp ?? player.adp ?? null;
 }

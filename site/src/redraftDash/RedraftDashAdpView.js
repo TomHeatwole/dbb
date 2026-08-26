@@ -71,10 +71,15 @@ function RedraftDashAdpView({
   positionFilter,
   publicMode = false,
   adpMode = DEFAULT_ADP_MODE,
+  format = 'superflex',
 }) {
   const [signalFilter, setSignalFilter] = useState('all');
   const byPosition = positionFilter !== 'ALL';
-  const marketLabel = adpMode === 'jaml' ? 'JAML ADP' : 'YAFSB SF ADP';
+  const marketLabel = adpMode === 'jaml'
+    ? 'JAML ADP'
+    : adpMode === 'fp'
+      ? 'FP Half ADP'
+      : 'YAFSB SF ADP';
 
   const signalsByKey = useMemo(
     () => buildCohortValueSignals(players, adpMode),
@@ -241,7 +246,7 @@ function RedraftDashAdpView({
                       <span className="rdda-our-num">{byPosition ? p.posRank : p.rank}</span>
                     </span>
                     <SignalBadge signal={signal} />
-                    {!publicMode && <SourceChips player={p} />}
+                    {!publicMode && <SourceChips player={p} format={format} />}
                   </div>
                 );
               })}

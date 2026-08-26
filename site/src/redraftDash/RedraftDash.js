@@ -1,13 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import LoadingState from '../LoadingState';
 import PositionBadge from '../PositionBadge';
-import { loadRedraftDashData, loadRedraftDashSnapshot } from './redraftDashLoader';
+import {
+  DEFAULT_DRAFT_FORMAT,
+  DRAFT_FORMATS,
+  loadRedraftDashData,
+  loadRedraftDashSnapshot,
+} from './redraftDashLoader';
 import RedraftDashAdpView from './RedraftDashAdpView';
 import RedraftDashMockDraft from './RedraftDashMockDraft';
 import RedraftDashCover from './RedraftDashCover';
 import RedraftDashPrintable from './RedraftDashPrintable';
 import RedraftDashTierView from './RedraftDashTierView';
-import { ADP_MODES, DEFAULT_ADP_MODE, resolveMarketAdp } from './redraftDashJamlAdp';
+import {
+  adpModesForFormat,
+  defaultAdpModeForFormat,
+  resolveMarketAdp,
+} from './redraftDashJamlAdp';
 import { PUNTER_RANKINGS } from './redraftDashMockDraftLogic';
 
 const LOCAL_POSITION_FILTERS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST', 'P'];
@@ -55,8 +64,25 @@ function formatAdp(adp) {
   return adp.toFixed(1);
 }
 
-function localBoardReady(localData) {
-  return Boolean(localData?.customBoard?.length);
+function localBoardReady(localData, format = DEFAULT_DRAFT_FORMAT) {
+  const boards = localData?.customBoards;
+  if (boards?.[format]?.length) return true;
+  if (format === 'superflex' && localData?.customBoard?.length) return true;
+  return false;
+}
+
+function boardForFormat(data, format) {
+  if (!data) return [];
+  return data.customBoards?.[format]
+    || (format === 'superflex' ? data.customBoard : null)
+    || [];
+}
+
+function defensesForFormat(data, format) {
+  if (!data) return [];
+  return data.defensesByFormat?.[format]
+    || (format === 'superflex' ? data.defenses : null)
+    || [];
 }
 
 function RedraftDash() {
@@ -64,9 +90,10 @@ function RedraftDash() {
   const [publicData, setPublicData] = useState(null);
   const [error, setError] = useState(null);
   const [dataset, setDataset] = useState(null);
+  const [format, setFormat] = useState(DEFAULT_DRAFT_FORMAT);
   const [positionFilter, setPositionFilter] = useState('ALL');
   const [view, setView] = useState('table');
-  const [adpMode, setAdpMode] = useState(DEFAULT_ADP_MODE);
+  const [adpMode, setAdpMode] = useState(defaultAdpModeForFormat(DEFAULT_DRAFT_FORMAT));
   const [sortKey, setSortKey] = useState('avgRank');
   const [sortDir, setSortDir] = useState('asc');
 
@@ -85,7 +112,7 @@ function RedraftDash() {
       }
       setLocalData(nextLocal);
       setPublicData(nextPublic);
-      const useLocal = localBoardReady(nextLocal);
+      const useLocal = localBoardReady(nextLocal, DEFAULT_DRAFT_FORMAT);
       setDataset(useLocal ? 'local' : 'public');
       if (!useLocal) {
         setView('tiers');
@@ -95,15 +122,25 @@ function RedraftDash() {
     return () => { cancelled = true; };
   }, []);
 
+  const handleFormat = (nextFormat) => {
+    setFormat(nextFormat);
+    setAdpMode(defaultAdpModeForFormat(nextFormat));
+  };
+
   const isPublic = dataset === 'public';
   const data = isPublic ? publicData : localData;
+  const customBoard = boardForFormat(data, format);
+  const defenses = defensesForFormat(isPublic ? localData : data, format);
   const positionFilters = isPublic ? PUBLIC_POSITION_FILTERS : LOCAL_POSITION_FILTERS;
   const views = isPublic ? PUBLIC_VIEWS : LOCAL_VIEWS;
+  const adpModes = adpModesForFormat(format);
+  const formatBoardMissing = Boolean(data) && customBoard.length === 0
+    && (format === '1qb' || localBoardReady(data, 'superflex') || (isPublic && (publicData?.customBoards?.superflex?.length || publicData?.customBoard?.length)));
 
   const sortedPlayers = useMemo(() => {
     if (!data) return [];
     if (isPublic) {
-      const board = data.customBoard || [];
+      const board = customBoard;
       const filtered = positionFilter === 'ALL'
         ? board
         : board.filter((p) => p.position === positionFilter);
@@ -144,7 +181,7 @@ function RedraftDash() {
       if (va > vb) return sortDir === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [data, isPublic, positionFilter, sortKey, sortDir, adpMode]);
+  }, [data, isPublic, customBoard, positionFilter, sortKey, sortDir, adpMode]);
 
   if (error) {
     return <div className="rv-error">Redraft Dash failed to load: {error}</div>;
@@ -196,11 +233,11 @@ function RedraftDash() {
   const listCount = positionFilter === 'P'
     ? PUNTER_RANKINGS.length
     : positionFilter === 'DST'
-      ? (data.defenses || []).length
-      : isPublic
+      ? defenses.length
+      : isPublic || view === 'tiers' || view === 'adp' || view === 'mock' || view === 'printable'
         ? (positionFilter === 'ALL'
-          ? (data.customBoard || []).length
-          : (data.customBoard || []).filter((p) => p.position === positionFilter).length)
+          ? customBoard.length
+          : customBoard.filter((p) => p.position === positionFilter).length)
         : sortedPlayers.length;
 
   return (
@@ -217,6 +254,21 @@ function RedraftDash() {
                 onClick={() => handleDataset(d.id)}
               >
                 {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rv-field">
+          <span className="rv-label">Format</span>
+          <div className="rdd-view-toggle" title="Switches the custom board, market ADP, and mock roster (2QB vs 1QB)">
+            {DRAFT_FORMATS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className={`rdd-view-btn${format === f.id ? ' rdd-view-btn--active' : ''}`}
+                onClick={() => handleFormat(f.id)}
+              >
+                {f.shortLabel}
               </button>
             ))}
           </div>
@@ -252,11 +304,16 @@ function RedraftDash() {
           </select>
         </div>
         )}
-        {!localUnavailable && !publicUnavailable && (view === 'tiers' || view === 'adp' || view === 'mock' || view === 'printable' || (isPublic && view === 'table')) && (
+        {!localUnavailable && !publicUnavailable && !formatBoardMissing && (view === 'tiers' || view === 'adp' || view === 'mock' || view === 'printable' || (isPublic && view === 'table')) && (
         <div className="rv-field">
           <span className="rv-label">ADP market</span>
-          <div className="rdd-view-toggle" title="JAML compresses QB ADP for a league that takes ~5–6 QBs in R1">
-            {ADP_MODES.map((m) => (
+          <div
+            className="rdd-view-toggle"
+            title={format === '1qb'
+              ? 'FantasyPros half-PPR ADP for 1QB leagues'
+              : 'JAML compresses QB ADP for a league that takes ~5–6 QBs in R1'}
+          >
+            {adpModes.map((m) => (
               <button
                 key={m.id}
                 type="button"
@@ -272,7 +329,7 @@ function RedraftDash() {
         )}
         {!hideListChrome && (
         <p className="rv-meta rdd-source-meta">
-          {data.season} redraft · {listCount} {positionFilter === 'DST' ? 'defenses' : 'players'}
+          {data.season} redraft · {format === '1qb' ? '1QB' : 'superflex'} · {listCount} {positionFilter === 'DST' ? 'defenses' : 'players'}
           {isPublic ? ' · public snapshot' : null}
           {!isPublic && data.sources && (
             <>
@@ -294,7 +351,8 @@ function RedraftDash() {
 
       {!hideListChrome && (isPublic ? (
         <div className="rdd-privacy-note">
-          Public snapshot of the DBB custom board — overall rank and Sleeper SF ADP only.
+          Public snapshot of the DBB custom board — overall rank and
+          {format === '1qb' ? ' FantasyPros half ADP' : ' Sleeper SF ADP'} only.
           Per-source ranks from private boards are not included.
         </div>
       ) : data.privateMissing ? (
@@ -304,7 +362,7 @@ function RedraftDash() {
       ) : (
         <div className="rdd-privacy-note">
           Private sources load from <code>dbbp/</code> at startup — they never ship with the public deploy.
-          Public baselines (FP ECR, Gibbs, YAFSB SF ADP) ship with the site.
+          Public baselines (FP ECR, Gibbs, {format === '1qb' ? 'FP half ADP' : 'YAFSB SF ADP'}) ship with the site.
         </div>
       ))}
 
@@ -328,6 +386,17 @@ function RedraftDash() {
             <code> node scripts/build_redraft_dash_snapshot.js</code> (or a full
             <code> ./scripts/all_updates.sh</code>) and deploy the CSV in
             <code> site/public/data/</code>.
+          </p>
+        </div>
+      )}
+
+      {formatBoardMissing && !localUnavailable && !publicUnavailable && (
+        <div className="rdd-unavailable">
+          <h3>{format === '1qb' ? '1QB' : 'Superflex'} board unavailable</h3>
+          <p>
+            Rebuild with <code> node dbbp/scripts/build_custom_rankings.js</code>
+            {' '}then <code> node scripts/build_redraft_dash_snapshot.js</code>
+            {' '}(and restart the dev server so <code>dbbp/</code> re-syncs).
           </p>
         </div>
       )}
@@ -365,11 +434,11 @@ function RedraftDash() {
       {!hideListChrome && !isPublic && positionFilter === 'DST' && (
         <div className="rdd-punter-list">
           <p className="rdd-punter-note">
-            ETR superflex (2QB half-PPR) defense ranks. Defenses stay off the overall
+            ETR {format === '1qb' ? 'half-PPR' : 'superflex (2QB half-PPR)'} defense ranks. Defenses stay off the overall
             board — stream them late like punters; the DST1-to-DST10 gap is not worth
             an early pick.
           </p>
-          {(data.defenses || []).length === 0 ? (
+          {defenses.length === 0 ? (
             <p className="rdd-punter-note">ETR defense ranks aren&apos;t available in this deployment.</p>
           ) : (
             <table className="rv-table rdd-table rdd-punter-table">
@@ -378,12 +447,12 @@ function RedraftDash() {
                   <th className="rv-th rv-th-rank">#</th>
                   <th className="rv-th rv-th-name">Defense</th>
                   <th className="rv-th rv-th-team">Team</th>
-                  <th className="rv-th rdd-th-rank">ETR SF</th>
+                  <th className="rv-th rdd-th-rank">ETR {format === '1qb' ? '1QB' : 'SF'}</th>
                   <th className="rv-th">Tier</th>
                 </tr>
               </thead>
               <tbody>
-                {(data.defenses || []).map((d) => (
+                {defenses.map((d) => (
                   <tr key={d.team || d.name} className="rv-row">
                     <td className="rv-td rv-td-rank">{d.posRank}</td>
                     <td className="rv-td rv-td-name">{d.name}</td>
@@ -398,21 +467,24 @@ function RedraftDash() {
         </div>
       )}
 
-      {!localUnavailable && !publicUnavailable && view === 'mock' && (
+      {!formatBoardMissing && !localUnavailable && !publicUnavailable && view === 'mock' && (
         <RedraftDashMockDraft
-          players={data.customBoard || []}
-          defenses={localData?.defenses || []}
+          key={format}
+          players={customBoard}
+          defenses={defenses}
           publicMode={isPublic}
           adpMode={adpMode}
+          format={format}
         />
       )}
 
-      {!localUnavailable && !publicUnavailable && view === 'printable' && (
+      {!formatBoardMissing && !localUnavailable && !publicUnavailable && view === 'printable' && (
         <RedraftDashPrintable
-          players={data.customBoard || []}
-          defenses={localData?.defenses || data.defenses || []}
+          players={customBoard}
+          defenses={defenses}
           publicMode={isPublic}
           adpMode={adpMode}
+          format={format}
         />
       )}
 
@@ -420,21 +492,23 @@ function RedraftDash() {
         <RedraftDashCover />
       )}
 
-      {!localUnavailable && !publicUnavailable && positionFilter !== 'P' && positionFilter !== 'DST' && view === 'tiers' && (
+      {!formatBoardMissing && !localUnavailable && !publicUnavailable && positionFilter !== 'P' && positionFilter !== 'DST' && view === 'tiers' && (
         <RedraftDashTierView
-          players={data.customBoard || []}
+          players={customBoard}
           positionFilter={positionFilter}
           publicMode={isPublic}
           adpMode={adpMode}
+          format={format}
         />
       )}
 
-      {!localUnavailable && !publicUnavailable && positionFilter !== 'P' && positionFilter !== 'DST' && view === 'adp' && (
+      {!formatBoardMissing && !localUnavailable && !publicUnavailable && positionFilter !== 'P' && positionFilter !== 'DST' && view === 'adp' && (
         <RedraftDashAdpView
-          players={data.customBoard || []}
+          players={customBoard}
           positionFilter={positionFilter}
           publicMode={isPublic}
           adpMode={adpMode}
+          format={format}
         />
       )}
 
@@ -498,7 +572,7 @@ function RedraftDash() {
               {renderSortableTh('name', 'Player', 'rv-th-name')}
               <th className="rv-th rv-th-pos">Pos</th>
               <th className="rv-th rv-th-team">Team</th>
-              {renderSortableTh('adp', adpMode === 'jaml' ? 'JAML ADP' : 'YAFSB ADP', 'rdd-th-rank')}
+              {renderSortableTh('adp', adpMode === 'jaml' ? 'JAML ADP' : adpMode === 'fp' ? 'FP ADP' : 'YAFSB ADP', 'rdd-th-rank')}
             </tr>
           </thead>
           <tbody>

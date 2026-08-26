@@ -309,6 +309,7 @@ function RedraftDashPrintable({
   defenses = [],
   publicMode = false,
   adpMode = DEFAULT_ADP_MODE,
+  format = 'superflex',
 }) {
   const printPool = useMemo(() => {
     return [...players]
@@ -415,11 +416,11 @@ function RedraftDashPrintable({
           Print / Save PDF
         </button>
         <p className="rddp-toolbar-copy">
-          Top {PRINT_DEPTH} · {totalPages} letter pages · {PLAYERS_PER_PAGE}/page · 2-column.
+          {format === '1qb' ? '1QB' : 'Superflex'} · Top {PRINT_DEPTH} · {totalPages} letter pages · {PLAYERS_PER_PAGE}/page · 2-column.
           {hasSources
             ? ' Letters: C / Z / G / E / F (not expanded on paper).'
             : ' Switch to Local for per-source letter codes — this board has none.'}
-          {' '}Ends with raw {adpMode === 'jaml' ? 'JAML' : 'YAFSB'} ADP scratch sheets
+          {' '}Ends with raw {adpMode === 'jaml' ? 'JAML' : adpMode === 'fp' ? 'FP' : 'YAFSB'} ADP scratch sheets
           (QBs separate, top {ADP_SCRATCH_SKILL_COUNT} RB/WR/TE).
           {' '}In the print dialog, turn off “Headers and footers” and turn on “Background graphics” for the watermark.
         </p>

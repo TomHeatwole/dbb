@@ -19,7 +19,11 @@ export function AdpCell({ player, adpMode = DEFAULT_ADP_MODE, signal: signalProp
     return <span className="rddt-adp rddt-adp--missing">ADP —</span>;
   }
   const { cls, rounded } = signal;
-  const modeLabel = adpMode === 'yafsb' ? 'YAFSB SF ADP' : 'JAML ADP';
+  const modeLabel = adpMode === 'yafsb'
+    ? 'YAFSB SF ADP'
+    : adpMode === 'fp'
+      ? 'FP Half ADP'
+      : 'JAML ADP';
   const rawYafsb = player.rawAdp ?? player.adp;
   const cohortLabel = signal.cohort ? SIGNAL_COHORT_LABELS[signal.cohort] : null;
   const compareLine = signal.cohort && signal.ourCohortRank != null && signal.marketCohortRank != null
@@ -48,8 +52,9 @@ export function AdpCell({ player, adpMode = DEFAULT_ADP_MODE, signal: signalProp
   );
 }
 
-export function SourceChips({ player }) {
-  const chips = CUSTOM_BOARD_SOURCES.map((source) => {
+export function SourceChips({ player, format = 'superflex' }) {
+  const sources = CUSTOM_BOARD_SOURCES[format] || CUSTOM_BOARD_SOURCES.superflex;
+  const chips = sources.map((source) => {
     const srcRank = player.sourceRanks?.[source.id];
     // Positive delta = this source is higher (better) on the player than our blend
     const delta = srcRank == null ? null : player.rank - srcRank;
@@ -67,6 +72,8 @@ export function SourceChips({ player }) {
     if (deltaClass(last.delta, player.rank) !== 'neutral') bearish = last.source.id;
   }
 
+  const rankLabel = format === '1qb' ? 'rank' : 'equivalent SF rank';
+
   return (
     <div className="rddt-chips">
       {chips.map(({ source, srcRank, delta }) => {
@@ -78,7 +85,7 @@ export function SourceChips({ player }) {
             title={
               delta == null
                 ? `${source.label} (${source.weight}%): not ranked`
-                : `${source.label} (${source.weight}% of blend): equivalent SF rank ${formatEqRank(srcRank)} — `
+                : `${source.label} (${source.weight}% of blend): ${rankLabel} ${formatEqRank(srcRank)} — `
                   + `${Math.abs(Math.round(delta))} spots ${delta >= 0 ? 'higher' : 'lower'} than our #${player.rank}`
             }
           >

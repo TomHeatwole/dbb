@@ -18,9 +18,16 @@ function RedraftDashTierView({
   positionFilter,
   publicMode = false,
   adpMode = DEFAULT_ADP_MODE,
+  format = 'superflex',
 }) {
   const byPosition = positionFilter !== 'ALL';
-  const marketLabel = adpMode === 'jaml' ? 'JAML-adjusted ADP' : 'Sleeper superflex ADP';
+  const marketLabel = adpMode === 'jaml'
+    ? 'JAML-adjusted ADP'
+    : adpMode === 'fp'
+      ? 'FantasyPros half ADP'
+      : 'Sleeper superflex ADP';
+  const isSf = format !== '1qb';
+  const rankChipLabel = isSf ? 'equivalent-SF rank' : '1QB source rank';
 
   const signalsByKey = useMemo(
     () => buildCohortValueSignals(players, adpMode),
@@ -68,12 +75,12 @@ function RedraftDashTierView({
     : (
       <>
         {byPosition && positionFilter === 'K'
-          ? 'Kicker positional tiers from ETR superflex ranks, spliced into the custom board by value. Only ETR ranks kickers — other source chips will be empty.'
+          ? `Kicker positional tiers from ETR ${isSf ? 'superflex' : 'half-PPR'} ranks, spliced into the custom board by value. Only ETR ranks kickers — other source chips will be empty.`
           : byPosition
             ? `${positionFilter} positional tiers from the DBB Custom blend.`
-            : 'Overall tiers from the DBB Custom blend (kickers inserted at ETR superflex values).'}
+            : `Overall tiers from the DBB Custom blend (kickers inserted at ETR ${isSf ? 'superflex' : 'half-PPR'} values).`}
         {' '}
-        Chips show each source&apos;s equivalent-SF rank —{' '}
+        Chips show each source&apos;s {rankChipLabel} —{' '}
         <span className="rddt-chip rddt-chip--high rddt-legend-chip">higher</span> /{' '}
         <span className="rddt-chip rddt-chip--low rddt-legend-chip">lower</span> than our blended rank,
         with ▲/▼ marking the most bullish and most bearish source on that player.
@@ -137,7 +144,7 @@ function RedraftDashTierView({
                     adpMode={adpMode}
                     signal={signalsByKey.get(playerSignalKey(p))}
                   />
-                  {!publicMode && <SourceChips player={p} />}
+                  {!publicMode && <SourceChips player={p} format={format} />}
                 </div>
               ))}
             </div>

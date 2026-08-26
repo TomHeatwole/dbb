@@ -2,18 +2,19 @@
 /**
  * build_redraft_dash_snapshot.js
  *
- * Publishes a sanitized snapshot of the DBB custom redraft board for the
- * live site's "Public" Redraft Dash view.
+ * Publishes sanitized snapshots of the DBB custom redraft boards for the
+ * live site's "Public" Redraft Dash view (superflex + 1QB).
  *
- * Reads the private custom board (dbbp/redraft-dash/dbb_custom_rankings.csv)
- * and the public YAFSB SF ADP file, then writes ONLY the aggregated board:
- * rank, player, position, team, tier, pos_rank, pos_tier, adp, sleeper_id.
- * Per-source equivalent ranks (ETR/LRDG/Gibbs/ECR/FFB), coverage, and the
- * ETR-calibrated value score are stripped — those stay in dbbp/ and never ship.
+ * Reads the private custom boards and public ADP files, then writes ONLY the
+ * aggregated board: rank, player, position, team, tier, pos_rank, pos_tier,
+ * adp, sleeper_id. Per-source ranks, coverage, and value scores stay private.
+ *
+ * ADP pairing:
+ *   Superflex → YAFSB Sleeper SF ADP
+ *   1QB       → FantasyPros half-PPR ADP (no YAFSB 1QB file checked in yet)
  *
  * Wired into all_updates.sh after custom_rankings so a full refresh updates
- * the committed public CSV. The live site loads this file; it does not need
- * dbbp/ checked out.
+ * the committed public CSVs.
  *
  * Usage (run from project root):
  *   node scripts/build_redraft_dash_snapshot.js
@@ -23,24 +24,36 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const DBBP_BOARD = path.join(ROOT, 'dbbp/redraft-dash/dbb_custom_rankings.csv');
-const SYNCED_BOARD = path.join(ROOT, 'site/public/data/redraft_dash/dbb_custom_rankings.csv');
-const ADP_CSV = path.join(ROOT, 'site/public/data/yafsb_adp_half_superflex.csv');
-const OUT_CSV = path.join(ROOT, 'site/public/data/redraft_dash_snapshot.csv');
-const OUT_META = path.join(ROOT, 'site/public/data/redraft_dash_snapshot_meta.json');
-
 const SEASON = 2026;
 
-/** Columns allowed in the public file. Anything else from the private board is dropped. */
 const PUBLIC_COLUMNS = [
   'rank', 'player', 'position', 'team', 'tier', 'pos_rank', 'pos_tier', 'adp', 'sleeper_id',
 ];
 
-/**
- * Headers that would leak a premium source. The writer refuses to emit them
- * even if a future private-board column sneaks into PUBLIC_COLUMNS.
- */
-const FORBIDDEN_HEADER_RE = /^(etr|lrdg|gibbs|ecr|udk|ffb|coverage)(_|$)|_(sf|eq)$/i;
+const FORBIDDEN_HEADER_RE = /^(etr|lrdg|gibbs|ecr|udk|ffb|coverage)(_|$)|_(sf|eq|1qb)$/i;
+
+const SNAPSHOTS = [
+  {
+    id: 'superflex',
+    dbbpBoard: path.join(ROOT, 'dbbp/redraft-dash/dbb_custom_rankings.csv'),
+    syncedBoard: path.join(ROOT, 'site/public/data/redraft_dash/dbb_custom_rankings.csv'),
+    adpCsv: path.join(ROOT, 'site/public/data/yafsb_adp_half_superflex.csv'),
+    adpField: 'adp',
+    outCsv: path.join(ROOT, 'site/public/data/redraft_dash_snapshot.csv'),
+    outMeta: path.join(ROOT, 'site/public/data/redraft_dash_snapshot_meta.json'),
+    adpHint: 'Run `node scripts/process_yafsb_adp.js` first.',
+  },
+  {
+    id: '1qb',
+    dbbpBoard: path.join(ROOT, 'dbbp/redraft-dash/dbb_custom_rankings_1qb.csv'),
+    syncedBoard: path.join(ROOT, 'site/public/data/redraft_dash/dbb_custom_rankings_1qb.csv'),
+    adpCsv: path.join(ROOT, 'site/public/data/adp/fantasypros_adp_half_2026.csv'),
+    adpField: 'avg',
+    outCsv: path.join(ROOT, 'site/public/data/redraft_dash_snapshot_1qb.csv'),
+    outMeta: path.join(ROOT, 'site/public/data/redraft_dash_snapshot_1qb_meta.json'),
+    adpHint: 'Expected FantasyPros half ADP at site/public/data/adp/fantasypros_adp_half_2026.csv.',
+  },
+];
 
 function parseCsv(text) {
   const rows = [];
@@ -96,11 +109,11 @@ function normalisePlayerName(name) {
     .trim();
 }
 
-function loadAdpIndex(adpRows) {
+function loadAdpIndex(adpRows, adpField) {
   const bySleeper = new Map();
   const byName = new Map();
   for (const row of adpRows) {
-    const adp = Number(row.adp);
+    const adp = Number(row[adpField] ?? row.adp ?? row.avg);
     if (!Number.isFinite(adp)) continue;
     if (row.sleeper_id) bySleeper.set(row.sleeper_id, adp);
     const key = normalisePlayerName(row.player || row.name || '');
@@ -109,21 +122,21 @@ function loadAdpIndex(adpRows) {
   return { bySleeper, byName };
 }
 
-function resolveBoardPath() {
-  if (fs.existsSync(DBBP_BOARD)) return DBBP_BOARD;
-  if (fs.existsSync(SYNCED_BOARD)) return SYNCED_BOARD;
+function resolveBoardPath(cfg) {
+  if (fs.existsSync(cfg.dbbpBoard)) return cfg.dbbpBoard;
+  if (fs.existsSync(cfg.syncedBoard)) return cfg.syncedBoard;
   return null;
 }
 
-function run() {
-  const boardPath = resolveBoardPath();
+function writeSnapshot(cfg) {
+  const boardPath = resolveBoardPath(cfg);
   if (!boardPath) {
-    console.error('ERROR: custom board not found. Run `node dbbp/scripts/build_custom_rankings.js` first.');
+    console.error(`ERROR: ${cfg.id} custom board not found. Run \`node dbbp/scripts/build_custom_rankings.js\` first.`);
     process.exit(1);
   }
-  if (!fs.existsSync(ADP_CSV)) {
-    console.error(`ERROR: ADP file missing: ${ADP_CSV}`);
-    console.error('Run `node scripts/process_yafsb_adp.js` first.');
+  if (!fs.existsSync(cfg.adpCsv)) {
+    console.error(`ERROR: ADP file missing: ${cfg.adpCsv}`);
+    console.error(cfg.adpHint);
     process.exit(1);
   }
 
@@ -135,10 +148,10 @@ function run() {
 
   const privateHeaders = Object.keys(boardRows[0]).filter((h) => !PUBLIC_COLUMNS.includes(h));
   if (privateHeaders.length) {
-    console.log(`Stripped private columns: ${privateHeaders.join(', ')}`);
+    console.log(`[${cfg.id}] Stripped private columns: ${privateHeaders.join(', ')}`);
   }
 
-  const { bySleeper, byName } = loadAdpIndex(readCsvObjects(ADP_CSV));
+  const { bySleeper, byName } = loadAdpIndex(readCsvObjects(cfg.adpCsv), cfg.adpField);
 
   const snapshot = boardRows.map((row) => {
     const sleeperId = row.sleeper_id || '';
@@ -175,22 +188,22 @@ function run() {
   for (const row of snapshot) {
     lines.push(PUBLIC_COLUMNS.map((col) => csvEscape(row[col])).join(','));
   }
-  fs.mkdirSync(path.dirname(OUT_CSV), { recursive: true });
-  fs.writeFileSync(OUT_CSV, `${lines.join('\n')}\n`, 'utf8');
+  fs.mkdirSync(path.dirname(cfg.outCsv), { recursive: true });
+  fs.writeFileSync(cfg.outCsv, `${lines.join('\n')}\n`, 'utf8');
 
   const withAdp = snapshot.filter((r) => r.adp !== '').length;
   const meta = {
     season: SEASON,
+    format: cfg.id,
     generatedAt: new Date().toISOString(),
     playerCount: snapshot.length,
     adpMatched: withAdp,
   };
-  fs.writeFileSync(OUT_META, `${JSON.stringify(meta, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(cfg.outMeta, `${JSON.stringify(meta, null, 2)}\n`, 'utf8');
 
-  console.log(`Output: ${OUT_CSV} (${snapshot.length} players, ${withAdp} with ADP)`);
-  console.log(`Meta:   ${OUT_META}`);
-  console.log('Columns: ' + PUBLIC_COLUMNS.join(', '));
-  console.log('Top 10:');
+  console.log(`[${cfg.id}] Output: ${cfg.outCsv} (${snapshot.length} players, ${withAdp} with ADP)`);
+  console.log(`[${cfg.id}] Meta:   ${cfg.outMeta}`);
+  console.log(`[${cfg.id}] Top 10:`);
   snapshot.slice(0, 10).forEach((r) => {
     console.log(
       `  ${String(r.rank).padStart(3)} T${String(r.tier).padStart(2)}  `
@@ -198,6 +211,10 @@ function run() {
       + ` ${r.player.padEnd(22)} ADP ${r.adp || '—'}`,
     );
   });
+}
+
+function run() {
+  for (const cfg of SNAPSHOTS) writeSnapshot(cfg);
 }
 
 run();
