@@ -20328,19 +20328,8 @@ body.modal-open {
   cursor: wait;
 }
 
-.standings-row--me {
-  border-color: rgba(74, 222, 128, 0.85) !important;
-  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.35), 0 6px 16px rgba(74, 222, 128, 0.12);
-}
-
 .standings-row--me .standings-title {
   color: #4ade80;
-}
-
-.scores-row--me,
-.yoffs-row--me {
-  border-color: rgba(74, 222, 128, 0.85) !important;
-  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.35);
 }
 
 .h2h-web-card--me {
