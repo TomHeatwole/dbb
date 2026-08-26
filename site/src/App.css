@@ -3526,23 +3526,28 @@
 
 .recent-waivers-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.65rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.28rem;
 }
 
 .recent-waivers-team {
-  flex: 0 1 auto;
+  width: 100%;
   min-width: 0;
-  max-width: 100%;
+}
+
+.recent-waivers-team .recent-trades-team-name {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .recent-waivers-moves {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.2rem 0.4rem;
+  gap: 0.2rem 0.45rem;
   min-width: 0;
+  overflow: hidden;
 }
 
 .recent-waivers-player {
@@ -3558,6 +3563,12 @@
   border-radius: 0.3rem;
   cursor: pointer;
   color: inherit;
+  min-width: 0;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.recent-waivers-player .recent-trades-asset-name {
   min-width: 0;
 }
 
@@ -3587,7 +3598,8 @@
 }
 
 .recent-waivers-bid {
-  margin-left: 0.35rem;
+  margin-left: auto;
+  flex: 0 0 auto;
   font-size: 0.72rem;
   font-weight: 800;
   color: rgba(148, 180, 255, 0.9);
