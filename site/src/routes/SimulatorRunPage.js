@@ -51,6 +51,7 @@ function SimulatorRunPage() {
   const [teamFinishBuckets, setTeamFinishBuckets] = useState(null);
   const [teamScoreHistograms, setTeamScoreHistograms] = useState(null);
   const [teamSlotHistograms, setTeamSlotHistograms] = useState(null);
+  const [teamSeasonExtremes, setTeamSeasonExtremes] = useState(null);
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [teamsForGrid, setTeamsForGrid] = useState([]);
   const [originalRosters, setOriginalRosters] = useState({});
@@ -149,6 +150,7 @@ function SimulatorRunPage() {
           teamFinishBuckets: finishBuckets,
           teamScoreHistograms: scoreHists,
           teamSlotHistograms: slotHists,
+          teamSeasonExtremes: seasonExtremes,
         } = await runMonteCarloSimulation(
           ctx,
           players,
@@ -167,6 +169,7 @@ function SimulatorRunPage() {
           setTeamFinishBuckets(finishBuckets);
           setTeamScoreHistograms(scoreHists);
           setTeamSlotHistograms(slotHists);
+          setTeamSeasonExtremes(seasonExtremes);
           setSimProgress(1);
           setPhase('celebrating');
           await new Promise((resolve) => {
@@ -273,6 +276,7 @@ function SimulatorRunPage() {
                 teamFinishBuckets={teamFinishBuckets}
                 teamScoreHistograms={teamScoreHistograms}
                 teamSlotHistograms={teamSlotHistograms}
+                teamSeasonExtremes={teamSeasonExtremes}
                 originalRosters={originalRosters}
                 scenarioRosters={scenarioRosters}
                 seasonYear={scenarioSeason}

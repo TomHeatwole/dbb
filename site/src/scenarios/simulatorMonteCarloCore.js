@@ -217,6 +217,55 @@ function incrementTeamFinishCount(buckets, rosterId, place) {
   teamBuckets[place - 1].count += 1;
 }
 
+function cloneRollMap(rolls) {
+  return { ...rolls };
+}
+
+function createTeamSeasonExtremes(rosterIds) {
+  const byTeam = {};
+  for (const rid of rosterIds) {
+    byTeam[rid] = { best: null, worst: null };
+  }
+  return byTeam;
+}
+
+function buildSeasonExtremeSample(simIndex, ctx, rosterId, totalScore, place) {
+  const rid = Number(rosterId);
+  const rosterPlayerIds = ctx.scenarioRosters[rid]
+    || ctx.scenarioRosters[String(rid)]
+    || [];
+  const luck = computeLuckFromRolls(
+    rosterPlayerIds,
+    ctx.rolls,
+    ctx.hwangAdpRankMap,
+    ctx.pools,
+  );
+  return {
+    simIndex,
+    rolls: cloneRollMap(ctx.rolls),
+    playoffRolls: cloneRollMap(ctx.playoffRolls),
+    totalScore,
+    place,
+    luckPercentile: luck?.totalLuckPercentile ?? null,
+  };
+}
+
+/** Keep each team's highest- and lowest-scoring seasons (2 samples, any run size). */
+function recordTeamSeasonExtreme(extremes, rosterId, simIndex, ctx, totalScore, place) {
+  if (totalScore == null || !Number.isFinite(totalScore)) return;
+  const rid = Number(rosterId);
+  const team = extremes[rid];
+  if (!team) return;
+
+  const isBest = !team.best || totalScore > team.best.totalScore;
+  const isWorst = !team.worst || totalScore < team.worst.totalScore;
+  if (!isBest && !isWorst) return;
+
+  const sample = buildSeasonExtremeSample(simIndex, ctx, rid, totalScore, place);
+  if (isBest) team.best = sample;
+  if (isWorst) team.worst = sample;
+}
+
 function recordTeamFinishSample(buckets, rosterId, simIndex, rolls, playoffRolls, teamResult) {
   const place = teamResult?.place;
   if (place == null || place < 1 || place > 10) return;
@@ -400,6 +449,7 @@ export function createSimulationState(ctx, lightweight) {
     stats: emptyStats(ctx.rosterIds),
     baselineStats: ctx.baselineRosters ? emptyStats(ctx.rosterIds) : null,
     teamFinishBuckets: createTeamFinishBuckets(ctx.rosterIds),
+    teamSeasonExtremes: createTeamSeasonExtremes(ctx.rosterIds),
     teamScoreHistograms: createTeamScoreHistograms(ctx.rosterIds),
     teamSlotHistograms: createTeamSlotHistograms(ctx.rosterIds, slotNames),
     keepSimSamples: !lightweight,
@@ -416,7 +466,8 @@ export function runSimulationIterations(ctx, state, {
   totalIterations,
 }) {
   const {
-    stats, baselineStats, teamFinishBuckets, teamScoreHistograms, teamSlotHistograms, keepSimSamples,
+    stats, baselineStats, teamFinishBuckets, teamSeasonExtremes,
+    teamScoreHistograms, teamSlotHistograms, keepSimSamples,
   } = state;
   const reportEvery = progressInterval
     ?? (lightweight
@@ -441,6 +492,16 @@ export function runSimulationIterations(ctx, state, {
 
     for (const row of scenarioOutcome.standings) {
       incrementTeamFinishCount(teamFinishBuckets, row.rosterId, row.place);
+      const totalScore = (scenarioOutcome.regTotals[row.rosterId] || 0)
+        + (scenarioOutcome.ploffTotals[row.rosterId] || 0);
+      recordTeamSeasonExtreme(
+        teamSeasonExtremes,
+        row.rosterId,
+        simIndex + 1,
+        ctx,
+        totalScore,
+        row.place,
+      );
     }
 
     accumulateTeamScoreHistograms(
@@ -506,7 +567,10 @@ export function runSimulationIterations(ctx, state, {
 }
 
 export function finalizeSimulationState(state, iterations, rosterIds) {
-  const { stats, baselineStats, teamFinishBuckets, teamScoreHistograms, teamSlotHistograms } = state;
+  const {
+    stats, baselineStats, teamFinishBuckets, teamSeasonExtremes,
+    teamScoreHistograms, teamSlotHistograms,
+  } = state;
   const results = buildResultsFromStats(stats, iterations, rosterIds);
   const baselineResults = baselineStats
     ? buildResultsFromStats(baselineStats, iterations, rosterIds)
@@ -520,6 +584,7 @@ export function finalizeSimulationState(state, iterations, rosterIds) {
     baselineResults,
     resultDeltas,
     teamFinishBuckets,
+    teamSeasonExtremes,
     teamScoreHistograms: serializeTeamScoreHistograms(teamScoreHistograms),
     teamSlotHistograms: serializeTeamSlotHistograms(teamSlotHistograms),
   };

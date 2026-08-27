@@ -407,6 +407,30 @@ export function computeSlotRankAverage(hist) {
   return sum / total;
 }
 
+/**
+ * Rank all teams at each lineup slot by average score (highest first).
+ * rankings[si] = [{ rid, total }, ...] sorted descending by average points.
+ */
+export function computeSlotObjectiveRankings(teamSlotHistograms, rangeKey) {
+  const teams = Object.entries(teamSlotHistograms || {});
+  if (!teams.length) return [];
+  const slotCount = teams[0][1]?.slots?.length || 0;
+  const out = [];
+  for (let si = 0; si < slotCount; si++) {
+    const rankings = [];
+    for (const [rid, team] of teams) {
+      const slot = team.slots?.[si];
+      const rangeData = slot?.[rangeKey] || slot?.reg;
+      const avg = computeSlotScoreAverage(rangeData?.score);
+      if (avg == null || !Number.isFinite(avg)) continue;
+      rankings.push({ rid: Number(rid), total: avg });
+    }
+    rankings.sort((a, b) => b.total - a.total);
+    out.push(rankings);
+  }
+  return out;
+}
+
 /** Slot league-rank distribution (1st–10th) bar chart rows. */
 export function buildSlotRankChartData(rankHist, iterations) {
   if (!rankHist?.bins?.length) return [];

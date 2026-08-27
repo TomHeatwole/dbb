@@ -99,12 +99,77 @@ function ScoreHistogramSection({ title, subtitle, data, hist, barColor, activeBa
   );
 }
 
+function SimOutcomeLink({ run, originalRosters, scenarioRosters, seasonYear }) {
+  if (!run?.rolls) return null;
+
+  const href = buildFutureScenario2EvalUrl(
+    originalRosters,
+    scenarioRosters,
+    run.rolls,
+    seasonYear,
+    run.playoffRolls,
+  );
+  const luckLabel = run.luckPercentile != null
+    ? `P${Math.round(run.luckPercentile)}`
+    : '—';
+  const placeBit = run.place ? `${ordinal(run.place)} · ` : '';
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="simulator-sim-link-row"
+      title={`Sim #${run.simIndex} · ${placeBit}${run.totalScore.toFixed(1)} pts · ${luckLabel} luck · open in Future Scenarios v2`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <span className="simulator-sim-link-id">#{run.simIndex}</span>
+      <span className="simulator-sim-link-score">
+        {run.totalScore.toFixed(1)}
+      </span>
+      <span
+        className="simulator-sim-link-luck"
+        style={run.luckPercentile != null ? {
+          '--roll-color': percentileColor(run.luckPercentile),
+        } : undefined}
+      >
+        {luckLabel}
+      </span>
+    </a>
+  );
+}
+
+function SeasonExtremeCard({ label, tone, run, originalRosters, scenarioRosters, seasonYear }) {
+  return (
+    <div className={`simulator-extreme-card simulator-extreme-card--${tone}`}>
+      <div className="simulator-extreme-card-label">{label}</div>
+      {run ? (
+        <>
+          <div className="simulator-extreme-card-meta">
+            {run.place ? `${ordinal(run.place)} · ` : ''}
+            {fmtPts(run.totalScore)} pts
+          </div>
+          <SimOutcomeLink
+            run={run}
+            originalRosters={originalRosters}
+            scenarioRosters={scenarioRosters}
+            seasonYear={seasonYear}
+          />
+        </>
+      ) : (
+        <span className="simulator-finish-col-empty">—</span>
+      )}
+    </div>
+  );
+}
+
 function SimulatorTeamDetail({
   rosterId,
   teamsForGrid,
   teamFinishBuckets,
   teamScoreHistograms,
   teamSlotHistograms,
+  teamSeasonExtremes,
   originalRosters,
   scenarioRosters,
   seasonYear,
@@ -123,6 +188,11 @@ function SimulatorTeamDetail({
   const scoreHist = useMemo(
     () => teamScoreHistograms?.[rosterId] || teamScoreHistograms?.[String(rosterId)] || null,
     [teamScoreHistograms, rosterId],
+  );
+
+  const seasonExtremes = useMemo(
+    () => teamSeasonExtremes?.[rosterId] || teamSeasonExtremes?.[String(rosterId)] || null,
+    [teamSeasonExtremes, rosterId],
   );
 
   const finishChartData = useMemo(
@@ -215,79 +285,81 @@ function SimulatorTeamDetail({
         rosterId={rosterId}
         iterations={iterations}
         totalTeams={totalTeams}
+        teamsForGrid={teamsForGrid}
       />
 
-      {showOutcomeLinks && (
+      {(seasonExtremes?.best || seasonExtremes?.worst || showOutcomeLinks) && (
         <div className="simulator-team-detail-section simulator-team-detail-section--outcomes">
           <div className="simulator-team-detail-section-title">Specific simulations</div>
           <div className="simulator-team-detail-subtitle">
             Open an outcome set in Future Scenarios v2
-            {buckets.some((b) => b.count > b.runs.length) && (
+            {showOutcomeLinks && buckets.some((b) => b.count > b.runs.length) && (
               <span className="simulator-team-detail-note">
                 {' '}· top 50 scores per finish shown
               </span>
             )}
+            {!showOutcomeLinks && (
+              <span className="simulator-team-detail-note">
+                {' '}· large runs keep each team&apos;s best and worst season
+              </span>
+            )}
           </div>
 
-          <div className="simulator-finish-grid">
-            {buckets.map((bucket) => (
-              <div
-                key={bucket.place}
-                className={
-                  'simulator-finish-col' +
-                  (bucket.place <= 4 ? ' simulator-finish-col--playoff' : '')
-                }
-              >
-                <div className="simulator-finish-col-header">{ordinal(bucket.place)}</div>
-                <div className="simulator-finish-col-count">
-                  {bucket.count}
-                  <span className="simulator-finish-col-count-denom">/{iterations}</span>
-                </div>
-                <div className="simulator-finish-col-links">
-                  {bucket.runs.length === 0 ? (
-                    <span className="simulator-finish-col-empty">—</span>
-                  ) : (
-                    bucket.runs.map((run) => {
-                      const href = buildFutureScenario2EvalUrl(
-                        originalRosters,
-                        scenarioRosters,
-                        run.rolls,
-                        seasonYear,
-                        run.playoffRolls,
-                      );
-                      const luckLabel = run.luckPercentile != null
-                        ? `P${Math.round(run.luckPercentile)}`
-                        : '—';
-                      return (
-                        <a
+          {(seasonExtremes?.best || seasonExtremes?.worst) && (
+            <div className="simulator-extreme-grid">
+              <SeasonExtremeCard
+                label="Best season"
+                tone="best"
+                run={seasonExtremes.best}
+                originalRosters={originalRosters}
+                scenarioRosters={scenarioRosters}
+                seasonYear={seasonYear}
+              />
+              <SeasonExtremeCard
+                label="Worst season"
+                tone="worst"
+                run={seasonExtremes.worst}
+                originalRosters={originalRosters}
+                scenarioRosters={scenarioRosters}
+                seasonYear={seasonYear}
+              />
+            </div>
+          )}
+
+          {showOutcomeLinks && (
+            <div className="simulator-finish-grid">
+              {buckets.map((bucket) => (
+                <div
+                  key={bucket.place}
+                  className={
+                    'simulator-finish-col' +
+                    (bucket.place <= 4 ? ' simulator-finish-col--playoff' : '')
+                  }
+                >
+                  <div className="simulator-finish-col-header">{ordinal(bucket.place)}</div>
+                  <div className="simulator-finish-col-count">
+                    {bucket.count}
+                    <span className="simulator-finish-col-count-denom">/{iterations}</span>
+                  </div>
+                  <div className="simulator-finish-col-links">
+                    {bucket.runs.length === 0 ? (
+                      <span className="simulator-finish-col-empty">—</span>
+                    ) : (
+                      bucket.runs.map((run) => (
+                        <SimOutcomeLink
                           key={run.simIndex}
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="simulator-sim-link-row"
-                          title={`Sim #${run.simIndex} · ${run.totalScore.toFixed(1)} pts · ${luckLabel} luck · open in Future Scenarios v2`}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span className="simulator-sim-link-id">#{run.simIndex}</span>
-                          <span className="simulator-sim-link-score">
-                            {run.totalScore.toFixed(1)}
-                          </span>
-                          <span
-                            className="simulator-sim-link-luck"
-                            style={run.luckPercentile != null ? {
-                              '--roll-color': percentileColor(run.luckPercentile),
-                            } : undefined}
-                          >
-                            {luckLabel}
-                          </span>
-                        </a>
-                      );
-                    })
-                  )}
+                          run={run}
+                          originalRosters={originalRosters}
+                          scenarioRosters={scenarioRosters}
+                          seasonYear={seasonYear}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

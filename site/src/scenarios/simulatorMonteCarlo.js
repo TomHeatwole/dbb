@@ -133,7 +133,7 @@ async function runOnMainThread(ctx, iterations, onProgress) {
 }
 
 /**
- * @returns {Promise<{ results, baselineResults, resultDeltas, teamFinishBuckets }>}
+ * @returns {Promise<{ results, baselineResults, resultDeltas, teamFinishBuckets, teamSeasonExtremes }>}
  */
 export async function runMonteCarloSimulation(
   ctx,

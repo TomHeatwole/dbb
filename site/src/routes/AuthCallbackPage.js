@@ -20,7 +20,16 @@ function AuthCallbackPage() {
         const token = await getSessionToken();
         if (!token) throw new Error('No session after sign-in');
         const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(
+            text.replace(/\s+/g, ' ').trim().slice(0, 180)
+            || `HTTP ${res.status}`
+          );
+        }
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
         await refresh();
         if (cancelled) return;

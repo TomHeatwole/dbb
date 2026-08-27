@@ -17,13 +17,13 @@
     "style-to-object": "^1.0.14",
     "web-vitals": "^5.1.0"
   },
-  "proxy": "http://localhost:3001",
   "scripts": {
     "prestart": "node scripts/sync-dbbp-data.mjs",
     "prebuild": "node scripts/sync-dbbp-data.mjs",
     "sync:dbbp": "node scripts/sync-dbbp-data.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
-    "start": "react-scripts start",
+    "start": "node scripts/start-dev.mjs",
+    "start:cra": "react-scripts start",
     "api": "node chat-dev-server.js",
     "dk:login": "node scripts/dk-login.mjs",
     "dk:test-fetch": "node scripts/dk-test-fetch.mjs",

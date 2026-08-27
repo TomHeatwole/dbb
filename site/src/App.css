@@ -8786,6 +8786,7 @@ body.modal-open {
 
 /* Rank cell with hover tooltip */
 .scenario-pos-impact-num--rank { cursor: default; }
+.scenario-pos-impact-num--obj-rank { cursor: help; white-space: nowrap; }
 .pos-rank-tooltip {
   background: #12142b;
   border: 1px solid rgba(100, 110, 190, 0.35);
@@ -10084,6 +10085,66 @@ body.modal-open {
   margin-bottom: 0.75rem;
 }
 
+.simulator-extreme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+
+.simulator-extreme-card {
+  padding: 0.55rem 0.7rem 0.5rem;
+  background: rgba(12, 14, 28, 0.55);
+  border: 1px solid rgba(120, 130, 200, 0.12);
+  border-radius: 6px;
+}
+
+.simulator-extreme-card--best {
+  background: rgba(80, 160, 110, 0.08);
+  border-color: rgba(90, 180, 120, 0.28);
+}
+
+.simulator-extreme-card--worst {
+  background: rgba(180, 80, 80, 0.07);
+  border-color: rgba(200, 100, 100, 0.24);
+}
+
+.simulator-extreme-card-label {
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(170, 175, 220, 0.65);
+  margin-bottom: 0.15rem;
+}
+
+.simulator-extreme-card--best .simulator-extreme-card-label {
+  color: rgba(140, 220, 165, 0.85);
+}
+
+.simulator-extreme-card--worst .simulator-extreme-card-label {
+  color: rgba(240, 160, 160, 0.85);
+}
+
+.simulator-extreme-card-meta {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e0e4ff;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.25rem;
+}
+
+.simulator-extreme-card .simulator-sim-link-row {
+  font-size: 0.72rem;
+  padding: 0.12rem 0.15rem;
+}
+
+@media (max-width: 600px) {
+  .simulator-extreme-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .simulator-team-detail-section-title {
   font-size: 0.92rem;
   font-weight: 600;
@@ -10179,7 +10240,7 @@ body.modal-open {
 .simulator-slot-hist-stats {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem 0.75rem;
   margin-top: 0.15rem;
   padding-top: 0.55rem;
