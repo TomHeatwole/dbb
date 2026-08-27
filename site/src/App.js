@@ -44,6 +44,7 @@ import AccountSetupPage from './routes/AccountSetupPage';
 import AuthCallbackPage from './routes/AuthCallbackPage';
 import { AuthUserProvider } from './hooks/useAuthUser';
 import RequireAdmin from './layout/RequireAdmin';
+import { canAccessRedraftDash } from './utils/adminAccounts';
 import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 import { inkNavClass, navIsAnyActive, NAV_MATCH } from './layout/navActive';
 
@@ -185,7 +186,7 @@ function AppInner() {
 
       <Route path="/sandbox" element={<RequireAdmin><SandboxPage /></RequireAdmin>} />
       <Route path="/valuesandbox" element={<RequireAdmin><ValueSandboxPage /></RequireAdmin>} />
-      <Route path="/redraftdash" element={<RequireAdmin><RedraftDashPage /></RequireAdmin>} />
+      <Route path="/redraftdash" element={<RequireAdmin allow={canAccessRedraftDash}><RedraftDashPage /></RequireAdmin>} />
       <Route path="/hwangai" element={<HwangAIPage />} />
       <Route path="/teams-2" element={<Navigate to="/teams" replace />} />
       <Route path="/SOP/*" element={<SOPPage />} />
