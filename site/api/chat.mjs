@@ -6,8 +6,16 @@ import {
   runScenario, getPlayerStats, getHistoricalResults,
   getPlayerValueBreakdown, getTeamValueSummary,
   getSeasonOdds, simulateRosterChangeOdds,
+  loadCompletedTrades,
 } from '../lib/mcp/tools.mjs';
 import { CHAT_TOOL_RENDER_MODE } from '../lib/mcp/renderConfig.mjs';
+import { loadPlayersData, loadOwnerAliasesByRoster } from '../lib/mcp/dataLoader.mjs';
+import { CURRENT_YEAR } from '../lib/mcp/config.mjs';
+import {
+  applyScenarioEditorOperations,
+  applyOwnerAliases,
+  formatScenarioContext,
+} from '../lib/mcp/scenarioEditor.mjs';
 
 // Primary model first; fallbacks have SEPARATE free-tier quotas, so a 429 on
 // flash (rate limit or exhausted daily quota) doesn't take HwangAI down.
@@ -425,6 +433,50 @@ const TOOL_DECLARATIONS = [
   },
 ];
 
+const SCENARIO_EDITOR_TOOLS = [
+  {
+    name: 'apply_scenario_edits',
+    description:
+      'Apply roster edits to the scenario currently being built. Call this for any trade, add, drop, move, copy, reverse, or reset. For a named trade between two teams ("reverse that Mac/Aidan trade"), use type reverse_trade with those first names — recent trades are already in context. For a fresh trade, pass player names on each side. Default add/move STEALS the player off every other roster. If the user asked to copy them or keep them on the original team, set keep_on_other_teams true (or type "copy") so they exist on both.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        operations: {
+          type: 'ARRAY',
+          description: 'List of roster operations to apply in order',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              type: {
+                type: 'STRING',
+                enum: ['trade', 'add', 'drop', 'move', 'edit', 'copy', 'reverse_trade', 'reset'],
+                description: 'trade = swap two sides; reverse_trade = undo a listed recent trade between named teams; add/drop/move = one-sided (add/move steal by default); copy = add without removing from other teams; edit = add+drop on one team; reset = restore original rosters',
+              },
+              players_a: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Trade side A player names' },
+              players_b: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Trade side B player names' },
+              team: { type: 'STRING', description: 'Team, owner first name, or nickname (add/drop/edit/copy/reverse_trade). Examples: Mac, Aidan, Drew, Hwang.' },
+              to_team: { type: 'STRING', description: 'Destination team, owner first name, or nickname (move). Second team for reverse_trade.' },
+              team_a: { type: 'STRING', description: 'First team for reverse_trade (first name or team name)' },
+              team_b: { type: 'STRING', description: 'Second team for reverse_trade' },
+              teams: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Teams involved in reverse_trade, e.g. ["Mac","Aidan"]' },
+              player: { type: 'STRING', description: 'Single player name (move/drop/add/copy), or a player from the trade to disambiguate reverse_trade' },
+              players: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Player names for add/drop/move/copy' },
+              add: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Players to add (edit)' },
+              drop: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Players to drop (edit)' },
+              keep_on_other_teams: {
+                type: 'BOOLEAN',
+                description: 'If true, add/move copies the player onto the destination without removing them from any other roster. Use when the user says keep them, copy, duplicate, or do not take them off the other team.',
+              },
+            },
+            required: ['type'],
+          },
+        },
+      },
+      required: ['operations'],
+    },
+  },
+];
+
 // ── Tool executor ─────────────────────────────────────────────────────────────
 
 async function executeTool(name, args) {
@@ -585,12 +637,38 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
 
-  const { messages, systemPrompt, continuation, mode } = body || {};
+  const { messages, systemPrompt, continuation, mode, scenario } = body || {};
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Invalid messages' });
   }
   const continuationDepth = Number(continuation?.depth) || 0;
   const plain = mode === 'plain';
+  const scenarioEditor = mode === 'scenario_editor';
+  let scenarioSnapshot = scenario;
+  if (scenarioEditor && scenario) {
+    let trades = [];
+    try {
+      const seasonTrades = await loadCompletedTrades(scenario.season);
+      const yr = String(scenario.season || '');
+      if (yr && yr !== String(CURRENT_YEAR)) {
+        const currentTrades = await loadCompletedTrades(CURRENT_YEAR);
+        const seen = new Set(seasonTrades.map((t) => t.id).filter(Boolean));
+        trades = [
+          ...currentTrades.filter((t) => t.id && !seen.has(t.id)),
+          ...seasonTrades,
+        ].sort((a, b) => (b.created || 0) - (a.created || 0));
+      } else {
+        trades = seasonTrades;
+      }
+    } catch (err) {
+      console.error('[scenario editor] failed to load trades:', err);
+    }
+    scenarioSnapshot = {
+      ...scenario,
+      teams: applyOwnerAliases(scenario.teams, loadOwnerAliasesByRoster()),
+      trades,
+    };
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -598,19 +676,27 @@ export default async function handler(req, res) {
   }
 
   // Decide whether to fire the side query this turn
-  const doSideQuery = !plain && Math.random() < SIDE_QUERY_PROBABILITY;
+  const doSideQuery = !plain && !scenarioEditor && Math.random() < SIDE_QUERY_PROBABILITY;
   const sideQueryPromise = doSideQuery
     ? fetchChineseCharacters(apiKey)
     : Promise.resolve(null);
 
   // Execute the tools requested in a model turn's functionCall parts and
   // return the functionResponse turn to append to the conversation.
+  let lastScenarioResult = null;
   async function runToolCalls(functionCallParts) {
     const toolResults = await Promise.all(
-      functionCallParts.map(async ({ functionCall: { name, args } }) => ({
-        name,
-        result: await executeTool(name, args || {}),
-      }))
+      functionCallParts.map(async ({ functionCall: { name, args } }) => {
+        if (name === 'apply_scenario_edits') {
+          const result = applyScenarioEditorOperations(args?.operations, scenarioSnapshot, loadPlayersData());
+          if (result.ok) lastScenarioResult = result;
+          return { name, result: result.toolMessage };
+        }
+        return {
+          name,
+          result: await executeTool(name, args || {}),
+        };
+      })
     );
     return {
       role: 'user',
@@ -653,9 +739,14 @@ export default async function handler(req, res) {
     }
   }
 
+  const effectiveSystemPrompt = scenarioEditor
+    ? [systemPrompt, formatScenarioContext(scenarioSnapshot, loadPlayersData())].filter(Boolean).join('\n\n')
+    : systemPrompt;
   const requestBase = {
-    ...(plain ? {} : { tools: [{ functionDeclarations: TOOL_DECLARATIONS }] }),
-    ...(systemPrompt ? { systemInstruction: { parts: [{ text: systemPrompt }] } } : {}),
+    ...(plain ? {} : {
+      tools: [{ functionDeclarations: scenarioEditor ? SCENARIO_EDITOR_TOOLS : TOOL_DECLARATIONS }],
+    }),
+    ...(effectiveSystemPrompt ? { systemInstruction: { parts: [{ text: effectiveSystemPrompt }] } } : {}),
   };
 
   // Tool-calling loop (max 10 rounds — multi-step value/simulation playbooks
@@ -685,13 +776,13 @@ export default async function handler(req, res) {
       // No tool calls — extract the text response (skip Gemini 3.x thought-
       // summary parts, join multiple text parts) and stitch side query
       let text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n');
-      const needsSearch = !plain && (
+      const needsSearch = !plain && !scenarioEditor && (
         text.includes('<!--search-->') ||
         RESPONSE_SEARCH_PHRASES.some(re => re.test(text)) ||
         questionNeedsSearch(messages)
       );
       text = text.replace(/<!--search-->/g, '').trim();
-      if (!plain) {
+      if (!plain && !scenarioEditor) {
         text = await sanitizeInternalLeaks(text, apiKey, geminiState);
       }
 
@@ -719,6 +810,23 @@ export default async function handler(req, res) {
     // Append model's function call turn verbatim (Gemini 3.x models require
     // thoughtSignature to be echoed back on functionCall parts)
     contents.push({ role: 'model', parts });
+
+    if (scenarioEditor) {
+      lastScenarioResult = null;
+      contents.push(await runToolCalls(functionCalls));
+      if (lastScenarioResult?.ok) {
+        const modelText = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n').trim();
+        const message = modelText || lastScenarioResult.summary;
+        logConversation(messages, message);
+        return res.status(200).json({
+          message,
+          needsSearch: false,
+          scenarioEdits: lastScenarioResult.edits,
+          reset: Boolean(lastScenarioResult.reset),
+        });
+      }
+      continue;
+    }
 
     // Slow tool requested → hand an interim "hang on" message back to the UI
     // along with the conversation state; the frontend calls back immediately

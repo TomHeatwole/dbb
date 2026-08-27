@@ -22,8 +22,9 @@ import ScenarioRosterEditor from '../scenarios/ScenarioRosterEditor';
 import ScenarioDeltas from '../scenarios/ScenarioDeltas';
 import ScenarioBuilderTooltip from '../scenarios/ScenarioBuilderTooltip';
 import { encodeScenario, decodeScenario, applyScenarioChanges, sanitizeRosters } from '../scenarios/scenarioEncoding';
-import { isValidPlayerId } from '../scenarios/scenarioUtils';
+import { isValidPlayerId, applyRosterEdits } from '../scenarios/scenarioUtils';
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
+import ScenarioHwangAIEditor from '../scenarios/ScenarioHwangAIEditor';
 
 const OG_TITLE = 'Scenario Builder';
 const OG_DESCRIPTION = 'Build what-if scenarios by editing team rosters.';
@@ -185,8 +186,10 @@ function ScenarioBuilderPage() {
             (u) => roster && String(u.user_id) === String(roster.owner_id)
           );
           let teamName = `Team ${rid}`;
+          let ownerName = '';
           if (user?.metadata?.team_name)        teamName = user.metadata.team_name;
           else if (user?.display_name)          teamName = `Team ${user.display_name}`;
+          if (user?.display_name) ownerName = user.display_name;
           const avatarUrl =
             (user && (user.team_avatar_url || user.user_avatar_url || user.avatar_url)) || null;
           const place       = placeByRosterId[String(rid)];
@@ -194,6 +197,7 @@ function ScenarioBuilderPage() {
           return {
             rosterId: rid,
             teamName,
+            ownerName,
             avatarUrl,
             place:       place !== 999 ? place : null,
             totalPoints: totalPoints ?? null,
@@ -281,6 +285,24 @@ function ScenarioBuilderPage() {
     });
   };
 
+  const handleAiEdits = (payload) => {
+    if (!payload) return;
+    if (payload.reset) {
+      const snapshot = {};
+      for (const rid in originalRosters) snapshot[rid] = [...(originalRosters[rid] || [])];
+      setScenarioRosters(sanitizeRosters(snapshot));
+      return;
+    }
+    const edits = payload.edits || [];
+    if (edits.length === 0) return;
+    setScenarioRosters((prev) => applyRosterEdits(prev, edits));
+    const affected = edits.map((e) => Number(e.rosterId)).filter((rid) => Number.isFinite(rid));
+    if (affected.length === 0) return;
+    setSelectedRosterId((current) => (
+      current != null && affected.includes(Number(current)) ? current : affected[0]
+    ));
+  };
+
   const handleEvaluate = () => {
     const encoded = encodeScenario(season, originalRosters, scenarioRosters);
     navigate(`?state=eval&scenario=${encodeURIComponent(encoded)}`);
@@ -292,6 +314,17 @@ function ScenarioBuilderPage() {
     () => teamsForGrid.find((t) => t.rosterId === selectedRosterId) || null,
     [teamsForGrid, selectedRosterId],
   );
+
+  const chatIdentity = useMemo(() => {
+    if (myRosterId == null) return null;
+    const mine = teamsForGrid.find((t) => Number(t.rosterId) === Number(myRosterId));
+    if (!mine) return { rosterId: myRosterId };
+    return {
+      rosterId: mine.rosterId,
+      teamName: mine.teamName || null,
+      ownerName: mine.ownerName || null,
+    };
+  }, [myRosterId, teamsForGrid]);
 
   const hasChanges = useMemo(() => {
     for (const rid in originalRosters) {
@@ -357,9 +390,28 @@ function ScenarioBuilderPage() {
               />
             </div>
 
-            {/* Middle: deltas + evaluate (left) | roster editor (right) */}
+            {/* Middle: roster editor (left) | scenario + HwangAI (right) */}
             <div className="scenario-page-middle">
-              <div className="scenario-page-deltas-col">
+              <div className="scenario-page-editor-col">
+                {selectedTeam && playersData && playerIdMap ? (
+                  <ScenarioRosterEditor
+                    key={`${season}-${selectedRosterId}`}
+                    team={selectedTeam}
+                    playerIds={scenarioRosters[selectedRosterId] || []}
+                    playersData={playersData}
+                    playerIdMap={playerIdMap}
+                    topPlayersBySeason={topPlayersBySeason}
+                    onRemovePlayer={handleRemovePlayer}
+                    onAddPlayer={handleAddPlayer}
+                  />
+                ) : (
+                  <div className="scenario-editor-placeholder">
+                    <span>↑ Select a team above to edit its roster</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="scenario-page-side-col">
                 {playersData && playerIdMap && (
                   <ScenarioDeltas
                     originalRosters={originalRosters}
@@ -370,6 +422,14 @@ function ScenarioBuilderPage() {
                     onRevert={handleRevert}
                   />
                 )}
+                <ScenarioHwangAIEditor
+                  season={season}
+                  teamsForGrid={teamsForGrid}
+                  scenarioRosters={scenarioRosters}
+                  originalRosters={originalRosters}
+                  identity={chatIdentity}
+                  onApplyEdits={handleAiEdits}
+                />
                 <div className="scenario-evaluate-wrapper">
                   {/* Outer span intercepts hover even when button is disabled */}
                   <span className={!hasChanges ? 'scenario-evaluate-hint' : undefined}>
@@ -391,25 +451,6 @@ function ScenarioBuilderPage() {
                     )}
                   </span>
                 </div>
-              </div>
-
-              <div className="scenario-page-editor-col">
-                {selectedTeam && playersData && playerIdMap ? (
-                  <ScenarioRosterEditor
-                    key={`${season}-${selectedRosterId}`}
-                    team={selectedTeam}
-                    playerIds={scenarioRosters[selectedRosterId] || []}
-                    playersData={playersData}
-                    playerIdMap={playerIdMap}
-                    topPlayersBySeason={topPlayersBySeason}
-                    onRemovePlayer={handleRemovePlayer}
-                    onAddPlayer={handleAddPlayer}
-                  />
-                ) : (
-                  <div className="scenario-editor-placeholder">
-                    <span>↑ Select a team above to edit its roster</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>

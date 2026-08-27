@@ -1,0 +1,16 @@
+# Map roster IDs to owner first names and nicknames.
+# Any name listed here can be used to identify a team in the scenario editor.
+# Format:  <roster_id> | <name>, <name>, ...
+# Lines starting with # are comments. Blank lines are ignored.
+# Names are case-insensitive.
+
+1  | tom, heatwole
+2  | aidan, toms
+3  | jeff, heatwole
+4  | sean, crow
+5  | mike, hwang
+6  | davis, daniel
+7  | alexander, alex, abramenko
+8  | drew, wolanski
+9  | fred, umland
+10 | mac, sochor

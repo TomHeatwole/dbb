@@ -12,6 +12,7 @@ import {
   buildTeamMap, getPlayerDisplayName, lookupKtc, fmt, fmtDate, findTeam,
 } from './helpers.mjs';
 import { runScenarioEval } from './scenarioEngine.mjs';
+import { summarizeTrade } from './scenarioEditor.mjs';
 import {
   VALUE_SOURCES, VALUE_SOURCE_LABELS,
   getValueLookups, lookupValueEntry, evaluateKtcStyleTrade,
@@ -1285,6 +1286,39 @@ export async function getTrendingPlayers() {
 }
 
 // ─── Recent Trades ────────────────────────────────────────────────────────────
+
+/**
+ * Completed league trades for a season, newest first.
+ * Offseason of the current year uses Sleeper legs 0 and 1.
+ */
+export async function loadCompletedTrades(season, { weeksBack = 4, limit = 50 } = {}) {
+  const yr = season ? String(season) : CURRENT_YEAR;
+  const completedWeeks = getCompletedWeeksCount(yr);
+  const isCurrent = String(yr) === String(CURRENT_YEAR);
+  const isOffseason = isCurrent && completedWeeks === 0;
+
+  let weekNums;
+  if (isOffseason) {
+    weekNums = [0, 1];
+  } else {
+    const currentWeek = getCurrentNFLWeek(yr);
+    const startWeek = isCurrent ? Math.max(1, currentWeek - weeksBack + 1) : 1;
+    const endWeek = isCurrent ? currentWeek : Math.max(completedWeeks, 1);
+    weekNums = Array.from({ length: Math.max(0, endWeek - startWeek + 1) }, (_, i) => startWeek + i);
+  }
+
+  const seen = new Set();
+  const trades = (
+    await Promise.all(weekNums.map((w) => fetchTransactions(w, yr).catch(() => [])))
+  ).flat().filter((t) => {
+    if (!t?.transaction_id || seen.has(t.transaction_id)) return false;
+    seen.add(t.transaction_id);
+    return t?.type === 'trade' && t?.status === 'complete';
+  }).sort((a, b) => (b.created || 0) - (a.created || 0));
+
+  const playersData = loadPlayersData();
+  return trades.slice(0, limit).map((t) => summarizeTrade(t, playersData));
+}
 
 export async function getRecentTrades(weeksBack, season) {
   const lookback = Math.min(Math.max(weeksBack || 4, 1), 17);

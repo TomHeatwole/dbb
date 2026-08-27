@@ -1,5 +1,6 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { DATA_DIR } from './config.mjs';
 import { normalisePlayerName } from './helpers.mjs';
 
@@ -244,4 +245,72 @@ export function findPlayerByName(searchName) {
 
   if (!bestPlayer || bestScore === 0) return null;
   return { playerId: bestId, player: bestPlayer };
+}
+
+// ─── owner_names.txt ──────────────────────────────────────────────────────────
+// Map<normalised lowercase name, rosterIdNumber>
+// Mirrors mcp/owner_names.txt so "Mac" / "Aidan" / "Drew" resolve to teams.
+
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+let ownerNamesCache = null;
+let ownerAliasesByRosterCache = null;
+
+function loadOwnerNameTables() {
+  if (ownerNamesCache && ownerAliasesByRosterCache) {
+    return { byName: ownerNamesCache, byRoster: ownerAliasesByRosterCache };
+  }
+
+  const candidates = [
+    join(MODULE_DIR, 'owner_names.txt'),
+    join(MODULE_DIR, '../../../mcp/owner_names.txt'),
+    join(DATA_DIR, 'owner_names.txt'),
+  ];
+  let text = '';
+  for (const filePath of candidates) {
+    try {
+      if (existsSync(filePath)) {
+        text = readFileSync(filePath, 'utf8');
+        break;
+      }
+    } catch {
+      // try next
+    }
+  }
+
+  const byName = new Map();
+  const byRoster = new Map();
+  if (text) {
+    for (const raw of text.split('\n')) {
+      const line = raw.replace(/\r$/, '').trim();
+      if (!line || line.startsWith('#')) continue;
+      const pipeIdx = line.indexOf('|');
+      if (pipeIdx === -1) continue;
+      const rosterId = parseInt(line.slice(0, pipeIdx).trim(), 10);
+      if (!Number.isFinite(rosterId)) continue;
+      const names = line
+        .slice(pipeIdx + 1)
+        .split(',')
+        .map((n) => n.trim().toLowerCase())
+        .filter(Boolean);
+      const ridKey = String(rosterId);
+      if (!byRoster.has(ridKey)) byRoster.set(ridKey, []);
+      for (const name of names) {
+        byName.set(name, rosterId);
+        byRoster.get(ridKey).push(name);
+      }
+    }
+  }
+
+  ownerNamesCache = byName;
+  ownerAliasesByRosterCache = byRoster;
+  return { byName, byRoster };
+}
+
+export function loadOwnerNames() {
+  return loadOwnerNameTables().byName;
+}
+
+/** Map<rosterIdString, lowercase alias[]> — keeps shared last names on every matching roster. */
+export function loadOwnerAliasesByRoster() {
+  return loadOwnerNameTables().byRoster;
 }

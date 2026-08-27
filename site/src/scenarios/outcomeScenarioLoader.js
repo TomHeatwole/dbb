@@ -35,8 +35,10 @@ export async function loadOutcomeScenarioRosterData(season) {
       (u) => String(u.user_id) === String(roster.owner_id),
     );
     let teamName = `Team ${rid}`;
+    let ownerName = '';
     if (user?.metadata?.team_name) teamName = user.metadata.team_name;
     else if (user?.display_name) teamName = `Team ${user.display_name}`;
+    if (user?.display_name) ownerName = user.display_name;
     const avatarUrl =
       (user && (user.team_avatar_url || user.user_avatar_url || user.avatar_url)) || null;
     const place = placeByRosterId[String(rid)];
@@ -44,6 +46,7 @@ export async function loadOutcomeScenarioRosterData(season) {
     return {
       rosterId: rid,
       teamName,
+      ownerName,
       avatarUrl,
       place: place && place !== 999 ? place : null,
       totalPoints: totalPoints ?? null,

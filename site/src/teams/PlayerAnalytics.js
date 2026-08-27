@@ -79,10 +79,16 @@ function hvorpSeasonTipLines(row, playersData, playerIdMap) {
   return lines;
 }
 
-function HoverLines({ children, lines, placement = 'below' }) {
+function HoverLines({ children, lines, placement = 'below', align = 'end', wrap = false }) {
   if (!lines?.length) return children;
+  const className = [
+    'player-analytics-hover',
+    `player-analytics-hover--${placement}`,
+    align === 'start' ? 'player-analytics-hover--start' : '',
+    wrap ? 'player-analytics-hover--wrap' : '',
+  ].filter(Boolean).join(' ');
   return (
-    <span className={`player-analytics-hover player-analytics-hover--${placement}`}>
+    <span className={className}>
       {children}
       <span className="player-analytics-hover-tip" role="tooltip">
         {lines.map((line, i) => (
@@ -95,6 +101,61 @@ function HoverLines({ children, lines, placement = 'below' }) {
         ))}
       </span>
     </span>
+  );
+}
+
+const HVORP_SORT_COLUMNS = [
+  {
+    key: 'name',
+    label: 'Player',
+    align: 'left',
+    defaultDir: 'asc',
+    tipAlign: 'start',
+    tip: ['Player', 'Click for weekly HVORP and lineup detail.'],
+  },
+  {
+    key: 'hvorp',
+    label: 'HVORP',
+    align: 'num',
+    defaultDir: 'desc',
+    tip: [
+      'HVORP',
+      'Hwang value over replacement — starter points this roster would lose if the player weren’t on it.',
+    ],
+  },
+  {
+    key: 'hvorpPerGame',
+    label: '/G',
+    align: 'num',
+    defaultDir: 'desc',
+    tip: [
+      'HVORP / G',
+      'Season HVORP divided by games with a score, so missed weeks don’t dilute the rate.',
+    ],
+  },
+  {
+    key: 'totalScore',
+    label: 'Pts',
+    align: 'num',
+    defaultDir: 'desc',
+    tip: ['Pts', 'Total fantasy points scored this season.'],
+  },
+  {
+    key: 'yoff',
+    label: 'Yoff',
+    align: 'num',
+    defaultDir: 'desc',
+    tip: ['Yoff', `Playoff HVORP — weeks ${PLAYOFF_START_WEEK}–17 only.`],
+  },
+];
+
+const HVORP_RANK_TIP = ['Rank', 'Position in the current sort.'];
+
+function ColumnLabel({ col, children }) {
+  return (
+    <HoverLines lines={col.tip} placement="below" align={col.tipAlign || 'end'} wrap>
+      {children || <span className="player-analytics-col-label">{col.label}</span>}
+    </HoverLines>
   );
 }
 
@@ -702,13 +763,14 @@ function PlayerAnalyticsBoard({
     <div className="player-analytics-board">
       {columns.map((colRows, colIdx) => (
         <div key={colIdx} className="player-analytics-board-col">
-          <div className="player-analytics-board-legend" aria-hidden="true">
-            <span>Player</span>
+          <div className="player-analytics-board-legend">
+            <ColumnLabel col={HVORP_SORT_COLUMNS[0]} />
             <span className="player-analytics-tile-bar">
-              <span className="player-analytics-tile-stat">HVORP</span>
-              <span className="player-analytics-tile-stat">/G</span>
-              <span className="player-analytics-tile-stat">Pts</span>
-              <span className="player-analytics-tile-stat">Yoff</span>
+              {HVORP_SORT_COLUMNS.filter((col) => col.key !== 'name').map((col) => (
+                <ColumnLabel key={col.key} col={col}>
+                  <span className="player-analytics-tile-stat player-analytics-col-label">{col.label}</span>
+                </ColumnLabel>
+              ))}
             </span>
           </div>
           {colRows.map((row, i) => {
@@ -751,14 +813,6 @@ function PlayerAnalyticsBoard({
     </div>
   );
 }
-
-const HVORP_SORT_COLUMNS = [
-  { key: 'name', label: 'Player', align: 'left', title: null, defaultDir: 'asc' },
-  { key: 'hvorp', label: 'HVORP', align: 'num', title: 'Hwang value over replacement — starter points lost if this player were off the roster', defaultDir: 'desc' },
-  { key: 'hvorpPerGame', label: '/G', align: 'num', title: 'HVORP divided by games with a score', defaultDir: 'desc' },
-  { key: 'totalScore', label: 'Pts', align: 'num', title: null, defaultDir: 'desc' },
-  { key: 'yoff', label: 'Yoff', align: 'num', title: `HVORP in weeks ${PLAYOFF_START_WEEK}–17`, defaultDir: 'desc' },
-];
 
 function sortValueForRow(row, key, playersData, playerIdMap, season, completedWeeks) {
   if (key === 'name') {
@@ -818,7 +872,11 @@ function PlayerAnalyticsTable({
       <table className="player-analytics-table">
         <thead>
           <tr>
-            <th className="player-analytics-th-rank">#</th>
+            <th className="player-analytics-th-rank">
+              <HoverLines lines={HVORP_RANK_TIP} placement="below" align="start" wrap>
+                <span className="player-analytics-col-label">#</span>
+              </HoverLines>
+            </th>
             {HVORP_SORT_COLUMNS.map((col) => {
               const active = sortKey === col.key;
               return (
@@ -829,11 +887,10 @@ function PlayerAnalyticsTable({
                     'player-analytics-th-sortable' +
                     (active ? ' player-analytics-th-sortable--active' : '')
                   }
-                  title={col.title || undefined}
                   onClick={() => handleSort(col.key, col.defaultDir)}
                   aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                 >
-                  {col.label}
+                  <ColumnLabel col={col} />
                   <span className="player-analytics-sort-arrow" aria-hidden="true">
                     {active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
                   </span>

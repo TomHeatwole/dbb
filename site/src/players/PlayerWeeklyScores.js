@@ -6,14 +6,95 @@ import { loadSeasonStatsFromCSV, mapCSVStatsToSleeperFormat } from './WeeklyStat
 import useIsMobile from '../hooks/useIsMobile';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { fetchTeamData } from '../lookups/TeamLookup';
 import PositionBadge from '../PositionBadge';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam } from '../scores/GamesParser';
 import { readPlayersSnapshot } from '../utils/database';
 
+function rosterHasPlayer(roster, playerId) {
+  if (!roster || playerId == null) return false;
+  const pid = String(playerId);
+  const pools = [roster.players, roster.taxi, roster.reserve];
+  return pools.some(
+    (pool) => Array.isArray(pool) && pool.some((p) => String(p) === pid)
+  );
+}
+
+function resolveOwnership(playerId, rosters, users) {
+  if (!playerId || !Array.isArray(rosters) || !Array.isArray(users)) {
+    return { resolved: false, info: null };
+  }
+
+  const owningRoster = rosters.find((r) => rosterHasPlayer(r, playerId));
+  if (!owningRoster) {
+    return { resolved: true, info: null };
+  }
+
+  const owningUser = users.find(
+    (u) => u && String(u.user_id) === String(owningRoster.owner_id)
+  );
+
+  return {
+    resolved: true,
+    info: {
+      teamName:
+        (owningUser && owningUser.metadata && owningUser.metadata.team_name) ||
+        (owningUser && owningUser.display_name) ||
+        `Team ${owningRoster.roster_id}`,
+      avatar: owningUser
+        ? owningUser.team_avatar_url ||
+          owningUser.user_avatar_url ||
+          owningUser.avatar_url ||
+          null
+        : null,
+      rosterId: owningRoster.roster_id,
+    },
+  };
+}
+
+function OwnershipDisplay({ info, myRosterId, variant = 'banner', label = 'Owned by' }) {
+  const ownedByMe = isMyRoster(info?.rosterId, myRosterId);
+  const isFa = !info;
+  const rootClass =
+    variant === 'banner'
+      ? `player-ownership-banner${
+          isFa
+            ? ' player-ownership-banner--fa'
+            : ownedByMe
+              ? ' player-ownership-banner--me'
+              : ' player-ownership-banner--owned'
+        }`
+      : `player-ownership-info${ownedByMe ? ' player-ownership-info--me' : ''}${
+          isFa ? ' player-ownership-info--fa' : ''
+        }`;
+
+  const teamRow = info ? (
+    <span className="player-ownership-team-row">
+      {info.avatar ? (
+        <img src={info.avatar} alt="" className="player-ownership-avatar" />
+      ) : null}
+      <span className="player-ownership-team">
+        {info.teamName}
+        {ownedByMe ? <span className="me-chip">YOU</span> : null}
+      </span>
+    </span>
+  ) : (
+    <span className="player-ownership-free-agent">Free Agent</span>
+  );
+
+  return (
+    <div className={rootClass}>
+      {variant === 'banner' && info ? (
+        <span className="player-ownership-label">{label}</span>
+      ) : null}
+      {teamRow}
+    </div>
+  );
+}
+
 function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride, initialSeason }) {
-  const myRosterId = useMyRosterId(rosters, users);
   // Default to previous year if current season hasn't started yet
   const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
   const isPreSeason = completedWeeks === 0;
@@ -31,11 +112,22 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
   const [positionRankPerGame, setPositionRankPerGame] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [weeklyGames, setWeeklyGames] = useState({});
+  const [currentRosters, setCurrentRosters] = useState(null);
+  const [currentUsers, setCurrentUsers] = useState(null);
+  const [seasonRosters, setSeasonRosters] = useState(null);
+  const [seasonUsers, setSeasonUsers] = useState(null);
   const dropdownRef = useRef(null);
   const isMobile = useIsMobile();
 
   const playerId = player && player.player_id ? player.player_id : null;
   const rookieYear = player && player.metadata && player.metadata.rookie_year ? player.metadata.rookie_year : null;
+
+  const hasPropRosters = Array.isArray(rosters) && rosters.length > 0;
+  const hasPropUsers = Array.isArray(users) && users.length > 0;
+  const effectiveCurrentRosters = hasPropRosters ? rosters : currentRosters;
+  const effectiveCurrentUsers = hasPropUsers ? users : currentUsers;
+  const myRosterId = useMyRosterId(effectiveCurrentRosters, effectiveCurrentUsers);
+  const seasonMyRosterId = useMyRosterId(seasonRosters, seasonUsers);
 
   useEffect(() => {
     const next = initialSeason ? String(initialSeason) : defaultSeason;
@@ -44,6 +136,66 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
     // the user picks a year inside this card.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, initialSeason]);
+
+  // Current Hwang Dynasty ownership (top bar) — prefer caller props, else fetch.
+  useEffect(() => {
+    if (ownershipOverride) return;
+    if (hasPropRosters && hasPropUsers) return;
+
+    let cancelled = false;
+    fetchTeamData(CURRENT_YEAR)
+      .then((data) => {
+        if (cancelled || !data) return;
+        setCurrentRosters(Array.isArray(data.rosters) ? data.rosters : []);
+        setCurrentUsers(Array.isArray(data.users) ? data.users : []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCurrentRosters([]);
+          setCurrentUsers([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ownershipOverride, hasPropRosters, hasPropUsers]);
+
+  // Selected-season ownership (season header row).
+  useEffect(() => {
+    if (ownershipOverride && String(season) === String(CURRENT_YEAR)) {
+      setSeasonRosters(null);
+      setSeasonUsers(null);
+      return;
+    }
+
+    // Reuse current league data when viewing the current season.
+    if (String(season) === String(CURRENT_YEAR) && effectiveCurrentRosters && effectiveCurrentUsers) {
+      setSeasonRosters(effectiveCurrentRosters);
+      setSeasonUsers(effectiveCurrentUsers);
+      return;
+    }
+
+    let cancelled = false;
+    setSeasonRosters(null);
+    setSeasonUsers(null);
+    fetchTeamData(season)
+      .then((data) => {
+        if (cancelled || !data) return;
+        setSeasonRosters(Array.isArray(data.rosters) ? data.rosters : []);
+        setSeasonUsers(Array.isArray(data.users) ? data.users : []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSeasonRosters([]);
+          setSeasonUsers([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [season, ownershipOverride, effectiveCurrentRosters, effectiveCurrentUsers]);
   
   // Build available years list from rookie year to current (or previous year if pre-season)
   const availableYears = [];
@@ -364,26 +516,17 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
 
   const statsColumns = getStatsColumns();
 
-  let ownershipInfo = ownershipOverride || null;
-  if (!ownershipInfo && playerId && rosters && users) {
-    const owningRoster = rosters.find(r => 
-      r && Array.isArray(r.players) && r.players.includes(playerId)
-    );
-    
-    if (owningRoster) {
-      const owningUser = users.find(u => 
-        u && String(u.user_id) === String(owningRoster.owner_id)
-      );
-      
-      if (owningUser) {
-        ownershipInfo = {
-          teamName: (owningUser.metadata && owningUser.metadata.team_name) || owningUser.display_name || `Team ${owningRoster.roster_id}`,
-          avatar: owningUser.team_avatar_url || owningUser.user_avatar_url || owningUser.avatar_url || null,
-          rosterId: owningRoster.roster_id,
-        };
-      }
-    }
-  }
+  const currentOwnership = ownershipOverride
+    ? { resolved: true, info: ownershipOverride }
+    : resolveOwnership(playerId, effectiveCurrentRosters, effectiveCurrentUsers);
+
+  const seasonOwnership =
+    ownershipOverride && String(season) === String(CURRENT_YEAR)
+      ? { resolved: true, info: ownershipOverride }
+      : resolveOwnership(playerId, seasonRosters, seasonUsers);
+
+  const seasonRowMyRosterId =
+    String(season) === String(CURRENT_YEAR) ? myRosterId : seasonMyRosterId;
 
   const isUpcomingRookie = isPreSeason && yearsExp === 0;
 
@@ -430,7 +573,8 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
             <div className="player-card-name">{name}</div>
             <div className="player-card-position-row">
               {nflTeamLogo && <img src={nflTeamLogo} alt={team} className="player-nfl-team-logo" />}
-              <PositionBadge position={position} />{team && <span style={{ marginLeft: '0.35rem' }}>{team}</span>}
+              <PositionBadge position={position} />
+              {team && <span className="player-nfl-team-abbr">{team}</span>}
             </div>
           </div>
           
@@ -444,6 +588,15 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
             {injury && <span className="player-detail-inline player-injury-status">{injury}</span>}
           </div>
         </div>
+
+        {currentOwnership.resolved ? (
+          <OwnershipDisplay
+            info={currentOwnership.info}
+            myRosterId={myRosterId}
+            variant="banner"
+            label="Owned by"
+          />
+        ) : null}
       </div>
 
       {!isUpcomingRookie && (
@@ -466,21 +619,13 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
             )}
           </div>
 
-          {!isMobile && (
-            <div className={`player-ownership-info${isMyRoster(ownershipInfo?.rosterId, myRosterId) ? ' player-ownership-info--me' : ''}`}>
-              {ownershipInfo ? (
-                <>
-                  {ownershipInfo.avatar && <img src={ownershipInfo.avatar} alt={ownershipInfo.teamName} className="player-ownership-avatar" />}
-                  <span className="player-ownership-team">
-                    {ownershipInfo.teamName}
-                    {isMyRoster(ownershipInfo.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
-                  </span>
-                </>
-              ) : (
-                <span className="player-ownership-free-agent">Free Agent</span>
-              )}
-            </div>
-          )}
+          {seasonOwnership.resolved ? (
+            <OwnershipDisplay
+              info={seasonOwnership.info}
+              myRosterId={seasonRowMyRosterId}
+              variant="inline"
+            />
+          ) : null}
         </div>
       )}
 

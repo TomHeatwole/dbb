@@ -29,11 +29,12 @@ import {
   applyScenarioChanges,
   sanitizeRosters,
 } from '../scenarios/scenarioEncoding';
-import { isValidPlayerId } from '../scenarios/scenarioUtils';
+import { isValidPlayerId, applyRosterEdits } from '../scenarios/scenarioUtils';
 import { getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
 import OutcomeScenarioSeasonDropdown from '../scenarios/OutcomeScenarioSeasonDropdown';
 import SimulatorRunSettings from '../scenarios/SimulatorRunSettings';
 import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
+import ScenarioHwangAIEditor from '../scenarios/ScenarioHwangAIEditor';
 import {
   DEFAULT_OUTCOME_SCENARIO_YEAR,
   normalizeOutcomeScenarioYear,
@@ -66,7 +67,8 @@ function SimulatorTooltip({ season, iterations, rankSource }) {
               regular-season scorers.
             </p>
             <p style={{ margin: 0 }}>
-              Edit rosters, then run <strong>{iterations.toLocaleString()} simulations</strong> to
+              Edit rosters directly or tell HwangAI the move in plain English, then run
+              {' '}<strong>{iterations.toLocaleString()} simulations</strong> to
               see each team&apos;s championship win rate.
             </p>
           </div>
@@ -251,6 +253,24 @@ function SimulatorBuilderPage() {
     });
   };
 
+  const handleAiEdits = (payload) => {
+    if (!payload) return;
+    if (payload.reset) {
+      const snapshot = {};
+      for (const rid in originalRosters) snapshot[rid] = [...(originalRosters[rid] || [])];
+      setScenarioRosters(sanitizeRosters(snapshot));
+      return;
+    }
+    const edits = payload.edits || [];
+    if (edits.length === 0) return;
+    setScenarioRosters((prev) => applyRosterEdits(prev, edits));
+    const affected = edits.map((e) => Number(e.rosterId)).filter((rid) => Number.isFinite(rid));
+    if (affected.length === 0) return;
+    setSelectedRosterId((current) => (
+      current != null && affected.includes(Number(current)) ? current : affected[0]
+    ));
+  };
+
   const handleRun = () => {
     const encoded = encodeSimulatorScenario(originalRosters, scenarioRosters, {
       seasonYear: season,
@@ -266,6 +286,17 @@ function SimulatorBuilderPage() {
     () => teamsForGrid.find((t) => t.rosterId === selectedRosterId) || null,
     [teamsForGrid, selectedRosterId],
   );
+
+  const chatIdentity = useMemo(() => {
+    if (myRosterId == null) return null;
+    const mine = teamsForGrid.find((t) => Number(t.rosterId) === Number(myRosterId));
+    if (!mine) return { rosterId: myRosterId };
+    return {
+      rosterId: mine.rosterId,
+      teamName: mine.teamName || null,
+      ownerName: mine.ownerName || null,
+    };
+  }, [myRosterId, teamsForGrid]);
 
   const historyYears = getOutcomeHistoryYears(season);
   const historyLabel = historyYears.length > 0
@@ -313,7 +344,26 @@ function SimulatorBuilderPage() {
             </div>
 
             <div className="scenario-page-middle">
-              <div className="scenario-page-deltas-col">
+              <div className="scenario-page-editor-col">
+                {selectedTeam && playersData && playerIdMap ? (
+                  <ScenarioRosterEditor
+                    key={`sim-${season}-${selectedRosterId}`}
+                    team={selectedTeam}
+                    playerIds={scenarioRosters[selectedRosterId] || []}
+                    playersData={playersData}
+                    playerIdMap={playerIdMap}
+                    topPlayersBySeason={topPlayersBySeason}
+                    onRemovePlayer={handleRemovePlayer}
+                    onAddPlayer={handleAddPlayer}
+                  />
+                ) : (
+                  <div className="scenario-editor-placeholder">
+                    <span>↑ Select a team above to edit its roster</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="scenario-page-side-col">
                 {playersData && playerIdMap && (
                   <ScenarioDeltas
                     originalRosters={originalRosters}
@@ -324,6 +374,18 @@ function SimulatorBuilderPage() {
                     onRevert={handleRevert}
                   />
                 )}
+                <ScenarioHwangAIEditor
+                  season={season}
+                  teamsForGrid={teamsForGrid}
+                  scenarioRosters={scenarioRosters}
+                  originalRosters={originalRosters}
+                  identity={chatIdentity}
+                  onApplyEdits={handleAiEdits}
+                  promptSuffix={
+                    'The user is editing rosters for the season simulator, not the historical scenario evaluator. '
+                    + 'After a successful edit, tell them to hit Run Simulations — do not say Evaluate Scenario.'
+                  }
+                />
                 <div className="scenario-evaluate-wrapper simulator-run-controls">
                   <button
                     type="button"
@@ -344,25 +406,6 @@ function SimulatorBuilderPage() {
                     allowRedraftDash={dashRanksAvailable}
                   />
                 </div>
-              </div>
-
-              <div className="scenario-page-editor-col">
-                {selectedTeam && playersData && playerIdMap ? (
-                  <ScenarioRosterEditor
-                    key={`sim-${season}-${selectedRosterId}`}
-                    team={selectedTeam}
-                    playerIds={scenarioRosters[selectedRosterId] || []}
-                    playersData={playersData}
-                    playerIdMap={playerIdMap}
-                    topPlayersBySeason={topPlayersBySeason}
-                    onRemovePlayer={handleRemovePlayer}
-                    onAddPlayer={handleAddPlayer}
-                  />
-                ) : (
-                  <div className="scenario-editor-placeholder">
-                    <span>↑ Select a team above to edit its roster</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 Scenario Builder let's you answer "what if?" roster questions from previous seasons. What if Alex had acquired one more star RB? What if Jack hadn't picked up George Kittle?
 
-Pick a year, select any team, then add or remove players to reshape their roster. All changes are tracked in the "Your Scenario" panel.
+Pick a year, select any team, then add or remove players to reshape their roster — or tell HwangAI the move in plain English on the right. All changes are tracked in the "Your Scenario" panel.
 
 Once you're happy with the scenario, hit Evaluate Scenario to see how those hypothetical rosters would have affected the standings.

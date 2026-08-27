@@ -18,7 +18,7 @@ const DATA = join(ROOT, 'site/public/data');
 // Keep in sync with HWANG_POSITION_COEFFICIENTS.true in
 // site/src/lookups/hwangPositionCoefficients.js
 const TRUE_COEFFS = {
-  QB: { c: 0.932, k: -0.175 },
+  QB: 1.0,
   RB: { c: 1.112, k: -0.029 },
   WR: { c: 0.899, k: 0.029 },
   TE: { c: 0.976, k: 0.069 },
@@ -45,7 +45,8 @@ function parseCsv(text) {
 
 function trueVal(pos, v) {
   const coeff = TRUE_COEFFS[pos];
-  if (!coeff) return null;
+  if (coeff == null) return null;
+  if (typeof coeff === 'number') return Math.round(v * coeff);
   const vv = Math.max(Number(v) || 0, 100);
   return Math.round(v * coeff.c * ((vv / VREF) ** coeff.k));
 }

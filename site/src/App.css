@@ -6982,12 +6982,14 @@ body.modal-open {
 
 .player-card-content-expanded {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding-right: 2.35rem; /* clear close button */
+  min-width: 0;
 }
 
 .player-card-info-wrapper {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -6997,13 +6999,20 @@ body.modal-open {
 .player-card-position-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .player-nfl-team-logo {
-  width: 20px;
-  height: 20px;
+  width: 2.35rem;
+  height: 2.35rem;
   object-fit: contain;
+  flex-shrink: 0;
+}
+
+.player-nfl-team-abbr {
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.85);
+  letter-spacing: 0.02em;
 }
 
 .player-card-details-inline {
@@ -7036,7 +7045,81 @@ body.modal-open {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.player-ownership-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  flex: 0 1 9rem;
+  width: 9rem;
+  max-width: 38%;
+  min-width: 0;
+  align-self: flex-start;
+  margin: 0.15rem 0 0;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.player-ownership-banner--owned {
+  background: rgba(148, 180, 255, 0.12);
+  border-color: rgba(148, 180, 255, 0.35);
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.player-ownership-banner--me {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.player-ownership-banner--fa {
+  background: rgba(77, 208, 225, 0.12);
+  border-color: rgba(77, 208, 225, 0.4);
+  align-items: center;
+  flex-basis: auto;
+  width: auto;
+}
+
+.player-ownership-team-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.player-ownership-banner .player-ownership-team {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-ownership-banner .player-ownership-team .me-chip {
+  margin-left: 0.3rem;
+}
+
+.player-ownership-label {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.55);
 }
 
 .player-ownership-info {
@@ -7045,23 +7128,51 @@ body.modal-open {
   gap: 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
+  min-width: 0;
+}
+
+.player-ownership-info--fa .player-ownership-free-agent {
+  font-size: 0.78rem;
 }
 
 .player-ownership-avatar {
-  width: 24px;
-  height: 24px;
+  width: 1.65rem;
+  height: 1.65rem;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.player-ownership-info .player-ownership-avatar {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .player-ownership-team {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 800;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.player-ownership-info .player-ownership-team {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 12rem;
 }
 
 .player-ownership-free-agent {
   color: #4dd0e1;
-  font-style: italic;
-  font-weight: 500;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
 }
 
 .player-season-dropdown {
@@ -7732,7 +7843,7 @@ body.modal-open {
   width: 100%;
 }
 
-/* Middle row: deltas + evaluate on left, editor on right.
+/* Middle row: roster editor on left, scenario + HwangAI on right.
    Fixed height so the layout never grows with editor content. */
 .scenario-page-middle {
   display: flex;
@@ -7745,9 +7856,9 @@ body.modal-open {
   overflow: hidden;
 }
 
-/* Left column: flex column so evaluate button sticks to the bottom */
-.scenario-page-deltas-col {
-  flex: 0 0 240px;
+/* Left column: roster editor fills remaining width */
+.scenario-page-editor-col {
+  flex: 1 1 0;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -7755,9 +7866,19 @@ body.modal-open {
   overflow: hidden;
 }
 
-/* Right column: flex column so editor/placeholder fills full height */
-.scenario-page-editor-col {
-  flex: 1 1 0;
+/* Right column: current scenario, HwangAI chat, evaluate button */
+.scenario-page-side-col {
+  flex: 0 0 360px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.scenario-page-deltas-col {
+  flex: 0 0 240px;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -7801,10 +7922,10 @@ body.modal-open {
   white-space: normal;
 }
 
-/* ── Evaluate Scenario button — bottom of left column ── */
+/* ── Evaluate Scenario button — bottom of the side column ── */
 .scenario-evaluate-wrapper {
-  padding-top: 0.85rem;
-  /* sits naturally at the bottom of the flex left column */
+  padding-top: 0.1rem;
+  flex: 0 0 auto;
 }
 
 .scenario-evaluate-btn {
@@ -7916,13 +8037,19 @@ body.modal-open {
 
 /* ── Scenario Delta Summary ── */
 .scenario-deltas-root {
-  flex: 1;
+  flex: 0 1 auto;
+  max-height: 38%;
   min-height: 0;
   overflow-y: auto;
   background: rgba(26, 22, 40, 0.95);
   border: 1px solid rgba(100, 100, 140, 0.35);
   border-radius: 0.75rem;
   padding: 1rem 1rem 0.75rem;
+}
+
+.scenario-page-deltas-col .scenario-deltas-root {
+  flex: 1;
+  max-height: none;
 }
 
 .scenario-deltas-heading {
@@ -8015,6 +8142,145 @@ body.modal-open {
   background: rgba(29, 185, 84, 0.2);
   border-color: rgba(29, 185, 84, 0.55);
   color: #1db954;
+}
+
+/* ── Scenario HwangAI editor ── */
+.scenario-hwang-ai {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(26, 22, 40, 0.95);
+  border: 1px solid rgba(100, 100, 140, 0.35);
+  border-radius: 0.75rem;
+  padding: 0.85rem 0.85rem 0.75rem;
+}
+
+.scenario-hwang-ai-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.55rem;
+  flex-shrink: 0;
+}
+
+.scenario-hwang-ai-heading-logo {
+  width: 1.15rem;
+  height: 1.15rem;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.scenario-hwang-ai-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.15rem 0 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(174, 78, 2, 0.35) transparent;
+}
+
+.scenario-hwang-ai-messages::-webkit-scrollbar {
+  width: 4px;
+}
+.scenario-hwang-ai-messages::-webkit-scrollbar-thumb {
+  background: rgba(174, 78, 2, 0.35);
+  border-radius: 2px;
+}
+
+.scenario-hwang-ai .hwang-ai-message {
+  max-width: 100%;
+}
+
+.scenario-hwang-ai .hwang-ai-avatar {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.scenario-hwang-ai .hwang-ai-bubble {
+  font-size: 0.82rem;
+  padding: 0.5rem 0.7rem;
+  line-height: 1.45;
+}
+
+.scenario-hwang-ai .hwang-ai-input-row {
+  padding-top: 0.55rem;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.scenario-hwang-ai .hwang-ai-input {
+  font-size: 0.82rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.6rem;
+}
+
+.scenario-hwang-ai .hwang-ai-send-btn {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.95rem;
+}
+
+.scenario-hwang-ai .hwang-ai-error {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.65rem;
+}
+
+.scenario-hwang-ai .hwang-ai-bubble--ai p {
+  margin: 0 0 0.35em 0;
+}
+.scenario-hwang-ai .hwang-ai-bubble--ai p:last-child {
+  margin-bottom: 0;
+}
+
+.scenario-hwang-ai-handoff {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem 0.55rem 0.55rem;
+  border-radius: 0.7rem;
+  text-decoration: none;
+  color: #f6e0c8;
+  background: linear-gradient(180deg, rgba(174, 78, 2, 0.38), rgba(174, 78, 2, 0.16));
+  border: 1px solid rgba(245, 164, 98, 0.5);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.scenario-hwang-ai-handoff:hover {
+  border-color: rgba(255, 190, 138, 0.8);
+  background: linear-gradient(180deg, rgba(174, 78, 2, 0.5), rgba(174, 78, 2, 0.22));
+  color: #fff;
+  transform: translateY(-1px);
+}
+.scenario-hwang-ai-handoff-logo {
+  width: 1.4rem;
+  height: 1.4rem;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.scenario-hwang-ai-handoff-label {
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+.scenario-hwang-ai-handoff-arrow {
+  color: #F5A462;
+  font-size: 1.05rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* ── Scenario Eval View ── */
@@ -9473,6 +9739,7 @@ body.modal-open {
   display: flex;
   align-items: stretch;
   gap: 0.45rem;
+  flex: 0 0 auto;
 }
 
 .simulator-run-settings-wrap {
@@ -10831,9 +11098,19 @@ body.modal-open {
     overflow: visible;
   }
 
-  .scenario-page-deltas-col {
+  .scenario-page-deltas-col,
+  .scenario-page-side-col {
     flex: none;
     width: 100%;
+  }
+
+  .scenario-page-side-col .scenario-deltas-root {
+    max-height: none;
+  }
+
+  .scenario-hwang-ai {
+    min-height: 260px;
+    height: 320px;
   }
 
   /* ── Standings panel: tighter columns ── */
@@ -14717,6 +14994,11 @@ body.modal-open {
   cursor: help;
 }
 
+.player-analytics-hover:hover,
+.player-analytics-hover:focus-within {
+  z-index: 50;
+}
+
 .player-analytics-hover-tip {
   position: absolute;
   min-width: 11rem;
@@ -14731,6 +15013,9 @@ body.modal-open {
   transition: opacity 0.15s ease, transform 0.15s ease;
   z-index: 40;
   text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
 }
 
 .player-analytics-hover--below .player-analytics-hover-tip {
@@ -14743,10 +15028,34 @@ body.modal-open {
   right: 0;
 }
 
+.player-analytics-hover--start .player-analytics-hover-tip {
+  right: auto;
+  left: 0;
+}
+
+.player-analytics-hover--wrap .player-analytics-hover-tip {
+  min-width: 12rem;
+  max-width: 16.5rem;
+}
+
+.player-analytics-hover--wrap .player-analytics-hover-line {
+  white-space: normal;
+}
+
+.player-analytics-hover--wrap .player-analytics-hover-line--title {
+  white-space: nowrap;
+}
+
 .player-analytics-hover:hover .player-analytics-hover-tip,
 .player-analytics-hover:focus-within .player-analytics-hover-tip {
   opacity: 1;
   transform: translateY(0);
+}
+
+.player-analytics-col-label {
+  text-decoration: underline dotted rgba(148, 163, 184, 0.55);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
 }
 
 .player-analytics-hover-line {
@@ -15006,6 +15315,7 @@ body.modal-open {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.18rem 0.7rem;
+  overflow: visible;
 }
 
 .player-analytics-board-col {
@@ -15013,6 +15323,7 @@ body.modal-open {
   flex-direction: column;
   gap: 0.18rem;
   min-width: 0;
+  overflow: visible;
 }
 
 .player-analytics-board-legend {
@@ -15025,6 +15336,9 @@ body.modal-open {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #64748b;
+  position: relative;
+  z-index: 3;
+  overflow: visible;
 }
 
 .player-analytics-board-legend .player-analytics-tile-bar {
@@ -15099,6 +15413,7 @@ body.modal-open {
   padding: 0.08rem 0.28rem;
   border-radius: 0.3rem;
   background: rgba(148, 180, 255, 0.06);
+  overflow: visible;
 }
 
 .player-analytics-tile-bar .player-analytics-hover {
@@ -20349,11 +20664,18 @@ body.modal-open {
   box-shadow: 0 0 16px rgba(74, 222, 128, 0.35);
 }
 
-.scenario-standings-row--me,
-.simulator-results-tr--me {
-  outline: 1px solid rgba(74, 222, 128, 0.55);
-  outline-offset: -1px;
-  background: rgba(74, 222, 128, 0.08) !important;
+.scenario-standings-row--me .scenario-standings-name,
+.simulator-results-tr--me .simulator-results-name {
+  color: #4ade80;
+}
+
+.scenario-team-grid-root .h2h-web-card--me {
+  border-color: rgba(100, 100, 140, 0.45) !important;
+  box-shadow: none !important;
+}
+
+.scenario-team-grid-root .h2h-web-card--me .h2h-web-name {
+  color: #4ade80;
 }
 
 .recent-trades-side--me .recent-trades-team-name,
@@ -20383,8 +20705,7 @@ body.modal-open {
 }
 
 .dynasty-roster-card--me,
-.teams2-card--me,
-.scenario-team-card--me {
+.teams2-card--me {
   border-color: rgba(74, 222, 128, 0.9) !important;
   box-shadow: 0 0 14px rgba(74, 222, 128, 0.3);
 }
@@ -20436,6 +20757,7 @@ body.modal-open {
 .teams2-detail-hero--me .teams2-detail-owner-avatar,
 .dynasty-roster-header--me .dynasty-roster-avatar,
 .player-ownership-info--me .player-ownership-avatar,
+.player-ownership-banner--me .player-ownership-avatar,
 .head-to-head-team-box--me .standings-avatar {
   outline: 1.5px solid #4ade80;
   outline-offset: 1px;

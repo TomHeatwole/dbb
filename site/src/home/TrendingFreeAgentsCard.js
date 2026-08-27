@@ -11,6 +11,8 @@ import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 import PositionBadge from '../PositionBadge';
 
+const SKILL_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
+
 function TrendingFreeAgentsCard() {
   const [trendingFreeAgents, setTrendingFreeAgents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,10 +51,9 @@ function TrendingFreeAgentsCard() {
           }
         });
 
-        // Filter trending to only free agents
+        // Filter trending to unrostered skill-position players (QB/RB/WR/TE)
         const freeAgents = trending
           .filter(item => !rosteredSleeperIds.has(item.player_id))
-          .slice(0, 10)
           .map(item => {
             const playerInfo = getPlayerInfo(item.player_id, players, idMapResult);
             return {
@@ -64,7 +65,9 @@ function TrendingFreeAgentsCard() {
               photo: playerInfo?.espn_photo_url || null,
               fullPlayerInfo: playerInfo // Store full player info for modal
             };
-          });
+          })
+          .filter(player => SKILL_POSITIONS.has(String(player.position).toUpperCase()))
+          .slice(0, 10);
 
         setTrendingFreeAgents(freeAgents);
       } catch (err) {

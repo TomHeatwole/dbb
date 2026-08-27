@@ -16,12 +16,15 @@
  * RB/WR are fit from the RB-vs-WR pair curve only (geo-mean 1 between
  * them). TE is then fit against that gauge so no-TEP Underdog cannot
  * manufacture a TE bump. QB has no valid 1QB Underdog denominator;
- * it is the Hwang True Simulator curve on Final KTC (v3b `true.QB`).
+ * it stays at 1.0 (unadjusted SF KTC / competitor). The old Hwang-sim
+ * negative-k curve taxed elite SF QBs as spare depth; replace-mode HVORP
+ * and the “already paid for the seat” trade framing both argue against
+ * that tax.
  *
  * `true` uses the KTC-basis format-factor fit (apply to KTC values).
  * `trueComp` uses the competitor-basis format-factor fit (apply to
- * Competitor/Rebuild bases). QB is the same KTC-basis Hwang curve on
- * both. Regenerate skill coeffs with:
+ * Competitor/Rebuild bases). QB is 1.0 on both. Regenerate skill coeffs
+ * with:
  *   python scripts/fit_hwang_format_factor_coeffs.py
  *
  * HWANG_COMPOSITE_COEFFICIENT_KEY picks which set is applied on top of
@@ -37,19 +40,18 @@ export const HWANG_POSITION_COEFFICIENTS = {
     WR: 0.96,
     TE: 1.0,
   },
-  // Format factor on KTC basis (Hwang ÷ Underdog+TEP), plus Hwang-from-KTC QB.
-  // `flat` is the value-independent mental-math version of the same split.
+  // Format factor on KTC basis (Hwang ÷ Underdog+TEP). QB unadjusted.
+  // `flat` is the value-independent mental-math version of the skill split.
   true: {
-    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    QB: 1.0,
     RB: { c: 1.112, k: -0.029, flat: 1.11 },
     WR: { c: 0.899, k: 0.029, flat: 0.90 },
     TE: { c: 0.976, k: 0.069, flat: 0.95 },
   },
   // Same recipe on the competitor-adjusted board. Skill curves are nearly
-  // flat; QB is still the KTC-basis Hwang measurement (no SF best-ball
-  // baseline exists to make a QB format factor).
+  // flat; QB stays 1.0 (no SF best-ball baseline for a QB format factor).
   trueComp: {
-    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    QB: 1.0,
     RB: { c: 1.112, k: -0.011, flat: 1.12 },
     WR: { c: 0.899, k: 0.011, flat: 0.90 },
     TE: { c: 0.974, k: 0.050, flat: 0.96 },

@@ -7,8 +7,8 @@ Denominator: Underdog BBM clubs + UD lineup/PPR
 
 RB and WR come from the RB-vs-WR pair curve only (TE is not in that
 geo-mean). TE is then fit against that RB/WR gauge on each side, and the
-ratio is the TE format factor. QB is not produced here — it stays the
-KTC-basis Hwang True Simulator curve (no valid 1QB Underdog denominator).
+ratio is the TE format factor. QB is not produced here — it stays 1.0
+(unadjusted; no valid 1QB Underdog denominator).
 
 Usage:
   /tmp/dbb-hwang-venv/bin/python scripts/fit_hwang_format_factor_coeffs.py

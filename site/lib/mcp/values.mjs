@@ -32,13 +32,13 @@ export const HWANG_POSITION_COEFFICIENTS = {
     TE: 1.0,
   },
   true: {
-    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    QB: 1.0,
     RB: { c: 1.112, k: -0.029, flat: 1.11 },
     WR: { c: 0.899, k: 0.029, flat: 0.90 },
     TE: { c: 0.976, k: 0.069, flat: 0.95 },
   },
   trueComp: {
-    QB: { c: 0.932, k: -0.175, flat: 0.97 },
+    QB: 1.0,
     RB: { c: 1.112, k: -0.011, flat: 1.12 },
     WR: { c: 0.899, k: 0.011, flat: 0.90 },
     TE: { c: 0.974, k: 0.050, flat: 0.96 },
