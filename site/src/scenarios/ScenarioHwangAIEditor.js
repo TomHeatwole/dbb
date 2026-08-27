@@ -234,7 +234,7 @@ function ScenarioHwangAIEditor({
     <div className="scenario-hwang-ai">
       <div className="scenario-hwang-ai-heading">
         <img src={LOGO} alt="" className="scenario-hwang-ai-heading-logo" aria-hidden="true" />
-        HwangAI
+        HwangAI: Roster Editor
       </div>
 
       <div className="scenario-hwang-ai-messages">
