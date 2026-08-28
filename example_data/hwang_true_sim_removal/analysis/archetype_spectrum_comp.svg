@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="598" viewBox="0 0 1120 598" font-family="Helvetica, Arial, sans-serif">
+<rect width="1120" height="598" fill="white"/>
+<text x="560.0" y="22" text-anchor="middle" font-size="15" fill="#222">Per-archetype leave-one-out multipliers — Hwang, Competitor-adjusted, 1000 builds</text>
+<text x="430.0" y="30" text-anchor="middle" font-size="11" fill="#444">Spectrum by archetype (sorted by RB)</text>
+<line x1="342.5" y1="48" x2="342.5" y2="542" stroke="#666" stroke-dasharray="4 3" stroke-width="1"/>
+<text x="212" y="533.0" text-anchor="end" font-size="9" fill="#333">2024 #2 · Age (15-3)</text>
+<circle cx="392.242936893749" cy="529.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="389.447201495595" cy="529.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="265.7259851051207" cy="529.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="338.62792080064514" cy="529.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="507.0" text-anchor="end" font-size="9" fill="#333">2025 #1 · Pittsy (15-3)</text>
+<circle cx="430.9154929222998" cy="503.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="398.7488469388056" cy="503.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="287.2139660504909" cy="503.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="278.3863540919428" cy="503.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="481.0" text-anchor="end" font-size="9" fill="#333">2024 #6 · seanjcrow (9-9)</text>
+<circle cx="415.5521319915565" cy="477.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="405.50070959591494" cy="477.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="264.9831925696771" cy="477.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="307.70113483288424" cy="477.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="455.0" text-anchor="end" font-size="9" fill="#333">2024 #5 · Boomers (11-7)</text>
+<circle cx="392.3057232230917" cy="451.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="408.571399217162" cy="451.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="274.5861064431722" cy="451.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="312.29642969578515" cy="451.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="429.0" text-anchor="end" font-size="9" fill="#333">2025 #5 · Hwang (11-7)</text>
+<circle cx="413.29276585314483" cy="425.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="409.6538164772717" cy="425.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="314.4549502600618" cy="425.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="258.0293817013503" cy="425.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="403.0" text-anchor="end" font-size="9" fill="#333">2024 #3 · Adams (12-6)</text>
+<circle cx="421.9753998003573" cy="399.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="422.077199361529" cy="399.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="279.89387111002605" cy="399.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="275.51871854396677" cy="399.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="377.0" text-anchor="end" font-size="9" fill="#333">2026 #6 · Hwang</text>
+<circle cx="447.5189598675778" cy="373.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="422.2761366740298" cy="373.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="268.81284061957047" cy="373.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="270.2149879969996" cy="373.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="351.0" text-anchor="end" font-size="9" fill="#333">2025 #3 · Drake &amp; Bake (13-5)</text>
+<circle cx="374.66744250456895" cy="347.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="426.05916334160514" cy="347.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="277.1594683961531" cy="347.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="310.65920140729537" cy="347.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="325.0" text-anchor="end" font-size="9" fill="#333">2026 #1 · Ladds</text>
+<circle cx="344.472866640712" cy="321.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="436.47067642029873" cy="321.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="264.42167377495724" cy="321.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="345.65461073617007" cy="321.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="299.0" text-anchor="end" font-size="9" fill="#333">2026 #4 · Drake &amp; Bake</text>
+<circle cx="392.89600274434304" cy="295.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="436.7443094829085" cy="295.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="254.26940522192444" cy="295.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="314.7861812698741" cy="295.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="273.0" text-anchor="end" font-size="9" fill="#333">2026 #5 · Pittsy</text>
+<circle cx="426.5887379109512" cy="269.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="437.68263979481605" cy="269.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="271.5188097184297" cy="269.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="270.80560741330265" cy="269.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="247.0" text-anchor="end" font-size="9" fill="#333">2024 #1 · Cook (16-2)</text>
+<circle cx="465.8188384355907" cy="243.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="458.57876927954936" cy="243.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="253.20794804589687" cy="243.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="253.41845330743996" cy="243.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="221.0" text-anchor="end" font-size="9" fill="#333">2025 #4 · Ladds (12-6)</text>
+<circle cx="377.8930783067974" cy="217.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="467.8779378209522" cy="217.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="259.7406045429918" cy="217.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="298.99740304849695" cy="217.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="195.0" text-anchor="end" font-size="9" fill="#333">2025 #2 · seanjcrow (14-4)</text>
+<circle cx="311.90949615088" cy="191.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="474.6728479549522" cy="191.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="282.4208981678521" cy="191.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="328.5795456869145" cy="191.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="169.0" text-anchor="end" font-size="9" fill="#333">2026 #3 · Eat It</text>
+<circle cx="308.9133140724765" cy="165.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="491.75270745446943" cy="165.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="282.5974221351658" cy="165.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="319.95613355575483" cy="165.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="143.0" text-anchor="end" font-size="9" fill="#333">2026 #7 · Zaccheaus</text>
+<circle cx="464.66010127238144" cy="139.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="494.07590084838534" cy="139.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="249.9084761805326" cy="139.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="238.66334608053944" cy="139.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="117.0" text-anchor="end" font-size="9" fill="#333">2025 #6 · aidsonballs (11-7)</text>
+<circle cx="450.8237542016034" cy="113.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="494.81571884837246" cy="113.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="229.3876395634485" cy="113.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="267.65704807900335" cy="113.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="91.0" text-anchor="end" font-size="9" fill="#333">2026 #2 · seanjcrow</text>
+<circle cx="305.96456246633375" cy="87.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="523.0144922065189" cy="87.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="263.087714387693" cy="87.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="325.98660966158894" cy="87.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="212" y="65.0" text-anchor="end" font-size="9" fill="#333">2024 #4 · CMC-home (11-7)</text>
+<circle cx="280.4974748534952" cy="61.0" r="5" fill="#8e44ad" stroke="white" stroke-width="0.6"/>
+<circle cx="537.6955883551035" cy="61.0" r="5" fill="#d1495b" stroke="white" stroke-width="0.6"/>
+<circle cx="272.6214795660308" cy="61.0" r="5" fill="#1f6feb" stroke="white" stroke-width="0.6"/>
+<circle cx="333.6809333953272" cy="61.0" r="5" fill="#2e933c" stroke="white" stroke-width="0.6"/>
+<text x="272.5" y="558" text-anchor="middle" font-size="9" fill="#555">0.8</text>
+<text x="342.5" y="558" text-anchor="middle" font-size="9" fill="#555">1.0</text>
+<text x="412.49999999999994" y="558" text-anchor="middle" font-size="9" fill="#555">1.2</text>
+<text x="482.4999999999999" y="558" text-anchor="middle" font-size="9" fill="#555">1.4</text>
+<text x="552.5" y="558" text-anchor="middle" font-size="9" fill="#555">1.6</text>
+<text x="622.5" y="558" text-anchor="middle" font-size="9" fill="#555">1.8</text>
+<text x="430.0" y="576" text-anchor="middle" font-size="10" fill="#444">multiplier vs average same-priced removal</text>
+<circle cx="232" cy="534" r="5" fill="#8e44ad"/>
+<text x="242" y="538" font-size="10" fill="#333">QB</text>
+<circle cx="302" cy="534" r="5" fill="#d1495b"/>
+<text x="312" y="538" font-size="10" fill="#333">RB</text>
+<circle cx="372" cy="534" r="5" fill="#1f6feb"/>
+<text x="382" y="538" font-size="10" fill="#333">WR</text>
+<circle cx="442" cy="534" r="5" fill="#2e933c"/>
+<text x="452" y="538" font-size="10" fill="#333">TE</text>
+<text x="900.0" y="52" text-anchor="middle" font-size="11" fill="#444">RB vs WR (color = TE)</text>
+<rect x="720" y="80" width="360" height="420" fill="none" stroke="#ccc"/>
+<line x1="852.715657108608" y1="80" x2="852.715657108608" y2="500" stroke="#999" stroke-dasharray="3 3"/>
+<line x1="720" y1="299.2548074835378" x2="1080" y2="299.2548074835378" stroke="#999" stroke-dasharray="3 3"/>
+<circle cx="769.3516749629631" cy="308.445308880826" r="7" fill="rgb(240,215,40)" stroke="#222" stroke-width="0.6"/>
+<text x="778.3516749629631" y="311.445308880826" font-size="8" fill="#333">2024 #2</text>
+<circle cx="785.7463814820364" cy="244.46909814505156" r="7" fill="rgb(136,86,66)" stroke="#222" stroke-width="0.6"/>
+<text x="794.7463814820364" y="247.46909814505156" font-size="8" fill="#333">2025 #1</text>
+<circle cx="797.6469433123303" cy="310.6568266544741" r="7" fill="rgb(187,149,53)" stroke="#222" stroke-width="0.6"/>
+<text x="806.6469433123303" y="313.6568266544741" font-size="8" fill="#333">2024 #6</text>
+<circle cx="803.0592174587564" cy="282.06605103855554" r="7" fill="rgb(195,159,51)" stroke="#222" stroke-width="0.6"/>
+<text x="812.0592174587564" y="285.06605103855554" font-size="8" fill="#333">2024 #5</text>
+<circle cx="804.9670426300147" cy="163.36445872489668" r="7" fill="rgb(101,42,75)" stroke="#222" stroke-width="0.6"/>
+<text x="813.9670426300147" y="166.36445872489668" font-size="8" fill="#333">2025 #5</text>
+<circle cx="826.8639981315971" cy="266.2632321638626" r="7" fill="rgb(131,80,67)" stroke="#222" stroke-width="0.6"/>
+<text x="835.8639981315971" y="269.2632321638626" font-size="8" fill="#333">2024 #3</text>
+<circle cx="827.2146370453307" cy="299.2548074835378" r="7" fill="rgb(122,68,70)" stroke="#222" stroke-width="0.6"/>
+<text x="836.2146370453307" y="302.2548074835378" font-size="8" fill="#333">2026 #6</text>
+<circle cx="833.882447847988" cy="274.4043750987878" r="7" fill="rgb(192,155,52)" stroke="#222" stroke-width="0.6"/>
+<text x="842.882447847988" y="277.4043750987878" font-size="8" fill="#333">2025 #3</text>
+<circle cx="852.2333624669996" cy="312.32863773967676" r="7" fill="rgb(253,231,37)" stroke="#222" stroke-width="0.6"/>
+<text x="861.2333624669996" y="315.32863773967676" font-size="8" fill="#333">2026 #1</text>
+<circle cx="852.715657108608" cy="342.5550081951544" r="7" fill="rgb(199,164,50)" stroke="#222" stroke-width="0.6"/>
+<text x="861.715657108608" y="345.5550081951544" font-size="8" fill="#333">2026 #4</text>
+<circle cx="854.3695204143636" cy="291.19832001022735" r="7" fill="rgb(123,70,69)" stroke="#222" stroke-width="0.6"/>
+<text x="863.3695204143636" y="294.19832001022735" font-size="8" fill="#333">2026 #5</text>
+<circle cx="891.2001986398832" cy="345.7152868715542" r="7" fill="rgb(93,32,77)" stroke="#222" stroke-width="0.6"/>
+<text x="900.2001986398832" y="348.7152868715542" font-size="8" fill="#333">2024 #1</text>
+<circle cx="907.5905394713518" cy="326.2655949816972" r="7" fill="rgb(172,130,57)" stroke="#222" stroke-width="0.6"/>
+<text x="916.5905394713518" y="329.2655949816972" font-size="8" fill="#333">2025 #4</text>
+<circle cx="919.5669750547702" cy="258.73950920461834" r="7" fill="rgb(223,194,44)" stroke="#222" stroke-width="0.6"/>
+<text x="928.5669750547702" y="261.73950920461834" font-size="8" fill="#333">2025 #2</text>
+<circle cx="949.671249141672" cy="258.21394402650844" r="7" fill="rgb(208,175,48)" stroke="#222" stroke-width="0.6"/>
+<text x="958.671249141672" y="261.21394402650844" font-size="8" fill="#333">2026 #3</text>
+<circle cx="953.7660164721235" cy="355.53881137634414" r="7" fill="rgb(68,1,84)" stroke="#222" stroke-width="0.6"/>
+<text x="962.7660164721235" y="358.53881137634414" font-size="8" fill="#333">2026 #7</text>
+<circle cx="955.0699899530919" cy="416.6355412751033" r="7" fill="rgb(118,63,71)" stroke="#222" stroke-width="0.6"/>
+<text x="964.0699899530919" y="419.6355412751033" font-size="8" fill="#333">2025 #6</text>
+<circle cx="1004.7720148504313" cy="316.3002378211154" r="7" fill="rgb(218,188,45)" stroke="#222" stroke-width="0.6"/>
+<text x="1013.7720148504313" y="319.3002378211154" font-size="8" fill="#333">2026 #2</text>
+<circle cx="1030.648325037037" cy="287.9153387603154" r="7" fill="rgb(232,205,42)" stroke="#222" stroke-width="0.6"/>
+<text x="1039.648325037037" y="290.9153387603154" font-size="8" fill="#333">2024 #4</text>
+<text x="900.0" y="522" text-anchor="middle" font-size="10" fill="#444">RB multiplier</text>
+<text x="692" y="290.0" text-anchor="middle" font-size="10" fill="#444" transform="rotate(-90 692 290.0)">WR multiplier</text>
+</svg>

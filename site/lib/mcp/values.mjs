@@ -5,7 +5,9 @@
  * trades with the exact same math as the site's trade calculator.
  *
  * KEEP IN SYNC with the frontend sources of truth:
- *   site/src/lookups/hwangPositionCoefficients.js   (coefficients)
+ *   site/src/lookups/hwangPositionCoefficients.js   (coefficients;
+ *     HWANG_FORMAT_FACTOR_HVORP_MODE is 'addon' — do not paste removal
+ *     Hwang-only multipliers here)
  *   site/src/tradeCalculator/ktcValueAdjustment.js  (KTC-style VA formula)
  *   site/src/lookups/HwangValueAdjustmentLookup.js  (stitched KTC + multipliers)
  *   site/src/lookups/RedraftValueLookup.js          (competitor/rebuilder CSV)

@@ -9,17 +9,24 @@
  *   - a flat number (value × m), or
  *   - a power-law curve { c, k } meaning m(v) = c · (v/5000)^k.
  *
- * Skill positions (RB / WR / TE) are the Hwang ÷ Underdog format factor:
+ * Skill positions (RB / WR / TE) are the Hwang ÷ Underdog format factor,
+ * measured with **add-on** HVORP (27th-man plug at equal price):
  *   numerator   Hwang clubs + Hwang scoring          (v3b, format=hwang)
  *   denominator Underdog BBM clubs + UD lineup/PPR
  *               + TE premium 0.5                     (bbm_50_tep)
+ * Do not mix this with **removal** HVORP (leave-one-out of rostered players).
+ * Removal format factor is Hwang ÷ Regular from
+ * example_data/hwang_true_sim_removal (same 19 templates, 1000 builds).
+ * The spectrum markdown reports both; live rankings stay on add-on until a
+ * matching Underdog-club removal dump exists.
  * RB/WR are fit from the RB-vs-WR pair curve only (geo-mean 1 between
  * them). TE is then fit against that gauge so no-TEP Underdog cannot
  * manufacture a TE bump. QB has no valid 1QB Underdog denominator;
  * it stays at 1.0 (unadjusted SF KTC / competitor). The old Hwang-sim
  * negative-k curve taxed elite SF QBs as spare depth; replace-mode HVORP
  * and the “already paid for the seat” trade framing both argue against
- * that tax.
+ * that tax. Hwang-only QB multipliers (add-on ~0.94, removal ~1.13) are
+ * not format factors.
  *
  * `true` uses the KTC-basis format-factor fit (apply to KTC values).
  * `trueComp` uses the competitor-basis format-factor fit (apply to
@@ -27,11 +34,16 @@
  * with:
  *   python scripts/fit_hwang_format_factor_coeffs.py
  *
- * HWANG_COMPOSITE_COEFFICIENT_KEY picks which set is applied on top of
- * Competitor / Rebuild bases. Change that key (or the numbers) in this file only.
+ * HWANG_FORMAT_FACTOR_HVORP_MODE records which experiment produced the
+ * numbers below. HWANG_COMPOSITE_COEFFICIENT_KEY picks which set is
+ * applied on top of Competitor / Rebuild bases.
  */
 
 export const HWANG_MULTIPLIER_VREF = 5000;
+
+/** Experiment that produced `true` / `trueComp`. Do not apply removal
+ *  Hwang-only multipliers as if they were this format factor. */
+export const HWANG_FORMAT_FACTOR_HVORP_MODE = 'addon';
 
 export const HWANG_POSITION_COEFFICIENTS = {
   market: {
@@ -40,8 +52,8 @@ export const HWANG_POSITION_COEFFICIENTS = {
     WR: 0.96,
     TE: 1.0,
   },
-  // Format factor on KTC basis (Hwang ÷ Underdog+TEP). QB unadjusted.
-  // `flat` is the value-independent mental-math version of the skill split.
+  // Format factor on KTC basis (Hwang ÷ Underdog+TEP, add-on HVORP).
+  // QB unadjusted. `flat` is the value-independent mental-math split.
   true: {
     QB: 1.0,
     RB: { c: 1.112, k: -0.029, flat: 1.11 },
@@ -64,6 +76,7 @@ export const HWANG_COEFFICIENT_LABELS = {
   trueComp: 'Hwang True Value Adjusted Competitor',
 };
 
+/** Which coefficient set powers Hwang-Adjusted Competitor / Rebuild rankings. */
 /** Which coefficient set powers Hwang-Adjusted Competitor / Rebuild rankings. */
 export const HWANG_COMPOSITE_COEFFICIENT_KEY = 'trueComp';
 

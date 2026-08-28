@@ -1,0 +1,290 @@
+{
+  "hvorp_mode": "removal",
+  "builds_per_archetype": 1000,
+  "chart_basis": "comp",
+  "pooled": {
+    "ktc/hwang": {
+      "QB": 1.161,
+      "RB": 1.251,
+      "WR": 0.774,
+      "TE": 0.889
+    },
+    "ktc/regular": {
+      "QB": 1.098,
+      "RB": 1.039,
+      "WR": 0.91,
+      "TE": 0.964
+    },
+    "comp/hwang": {
+      "QB": 1.128,
+      "RB": 1.277,
+      "WR": 0.787,
+      "TE": 0.882
+    },
+    "comp/regular": {
+      "QB": 1.051,
+      "RB": 1.049,
+      "WR": 0.922,
+      "TE": 0.984
+    }
+  },
+  "format_factor_hwang_over_regular": {
+    "ktc": {
+      "QB": 1.058,
+      "RB": 1.205,
+      "WR": 0.851,
+      "TE": 0.922
+    },
+    "comp": {
+      "QB": 1.073,
+      "RB": 1.217,
+      "WR": 0.854,
+      "TE": 0.897
+    }
+  },
+  "archetypes": [
+    {
+      "archetype_id": "2024_4",
+      "label": "2024 #4 \u2014 We Have McCaffrey at Home (11-7)",
+      "short": "2024 #4 \u00b7 CMC-home (11-7)",
+      "n_pairs": 21965,
+      "QB": 0.823,
+      "RB": 1.558,
+      "WR": 0.8,
+      "TE": 0.975,
+      "rb_minus_wr": 0.757
+    },
+    {
+      "archetype_id": "2026_2",
+      "label": "2026 #2 \u2014 seanjcrow",
+      "short": "2026 #2 \u00b7 seanjcrow",
+      "n_pairs": 34827,
+      "QB": 0.896,
+      "RB": 1.516,
+      "WR": 0.773,
+      "TE": 0.953,
+      "rb_minus_wr": 0.743
+    },
+    {
+      "archetype_id": "2025_6",
+      "label": "2025 #6 \u2014 aidsonballs (11-7)",
+      "short": "2025 #6 \u00b7 aidsonballs (11-7)",
+      "n_pairs": 24723,
+      "QB": 1.309,
+      "RB": 1.435,
+      "WR": 0.677,
+      "TE": 0.786,
+      "rb_minus_wr": 0.758
+    },
+    {
+      "archetype_id": "2026_7",
+      "label": "2026 #7 \u2014 MrZaccheaus",
+      "short": "2026 #7 \u00b7 Zaccheaus",
+      "n_pairs": 32645,
+      "QB": 1.349,
+      "RB": 1.433,
+      "WR": 0.735,
+      "TE": 0.703,
+      "rb_minus_wr": 0.698
+    },
+    {
+      "archetype_id": "2026_3",
+      "label": "2026 #3 \u2014 Eat It While She Sleeper",
+      "short": "2026 #3 \u00b7 Eat It",
+      "n_pairs": 41520,
+      "QB": 0.904,
+      "RB": 1.426,
+      "WR": 0.829,
+      "TE": 0.936,
+      "rb_minus_wr": 0.598
+    },
+    {
+      "archetype_id": "2025_2",
+      "label": "2025 #2 \u2014 seanjcrow (14-4)",
+      "short": "2025 #2 \u00b7 seanjcrow (14-4)",
+      "n_pairs": 40979,
+      "QB": 0.913,
+      "RB": 1.378,
+      "WR": 0.828,
+      "TE": 0.96,
+      "rb_minus_wr": 0.549
+    },
+    {
+      "archetype_id": "2025_4",
+      "label": "2025 #4 \u2014 The Ladds (12-6)",
+      "short": "2025 #4 \u00b7 Ladds (12-6)",
+      "n_pairs": 43125,
+      "QB": 1.101,
+      "RB": 1.358,
+      "WR": 0.764,
+      "TE": 0.876,
+      "rb_minus_wr": 0.595
+    },
+    {
+      "archetype_id": "2024_1",
+      "label": "2024 #1 \u2014 Let James Cook (16-2)",
+      "short": "2024 #1 \u00b7 Cook (16-2)",
+      "n_pairs": 27523,
+      "QB": 1.352,
+      "RB": 1.332,
+      "WR": 0.745,
+      "TE": 0.745,
+      "rb_minus_wr": 0.587
+    },
+    {
+      "archetype_id": "2026_5",
+      "label": "2026 #5 \u2014 Lord Pittsy Flacco Joedy",
+      "short": "2026 #5 \u00b7 Pittsy",
+      "n_pairs": 34520,
+      "QB": 1.24,
+      "RB": 1.272,
+      "WR": 0.797,
+      "TE": 0.795,
+      "rb_minus_wr": 0.475
+    },
+    {
+      "archetype_id": "2026_4",
+      "label": "2026 #4 \u2014 Drake & Bake",
+      "short": "2026 #4 \u00b7 Drake & Bake",
+      "n_pairs": 39327,
+      "QB": 1.144,
+      "RB": 1.269,
+      "WR": 0.748,
+      "TE": 0.921,
+      "rb_minus_wr": 0.521
+    },
+    {
+      "archetype_id": "2026_1",
+      "label": "2026 #1 \u2014 The Ladds",
+      "short": "2026 #1 \u00b7 Ladds",
+      "n_pairs": 45783,
+      "QB": 1.006,
+      "RB": 1.268,
+      "WR": 0.777,
+      "TE": 1.009,
+      "rb_minus_wr": 0.492
+    },
+    {
+      "archetype_id": "2025_3",
+      "label": "2025 #3 \u2014 Drake & Bake (13-5)",
+      "short": "2025 #3 \u00b7 Drake & Bake (13-5)",
+      "n_pairs": 28379,
+      "QB": 1.092,
+      "RB": 1.239,
+      "WR": 0.813,
+      "TE": 0.909,
+      "rb_minus_wr": 0.425
+    },
+    {
+      "archetype_id": "2026_6",
+      "label": "2026 #6 \u2014 House of Hwang",
+      "short": "2026 #6 \u00b7 Hwang",
+      "n_pairs": 40688,
+      "QB": 1.3,
+      "RB": 1.228,
+      "WR": 0.789,
+      "TE": 0.793,
+      "rb_minus_wr": 0.438
+    },
+    {
+      "archetype_id": "2024_3",
+      "label": "2024 #3 \u2014 Adam(s) and Steve(nson) (12-6)",
+      "short": "2024 #3 \u00b7 Adams (12-6)",
+      "n_pairs": 19975,
+      "QB": 1.227,
+      "RB": 1.227,
+      "WR": 0.821,
+      "TE": 0.809,
+      "rb_minus_wr": 0.406
+    },
+    {
+      "archetype_id": "2025_5",
+      "label": "2025 #5 \u2014 House of Hwang (11-7)",
+      "short": "2025 #5 \u00b7 Hwang (11-7)",
+      "n_pairs": 32641,
+      "QB": 1.202,
+      "RB": 1.192,
+      "WR": 0.92,
+      "TE": 0.759,
+      "rb_minus_wr": 0.272
+    },
+    {
+      "archetype_id": "2024_5",
+      "label": "2024 #5 \u2014 The Boomers (11-7)",
+      "short": "2024 #5 \u00b7 Boomers (11-7)",
+      "n_pairs": 17132,
+      "QB": 1.142,
+      "RB": 1.189,
+      "WR": 0.806,
+      "TE": 0.914,
+      "rb_minus_wr": 0.383
+    },
+    {
+      "archetype_id": "2024_6",
+      "label": "2024 #6 \u2014 seanjcrow (9-9)",
+      "short": "2024 #6 \u00b7 seanjcrow (9-9)",
+      "n_pairs": 22745,
+      "QB": 1.209,
+      "RB": 1.18,
+      "WR": 0.779,
+      "TE": 0.901,
+      "rb_minus_wr": 0.401
+    },
+    {
+      "archetype_id": "2025_1",
+      "label": "2025 #1 \u2014 Lord Pittsy Flacco Joedy (15-3)",
+      "short": "2025 #1 \u00b7 Pittsy (15-3)",
+      "n_pairs": 24584,
+      "QB": 1.253,
+      "RB": 1.161,
+      "WR": 0.842,
+      "TE": 0.817,
+      "rb_minus_wr": 0.319
+    },
+    {
+      "archetype_id": "2024_2",
+      "label": "2024 #2 \u2014 Age is just a number (15-3)",
+      "short": "2024 #2 \u00b7 Age (15-3)",
+      "n_pairs": 29640,
+      "QB": 1.142,
+      "RB": 1.134,
+      "WR": 0.781,
+      "TE": 0.989,
+      "rb_minus_wr": 0.353
+    }
+  ],
+  "years": {
+    "2021": {
+      "QB": 1.27,
+      "RB": 1.09,
+      "WR": 0.724,
+      "TE": 0.998
+    },
+    "2022": {
+      "QB": 1.197,
+      "RB": 1.286,
+      "WR": 0.832,
+      "TE": 0.78
+    },
+    "2023": {
+      "QB": 1.089,
+      "RB": 1.148,
+      "WR": 0.875,
+      "TE": 0.915
+    },
+    "2024": {
+      "QB": 0.996,
+      "RB": 1.386,
+      "WR": 0.801,
+      "TE": 0.905
+    },
+    "2025": {
+      "QB": 1.07,
+      "RB": 1.522,
+      "WR": 0.691,
+      "TE": 0.89
+    }
+  },
+  "png": "example_data/hwang_true_sim_removal/analysis/archetype_spectrum_comp.svg",
+  "svg": "example_data/hwang_true_sim_removal/analysis/archetype_spectrum_comp.svg"
+}

@@ -1,18 +1,30 @@
 #!/usr/bin/env python3
-"""Fit Hwang-adjusted rank coefficients from the combined format-factor study.
+"""Fit Hwang-adjusted rank coefficients from a combined format-factor study.
 
-Numerator:   Hwang clubs + Hwang scoring          (v3b, format=hwang)
-Denominator: Underdog BBM clubs + UD lineup/PPR
-             + TE premium 0.5                     (bbm_50_tep, format=regular)
+Numerator and denominator MUST use the same HVORP mode (add-on or removal).
+Mixing a 27th-man add-on dump with a leave-one-out removal dump is refused.
 
-RB and WR come from the RB-vs-WR pair curve only (TE is not in that
-geo-mean). TE is then fit against that RB/WR gauge on each side, and the
-ratio is the TE format factor. QB is not produced here — it stays 1.0
-(unadjusted; no valid 1QB Underdog denominator).
+Default (add-on, live rankings):
+  Numerator:   Hwang clubs + Hwang scoring          (v3b, format=hwang)
+  Denominator: Underdog BBM clubs + UD lineup/PPR
+               + TE premium 0.5                     (bbm_50_tep, format=regular)
+
+Removal same-club (spectrum / format-factor check):
+  python scripts/fit_hwang_format_factor_coeffs.py \\
+    --hwang-dir example_data/hwang_true_sim_removal \\
+    --ud-dir example_data/hwang_true_sim_removal \\
+    --ud-format regular
+
+RB and WR come from the RB-vs-WR pair curve only when pairs.csv exists
+(add-on board pairs). Removal dumps have no board-pair CSV; then only
+flat Hwang÷Regular factors from matchups.csv are printed. TE is then fit
+against that gauge when pairs exist. QB is not produced here — it stays
+1.0 (unadjusted; no valid 1QB Underdog denominator).
 
 Usage:
-  /tmp/dbb-hwang-venv/bin/python scripts/fit_hwang_format_factor_coeffs.py
+  python scripts/fit_hwang_format_factor_coeffs.py
 """
+import argparse
 import csv
 import math
 import os
@@ -21,10 +33,35 @@ import sys
 import numpy as np
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-HWANG_DIR = os.path.join(ROOT, 'example_data', 'hwang_true_sim_200_v3b')
-UD_DIR = os.path.join(ROOT, 'example_data', 'hwang_true_sim_bbm_50_tep')
+DEFAULT_HWANG = os.path.join(ROOT, 'example_data', 'hwang_true_sim_200_v3b')
+DEFAULT_UD = os.path.join(ROOT, 'example_data', 'hwang_true_sim_bbm_50_tep')
 VREF = 5000.0
 BASES = ['ktc', 'comp']
+
+
+def load_hvorp_mode(data_dir):
+    path = os.path.join(data_dir, 'config.csv')
+    if not os.path.exists(path):
+        return 'addon'
+    modes = set()
+    with open(path) as f:
+        for r in csv.DictReader(f):
+            modes.add(r.get('hvorp_mode') or 'addon')
+    if not modes:
+        return 'addon'
+    if len(modes) > 1:
+        raise SystemExit(f'{data_dir} mixes HVORP modes {sorted(modes)}')
+    return next(iter(modes))
+
+
+def pairs_csv_usable(data_dir):
+    path = os.path.join(data_dir, 'pairs.csv')
+    if not os.path.exists(path):
+        return False
+    with open(path) as f:
+        f.readline()
+        rest = f.readline()
+    return bool(rest)
 
 
 def load_skill_pairs(data_dir, fmt):
@@ -139,13 +176,38 @@ def eval_m(ck, v):
 
 
 def main():
-    h_pairs = load_skill_pairs(HWANG_DIR, 'hwang')
-    u_pairs = load_skill_pairs(UD_DIR, 'regular')
-    h_over = load_overall_direct(HWANG_DIR, 'hwang')
-    u_over = load_overall_direct(UD_DIR, 'regular')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--hwang-dir', default=DEFAULT_HWANG)
+    parser.add_argument('--ud-dir', default=DEFAULT_UD)
+    parser.add_argument('--hwang-format', default='hwang')
+    parser.add_argument('--ud-format', default='regular')
+    args = parser.parse_args()
+    hwang_dir = os.path.abspath(args.hwang_dir)
+    ud_dir = os.path.abspath(args.ud_dir)
+
+    h_mode = load_hvorp_mode(hwang_dir)
+    u_mode = load_hvorp_mode(ud_dir)
+    if h_mode != u_mode:
+        raise SystemExit(
+            f'Refusing to mix HVORP modes: numerator {hwang_dir} is {h_mode}, '
+            f'denominator {ud_dir} is {u_mode}. Format factor is Hwang ÷ baseline '
+            f'from the SAME experiment (add-on vs add-on, or removal vs removal).'
+        )
+
+    have_pairs = pairs_csv_usable(hwang_dir) and pairs_csv_usable(ud_dir)
+    h_pairs = load_skill_pairs(hwang_dir, args.hwang_format) if have_pairs else None
+    u_pairs = load_skill_pairs(ud_dir, args.ud_format) if have_pairs else None
+    h_over = load_overall_direct(hwang_dir, args.hwang_format)
+    u_over = load_overall_direct(ud_dir, args.ud_format)
 
     print('Combined format-factor coefficients')
-    print('RB/WR from pair curve, geo-mean 1; TE vs that gauge; TEP on UD baseline')
+    print(f'HVORP mode: {h_mode}')
+    print(f'numerator:   {hwang_dir} format={args.hwang_format}')
+    print(f'denominator: {ud_dir} format={args.ud_format}')
+    if have_pairs:
+        print('RB/WR from pair curve, geo-mean 1; TE vs that gauge')
+    else:
+        print('No board-pair CSV (typical of removal dumps); flats from matchups.csv only')
     print()
 
     out = {}
@@ -162,6 +224,19 @@ def main():
         wrte_h, wrte_u = ht[0] / ht[1], ut[0] / ut[1]
         # TE vs WR, then vs WR's geo-split level
         flat_te = flat_wr * (wrte_u / wrte_h)
+        flats = {'RB': flat_rb, 'WR': flat_wr, 'TE': flat_te}
+
+        print(f'=== {basis} ===')
+        print(f'  overall RB/WR factor {rbw_f:.3f}  →  RB {flat_rb:.3f}  WR {flat_wr:.3f}  TE {flat_te:.3f}')
+
+        if not have_pairs:
+            out[basis] = {pos: round_coeff(flats[pos], 0.0, flats[pos])
+                          for pos in ('RB', 'WR', 'TE')}
+            for pos in ('RB', 'WR', 'TE'):
+                r = out[basis][pos]
+                print(f"  {pos:<4}flat {r['flat']}")
+            print()
+            continue
 
         h_rbwr = fit_rb_wr(h_pairs[basis])
         u_rbwr = fit_rb_wr(u_pairs[basis])
@@ -175,14 +250,11 @@ def main():
             factor[pos] = (hc / uc, hk - uk)
         factor['TE'] = (h_te[0] / u_te[0], h_te[1] - u_te[1])
 
-        flats = {'RB': flat_rb, 'WR': flat_wr, 'TE': flat_te}
         rounded = {pos: round_coeff(factor[pos][0], factor[pos][1], flats[pos])
                    for pos in ('RB', 'WR', 'TE')}
         out[basis] = rounded
 
-        print(f'=== {basis} ===')
-        print(f'  overall RB/WR factor {rbw_f:.3f}  →  RB {flat_rb:.3f}  WR {flat_wr:.3f}  TE {flat_te:.3f}')
-        print(f"  {'pos':<4}{'Hwang':>16}{'UD+TEP':>16}{'factor':>16}  rounded")
+        print(f"  {'pos':<4}{'Hwang':>16}{'baseline':>16}{'factor':>16}  rounded")
         for pos in ('RB', 'WR'):
             hc, hk = h_rbwr[pos]
             uc, uk = u_rbwr[pos]
@@ -203,6 +275,7 @@ def main():
         print()
 
     print('JS snippet (QB filled in by caller):')
+    print(f'  # HVORP mode: {h_mode}')
     print('  true: {  # ktc basis')
     for pos in ('RB', 'WR', 'TE'):
         r = out['ktc'][pos]

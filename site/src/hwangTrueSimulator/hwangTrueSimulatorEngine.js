@@ -16,7 +16,10 @@
  *      Optional `hvorpMode: 'replace'` instead removes a similar-value player
  *      from the built roster and inserts the candidate (roster size stays
  *      constant). If one side of the pair is already on the club, that player
- *      is the swap target.
+ *      is the swap target. Optional `hvorpMode: 'removal'` keeps the full
+ *      26-man, leave-one-out scores every rostered player, and pairs those
+ *      already on the club who sit within ±5% KTC of each other (no 27th-man
+ *      board pool). Density comes from more jittered builds, not more adds.
  *   4. Accumulate total HVORP per position group within each matchup
  *      (QB vs RB, QB vs WR, … WR vs TE) → total relative difference.
  *
@@ -535,8 +538,10 @@ function buildYearCandidates(finalKtcRows, year, ptsById) {
  * @param {boolean}  opts.valueWeightPairs    weight each pair's contribution by its mid value
  * @param {boolean}  opts.pointsWeightBuilds  weight each build's contribution by its base-roster
  *                                            season optimal total (better teams count more)
- * @param {string}   opts.hvorpMode           'addon' (default; 27th-man plug) or
- *                                            'replace' (swap a similar-value roster player)
+ * @param {string}   opts.hvorpMode           'addon' (default; 27th-man plug),
+ *                                            'replace' (swap a similar-value roster player),
+ *                                            or 'removal' (leave-one-out of same-roster
+ *                                            players at similar KTC; use many builds)
  * @param {Function} opts.onProgress          ({ fraction, label }) => void
  * @param {Function} opts.isCancelled         () => boolean
  */
@@ -612,7 +617,7 @@ export async function runHwangTrueSimulation({
     clearStatsCache();
 
     const { candidates, excludedZeroPoint, poolSize } = buildYearCandidates(valueRows, year, ptsById);
-    const pairs = findValuePairs(candidates, PAIR_TOLERANCE_PCT);
+    const pairs = hvorpMode === 'removal' ? [] : findValuePairs(candidates, PAIR_TOLERANCE_PCT);
 
     const candidateById = new Map(candidates.map((c) => [c.playerId, c]));
     const pairedIds = new Set();
@@ -623,11 +628,13 @@ export async function runHwangTrueSimulation({
 
     const yearMatchups = emptyMatchups();
     const archetypeResults = [];
+    const appearedPlayers = new Map();
+    let yearRemovalPairs = 0;
 
     for (let ai = 0; ai < archetypes.length; ai += 1) {
       if (isCancelled()) throw new Error('cancelled');
       const archetype = archetypes[ai];
-      const dropIndex = hvorpMode === 'replace' ? -1 : findDropSlotIndex(archetype.slots);
+      const dropIndex = hvorpMode === 'addon' ? findDropSlotIndex(archetype.slots) : -1;
 
       const archMatchups = emptyMatchups();
       const hvorpSums = new Map(); // pid → { sum, n, wSum, w }
@@ -638,6 +645,7 @@ export async function runHwangTrueSimulation({
       let replaceHits = 0;
       let replaceSkipBoth = 0;
       let replaceSkipNoTarget = 0;
+      let removalPairs = 0;
 
       for (let b = 0; b < builds; b += 1) {
         if (isCancelled()) throw new Error('cancelled');
@@ -674,6 +682,7 @@ export async function runHwangTrueSimulation({
         const weekArrays = buildBaseWeekArrays(basePlayers, ptsById);
         const baseTotals = weekArrays.map((week) => optimalTotal(week, slotCounts));
         const hvorpById = new Map();
+        let buildPairs = pairs;
 
         if (hvorpMode === 'replace') {
           const holeCache = new Map(); // swapTargetId → { weekArrays, baseTotals, evals: Map(pid → hvorp) }
@@ -727,6 +736,48 @@ export async function runHwangTrueSimulation({
               await new Promise((r) => setTimeout(r, 0));
               if (isCancelled()) throw new Error('cancelled');
             }
+          }
+        } else if (hvorpMode === 'removal') {
+          for (const player of basePlayers) {
+            if (!player.sleeperId) continue;
+            hvorpById.set(
+              player.sleeperId,
+              evalPlayerHvorp(
+                player.sleeperId, player.position, true,
+                weekArrays, baseTotals, ptsById, slotCounts,
+              ),
+            );
+            if (!appearedPlayers.has(player.sleeperId)) {
+              appearedPlayers.set(player.sleeperId, {
+                playerId: player.sleeperId,
+                name: player.name,
+                position: player.position,
+                value: player.ktcValue,
+                seasonPts: seasonTotal(ptsById, player.sleeperId),
+              });
+            }
+          }
+          const rosterCands = [];
+          for (const p of basePlayers) {
+            if (!p.sleeperId || !(p.ktcValue > 0)) continue;
+            if (seasonTotal(ptsById, p.sleeperId) <= 0) continue;
+            rosterCands.push({
+              playerId: p.sleeperId,
+              position: p.position,
+              value: p.ktcValue,
+            });
+          }
+          buildPairs = findValuePairs(rosterCands, PAIR_TOLERANCE_PCT);
+          removalPairs += buildPairs.length;
+          yearRemovalPairs += buildPairs.length;
+          if (b % 20 === 0) {
+            report(
+              (b + 0.5) / builds,
+              `${year}: ${archetype.label}${buildLabel} — leave-one-out (${buildPairs.length} same-roster pairs)`,
+            );
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => setTimeout(r, 0));
+            if (isCancelled()) throw new Error('cancelled');
           }
         } else {
           // HVORP for every paired candidate plus every base player (for display).
@@ -789,7 +840,7 @@ export async function runHwangTrueSimulation({
         }
 
         const buildMatchups = emptyMatchups();
-        for (const pair of pairs) {
+        for (const pair of buildPairs) {
           let hvorpA;
           let hvorpB;
           if (hvorpMode === 'replace') {
@@ -868,28 +919,33 @@ export async function runHwangTrueSimulation({
         replaceHits,
         replaceSkipBoth,
         replaceSkipNoTarget,
+        removalPairs,
       });
     }
 
     accumulateMatchups(overallMatchups, yearMatchups);
-    yearResults.push({
-      year,
-      candidateCount: candidates.length,
-      excludedZeroPoint,
-      poolSize,
-      pairCount: pairs.length,
-      replaceAttempts: archetypeResults.reduce((s, a) => s + (a.replaceAttempts || 0), 0),
-      replaceHits: archetypeResults.reduce((s, a) => s + (a.replaceHits || 0), 0),
-      replaceSkipBoth: archetypeResults.reduce((s, a) => s + (a.replaceSkipBoth || 0), 0),
-      replaceSkipNoTarget: archetypeResults.reduce((s, a) => s + (a.replaceSkipNoTarget || 0), 0),
-      matchups: finalizeMatchups(yearMatchups),
-      candidates: candidates.map((c) => ({
+    const yearCandidates = hvorpMode === 'removal'
+      ? [...appearedPlayers.values()]
+      : candidates.map((c) => ({
         playerId: c.playerId,
         name: c.name,
         position: c.position,
         value: c.value,
         seasonPts: c.seasonPts,
-      })),
+      }));
+    yearResults.push({
+      year,
+      candidateCount: yearCandidates.length,
+      excludedZeroPoint,
+      poolSize: hvorpMode === 'removal' ? yearCandidates.length : poolSize,
+      pairCount: hvorpMode === 'removal' ? yearRemovalPairs : pairs.length,
+      replaceAttempts: archetypeResults.reduce((s, a) => s + (a.replaceAttempts || 0), 0),
+      replaceHits: archetypeResults.reduce((s, a) => s + (a.replaceHits || 0), 0),
+      replaceSkipBoth: archetypeResults.reduce((s, a) => s + (a.replaceSkipBoth || 0), 0),
+      replaceSkipNoTarget: archetypeResults.reduce((s, a) => s + (a.replaceSkipNoTarget || 0), 0),
+      removalPairs: yearRemovalPairs,
+      matchups: finalizeMatchups(yearMatchups),
+      candidates: yearCandidates,
       pairs: pairs.map((p) => ({ pairKey: p.pairKey, aId: p.a.playerId, bId: p.b.playerId })),
       archetypes: archetypeResults,
     });
@@ -918,7 +974,9 @@ export async function runHwangTrueSimulation({
       ktcAsOf: meta?.ktcAsOf || null,
       hvorpMethod: hvorpMode === 'replace'
         ? 'roster-context optimal starter totals (17 weeks, replace similar-value player)'
-        : 'roster-context optimal starter totals (17 weeks, add-on / leave-one-out)',
+        : hvorpMode === 'removal'
+          ? 'roster-context optimal starter totals (17 weeks, leave-one-out of same-roster similar-value players)'
+          : 'roster-context optimal starter totals (17 weeks, add-on / leave-one-out)',
     },
     overall: {
       matchups: finalOverall,
