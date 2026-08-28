@@ -36,10 +36,19 @@ const PLAYOFF_NEIGHBORS = 30;
 
 export const VARIANCE_LEVELS = {
   low: { extrapolations: [] },
+  openTail: { extrapolations: [], predictiveTail: true },
   medium: { extrapolations: [0.12] },
   high: { extrapolations: [0.12, 0.25] },
 };
-export const DEFAULT_VARIANCE = 'low';
+export const DEFAULT_VARIANCE = 'openTail';
+
+const PREDICTIVE_SAMPLE_N = 25;
+const PREDICTIVE_RARE_P = 1 / 10000;
+const PREDICTIVE_TAIL_RUNGS = 12;
+
+export function randomPercentile() {
+  return Math.random() * 100;
+}
 
 export function normalizeVariance(v) {
   return VARIANCE_LEVELS[v] ? v : DEFAULT_VARIANCE;
@@ -57,16 +66,19 @@ export function normalizeMonotone(m) {
 
 export function percentileToOutcomeIndex(percentile, outcomeCount, cumWeights = null) {
   if (outcomeCount <= 0) return -1;
-  const p = Math.max(0, Math.min(100, Number(percentile) || 0));
+  const raw = Number(percentile);
+  const p = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 50;
   if (!cumWeights) {
     return Math.min(outcomeCount - 1, Math.floor(((100 - p) / 100) * outcomeCount));
   }
-  const target = ((100 - p) / 100) * cumWeights[outcomeCount - 1];
+  const total = cumWeights[outcomeCount - 1];
+  const target = ((100 - p) / 100) * total;
+  if (target <= 0) return 0;
   let lo = 0;
   let hi = outcomeCount - 1;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (cumWeights[mid] > target) hi = mid;
+    if (cumWeights[mid] >= target) hi = mid;
     else lo = mid + 1;
   }
   return lo;
@@ -157,7 +169,7 @@ function poolQuality(pool) {
     sum += e.weight * e.scoringPts;
   }
   const sorted = pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
-  const densified = densifyPool(sorted, DEFAULT_VARIANCE);
+  const densified = densifyPool(sorted, 'low');
   const cum = buildPoolCumulativeWeights(densified);
   const idx = percentileToOutcomeIndex(50, densified.length, cum);
   return { median: densified[idx].scoringPts, mean: wTot > 0 ? sum / wTot : -Infinity };
@@ -318,6 +330,119 @@ function densifyPool(sortedReal, variance) {
   return out.sort((a, b) => b.scoringPts - a.scoringPts);
 }
 
+function realParentRef(e) {
+  if (!e) return null;
+  if (!e.synthetic && e.sleeperId != null && e.seasonYear != null) return parentRef(e);
+  const p = (e.parents || []).find((x) => x?.sleeperId != null && x?.seasonYear != null)
+    || e.parents?.[0];
+  if (p?.sleeperId != null) {
+    return {
+      sleeperId: p.sleeperId,
+      seasonYear: p.seasonYear,
+      scoringPts: p.scoringPts ?? e.scoringPts,
+    };
+  }
+  return null;
+}
+
+function exponentialTailScale(sortedDesc) {
+  const reals = sortedDesc.filter((e) => !e.synthetic);
+  const src = reals.length >= 2 ? reals : sortedDesc.filter((e) => !e.extrapolation);
+  const gaps = [];
+  for (let i = 0; i < Math.min(4, src.length - 1); i++) {
+    const g = src[i].scoringPts - src[i + 1].scoringPts;
+    if (g > 0) gaps.push(g);
+  }
+  if (gaps.length) return gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  const maxPts = src[0]?.scoringPts || sortedDesc[0]?.scoringPts || 0;
+  return Math.max(1, maxPts * 0.08);
+}
+
+function logSpacedSurvivals(pStart, pEnd, rungs) {
+  const edges = [];
+  const log0 = Math.log(pStart);
+  const log1 = Math.log(pEnd);
+  for (let i = 0; i <= rungs; i++) {
+    edges.push(Math.exp(log0 + (log1 - log0) * (i / rungs)));
+  }
+  return edges;
+}
+
+function appendPredictiveTails(pool) {
+  if (!pool || pool.length === 0) return pool;
+  const sorted = sortPoolDesc(pool.slice());
+
+  let realN = 0;
+  let histW = 0;
+  for (const e of sorted) {
+    if (!e.synthetic) realN += 1;
+    histW += e.weight ?? 1;
+  }
+  const n = Math.max(2, realN || PREDICTIVE_SAMPLE_N);
+  const pStart = 1 / (n + 1);
+  if (histW <= 0 || pStart <= PREDICTIVE_RARE_P) return sorted;
+
+  const wTail = histW / (n - 1);
+  const sigma = exponentialTailScale(sorted);
+  const best = sorted.find((e) => !e.synthetic) || sorted[0];
+  const worst = [...sorted].reverse().find((e) => !e.synthetic) || sorted[sorted.length - 1];
+  const bestRef = realParentRef(best);
+  const worstRef = realParentRef(worst);
+  const maxPts = best.scoringPts;
+  const minPts = worst.scoringPts;
+  const parentMax = bestRef?.scoringPts || maxPts;
+  const parentMin = worstRef?.scoringPts || minPts;
+  const edges = logSpacedSurvivals(pStart, PREDICTIVE_RARE_P, PREDICTIVE_TAIL_RUNGS);
+  const rungs = [];
+
+  for (let i = 0; i < edges.length - 1; i++) {
+    const pHi = edges[i];
+    const pLo = edges[i + 1];
+    const weight = wTail * ((pHi - pLo) / pStart);
+    const pRep = i === edges.length - 2 ? pLo : Math.sqrt(pHi * pLo);
+    const excess = sigma * Math.log(pStart / pRep);
+
+    if (bestRef && parentMax > 0) {
+      const scoringPts = maxPts + excess;
+      rungs.push({
+        synthetic: true,
+        extrapolation: 'ceiling',
+        position: best.position,
+        parents: [bestRef],
+        scale: scoringPts / parentMax,
+        scoringPts,
+        weight,
+        outcomeRank: null,
+        survivalP: pRep,
+      });
+    }
+    if (worstRef && parentMin > 0) {
+      const scoringPts = Math.max(0, minPts - excess);
+      rungs.push({
+        synthetic: true,
+        extrapolation: 'floor',
+        position: worst.position,
+        parents: [worstRef],
+        scale: scoringPts / parentMin,
+        scoringPts,
+        weight,
+        outcomeRank: null,
+        survivalP: pRep,
+      });
+    }
+  }
+
+  return sortPoolDesc(sorted.concat(rungs));
+}
+
+function finalizePool(sorted, variance, densify, preDensified) {
+  let out = (preDensified || !densify) ? sorted : densifyPool(sorted, variance);
+  if (densify && VARIANCE_LEVELS[variance]?.predictiveTail) {
+    out = appendPredictiveTails(out);
+  }
+  return out;
+}
+
 export function buildOutcomePool(adpInfo, catalog, positionMaxRanks, options = {}) {
   if (!adpInfo || !catalog) return [];
   const { position, posRank, effRank: rawEffRank } = adpInfo;
@@ -346,8 +471,7 @@ export function buildOutcomePool(adpInfo, catalog, positionMaxRanks, options = {
   }
 
   const sorted = pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
-  if (grid.preDensified || !densify) return sorted;
-  return densifyPool(sorted, variance);
+  return finalizePool(sorted, variance, densify, grid.preDensified);
 }
 
 function realWeekArray(ref, basePointsByYear, numWeeks) {
@@ -959,7 +1083,7 @@ function emptyStats(rosterIds) {
   const stats = {};
   for (const rid of rosterIds) {
     stats[rid] = {
-      rosterId: rid, wins: 0, playoffCount: 0, top3Count: 0,
+      rosterId: rid, wins: 0, playoffCount: 0,
       placeSum: 0, regSeasonSum: 0, playoffSum: 0,
     };
   }
@@ -972,7 +1096,6 @@ function accumulate(stats, outcome, rosterIds) {
     if (!s) continue;
     if (row.place === 1) s.wins += 1;
     if (row.isPlayoff) s.playoffCount += 1;
-    if (row.place <= 3) s.top3Count += 1;
     s.placeSum += row.place;
   }
   for (const rid of rosterIds) {
@@ -990,7 +1113,6 @@ function buildResults(stats, iterations, rosterIds) {
       rosterId: rid,
       winPct: (row.wins / iterations) * 100,
       playoffPct: (row.playoffCount / iterations) * 100,
-      top3Pct: (row.top3Count / iterations) * 100,
       avgFinish: row.placeSum / iterations,
       avgRegSeason,
       avgPlayoff,
@@ -1017,8 +1139,8 @@ export function runSeasonSim(ctx, iterations = DEFAULT_ITERATIONS) {
 
   for (let i = 0; i < n; i++) {
     for (const pid of ctx.allPlayerIds) {
-      ctx.rolls[pid] = (Math.random() * 101) | 0;
-      ctx.playoffRolls[pid] = (Math.random() * 101) | 0;
+      ctx.rolls[pid] = randomPercentile();
+      ctx.playoffRolls[pid] = randomPercentile();
     }
     fillWeeklyFromRolls(ctx);
 

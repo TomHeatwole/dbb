@@ -967,7 +967,7 @@ function formatOddsTable(results, teamMap, deltasById = null) {
     lines.push(
       `  ${String(i + 1).padStart(2)}. ${name} (${info.ownerName || '?'}) — ` +
       `title ${row.winPct.toFixed(1)}% | playoffs ${row.playoffPct.toFixed(1)}% | ` +
-      `top-3 ${row.top3Pct.toFixed(1)}% | avg finish ${row.avgFinish.toFixed(1)} | ` +
+      `avg finish ${row.avgFinish.toFixed(1)} | ` +
       `avg pts ${Math.round(row.avgTotalScore).toLocaleString()}${deltaStr}`
     );
   });

@@ -20,7 +20,7 @@ import {
   loadHwangPositionMaxRanks,
 } from '../scenarios/hwangAdpLoader';
 import { loadHistoricalOutcomeCatalog, getOutcomeHistoryYears } from '../scenarios/historicalOutcomeData';
-import { generateMissingRolls } from '../scenarios/outcomeDistribution';
+import { generateMissingRolls, randomPercentile } from '../scenarios/outcomeDistribution';
 import { computeFutureScenario2Eval } from '../scenarios/computeFutureScenario2Eval';
 import ScenarioStandingsPanel from '../scenarios/ScenarioStandingsPanel';
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
@@ -266,8 +266,8 @@ function FutureScenario2EvalPage() {
     const next = {};
     const nextPo = {};
     for (const pid of allPlayerIds) {
-      next[pid] = Math.floor(Math.random() * 101);
-      nextPo[pid] = Math.floor(Math.random() * 101);
+      next[pid] = randomPercentile();
+      nextPo[pid] = randomPercentile();
     }
     setPercentileRolls(next);
     setPlayoffRolls(nextPo);

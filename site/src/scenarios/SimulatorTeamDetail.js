@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { buildFutureScenario2EvalUrl } from './scenarioEncoding';
 import { percentileColor } from './luckMetrics';
 import SimulatorHistogramChart from './SimulatorHistogramChart';
@@ -140,26 +140,55 @@ function SimOutcomeLink({ run, originalRosters, scenarioRosters, seasonYear }) {
 }
 
 function SeasonExtremeCard({ label, tone, run, originalRosters, scenarioRosters, seasonYear }) {
-  return (
-    <div className={`simulator-extreme-card simulator-extreme-card--${tone}`}>
+  const href = run?.rolls
+    ? buildFutureScenario2EvalUrl(
+      originalRosters,
+      scenarioRosters,
+      run.rolls,
+      seasonYear,
+      run.playoffRolls,
+    )
+    : null;
+  const luckLabel = run?.luckPercentile != null
+    ? `P${Math.round(run.luckPercentile)} luck`
+    : null;
+  const className = `simulator-extreme-card simulator-extreme-card--${tone}${href ? ' simulator-extreme-card--link' : ''}`;
+
+  const inner = (
+    <>
       <div className="simulator-extreme-card-label">{label}</div>
       {run ? (
         <>
           <div className="simulator-extreme-card-meta">
             {run.place ? `${ordinal(run.place)} · ` : ''}
             {fmtPts(run.totalScore)} pts
+            {luckLabel ? ` · ${luckLabel}` : ''}
           </div>
-          <SimOutcomeLink
-            run={run}
-            originalRosters={originalRosters}
-            scenarioRosters={scenarioRosters}
-            seasonYear={seasonYear}
-          />
+          {href
+            ? <div className="simulator-extreme-card-cta">Open this season →</div>
+            : <span className="simulator-finish-col-empty">No outcome link</span>}
         </>
       ) : (
         <span className="simulator-finish-col-empty">—</span>
       )}
-    </div>
+    </>
+  );
+
+  if (!href) {
+    return <div className={className}>{inner}</div>;
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+      title={`${label} · sim #${run.simIndex} · open in Future Scenarios v2`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {inner}
+    </a>
   );
 }
 
@@ -179,6 +208,11 @@ function SimulatorTeamDetail({
   const team = (teamsForGrid || []).find((t) => t.rosterId === rosterId) || {};
   const myRosterId = useMyCurrentRosterId();
   const mine = isMyRoster(rosterId, myRosterId);
+  const detailRef = useRef(null);
+
+  useEffect(() => {
+    detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [rosterId]);
 
   const buckets = useMemo(
     () => teamFinishBuckets?.[rosterId] || teamFinishBuckets?.[String(rosterId)] || null,
@@ -221,7 +255,7 @@ function SimulatorTeamDetail({
   const totalTeams = (teamsForGrid || []).length || 10;
 
   return (
-    <div className="simulator-team-detail">
+    <div className="simulator-team-detail" ref={detailRef}>
       <div className="simulator-team-detail-header">
         <span className="simulator-team-detail-label">Viewing:</span>
         {team.avatarUrl
@@ -230,6 +264,34 @@ function SimulatorTeamDetail({
         }
         <span className="simulator-team-detail-name">{team.teamName || `Team ${rosterId}`}</span>
       </div>
+
+      {(seasonExtremes?.best || seasonExtremes?.worst) && (
+        <div className="simulator-team-detail-section simulator-team-detail-section--extremes">
+          <div className="simulator-team-detail-section-title">Best and worst seasons</div>
+          <div className="simulator-team-detail-subtitle">
+            Highest- and lowest-scoring runs for this team across {iterations.toLocaleString()} simulations
+            {' '}· click to open the full outcome set
+          </div>
+          <div className="simulator-extreme-grid">
+            <SeasonExtremeCard
+              label="Best season"
+              tone="best"
+              run={seasonExtremes.best}
+              originalRosters={originalRosters}
+              scenarioRosters={scenarioRosters}
+              seasonYear={seasonYear}
+            />
+            <SeasonExtremeCard
+              label="Worst season"
+              tone="worst"
+              run={seasonExtremes.worst}
+              originalRosters={originalRosters}
+              scenarioRosters={scenarioRosters}
+              seasonYear={seasonYear}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="simulator-team-detail-section simulator-team-detail-section--histogram">
         <div className="simulator-team-detail-section-title">League finish distribution</div>
@@ -288,78 +350,50 @@ function SimulatorTeamDetail({
         teamsForGrid={teamsForGrid}
       />
 
-      {(seasonExtremes?.best || seasonExtremes?.worst || showOutcomeLinks) && (
+      {showOutcomeLinks && (
         <div className="simulator-team-detail-section simulator-team-detail-section--outcomes">
           <div className="simulator-team-detail-section-title">Specific simulations</div>
           <div className="simulator-team-detail-subtitle">
             Open an outcome set in Future Scenarios v2
-            {showOutcomeLinks && buckets.some((b) => b.count > b.runs.length) && (
+            {buckets.some((b) => b.count > b.runs.length) && (
               <span className="simulator-team-detail-note">
                 {' '}· top 50 scores per finish shown
               </span>
             )}
-            {!showOutcomeLinks && (
-              <span className="simulator-team-detail-note">
-                {' '}· large runs keep each team&apos;s best and worst season
-              </span>
-            )}
           </div>
 
-          {(seasonExtremes?.best || seasonExtremes?.worst) && (
-            <div className="simulator-extreme-grid">
-              <SeasonExtremeCard
-                label="Best season"
-                tone="best"
-                run={seasonExtremes.best}
-                originalRosters={originalRosters}
-                scenarioRosters={scenarioRosters}
-                seasonYear={seasonYear}
-              />
-              <SeasonExtremeCard
-                label="Worst season"
-                tone="worst"
-                run={seasonExtremes.worst}
-                originalRosters={originalRosters}
-                scenarioRosters={scenarioRosters}
-                seasonYear={seasonYear}
-              />
-            </div>
-          )}
-
-          {showOutcomeLinks && (
-            <div className="simulator-finish-grid">
-              {buckets.map((bucket) => (
-                <div
-                  key={bucket.place}
-                  className={
-                    'simulator-finish-col' +
-                    (bucket.place <= 4 ? ' simulator-finish-col--playoff' : '')
-                  }
-                >
-                  <div className="simulator-finish-col-header">{ordinal(bucket.place)}</div>
-                  <div className="simulator-finish-col-count">
-                    {bucket.count}
-                    <span className="simulator-finish-col-count-denom">/{iterations}</span>
-                  </div>
-                  <div className="simulator-finish-col-links">
-                    {bucket.runs.length === 0 ? (
-                      <span className="simulator-finish-col-empty">—</span>
-                    ) : (
-                      bucket.runs.map((run) => (
-                        <SimOutcomeLink
-                          key={run.simIndex}
-                          run={run}
-                          originalRosters={originalRosters}
-                          scenarioRosters={scenarioRosters}
-                          seasonYear={seasonYear}
-                        />
-                      ))
-                    )}
-                  </div>
+          <div className="simulator-finish-grid">
+            {buckets.map((bucket) => (
+              <div
+                key={bucket.place}
+                className={
+                  'simulator-finish-col' +
+                  (bucket.place <= 4 ? ' simulator-finish-col--playoff' : '')
+                }
+              >
+                <div className="simulator-finish-col-header">{ordinal(bucket.place)}</div>
+                <div className="simulator-finish-col-count">
+                  {bucket.count}
+                  <span className="simulator-finish-col-count-denom">/{iterations}</span>
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="simulator-finish-col-links">
+                  {bucket.runs.length === 0 ? (
+                    <span className="simulator-finish-col-empty">—</span>
+                  ) : (
+                    bucket.runs.map((run) => (
+                      <SimOutcomeLink
+                        key={run.simIndex}
+                        run={run}
+                        originalRosters={originalRosters}
+                        scenarioRosters={scenarioRosters}
+                        seasonYear={seasonYear}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

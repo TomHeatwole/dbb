@@ -404,7 +404,6 @@ function mergeResults(a, b) {
     if (!cur) { byId.set(r.rosterId, { ...r }); continue; }
     cur.winPct = (cur.winPct + r.winPct) / 2;
     cur.playoffPct = (cur.playoffPct + r.playoffPct) / 2;
-    cur.top3Pct = (cur.top3Pct + r.top3Pct) / 2;
     cur.avgFinish = (cur.avgFinish + r.avgFinish) / 2;
     cur.avgTotalScore = (cur.avgTotalScore + r.avgTotalScore) / 2;
     cur.avgRegSeasonScore = ((cur.avgRegSeasonScore || 0) + (r.avgRegSeasonScore || 0)) / 2;
@@ -418,13 +417,13 @@ results.sort((a, b) => b.winPct - a.winPct || a.avgFinish - b.avgFinish);
 
 console.log('\n===== JAML REDRAFT BESTBALL — 10,000 seasons =====');
 console.log('Half-PPR · 1QB 2RB 3WR 1TE 1FLEX 1SF · Redraft Dash ranks for outcome ranges');
-console.log('rank  team            title%  playoff%  top3%  avgFin  avgPts');
+console.log('rank  team            title%  playoff%  avgFin  avgPts');
 results.forEach((row, i) => {
   const name = teamNames[row.rosterId] || `Team ${row.rosterId}`;
   console.log(
     `${String(i + 1).padStart(2)}    ${name.padEnd(14)}  ` +
     `${row.winPct.toFixed(1).padStart(5)}  ${row.playoffPct.toFixed(1).padStart(7)}  ` +
-    `${row.top3Pct.toFixed(1).padStart(5)}  ${row.avgFinish.toFixed(2).padStart(6)}  ` +
+    `${row.avgFinish.toFixed(2).padStart(6)}  ` +
     `${Math.round(row.avgTotalScore).toString().padStart(6)}`,
   );
 });

@@ -289,7 +289,7 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'get_season_odds',
-    description: 'Run a Monte Carlo simulation of the upcoming/current season with the real rosters: rolls each player\'s season outcome from historical seasons of players drafted at a similar ADP, scores optimal best-ball lineups for all 17 weeks, and returns title odds, playoff odds, top-3 odds, average finish, and average points for every team. Call this before making ANY claim about a team\'s chances, projections, or outlook this season.',
+    description: 'Run a Monte Carlo simulation of the upcoming/current season with the real rosters: rolls each player\'s season outcome from historical seasons of players drafted at a similar ADP, scores optimal best-ball lineups for all 17 weeks, and returns title odds, playoff odds, average finish, and average points for every team. Call this before making ANY claim about a team\'s chances, projections, or outlook this season.',
     parameters: {
       type: 'OBJECT',
       properties: {

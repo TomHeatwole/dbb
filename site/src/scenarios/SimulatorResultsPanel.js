@@ -80,7 +80,6 @@ function SimulatorResultsPanel({
     d.resultsRankDelta
     || Math.abs(d.winPctDelta || 0) >= 0.05
     || Math.abs(d.playoffPctDelta || 0) >= 0.05
-    || Math.abs(d.top3PctDelta || 0) >= 0.05
     || Math.abs(d.avgFinishDelta || 0) >= 0.005
     || Math.abs(d.avgRegSeasonRankDelta || 0) >= 0.005
     || Math.abs(d.avgRegSeasonDelta || 0) >= 0.05
@@ -115,7 +114,6 @@ function SimulatorResultsPanel({
               <th className="simulator-results-th simulator-results-th--team">Team</th>
               <th className="simulator-results-th simulator-results-th--num" title="Championship rate">Win %</th>
               <th className="simulator-results-th simulator-results-th--num" title="Top-4 seed rate">Playoff %</th>
-              <th className="simulator-results-th simulator-results-th--num" title="Finish 1st–3rd rate">Top 3 %</th>
               <th className="simulator-results-th simulator-results-th--num" title="Average final standing (1–10)">Avg Finish</th>
               <th className="simulator-results-th simulator-results-th--num" title="Average regular-season seed by points">Avg Reg Seed</th>
               <th className="simulator-results-th simulator-results-th--num" title="Average regular-season starter points">Avg 14 Wk</th>
@@ -173,12 +171,6 @@ function SimulatorResultsPanel({
                     <span className="simulator-results-metric">
                       <span>{fmtPct(row.playoffPct)}</span>
                       <MetricDelta delta={delta.playoffPctDelta} format={fmtPctDelta} />
-                    </span>
-                  </td>
-                  <td className="simulator-results-td simulator-results-td--num">
-                    <span className="simulator-results-metric">
-                      <span>{fmtPct(row.top3Pct)}</span>
-                      <MetricDelta delta={delta.top3PctDelta} format={fmtPctDelta} />
                     </span>
                   </td>
                   <td className="simulator-results-td simulator-results-td--num">

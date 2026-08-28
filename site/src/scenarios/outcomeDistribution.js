@@ -18,13 +18,17 @@
  *     recent-year-only samples can't invert the deep tail.
  *  5. Pools are densified with synthetic seasons interpolated between each
  *     adjacent pair of real outcomes (week-spliced from the two parents).
- *     Higher variance settings additionally extrapolate a few seasons
- *     beyond the historical ceiling and floor.
+ *     `openTail` (default) then appends a predictive record tail: 1/(n+1)
+ *     of the mass above the historical max and below the min, discretized
+ *     from just-beyond-history down to 1-in-10,000, with exponential
+ *     excesses scaled from the pool's own top spacings. Elevated/Chaotic
+ *     instead add a few fixed-percent seasons beyond both extremes.
  *
- * Percentile rolls (0–100) map to outcomes through the weighted CDF.
- * That roll supplies weeks 1–14. Weeks 15–17 are a second independent
- * roll from real historical playoff weeks, kernel-weighted toward
- * seasons whose weeks 1–14 total is close to the one already drawn.
+ * Percentile rolls are continuous on [0, 100) and map through the weighted
+ * CDF, so a 1-in-10,000 rung is reachable. That roll supplies weeks 1–14.
+ * Weeks 15–17 are a second independent roll from real historical playoff
+ * weeks, kernel-weighted toward seasons whose weeks 1–14 total is close
+ * to the one already drawn.
  */
 
 const ADP_WINDOW = 2;
@@ -39,15 +43,43 @@ const PLAYOFF_NEIGHBORS = 30;
 /**
  * Variance levels control how far synthetic seasons may extend beyond the
  * historical ceiling/floor of a pool. `low` interpolates only (a season can
- * never beat the best real season in the window); higher levels add a few
- * low-probability seasons scaled beyond both historical extremes.
+ * never beat the best real season in the window). `openTail` (default) adds
+ * an unseen-record range with total mass 1/(n+1) ≈ 1/26, including
+ * 1-in-10,000 seasons. Elevated/Chaotic add a few fixed-percent rungs.
  */
 export const VARIANCE_LEVELS = {
-  low: { label: 'Historical', description: 'Outcomes capped at the best/worst real season', extrapolations: [] },
-  medium: { label: 'Elevated', description: 'Rare outcomes up to 12% beyond the historical range', extrapolations: [0.12] },
-  high: { label: 'Chaotic', description: 'Rare outcomes up to 25% beyond the historical range', extrapolations: [0.12, 0.25] },
+  low: {
+    label: 'Historical',
+    description: 'Outcomes capped at the best/worst real season',
+    extrapolations: [],
+  },
+  openTail: {
+    label: 'Open tail',
+    description: 'Unseen records beyond history, including 1-in-10,000 seasons. Tail mass matches ~25 analogs (1/26).',
+    extrapolations: [],
+    predictiveTail: true,
+  },
+  medium: {
+    label: 'Elevated',
+    description: 'Rare outcomes up to 12% beyond the historical range',
+    extrapolations: [0.12],
+  },
+  high: {
+    label: 'Chaotic',
+    description: 'Rare outcomes up to 25% beyond the historical range',
+    extrapolations: [0.12, 0.25],
+  },
 };
-export const DEFAULT_VARIANCE = 'low';
+export const DEFAULT_VARIANCE = 'openTail';
+
+/** Typical analog count in a ±2 × 5-year window; P(new record) = 1/(n+1). */
+const PREDICTIVE_SAMPLE_N = 25;
+const PREDICTIVE_RARE_P = 1 / 10000;
+const PREDICTIVE_TAIL_RUNGS = 12;
+
+export function randomPercentile() {
+  return Math.random() * 100;
+}
 
 export function normalizeVariance(v) {
   return VARIANCE_LEVELS[v] ? v : DEFAULT_VARIANCE;
@@ -82,16 +114,19 @@ export function normalizeMonotone(m) {
  */
 export function percentileToOutcomeIndex(percentile, outcomeCount, cumWeights = null) {
   if (outcomeCount <= 0) return -1;
-  const p = Math.max(0, Math.min(100, Number(percentile) || 0));
+  const raw = Number(percentile);
+  const p = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 50;
   if (!cumWeights) {
     return Math.min(outcomeCount - 1, Math.floor(((100 - p) / 100) * outcomeCount));
   }
-  const target = ((100 - p) / 100) * cumWeights[outcomeCount - 1];
+  const total = cumWeights[outcomeCount - 1];
+  const target = ((100 - p) / 100) * total;
+  if (target <= 0) return 0;
   let lo = 0;
   let hi = outcomeCount - 1;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (cumWeights[mid] > target) hi = mid;
+    if (cumWeights[mid] >= target) hi = mid;
     else lo = mid + 1;
   }
   return lo;
@@ -210,7 +245,7 @@ function poolQuality(pool) {
     sum += e.weight * e.scoringPts;
   }
   const sorted = pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
-  const densified = densifyPool(sorted, DEFAULT_VARIANCE);
+  const densified = densifyPool(sorted, 'low');
   const cum = buildPoolCumulativeWeights(densified);
   const idx = percentileToOutcomeIndex(50, densified.length, cum);
   return { median: densified[idx].scoringPts, mean: wTot > 0 ? sum / wTot : -Infinity };
@@ -384,6 +419,125 @@ function densifyPool(sortedReal, variance) {
   return out.sort((a, b) => b.scoringPts - a.scoringPts);
 }
 
+function realParentRef(e) {
+  if (!e) return null;
+  if (!e.synthetic && e.sleeperId != null && e.seasonYear != null) return parentRef(e);
+  const p = (e.parents || []).find((x) => x?.sleeperId != null && x?.seasonYear != null)
+    || e.parents?.[0];
+  if (p?.sleeperId != null) {
+    return {
+      sleeperId: p.sleeperId,
+      seasonYear: p.seasonYear,
+      scoringPts: p.scoringPts ?? e.scoringPts,
+    };
+  }
+  return null;
+}
+
+function exponentialTailScale(sortedDesc) {
+  const reals = sortedDesc.filter((e) => !e.synthetic);
+  const src = reals.length >= 2 ? reals : sortedDesc.filter((e) => !e.extrapolation);
+  const gaps = [];
+  for (let i = 0; i < Math.min(4, src.length - 1); i++) {
+    const g = src[i].scoringPts - src[i + 1].scoringPts;
+    if (g > 0) gaps.push(g);
+  }
+  if (gaps.length) return gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  const maxPts = src[0]?.scoringPts || sortedDesc[0]?.scoringPts || 0;
+  return Math.max(1, maxPts * 0.08);
+}
+
+function logSpacedSurvivals(pStart, pEnd, rungs) {
+  const edges = [];
+  const log0 = Math.log(pStart);
+  const log1 = Math.log(pEnd);
+  for (let i = 0; i <= rungs; i++) {
+    edges.push(Math.exp(log0 + (log1 - log0) * (i / rungs)));
+  }
+  return edges;
+}
+
+/**
+ * After historical densify: add a 1/(n+1) record tail on each end, split into
+ * log-spaced rungs from just-beyond-history down to 1-in-10,000. Applied once
+ * per player pool (after blending) so fractional ranks keep the right mass.
+ */
+function appendPredictiveTails(pool) {
+  if (!pool || pool.length === 0) return pool;
+  const sorted = sortPoolDesc(pool.slice());
+
+  let realN = 0;
+  let histW = 0;
+  for (const e of sorted) {
+    if (!e.synthetic) realN += 1;
+    histW += e.weight ?? 1;
+  }
+  const n = Math.max(2, realN || PREDICTIVE_SAMPLE_N);
+  const pStart = 1 / (n + 1);
+  if (histW <= 0 || pStart <= PREDICTIVE_RARE_P) return sorted;
+
+  // Both tails: P(each) = 1/(n+1) ⇒ w_tail = histW / (n - 1).
+  const wTail = histW / (n - 1);
+  const sigma = exponentialTailScale(sorted);
+  const best = sorted.find((e) => !e.synthetic) || sorted[0];
+  const worst = [...sorted].reverse().find((e) => !e.synthetic) || sorted[sorted.length - 1];
+  const bestRef = realParentRef(best);
+  const worstRef = realParentRef(worst);
+  const maxPts = best.scoringPts;
+  const minPts = worst.scoringPts;
+  const parentMax = bestRef?.scoringPts || maxPts;
+  const parentMin = worstRef?.scoringPts || minPts;
+  const edges = logSpacedSurvivals(pStart, PREDICTIVE_RARE_P, PREDICTIVE_TAIL_RUNGS);
+  const rungs = [];
+
+  for (let i = 0; i < edges.length - 1; i++) {
+    const pHi = edges[i];
+    const pLo = edges[i + 1];
+    const weight = wTail * ((pHi - pLo) / pStart);
+    const pRep = i === edges.length - 2 ? pLo : Math.sqrt(pHi * pLo);
+    const excess = sigma * Math.log(pStart / pRep);
+
+    if (bestRef && parentMax > 0) {
+      const scoringPts = maxPts + excess;
+      rungs.push({
+        synthetic: true,
+        extrapolation: 'ceiling',
+        position: best.position,
+        parents: [bestRef],
+        scale: scoringPts / parentMax,
+        scoringPts,
+        weight,
+        outcomeRank: null,
+        survivalP: pRep,
+      });
+    }
+    if (worstRef && parentMin > 0) {
+      const scoringPts = Math.max(0, minPts - excess);
+      rungs.push({
+        synthetic: true,
+        extrapolation: 'floor',
+        position: worst.position,
+        parents: [worstRef],
+        scale: scoringPts / parentMin,
+        scoringPts,
+        weight,
+        outcomeRank: null,
+        survivalP: pRep,
+      });
+    }
+  }
+
+  return sortPoolDesc(sorted.concat(rungs));
+}
+
+function finalizePool(sorted, variance, densify, preDensified) {
+  let out = (preDensified || !densify) ? sorted : densifyPool(sorted, variance);
+  if (densify && VARIANCE_LEVELS[variance]?.predictiveTail) {
+    out = appendPredictiveTails(out);
+  }
+  return out;
+}
+
 // ─── Pool building ────────────────────────────────────────────────────────────
 
 /**
@@ -424,8 +578,7 @@ export function buildOutcomePool(adpInfo, catalog, positionMaxRanks, options = {
   }
 
   const sorted = pool.slice().sort((a, b) => b.scoringPts - a.scoringPts);
-  if (grid.preDensified || !densify) return sorted;
-  return densifyPool(sorted, variance);
+  return finalizePool(sorted, variance, densify, grid.preDensified);
 }
 
 // ─── Weekly materialization ───────────────────────────────────────────────────
@@ -674,7 +827,7 @@ export function generateMissingRolls(playerIds, existingRolls = {}) {
   const rolls = { ...(existingRolls || {}) };
   for (const pid of playerIds) {
     if (rolls[pid] == null) {
-      rolls[pid] = Math.floor(Math.random() * 101);
+      rolls[pid] = randomPercentile();
     }
   }
   return rolls;

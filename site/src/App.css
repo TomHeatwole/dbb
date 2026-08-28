@@ -9891,7 +9891,7 @@ body.modal-open {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.85rem;
 }
 
 .simulator-team-detail-label {
@@ -10089,7 +10089,17 @@ body.modal-open {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0;
+}
+
+.simulator-team-detail-section--extremes {
+  margin: 0 0 1.15rem;
+  padding: 0 0 1.1rem;
+  border-bottom: 1px solid rgba(120, 130, 200, 0.18);
+}
+
+.simulator-team-detail-section--extremes .simulator-team-detail-subtitle {
+  margin-bottom: 0.65rem;
 }
 
 .simulator-extreme-card {
@@ -10132,6 +10142,28 @@ body.modal-open {
   color: #e0e4ff;
   font-variant-numeric: tabular-nums;
   margin-bottom: 0.25rem;
+}
+
+.simulator-extreme-card-cta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(180, 200, 255, 0.8);
+}
+
+.simulator-extreme-card--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.simulator-extreme-card--link:hover {
+  border-color: rgba(160, 185, 255, 0.55);
+}
+
+.simulator-extreme-card--link:hover .simulator-extreme-card-cta {
+  color: #fff;
 }
 
 .simulator-extreme-card .simulator-sim-link-row {

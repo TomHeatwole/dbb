@@ -14,7 +14,7 @@ import {
 import WeekSelector from '../scores/WeekSelector';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { fetchRedraftValueData } from '../lookups/RedraftValueLookup';
-import { computeTeamLuckMetrics, percentileColor } from './luckMetrics';
+import { computeTeamLuckMetrics, percentileColor, formatRollPercentile } from './luckMetrics';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
@@ -44,7 +44,12 @@ function syntheticOutcomeLabel(outcome, playersData) {
     return `${name} ${p.seasonYear}`;
   });
   if (outcome.extrapolation) {
-    return `${parts[0] || '?'} ×${Number(outcome.scale).toFixed(2)}`;
+    const rarity = outcome.survivalP > 0
+      ? `1-in-${Math.round(1 / outcome.survivalP).toLocaleString()}`
+      : null;
+    const scale = `×${Number(outcome.scale).toFixed(2)}`;
+    const base = `${parts[0] || '?'} ${scale}`;
+    return rarity ? `${base} · ${rarity}` : base;
   }
   return parts.join(' + ');
 }
@@ -94,11 +99,12 @@ function OutcomeListModal({
             type="range"
             min={0}
             max={100}
+            step={0.01}
             value={localPercentile}
             onChange={(e) => setLocalPercentile(Number(e.target.value))}
             className="outcome-modal-slider"
           />
-          <span className="outcome-modal-percentile-value">P{localPercentile}</span>
+          <span className="outcome-modal-percentile-value">P{formatRollPercentile(localPercentile)}</span>
           <button type="button" className="outcome-modal-apply-btn" onClick={handleApply}>
             Apply
           </button>
@@ -125,7 +131,7 @@ function OutcomeListModal({
                 const nameCell = entry.synthetic
                   ? (
                     <>
-                      <span className="outcome-modal-weight">synthetic · </span>
+                      <span className="outcome-modal-weight">{entry.survivalP ? 'open tail · ' : 'synthetic · '}</span>
                       {syntheticOutcomeLabel(entry, playersData)}
                     </>
                   )
@@ -214,11 +220,12 @@ function PlayoffOutcomeModal({
             type="range"
             min={0}
             max={100}
+            step={0.01}
             value={localPercentile}
             onChange={(e) => setLocalPercentile(Number(e.target.value))}
             className="outcome-modal-slider"
           />
-          <span className="outcome-modal-percentile-value">P{localPercentile}</span>
+          <span className="outcome-modal-percentile-value">P{formatRollPercentile(localPercentile)}</span>
           <button type="button" className="outcome-modal-apply-btn" onClick={handleApply}>
             Apply
           </button>
@@ -308,14 +315,14 @@ function OutcomeProjectionPills({
   const playoffColor = percentileColor(playoffPercentile);
 
   const rsBit = selectedOutcome?.synthetic
-    ? `Synthetic weeks 1–14 · ${syntheticOutcomeLabel(selectedOutcome, playersData)} · P${Math.round(percentile)}`
+    ? `Synthetic weeks 1–14 · ${syntheticOutcomeLabel(selectedOutcome, playersData)} · P${formatRollPercentile(percentile)}`
     : historicalPlayerName && selectedOutcome
-      ? `${historicalPlayerName}, ${selectedOutcome.seasonYear} weeks 1–14 · finish ${position}${outcomeRank ?? '?'} · P${Math.round(percentile)}`
-      : `${adpLabel} outcome pool · P${Math.round(percentile)}`;
+      ? `${historicalPlayerName}, ${selectedOutcome.seasonYear} weeks 1–14 · finish ${position}${outcomeRank ?? '?'} · P${formatRollPercentile(percentile)}`
+      : `${adpLabel} outcome pool · P${formatRollPercentile(percentile)}`;
   const poBit = selectedPlayoffOutcome
-    ? `Playoff · ${playoffOutcomeLabel(selectedPlayoffOutcome, playersData)} · ${selectedPlayoffOutcome.poTotal.toFixed(1)} pts · P${Math.round(playoffPercentile)} given this regular season`
+    ? `Playoff · ${playoffOutcomeLabel(selectedPlayoffOutcome, playersData)} · ${selectedPlayoffOutcome.poTotal.toFixed(1)} pts · P${formatRollPercentile(playoffPercentile)} given this regular season`
     : playoffPercentile != null
-      ? `Playoff P${Math.round(playoffPercentile)} given this regular season`
+      ? `Playoff P${formatRollPercentile(playoffPercentile)} given this regular season`
       : null;
   const tooltip = poBit ? `${rsBit} · ${poBit}` : rsBit;
 
@@ -346,7 +353,7 @@ function OutcomeProjectionPills({
           style={{ '--roll-color': rollColor }}
           onClick={openModal}
         >
-          <span className="outcome-roll-pct">P{Math.round(percentile)}</span>
+          <span className="outcome-roll-pct">P{formatRollPercentile(percentile)}</span>
           {outcomeRank != null && (
             <span className="outcome-roll-finish">{position}{outcomeRank}</span>
           )}
@@ -359,7 +366,7 @@ function OutcomeProjectionPills({
           onClick={openPlayoffModal}
         >
           <span className="outcome-roll-kind">Yoff</span>
-          <span className="outcome-roll-pct">P{Math.round(playoffPercentile)}</span>
+          <span className="outcome-roll-pct">P{formatRollPercentile(playoffPercentile)}</span>
         </span>
       )}
     </>

@@ -167,7 +167,7 @@ server.tool(
 
 server.tool(
   'get_season_odds',
-  'Monte Carlo simulation of the upcoming/current season with real rosters: rolls each player\'s season outcome from historical seasons of similar-ADP players, scores optimal best-ball lineups for all 17 weeks, and returns title/playoff/top-3 odds, average finish, and average points for every team.',
+  'Monte Carlo simulation of the upcoming/current season with real rosters: rolls each player\'s season outcome from historical seasons of similar-ADP players, scores optimal best-ball lineups for all 17 weeks, and returns title/playoff odds, average finish, and average points for every team.',
   {
     iterations: z
       .number()

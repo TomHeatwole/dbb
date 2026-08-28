@@ -285,7 +285,7 @@ function SimulatorRunPage() {
               />
             ) : (
               <div className="scenario-eval-team-stats-placeholder">
-                Click a team above to see finish, score, and lineup position distributions
+                Click a team above to see its best and worst seasons, plus finish, score, and lineup distributions
               </div>
             )}
           </div>

@@ -11,6 +11,7 @@ import {
   buildPlayoffIndex,
   materializeOutcomeWeeks,
   percentileToOutcomeIndex,
+  randomPercentile,
   selectPlayoffOutcome,
 } from './outcomeDistribution';
 import { buildSleeperBasePoints } from './sleeperScoring';
@@ -107,8 +108,8 @@ function createRuntimeBuffers(allPlayerIds) {
 
 function fillRandomRolls(allPlayerIds, rolls, playoffRolls = {}) {
   for (const pid of allPlayerIds) {
-    rolls[pid] = (Math.random() * 101) | 0;
-    playoffRolls[pid] = (Math.random() * 101) | 0;
+    rolls[pid] = randomPercentile();
+    playoffRolls[pid] = randomPercentile();
   }
 }
 
@@ -158,7 +159,6 @@ function emptyStats(rosterIds) {
       rosterId: rid,
       wins: 0,
       playoffCount: 0,
-      top3Count: 0,
       placeSum: 0,
       regSeasonRankSum: 0,
       regSeasonSum: 0,
@@ -187,7 +187,6 @@ function accumulateIterationStats(stats, champion, standings, regTotals, ploffTo
     if (!stats[rid]) continue;
     stats[rid].placeSum += row.place;
     if (row.isPlayoff) stats[rid].playoffCount += 1;
-    if (row.place <= 3) stats[rid].top3Count += 1;
     stats[rid].regSeasonRankSum += regSeasonRankByRid[rid] || row.place;
   }
 
@@ -218,7 +217,12 @@ function incrementTeamFinishCount(buckets, rosterId, place) {
 }
 
 function cloneRollMap(rolls) {
-  return { ...rolls };
+  const out = {};
+  for (const pid of Object.keys(rolls || {})) {
+    const v = rolls[pid];
+    out[pid] = typeof v === 'number' ? Math.round(v * 10000) / 10000 : v;
+  }
+  return out;
 }
 
 function createTeamSeasonExtremes(rosterIds) {
@@ -351,7 +355,6 @@ function buildResultsFromStats(stats, iterations, rosterIds) {
       wins: row.wins,
       winPct: (row.wins / iterations) * 100,
       playoffPct: (row.playoffCount / iterations) * 100,
-      top3Pct: (row.top3Count / iterations) * 100,
       avgFinish: row.placeSum / iterations,
       avgRegSeasonRank: row.regSeasonRankSum / iterations,
       avgTotalScore: avgRegSeason + avgPlayoff,
@@ -379,7 +382,6 @@ export function computeSimulatorResultDeltas(baselineResults, scenarioResults) {
       resultsRankDelta: base.resultsRank - (idx + 1),
       winPctDelta: row.winPct - base.winPct,
       playoffPctDelta: row.playoffPct - base.playoffPct,
-      top3PctDelta: row.top3Pct - base.top3Pct,
       avgFinishDelta: base.avgFinish - row.avgFinish,
       avgRegSeasonRankDelta: base.avgRegSeasonRank - row.avgRegSeasonRank,
       avgRegSeasonDelta: row.avgRegSeason - base.avgRegSeason,

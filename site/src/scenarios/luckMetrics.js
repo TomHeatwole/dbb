@@ -155,6 +155,15 @@ const LUCK_COLOR_STOPS = [
   { at: 100, h: 120, s: 100, l: 45 }, // bright green
 ];
 
+export function formatRollPercentile(pct) {
+  const p = Number(pct);
+  if (!Number.isFinite(p)) return '—';
+  if (p >= 99.5 || p <= 0.5) {
+    return p.toFixed(2).replace(/\.?0+$/, '');
+  }
+  return String(Math.round(p));
+}
+
 export function percentileColor(pct) {
   const p = Math.max(0, Math.min(100, Number(pct) || 0));
   let i = 0;

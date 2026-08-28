@@ -1,0 +1,3174 @@
+{
+  "config": {
+    "seed": 1,
+    "buildsPerArchetypeYear": 60,
+    "jitterPct": 10,
+    "windowPct": 0.22,
+    "minWindow": 4,
+    "overallAdpMax": 200,
+    "years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "archetypeCount": 19,
+    "constructionBasis": "comp",
+    "format": "hwang 1QB/3RB/3WR/1TE/2FLEX/1SF · 0 PPR · TE +0.5",
+    "leagueWin": 2500,
+    "leagueWinStrict": 2700,
+    "scoring": "optimal weekly starters, 17 weeks"
+  },
+  "groups": {
+    "2021": [
+      {
+        "team": "LA",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Robert Woods (WR ovr 42), Cooper Kupp (WR ovr 51), Odell Beckham (WR ovr 68), Tyler Higbee (TE ovr 113)",
+        "doubleNames": "Robert Woods/Cooper Kupp",
+        "tripleNames": "Robert Woods/Cooper Kupp/Odell Beckham"
+      },
+      {
+        "team": "NE",
+        "n": 4,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Jonnu Smith (TE ovr 136), Jakobi Meyers (WR ovr 147), Nelson Agholor (WR ovr 158), Hunter Henry (TE ovr 171)",
+        "doubleNames": "Jonnu Smith/Jakobi Meyers",
+        "tripleNames": "Jonnu Smith/Jakobi Meyers/Nelson Agholor"
+      },
+      {
+        "team": "PIT",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Diontae Johnson (WR ovr 60), Chase Claypool (WR ovr 66), JuJu Smith-Schuster (WR ovr 76), Pat Freiermuth (TE ovr 179)",
+        "doubleNames": "Diontae Johnson/Chase Claypool",
+        "tripleNames": "Diontae Johnson/Chase Claypool/JuJu Smith-Schuster"
+      },
+      {
+        "team": "CIN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Ja'Marr Chase (WR ovr 70), Tee Higgins (WR ovr 71), Tyler Boyd (WR ovr 90)",
+        "doubleNames": "Ja'Marr Chase/Tee Higgins",
+        "tripleNames": "Ja'Marr Chase/Tee Higgins/Tyler Boyd"
+      },
+      {
+        "team": "DAL",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "CeeDee Lamb (WR ovr 36), Amari Cooper (WR ovr 44), Michael Gallup (WR ovr 124)",
+        "doubleNames": "CeeDee Lamb/Amari Cooper",
+        "tripleNames": "CeeDee Lamb/Amari Cooper/Michael Gallup"
+      },
+      {
+        "team": "DEN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Jerry Jeudy (WR ovr 74), Courtland Sutton (WR ovr 79), Noah Fant (TE ovr 92)",
+        "doubleNames": "Jerry Jeudy/Courtland Sutton",
+        "tripleNames": "Jerry Jeudy/Courtland Sutton/Noah Fant"
+      },
+      {
+        "team": "KC",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Tyreek Hill (WR ovr 11), Travis Kelce (TE ovr 12), Mecole Hardman (WR ovr 122)",
+        "doubleNames": "Tyreek Hill/Travis Kelce",
+        "tripleNames": "Tyreek Hill/Travis Kelce/Mecole Hardman"
+      },
+      {
+        "team": "MIA",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Mike Gesicki (TE ovr 112), Jaylen Waddle (WR ovr 115), DeVante Parker (WR ovr 146)",
+        "doubleNames": "Mike Gesicki/Jaylen Waddle",
+        "tripleNames": "Mike Gesicki/Jaylen Waddle/DeVante Parker"
+      },
+      {
+        "team": "SEA",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "DK Metcalf (WR ovr 18), Tyler Lockett (WR ovr 55), Gerald Everett (TE ovr 181)",
+        "doubleNames": "DK Metcalf/Tyler Lockett",
+        "tripleNames": "DK Metcalf/Tyler Lockett/Gerald Everett"
+      },
+      {
+        "team": "SF",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "George Kittle (TE ovr 30), Brandon Aiyuk (WR ovr 65), Deebo Samuel (WR ovr 86)",
+        "doubleNames": "George Kittle/Brandon Aiyuk",
+        "tripleNames": "George Kittle/Brandon Aiyuk/Deebo Samuel"
+      },
+      {
+        "team": "ARI",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "DeAndre Hopkins (WR ovr 20), Zach Ertz (TE ovr 172)",
+        "doubleNames": "DeAndre Hopkins/Zach Ertz",
+        "tripleNames": ""
+      },
+      {
+        "team": "ATL",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "Calvin Ridley (WR ovr 21), Kyle Pitts (TE ovr 48)",
+        "doubleNames": "Calvin Ridley/Kyle Pitts",
+        "tripleNames": ""
+      },
+      {
+        "team": "BAL",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "Mark Andrews (TE ovr 54), Marquise Brown (WR ovr 123)",
+        "doubleNames": "Mark Andrews/Marquise Brown",
+        "tripleNames": ""
+      },
+      {
+        "team": "BUF",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Stefon Diggs (WR ovr 16), Gabriel Davis (WR ovr 195)",
+        "doubleNames": "Stefon Diggs/Gabriel Davis",
+        "tripleNames": ""
+      },
+      {
+        "team": "CAR",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "D.J. Moore (WR ovr 57), Terrace Marshall (WR ovr 186)",
+        "doubleNames": "D.J. Moore/Terrace Marshall",
+        "tripleNames": ""
+      },
+      {
+        "team": "DET",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "T.J. Hockenson (TE ovr 64), Amon-Ra St. Brown (WR ovr 193)",
+        "doubleNames": "T.J. Hockenson/Amon-Ra St. Brown",
+        "tripleNames": ""
+      },
+      {
+        "team": "JAX",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "D.J. Chark (WR ovr 93), Laviska Shenault (WR ovr 103)",
+        "doubleNames": "D.J. Chark/Laviska Shenault",
+        "tripleNames": ""
+      },
+      {
+        "team": "MIN",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Justin Jefferson (WR ovr 25), Adam Thielen (WR ovr 47)",
+        "doubleNames": "Justin Jefferson/Adam Thielen",
+        "tripleNames": ""
+      },
+      {
+        "team": "PHI",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "DeVonta Smith (WR ovr 82), Dallas Goedert (TE ovr 99)",
+        "doubleNames": "DeVonta Smith/Dallas Goedert",
+        "tripleNames": ""
+      },
+      {
+        "team": "TB",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Mike Evans (WR ovr 34), Chris Godwin (WR ovr 41)",
+        "doubleNames": "Mike Evans/Chris Godwin",
+        "tripleNames": ""
+      },
+      {
+        "team": "WAS",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Terry McLaurin (WR ovr 33), Curtis Samuel (WR ovr 131)",
+        "doubleNames": "Terry McLaurin/Curtis Samuel",
+        "tripleNames": ""
+      }
+    ],
+    "2022": [
+      {
+        "team": "KC",
+        "n": 6,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Travis Kelce (TE ovr 16), JuJu Smith-Schuster (WR ovr 72), Kadarius Toney (WR ovr 119), Skyy Moore (WR ovr 121), Marquez Valdes-Scantling (WR ovr 139), Mecole Hardman (WR ovr 170)",
+        "doubleNames": "Travis Kelce/JuJu Smith-Schuster",
+        "tripleNames": "Travis Kelce/JuJu Smith-Schuster/Kadarius Toney"
+      },
+      {
+        "team": "BUF",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Stefon Diggs (WR ovr 15), Gabriel Davis (WR ovr 64), Dawson Knox (TE ovr 94), Isaiah McKenzie (WR ovr 166)",
+        "doubleNames": "Stefon Diggs/Gabriel Davis",
+        "tripleNames": "Stefon Diggs/Gabriel Davis/Dawson Knox"
+      },
+      {
+        "team": "DAL",
+        "n": 4,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "CeeDee Lamb (WR ovr 20), Dalton Schultz (TE ovr 61), Michael Gallup (WR ovr 124), Jalen Tolbert (WR ovr 194)",
+        "doubleNames": "CeeDee Lamb/Dalton Schultz",
+        "tripleNames": "CeeDee Lamb/Dalton Schultz/Michael Gallup"
+      },
+      {
+        "team": "MIN",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Justin Jefferson (WR ovr 8), Adam Thielen (WR ovr 70), T.J. Hockenson (TE ovr 74), Irv Smith (TE ovr 152)",
+        "doubleNames": "Justin Jefferson/Adam Thielen",
+        "tripleNames": "Justin Jefferson/Adam Thielen/T.J. Hockenson"
+      },
+      {
+        "team": "ARI",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Marquise Brown (WR ovr 63), DeAndre Hopkins (WR ovr 87), Zach Ertz (TE ovr 101)",
+        "doubleNames": "Marquise Brown/DeAndre Hopkins",
+        "tripleNames": "Marquise Brown/DeAndre Hopkins/Zach Ertz"
+      },
+      {
+        "team": "BAL",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/TE",
+        "names": "Mark Andrews (TE ovr 25), Rashod Bateman (WR ovr 82), Isaiah Likely (TE ovr 200)",
+        "doubleNames": "Mark Andrews/Rashod Bateman",
+        "tripleNames": "Mark Andrews/Rashod Bateman/Isaiah Likely"
+      },
+      {
+        "team": "CHI",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Darnell Mooney (WR ovr 68), Cole Kmet (TE ovr 114), Chase Claypool (WR ovr 115)",
+        "doubleNames": "Darnell Mooney/Cole Kmet",
+        "tripleNames": "Darnell Mooney/Cole Kmet/Chase Claypool"
+      },
+      {
+        "team": "CIN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Ja'Marr Chase (WR ovr 10), Tee Higgins (WR ovr 35), Tyler Boyd (WR ovr 133)",
+        "doubleNames": "Ja'Marr Chase/Tee Higgins",
+        "tripleNames": "Ja'Marr Chase/Tee Higgins/Tyler Boyd"
+      },
+      {
+        "team": "DEN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Courtland Sutton (WR ovr 42), Jerry Jeudy (WR ovr 67), Albert Okwuegbunam (TE ovr 157)",
+        "doubleNames": "Courtland Sutton/Jerry Jeudy",
+        "tripleNames": "Courtland Sutton/Jerry Jeudy/Albert Okwuegbunam"
+      },
+      {
+        "team": "DET",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Amon-Ra St. Brown (WR ovr 59), D.J. Chark (WR ovr 147), Jameson Williams (WR ovr 192)",
+        "doubleNames": "Amon-Ra St. Brown/D.J. Chark",
+        "tripleNames": "Amon-Ra St. Brown/D.J. Chark/Jameson Williams"
+      },
+      {
+        "team": "GB",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Allen Lazard (WR ovr 90), Romeo Doubs (WR ovr 151), Christian Watson (WR ovr 174)",
+        "doubleNames": "Allen Lazard/Romeo Doubs",
+        "tripleNames": "Allen Lazard/Romeo Doubs/Christian Watson"
+      },
+      {
+        "team": "LAC",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Keenan Allen (WR ovr 32), Gerald Everett (TE ovr 184), Josh Palmer (WR ovr 185)",
+        "doubleNames": "Keenan Allen/Gerald Everett",
+        "tripleNames": "Keenan Allen/Gerald Everett/Josh Palmer"
+      },
+      {
+        "team": "LV",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Davante Adams (WR ovr 13), Darren Waller (TE ovr 49), Hunter Renfrow (WR ovr 93)",
+        "doubleNames": "Davante Adams/Darren Waller",
+        "tripleNames": "Davante Adams/Darren Waller/Hunter Renfrow"
+      },
+      {
+        "team": "MIA",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Tyreek Hill (WR ovr 23), Jaylen Waddle (WR ovr 52), Mike Gesicki (TE ovr 137)",
+        "doubleNames": "Tyreek Hill/Jaylen Waddle",
+        "tripleNames": "Tyreek Hill/Jaylen Waddle/Mike Gesicki"
+      },
+      {
+        "team": "NE",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Hunter Henry (TE ovr 126), DeVante Parker (WR ovr 162), Jakobi Meyers (WR ovr 164)",
+        "doubleNames": "Hunter Henry/DeVante Parker",
+        "tripleNames": "Hunter Henry/DeVante Parker/Jakobi Meyers"
+      },
+      {
+        "team": "PHI",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "A.J. Brown (WR ovr 29), Dallas Goedert (TE ovr 81), DeVonta Smith (WR ovr 91)",
+        "doubleNames": "A.J. Brown/Dallas Goedert",
+        "tripleNames": "A.J. Brown/Dallas Goedert/DeVonta Smith"
+      },
+      {
+        "team": "PIT",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Diontae Johnson (WR ovr 46), Pat Freiermuth (TE ovr 109), George Pickens (WR ovr 112)",
+        "doubleNames": "Diontae Johnson/Pat Freiermuth",
+        "tripleNames": "Diontae Johnson/Pat Freiermuth/George Pickens"
+      },
+      {
+        "team": "SEA",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "DK Metcalf (WR ovr 54), Tyler Lockett (WR ovr 108), Noah Fant (TE ovr 177)",
+        "doubleNames": "DK Metcalf/Tyler Lockett",
+        "tripleNames": "DK Metcalf/Tyler Lockett/Noah Fant"
+      },
+      {
+        "team": "SF",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Deebo Samuel (WR ovr 22), George Kittle (TE ovr 40), Brandon Aiyuk (WR ovr 96)",
+        "doubleNames": "Deebo Samuel/George Kittle",
+        "tripleNames": "Deebo Samuel/George Kittle/Brandon Aiyuk"
+      },
+      {
+        "team": "ATL",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "Kyle Pitts (TE ovr 31), Drake London (WR ovr 97)",
+        "doubleNames": "Kyle Pitts/Drake London",
+        "tripleNames": ""
+      },
+      {
+        "team": "CLE",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "Amari Cooper (WR ovr 73), David Njoku (TE ovr 158)",
+        "doubleNames": "Amari Cooper/David Njoku",
+        "tripleNames": ""
+      },
+      {
+        "team": "HOU",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Brandin Cooks (WR ovr 62), Nico Collins (WR ovr 182)",
+        "doubleNames": "Brandin Cooks/Nico Collins",
+        "tripleNames": ""
+      },
+      {
+        "team": "IND",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Michael Pittman (WR ovr 33), Alec Pierce (WR ovr 191)",
+        "doubleNames": "Michael Pittman/Alec Pierce",
+        "tripleNames": ""
+      },
+      {
+        "team": "LA",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "Cooper Kupp (WR ovr 6), Tyler Higbee (TE ovr 175)",
+        "doubleNames": "Cooper Kupp/Tyler Higbee",
+        "tripleNames": ""
+      },
+      {
+        "team": "NO",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Michael Thomas (WR ovr 69), Chris Olave (WR ovr 105)",
+        "doubleNames": "Michael Thomas/Chris Olave",
+        "tripleNames": ""
+      },
+      {
+        "team": "NYJ",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Elijah Moore (WR ovr 92), Garrett Wilson (WR ovr 134)",
+        "doubleNames": "Elijah Moore/Garrett Wilson",
+        "tripleNames": ""
+      },
+      {
+        "team": "TB",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Mike Evans (WR ovr 26), Chris Godwin (WR ovr 65)",
+        "doubleNames": "Mike Evans/Chris Godwin",
+        "tripleNames": ""
+      },
+      {
+        "team": "TEN",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Robert Woods (WR ovr 103), Treylon Burks (WR ovr 110)",
+        "doubleNames": "Robert Woods/Treylon Burks",
+        "tripleNames": ""
+      },
+      {
+        "team": "WAS",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Terry McLaurin (WR ovr 45), Jahan Dotson (WR ovr 154)",
+        "doubleNames": "Terry McLaurin/Jahan Dotson",
+        "tripleNames": ""
+      }
+    ],
+    "2023": [
+      {
+        "team": "BAL",
+        "n": 4,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Mark Andrews (TE ovr 28), Zay Flowers (WR ovr 100), Odell Beckham (WR ovr 112), Rashod Bateman (WR ovr 143)",
+        "doubleNames": "Mark Andrews/Zay Flowers",
+        "tripleNames": "Mark Andrews/Zay Flowers/Odell Beckham"
+      },
+      {
+        "team": "DEN",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Jerry Jeudy (WR ovr 78), Courtland Sutton (WR ovr 99), Marvin Mims (WR ovr 166), Greg Dulcich (TE ovr 167)",
+        "doubleNames": "Jerry Jeudy/Courtland Sutton",
+        "tripleNames": "Jerry Jeudy/Courtland Sutton/Marvin Mims"
+      },
+      {
+        "team": "DET",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Amon-Ra St. Brown (WR ovr 19), Jameson Williams (WR ovr 145), Sam LaPorta (TE ovr 146), Donovan Peoples-Jones (WR ovr 188)",
+        "doubleNames": "Amon-Ra St. Brown/Jameson Williams",
+        "tripleNames": "Amon-Ra St. Brown/Jameson Williams/Sam LaPorta"
+      },
+      {
+        "team": "JAX",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Calvin Ridley (WR ovr 35), Christian Kirk (WR ovr 72), Evan Engram (TE ovr 82), Zay Jones (WR ovr 180)",
+        "doubleNames": "Calvin Ridley/Christian Kirk",
+        "tripleNames": "Calvin Ridley/Christian Kirk/Evan Engram"
+      },
+      {
+        "team": "KC",
+        "n": 4,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Travis Kelce (TE ovr 5), Kadarius Toney (WR ovr 110), Skyy Moore (WR ovr 115), Rashee Rice (WR ovr 171)",
+        "doubleNames": "Travis Kelce/Kadarius Toney",
+        "tripleNames": "Travis Kelce/Kadarius Toney/Skyy Moore"
+      },
+      {
+        "team": "MIN",
+        "n": 4,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Justin Jefferson (WR ovr 2), T.J. Hockenson (TE ovr 46), Jordan Addison (WR ovr 83), K.J. Osborn (WR ovr 196)",
+        "doubleNames": "Justin Jefferson/T.J. Hockenson",
+        "tripleNames": "Justin Jefferson/T.J. Hockenson/Jordan Addison"
+      },
+      {
+        "team": "NO",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Chris Olave (WR ovr 25), Michael Thomas (WR ovr 102), Juwan Johnson (TE ovr 156), Taysom Hill (TE ovr 198)",
+        "doubleNames": "Chris Olave/Michael Thomas",
+        "tripleNames": "Chris Olave/Michael Thomas/Juwan Johnson"
+      },
+      {
+        "team": "ATL",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Drake London (WR ovr 65), Kyle Pitts (TE ovr 70), Van Jefferson (WR ovr 182)",
+        "doubleNames": "Drake London/Kyle Pitts",
+        "tripleNames": "Drake London/Kyle Pitts/Van Jefferson"
+      },
+      {
+        "team": "BUF",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Stefon Diggs (WR ovr 10), Gabriel Davis (WR ovr 96), Dalton Kincaid (TE ovr 109)",
+        "doubleNames": "Stefon Diggs/Gabriel Davis",
+        "tripleNames": "Stefon Diggs/Gabriel Davis/Dalton Kincaid"
+      },
+      {
+        "team": "CHI",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "D.J. Moore (WR ovr 48), Cole Kmet (TE ovr 132), Darnell Mooney (WR ovr 168)",
+        "doubleNames": "D.J. Moore/Cole Kmet",
+        "tripleNames": "D.J. Moore/Cole Kmet/Darnell Mooney"
+      },
+      {
+        "team": "CIN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Ja'Marr Chase (WR ovr 4), Tee Higgins (WR ovr 33), Tyler Boyd (WR ovr 163)",
+        "doubleNames": "Ja'Marr Chase/Tee Higgins",
+        "tripleNames": "Ja'Marr Chase/Tee Higgins/Tyler Boyd"
+      },
+      {
+        "team": "CLE",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Amari Cooper (WR ovr 42), David Njoku (TE ovr 93), Elijah Moore (WR ovr 119)",
+        "doubleNames": "Amari Cooper/David Njoku",
+        "tripleNames": "Amari Cooper/David Njoku/Elijah Moore"
+      },
+      {
+        "team": "GB",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Christian Watson (WR ovr 57), Romeo Doubs (WR ovr 138), Luke Musgrave (TE ovr 176)",
+        "doubleNames": "Christian Watson/Romeo Doubs",
+        "tripleNames": "Christian Watson/Romeo Doubs/Luke Musgrave"
+      },
+      {
+        "team": "LAC",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Keenan Allen (WR ovr 43), Quentin Johnston (WR ovr 121), Gerald Everett (TE ovr 187)",
+        "doubleNames": "Keenan Allen/Quentin Johnston",
+        "tripleNames": "Keenan Allen/Quentin Johnston/Gerald Everett"
+      },
+      {
+        "team": "PHI",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "A.J. Brown (WR ovr 13), DeVonta Smith (WR ovr 27), Dallas Goedert (TE ovr 69)",
+        "doubleNames": "A.J. Brown/DeVonta Smith",
+        "tripleNames": "A.J. Brown/DeVonta Smith/Dallas Goedert"
+      },
+      {
+        "team": "PIT",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "George Pickens (WR ovr 74), Diontae Johnson (WR ovr 76), Pat Freiermuth (TE ovr 89)",
+        "doubleNames": "George Pickens/Diontae Johnson",
+        "tripleNames": "George Pickens/Diontae Johnson/Pat Freiermuth"
+      },
+      {
+        "team": "SEA",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "DK Metcalf (WR ovr 36), Tyler Lockett (WR ovr 71), Jaxon Smith-Njigba (WR ovr 90)",
+        "doubleNames": "DK Metcalf/Tyler Lockett",
+        "tripleNames": "DK Metcalf/Tyler Lockett/Jaxon Smith-Njigba"
+      },
+      {
+        "team": "SF",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Deebo Samuel (WR ovr 37), George Kittle (TE ovr 49), Brandon Aiyuk (WR ovr 66)",
+        "doubleNames": "Deebo Samuel/George Kittle",
+        "tripleNames": "Deebo Samuel/George Kittle/Brandon Aiyuk"
+      },
+      {
+        "team": "TEN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "DeAndre Hopkins (WR ovr 53), Treylon Burks (WR ovr 117), Chigoziem Okonkwo (TE ovr 137)",
+        "doubleNames": "DeAndre Hopkins/Treylon Burks",
+        "tripleNames": "DeAndre Hopkins/Treylon Burks/Chigoziem Okonkwo"
+      },
+      {
+        "team": "CAR",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Adam Thielen (WR ovr 129), Jonathan Mingo (WR ovr 179)",
+        "doubleNames": "Adam Thielen/Jonathan Mingo",
+        "tripleNames": ""
+      },
+      {
+        "team": "DAL",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "CeeDee Lamb (WR ovr 11), Brandin Cooks (WR ovr 95)",
+        "doubleNames": "CeeDee Lamb/Brandin Cooks",
+        "tripleNames": ""
+      },
+      {
+        "team": "HOU",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "Dalton Schultz (TE ovr 124), Nico Collins (WR ovr 160)",
+        "doubleNames": "Dalton Schultz/Nico Collins",
+        "tripleNames": ""
+      },
+      {
+        "team": "LA",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "Cooper Kupp (WR ovr 18), Tyler Higbee (TE ovr 136)",
+        "doubleNames": "Cooper Kupp/Tyler Higbee",
+        "tripleNames": ""
+      },
+      {
+        "team": "LV",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Davante Adams (WR ovr 17), Jakobi Meyers (WR ovr 162)",
+        "doubleNames": "Davante Adams/Jakobi Meyers",
+        "tripleNames": ""
+      },
+      {
+        "team": "MIA",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Tyreek Hill (WR ovr 6), Jaylen Waddle (WR ovr 24)",
+        "doubleNames": "Tyreek Hill/Jaylen Waddle",
+        "tripleNames": ""
+      },
+      {
+        "team": "NYG",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "Darren Waller (TE ovr 51), Jalin Hyatt (WR ovr 153)",
+        "doubleNames": "Darren Waller/Jalin Hyatt",
+        "tripleNames": ""
+      },
+      {
+        "team": "NYJ",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Garrett Wilson (WR ovr 21), Allen Lazard (WR ovr 131)",
+        "doubleNames": "Garrett Wilson/Allen Lazard",
+        "tripleNames": ""
+      },
+      {
+        "team": "TB",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Chris Godwin (WR ovr 68), Mike Evans (WR ovr 77)",
+        "doubleNames": "Chris Godwin/Mike Evans",
+        "tripleNames": ""
+      },
+      {
+        "team": "WAS",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Terry McLaurin (WR ovr 52), Jahan Dotson (WR ovr 86)",
+        "doubleNames": "Terry McLaurin/Jahan Dotson",
+        "tripleNames": ""
+      }
+    ],
+    "2024": [
+      {
+        "team": "BUF",
+        "n": 5,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Dalton Kincaid (TE ovr 49), Amari Cooper (WR ovr 54), Keon Coleman (WR ovr 108), Curtis Samuel (WR ovr 121), Khalil Shakir (WR ovr 123)",
+        "doubleNames": "Dalton Kincaid/Amari Cooper",
+        "tripleNames": "Dalton Kincaid/Amari Cooper/Keon Coleman"
+      },
+      {
+        "team": "GB",
+        "n": 5,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Jayden Reed (WR ovr 81), Christian Watson (WR ovr 98), Romeo Doubs (WR ovr 119), Dontayvion Wicks (WR ovr 153), Luke Musgrave (TE ovr 156)",
+        "doubleNames": "Jayden Reed/Christian Watson",
+        "tripleNames": "Jayden Reed/Christian Watson/Romeo Doubs"
+      },
+      {
+        "team": "HOU",
+        "n": 5,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Nico Collins (WR ovr 27), Stefon Diggs (WR ovr 41), Tank Dell (WR ovr 61), Diontae Johnson (WR ovr 86), Dalton Schultz (TE ovr 126)",
+        "doubleNames": "Nico Collins/Stefon Diggs",
+        "tripleNames": "Nico Collins/Stefon Diggs/Tank Dell"
+      },
+      {
+        "team": "KC",
+        "n": 5,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Travis Kelce (TE ovr 28), Rashee Rice (WR ovr 67), Xavier Worthy (WR ovr 82), DeAndre Hopkins (WR ovr 100), Marquise Brown (WR ovr 106)",
+        "doubleNames": "Travis Kelce/Rashee Rice",
+        "tripleNames": "Travis Kelce/Rashee Rice/Xavier Worthy"
+      },
+      {
+        "team": "CHI",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "D.J. Moore (WR ovr 40), Keenan Allen (WR ovr 73), Rome Odunze (WR ovr 89), Cole Kmet (TE ovr 132)",
+        "doubleNames": "D.J. Moore/Keenan Allen",
+        "tripleNames": "D.J. Moore/Keenan Allen/Rome Odunze"
+      },
+      {
+        "team": "JAX",
+        "n": 4,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Christian Kirk (WR ovr 70), Evan Engram (TE ovr 72), Brian Thomas Jr. (WR ovr 112), Gabriel Davis (WR ovr 147)",
+        "doubleNames": "Christian Kirk/Evan Engram",
+        "tripleNames": "Christian Kirk/Evan Engram/Brian Thomas Jr."
+      },
+      {
+        "team": "PHI",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "A.J. Brown (WR ovr 9), DeVonta Smith (WR ovr 47), Dallas Goedert (TE ovr 117), Jahan Dotson (WR ovr 189)",
+        "doubleNames": "A.J. Brown/DeVonta Smith",
+        "tripleNames": "A.J. Brown/DeVonta Smith/Dallas Goedert"
+      },
+      {
+        "team": "ARI",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Marvin Harrison Jr. (WR ovr 15), Trey McBride (TE ovr 48), Michael Wilson (WR ovr 173)",
+        "doubleNames": "Marvin Harrison Jr./Trey McBride",
+        "tripleNames": "Marvin Harrison Jr./Trey McBride/Michael Wilson"
+      },
+      {
+        "team": "ATL",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Drake London (WR ovr 21), Kyle Pitts (TE ovr 64), Darnell Mooney (WR ovr 169)",
+        "doubleNames": "Drake London/Kyle Pitts",
+        "tripleNames": "Drake London/Kyle Pitts/Darnell Mooney"
+      },
+      {
+        "team": "BAL",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/TE",
+        "names": "Mark Andrews (TE ovr 50), Zay Flowers (WR ovr 60), Isaiah Likely (TE ovr 180)",
+        "doubleNames": "Mark Andrews/Zay Flowers",
+        "tripleNames": "Mark Andrews/Zay Flowers/Isaiah Likely"
+      },
+      {
+        "team": "DAL",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "CeeDee Lamb (WR ovr 3), Jake Ferguson (TE ovr 83), Brandin Cooks (WR ovr 152)",
+        "doubleNames": "CeeDee Lamb/Jake Ferguson",
+        "tripleNames": "CeeDee Lamb/Jake Ferguson/Brandin Cooks"
+      },
+      {
+        "team": "DET",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Amon-Ra St. Brown (WR ovr 8), Sam LaPorta (TE ovr 30), Jameson Williams (WR ovr 109)",
+        "doubleNames": "Amon-Ra St. Brown/Sam LaPorta",
+        "tripleNames": "Amon-Ra St. Brown/Sam LaPorta/Jameson Williams"
+      },
+      {
+        "team": "IND",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Michael Pittman (WR ovr 35), Adonai Mitchell (WR ovr 145), Josh Downs (WR ovr 174)",
+        "doubleNames": "Michael Pittman/Adonai Mitchell",
+        "tripleNames": "Michael Pittman/Adonai Mitchell/Josh Downs"
+      },
+      {
+        "team": "LAC",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Ladd McConkey (WR ovr 99), Josh Palmer (WR ovr 130), Quentin Johnston (WR ovr 187)",
+        "doubleNames": "Ladd McConkey/Josh Palmer",
+        "tripleNames": "Ladd McConkey/Josh Palmer/Quentin Johnston"
+      },
+      {
+        "team": "MIN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Justin Jefferson (WR ovr 4), Jordan Addison (WR ovr 101), T.J. Hockenson (TE ovr 124)",
+        "doubleNames": "Justin Jefferson/Jordan Addison",
+        "tripleNames": "Justin Jefferson/Jordan Addison/T.J. Hockenson"
+      },
+      {
+        "team": "NE",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Ja'Lynn Polk (WR ovr 167), Hunter Henry (TE ovr 183), Demario Douglas (WR ovr 191)",
+        "doubleNames": "Ja'Lynn Polk/Hunter Henry",
+        "tripleNames": "Ja'Lynn Polk/Hunter Henry/Demario Douglas"
+      },
+      {
+        "team": "NO",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Chris Olave (WR ovr 25), Taysom Hill (TE ovr 148), Rashid Shaheed (WR ovr 151)",
+        "doubleNames": "Chris Olave/Taysom Hill",
+        "tripleNames": "Chris Olave/Taysom Hill/Rashid Shaheed"
+      },
+      {
+        "team": "NYJ",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Garrett Wilson (WR ovr 13), Davante Adams (WR ovr 22), Tyler Conklin (TE ovr 181)",
+        "doubleNames": "Garrett Wilson/Davante Adams",
+        "tripleNames": "Garrett Wilson/Davante Adams/Tyler Conklin"
+      },
+      {
+        "team": "SEA",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "DK Metcalf (WR ovr 42), Jaxon Smith-Njigba (WR ovr 95), Tyler Lockett (WR ovr 134)",
+        "doubleNames": "DK Metcalf/Jaxon Smith-Njigba",
+        "tripleNames": "DK Metcalf/Jaxon Smith-Njigba/Tyler Lockett"
+      },
+      {
+        "team": "SF",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Deebo Samuel (WR ovr 26), Brandon Aiyuk (WR ovr 34), George Kittle (TE ovr 62)",
+        "doubleNames": "Deebo Samuel/Brandon Aiyuk",
+        "tripleNames": "Deebo Samuel/Brandon Aiyuk/George Kittle"
+      },
+      {
+        "team": "TB",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Mike Evans (WR ovr 37), Chris Godwin (WR ovr 75), Cade Otton (TE ovr 194)",
+        "doubleNames": "Mike Evans/Chris Godwin",
+        "tripleNames": "Mike Evans/Chris Godwin/Cade Otton"
+      },
+      {
+        "team": "CAR",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Adam Thielen (WR ovr 160), Xavier Legette (WR ovr 161)",
+        "doubleNames": "Adam Thielen/Xavier Legette",
+        "tripleNames": ""
+      },
+      {
+        "team": "CIN",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Ja'Marr Chase (WR ovr 7), Tee Higgins (WR ovr 59)",
+        "doubleNames": "Ja'Marr Chase/Tee Higgins",
+        "tripleNames": ""
+      },
+      {
+        "team": "CLE",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "David Njoku (TE ovr 88), Jerry Jeudy (WR ovr 138)",
+        "doubleNames": "David Njoku/Jerry Jeudy",
+        "tripleNames": ""
+      },
+      {
+        "team": "LA",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Puka Nacua (WR ovr 14), Cooper Kupp (WR ovr 36)",
+        "doubleNames": "Puka Nacua/Cooper Kupp",
+        "tripleNames": ""
+      },
+      {
+        "team": "LV",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "Brock Bowers (TE ovr 90), Jakobi Meyers (WR ovr 137)",
+        "doubleNames": "Brock Bowers/Jakobi Meyers",
+        "tripleNames": ""
+      },
+      {
+        "team": "MIA",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Tyreek Hill (WR ovr 2), Jaylen Waddle (WR ovr 39)",
+        "doubleNames": "Tyreek Hill/Jaylen Waddle",
+        "tripleNames": ""
+      },
+      {
+        "team": "PIT",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "George Pickens (WR ovr 57), Pat Freiermuth (TE ovr 129)",
+        "doubleNames": "George Pickens/Pat Freiermuth",
+        "tripleNames": ""
+      },
+      {
+        "team": "TEN",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "Calvin Ridley (WR ovr 80), Chigoziem Okonkwo (TE ovr 195)",
+        "doubleNames": "Calvin Ridley/Chigoziem Okonkwo",
+        "tripleNames": ""
+      }
+    ],
+    "2025": [
+      {
+        "team": "BAL",
+        "n": 5,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Zay Flowers (WR ovr 61), Mark Andrews (TE ovr 83), DeAndre Hopkins (WR ovr 161), Rashod Bateman (WR ovr 163), Isaiah Likely (TE ovr 172)",
+        "doubleNames": "Zay Flowers/Mark Andrews",
+        "tripleNames": "Zay Flowers/Mark Andrews/DeAndre Hopkins"
+      },
+      {
+        "team": "KC",
+        "n": 4,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Xavier Worthy (WR ovr 54), Rashee Rice (WR ovr 62), Travis Kelce (TE ovr 70), Marquise Brown (WR ovr 150)",
+        "doubleNames": "Xavier Worthy/Rashee Rice",
+        "tripleNames": "Xavier Worthy/Rashee Rice/Travis Kelce"
+      },
+      {
+        "team": "PIT",
+        "n": 4,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "DK Metcalf (WR ovr 50), Jonnu Smith (TE ovr 117), Adam Thielen (WR ovr 169), Pat Freiermuth (TE ovr 196)",
+        "doubleNames": "DK Metcalf/Jonnu Smith",
+        "tripleNames": "DK Metcalf/Jonnu Smith/Adam Thielen"
+      },
+      {
+        "team": "ATL",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Drake London (WR ovr 19), Darnell Mooney (WR ovr 120), Kyle Pitts (TE ovr 138)",
+        "doubleNames": "Drake London/Darnell Mooney",
+        "tripleNames": "Drake London/Darnell Mooney/Kyle Pitts"
+      },
+      {
+        "team": "BUF",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Khalil Shakir (WR ovr 90), Keon Coleman (WR ovr 116), Dalton Kincaid (TE ovr 123)",
+        "doubleNames": "Khalil Shakir/Keon Coleman",
+        "tripleNames": "Khalil Shakir/Keon Coleman/Dalton Kincaid"
+      },
+      {
+        "team": "CHI",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "D.J. Moore (WR ovr 48), Rome Odunze (WR ovr 77), Colston Loveland (TE ovr 115)",
+        "doubleNames": "D.J. Moore/Rome Odunze",
+        "tripleNames": "D.J. Moore/Rome Odunze/Colston Loveland"
+      },
+      {
+        "team": "CIN",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Ja'Marr Chase (WR ovr 1), Tee Higgins (WR ovr 33), Mike Gesicki (TE ovr 199)",
+        "doubleNames": "Ja'Marr Chase/Tee Higgins",
+        "tripleNames": "Ja'Marr Chase/Tee Higgins/Mike Gesicki"
+      },
+      {
+        "team": "CLE",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Jerry Jeudy (WR ovr 68), David Njoku (TE ovr 100), Cedric Tillman (WR ovr 164)",
+        "doubleNames": "Jerry Jeudy/David Njoku",
+        "tripleNames": "Jerry Jeudy/David Njoku/Cedric Tillman"
+      },
+      {
+        "team": "DAL",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "CeeDee Lamb (WR ovr 6), George Pickens (WR ovr 63), Jake Ferguson (TE ovr 122)",
+        "doubleNames": "CeeDee Lamb/George Pickens",
+        "tripleNames": "CeeDee Lamb/George Pickens/Jake Ferguson"
+      },
+      {
+        "team": "DEN",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Courtland Sutton (WR ovr 49), Evan Engram (TE ovr 89), Marvin Mims (WR ovr 131)",
+        "doubleNames": "Courtland Sutton/Evan Engram",
+        "tripleNames": "Courtland Sutton/Evan Engram/Marvin Mims"
+      },
+      {
+        "team": "DET",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Amon-Ra St. Brown (WR ovr 7), Sam LaPorta (TE ovr 55), Jameson Williams (WR ovr 58)",
+        "doubleNames": "Amon-Ra St. Brown/Sam LaPorta",
+        "tripleNames": "Amon-Ra St. Brown/Sam LaPorta/Jameson Williams"
+      },
+      {
+        "team": "GB",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Tucker Kraft (TE ovr 107), Jayden Reed (WR ovr 109), Romeo Doubs (WR ovr 185)",
+        "doubleNames": "Tucker Kraft/Jayden Reed",
+        "tripleNames": "Tucker Kraft/Jayden Reed/Romeo Doubs"
+      },
+      {
+        "team": "IND",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "Tyler Warren (TE ovr 96), Michael Pittman (WR ovr 110), Josh Downs (WR ovr 113)",
+        "doubleNames": "Tyler Warren/Michael Pittman",
+        "tripleNames": "Tyler Warren/Michael Pittman/Josh Downs"
+      },
+      {
+        "team": "JAX",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Brian Thomas Jr. (WR ovr 14), Jakobi Meyers (WR ovr 87), Brenton Strange (TE ovr 166)",
+        "doubleNames": "Brian Thomas Jr./Jakobi Meyers",
+        "tripleNames": "Brian Thomas Jr./Jakobi Meyers/Brenton Strange"
+      },
+      {
+        "team": "MIN",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Justin Jefferson (WR ovr 5), T.J. Hockenson (TE ovr 67), Jordan Addison (WR ovr 80)",
+        "doubleNames": "Justin Jefferson/T.J. Hockenson",
+        "tripleNames": "Justin Jefferson/T.J. Hockenson/Jordan Addison"
+      },
+      {
+        "team": "NE",
+        "n": 3,
+        "doubleShape": "WR/TE",
+        "tripleShape": "WR/TE/WR",
+        "names": "Stefon Diggs (WR ovr 84), Hunter Henry (TE ovr 152), Demario Douglas (WR ovr 189)",
+        "doubleNames": "Stefon Diggs/Hunter Henry",
+        "tripleNames": "Stefon Diggs/Hunter Henry/Demario Douglas"
+      },
+      {
+        "team": "PHI",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "A.J. Brown (WR ovr 22), DeVonta Smith (WR ovr 53), Dallas Goedert (TE ovr 142)",
+        "doubleNames": "A.J. Brown/DeVonta Smith",
+        "tripleNames": "A.J. Brown/DeVonta Smith/Dallas Goedert"
+      },
+      {
+        "team": "SEA",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/WR",
+        "names": "Jaxon Smith-Njigba (WR ovr 29), Cooper Kupp (WR ovr 88), Rashid Shaheed (WR ovr 135)",
+        "doubleNames": "Jaxon Smith-Njigba/Cooper Kupp",
+        "tripleNames": "Jaxon Smith-Njigba/Cooper Kupp/Rashid Shaheed"
+      },
+      {
+        "team": "SF",
+        "n": 3,
+        "doubleShape": "TE/WR",
+        "tripleShape": "TE/WR/WR",
+        "names": "George Kittle (TE ovr 39), Ricky Pearsall (WR ovr 81), Jauan Jennings (WR ovr 102)",
+        "doubleNames": "George Kittle/Ricky Pearsall",
+        "tripleNames": "George Kittle/Ricky Pearsall/Jauan Jennings"
+      },
+      {
+        "team": "TB",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Mike Evans (WR ovr 42), Chris Godwin (WR ovr 91), Cade Otton (TE ovr 178)",
+        "doubleNames": "Mike Evans/Chris Godwin",
+        "tripleNames": "Mike Evans/Chris Godwin/Cade Otton"
+      },
+      {
+        "team": "WAS",
+        "n": 3,
+        "doubleShape": "WR/WR",
+        "tripleShape": "WR/WR/TE",
+        "names": "Terry McLaurin (WR ovr 35), Deebo Samuel (WR ovr 82), Zach Ertz (TE ovr 155)",
+        "doubleNames": "Terry McLaurin/Deebo Samuel",
+        "tripleNames": "Terry McLaurin/Deebo Samuel/Zach Ertz"
+      },
+      {
+        "team": "ARI",
+        "n": 2,
+        "doubleShape": "TE/WR",
+        "tripleShape": "",
+        "names": "Trey McBride (TE ovr 27), Marvin Harrison Jr. (WR ovr 40)",
+        "doubleNames": "Trey McBride/Marvin Harrison Jr.",
+        "tripleNames": ""
+      },
+      {
+        "team": "HOU",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Nico Collins (WR ovr 12), Christian Kirk (WR ovr 144)",
+        "doubleNames": "Nico Collins/Christian Kirk",
+        "tripleNames": ""
+      },
+      {
+        "team": "LA",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Puka Nacua (WR ovr 13), Davante Adams (WR ovr 44)",
+        "doubleNames": "Puka Nacua/Davante Adams",
+        "tripleNames": ""
+      },
+      {
+        "team": "LAC",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Ladd McConkey (WR ovr 26), Keenan Allen (WR ovr 154)",
+        "doubleNames": "Ladd McConkey/Keenan Allen",
+        "tripleNames": ""
+      },
+      {
+        "team": "MIA",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Tyreek Hill (WR ovr 30), Jaylen Waddle (WR ovr 72)",
+        "doubleNames": "Tyreek Hill/Jaylen Waddle",
+        "tripleNames": ""
+      },
+      {
+        "team": "NYG",
+        "n": 2,
+        "doubleShape": "WR/WR",
+        "tripleShape": "",
+        "names": "Malik Nabers (WR ovr 8), Wan'Dale Robinson (WR ovr 174)",
+        "doubleNames": "Malik Nabers/Wan'Dale Robinson",
+        "tripleNames": ""
+      },
+      {
+        "team": "NYJ",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "Garrett Wilson (WR ovr 37), Mason Taylor (TE ovr 176)",
+        "doubleNames": "Garrett Wilson/Mason Taylor",
+        "tripleNames": ""
+      },
+      {
+        "team": "TEN",
+        "n": 2,
+        "doubleShape": "WR/TE",
+        "tripleShape": "",
+        "names": "Calvin Ridley (WR ovr 66), Chigoziem Okonkwo (TE ovr 190)",
+        "doubleNames": "Calvin Ridley/Chigoziem Okonkwo",
+        "tripleNames": ""
+      }
+    ]
+  },
+  "variantCounts": {
+    "natural": 5700,
+    "none": 5700,
+    "double": 5700,
+    "triple": 5441
+  },
+  "naturalClassCounts": {
+    "none": 2919,
+    "double": 2615,
+    "triple": 166
+  },
+  "overall": {
+    "none": {
+      "n": 5700,
+      "mean": 2313.3,
+      "median": 2329.9,
+      "std": 260.1,
+      "variance": 67667.7,
+      "p10": 1979.5,
+      "p90": 2630.4,
+      "iqr": 339.8,
+      "win2500": 23.9,
+      "win2700": 5.5
+    },
+    "double": {
+      "n": 5700,
+      "mean": 2311.8,
+      "median": 2329.1,
+      "std": 257.8,
+      "variance": 66464.4,
+      "p10": 1985.7,
+      "p90": 2622.4,
+      "iqr": 336.7,
+      "win2500": 23.6,
+      "win2700": 5.6
+    },
+    "triple": {
+      "n": 5441,
+      "mean": 2325.7,
+      "median": 2332.4,
+      "std": 237.9,
+      "variance": 56589.8,
+      "p10": 2012,
+      "p90": 2630.1,
+      "iqr": 326.1,
+      "win2500": 24.1,
+      "win2700": 5.6
+    },
+    "natural": {
+      "n": 5700,
+      "mean": 2311.4,
+      "median": 2329.8,
+      "std": 259.5,
+      "variance": 67354.8,
+      "p10": 1979.5,
+      "p90": 2624.1,
+      "iqr": 335.8,
+      "win2500": 23.5,
+      "win2700": 5.5
+    }
+  },
+  "byYear": {
+    "2021": {
+      "none": {
+        "n": 1140,
+        "mean": 2264.4,
+        "median": 2283.9,
+        "std": 237.6,
+        "variance": 56444.8,
+        "p10": 1964.9,
+        "p90": 2543.2,
+        "iqr": 298.7,
+        "win2500": 14.3,
+        "win2700": 1.8
+      },
+      "double": {
+        "n": 1140,
+        "mean": 2266.7,
+        "median": 2286,
+        "std": 231.4,
+        "variance": 53558.8,
+        "p10": 1966.5,
+        "p90": 2544.9,
+        "iqr": 303.9,
+        "win2500": 14.3,
+        "win2700": 1.8
+      },
+      "triple": {
+        "n": 982,
+        "mean": 2283.2,
+        "median": 2285.8,
+        "std": 205.6,
+        "variance": 42253.5,
+        "p10": 2011.9,
+        "p90": 2547.4,
+        "iqr": 275.4,
+        "win2500": 14.4,
+        "win2700": 2.2
+      }
+    },
+    "2022": {
+      "none": {
+        "n": 1140,
+        "mean": 2316.3,
+        "median": 2329.9,
+        "std": 215.3,
+        "variance": 46372.2,
+        "p10": 2027.6,
+        "p90": 2580.7,
+        "iqr": 279.7,
+        "win2500": 21,
+        "win2700": 3.1
+      },
+      "double": {
+        "n": 1140,
+        "mean": 2321.6,
+        "median": 2335.2,
+        "std": 210.5,
+        "variance": 44300.8,
+        "p10": 2038.5,
+        "p90": 2581.5,
+        "iqr": 276.4,
+        "win2500": 20.3,
+        "win2700": 3.4
+      },
+      "triple": {
+        "n": 1140,
+        "mean": 2323,
+        "median": 2337.6,
+        "std": 216.7,
+        "variance": 46964.9,
+        "p10": 2030.9,
+        "p90": 2594.5,
+        "iqr": 278.4,
+        "win2500": 21.7,
+        "win2700": 3.2
+      }
+    },
+    "2023": {
+      "none": {
+        "n": 1140,
+        "mean": 2291.1,
+        "median": 2320.7,
+        "std": 261.9,
+        "variance": 68578.9,
+        "p10": 1944,
+        "p90": 2609.8,
+        "iqr": 372.9,
+        "win2500": 22.3,
+        "win2700": 3.3
+      },
+      "double": {
+        "n": 1140,
+        "mean": 2290.6,
+        "median": 2317.6,
+        "std": 257,
+        "variance": 66052.9,
+        "p10": 1946.7,
+        "p90": 2603.6,
+        "iqr": 385.1,
+        "win2500": 23.3,
+        "win2700": 3.8
+      },
+      "triple": {
+        "n": 1140,
+        "mean": 2294.8,
+        "median": 2325.1,
+        "std": 257.1,
+        "variance": 66091.1,
+        "p10": 1941.6,
+        "p90": 2608.8,
+        "iqr": 372.9,
+        "win2500": 22.8,
+        "win2700": 3.7
+      }
+    },
+    "2024": {
+      "none": {
+        "n": 1140,
+        "mean": 2429.4,
+        "median": 2458,
+        "std": 277.8,
+        "variance": 77148.2,
+        "p10": 2056.2,
+        "p90": 2773.7,
+        "iqr": 375.9,
+        "win2500": 43.4,
+        "win2700": 16.4
+      },
+      "double": {
+        "n": 1140,
+        "mean": 2417.3,
+        "median": 2442.5,
+        "std": 279.8,
+        "variance": 78276.7,
+        "p10": 2044.7,
+        "p90": 2761.7,
+        "iqr": 373.4,
+        "win2500": 41.9,
+        "win2700": 15.8
+      },
+      "triple": {
+        "n": 1099,
+        "mean": 2420.5,
+        "median": 2427.5,
+        "std": 259.5,
+        "variance": 67329.8,
+        "p10": 2077,
+        "p90": 2752.3,
+        "iqr": 366.6,
+        "win2500": 40.2,
+        "win2700": 15
+      }
+    },
+    "2025": {
+      "none": {
+        "n": 1140,
+        "mean": 2265.5,
+        "median": 2293.1,
+        "std": 266.7,
+        "variance": 71139.4,
+        "p10": 1956.1,
+        "p90": 2573.3,
+        "iqr": 335.5,
+        "win2500": 18.8,
+        "win2700": 2.8
+      },
+      "double": {
+        "n": 1140,
+        "mean": 2262.7,
+        "median": 2290.5,
+        "std": 272.1,
+        "variance": 74021.6,
+        "p10": 1955.7,
+        "p90": 2578.4,
+        "iqr": 329.4,
+        "win2500": 18.2,
+        "win2700": 3.1
+      },
+      "triple": {
+        "n": 1080,
+        "mean": 2303.5,
+        "median": 2304.5,
+        "std": 215.7,
+        "variance": 46527,
+        "p10": 2024,
+        "p90": 2589.3,
+        "iqr": 317.1,
+        "win2500": 20.5,
+        "win2700": 3.8
+      }
+    }
+  },
+  "byArchetype": {
+    "2024_1": {
+      "label": "2024 #1 — Let James Cook (16-2)",
+      "none": {
+        "n": 300,
+        "mean": 2203.6,
+        "median": 2212.6,
+        "std": 181.5,
+        "variance": 32958.7,
+        "p10": 1966,
+        "p90": 2437.9,
+        "iqr": 240.3,
+        "win2500": 5,
+        "win2700": 0
+      },
+      "double": {
+        "n": 300,
+        "mean": 2199.7,
+        "median": 2208.9,
+        "std": 180.3,
+        "variance": 32492.7,
+        "p10": 1970.7,
+        "p90": 2424.6,
+        "iqr": 234.3,
+        "win2500": 5.3,
+        "win2700": 0
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2176.9,
+        "median": 2194,
+        "std": 183.5,
+        "variance": 33679.9,
+        "p10": 1942.2,
+        "p90": 2400,
+        "iqr": 233.5,
+        "win2500": 3,
+        "win2700": 0.3
+      }
+    },
+    "2024_2": {
+      "label": "2024 #2 — Age is just a number (15-3)",
+      "none": {
+        "n": 300,
+        "mean": 2079.1,
+        "median": 2072.3,
+        "std": 171.5,
+        "variance": 29422.5,
+        "p10": 1870.9,
+        "p90": 2306.4,
+        "iqr": 222.5,
+        "win2500": 1.3,
+        "win2700": 0
+      },
+      "double": {
+        "n": 300,
+        "mean": 2080.8,
+        "median": 2076.7,
+        "std": 162.9,
+        "variance": 26547.8,
+        "p10": 1870.6,
+        "p90": 2295.8,
+        "iqr": 232.3,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "triple": {
+        "n": 286,
+        "mean": 2081.9,
+        "median": 2075.6,
+        "std": 153.1,
+        "variance": 23430.7,
+        "p10": 1879,
+        "p90": 2274.6,
+        "iqr": 216.3,
+        "win2500": 0.3,
+        "win2700": 0
+      }
+    },
+    "2024_3": {
+      "label": "2024 #3 — Adam(s) and Steve(nson) (12-6)",
+      "none": {
+        "n": 300,
+        "mean": 2170.5,
+        "median": 2163.5,
+        "std": 174.5,
+        "variance": 30433.2,
+        "p10": 1951.5,
+        "p90": 2393,
+        "iqr": 237.6,
+        "win2500": 1.7,
+        "win2700": 0
+      },
+      "double": {
+        "n": 300,
+        "mean": 2158.1,
+        "median": 2158.8,
+        "std": 174.3,
+        "variance": 30366.3,
+        "p10": 1921.4,
+        "p90": 2377.9,
+        "iqr": 243.5,
+        "win2500": 1.7,
+        "win2700": 0
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2144.3,
+        "median": 2141.1,
+        "std": 175.6,
+        "variance": 30818.7,
+        "p10": 1931.7,
+        "p90": 2360.3,
+        "iqr": 244.7,
+        "win2500": 2.3,
+        "win2700": 0
+      }
+    },
+    "2024_4": {
+      "label": "2024 #4 — We Have McCaffrey at Home (11-7)",
+      "none": {
+        "n": 300,
+        "mean": 2150.1,
+        "median": 2165.2,
+        "std": 160.8,
+        "variance": 25860.4,
+        "p10": 1922.1,
+        "p90": 2351.5,
+        "iqr": 216.3,
+        "win2500": 0.3,
+        "win2700": 0
+      },
+      "double": {
+        "n": 300,
+        "mean": 2148.5,
+        "median": 2159.3,
+        "std": 158.2,
+        "variance": 25016.7,
+        "p10": 1924.4,
+        "p90": 2343.9,
+        "iqr": 217.8,
+        "win2500": 0.3,
+        "win2700": 0
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2154.9,
+        "median": 2156,
+        "std": 156.6,
+        "variance": 24515.7,
+        "p10": 1933.1,
+        "p90": 2348.5,
+        "iqr": 208.9,
+        "win2500": 1.3,
+        "win2700": 0
+      }
+    },
+    "2024_5": {
+      "label": "2024 #5 — The Boomers (11-7)",
+      "none": {
+        "n": 300,
+        "mean": 1763.2,
+        "median": 1770.3,
+        "std": 182.1,
+        "variance": 33169.4,
+        "p10": 1518.6,
+        "p90": 1988.7,
+        "iqr": 234,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "double": {
+        "n": 300,
+        "mean": 1779.8,
+        "median": 1793.9,
+        "std": 193.7,
+        "variance": 37521,
+        "p10": 1523.2,
+        "p90": 2009.6,
+        "iqr": 263,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "triple": {
+        "n": 139,
+        "mean": 1860.3,
+        "median": 1871,
+        "std": 137.7,
+        "variance": 18962.3,
+        "p10": 1678.1,
+        "p90": 2032.1,
+        "iqr": 205.5,
+        "win2500": 0,
+        "win2700": 0
+      }
+    },
+    "2024_6": {
+      "label": "2024 #6 — seanjcrow (9-9)",
+      "none": {
+        "n": 300,
+        "mean": 2246.5,
+        "median": 2235.7,
+        "std": 185.2,
+        "variance": 34286.7,
+        "p10": 2017.4,
+        "p90": 2489.7,
+        "iqr": 271.6,
+        "win2500": 8.3,
+        "win2700": 0.7
+      },
+      "double": {
+        "n": 300,
+        "mean": 2249.9,
+        "median": 2245.6,
+        "std": 189.4,
+        "variance": 35879.3,
+        "p10": 2021,
+        "p90": 2500.1,
+        "iqr": 278.5,
+        "win2500": 10.3,
+        "win2700": 1.3
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2255.2,
+        "median": 2256,
+        "std": 179.1,
+        "variance": 32076.4,
+        "p10": 2029.5,
+        "p90": 2472.6,
+        "iqr": 290.5,
+        "win2500": 8,
+        "win2700": 0
+      }
+    },
+    "2025_1": {
+      "label": "2025 #1 — Lord Pittsy Flacco Joedy (15-3)",
+      "none": {
+        "n": 300,
+        "mean": 2472.3,
+        "median": 2470.7,
+        "std": 180.7,
+        "variance": 32662.8,
+        "p10": 2265.7,
+        "p90": 2726,
+        "iqr": 231.8,
+        "win2500": 42,
+        "win2700": 12
+      },
+      "double": {
+        "n": 300,
+        "mean": 2455.3,
+        "median": 2451.3,
+        "std": 188.5,
+        "variance": 35514.1,
+        "p10": 2234.8,
+        "p90": 2717.3,
+        "iqr": 241.7,
+        "win2500": 37.3,
+        "win2700": 10.7
+      },
+      "triple": {
+        "n": 240,
+        "mean": 2466,
+        "median": 2453.6,
+        "std": 197.5,
+        "variance": 38995.5,
+        "p10": 2211.1,
+        "p90": 2744,
+        "iqr": 279.7,
+        "win2500": 43.8,
+        "win2700": 14.6
+      }
+    },
+    "2025_2": {
+      "label": "2025 #2 — seanjcrow (14-4)",
+      "none": {
+        "n": 300,
+        "mean": 2489.8,
+        "median": 2489.3,
+        "std": 202.7,
+        "variance": 41086.8,
+        "p10": 2217,
+        "p90": 2752.5,
+        "iqr": 270.8,
+        "win2500": 48,
+        "win2700": 15.7
+      },
+      "double": {
+        "n": 300,
+        "mean": 2492.5,
+        "median": 2490,
+        "std": 202.8,
+        "variance": 41123.6,
+        "p10": 2224.3,
+        "p90": 2755.7,
+        "iqr": 284.7,
+        "win2500": 48.3,
+        "win2700": 15.7
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2484.5,
+        "median": 2495,
+        "std": 194.1,
+        "variance": 37663.9,
+        "p10": 2216,
+        "p90": 2743.3,
+        "iqr": 264.3,
+        "win2500": 49.3,
+        "win2700": 15
+      }
+    },
+    "2025_3": {
+      "label": "2025 #3 — Drake & Bake (13-5)",
+      "none": {
+        "n": 300,
+        "mean": 2413.1,
+        "median": 2431.7,
+        "std": 170.3,
+        "variance": 28988.8,
+        "p10": 2210,
+        "p90": 2631.9,
+        "iqr": 236.9,
+        "win2500": 33,
+        "win2700": 2
+      },
+      "double": {
+        "n": 300,
+        "mean": 2415.8,
+        "median": 2420.8,
+        "std": 170,
+        "variance": 28894,
+        "p10": 2197.7,
+        "p90": 2635.5,
+        "iqr": 221.6,
+        "win2500": 33,
+        "win2700": 3.3
+      },
+      "triple": {
+        "n": 299,
+        "mean": 2420.7,
+        "median": 2428.9,
+        "std": 173.3,
+        "variance": 30039.4,
+        "p10": 2193.1,
+        "p90": 2636.2,
+        "iqr": 237.4,
+        "win2500": 33.4,
+        "win2700": 4.3
+      }
+    },
+    "2025_4": {
+      "label": "2025 #4 — The Ladds (12-6)",
+      "none": {
+        "n": 300,
+        "mean": 2377.3,
+        "median": 2386.1,
+        "std": 171.8,
+        "variance": 29510.4,
+        "p10": 2146.5,
+        "p90": 2591.2,
+        "iqr": 244.3,
+        "win2500": 26.7,
+        "win2700": 1.3
+      },
+      "double": {
+        "n": 300,
+        "mean": 2377.8,
+        "median": 2387.2,
+        "std": 171.8,
+        "variance": 29504.8,
+        "p10": 2150.1,
+        "p90": 2586.2,
+        "iqr": 236.8,
+        "win2500": 28,
+        "win2700": 2
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2388.7,
+        "median": 2400.6,
+        "std": 179.9,
+        "variance": 32349.8,
+        "p10": 2157.1,
+        "p90": 2608.2,
+        "iqr": 247.2,
+        "win2500": 28.7,
+        "win2700": 2.3
+      }
+    },
+    "2025_5": {
+      "label": "2025 #5 — House of Hwang (11-7)",
+      "none": {
+        "n": 300,
+        "mean": 2272.1,
+        "median": 2266.2,
+        "std": 177.2,
+        "variance": 31385,
+        "p10": 2048.7,
+        "p90": 2505,
+        "iqr": 245.3,
+        "win2500": 11,
+        "win2700": 1.3
+      },
+      "double": {
+        "n": 300,
+        "mean": 2271.3,
+        "median": 2273.1,
+        "std": 173.1,
+        "variance": 29951.6,
+        "p10": 2042.7,
+        "p90": 2493.4,
+        "iqr": 228.5,
+        "win2500": 10,
+        "win2700": 1.3
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2288,
+        "median": 2280.1,
+        "std": 175.7,
+        "variance": 30854.9,
+        "p10": 2058.6,
+        "p90": 2509.8,
+        "iqr": 229.8,
+        "win2500": 10.7,
+        "win2700": 0.7
+      }
+    },
+    "2025_6": {
+      "label": "2025 #6 — aidsonballs (11-7)",
+      "none": {
+        "n": 300,
+        "mean": 2176.2,
+        "median": 2178.4,
+        "std": 167.9,
+        "variance": 28196.1,
+        "p10": 1957.4,
+        "p90": 2392.9,
+        "iqr": 238.2,
+        "win2500": 1.3,
+        "win2700": 0
+      },
+      "double": {
+        "n": 300,
+        "mean": 2170.5,
+        "median": 2180.3,
+        "std": 164.7,
+        "variance": 27118.2,
+        "p10": 1961.7,
+        "p90": 2375.5,
+        "iqr": 224.8,
+        "win2500": 1.3,
+        "win2700": 0
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2155.8,
+        "median": 2159.1,
+        "std": 163.3,
+        "variance": 26669.2,
+        "p10": 1942.6,
+        "p90": 2375.9,
+        "iqr": 230.3,
+        "win2500": 1,
+        "win2700": 0
+      }
+    },
+    "2026_1": {
+      "label": "2026 #1 — The Ladds",
+      "none": {
+        "n": 300,
+        "mean": 2444.2,
+        "median": 2455.1,
+        "std": 173.6,
+        "variance": 30121.1,
+        "p10": 2205.7,
+        "p90": 2652.5,
+        "iqr": 241,
+        "win2500": 38.3,
+        "win2700": 6
+      },
+      "double": {
+        "n": 300,
+        "mean": 2444.3,
+        "median": 2458.1,
+        "std": 175,
+        "variance": 30634.4,
+        "p10": 2196.7,
+        "p90": 2656.4,
+        "iqr": 241.2,
+        "win2500": 40.7,
+        "win2700": 6
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2445.6,
+        "median": 2444.7,
+        "std": 174.9,
+        "variance": 30581.7,
+        "p10": 2202.7,
+        "p90": 2663.8,
+        "iqr": 264.4,
+        "win2500": 40.3,
+        "win2700": 7.7
+      }
+    },
+    "2026_2": {
+      "label": "2026 #2 — seanjcrow",
+      "none": {
+        "n": 300,
+        "mean": 2476.9,
+        "median": 2473,
+        "std": 194.8,
+        "variance": 37960.3,
+        "p10": 2244.3,
+        "p90": 2724.8,
+        "iqr": 285.9,
+        "win2500": 47.7,
+        "win2700": 12.7
+      },
+      "double": {
+        "n": 300,
+        "mean": 2475.7,
+        "median": 2472.2,
+        "std": 194.1,
+        "variance": 37657.8,
+        "p10": 2219.8,
+        "p90": 2730.3,
+        "iqr": 265,
+        "win2500": 46.7,
+        "win2700": 16
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2478.9,
+        "median": 2500.8,
+        "std": 190.5,
+        "variance": 36295.7,
+        "p10": 2224.6,
+        "p90": 2731.4,
+        "iqr": 269.3,
+        "win2500": 50.3,
+        "win2700": 14.3
+      }
+    },
+    "2026_3": {
+      "label": "2026 #3 — Eat It While She Sleeper",
+      "none": {
+        "n": 300,
+        "mean": 2345.7,
+        "median": 2349.3,
+        "std": 179,
+        "variance": 32029,
+        "p10": 2121.2,
+        "p90": 2580.2,
+        "iqr": 239.1,
+        "win2500": 19.7,
+        "win2700": 1.7
+      },
+      "double": {
+        "n": 300,
+        "mean": 2345.9,
+        "median": 2350.5,
+        "std": 180.4,
+        "variance": 32532.2,
+        "p10": 2116.6,
+        "p90": 2574.3,
+        "iqr": 239.8,
+        "win2500": 21.7,
+        "win2700": 2.7
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2332.9,
+        "median": 2335.3,
+        "std": 185.3,
+        "variance": 34337.2,
+        "p10": 2089.5,
+        "p90": 2588,
+        "iqr": 241.2,
+        "win2500": 17.7,
+        "win2700": 2.3
+      }
+    },
+    "2026_4": {
+      "label": "2026 #4 — Drake & Bake",
+      "none": {
+        "n": 300,
+        "mean": 2513.8,
+        "median": 2516.1,
+        "std": 163.7,
+        "variance": 26791.2,
+        "p10": 2307.2,
+        "p90": 2736.8,
+        "iqr": 240.6,
+        "win2500": 52.3,
+        "win2700": 13.7
+      },
+      "double": {
+        "n": 300,
+        "mean": 2512.4,
+        "median": 2508,
+        "std": 161.4,
+        "variance": 26048.1,
+        "p10": 2299.3,
+        "p90": 2743.9,
+        "iqr": 217,
+        "win2500": 52.3,
+        "win2700": 14
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2509.5,
+        "median": 2510.2,
+        "std": 166.2,
+        "variance": 27630.1,
+        "p10": 2303.7,
+        "p90": 2734.2,
+        "iqr": 244.2,
+        "win2500": 52.3,
+        "win2700": 14.7
+      }
+    },
+    "2026_5": {
+      "label": "2026 #5 — Lord Pittsy Flacco Joedy",
+      "none": {
+        "n": 300,
+        "mean": 2597.2,
+        "median": 2579.7,
+        "std": 177.3,
+        "variance": 31422.4,
+        "p10": 2375.1,
+        "p90": 2837.9,
+        "iqr": 262.6,
+        "win2500": 68.7,
+        "win2700": 28.3
+      },
+      "double": {
+        "n": 300,
+        "mean": 2591,
+        "median": 2578,
+        "std": 176.3,
+        "variance": 31083.5,
+        "p10": 2372.5,
+        "p90": 2843.8,
+        "iqr": 243.1,
+        "win2500": 66,
+        "win2700": 27
+      },
+      "triple": {
+        "n": 277,
+        "mean": 2578.2,
+        "median": 2559,
+        "std": 187.7,
+        "variance": 35220.2,
+        "p10": 2345.1,
+        "p90": 2846.7,
+        "iqr": 255.2,
+        "win2500": 63.5,
+        "win2700": 25.3
+      }
+    },
+    "2026_6": {
+      "label": "2026 #6 — House of Hwang",
+      "none": {
+        "n": 300,
+        "mean": 2387.7,
+        "median": 2377.5,
+        "std": 187.1,
+        "variance": 35024.7,
+        "p10": 2166.6,
+        "p90": 2632,
+        "iqr": 255.3,
+        "win2500": 27.3,
+        "win2700": 6.3
+      },
+      "double": {
+        "n": 300,
+        "mean": 2387.2,
+        "median": 2387,
+        "std": 179.5,
+        "variance": 32210.4,
+        "p10": 2159.3,
+        "p90": 2628,
+        "iqr": 222.2,
+        "win2500": 24.7,
+        "win2700": 4
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2396.2,
+        "median": 2388.3,
+        "std": 179.7,
+        "variance": 32289.8,
+        "p10": 2164.8,
+        "p90": 2633.1,
+        "iqr": 255.8,
+        "win2500": 28.3,
+        "win2700": 4
+      }
+    },
+    "2026_7": {
+      "label": "2026 #7 — MrZaccheaus",
+      "none": {
+        "n": 300,
+        "mean": 2374.1,
+        "median": 2373.2,
+        "std": 165.5,
+        "variance": 27399.1,
+        "p10": 2146.3,
+        "p90": 2578.5,
+        "iqr": 205,
+        "win2500": 22.3,
+        "win2700": 2.3
+      },
+      "double": {
+        "n": 300,
+        "mean": 2367.9,
+        "median": 2371.9,
+        "std": 164.5,
+        "variance": 27073.2,
+        "p10": 2127,
+        "p90": 2567.4,
+        "iqr": 211.1,
+        "win2500": 21,
+        "win2700": 1.7
+      },
+      "triple": {
+        "n": 300,
+        "mean": 2357.1,
+        "median": 2361.3,
+        "std": 157.9,
+        "variance": 24927.1,
+        "p10": 2113.3,
+        "p90": 2546.9,
+        "iqr": 190,
+        "win2500": 16.3,
+        "win2700": 1.3
+      }
+    }
+  },
+  "weeklyStd": {
+    "none": {
+      "n": 5700,
+      "mean": 24,
+      "median": 23.7,
+      "std": 4.6,
+      "variance": 20.8,
+      "p10": 18.5,
+      "p90": 30,
+      "iqr": 6,
+      "win2500": 0,
+      "win2700": 0
+    },
+    "double": {
+      "n": 5700,
+      "mean": 24,
+      "median": 23.7,
+      "std": 4.5,
+      "variance": 20.4,
+      "p10": 18.6,
+      "p90": 29.9,
+      "iqr": 5.8,
+      "win2500": 0,
+      "win2700": 0
+    },
+    "triple": {
+      "n": 5441,
+      "mean": 23.9,
+      "median": 23.6,
+      "std": 4.4,
+      "variance": 19.1,
+      "p10": 18.5,
+      "p90": 29.6,
+      "iqr": 5.8,
+      "win2500": 0,
+      "win2700": 0
+    }
+  },
+  "hist": {
+    "none": [
+      {
+        "lo": 1800,
+        "hi": 1900,
+        "label": "1800–1899",
+        "n": 367
+      },
+      {
+        "lo": 1900,
+        "hi": 2000,
+        "label": "1900–1999",
+        "n": 271
+      },
+      {
+        "lo": 2000,
+        "hi": 2100,
+        "label": "2000–2099",
+        "n": 469
+      },
+      {
+        "lo": 2100,
+        "hi": 2200,
+        "label": "2100–2199",
+        "n": 622
+      },
+      {
+        "lo": 2200,
+        "hi": 2300,
+        "label": "2200–2299",
+        "n": 840
+      },
+      {
+        "lo": 2300,
+        "hi": 2400,
+        "label": "2300–2399",
+        "n": 949
+      },
+      {
+        "lo": 2400,
+        "hi": 2500,
+        "label": "2400–2499",
+        "n": 817
+      },
+      {
+        "lo": 2500,
+        "hi": 2600,
+        "label": "2500–2599",
+        "n": 656
+      },
+      {
+        "lo": 2600,
+        "hi": 2700,
+        "label": "2600–2699",
+        "n": 397
+      },
+      {
+        "lo": 2700,
+        "hi": 2800,
+        "label": "2700–2799",
+        "n": 188
+      },
+      {
+        "lo": 2800,
+        "hi": 2900,
+        "label": "2800–2899",
+        "n": 88
+      },
+      {
+        "lo": 2900,
+        "hi": 3000,
+        "label": "2900–2999",
+        "n": 29
+      },
+      {
+        "lo": 3000,
+        "hi": 3100,
+        "label": "3000–3099",
+        "n": 7
+      },
+      {
+        "lo": 3100,
+        "hi": 3200,
+        "label": "3100–3199",
+        "n": 0
+      },
+      {
+        "lo": 3200,
+        "hi": 3300,
+        "label": "3200–3299",
+        "n": 0
+      },
+      {
+        "lo": 3300,
+        "hi": 3400,
+        "label": "3300–3399",
+        "n": 0
+      }
+    ],
+    "double": [
+      {
+        "lo": 1800,
+        "hi": 1900,
+        "label": "1800–1899",
+        "n": 345
+      },
+      {
+        "lo": 1900,
+        "hi": 2000,
+        "label": "1900–1999",
+        "n": 278
+      },
+      {
+        "lo": 2000,
+        "hi": 2100,
+        "label": "2000–2099",
+        "n": 488
+      },
+      {
+        "lo": 2100,
+        "hi": 2200,
+        "label": "2100–2199",
+        "n": 652
+      },
+      {
+        "lo": 2200,
+        "hi": 2300,
+        "label": "2200–2299",
+        "n": 837
+      },
+      {
+        "lo": 2300,
+        "hi": 2400,
+        "label": "2300–2399",
+        "n": 917
+      },
+      {
+        "lo": 2400,
+        "hi": 2500,
+        "label": "2400–2499",
+        "n": 837
+      },
+      {
+        "lo": 2500,
+        "hi": 2600,
+        "label": "2500–2599",
+        "n": 667
+      },
+      {
+        "lo": 2600,
+        "hi": 2700,
+        "label": "2600–2699",
+        "n": 362
+      },
+      {
+        "lo": 2700,
+        "hi": 2800,
+        "label": "2700–2799",
+        "n": 210
+      },
+      {
+        "lo": 2800,
+        "hi": 2900,
+        "label": "2800–2899",
+        "n": 71
+      },
+      {
+        "lo": 2900,
+        "hi": 3000,
+        "label": "2900–2999",
+        "n": 31
+      },
+      {
+        "lo": 3000,
+        "hi": 3100,
+        "label": "3000–3099",
+        "n": 5
+      },
+      {
+        "lo": 3100,
+        "hi": 3200,
+        "label": "3100–3199",
+        "n": 0
+      },
+      {
+        "lo": 3200,
+        "hi": 3300,
+        "label": "3200–3299",
+        "n": 0
+      },
+      {
+        "lo": 3300,
+        "hi": 3400,
+        "label": "3300–3399",
+        "n": 0
+      }
+    ],
+    "triple": [
+      {
+        "lo": 1800,
+        "hi": 1900,
+        "label": "1800–1899",
+        "n": 211
+      },
+      {
+        "lo": 1900,
+        "hi": 2000,
+        "label": "1900–1999",
+        "n": 285
+      },
+      {
+        "lo": 2000,
+        "hi": 2100,
+        "label": "2000–2099",
+        "n": 483
+      },
+      {
+        "lo": 2100,
+        "hi": 2200,
+        "label": "2100–2199",
+        "n": 616
+      },
+      {
+        "lo": 2200,
+        "hi": 2300,
+        "label": "2200–2299",
+        "n": 841
+      },
+      {
+        "lo": 2300,
+        "hi": 2400,
+        "label": "2300–2399",
+        "n": 898
+      },
+      {
+        "lo": 2400,
+        "hi": 2500,
+        "label": "2400–2499",
+        "n": 796
+      },
+      {
+        "lo": 2500,
+        "hi": 2600,
+        "label": "2500–2599",
+        "n": 633
+      },
+      {
+        "lo": 2600,
+        "hi": 2700,
+        "label": "2600–2699",
+        "n": 372
+      },
+      {
+        "lo": 2700,
+        "hi": 2800,
+        "label": "2700–2799",
+        "n": 220
+      },
+      {
+        "lo": 2800,
+        "hi": 2900,
+        "label": "2800–2899",
+        "n": 59
+      },
+      {
+        "lo": 2900,
+        "hi": 3000,
+        "label": "2900–2999",
+        "n": 22
+      },
+      {
+        "lo": 3000,
+        "hi": 3100,
+        "label": "3000–3099",
+        "n": 5
+      },
+      {
+        "lo": 3100,
+        "hi": 3200,
+        "label": "3100–3199",
+        "n": 0
+      },
+      {
+        "lo": 3200,
+        "hi": 3300,
+        "label": "3200–3299",
+        "n": 0
+      },
+      {
+        "lo": 3300,
+        "hi": 3400,
+        "label": "3300–3399",
+        "n": 0
+      }
+    ]
+  },
+  "paired": {
+    "double": {
+      "n": 5700,
+      "stacked": {
+        "n": 5700,
+        "mean": 2311.8,
+        "median": 2329.1,
+        "std": 257.8,
+        "variance": 66464.4,
+        "p10": 1985.7,
+        "p90": 2622.4,
+        "iqr": 336.7,
+        "win2500": 23.6,
+        "win2700": 5.6
+      },
+      "twin": {
+        "n": 5700,
+        "mean": 2313.3,
+        "median": 2329.9,
+        "std": 260.1,
+        "variance": 67667.7,
+        "p10": 1979.5,
+        "p90": 2630.4,
+        "iqr": 339.8,
+        "win2500": 23.9,
+        "win2700": 5.5
+      },
+      "deltaMean": -1.5,
+      "deltaMedian": -0.8,
+      "stackedWins": 48.6,
+      "weeklyStdStacked": {
+        "n": 5700,
+        "mean": 24,
+        "median": 23.7,
+        "std": 4.5,
+        "variance": 20.4,
+        "p10": 18.6,
+        "p90": 29.9,
+        "iqr": 5.8,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "weeklyStdTwin": {
+        "n": 5700,
+        "mean": 24,
+        "median": 23.7,
+        "std": 4.6,
+        "variance": 20.8,
+        "p10": 18.5,
+        "p90": 30,
+        "iqr": 6,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "byYear": {
+        "2021": {
+          "n": 1140,
+          "stacked": {
+            "n": 1140,
+            "mean": 2266.7,
+            "median": 2286,
+            "std": 231.4,
+            "variance": 53558.8,
+            "p10": 1966.5,
+            "p90": 2544.9,
+            "iqr": 303.9,
+            "win2500": 14.3,
+            "win2700": 1.8
+          },
+          "twin": {
+            "n": 1140,
+            "mean": 2264.4,
+            "median": 2283.9,
+            "std": 237.6,
+            "variance": 56444.8,
+            "p10": 1964.9,
+            "p90": 2543.2,
+            "iqr": 298.7,
+            "win2500": 14.3,
+            "win2700": 1.8
+          },
+          "deltaMean": 2.4,
+          "deltaMedian": 4.1,
+          "stackedWins": 53.7
+        },
+        "2022": {
+          "n": 1140,
+          "stacked": {
+            "n": 1140,
+            "mean": 2321.6,
+            "median": 2335.2,
+            "std": 210.5,
+            "variance": 44300.8,
+            "p10": 2038.5,
+            "p90": 2581.5,
+            "iqr": 276.4,
+            "win2500": 20.3,
+            "win2700": 3.4
+          },
+          "twin": {
+            "n": 1140,
+            "mean": 2316.3,
+            "median": 2329.9,
+            "std": 215.3,
+            "variance": 46372.2,
+            "p10": 2027.6,
+            "p90": 2580.7,
+            "iqr": 279.7,
+            "win2500": 21,
+            "win2700": 3.1
+          },
+          "deltaMean": 5.3,
+          "deltaMedian": 2.5,
+          "stackedWins": 52.5
+        },
+        "2023": {
+          "n": 1140,
+          "stacked": {
+            "n": 1140,
+            "mean": 2290.6,
+            "median": 2317.6,
+            "std": 257,
+            "variance": 66052.9,
+            "p10": 1946.7,
+            "p90": 2603.6,
+            "iqr": 385.1,
+            "win2500": 23.3,
+            "win2700": 3.8
+          },
+          "twin": {
+            "n": 1140,
+            "mean": 2291.1,
+            "median": 2320.7,
+            "std": 261.9,
+            "variance": 68578.9,
+            "p10": 1944,
+            "p90": 2609.8,
+            "iqr": 372.9,
+            "win2500": 22.3,
+            "win2700": 3.3
+          },
+          "deltaMean": -0.5,
+          "deltaMedian": -0.8,
+          "stackedWins": 48.5
+        },
+        "2024": {
+          "n": 1140,
+          "stacked": {
+            "n": 1140,
+            "mean": 2417.3,
+            "median": 2442.5,
+            "std": 279.8,
+            "variance": 78276.7,
+            "p10": 2044.7,
+            "p90": 2761.7,
+            "iqr": 373.4,
+            "win2500": 41.9,
+            "win2700": 15.8
+          },
+          "twin": {
+            "n": 1140,
+            "mean": 2429.4,
+            "median": 2458,
+            "std": 277.8,
+            "variance": 77148.2,
+            "p10": 2056.2,
+            "p90": 2773.7,
+            "iqr": 375.9,
+            "win2500": 43.4,
+            "win2700": 16.4
+          },
+          "deltaMean": -12.1,
+          "deltaMedian": -8.4,
+          "stackedWins": 39.4
+        },
+        "2025": {
+          "n": 1140,
+          "stacked": {
+            "n": 1140,
+            "mean": 2262.7,
+            "median": 2290.5,
+            "std": 272.1,
+            "variance": 74021.6,
+            "p10": 1955.7,
+            "p90": 2578.4,
+            "iqr": 329.4,
+            "win2500": 18.2,
+            "win2700": 3.1
+          },
+          "twin": {
+            "n": 1140,
+            "mean": 2265.5,
+            "median": 2293.1,
+            "std": 266.7,
+            "variance": 71139.4,
+            "p10": 1956.1,
+            "p90": 2573.3,
+            "iqr": 335.5,
+            "win2500": 18.8,
+            "win2700": 2.8
+          },
+          "deltaMean": -2.7,
+          "deltaMedian": -1,
+          "stackedWins": 48.8
+        }
+      }
+    },
+    "triple": {
+      "n": 5441,
+      "stacked": {
+        "n": 5441,
+        "mean": 2325.7,
+        "median": 2332.4,
+        "std": 237.9,
+        "variance": 56589.8,
+        "p10": 2012,
+        "p90": 2630.1,
+        "iqr": 326.1,
+        "win2500": 24.1,
+        "win2700": 5.6
+      },
+      "twin": {
+        "n": 5441,
+        "mean": 2330.1,
+        "median": 2336.9,
+        "std": 239.7,
+        "variance": 57439,
+        "p10": 2021.5,
+        "p90": 2635.4,
+        "iqr": 322.9,
+        "win2500": 24.4,
+        "win2700": 5.7
+      },
+      "deltaMean": -4.3,
+      "deltaMedian": -6.3,
+      "stackedWins": 45.6,
+      "weeklyStdStacked": {
+        "n": 5441,
+        "mean": 23.9,
+        "median": 23.6,
+        "std": 4.4,
+        "variance": 19.1,
+        "p10": 18.5,
+        "p90": 29.6,
+        "iqr": 5.8,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "weeklyStdTwin": {
+        "n": 5441,
+        "mean": 23.9,
+        "median": 23.6,
+        "std": 4.5,
+        "variance": 19.8,
+        "p10": 18.5,
+        "p90": 29.8,
+        "iqr": 5.9,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "byYear": {
+        "2021": {
+          "n": 982,
+          "stacked": {
+            "n": 982,
+            "mean": 2283.2,
+            "median": 2285.8,
+            "std": 205.6,
+            "variance": 42253.5,
+            "p10": 2011.9,
+            "p90": 2547.4,
+            "iqr": 275.4,
+            "win2500": 14.4,
+            "win2700": 2.2
+          },
+          "twin": {
+            "n": 982,
+            "mean": 2284.4,
+            "median": 2284.1,
+            "std": 198.3,
+            "variance": 39327.1,
+            "p10": 2026.8,
+            "p90": 2534.4,
+            "iqr": 269.4,
+            "win2500": 12.9,
+            "win2700": 1.6
+          },
+          "deltaMean": -1.2,
+          "deltaMedian": -6.1,
+          "stackedWins": 47.7
+        },
+        "2022": {
+          "n": 1140,
+          "stacked": {
+            "n": 1140,
+            "mean": 2323,
+            "median": 2337.6,
+            "std": 216.7,
+            "variance": 46964.9,
+            "p10": 2030.9,
+            "p90": 2594.5,
+            "iqr": 278.4,
+            "win2500": 21.7,
+            "win2700": 3.2
+          },
+          "twin": {
+            "n": 1140,
+            "mean": 2316.3,
+            "median": 2329.9,
+            "std": 215.3,
+            "variance": 46372.2,
+            "p10": 2027.6,
+            "p90": 2580.7,
+            "iqr": 279.7,
+            "win2500": 21,
+            "win2700": 3.1
+          },
+          "deltaMean": 6.7,
+          "deltaMedian": 5.8,
+          "stackedWins": 54.3
+        },
+        "2023": {
+          "n": 1140,
+          "stacked": {
+            "n": 1140,
+            "mean": 2294.8,
+            "median": 2325.1,
+            "std": 257.1,
+            "variance": 66091.1,
+            "p10": 1941.6,
+            "p90": 2608.8,
+            "iqr": 372.9,
+            "win2500": 22.8,
+            "win2700": 3.7
+          },
+          "twin": {
+            "n": 1140,
+            "mean": 2291.1,
+            "median": 2320.7,
+            "std": 261.9,
+            "variance": 68578.9,
+            "p10": 1944,
+            "p90": 2609.8,
+            "iqr": 372.9,
+            "win2500": 22.3,
+            "win2700": 3.3
+          },
+          "deltaMean": 3.7,
+          "deltaMedian": 2.2,
+          "stackedWins": 52
+        },
+        "2024": {
+          "n": 1099,
+          "stacked": {
+            "n": 1099,
+            "mean": 2420.5,
+            "median": 2427.5,
+            "std": 259.5,
+            "variance": 67329.8,
+            "p10": 2077,
+            "p90": 2752.3,
+            "iqr": 366.6,
+            "win2500": 40.2,
+            "win2700": 15
+          },
+          "twin": {
+            "n": 1099,
+            "mean": 2451.3,
+            "median": 2472.7,
+            "std": 257.2,
+            "variance": 66172.5,
+            "p10": 2112.5,
+            "p90": 2776.6,
+            "iqr": 357.3,
+            "win2500": 45,
+            "win2700": 17
+          },
+          "deltaMean": -30.8,
+          "deltaMedian": -27,
+          "stackedWins": 26.8
+        },
+        "2025": {
+          "n": 1080,
+          "stacked": {
+            "n": 1080,
+            "mean": 2303.5,
+            "median": 2304.5,
+            "std": 215.7,
+            "variance": 46527,
+            "p10": 2024,
+            "p90": 2589.3,
+            "iqr": 317.1,
+            "win2500": 20.5,
+            "win2700": 3.8
+          },
+          "twin": {
+            "n": 1080,
+            "mean": 2303.9,
+            "median": 2306.6,
+            "std": 213.5,
+            "variance": 45596.5,
+            "p10": 2023.5,
+            "p90": 2578.5,
+            "iqr": 313,
+            "win2500": 19.8,
+            "win2700": 3
+          },
+          "deltaMean": -0.4,
+          "deltaMedian": -4.7,
+          "stackedWins": 46.8
+        }
+      }
+    }
+  },
+  "shapes": {
+    "double": {
+      "WR/TE": {
+        "n": 2623,
+        "mean": 2268.9,
+        "median": 2299.8,
+        "std": 278,
+        "variance": 77296.1,
+        "p10": 1894.3,
+        "p90": 2592.1,
+        "iqr": 357.7,
+        "win2500": 20.1,
+        "win2700": 4.2
+      },
+      "WR/WR": {
+        "n": 2325,
+        "mean": 2344.4,
+        "median": 2347.2,
+        "std": 238.7,
+        "variance": 56975.3,
+        "p10": 2032.8,
+        "p90": 2652,
+        "iqr": 328.9,
+        "win2500": 26.4,
+        "win2700": 7
+      },
+      "TE/WR": {
+        "n": 702,
+        "mean": 2362.5,
+        "median": 2369.3,
+        "std": 215.7,
+        "variance": 46531.1,
+        "p10": 2075.5,
+        "p90": 2636.5,
+        "iqr": 307.9,
+        "win2500": 27.8,
+        "win2700": 5.8
+      },
+      "TE/TE": {
+        "n": 50,
+        "mean": 2337.6,
+        "median": 2331.9,
+        "std": 191.1,
+        "variance": 36532.8,
+        "p10": 2111.4,
+        "p90": 2556.1,
+        "iqr": 265.5,
+        "win2500": 24,
+        "win2700": 4
+      }
+    },
+    "triple": {
+      "WR/WR/TE": {
+        "n": 2399,
+        "mean": 2315.1,
+        "median": 2324.2,
+        "std": 245.7,
+        "variance": 60352.7,
+        "p10": 1985.7,
+        "p90": 2621.7,
+        "iqr": 337.7,
+        "win2500": 23.8,
+        "win2700": 5.3
+      },
+      "WR/TE/WR": {
+        "n": 1193,
+        "mean": 2322.8,
+        "median": 2316.7,
+        "std": 253.4,
+        "variance": 64195.9,
+        "p10": 2009.1,
+        "p90": 2659.6,
+        "iqr": 360.8,
+        "win2500": 25.3,
+        "win2700": 7.3
+      },
+      "WR/WR/WR": {
+        "n": 827,
+        "mean": 2333.7,
+        "median": 2346.4,
+        "std": 224.1,
+        "variance": 50243,
+        "p10": 2046.2,
+        "p90": 2625.2,
+        "iqr": 314.9,
+        "win2500": 23.1,
+        "win2700": 5.1
+      },
+      "TE/WR/WR": {
+        "n": 662,
+        "mean": 2362.1,
+        "median": 2366.2,
+        "std": 207.8,
+        "variance": 43164.9,
+        "p10": 2082.3,
+        "p90": 2635.9,
+        "iqr": 282.4,
+        "win2500": 26.1,
+        "win2700": 5.7
+      },
+      "TE/WR/TE": {
+        "n": 211,
+        "mean": 2342,
+        "median": 2340.5,
+        "std": 208.7,
+        "variance": 43565,
+        "p10": 2081.3,
+        "p90": 2625.8,
+        "iqr": 304.7,
+        "win2500": 25.1,
+        "win2700": 5.7
+      },
+      "WR/TE/TE": {
+        "n": 146,
+        "mean": 2290.3,
+        "median": 2307.4,
+        "std": 197.9,
+        "variance": 39182.6,
+        "p10": 2012.1,
+        "p90": 2546,
+        "iqr": 279.6,
+        "win2500": 14.4,
+        "win2700": 0.7
+      },
+      "TE/WR/WR/WR": {
+        "n": 1,
+        "mean": 2516.3,
+        "median": 2516.3,
+        "std": 0,
+        "variance": 0,
+        "p10": 2516.3,
+        "p90": 2516.3,
+        "iqr": 0,
+        "win2500": 100,
+        "win2700": 0
+      },
+      "WR/WR/WR/TE": {
+        "n": 1,
+        "mean": 2418.6,
+        "median": 2418.6,
+        "std": 0,
+        "variance": 0,
+        "p10": 2418.6,
+        "p90": 2418.6,
+        "iqr": 0,
+        "win2500": 0,
+        "win2700": 0
+      },
+      "WR/TE/WR/TE": {
+        "n": 1,
+        "mean": 2355.4,
+        "median": 2355.4,
+        "std": 0,
+        "variance": 0,
+        "p10": 2355.4,
+        "p90": 2355.4,
+        "iqr": 0,
+        "win2500": 0,
+        "win2700": 0
+      }
+    }
+  }
+}
