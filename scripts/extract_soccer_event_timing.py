@@ -8,7 +8,8 @@ the team that took it.
 
 The archive's detail CSVs carry no league column; that mapping lives in the
 Match/League/Country tables of the source database.sqlite. Pass --sqlite to
-join it in, otherwise league is written as UNKNOWN.
+join it in authoritatively. Without it, leagues are inferred from match_id
+blocks (see LEAGUE_BLOCKS) and validated against team-co-occurrence clusters.
 
 Usage:
   python scripts/extract_soccer_event_timing.py <archiveDir> [outDir] [--sqlite path]
@@ -29,6 +30,24 @@ VALID_GOAL_CODES = {'n', 'o', 'p'}
 # the opponent.
 OWN_GOAL_CODE = 'o'
 
+# The source database numbers matches in contiguous per-league blocks, ordered
+# by country name; each League.id is the first Match.id of its block. Entries
+# are (first_match_id, league); the final sentinel bounds the last block.
+LEAGUE_BLOCKS = [
+    (1, 'Belgium Jupiler League'),
+    (1729, 'England Premier League'),
+    (4769, 'France Ligue 1'),
+    (7809, 'Germany 1. Bundesliga'),
+    (10257, 'Italy Serie A'),
+    (13274, 'Netherlands Eredivisie'),
+    (15722, 'Poland Ekstraklasa'),
+    (17642, 'Portugal Liga ZON Sagres'),
+    (19694, 'Scotland Premier League'),
+    (21518, 'Spain LIGA BBVA'),
+    (24558, 'Switzerland Super League'),
+    (25980, None),
+]
+
 TEAM_SOURCE_FILES = [
     'corner_detail.csv', 'card_detail.csv', 'foulcommit_detail.csv',
     'shoton_detail.csv', 'shotoff_detail.csv', 'cross_detail.csv',
@@ -42,6 +61,53 @@ def event_minute(row):
         return None
     plus = row['elapsed_plus'].strip()
     return int(elapsed) + (int(plus) if plus else 0)
+
+
+def league_for(match_id):
+    mid = int(match_id)
+    for (start, name), (nxt, _) in zip(LEAGUE_BLOCKS, LEAGUE_BLOCKS[1:]):
+        if start <= mid < nxt:
+            return name or 'UNKNOWN'
+    return 'UNKNOWN'
+
+
+def verify_league_blocks(match_teams):
+    """Cross-check inferred leagues against team-co-occurrence clusters.
+
+    Teams only meet within their own domestic league here, so each connected
+    component of the co-occurrence graph must sit inside one league block.
+    A component straddling a boundary would mean the block table is wrong.
+    Only clean two-team matches are used as edges; corrupt records with a
+    stray third team would otherwise bridge unrelated leagues.
+    """
+    parent = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for teams in match_teams.values():
+        if len(teams) != 2:
+            continue
+        a, b = teams
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    spans = collections.defaultdict(list)
+    for match_id, teams in match_teams.items():
+        roots = {find(t) for t in teams if t in parent}
+        if len(roots) == 1:
+            spans[next(iter(roots))].append(int(match_id))
+
+    straddling = [
+        (min(ms), max(ms)) for ms in spans.values()
+        if league_for(min(ms)) != league_for(max(ms))
+    ]
+    return len(spans), straddling
 
 
 def load_match_teams(archive_dir):
@@ -143,7 +209,7 @@ def extract(src, out_path, league_map, goals_only_valid, goal_events=None):
                 continue
             match_id = row['match_id']
             out_row = [
-                league_map.get(match_id, 'UNKNOWN'), match_id,
+                league_map.get(match_id) or league_for(match_id), match_id,
                 minute, int(row['elapsed']),
                 int(row['elapsed_plus']) if row['elapsed_plus'].strip() else 0,
             ]
@@ -174,11 +240,18 @@ def main():
 
     league_map = load_league_map(args.sqlite) if args.sqlite else {}
     if args.sqlite:
-        print(f'league mapping: {len(league_map)} matches')
+        print(f'league mapping: {len(league_map)} matches from sqlite')
     else:
-        print('league mapping: none supplied, writing UNKNOWN')
+        print('league mapping: inferred from match_id blocks')
 
     match_teams = load_match_teams(args.archive_dir)
+    n_clusters, straddling = verify_league_blocks(match_teams)
+    if straddling:
+        print(f'  WARNING: {len(straddling)} team clusters cross a league '
+              f'boundary, inferred leagues are unreliable: {straddling[:5]}')
+    else:
+        print(f'  verified: all {n_clusters} team clusters nest inside one league')
+
     goal_events, unresolved = load_goal_events(args.archive_dir, match_teams)
     print(f'goal events for scoring: {sum(len(v) for v in goal_events.values())}'
           f' ({unresolved} own goals with unresolvable opponent, skipped)')
