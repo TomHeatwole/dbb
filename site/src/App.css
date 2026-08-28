@@ -18123,6 +18123,93 @@ body.modal-open {
   }
 }
 
+.corners-clock {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 224, 138, 0.9);
+}
+
+.corners-stoppage-chip {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #1a1a1a;
+  background: #ffe08a;
+}
+
+.corners-total,
+.corners-window,
+.corners-stoppage {
+  margin-top: 0.85rem;
+}
+
+.corners-window-range {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: rgba(230, 255, 240, 0.55);
+}
+
+.corners-total-row,
+.corners-ou-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+.corners-total-line {
+  min-width: 3.2rem;
+  font-size: 1.55rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #ffe08a;
+}
+
+.corners-plus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
+  gap: 0.35rem;
+}
+
+.corners-empty-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(210, 240, 220, 0.55);
+}
+
+.corners-stoppage-card {
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.65rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 224, 138, 0.22);
+}
+
+.corners-stoppage-main {
+  font-size: 1.35rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #ffe08a;
+}
+
+.corners-stoppage-meta {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(210, 240, 220, 0.65);
+}
+
+.corners-window .sop-exp-section-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
 /* ── Trade Calculator ─────────────────────────────────────────────────────── */
 
 .trade-calc-root {

@@ -36,6 +36,7 @@ import RedraftDashPage from './routes/RedraftDashPage';
 import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
 import SOPPage, { SOP2Page } from './routes/SOPPage';
+import CornersPage from './routes/CornersPage';
 import DKPage from './routes/DKPage';
 import PreflopPage from './routes/PreflopPage';
 import FredDuelPage from './routes/FredDuelPage';
@@ -133,6 +134,7 @@ function AppInner() {
   const isSopRoute =
     pathUpper === '/SOP' || pathUpper.startsWith('/SOP/')
     || pathUpper === '/SOP2' || pathUpper.startsWith('/SOP2/')
+    || pathUpper === '/CORNERS' || pathUpper.startsWith('/CORNERS/')
     || pathUpper === '/DK' || pathUpper.startsWith('/DK/');
   
   // Determine main content class based on viewport mode
@@ -192,6 +194,8 @@ function AppInner() {
       <Route path="/SOP/*" element={<SOPPage />} />
       <Route path="/SOP2/*" element={<SOP2Page />} />
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
+      <Route path="/corners" element={<CornersPage />} />
+      <Route path="/CORNERS" element={<CornersPage />} />
       <Route path="/dk/*" element={<DKPage />} />
       <Route path="/DK/*" element={<DKPage />} />
       <Route path="/preflop" element={<PreflopPage />} />

@@ -44,6 +44,16 @@
     "ogDescription": "SHOT OPEN PLAY",
     "ogImage": "/data/sop.jpeg"
   },
+  "/corners": {
+    "ogTitle": "PL Corners",
+    "ogDescription": "Premier League corner totals, next 5/10 minutes, and expected stoppage",
+    "ogImage": "/data/sop.jpeg"
+  },
+  "/CORNERS": {
+    "ogTitle": "PL Corners",
+    "ogDescription": "Premier League corner totals, next 5/10 minutes, and expected stoppage",
+    "ogImage": "/data/sop.jpeg"
+  },
   "/dk": {
     "ogTitle": "DK First Goal Method",
     "ogDescription": "DraftKings World Cup First Goal Method odds scanner",
