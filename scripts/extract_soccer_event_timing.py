@@ -2,7 +2,9 @@
 """Extract corner-kick and goal timings from the European Soccer Database dump.
 
 Reads corner_detail.csv and goal_detail.csv from the extracted archive and
-writes two tidy CSVs of event timings tagged with league.
+writes two tidy CSVs of event timings tagged with league. Corners also carry
+the running score at the moment the corner was taken, from the perspective of
+the team that took it.
 
 The archive's detail CSVs carry no league column; that mapping lives in the
 Match/League/Country tables of the source database.sqlite. Pass --sqlite to
@@ -12,6 +14,7 @@ Usage:
   python scripts/extract_soccer_event_timing.py <archiveDir> [outDir] [--sqlite path]
 """
 import argparse
+import collections
 import csv
 import os
 import sqlite3
@@ -19,6 +22,85 @@ import sqlite3
 # Per DataDictionary.xlsx, only these goal_type/comment codes are real goals;
 # dg (disallowed), npm/psm (missed penalties) and rp (retake) are not.
 VALID_GOAL_CODES = {'n', 'o', 'p'}
+
+# Every detail file's "team" column refers to the team of the player who
+# performed the action, verified against per-match player->team inference.
+# For an own goal that means the conceding side, so the goal is credited to
+# the opponent.
+OWN_GOAL_CODE = 'o'
+
+TEAM_SOURCE_FILES = [
+    'corner_detail.csv', 'card_detail.csv', 'foulcommit_detail.csv',
+    'shoton_detail.csv', 'shotoff_detail.csv', 'cross_detail.csv',
+    'goal_detail.csv',
+]
+
+
+def event_minute(row):
+    elapsed = row['elapsed'].strip()
+    if not elapsed:
+        return None
+    plus = row['elapsed_plus'].strip()
+    return int(elapsed) + (int(plus) if plus else 0)
+
+
+def load_match_teams(archive_dir):
+    """Map match_id -> set of team ids seen in any event for that match."""
+    teams = collections.defaultdict(set)
+    for name in TEAM_SOURCE_FILES:
+        path = os.path.join(archive_dir, name)
+        if not os.path.exists(path):
+            continue
+        with open(path, newline='', encoding='utf-8') as fh:
+            for row in csv.DictReader(fh):
+                team = (row.get('team') or '').strip()
+                if team:
+                    teams[row['match_id']].add(team)
+    return teams
+
+
+def load_goal_events(archive_dir, match_teams):
+    """Map match_id -> list of (minute, credited_team). Returns unresolved count."""
+    goals = collections.defaultdict(list)
+    unresolved = 0
+    path = os.path.join(archive_dir, 'goal_detail.csv')
+    with open(path, newline='', encoding='utf-8') as fh:
+        for row in csv.DictReader(fh):
+            if row.get('del', '').strip() == '1':
+                continue
+            code = (row.get('comment') or row.get('goal_type') or '').strip()
+            if code not in VALID_GOAL_CODES:
+                continue
+            minute = event_minute(row)
+            scorer_team = row['team'].strip()
+            if minute is None or not scorer_team:
+                continue
+            match_id = row['match_id']
+            credited = scorer_team
+            if code == OWN_GOAL_CODE:
+                others = match_teams.get(match_id, set()) - {scorer_team}
+                if len(others) != 1:
+                    unresolved += 1
+                    continue
+                credited = next(iter(others))
+            goals[match_id].append((minute, credited))
+    return goals, unresolved
+
+
+def score_before(goal_list, team, minute):
+    """Goals for/against `team` strictly before `minute`.
+
+    Strict inequality deliberately excludes a goal scored in the same minute as
+    the corner, which is usually a goal scored *from* that corner.
+    """
+    for_, against = 0, 0
+    for gm, credited in goal_list:
+        if gm < minute:
+            if credited == team:
+                for_ += 1
+            else:
+                against += 1
+    return for_, against
 
 
 def load_league_map(sqlite_path):
@@ -35,12 +117,16 @@ def load_league_map(sqlite_path):
     return {str(mid): f'{country} {league}' for mid, country, league in rows}
 
 
-def extract(src, out_path, league_map, goals_only_valid):
+def extract(src, out_path, league_map, goals_only_valid, goal_events=None):
+    with_score = goal_events is not None
     kept = dropped_deleted = dropped_invalid = 0
     with open(src, newline='', encoding='utf-8') as fh, \
             open(out_path, 'w', newline='', encoding='utf-8') as out:
         writer = csv.writer(out)
-        writer.writerow(['league', 'match_id', 'minute', 'elapsed', 'elapsed_plus'])
+        header = ['league', 'match_id', 'minute', 'elapsed', 'elapsed_plus']
+        if with_score:
+            header += ['team', 'goals_for', 'goals_against']
+        writer.writerow(header)
         for row in csv.DictReader(fh):
             if row.get('del', '').strip() == '1':
                 dropped_deleted += 1
@@ -51,18 +137,25 @@ def extract(src, out_path, league_map, goals_only_valid):
                 if code not in VALID_GOAL_CODES:
                     dropped_invalid += 1
                     continue
-            elapsed = row['elapsed'].strip()
-            if not elapsed:
+            minute = event_minute(row)
+            if minute is None:
                 dropped_invalid += 1
                 continue
-            plus = row['elapsed_plus'].strip()
-            elapsed = int(elapsed)
-            plus = int(plus) if plus else 0
             match_id = row['match_id']
-            writer.writerow([
+            out_row = [
                 league_map.get(match_id, 'UNKNOWN'), match_id,
-                elapsed + plus, elapsed, plus,
-            ])
+                minute, int(row['elapsed']),
+                int(row['elapsed_plus']) if row['elapsed_plus'].strip() else 0,
+            ]
+            if with_score:
+                team = row['team'].strip()
+                if team:
+                    for_, against = score_before(
+                        goal_events.get(match_id, ()), team, minute)
+                    out_row += [team, for_, against]
+                else:
+                    out_row += ['', '', '']
+            writer.writerow(out_row)
             kept += 1
     return kept, dropped_deleted, dropped_invalid
 
@@ -85,10 +178,17 @@ def main():
     else:
         print('league mapping: none supplied, writing UNKNOWN')
 
+    match_teams = load_match_teams(args.archive_dir)
+    goal_events, unresolved = load_goal_events(args.archive_dir, match_teams)
+    print(f'goal events for scoring: {sum(len(v) for v in goal_events.values())}'
+          f' ({unresolved} own goals with unresolvable opponent, skipped)')
+
     for name, goals_only_valid in [('corner', False), ('goal', True)]:
         src = os.path.join(args.archive_dir, f'{name}_detail.csv')
         out_path = os.path.join(out_dir, f'{name}_timing.csv')
-        kept, deleted, invalid = extract(src, out_path, league_map, goals_only_valid)
+        kept, deleted, invalid = extract(
+            src, out_path, league_map, goals_only_valid,
+            goal_events if name == 'corner' else None)
         print(f'{name:7s} -> {out_path}')
         print(f'         kept={kept} dropped_deleted={deleted} dropped_invalid={invalid}')
 
