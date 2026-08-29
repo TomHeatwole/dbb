@@ -38,15 +38,29 @@ function CornersCollageGrid() {
   );
 }
 
-function sportradarNotice(meta) {
-  if (!meta) return null;
-  if (!meta.configured) {
-    return 'Stoppage times unavailable — set SPORTRADAR_API_KEY on the API server.';
+function stoppageNotice(sr, sm) {
+  if (sr?.ok || sm?.ok) {
+    if (!sr?.ok && sm?.ok) {
+      return sr?.error
+        ? `Using Sportmonks for stoppage (Sportradar: ${sr.error}).`
+        : 'Using Sportmonks for stoppage.';
+    }
+    return null;
   }
-  if (!meta.ok && meta.error) {
-    return `Sportradar stoppage lookup failed: ${meta.error}`;
+
+  const bits = [];
+  if (sr && !sr.ok) {
+    bits.push(sr.configured ? `Sportradar: ${sr.error}` : 'Sportradar key not set');
   }
-  return null;
+  if (sm && !sm.ok) {
+    bits.push(
+      sm.configured
+        ? `Sportmonks: ${sm.error}`
+        : 'set SPORTMONKS_API_TOKEN for Sportmonks backup',
+    );
+  }
+  if (!bits.length) return null;
+  return `Stoppage times unavailable — ${bits.join(' · ')}`;
 }
 
 function CornersPage() {
@@ -69,7 +83,7 @@ function CornersPage() {
       const data = await res.json();
       setGames(data.games ?? []);
       setFetchedAt(data.fetchedAt ?? null);
-      setNotice(sportradarNotice(data.sportradar));
+      setNotice(stoppageNotice(data.sportradar, data.sportmonks));
       setBookError(null);
     } catch (err) {
       setBookError(err.message || 'Failed to load corners');

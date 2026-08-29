@@ -1,6 +1,6 @@
 /**
  * Premier League corner book: FanDuel totals + next 5/10 min lines,
- * plus expected stoppage from Sportradar soccer live timelines.
+ * plus expected stoppage from Sportradar (primary) and Sportmonks (backup).
  */
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
@@ -8,6 +8,7 @@ const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
 const PL_COMPETITION_ID = 10932509;
 const SR_PL_COMPETITION_ID = 'sr:competition:17';
+const SM_PL_LEAGUE_ID = 8;
 
 const FD_HEADERS = {
   Accept: 'application/json',
@@ -404,14 +405,14 @@ function extractStoppage(status, timeline) {
     playedLabel: formatClockLabel(playedSeconds),
     homeScore: status?.home_score ?? null,
     awayScore: status?.away_score ?? null,
+    source: 'sportradar',
   };
 }
 
 async function srFetch(path) {
   const apiKey = process.env.SPORTRADAR_API_KEY;
   const access = process.env.SPORTRADAR_ACCESS_LEVEL || 'trial';
-  const url = new URL(`https://api.sportradar.com/soccer/${access}/v4/en/${path}`);
-  url.searchParams.set('api_key', apiKey);
+  const url = `https://api.sportradar.com/soccer/${access}/v4/en/${path}`;
   const res = await fetch(url, {
     headers: {
       Accept: 'application/json',
@@ -423,6 +424,181 @@ async function srFetch(path) {
     throw new Error(`Sportradar ${path} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
   }
   return res.json();
+}
+
+function compactProviderError(err) {
+  const s = String(err ?? '');
+  if (/403/.test(s) || /Authentication Error/i.test(s)) return '403 authentication error';
+  if (/401/.test(s)) return '401 unauthorized';
+  return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
+}
+
+function sportmonksToken() {
+  return (
+    process.env.SPORTMONKS_API_TOKEN
+    || process.env.SPORTMONKS_API_KEY
+    || process.env.SPORTSMONKS_API_TOKEN
+    || process.env.SPORTSMONKS_API_KEY
+    || ''
+  );
+}
+
+function smParticipants(fixture) {
+  const parts = fixture?.participants ?? [];
+  const home = parts.find((p) => p.meta?.location === 'home') ?? parts[0];
+  const away = parts.find((p) => p.meta?.location === 'away') ?? parts[1];
+  if (home?.name && away?.name) {
+    return { home: home.name, away: away.name };
+  }
+  const parsed = String(fixture?.name ?? '').split(/\s+vs\.?\s+/i);
+  if (parsed.length === 2) {
+    return { home: parsed[0].trim(), away: parsed[1].trim() };
+  }
+  return { home: home?.name ?? null, away: away?.name ?? null };
+}
+
+function smScore(fixture) {
+  const scores = fixture?.scores ?? [];
+  const current = scores.filter((s) => String(s.description ?? '').toUpperCase() === 'CURRENT');
+  const pool = current.length ? current : scores;
+  let home = null;
+  let away = null;
+  for (const row of pool) {
+    const loc = row.score?.participant ?? row.participant;
+    const goals = row.score?.goals ?? row.goals;
+    if (loc === 'home' && Number.isFinite(goals)) home = goals;
+    if (loc === 'away' && Number.isFinite(goals)) away = goals;
+  }
+  if (home == null && away == null) return { home: null, away: null };
+  return { home: home ?? 0, away: away ?? 0 };
+}
+
+function extractSportmonksStoppage(fixture) {
+  const periods = fixture?.periods ?? [];
+  const ticking = periods.find((p) => p.ticking) ?? periods[periods.length - 1] ?? null;
+  const minutes = Number.isFinite(ticking?.minutes) ? ticking.minutes : null;
+  const seconds = Number.isFinite(ticking?.seconds) ? ticking.seconds : 0;
+  const countsFrom = Number.isFinite(ticking?.counts_from) ? ticking.counts_from : 0;
+  const periodLength = Number.isFinite(ticking?.period_length) ? ticking.period_length : 45;
+  const regularEnd = countsFrom + periodLength;
+  const timeAdded = ticking?.time_added;
+  const announcedSeconds = Number.isFinite(timeAdded) ? timeAdded * 60 : null;
+  const playedSeconds =
+    minutes != null ? Math.max(0, minutes * 60 + seconds - regularEnd * 60) : null;
+  const remainingSeconds =
+    announcedSeconds != null && playedSeconds != null
+      ? Math.max(0, announcedSeconds - playedSeconds)
+      : announcedSeconds;
+  const stateName = fixture?.state?.developer_name ?? fixture?.state?.name ?? ticking?.description ?? null;
+  const score = smScore(fixture);
+  const clock =
+    minutes != null ? `${minutes}:${String(Math.max(0, seconds)).padStart(2, '0')}` : null;
+
+  return {
+    matchStatus: stateName,
+    status: fixture?.state?.short_name ?? fixture?.state?.developer_name ?? null,
+    clock,
+    announced: Number.isFinite(timeAdded) ? `${timeAdded}:00` : null,
+    played: formatClockLabel(playedSeconds),
+    expectedMinutes: announcedSeconds != null ? announcedSeconds / 60 : null,
+    remainingLabel: formatClockLabel(remainingSeconds),
+    expectedLabel: formatClockLabel(announcedSeconds),
+    playedLabel: formatClockLabel(playedSeconds),
+    homeScore: score.home,
+    awayScore: score.away,
+    source: 'sportmonks',
+  };
+}
+
+async function smFetch(path, params = {}) {
+  const token = sportmonksToken();
+  const url = new URL(`https://api.sportmonks.com/v3/football/${path}`);
+  url.searchParams.set('api_token', token);
+  url.searchParams.set('timezone', 'UTC');
+  for (const [key, value] of Object.entries(params)) {
+    if (value != null && value !== '') url.searchParams.set(key, value);
+  }
+  const res = await fetch(url, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: token,
+    },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Sportmonks ${path} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
+  }
+  return res.json();
+}
+
+function smFixturesFromPayload(payload) {
+  const data = payload?.data;
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') return [data];
+  return [];
+}
+
+async function fetchSportmonksStoppage() {
+  const token = sportmonksToken();
+  if (!token) {
+    return {
+      ok: false,
+      configured: false,
+      error: 'SPORTMONKS_API_TOKEN is not set',
+      matches: [],
+    };
+  }
+
+  try {
+    const leaguePayload = await smFetch(`leagues/${SM_PL_LEAGUE_ID}`);
+    const league = leaguePayload?.data;
+    const hasPremierLeague = Array.isArray(league) ? league.length > 0 : Boolean(league?.id);
+    if (!hasPremierLeague) {
+      return {
+        ok: false,
+        configured: true,
+        error: 'Sportmonks Football Free Plan does not include Premier League (Denmark/Scotland only). Start a paid trial and select league 8.',
+        matches: [],
+      };
+    }
+
+    let payload;
+    try {
+      payload = await smFetch('livescores', {
+        include: 'participants;scores;periods;state',
+        filters: `fixtureLeagues:${SM_PL_LEAGUE_ID}`,
+      });
+    } catch (err) {
+      // Some plans reject the league filter; fall back and filter client-side.
+      if (!/\b40[03]\b/.test(String(err.message))) throw err;
+      payload = await smFetch('livescores', {
+        include: 'participants;scores;periods;state',
+      });
+    }
+
+    const matches = smFixturesFromPayload(payload)
+      .filter((fx) => fx.league_id == null || fx.league_id === SM_PL_LEAGUE_ID)
+      .map((fx) => ({
+        id: fx.id,
+        teams: smParticipants(fx),
+        startTime: fx.starting_at ?? null,
+        stoppage: extractSportmonksStoppage(fx),
+      }));
+
+    return {
+      ok: true,
+      configured: true,
+      error: null,
+      matches,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      configured: true,
+      error: err.message || 'Sportmonks fetch failed',
+      matches: [],
+    };
+  }
 }
 
 async function fetchSportradarStoppage() {
@@ -479,22 +655,28 @@ async function fetchSportradarStoppage() {
   }
 }
 
-function attachStoppage(game, srMatches) {
-  if (game.error || !game._markets) return { ...game, stoppage: null };
+function findLiveMatch(game, matchSets) {
   const home = game.teams?.home;
   const away = game.teams?.away;
-  if (!home || !away) return { ...game, stoppage: null };
+  if (!home || !away) return null;
+  for (const { source, matches } of matchSets) {
+    const hit = (matches ?? []).find(
+      (m) => namesMatch(home, m.teams.home) && namesMatch(away, m.teams.away),
+    );
+    if (hit) return { ...hit, source };
+  }
+  return null;
+}
 
-  const hit = srMatches.find(
-    (m) => namesMatch(home, m.teams.home) && namesMatch(away, m.teams.away),
-  );
+function attachStoppage(game, matchSets) {
+  if (game.error || !game._markets) return { ...game, stoppage: null };
+  const hit = findLiveMatch(game, matchSets);
   if (!hit) return { ...game, stoppage: null };
 
   const clockPlayed = hit.stoppage?.clock;
-  return {
+  const next = {
     ...game,
-    stoppage: hit.stoppage,
-    sportradarId: hit.id,
+    stoppage: { ...hit.stoppage, source: hit.source },
     next5: pickWindowMarket(game._markets, 5, clockPlayed) ?? game.next5,
     next10: pickWindowMarket(game._markets, 10, clockPlayed) ?? game.next10,
     score: hit.stoppage?.homeScore != null
@@ -504,13 +686,16 @@ function attachStoppage(game, srMatches) {
       ? `${hit.stoppage.homeScore}-${hit.stoppage.awayScore ?? 0}`
       : game.scoreDisplay,
   };
+  if (hit.source === 'sportradar') next.sportradarId = hit.id;
+  if (hit.source === 'sportmonks') next.sportmonksId = hit.id;
+  return next;
 }
 
 async function fetchPlCornerBook() {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
   const events = plMatchEvents(sportPage);
 
-  const [fdGames, sr] = await Promise.all([
+  const [fdGames, sr, sm] = await Promise.all([
     Promise.all(
       events.map(async (ev) => {
         try {
@@ -536,11 +721,17 @@ async function fetchPlCornerBook() {
       }),
     ),
     fetchSportradarStoppage(),
+    fetchSportmonksStoppage(),
   ]);
+
+  const matchSets = [
+    { source: 'sportradar', matches: sr.matches },
+    { source: 'sportmonks', matches: sm.matches },
+  ];
 
   const games = fdGames
     .map((game) => {
-      const merged = attachStoppage(game, sr.matches);
+      const merged = attachStoppage(game, matchSets);
       const { _markets, ...rest } = merged;
       return rest;
     })
@@ -557,8 +748,14 @@ async function fetchPlCornerBook() {
     sportradar: {
       ok: sr.ok,
       configured: sr.configured,
-      error: sr.error,
+      error: sr.error ? compactProviderError(sr.error) : null,
       livePremierLeague: sr.matches.length,
+    },
+    sportmonks: {
+      ok: sm.ok,
+      configured: sm.configured,
+      error: sm.error ? compactProviderError(sm.error) : null,
+      livePremierLeague: sm.matches.length,
     },
   };
 }

@@ -218,8 +218,8 @@ function GameCard({ game }) {
             {!game.stoppage && (
               <p className="corners-empty-hint">
                 {game.inPlay
-                  ? 'No Sportradar match matched this game yet.'
-                  : 'Shows up from Sportradar once the match is live and the 4th official board is out.'}
+                  ? 'No live timeline matched this game yet.'
+                  : 'Shows up once the match is live and the 4th official board is out.'}
               </p>
             )}
             {game.stoppage && (
@@ -228,7 +228,8 @@ function GameCard({ game }) {
                   {game.stoppage.expectedLabel ?? '—'}
                 </div>
                 <div className="corners-stoppage-meta">
-                  {formatMatchStatus(game.stoppage.matchStatus)}
+                  {game.stoppage.source === 'sportmonks' ? 'Sportmonks' : 'Sportradar'}
+                  {formatMatchStatus(game.stoppage.matchStatus) && ` · ${formatMatchStatus(game.stoppage.matchStatus)}`}
                   {game.stoppage.clock && ` · ${game.stoppage.clock}`}
                   {game.stoppage.announced && ` · announced ${game.stoppage.announced}`}
                   {game.stoppage.played && ` · played ${game.stoppage.played}`}
@@ -347,7 +348,7 @@ function CornersBookPanel({
 
       <p className="sop-exp-footer">
         Auto-refreshes every {REFRESH_MS / 1000}s · 5/10-min corners are FanDuel Quick Bets
-        (usually live-only) · stoppage from Sportradar live timelines
+        (usually live-only) · stoppage from Sportradar, Sportmonks backup
       </p>
     </div>
   );
