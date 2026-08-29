@@ -574,6 +574,85 @@ export function formatEdgePct(edgePoints) {
   return `${sign}${edgePoints.toFixed(1)}%`;
 }
 
+function americanToDecimal(american) {
+  const p = americanToImpliedProb(american);
+  if (p == null || p <= 0) return null;
+  return 1 / p;
+}
+
+/**
+ * Cover "either team 1+" by betting Yes on both team-interval lines,
+ * sized so a single-team hit returns the same. Conservative EV ignores
+ * the bonus if both teams take a corner.
+ */
+function buildDkBothYesPackages({
+  intervals,
+  clock,
+  plan,
+  mode,
+  lineRemaining,
+  remainingMass,
+}) {
+  const byWindow = new Map();
+  for (const row of intervals ?? []) {
+    if (!row?.window || row.yes?.american == null || !row.team) continue;
+    const list = byWindow.get(row.window) ?? [];
+    if (list.some((x) => x.team === row.team)) continue;
+    list.push(row);
+    byWindow.set(row.window, list);
+  }
+
+  const packages = [];
+  for (const [window, rows] of byWindow) {
+    if (rows.length < 2) continue;
+    const legs = rows.slice(0, 2).map((row) => {
+      const decimal = americanToDecimal(row.yes.american);
+      const implied = americanToImpliedProb(row.yes.american);
+      return {
+        team: row.team,
+        american: row.yes.american,
+        decimal,
+        implied,
+      };
+    });
+    if (legs.some((leg) => leg.decimal == null || leg.implied == null)) continue;
+
+    const combinedImplied = legs[0].implied + legs[1].implied;
+    const shareSum = combinedImplied;
+    const sized = legs.map((leg) => ({
+      ...leg,
+      share: shareSum > 0 ? leg.implied / shareSum : 0.5,
+    }));
+
+    const win = windowRemainingShare({ window }, clock, plan, mode);
+    if (!win) continue;
+    const fracOfRemaining = remainingMass > 0 ? win.remainingShare / remainingMass : 0;
+    const lambda = lineRemaining * fracOfRemaining;
+    const pModel = lambda > 0 ? 1 - Math.exp(-lambda) : 0;
+    const coversOneTeam = combinedImplied > 0 && combinedImplied < 0.999;
+    const packageAmerican = coversOneTeam ? probToAmerican(combinedImplied) : null;
+
+    packages.push(evalSide({
+      label: `Both 1+ ${window}`,
+      american: packageAmerican,
+      pModel,
+      kind: 'dk-both-yes',
+      meta: {
+        book: 'dk',
+        window,
+        lambda,
+        fracOfRemaining,
+        lineRemaining,
+        combinedImplied,
+        coversOneTeam,
+        bits: win.bits,
+        legs: sized,
+      },
+    }));
+  }
+  return packages;
+}
+
 function evalSide({ label, american, pModel, kind, meta, baseline = false }) {
   if (baseline) {
     return {
@@ -716,27 +795,15 @@ export function evaluateGameCorners(game, { bucketed = true, baselineBook: reque
   const next10 = attachWindow(game.next10, 'next10');
   bets.push(...windowBets);
 
-  for (const row of game.dk?.intervals ?? []) {
-    const windowLabel = row.window ? ` ${row.window}` : '';
-    if (row.yes?.american != null) {
-      bets.push(evalSide({
-        label: `${row.team} 1+${windowLabel}`,
-        american: row.yes.american,
-        pModel: null,
-        kind: 'dk-interval-yes',
-        meta: { book: 'dk', quoteOnly: true, team: row.team, window: row.window },
-      }));
-    }
-    if (row.no?.american != null) {
-      bets.push(evalSide({
-        label: `${row.team} none${windowLabel}`,
-        american: row.no.american,
-        pModel: null,
-        kind: 'dk-interval-no',
-        meta: { book: 'dk', quoteOnly: true, team: row.team, window: row.window },
-      }));
-    }
-  }
+  const dkPackages = buildDkBothYesPackages({
+    intervals: game.dk?.intervals,
+    clock,
+    plan,
+    mode,
+    lineRemaining,
+    remainingMass,
+  });
+  bets.push(...dkPackages);
 
   const evCount = bets.filter((b) => b.profitable).length;
 

@@ -164,12 +164,20 @@ function BaselineBookButton({ row, selected, onSelect }) {
   );
 }
 
+function formatNeedOdds(fairAmerican) {
+  if (!Number.isFinite(fairAmerican)) return null;
+  return `need ${formatAmericanOdds(Math.round(fairAmerican))}`;
+}
+
 function BetButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFraction }) {
   const hasOdds = bet.american != null;
   const baseline = Boolean(bet.baseline);
   const profitable = !baseline && Boolean(bet.profitable);
   const edge = baseline ? null : bet.analysis?.edgePoints;
   const book = bet.meta?.book;
+  const needOdds = !baseline && !profitable && !bet.meta?.quoteOnly
+    ? formatNeedOdds(bet.fairAmerican)
+    : null;
   const kellyStake = kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction);
   const className = [
     'corners-bet',
@@ -204,10 +212,13 @@ function BetButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFr
           {book === 'klsh' ? 'KLSH' : book.toUpperCase()}
         </span>
       )}
-      {edge != null && (
-        <span className={profitable ? 'sop-exp-edge-plus' : 'sop-exp-edge-minus'}>
+      {profitable && edge != null && (
+        <span className="sop-exp-edge-plus">
           {formatEdgePct(edge)}
         </span>
+      )}
+      {needOdds && (
+        <span className="corners-bet-need">{needOdds}</span>
       )}
       {kellyEnabled && kellyStake != null && (
         <span
@@ -217,6 +228,58 @@ function BetButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFr
           Kelly Bet Size: {formatKellyStake(kellyStake)}
         </span>
       )}
+    </button>
+  );
+}
+
+function DkBothYesButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFraction }) {
+  const profitable = Boolean(bet.profitable);
+  const edge = bet.analysis?.edgePoints;
+  const needOdds = !profitable ? formatNeedOdds(bet.fairAmerican) : null;
+  const kellyStake = kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction);
+  const legs = bet.meta?.legs ?? [];
+  const className = [
+    'corners-bet',
+    'corners-bet--package',
+    profitable ? 'corners-bet--ev' : '',
+    selected ? 'corners-bet--selected' : '',
+    'corners-bet--dk',
+  ].filter(Boolean).join(' ');
+
+  return (
+    <button
+      type="button"
+      className={className}
+      title="Show my work"
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(bet.id);
+      }}
+      aria-pressed={selected}
+    >
+      <span className="corners-bet-label">{bet.label}</span>
+      <span className="corners-bet-odds">
+        {bet.american != null ? formatAmericanOdds(bet.american) : 'cover both'}
+      </span>
+      <span className="corners-bet-tag corners-bet-tag--dk">DK both</span>
+      {profitable && edge != null && (
+        <span className="sop-exp-edge-plus">{formatEdgePct(edge)}</span>
+      )}
+      {needOdds && (
+        <span className="corners-bet-need">{needOdds}</span>
+      )}
+      {legs.map((leg) => {
+        const split = kellyStake != null
+          ? formatKellyStake(kellyStake * (leg.share ?? 0))
+          : `${Math.round((leg.share ?? 0) * 100)}%`;
+        return (
+          <span key={leg.team} className="corners-package-leg">
+            {leg.team} {formatAmericanOdds(leg.american)}
+            {' · '}
+            {kellyEnabled && kellyStake != null ? split : `${Math.round((leg.share ?? 0) * 100)}%`}
+          </span>
+        );
+      })}
     </button>
   );
 }
@@ -322,7 +385,9 @@ function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction
     ? model.next5?.win?.bits
     : bet.kind.startsWith('next10')
       ? model.next10?.win?.bits
-      : null;
+      : bet.kind === 'dk-both-yes'
+        ? bet.meta?.bits
+        : null;
   const lambdaWin = bet.meta?.lambda
     ?? (bet.kind.startsWith('next5') ? model.next5?.lambda : model.next10?.lambda);
   const need = bet.meta?.need;
@@ -339,13 +404,21 @@ function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction
       <p className={`corners-work-verdict${bet.profitable ? ' corners-work-verdict--ev' : ''}`}>
         {bet.baseline
           ? 'Game line · baseline, not a bet'
-          : bet.meta?.quoteOnly
-            ? 'Quote only · different bet than the FanDuel remaining model'
+          : bet.kind === 'dk-both-yes'
+            ? (bet.profitable
+              ? 'Bet both Yes · covers 1+ even if only one team corners'
+              : bet.meta?.coversOneTeam
+                ? 'No edge as a 1+ cover'
+                : 'Combined Yes prices are too short to cover 1+')
             : bet.profitable
               ? 'Good bet'
               : 'No edge'}
-        {!bet.baseline && !bet.meta?.quoteOnly && bet.analysis?.edgePoints != null
+        {!bet.baseline && bet.kind !== 'dk-both-yes' && bet.analysis?.edgePoints != null
           && ` · ${formatEdgePct(bet.analysis.edgePoints)} vs implied remaining`}
+        {bet.kind === 'dk-both-yes' && bet.analysis?.edgePoints != null
+          && ` · ${formatEdgePct(bet.analysis.edgePoints)} vs 1+`}
+        {!bet.profitable && !bet.baseline && bet.fairAmerican != null
+          && ` · need ${formatAmericanOdds(Math.round(bet.fairAmerican))}`}
       </p>
       {kellyEnabled && kellyStake != null && (
         <p className="sop-kelly-stake corners-work-kelly">
@@ -381,12 +454,32 @@ function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction
           {Number.isFinite(need) && ` · need ${need} more for the over`}
         </li>
         <li>Stoppage: {stoppageUsed}</li>
+        {bet.kind === 'dk-both-yes' && (bet.meta?.legs ?? []).length > 0 && (
+          <li>
+            Dutch both Yes so one-team hit pays the same
+            {' · '}combined implied {formatSharePct(bet.meta.combinedImplied)}
+            {' vs model P(1+) '}{formatSharePct(bet.pModel)}
+            {(bet.meta.legs).map((leg) => (
+              <span key={leg.team}>
+                {' · '}{leg.team} {formatAmericanOdds(leg.american)} ({formatSharePct(leg.share)} of stake)
+              </span>
+            ))}
+            {kellyEnabled && kellyStake != null && (
+              <>
+                {' · '}{bet.meta.legs.map((leg) => (
+                  `${leg.team} ${formatKellyStake(kellyStake * (leg.share ?? 0))}`
+                )).join(' / ')}
+              </>
+            )}
+          </li>
+        )}
         {!bet.baseline && (
           <li>
-            Model P({bet.label}) {formatSharePct(bet.pModel)}
+            Model P({bet.kind === 'dk-both-yes' ? '1+' : bet.label}) {formatSharePct(bet.pModel)}
             {' · '}fair {bet.fairAmerican != null ? formatAmericanOdds(bet.fairAmerican) : '—'}
             {' · '}{bet.american != null ? formatAmericanOdds(bet.american) : '—'}
             {' · '}implied {formatSharePct(bet.pMarket)}
+            {!bet.profitable && bet.fairAmerican != null && ` · need ${formatAmericanOdds(Math.round(bet.fairAmerican))}`}
           </li>
         )}
       </ul>
@@ -473,7 +566,7 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
   );
   const stoppageText = stoppageHeadline(game.stoppage, model.clock);
   const h1Bets = model.bets.filter((b) => b.kind === 'h1-over' || b.kind === 'h1-under');
-  const dkIntervalBets = model.bets.filter((b) => b.kind.startsWith('dk-interval'));
+  const dkBothBets = model.bets.filter((b) => b.kind === 'dk-both-yes');
   const atHalf = Boolean(model.clock.halftime || game.stoppage?.halfTime);
   const baselines = model.baselines ?? [];
   const activeBook = model.baselineBook;
@@ -633,19 +726,22 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
             kellyFraction={kellyFraction}
           />
 
-          {dkIntervalBets.length > 0 && (
+          {dkBothBets.length > 0 && (
             <section className="corners-total">
-              <div className="sop-exp-section-label">DraftKings team windows</div>
+              <div className="sop-exp-section-label">DraftKings both 1+</div>
               <p className="corners-empty-hint">
-                Team-specific 1+ in a clock window — not the FanDuel either-team next 5/10.
+                Bet Yes on both teams, sized so one-team hit pays the same. Extra if both corner.
               </p>
-              <div className="corners-plus-grid">
-                {dkIntervalBets.map((bet) => (
-                  <BetButton
+              <div className="corners-plus-grid corners-plus-grid--packages">
+                {dkBothBets.map((bet) => (
+                  <DkBothYesButton
                     key={bet.id}
                     bet={bet}
                     selected={selectedId === bet.id}
                     onSelect={selectBet}
+                    kellyEnabled={kellyEnabled}
+                    kellyBudget={kellyBudget}
+                    kellyFraction={kellyFraction}
                   />
                 ))}
               </div>
