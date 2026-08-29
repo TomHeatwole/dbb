@@ -947,9 +947,25 @@ function countGameEvBets(game) {
   }).length;
 }
 
+function wantsCornersBook(req) {
+  const q = req.query || {};
+  if (q.book === 'corners' || q.corners === '1') return true;
+  try {
+    const url = new URL(req.url || '', 'http://localhost');
+    return url.searchParams.get('book') === 'corners';
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (wantsCornersBook(req)) {
+    const { default: cornersHandler } = await import('../lib/dk-corners.mjs');
+    return cornersHandler(req, res);
   }
 
   try {

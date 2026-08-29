@@ -9,7 +9,7 @@ import {
   kalshiAskToAmerican,
   parseKalshiFixture,
   pickKalshiEvent,
-} from './kalshi-sop.mjs';
+} from '../api/kalshi-sop.mjs';
 
 const CORNERS_SERIES = 'KXEPLCORNERS';
 

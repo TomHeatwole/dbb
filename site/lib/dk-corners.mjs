@@ -11,7 +11,7 @@ import {
   mapPool,
   marketSelectionsFor,
   selectionQuote,
-} from './draftkings-goal-method.mjs';
+} from '../api/draftkings-goal-method.mjs';
 
 const TOTAL_PRE_ID = '17865';
 const TOTAL_LIVE_ID = '12393';

@@ -92,7 +92,7 @@ async function main() {
 
   app.get('/api/dk-corners', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/dk-corners.mjs');
+      const { default: handler } = await import('./lib/dk-corners.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });
@@ -101,7 +101,7 @@ async function main() {
 
   app.get('/api/kalshi-corners', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/kalshi-corners.mjs');
+      const { default: handler } = await import('./lib/kalshi-corners.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });

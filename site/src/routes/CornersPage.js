@@ -118,7 +118,7 @@ function CornersPage() {
     };
 
     await Promise.all([
-      fetchJsonWithTimeout('/api/dk-corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
+      fetchJsonWithTimeout('/api/draftkings-goal-method?book=corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
         dkData = data;
         applyMerges();
         if (!dkCornerGamesLoaded(data)) {
@@ -128,7 +128,7 @@ function CornersPage() {
           setNotice(stoppageNotice(espn));
         }
       }),
-      fetchJsonWithTimeout('/api/kalshi-corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
+      fetchJsonWithTimeout('/api/kalshi-sop?book=corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
         kalshiData = data;
         applyMerges();
       }),

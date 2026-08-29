@@ -38,22 +38,22 @@ const server = http.createServer(async (req, res) => {
   const pathname = (req.url || '').split('?')[0];
 
   const postHandlers = {
-    '/api/chat': 'chat',
-    '/api/search': 'search',
-    '/api/exchange': 'exchange',
-    '/api/onboard': 'onboard',
+    '/api/chat': './api/chat.mjs',
+    '/api/search': './api/search.mjs',
+    '/api/exchange': './api/exchange.mjs',
+    '/api/onboard': './api/onboard.mjs',
   };
 
   const getHandlers = {
-    '/api/fanduel-sop': 'fanduel-sop',
-    '/api/pl-corners': 'pl-corners',
-    '/api/dk-corners': 'dk-corners',
-    '/api/kalshi-corners': 'kalshi-corners',
-    '/api/draftkings-goal-method': 'draftkings-goal-method',
-    '/api/kalshi-sop': 'kalshi-sop',
-    '/api/exchange': 'exchange',
-    '/api/db-hello': 'db-hello',
-    '/api/me': 'me',
+    '/api/fanduel-sop': './api/fanduel-sop.mjs',
+    '/api/pl-corners': './api/pl-corners.mjs',
+    '/api/dk-corners': './lib/dk-corners.mjs',
+    '/api/kalshi-corners': './lib/kalshi-corners.mjs',
+    '/api/draftkings-goal-method': './api/draftkings-goal-method.mjs',
+    '/api/kalshi-sop': './api/kalshi-sop.mjs',
+    '/api/exchange': './api/exchange.mjs',
+    '/api/db-hello': './api/db-hello.mjs',
+    '/api/me': './api/me.mjs',
   };
 
   const handlerName =
@@ -67,7 +67,7 @@ const server = http.createServer(async (req, res) => {
         req.body = body;
         const parsed = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
         req.query = Object.fromEntries(parsed.searchParams);
-        const { default: handler } = await import(`./api/${handlerName}.mjs?v=${Date.now()}`);
+        const { default: handler } = await import(`${handlerName}?v=${Date.now()}`);
         await handler(req, res);
       } catch (err) {
         // eslint-disable-next-line no-console
