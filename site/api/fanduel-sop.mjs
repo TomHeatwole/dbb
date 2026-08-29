@@ -1,12 +1,12 @@
 /**
- * FanDuel World Cup SOP scraper — no-goal proxies + goal-type odds.
+ * FanDuel Premier League SOP scraper — no-goal proxies + goal-type odds.
  * Proxies FanDuel's undocumented sbapi — structure can change without notice.
  */
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
-const WC_COMPETITION_ID = 12469077;
+const PL_COMPETITION_ID = 10932509;
 
 const FD_HEADERS = {
   Accept: 'application/json',
@@ -97,10 +97,10 @@ async function fdFetch(path) {
   return res.json();
 }
 
-function wcMatchEvents(payload) {
+function plMatchEvents(payload) {
   const events = payload?.attachments?.events ?? {};
   return Object.entries(events)
-    .filter(([, ev]) => ev.competitionId === WC_COMPETITION_ID && String(ev.name ?? '').includes(' v '))
+    .filter(([, ev]) => ev.competitionId === PL_COMPETITION_ID && String(ev.name ?? '').includes(' v '))
     .map(([id, ev]) => ({
       eventId: Number(id),
       name: ev.name,
@@ -393,9 +393,9 @@ async function fetchEventBundle(eventId) {
   };
 }
 
-export async function fetchWorldCupSopOdds() {
+export async function fetchPremierLeagueSopOdds() {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
-  const events = wcMatchEvents(sportPage);
+  const events = plMatchEvents(sportPage);
 
   const results = await Promise.all(
     events.map(async (ev) => {
@@ -417,6 +417,7 @@ export async function fetchWorldCupSopOdds() {
   );
 
   results.sort((a, b) => {
+    if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
     if (!a.openDate) return 1;
     if (!b.openDate) return -1;
     return new Date(a.openDate) - new Date(b.openDate);
@@ -428,13 +429,16 @@ export async function fetchWorldCupSopOdds() {
   };
 }
 
+/** @deprecated alias — DK/Kalshi helpers still import this name */
+export const fetchWorldCupSopOdds = fetchPremierLeagueSopOdds;
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const data = await fetchWorldCupSopOdds();
+    const data = await fetchPremierLeagueSopOdds();
     res.setHeader('Cache-Control', 'public, max-age=15');
     return res.status(200).json(data);
   } catch (err) {

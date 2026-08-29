@@ -38,29 +38,11 @@ function CornersCollageGrid() {
   );
 }
 
-function stoppageNotice(sr, sm) {
-  if (sr?.ok || sm?.ok) {
-    if (!sr?.ok && sm?.ok) {
-      return sr?.error
-        ? `Using Sportmonks for stoppage (Sportradar: ${sr.error}).`
-        : 'Using Sportmonks for stoppage.';
-    }
-    return null;
-  }
-
-  const bits = [];
-  if (sr && !sr.ok) {
-    bits.push(sr.configured ? `Sportradar: ${sr.error}` : 'Sportradar key not set');
-  }
-  if (sm && !sm.ok) {
-    bits.push(
-      sm.configured
-        ? `Sportmonks: ${sm.error}`
-        : 'set SPORTMONKS_API_TOKEN for Sportmonks backup',
-    );
-  }
-  if (!bits.length) return null;
-  return `Stoppage times unavailable — ${bits.join(' · ')}`;
+function stoppageNotice(espn) {
+  if (!espn) return null;
+  if (espn.ok) return null;
+  if (espn.error) return `ESPN stoppage: ${espn.error}`;
+  return 'Stoppage times unavailable — ESPN Premier League feed failed.';
 }
 
 function CornersPage() {
@@ -83,7 +65,7 @@ function CornersPage() {
       const data = await res.json();
       setGames(data.games ?? []);
       setFetchedAt(data.fetchedAt ?? null);
-      setNotice(stoppageNotice(data.sportradar, data.sportmonks));
+      setNotice(stoppageNotice(data.espn));
       setBookError(null);
     } catch (err) {
       setBookError(err.message || 'Failed to load corners');

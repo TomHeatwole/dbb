@@ -1,14 +1,42 @@
 /**
  * Premier League corner book: FanDuel totals + next 5/10 min lines,
- * plus expected stoppage from Sportradar (primary) and Sportmonks (backup).
+ * plus expected stoppage estimated from ESPN play-by-play (no API key).
+ *
+ * ESPN does not publish an expected-stoppage field. We accumulate delay from
+ * live events (goals, substitutions, cards, injuries/VAR) in the current half.
  */
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
 const PL_COMPETITION_ID = 10932509;
-const SR_PL_COMPETITION_ID = 'sr:competition:17';
-const SM_PL_LEAGUE_ID = 8;
+
+const ESPN_SCOREBOARD_URLS = [
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+  'https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+];
+const ESPN_PLAYS_URL =
+  'https://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/events';
+const ESPN_HEADERS = {
+  Accept: 'application/json',
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+  Referer: 'https://www.espn.com/soccer/scoreboard/_/league/eng.1',
+};
+
+const STOPPAGE_SEC = {
+  goal: 30,
+  yellow: 20,
+  red: 60,
+  subStop: 20,
+  varReview: 60,
+  penalty: 15,
+  delayFallback: 30,
+  baseFirst: 15,
+  baseSecond: 30,
+};
+const ESPN_PLAYS_LIMIT = 300;
+const ESPN_PLAYS_MAX_PAGES = 8;
 
 const FD_HEADERS = {
   Accept: 'application/json',
@@ -198,6 +226,8 @@ function clockToSeconds(value) {
   if (value == null || value === '') return null;
   if (typeof value === 'number' && Number.isFinite(value)) return Math.round(value * 60);
   const s = String(value).trim();
+  const espn = s.match(/^(\d+)'(?:\+(\d+)')?$/);
+  if (espn) return (Number(espn[1]) + Number(espn[2] || 0)) * 60;
   const m = s.match(/^(\d+)(?::(\d+))?$/);
   if (!m) return null;
   return Number(m[1]) * 60 + Number(m[2] || 0);
@@ -220,7 +250,7 @@ function extractWindowSelections(market) {
     const quote = runnerQuote(runner);
     if (!quote) continue;
     const name = String(runner.runnerName ?? '');
-    const plusMatch = name.match(/^(\d+)\+\b/);
+    const plusMatch = name.match(/^(\d+)\+/);
     const ouMatch = name.match(/^(over|under)\s+(\d+\.5)\b/i);
 
     if (plusMatch && isEitherTeamCornerRunner(name)) {
@@ -261,19 +291,31 @@ function summarizeWindowMarket(market, minutes) {
   };
 }
 
+function isCornerWindowMarket(name, minutes) {
+  const n = String(name ?? '');
+  const dedicated = new RegExp(
+    `(?:match\\s+)?corners?\\s+in\\s+${minutes}\\s+minutes?|next\\s+${minutes}\\s+(?:min(?:ute)?s?)\\s+corners?`,
+    'i',
+  );
+  const outcomes = new RegExp(`match\\s+outcomes\\s+in\\s+${minutes}\\s+minutes?`, 'i');
+  return dedicated.test(n) || outcomes.test(n);
+}
+
 function pickWindowMarket(markets, minutes, clockPlayed) {
   if (!markets) return null;
-  const re = new RegExp(`(?:match\\s+)?corners?\\s+in\\s+${minutes}\\s+minutes?`, 'i');
-  const nextRe = new RegExp(`next\\s+${minutes}\\s+(?:min(?:ute)?s?)\\s+corners?`, 'i');
   const matches = [];
 
   for (const market of Object.values(markets)) {
     const name = String(market.marketName ?? '');
-    if (!re.test(name) && !nextRe.test(name)) continue;
+    if (!isCornerWindowMarket(name, minutes)) continue;
     if (String(market.marketStatus ?? '').toUpperCase() === 'CLOSED') continue;
+    const summarized = summarizeWindowMarket(market, minutes);
+    if (!summarized.plus.length && !summarized.overUnder.length && !summarized.other.length) {
+      continue;
+    }
     const windowMatch = name.match(/\(([^)]+)\)/);
     const bounds = parseWindowBounds(windowMatch?.[1]);
-    matches.push({ market, bounds, start: bounds?.startSeconds ?? -1 });
+    matches.push({ summarized, bounds, start: bounds?.startSeconds ?? Number.POSITIVE_INFINITY });
   }
 
   if (!matches.length) return null;
@@ -285,12 +327,17 @@ function pickWindowMarket(markets, minutes, clockPlayed) {
     );
     if (containing.length) {
       containing.sort((a, b) => b.start - a.start);
-      return summarizeWindowMarket(containing[0].market, minutes);
+      return containing[0].summarized;
+    }
+    const upcoming = matches.filter((m) => m.bounds && m.bounds.startSeconds >= clockSeconds);
+    if (upcoming.length) {
+      upcoming.sort((a, b) => a.start - b.start);
+      return upcoming[0].summarized;
     }
   }
 
-  matches.sort((a, b) => b.start - a.start);
-  return summarizeWindowMarket(matches[0].market, minutes);
+  matches.sort((a, b) => a.start - b.start);
+  return matches[0].summarized;
 }
 
 async function fetchEventBundle(eventId) {
@@ -329,49 +376,6 @@ function namesMatch(a, b) {
   return ca === cb || ca.includes(cb) || cb.includes(ca);
 }
 
-function competitorsFromSportEvent(sportEvent) {
-  const competitors = sportEvent?.competitors ?? [];
-  const home = competitors.find((c) => c.qualifier === 'home') ?? competitors[0];
-  const away = competitors.find((c) => c.qualifier === 'away') ?? competitors[1];
-  return {
-    home: home?.name ?? null,
-    away: away?.name ?? null,
-  };
-}
-
-function competitionIdOf(sportEvent) {
-  return (
-    sportEvent?.sport_event_context?.competition?.id
-    ?? sportEvent?.tournament?.id
-    ?? sportEvent?.competition?.id
-    ?? null
-  );
-}
-
-function latestInjuryTime(timeline, matchStatus) {
-  if (!Array.isArray(timeline)) return null;
-  const periodHint = String(matchStatus ?? '');
-  const preferSecond = /2nd|second/i.test(periodHint);
-  const preferFirst = /1st|first/i.test(periodHint);
-
-  let latest = null;
-  for (const ev of timeline) {
-    if (ev?.injury_time_announced == null && ev?.type !== 'injury_time_shown') continue;
-    const minutes = ev.injury_time_announced;
-    if (!Number.isFinite(minutes)) continue;
-    const matchClock = String(ev.match_clock ?? '');
-    const clockMinute = Number(matchClock.split(':')[0]);
-    const inSecond =
-      Number(ev.period) === 2
-      || Number(ev.match_time) >= 45
-      || (Number.isFinite(clockMinute) && clockMinute >= 45);
-    if (preferSecond && !inSecond) continue;
-    if (preferFirst && inSecond) continue;
-    latest = minutes;
-  }
-  return latest;
-}
-
 function formatClockLabel(seconds) {
   if (seconds == null) return null;
   const safe = Math.max(0, Math.round(seconds));
@@ -381,275 +385,437 @@ function formatClockLabel(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function extractStoppage(status, timeline) {
-  const clock = status?.clock ?? {};
-  const announcedSeconds = clockToSeconds(clock.stoppage_time_announced);
-  const playedSeconds = clockToSeconds(clock.stoppage_time_played);
-  const injuryMinutes = latestInjuryTime(timeline, status?.match_status);
-  const injurySeconds = Number.isFinite(injuryMinutes) ? injuryMinutes * 60 : null;
-  const expectedSeconds = announcedSeconds ?? injurySeconds;
-  const remainingSeconds =
-    expectedSeconds != null && playedSeconds != null
-      ? Math.max(0, expectedSeconds - playedSeconds)
-      : expectedSeconds;
-
-  return {
-    matchStatus: status?.match_status ?? null,
-    status: status?.status ?? null,
-    clock: clock.played ?? null,
-    announced: clock.stoppage_time_announced ?? (injuryMinutes != null ? `${injuryMinutes}:00` : null),
-    played: clock.stoppage_time_played ?? null,
-    expectedMinutes: expectedSeconds != null ? expectedSeconds / 60 : null,
-    remainingLabel: formatClockLabel(remainingSeconds),
-    expectedLabel: formatClockLabel(expectedSeconds),
-    playedLabel: formatClockLabel(playedSeconds),
-    homeScore: status?.home_score ?? null,
-    awayScore: status?.away_score ?? null,
-    source: 'sportradar',
-  };
-}
-
-async function srFetch(path) {
-  const apiKey = process.env.SPORTRADAR_API_KEY;
-  const access = process.env.SPORTRADAR_ACCESS_LEVEL || 'trial';
-  const url = `https://api.sportradar.com/soccer/${access}/v4/en/${path}`;
-  const res = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-      'x-api-key': apiKey,
-    },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Sportradar ${path} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
-  }
-  return res.json();
-}
-
 function compactProviderError(err) {
   const s = String(err ?? '');
-  if (/403/.test(s) || /Authentication Error/i.test(s)) return '403 authentication error';
+  if (/Access Denied/i.test(s) || /\b403\b/.test(s)) return '403 from ESPN';
   if (/401/.test(s)) return '401 unauthorized';
   return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
 }
 
-function sportmonksToken() {
-  return (
-    process.env.SPORTMONKS_API_TOKEN
-    || process.env.SPORTMONKS_API_KEY
-    || process.env.SPORTSMONKS_API_TOKEN
-    || process.env.SPORTSMONKS_API_KEY
-    || ''
-  );
-}
-
-function smParticipants(fixture) {
-  const parts = fixture?.participants ?? [];
-  const home = parts.find((p) => p.meta?.location === 'home') ?? parts[0];
-  const away = parts.find((p) => p.meta?.location === 'away') ?? parts[1];
-  if (home?.name && away?.name) {
-    return { home: home.name, away: away.name };
+function parseEspnClock(display) {
+  const s = String(display ?? '').trim();
+  const m = s.match(/^(\d+)'(?:\+(\d+)')?$/);
+  if (!m) {
+    return { display: s || null, elapsed: null, plus: 0, inStoppage: false };
   }
-  const parsed = String(fixture?.name ?? '').split(/\s+vs\.?\s+/i);
-  if (parsed.length === 2) {
-    return { home: parsed[0].trim(), away: parsed[1].trim() };
-  }
-  return { home: home?.name ?? null, away: away?.name ?? null };
-}
-
-function smScore(fixture) {
-  const scores = fixture?.scores ?? [];
-  const current = scores.filter((s) => String(s.description ?? '').toUpperCase() === 'CURRENT');
-  const pool = current.length ? current : scores;
-  let home = null;
-  let away = null;
-  for (const row of pool) {
-    const loc = row.score?.participant ?? row.participant;
-    const goals = row.score?.goals ?? row.goals;
-    if (loc === 'home' && Number.isFinite(goals)) home = goals;
-    if (loc === 'away' && Number.isFinite(goals)) away = goals;
-  }
-  if (home == null && away == null) return { home: null, away: null };
-  return { home: home ?? 0, away: away ?? 0 };
-}
-
-function extractSportmonksStoppage(fixture) {
-  const periods = fixture?.periods ?? [];
-  const ticking = periods.find((p) => p.ticking) ?? periods[periods.length - 1] ?? null;
-  const minutes = Number.isFinite(ticking?.minutes) ? ticking.minutes : null;
-  const seconds = Number.isFinite(ticking?.seconds) ? ticking.seconds : 0;
-  const countsFrom = Number.isFinite(ticking?.counts_from) ? ticking.counts_from : 0;
-  const periodLength = Number.isFinite(ticking?.period_length) ? ticking.period_length : 45;
-  const regularEnd = countsFrom + periodLength;
-  const timeAdded = ticking?.time_added;
-  const announcedSeconds = Number.isFinite(timeAdded) ? timeAdded * 60 : null;
-  const playedSeconds =
-    minutes != null ? Math.max(0, minutes * 60 + seconds - regularEnd * 60) : null;
-  const remainingSeconds =
-    announcedSeconds != null && playedSeconds != null
-      ? Math.max(0, announcedSeconds - playedSeconds)
-      : announcedSeconds;
-  const stateName = fixture?.state?.developer_name ?? fixture?.state?.name ?? ticking?.description ?? null;
-  const score = smScore(fixture);
-  const clock =
-    minutes != null ? `${minutes}:${String(Math.max(0, seconds)).padStart(2, '0')}` : null;
-
+  const elapsed = Number(m[1]);
+  const plus = Number(m[2] || 0);
   return {
-    matchStatus: stateName,
-    status: fixture?.state?.short_name ?? fixture?.state?.developer_name ?? null,
-    clock,
-    announced: Number.isFinite(timeAdded) ? `${timeAdded}:00` : null,
-    played: formatClockLabel(playedSeconds),
-    expectedMinutes: announcedSeconds != null ? announcedSeconds / 60 : null,
-    remainingLabel: formatClockLabel(remainingSeconds),
-    expectedLabel: formatClockLabel(announcedSeconds),
-    playedLabel: formatClockLabel(playedSeconds),
-    homeScore: score.home,
-    awayScore: score.away,
-    source: 'sportmonks',
+    display: s,
+    elapsed,
+    plus,
+    inStoppage: plus > 0 || Boolean(m[2]),
   };
 }
 
-async function smFetch(path, params = {}) {
-  const token = sportmonksToken();
-  const url = new URL(`https://api.sportmonks.com/v3/football/${path}`);
-  url.searchParams.set('api_token', token);
-  url.searchParams.set('timezone', 'UTC');
-  for (const [key, value] of Object.entries(params)) {
-    if (value != null && value !== '') url.searchParams.set(key, value);
+function playType(play) {
+  return String(play?.type?.type ?? play?.type?.text ?? '').toLowerCase();
+}
+
+function isGoalPlay(play) {
+  if (play?.scoringPlay) return true;
+  const type = playType(play);
+  return type === 'own-goal' || type === 'goal' || type.startsWith('goal---');
+}
+
+function playText(play) {
+  return String(play?.text ?? play?.shortText ?? '');
+}
+
+function playPeriod(play) {
+  const n = Number(play?.period?.number);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function playClockKey(play) {
+  return String(play?.clock?.displayValue ?? '').trim();
+}
+
+function isoMs(value) {
+  if (!value) return null;
+  const t = Date.parse(value);
+  return Number.isFinite(t) ? t : null;
+}
+
+function yyyymmddFromIso(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+function yyyymmddInTimeZone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day = parts.find((p) => p.type === 'day')?.value;
+  if (!year || !month || !day) return null;
+  return `${year}${month}${day}`;
+}
+
+function uniqueScoreboardDates(openDates) {
+  const dates = new Set();
+  const now = new Date();
+  dates.add(yyyymmddInTimeZone(now, 'UTC'));
+  dates.add(yyyymmddInTimeZone(now, 'Europe/London'));
+  dates.add(yyyymmddInTimeZone(now, 'America/New_York'));
+  for (const iso of openDates) {
+    const key = yyyymmddFromIso(iso);
+    if (key) dates.add(key);
   }
-  const res = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-      Authorization: token,
-    },
-  });
+  return [...dates].filter(Boolean).slice(0, 8);
+}
+
+function competitorsFromEspnEvent(event) {
+  const competition = event?.competitions?.[0] ?? {};
+  const competitors = competition.competitors ?? [];
+  const home = competitors.find((c) => c.homeAway === 'home') ?? competitors[0];
+  const away = competitors.find((c) => c.homeAway === 'away') ?? competitors[1];
+  const score = (row) => {
+    const n = Number(row?.score);
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    home: home?.team?.displayName ?? home?.team?.name ?? null,
+    away: away?.team?.displayName ?? away?.team?.name ?? null,
+    homeScore: score(home),
+    awayScore: score(away),
+  };
+}
+
+async function espnGetJson(url) {
+  const res = await fetch(url, { headers: ESPN_HEADERS });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`Sportmonks ${path} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
+    throw new Error(`ESPN ${url} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
   }
   return res.json();
 }
 
-function smFixturesFromPayload(payload) {
-  const data = payload?.data;
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') return [data];
-  return [];
-}
+let espnScoreboardBase = null;
 
-async function fetchSportmonksStoppage() {
-  const token = sportmonksToken();
-  if (!token) {
-    return {
-      ok: false,
-      configured: false,
-      error: 'SPORTMONKS_API_TOKEN is not set',
-      matches: [],
-    };
-  }
-
-  try {
-    const leaguePayload = await smFetch(`leagues/${SM_PL_LEAGUE_ID}`);
-    const league = leaguePayload?.data;
-    const hasPremierLeague = Array.isArray(league) ? league.length > 0 : Boolean(league?.id);
-    if (!hasPremierLeague) {
-      return {
-        ok: false,
-        configured: true,
-        error: 'Sportmonks Football Free Plan does not include Premier League (Denmark/Scotland only). Start a paid trial and select league 8.',
-        matches: [],
-      };
-    }
-
-    let payload;
+async function espnGetScoreboard(dates) {
+  const suffix = dates ? `?dates=${dates}` : '';
+  const bases = espnScoreboardBase
+    ? [espnScoreboardBase, ...ESPN_SCOREBOARD_URLS.filter((url) => url !== espnScoreboardBase)]
+    : ESPN_SCOREBOARD_URLS;
+  let lastErr = null;
+  for (const base of bases) {
     try {
-      payload = await smFetch('livescores', {
-        include: 'participants;scores;periods;state',
-        filters: `fixtureLeagues:${SM_PL_LEAGUE_ID}`,
-      });
+      const payload = await espnGetJson(`${base}${suffix}`);
+      espnScoreboardBase = base;
+      return payload;
     } catch (err) {
-      // Some plans reject the league filter; fall back and filter client-side.
-      if (!/\b40[03]\b/.test(String(err.message))) throw err;
-      payload = await smFetch('livescores', {
-        include: 'participants;scores;periods;state',
-      });
+      lastErr = err;
     }
-
-    const matches = smFixturesFromPayload(payload)
-      .filter((fx) => fx.league_id == null || fx.league_id === SM_PL_LEAGUE_ID)
-      .map((fx) => ({
-        id: fx.id,
-        teams: smParticipants(fx),
-        startTime: fx.starting_at ?? null,
-        stoppage: extractSportmonksStoppage(fx),
-      }));
-
-    return {
-      ok: true,
-      configured: true,
-      error: null,
-      matches,
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      configured: true,
-      error: err.message || 'Sportmonks fetch failed',
-      matches: [],
-    };
   }
+  throw lastErr ?? new Error('ESPN scoreboard fetch failed');
 }
 
-async function fetchSportradarStoppage() {
-  const apiKey = process.env.SPORTRADAR_API_KEY;
-  if (!apiKey) {
-    return {
-      ok: false,
-      configured: false,
-      error: 'SPORTRADAR_API_KEY is not set',
-      matches: [],
-    };
+function playsUrl(gameId, page) {
+  const id = encodeURIComponent(String(gameId));
+  const pageQ = page > 1 ? `&page=${page}` : '';
+  return `${ESPN_PLAYS_URL}/${id}/competitions/${id}/plays?limit=${ESPN_PLAYS_LIMIT}${pageQ}`;
+}
+
+async function fetchEspnPlays(gameId) {
+  const first = await espnGetJson(playsUrl(gameId, 1));
+  const pageCount = Math.min(
+    Number(first?.pageCount) || 1,
+    ESPN_PLAYS_MAX_PAGES,
+  );
+  const pages = [first];
+  if (pageCount > 1) {
+    const rest = await Promise.all(
+      Array.from({ length: pageCount - 1 }, (_, i) => espnGetJson(playsUrl(gameId, i + 2))),
+    );
+    pages.push(...rest);
+  }
+  const items = [];
+  const seen = new Set();
+  for (const page of pages) {
+    for (const play of page?.items ?? []) {
+      const id = play?.id;
+      if (id && seen.has(id)) continue;
+      if (id) seen.add(id);
+      items.push(play);
+    }
+  }
+  return items;
+}
+
+function currentPeriodFromStatus(status, clock) {
+  const period = Number(status?.period);
+  if (Number.isFinite(period) && period > 0) return period;
+  const name = String(status?.type?.name ?? status?.type?.description ?? '');
+  if (/HALFTIME/i.test(name)) return 1;
+  if (clock?.elapsed != null) return clock.elapsed <= 45 ? 1 : 2;
+  return 2;
+}
+
+function isLiveEspnStatus(status) {
+  const state = String(status?.type?.state ?? '').toLowerCase();
+  const name = String(status?.type?.name ?? '');
+  return state === 'in' || /HALFTIME/i.test(name);
+}
+
+function isFinishedEspnStatus(status) {
+  return String(status?.type?.state ?? '').toLowerCase() === 'post';
+}
+
+function delaySecondsFromPlays(plays, period) {
+  const starts = [];
+  const ends = [];
+  for (const play of plays) {
+    if (playPeriod(play) !== period) continue;
+    const type = playType(play);
+    const text = playText(play);
+    if (!text) continue;
+    if (type === 'start-delay') starts.push(play);
+    if (type === 'end-delay') ends.push(play);
   }
 
+  let total = 0;
+  const usedEnds = new Set();
+  for (const start of starts) {
+    const startMs = isoMs(start.wallclock);
+    let matched = null;
+    for (const end of ends) {
+      if (usedEnds.has(end.id)) continue;
+      const endMs = isoMs(end.wallclock);
+      if (startMs != null && endMs != null && endMs < startMs) continue;
+      matched = end;
+      break;
+    }
+    if (matched) {
+      usedEnds.add(matched.id);
+      const endMs = isoMs(matched.wallclock);
+      if (startMs != null && endMs != null) {
+        total += Math.max(0, Math.min(10 * 60, (endMs - startMs) / 1000));
+        continue;
+      }
+    }
+    total += STOPPAGE_SEC.delayFallback;
+  }
+  return { seconds: total, count: starts.length };
+}
+
+function estimateStoppageFromPlays(plays, period) {
+  const inPeriod = (plays ?? []).filter((p) => playPeriod(p) === period);
+  let goals = 0;
+  let yellows = 0;
+  let reds = 0;
+  let penalties = 0;
+  let varReviews = 0;
+  const subStops = new Set();
+
+  for (const play of inPeriod) {
+    const type = playType(play);
+    const text = playText(play);
+    if (isGoalPlay(play)) goals += 1;
+    if (play.yellowCard || type === 'yellow-card') yellows += 1;
+    if (play.redCard || type === 'red-card' || type === 'second-yellow') reds += 1;
+    if (play.penaltyKick || type === 'penalty' || type === 'penalty-awarded') penalties += 1;
+    if (play.substitution || type === 'substitution') {
+      subStops.add(playClockKey(play) || String(play.id));
+    }
+    if (/\bVAR\b|video review|var review/i.test(text) || type.includes('var')) {
+      varReviews += 1;
+    }
+  }
+
+  const delays = delaySecondsFromPlays(inPeriod, period);
+  const seconds =
+    (period === 1 ? STOPPAGE_SEC.baseFirst : STOPPAGE_SEC.baseSecond)
+    + goals * STOPPAGE_SEC.goal
+    + yellows * STOPPAGE_SEC.yellow
+    + reds * STOPPAGE_SEC.red
+    + subStops.size * STOPPAGE_SEC.subStop
+    + varReviews * STOPPAGE_SEC.varReview
+    + penalties * STOPPAGE_SEC.penalty
+    + delays.seconds;
+
+  return {
+    seconds,
+    breakdown: {
+      goals,
+      substitutions: subStops.size,
+      yellows,
+      reds,
+      penalties,
+      varReviews,
+      delays: delays.count,
+      delaySeconds: Math.round(delays.seconds),
+    },
+  };
+}
+
+function latestAddedClockSeconds(plays, period) {
+  let best = null;
+  for (const play of plays ?? []) {
+    if (period != null && playPeriod(play) !== period) continue;
+    const value = Number(play?.addedClock?.value);
+    if (!Number.isFinite(value) || value <= 0) continue;
+    if (best == null || value > best) best = value;
+  }
+  return best;
+}
+
+function announcedFromPlays(plays, period) {
+  let latest = null;
+  for (const play of plays ?? []) {
+    if (period != null && playPeriod(play) !== period) continue;
+    const text = playText(play);
+    const m = text.match(/(?:fourth official has )?announced\s+(\d+)\s+minutes?\s+of added time/i);
+    if (!m) continue;
+    latest = Number(m[1]);
+  }
+  return Number.isFinite(latest) ? latest : null;
+}
+
+function breakdownLabel(breakdown) {
+  if (!breakdown) return null;
+  const bits = [];
+  if (breakdown.goals) bits.push(`${breakdown.goals} goal${breakdown.goals === 1 ? '' : 's'}`);
+  if (breakdown.substitutions) bits.push(`${breakdown.substitutions} sub stop${breakdown.substitutions === 1 ? '' : 's'}`);
+  if (breakdown.yellows) bits.push(`${breakdown.yellows} yellow${breakdown.yellows === 1 ? '' : 's'}`);
+  if (breakdown.reds) bits.push(`${breakdown.reds} red${breakdown.reds === 1 ? '' : 's'}`);
+  if (breakdown.varReviews) bits.push(`${breakdown.varReviews} VAR`);
+  if (breakdown.delays) bits.push(`${breakdown.delays} delay${breakdown.delays === 1 ? '' : 's'}`);
+  return bits.length ? bits.join(' · ') : 'no delay events yet';
+}
+
+function extractEspnStoppage(event, plays) {
+  const competition = event?.competitions?.[0] ?? {};
+  const status = competition.status ?? {};
+  const teams = competitorsFromEspnEvent(event);
+  const clock = parseEspnClock(status.displayClock);
+  const period = currentPeriodFromStatus(status, clock);
+  const finished = isFinishedEspnStatus(status);
+  const estimate = plays?.length ? estimateStoppageFromPlays(plays, period) : null;
+  const announcedMinutes = announcedFromPlays(plays, period);
+  const addedSeconds = latestAddedClockSeconds(plays, period);
+  const playedSeconds =
+    addedSeconds
+    ?? (clock.inStoppage ? clock.plus * 60 : finished && clock.plus ? clock.plus * 60 : null);
+
+  let expectedSeconds = estimate?.seconds ?? null;
+  if (announcedMinutes != null) {
+    expectedSeconds = Math.max(expectedSeconds ?? 0, announcedMinutes * 60);
+  }
+  if (playedSeconds != null && expectedSeconds != null) {
+    expectedSeconds = Math.max(expectedSeconds, playedSeconds);
+  }
+  if (finished && playedSeconds != null && expectedSeconds == null) {
+    expectedSeconds = playedSeconds;
+  }
+
+  const remainingSeconds =
+    expectedSeconds != null
+      ? Math.max(0, expectedSeconds - (playedSeconds ?? 0))
+      : null;
+
+  const matchStatus = status.type?.description ?? status.type?.detail ?? status.type?.name ?? null;
+
+  return {
+    matchStatus,
+    status: status.type?.state ?? null,
+    clock: clock.display,
+    announced: announcedMinutes != null ? `${announcedMinutes}:00` : null,
+    played: playedSeconds != null ? formatClockLabel(playedSeconds) : null,
+    expectedMinutes: expectedSeconds != null ? expectedSeconds / 60 : null,
+    remainingLabel: finished
+      ? (playedSeconds != null ? "0'" : null)
+      : formatClockLabel(remainingSeconds),
+    expectedLabel: expectedSeconds != null
+      ? formatClockLabel(Math.round(expectedSeconds / 30) * 30)
+      : null,
+    playedLabel: playedSeconds != null ? formatClockLabel(playedSeconds) : null,
+    homeScore: teams.homeScore,
+    awayScore: teams.awayScore,
+    source: 'espn',
+    estimated: Boolean(estimate) && announcedMinutes == null,
+    period,
+    breakdown: estimate?.breakdown ?? null,
+    breakdownLabel: breakdownLabel(estimate?.breakdown),
+  };
+}
+
+function summarizeEspnEvent(event, plays) {
+  const teams = competitorsFromEspnEvent(event);
+  return {
+    id: event?.id ?? event?.competitions?.[0]?.id ?? null,
+    teams: { home: teams.home, away: teams.away },
+    startTime: event?.date ?? event?.competitions?.[0]?.date ?? null,
+    stoppage: extractEspnStoppage(event, plays),
+  };
+}
+
+async function fetchEspnStoppage(openDates) {
   try {
-    const [timelinesPayload, summariesPayload] = await Promise.all([
-      srFetch('schedules/live/timelines.json'),
-      srFetch('schedules/live/summaries.json'),
-    ]);
+    const dates = uniqueScoreboardDates(openDates);
+    const payloads = await Promise.all(
+      dates.map(async (date) => {
+        try {
+          return await espnGetScoreboard(date);
+        } catch (err) {
+          return { __error: err, date };
+        }
+      }),
+    );
 
-    const timelines = new Map();
-    for (const row of timelinesPayload?.sport_event_timelines ?? []) {
-      if (row?.id) timelines.set(row.id, row);
+    const eventsById = new Map();
+    const scoreboardErrors = [];
+    for (const payload of payloads) {
+      if (payload?.__error) {
+        scoreboardErrors.push(`${payload.date}: ${payload.__error.message}`);
+        continue;
+      }
+      for (const event of payload?.events ?? []) {
+        if (event?.id) eventsById.set(String(event.id), event);
+      }
     }
 
-    const matches = [];
-    for (const summary of summariesPayload?.summaries ?? []) {
-      const sportEvent = summary.sport_event;
-      if (competitionIdOf(sportEvent) !== SR_PL_COMPETITION_ID) continue;
-      const id = sportEvent?.id;
-      const timelineRow = timelines.get(id);
-      const status = timelineRow?.sport_event_status ?? summary.sport_event_status ?? {};
-      const teams = competitorsFromSportEvent(sportEvent);
-      matches.push({
-        id,
-        teams,
-        startTime: sportEvent?.start_time ?? timelineRow?.start_time ?? null,
-        stoppage: extractStoppage(status, timelineRow?.timeline ?? []),
-      });
+    if (!eventsById.size) {
+      const err = scoreboardErrors[0] || 'ESPN scoreboard returned no Premier League games';
+      return { ok: false, error: err, matches: [] };
     }
 
+    const events = [...eventsById.values()];
+    const needPlays = events.filter((event) => {
+      const status = event?.competitions?.[0]?.status;
+      return isLiveEspnStatus(status);
+    });
+
+    const playsById = new Map();
+    const playErrors = [];
+    await Promise.all(
+      needPlays.map(async (event) => {
+        try {
+          playsById.set(String(event.id), await fetchEspnPlays(event.id));
+        } catch (err) {
+          playErrors.push(`${event.id}: ${err.message}`);
+          playsById.set(String(event.id), []);
+        }
+      }),
+    );
+
+    const matches = events.map((event) => summarizeEspnEvent(event, playsById.get(String(event.id)) ?? []));
     return {
-      ok: true,
-      configured: true,
-      error: null,
+      ok: playErrors.length === 0,
+      error: playErrors.length ? compactProviderError(playErrors[0]) : null,
       matches,
+      livePremierLeague: needPlays.length,
     };
   } catch (err) {
     return {
       ok: false,
-      configured: true,
-      error: err.message || 'Sportradar fetch failed',
+      error: err.message || 'ESPN fetch failed',
       matches: [],
     };
   }
@@ -673,29 +839,38 @@ function attachStoppage(game, matchSets) {
   const hit = findLiveMatch(game, matchSets);
   if (!hit) return { ...game, stoppage: null };
 
-  const clockPlayed = hit.stoppage?.clock;
-  const next = {
+  const stoppage = hit.stoppage;
+  const useful =
+    stoppage
+    && (
+      stoppage.status === 'in'
+      || stoppage.status === 'post'
+      || stoppage.expectedLabel
+      || stoppage.played
+    );
+  if (!useful) return { ...game, stoppage: null };
+
+  const clockPlayed = stoppage.clock;
+  return {
     ...game,
-    stoppage: { ...hit.stoppage, source: hit.source },
+    stoppage: { ...stoppage, source: hit.source ?? 'espn' },
+    espnId: hit.id,
     next5: pickWindowMarket(game._markets, 5, clockPlayed) ?? game.next5,
     next10: pickWindowMarket(game._markets, 10, clockPlayed) ?? game.next10,
-    score: hit.stoppage?.homeScore != null
-      ? { home: hit.stoppage.homeScore, away: hit.stoppage.awayScore ?? 0 }
+    score: stoppage.homeScore != null
+      ? { home: stoppage.homeScore, away: stoppage.awayScore ?? 0 }
       : game.score,
-    scoreDisplay: hit.stoppage?.homeScore != null
-      ? `${hit.stoppage.homeScore}-${hit.stoppage.awayScore ?? 0}`
+    scoreDisplay: stoppage.homeScore != null
+      ? `${stoppage.homeScore}-${stoppage.awayScore ?? 0}`
       : game.scoreDisplay,
   };
-  if (hit.source === 'sportradar') next.sportradarId = hit.id;
-  if (hit.source === 'sportmonks') next.sportmonksId = hit.id;
-  return next;
 }
 
 async function fetchPlCornerBook() {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
   const events = plMatchEvents(sportPage);
 
-  const [fdGames, sr, sm] = await Promise.all([
+  const [fdGames, espn] = await Promise.all([
     Promise.all(
       events.map(async (ev) => {
         try {
@@ -720,14 +895,10 @@ async function fetchPlCornerBook() {
         }
       }),
     ),
-    fetchSportradarStoppage(),
-    fetchSportmonksStoppage(),
+    fetchEspnStoppage(events.map((ev) => ev.openDate)),
   ]);
 
-  const matchSets = [
-    { source: 'sportradar', matches: sr.matches },
-    { source: 'sportmonks', matches: sm.matches },
-  ];
+  const matchSets = [{ source: 'espn', matches: espn.matches }];
 
   const games = fdGames
     .map((game) => {
@@ -745,17 +916,11 @@ async function fetchPlCornerBook() {
   return {
     fetchedAt: new Date().toISOString(),
     games,
-    sportradar: {
-      ok: sr.ok,
-      configured: sr.configured,
-      error: sr.error ? compactProviderError(sr.error) : null,
-      livePremierLeague: sr.matches.length,
-    },
-    sportmonks: {
-      ok: sm.ok,
-      configured: sm.configured,
-      error: sm.error ? compactProviderError(sm.error) : null,
-      livePremierLeague: sm.matches.length,
+    espn: {
+      ok: espn.ok,
+      error: espn.error ? compactProviderError(espn.error) : null,
+      livePremierLeague: espn.livePremierLeague ?? 0,
+      matched: games.filter((g) => g.stoppage).length,
     },
   };
 }

@@ -52,7 +52,7 @@ const LOADING_MESSAGES = [
   'Initializing pitch sensors…',
   'Calibrating offside trap algorithms…',
   'Syncing with FIFA VAR mainframe…',
-  'Pulling FanDuel World Cup odds…',
+  'Pulling FanDuel Premier League odds…',
   'Loading corner kick coefficients…',
   'Warming up the fourth official…',
   'Parsing xG regression tables…',

@@ -89,8 +89,8 @@ function WindowSection({ title, windowMarket, liveHint }) {
       {!hasLines && (
         <p className="corners-empty-hint">
           {liveHint
-            ? 'FanDuel posts these on Quick Bets once the match is live.'
-            : 'No line up yet.'}
+            ? 'No Match Outcomes 5/10-min window on FanDuel Quick Bets yet.'
+            : 'No line up yet for this window.'}
         </p>
       )}
       {plus.length > 0 && (
@@ -135,13 +135,17 @@ function WindowSection({ title, windowMarket, liveHint }) {
 function stoppageHeadline(stoppage) {
   if (!stoppage) return null;
   if (stoppage.expectedLabel) {
-    if (stoppage.remainingLabel && stoppage.played) {
-      return `${stoppage.expectedLabel} announced · ${stoppage.remainingLabel} left`;
+    if (stoppage.remainingLabel && stoppage.played && stoppage.status === 'in') {
+      const kind = stoppage.announced ? 'announced' : 'estimated';
+      return `${stoppage.expectedLabel} ${kind} · ${stoppage.remainingLabel} left`;
     }
-    return `${stoppage.expectedLabel} announced`;
+    if (stoppage.status === 'post') {
+      return `${stoppage.played || stoppage.expectedLabel} played`;
+    }
+    return `${stoppage.expectedLabel} ${stoppage.announced ? 'announced' : 'estimated'}`;
   }
-  if (stoppage.matchStatus && /half|live|started/i.test(stoppage.matchStatus)) {
-    return 'Not announced yet';
+  if (stoppage.matchStatus && /half|live|started|in play/i.test(stoppage.matchStatus)) {
+    return 'Estimating from play-by-play…';
   }
   return null;
 }
@@ -218,8 +222,8 @@ function GameCard({ game }) {
             {!game.stoppage && (
               <p className="corners-empty-hint">
                 {game.inPlay
-                  ? 'No live timeline matched this game yet.'
-                  : 'Shows up once the match is live and the 4th official board is out.'}
+                  ? 'No ESPN play-by-play matched this game yet.'
+                  : 'Estimated from ESPN play-by-play once the match is live (goals, subs, cards, delays).'}
               </p>
             )}
             {game.stoppage && (
@@ -228,15 +232,19 @@ function GameCard({ game }) {
                   {game.stoppage.expectedLabel ?? '—'}
                 </div>
                 <div className="corners-stoppage-meta">
-                  {game.stoppage.source === 'sportmonks' ? 'Sportmonks' : 'Sportradar'}
+                  ESPN
+                  {game.stoppage.estimated ? ' estimate' : ''}
                   {formatMatchStatus(game.stoppage.matchStatus) && ` · ${formatMatchStatus(game.stoppage.matchStatus)}`}
                   {game.stoppage.clock && ` · ${game.stoppage.clock}`}
                   {game.stoppage.announced && ` · announced ${game.stoppage.announced}`}
                   {game.stoppage.played && ` · played ${game.stoppage.played}`}
-                  {game.stoppage.remainingLabel && ` · ${game.stoppage.remainingLabel} remaining`}
+                  {game.stoppage.status === 'in' && game.stoppage.remainingLabel && ` · ${game.stoppage.remainingLabel} remaining`}
                 </div>
+                {game.stoppage.breakdownLabel && (
+                  <p className="corners-empty-hint">{game.stoppage.breakdownLabel}</p>
+                )}
                 {!game.stoppage.expectedLabel && (
-                  <p className="corners-empty-hint">Not announced yet.</p>
+                  <p className="corners-empty-hint">No delay events yet this half.</p>
                 )}
               </div>
             )}
@@ -348,7 +356,7 @@ function CornersBookPanel({
 
       <p className="sop-exp-footer">
         Auto-refreshes every {REFRESH_MS / 1000}s · 5/10-min corners are FanDuel Quick Bets
-        (usually live-only) · stoppage from Sportradar, Sportmonks backup
+        Match Outcomes · stoppage estimated from ESPN play-by-play
       </p>
     </div>
   );

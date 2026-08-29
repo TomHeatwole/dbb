@@ -1,5 +1,5 @@
 /**
- * SOP Book tab — live FanDuel World Cup +EV scanner.
+ * SOP Book tab — live FanDuel Premier League +EV scanner.
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -666,8 +666,8 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
   if (loading) {
     return (
       <LoadingState
-        label="Loading World Cup odds…"
-        ariaLabel="Loading World Cup odds"
+        label="Loading Premier League odds…"
+        ariaLabel="Loading Premier League odds"
         className="sop-book-loading"
       />
     );
@@ -678,7 +678,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">SOP +EV Scanner</h1>
         <p className="sop-exp-subtitle">
-          FIFA World Cup · FanDuel + DraftKings + Kalshi
+          Premier League · FanDuel + DraftKings + Kalshi
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -764,7 +764,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       )}
 
       {!error && games.length === 0 && (
-        <p className="sop-exp-status">No World Cup games found on FanDuel.</p>
+        <p className="sop-exp-status">No Premier League games found on FanDuel.</p>
       )}
 
       <footer className="sop-exp-footer">
