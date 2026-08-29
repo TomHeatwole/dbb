@@ -3,7 +3,7 @@ import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PREVIOUS_YEARS } from '../utils/global_constants';
-import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from '../scores/WeekSelector';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
@@ -33,18 +33,14 @@ const show_sleeper_api_banner = false;
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
 function getAvailableYearsAndDefault() {
-	const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
-	const prevYears = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
-	const availableYears = isPreSeason ? prevYears : allYears;
-	const defaultSeason = isPreSeason && prevYears.length > 0 ? prevYears[0] : CURRENT_YEAR;
-	return { availableYears, defaultSeason, isPreSeason };
+	return { availableYears: allYears, defaultSeason: CURRENT_YEAR };
 }
 
 function LeagueScores() {
 	// Toggle: when true, keep the current mobile summary behavior; when false, render the full web breakdown on mobile
 	const showFullScoreBreakdownOnMobile = false;
 	const [searchParams, setSearchParams] = useSearchParams();
-	const { availableYears, defaultSeason, isPreSeason } = getAvailableYearsAndDefault();
+	const { availableYears, defaultSeason } = getAvailableYearsAndDefault();
 	const urlYear = searchParams.get('year');
 	const initialSeason = urlYear && availableYears.includes(urlYear) ? urlYear : defaultSeason;
 	const [season, setSeason] = useState(initialSeason);
@@ -183,9 +179,8 @@ function LeagueScores() {
 			setDropdownOpen(false);
 		}
 		if (!urlYear) {
-			const target = isPreSeason ? defaultSeason : CURRENT_YEAR;
-			if (season !== target) {
-				setSeason(target);
+			if (season !== CURRENT_YEAR) {
+				setSeason(CURRENT_YEAR);
 				setDropdownOpen(false);
 			}
 		}

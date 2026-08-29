@@ -121,6 +121,58 @@ function bookShort(book) {
   return 'FD';
 }
 
+function formatArbRoi(roi) {
+  if (!Number.isFinite(roi)) return '—';
+  return formatEdgePct(roi * 100);
+}
+
+function arbLegPercents(legs) {
+  const raw = (legs ?? []).map((leg) => Math.round((leg.share ?? 0) * 100));
+  if (!raw.length) return [];
+  const drift = raw.reduce((s, n) => s + n, 0) - 100;
+  raw[raw.length - 1] -= drift;
+  return raw;
+}
+
+function TotalArbChip({ arb, extraCount, selected, onSelect }) {
+  const legs = arb.legs ?? [arb.over, arb.under].filter(Boolean);
+  const split = arbLegPercents(legs);
+  const threeWay = arb.kind === '3way';
+  const title = [
+    threeWay
+      ? `Integer cover of ${arb.line}: ${legs.map((leg) => leg.label).join(' + ')}`
+      : `Same-line 2-way: ${arb.overLabel} vs ${arb.underLabel}`,
+    `implied ${((arb.pSum) * 100).toFixed(1)}% · lock ${formatArbRoi(arb.roi)}`,
+    extraCount > 0 ? `${extraCount} more cover${extraCount === 1 ? '' : 's'}` : null,
+  ].filter(Boolean).join(' · ');
+
+  return (
+    <button
+      type="button"
+      className={`corners-arb-chip${selected ? ' corners-arb-chip--selected' : ''}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(arb.id);
+      }}
+      aria-pressed={selected}
+      title={title}
+    >
+      <span className="corners-arb-kicker">
+        ARB {formatArbRoi(arb.roi)}{threeWay ? ' · 3-way' : ''}
+      </span>
+      {legs.map((leg) => (
+        <span key={`${leg.book}-${leg.side}-${leg.line}`} className="corners-arb-leg">
+          {leg.label} {formatAmericanOdds(leg.american)}
+        </span>
+      ))}
+      <span className="corners-arb-split">
+        {split.join('/')}
+        {extraCount > 0 ? ` · +${extraCount}` : ''}
+      </span>
+    </button>
+  );
+}
+
 function BaselineBookButton({ row, selected, onSelect }) {
   const short = bookShort(row.book);
   const className = [
@@ -374,7 +426,63 @@ function WindowSection({ title, packed, selectedId, onSelect, bucketed, kellyEna
   );
 }
 
+function ArbWorkPanel({ arb, extras }) {
+  const legs = arb.legs ?? [arb.over, arb.under].filter(Boolean);
+  const percents = arbLegPercents(legs);
+  const threeWay = arb.kind === '3way';
+  return (
+    <div className="corners-work">
+      <div className="sop-exp-section-label">Show my work · total corners arb</div>
+      <p className="corners-work-verdict corners-work-verdict--ev">
+        {threeWay
+          ? `Integer ${arb.line} cover, different books · lock ${formatArbRoi(arb.roi)}`
+          : `Same line, different books · lock ${formatArbRoi(arb.roi)}`}
+      </p>
+      <ul className="corners-work-list">
+        {legs.map((leg, i) => (
+          <li key={`${leg.book}-${leg.side}-${leg.line}`}>
+            {leg.label}
+            {' · '}{formatAmericanOdds(leg.american)}
+            {' · implied '}{formatSharePct(leg.implied)}
+            {' · '}{percents[i]}% of stake
+            {leg.side === 'under' && Number.isFinite(leg.line) && ` · total ≤ ${Math.floor(leg.line)}`}
+            {leg.side === 'over' && Number.isFinite(leg.line) && ` · total ≥ ${Math.floor(leg.line) + 1}`}
+            {leg.side === 'exact' && ` · total = ${leg.n ?? arb.line}`}
+          </li>
+        ))}
+        <li>
+          Combined implied {formatSharePct(arb.pSum)}
+          {' < 100% · guaranteed '}{formatArbRoi(arb.roi)}
+          {threeWay
+            ? ' on the trio (Under / Exact / Over cover every total)'
+            : ' on the pair (no middle — one side wins)'}
+        </li>
+      </ul>
+      {extras.length > 0 && (
+        <>
+          <div className="corners-work-sub">Other covers</div>
+          <ul className="corners-work-list">
+            {extras.map((row) => (
+              <li key={row.id}>
+                {formatArbRoi(row.roi)}
+                {row.kind === '3way' ? ' · 3-way' : ''}
+                {' · '}{(row.legs ?? []).map((leg) => (
+                  `${leg.label} ${formatAmericanOdds(leg.american)}`
+                )).join(' / ')}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction }) {
+  const arb = (model.totalArbs ?? []).find((row) => row.id === selectedId);
+  if (arb) {
+    return <ArbWorkPanel arb={arb} extras={(model.totalArbs ?? []).filter((row) => row.id !== arb.id)} />;
+  }
   const bet = model.bets.find((b) => b.id === selectedId);
   if (!bet) return null;
   const kellyStake = kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction);
@@ -680,6 +788,14 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
                     onSelect={setBaselineBook}
                   />
                 ))}
+                {model.totalArbs?.[0] && (
+                  <TotalArbChip
+                    arb={model.totalArbs[0]}
+                    extraCount={Math.max(0, model.totalArbs.length - 1)}
+                    selected={selectedId === model.totalArbs[0].id}
+                    onSelect={selectBet}
+                  />
+                )}
               </div>
             ) : (
               <p className="corners-empty-hint">No total corners line on FanDuel, DraftKings, or Kalshi.</p>

@@ -25,16 +25,12 @@ const OG_DESCRIPTION = '';
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
 function getAvailableYearsAndDefault() {
-  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
-  const prevYears = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
-  const availableYears = isPreSeason ? prevYears : allYears;
-  const defaultSeason = isPreSeason && prevYears.length > 0 ? prevYears[0] : CURRENT_YEAR;
-  return { availableYears, defaultSeason, isPreSeason };
+  return { availableYears: allYears, defaultSeason: CURRENT_YEAR };
 }
 
 function LeagueStandings() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { availableYears, defaultSeason, isPreSeason } = getAvailableYearsAndDefault();
+  const { availableYears, defaultSeason } = getAvailableYearsAndDefault();
   const urlYear = searchParams.get('year');
   const initialSeason = urlYear && availableYears.includes(urlYear) ? urlYear : defaultSeason;
   const [season, setSeason] = useState(initialSeason);
@@ -92,9 +88,8 @@ function LeagueStandings() {
       setDropdownOpen(false);
     }
     if (!urlYear) {
-      const target = isPreSeason ? defaultSeason : CURRENT_YEAR;
-      if (season !== target) {
-        setSeason(target);
+      if (season !== CURRENT_YEAR) {
+        setSeason(CURRENT_YEAR);
         setDropdownOpen(false);
       }
     }
@@ -569,9 +564,10 @@ function LeagueStandings() {
     .sort((a, b) => a.place - b.place)
     .slice(0, 4)
     .map(r => r.roster_id);
-  // When in current season pre-playoffs, highlight top 4 by the same live-inclusive totals used for ordering
-  let top4Set = new Set(top4Ids);
-  if (!usePlayoffLogic && season === CURRENT_YEAR) {
+  // When in current season pre-playoffs, highlight top 4 by the same live-inclusive totals used for ordering.
+  // Skip before any week has completed so a 0–0 field isn't painted as a playoff race.
+  let top4Set = new Set(completedWeeks === 0 ? [] : top4Ids);
+  if (completedWeeks > 0 && !usePlayoffLogic && season === CURRENT_YEAR) {
     const othersWeeks = usePlayoffLogic ? weeksCount14 : effectiveCompletedWeeks;
     const othersWeeksLive = Math.min(17, othersWeeks + 1);
     const liveTotalsAll = (standingsCompleted || []).map((r) => ({

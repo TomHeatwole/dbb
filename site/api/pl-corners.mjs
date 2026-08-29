@@ -215,8 +215,77 @@ function pickClosestOverUnderMarket(markets, nameRe) {
   return picked;
 }
 
-function extractTotalCorners(markets) {
-  return pickClosestOverUnderMarket(markets, /^Total Corners (\d+\.5)$/i);
+function marketIsOpen(market) {
+  return String(market?.marketStatus ?? '').toUpperCase() !== 'CLOSED';
+}
+
+/** All FanDuel Total Corners X.5 books, including one-sided Under/Over. */
+function extractTotalCornersLadder(markets) {
+  if (!markets) return [];
+  const rows = [];
+  for (const market of Object.values(markets)) {
+    const name = String(market.marketName ?? '');
+    const match = name.match(/^Total Corners (\d+\.5)$/i);
+    if (!match || !marketIsOpen(market)) continue;
+    const line = Number(match[1]);
+    if (!Number.isFinite(line)) continue;
+    const { over, under } = findOverUnder(market, line);
+    if (!over && !under) continue;
+    rows.push({ line, market: name, over, under });
+  }
+  rows.sort((a, b) => a.line - b.line);
+  return rows;
+}
+
+function pickClosestFromLadder(ladder) {
+  const scored = (ladder ?? [])
+    .filter((row) => row.over?.american != null && row.under?.american != null)
+    .map((row) => ({
+      row,
+      closeness: Math.abs((impliedProbFromAmerican(row.over.american) ?? 1) - 0.5),
+    }))
+    .sort((a, b) => a.closeness - b.closeness);
+  if (!scored[0]) return null;
+  const { line, market, over, under } = scored[0].row;
+  return { line, market, over, under };
+}
+
+/**
+ * FanDuel "Number of Corners": Under N / Over N / Exactly N.
+ * Under N ≡ Under (N−0.5); Over N ≡ Over (N+0.5).
+ */
+function extractNumberOfCorners(markets) {
+  if (!markets) return null;
+  for (const market of Object.values(markets)) {
+    const name = String(market.marketName ?? '');
+    if (!/^Number of Corners$/i.test(name) || !marketIsOpen(market)) continue;
+    const unders = [];
+    const overs = [];
+    const exact = [];
+    for (const runner of runnersList(market)) {
+      const quote = runnerQuote(runner);
+      if (!quote) continue;
+      const rn = String(runner.runnerName ?? '').trim();
+      let m = rn.match(/^Under\s+(\d+)\s*$/i);
+      if (m) {
+        unders.push({ n: Number(m[1]), ...quote });
+        continue;
+      }
+      m = rn.match(/^Over\s+(\d+)\s*$/i);
+      if (m) {
+        overs.push({ n: Number(m[1]), ...quote });
+        continue;
+      }
+      m = rn.match(/^Exactly\s+(\d+)\s*$/i);
+      if (m) exact.push({ n: Number(m[1]), ...quote });
+    }
+    unders.sort((a, b) => a.n - b.n);
+    overs.sort((a, b) => a.n - b.n);
+    exact.sort((a, b) => a.n - b.n);
+    if (!unders.length && !overs.length && !exact.length) return null;
+    return { market: name, unders, overs, exact };
+  }
+  return null;
 }
 
 function extractFirstHalfCorners(markets) {
@@ -983,6 +1052,7 @@ async function fetchPlCornerBook() {
           const teams = parseTeams(bundle.event?.name ?? ev.name);
           const inPlay = Boolean(bundle.event?.inPlay ?? ev.inPlay);
           const score = parseEventScore(bundle.event) ?? { home: 0, away: 0 };
+          const totals = extractTotalCornersLadder(bundle.markets);
           return {
             ...ev,
             inPlay,
@@ -990,7 +1060,9 @@ async function fetchPlCornerBook() {
             teams,
             score,
             scoreDisplay: scoreDisplay(score),
-            total: extractTotalCorners(bundle.markets),
+            totals,
+            total: pickClosestFromLadder(totals),
+            numberOfCorners: extractNumberOfCorners(bundle.markets),
             firstHalfTotal: extractFirstHalfCorners(bundle.markets),
             next5: pickWindowMarket(bundle.markets, 5, null),
             next10: pickWindowMarket(bundle.markets, 10, null),

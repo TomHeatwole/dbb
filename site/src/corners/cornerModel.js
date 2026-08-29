@@ -207,6 +207,186 @@ export function baselineBookLabel(book) {
   return 'FanDuel';
 }
 
+function lineKey(line) {
+  const n = Number(line);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(n * 2) / 2;
+}
+
+function bookTag(book) {
+  if (book === 'dk') return 'DK';
+  if (book === 'klsh') return 'KLSH';
+  return 'FD';
+}
+
+function quoteKey(quote) {
+  return `${quote.book}|${quote.line}|${quote.side}`;
+}
+
+function keepBetterQuote(map, quote) {
+  const p = americanToImpliedProb(quote.american);
+  if (p == null || p <= 0 || p >= 1) return;
+  const full = { ...quote, implied: p };
+  const key = quoteKey(full);
+  const prev = map.get(key);
+  if (!prev || full.implied < prev.implied) map.set(key, full);
+}
+
+function pushOuQuote(map, book, line, side, american, ticket) {
+  const key = lineKey(line);
+  if (key == null || !Number.isFinite(american)) return;
+  keepBetterQuote(map, {
+    book,
+    line: key,
+    side,
+    american,
+    ticket: ticket ?? `${bookTag(book)} ${side === 'over' ? 'O' : 'U'} ${key}`,
+  });
+}
+
+function pushOuRow(map, book, row) {
+  if (!row || !Number.isFinite(row.line)) return;
+  const line = lineKey(row.line);
+  if (line == null) return;
+  const tag = bookTag(book);
+  pushOuQuote(map, book, line, 'over', row.over?.american, `${tag} O ${line}`);
+  pushOuQuote(map, book, line, 'under', row.under?.american, `${tag} U ${line}`);
+}
+
+function collectTotalOuQuotes(game) {
+  const map = new Map();
+
+  pushOuRow(map, 'fd', game?.total);
+  for (const row of game?.totals ?? []) pushOuRow(map, 'fd', row);
+
+  for (const row of game?.numberOfCorners?.unders ?? []) {
+    if (!Number.isFinite(row?.n)) continue;
+    // Under N ≡ total ≤ N−1 ≡ Under (N−0.5)
+    pushOuQuote(map, 'fd', row.n - 0.5, 'under', row.american, `FD Under ${row.n}`);
+  }
+  for (const row of game?.numberOfCorners?.overs ?? []) {
+    if (!Number.isFinite(row?.n)) continue;
+    // Over N ≡ total ≥ N+1 ≡ Over (N+0.5)
+    pushOuQuote(map, 'fd', row.n + 0.5, 'over', row.american, `FD Over ${row.n}`);
+  }
+
+  const dkRows = [];
+  for (const row of game?.dk?.totals ?? []) dkRows.push(row);
+  if (game?.dk?.total && !dkRows.some((row) => lineKey(row.line) === lineKey(game.dk.total.line))) {
+    dkRows.push(game.dk.total);
+  }
+  for (const row of dkRows) pushOuRow(map, 'dk', row);
+
+  for (const plus of game?.klsh?.plus ?? []) {
+    if (!Number.isFinite(plus?.n)) continue;
+    const n = plus.n;
+    pushOuQuote(map, 'klsh', n - 0.5, 'over', plus.american, `KLSH ${n}+`);
+    pushOuQuote(map, 'klsh', n - 0.5, 'under', plus.noAmerican, `KLSH No ${n}+`);
+  }
+  return [...map.values()];
+}
+
+function collectExactQuotes(game) {
+  const map = new Map();
+  for (const row of game?.numberOfCorners?.exact ?? []) {
+    if (!Number.isFinite(row?.n) || !Number.isFinite(row.american)) continue;
+    keepBetterQuote(map, {
+      book: 'fd',
+      line: row.n,
+      side: 'exact',
+      n: row.n,
+      american: row.american,
+      ticket: `FD Ex ${row.n}`,
+    });
+  }
+  return [...map.values()];
+}
+
+function sideLabel(quote) {
+  if (quote?.ticket) return quote.ticket;
+  const tag = bookTag(quote.book);
+  if (quote.book === 'klsh') {
+    const n = Math.round(quote.line + 0.5);
+    return quote.side === 'over' ? `${tag} ${n}+` : `${tag} No ${n}+`;
+  }
+  if (quote.side === 'exact') return `${tag} Ex ${quote.n ?? quote.line}`;
+  return `${tag} ${quote.side === 'over' ? 'O' : 'U'} ${quote.line}`;
+}
+
+function pushCoverArb(arbs, legs, { kind, line }) {
+  if (legs.length < 2) return;
+  const books = new Set(legs.map((leg) => leg.book));
+  if (books.size < 2) return;
+  const pSum = legs.reduce((sum, leg) => sum + leg.implied, 0);
+  if (!(pSum > 0) || pSum >= 0.999) return;
+  const roi = (1 / pSum) - 1;
+  if (roi < 0.001) return;
+  const labeled = legs.map((leg) => ({
+    ...leg,
+    label: sideLabel(leg),
+    share: leg.implied / pSum,
+  }));
+  const id = `total-arb:${kind}:${line}:${labeled.map((leg) => `${leg.book}-${leg.side}`).join(':')}`;
+  arbs.push({
+    id,
+    kind,
+    line,
+    roi,
+    pSum,
+    legs: labeled,
+    over: labeled.find((leg) => leg.side === 'over') ?? null,
+    under: labeled.find((leg) => leg.side === 'under') ?? null,
+    overLabel: labeled.find((leg) => leg.side === 'over')?.label ?? labeled[0].label,
+    underLabel: labeled.find((leg) => leg.side === 'under')?.label ?? labeled[labeled.length - 1].label,
+    overShare: labeled.find((leg) => leg.side === 'over')?.share ?? labeled[0].share,
+    underShare: labeled.find((leg) => leg.side === 'under')?.share ?? labeled[labeled.length - 1].share,
+  });
+}
+
+/**
+ * Cross-book cover of the match total. 2-way: Over L vs Under L (same L.5).
+ * FanDuel Under N ≡ Under (N−0.5); Over N ≡ Over (N+0.5); Kalshi n+ Yes ≡ Over (n−0.5).
+ * 3-way: Under (n−0.5) + Exactly n + Over (n+0.5) when FD posts an exact.
+ */
+export function findTotalCornerArbs(game) {
+  const quotes = collectTotalOuQuotes(game);
+  const exacts = collectExactQuotes(game);
+  const arbs = [];
+  const byLine = new Map();
+  for (const quote of quotes) {
+    const list = byLine.get(quote.line) ?? [];
+    list.push(quote);
+    byLine.set(quote.line, list);
+  }
+
+  for (const [line, list] of byLine) {
+    const overs = list.filter((q) => q.side === 'over');
+    const unders = list.filter((q) => q.side === 'under');
+    for (const over of overs) {
+      for (const under of unders) {
+        pushCoverArb(arbs, [over, under], { kind: '2way', line });
+      }
+    }
+  }
+
+  const ns = new Set(exacts.map((row) => row.n ?? row.line));
+  for (const n of ns) {
+    const unders = quotes.filter((q) => q.side === 'under' && q.line === n - 0.5);
+    const overs = quotes.filter((q) => q.side === 'over' && q.line === n + 0.5);
+    const exactRows = exacts.filter((q) => (q.n ?? q.line) === n);
+    for (const under of unders) {
+      for (const exact of exactRows) {
+        for (const over of overs) {
+          pushCoverArb(arbs, [under, exact, over], { kind: '3way', line: n });
+        }
+      }
+    }
+  }
+
+  arbs.sort((a, b) => b.roi - a.roi);
+  return arbs;
+}
+
 export function vigRemovedOverProb(overAmerican, underAmerican) {
   const over = americanToImpliedProb(overAmerican);
   const under = americanToImpliedProb(underAmerican);
@@ -830,6 +1010,7 @@ export function evaluateGameCorners(game, { bucketed = true, baselineBook: reque
     next10,
     bets,
     evCount,
+    totalArbs: findTotalCornerArbs(game),
   };
 }
 
