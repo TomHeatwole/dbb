@@ -285,11 +285,11 @@ function BetButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFr
 }
 
 function formatDkBothOdds(bet) {
-  if (bet.american != null) return formatAmericanOdds(bet.american);
   const legs = bet.meta?.legs ?? [];
   if (legs.length >= 2 && legs[0].american != null && legs[1].american != null) {
     return `${formatAmericanOdds(legs[0].american)} / ${formatAmericanOdds(legs[1].american)}`;
   }
+  if (bet.american != null) return formatAmericanOdds(bet.american);
   return '—';
 }
 
@@ -335,7 +335,7 @@ function DkBothYesButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, k
           : `${Math.round((leg.share ?? 0) * 100)}%`;
         return (
           <span key={leg.team} className="corners-package-leg">
-            {leg.team} {formatAmericanOdds(leg.american)}
+            {leg.team}
             {' · '}
             {kellyEnabled && kellyStake != null ? split : `${Math.round((leg.share ?? 0) * 100)}%`}
           </span>

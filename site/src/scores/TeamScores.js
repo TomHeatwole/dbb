@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, us
 import { trackPageLoad } from '../utils/UsageTracker';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
-import { StartSitSort } from '../players/StartSitDecider';
+import { startSitWithProjections } from './projectionScoring';
+import useWeeklyProjectedPoints from './useWeeklyProjectedPoints';
 import { getPlayerInfo, fetchPlayersData } from '../lookups/PlayerLookup';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from './WeekSelector';
@@ -334,10 +335,13 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
+  const projectedPtsById = useWeeklyProjectedPoints(season, week);
 
   // Get week breakdown for this roster
   const rawWeekBreakdown = effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week)[rosterId] : null;
-  const weekBreakdown = rawWeekBreakdown ? StartSitSort(rawWeekBreakdown, playersDataForWeek, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap) : null;
+  const weekBreakdown = rawWeekBreakdown
+    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById)
+    : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
   useEffect(() => {

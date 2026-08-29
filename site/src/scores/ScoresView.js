@@ -6,6 +6,8 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
+import { startSitWithProjections } from './projectionScoring';
+import useWeeklyProjectedPoints from './useWeeklyProjectedPoints';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
 import MobileTeamScoreSummary from './MobileTeamScoreSummary';
@@ -231,6 +233,7 @@ function ScoresView({
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
+  const projectedPtsById = useWeeklyProjectedPoints(season, week);
 
   // Compute player->game labels for the selected week (web tables)
   useEffect(() => {
@@ -496,7 +499,7 @@ function ScoresView({
     .map((e) => {
       const rid = e.roster_id;
       const raw = breakdownByRoster[rid];
-      const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap) : null;
+      const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById) : null;
       const pts = computed
         ? computed.starterTotal
         : typeof e.points === 'number'
@@ -645,8 +648,12 @@ function ScoresView({
                     </span>
                   </div>
                 ) : null}
-                <span className="standings-total">
-                  {Number(points || 0).toFixed(1)} pts
+                <span
+                  className={`standings-total${weekBreakdown && weekBreakdown.includesProjection ? ' standings-total--proj' : ''}`}
+                  title={weekBreakdown && weekBreakdown.includesProjection ? 'Includes projections for players who have not played yet' : undefined}
+                >
+                  {Number(points || 0).toFixed(1)}
+                  {weekBreakdown && weekBreakdown.includesProjection ? <span className="proj-tag"> proj</span> : ' pts'}
                 </span>
               </button>
               {isExpanded && (

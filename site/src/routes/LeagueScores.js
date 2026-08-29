@@ -9,6 +9,8 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
+import { startSitWithProjections } from '../scores/projectionScoring';
+import useWeeklyProjectedPoints from '../scores/useWeeklyProjectedPoints';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
 import MobileScaled from '../scores/MobileScaled';
@@ -75,6 +77,7 @@ function LeagueScores() {
 	const playerSeasonTotalsMap = useMemo(() => {
 		return getPlayerSeasonTotalsMap(weeksParsedData);
 	}, [weeksParsedData]);
+	const projectedPtsById = useWeeklyProjectedPoints(season, week);
 
 	const buildExpandedData = useCallback((srcWeeksParsedData, targetWeek, labels, seasonTotalsMap) => {
 		if (!srcWeeksParsedData) { return null; }
@@ -91,7 +94,7 @@ function LeagueScores() {
 		const rows = weekEntries.map((e) => {
 			const rid = e.roster_id;
 			const raw = breakdownByRoster[rid];
-			const computed = raw ? StartSitSort(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap, seasonTotalsMap) : null;
+			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap, seasonTotalsMap, projectedPtsById) : null;
 			const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 			const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
 			const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
@@ -109,7 +112,7 @@ function LeagueScores() {
 		const teams = {};
 		rows.forEach(r => { teams[r.rosterId] = { total: r.total, starters: r.starters, bench: r.bench }; });
 		return { order, teams };
-	}, [playersData, playerIdMap, playerGameLabels, injuriesMap]);
+	}, [playersData, playerIdMap, playerGameLabels, injuriesMap, projectedPtsById]);
 
 	function compareExpanded(prev, next) {
 		if (!prev || !next) { return []; }
@@ -646,7 +649,7 @@ function LeagueScores() {
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
-							const computed = raw ? StartSitSort(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap) : null;
+							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)
@@ -733,7 +736,13 @@ function LeagueScores() {
 												<span className="standings-activity-item">Live {activeCount}</span>
 											</div>
 										) : null}
-										<span className={`standings-total${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}>{Number(points || 0).toFixed(1)} pts</span>
+										<span
+											className={`standings-total${weekBreakdown && weekBreakdown.includesProjection ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
+											title={weekBreakdown && weekBreakdown.includesProjection ? 'Includes projections for players who have not played yet' : undefined}
+										>
+											{Number(points || 0).toFixed(1)}
+											{weekBreakdown && weekBreakdown.includesProjection ? <span className="proj-tag"> proj</span> : ' pts'}
+										</span>
 									</button>
 									{isExpanded && (
 										<div className="standings-row-expand">

@@ -972,6 +972,20 @@
   color: #fff;
   min-width: 2.5em;
 }
+.team-scores-pts-cell--proj {
+  color: #9aa4c7;
+  font-weight: 600;
+  font-style: italic;
+}
+.proj-tag {
+  font-size: 0.68em;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-left: 0.2em;
+}
 
 /* Smaller player avatar for scores tables */
 .team-scores-table .player-avatar-style {
@@ -997,6 +1011,13 @@
   text-align: right;
   letter-spacing: 0.01em;
   border-top: 2px solid #61dafb;
+}
+.team-scores-total-row--proj {
+  color: #9aa4c7;
+  border-top-color: #9aa4c7;
+}
+.standings-total--proj {
+  color: #9aa4c7;
 }
 
 .team-scores-total-inner {
@@ -18480,6 +18501,10 @@ button.corners-bet:hover {
 .corners-bet--package {
   min-width: 8.4rem;
   gap: 0.16rem;
+}
+
+.corners-bet--package .corners-bet-odds {
+  font-size: 0.92rem;
 }
 
 .corners-package-leg {

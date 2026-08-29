@@ -43,6 +43,31 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
     return `${firstInitial} ${lastShort || ''}`.trim();
   }
 
+  function renderPlayerPts(p, gameObj, pHighlight) {
+    const isProj = p && p.ptsSource === 'proj';
+    const isUnplayed = !gameObj.live && !gameObj.completed && gameObj.text !== 'BYE';
+    const highlightClass = pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '');
+    const showDash = !isProj && isUnplayed && Number(p.pts) === 0;
+    return (
+      <td className={`team-scores-pts-cell${isProj ? ' team-scores-pts-cell--proj' : ''}${highlightClass}`}>
+        {showDash ? '-' : Number(p.pts || 0).toFixed(1)}
+        {isProj ? <span className="proj-tag"> proj</span> : null}
+      </td>
+    );
+  }
+
+  function renderTotalLabel(total, isProj) {
+    return (
+      <>
+        Total: {Number(total || 0).toFixed(1)}
+        {isProj ? <span className="proj-tag"> proj</span> : ''}
+      </>
+    );
+  }
+
+  const startersIncludeProj = Array.isArray(weekBreakdown.starters) && weekBreakdown.starters.some((p) => p && p.ptsSource === 'proj');
+  const benchIncludeProj = Array.isArray(weekBreakdown.bench) && weekBreakdown.bench.some((p) => p && p.ptsSource === 'proj');
+
   const InjuryBadge = ({ playerId, info }) => {
     let status = null;
     if (!isActiveWeek && injuriesMap && playerId && injuriesMap[String(playerId)]) {
@@ -71,7 +96,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <span>Starters</span>
         {showTopTotals ? (
           <span className="team-scores-total-top">
-            Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}
+            {renderTotalLabel(weekBreakdown.starterTotal, startersIncludeProj)}
           </span>
         ) : null}
       </div>
@@ -128,7 +153,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                     </div>
                   )}
                 </td>
-                <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : Number(p.pts || 0).toFixed(1)}</td>
+                {renderPlayerPts(p, gameObj, pHighlight)}
               </tr>
             );
           })}
@@ -136,9 +161,9 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         {!showTopTotals ? (
           <tfoot>
             <tr>
-              <td colSpan={4} className="team-scores-total-row">
+              <td colSpan={4} className={`team-scores-total-row${startersIncludeProj ? ' team-scores-total-row--proj' : ''}`}>
                 <div className="team-scores-total-inner">
-                  Total: {Number(weekBreakdown.starterTotal || 0).toFixed(1)}
+                  {renderTotalLabel(weekBreakdown.starterTotal, startersIncludeProj)}
                 </div>
               </td>
             </tr>
@@ -174,7 +199,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           <span>Bench</span>
           {showTopTotals ? (
             <span className="team-scores-total-top">
-              Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}
+              {renderTotalLabel(weekBreakdown.benchTotal, benchIncludeProj)}
             </span>
           ) : null}
         </div>
@@ -228,7 +253,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
                       </div>
                     )}
                   </td>
-                  <td className={`team-scores-pts-cell${pHighlight === 'up' ? ' text-up text-bold' : (pHighlight === 'down' ? ' text-down text-bold' : '')}`}>{(!gameObj.live && !gameObj.completed && Number(p.pts) === 0) ? '-' : Number(p.pts || 0).toFixed(1)}</td>
+                  {renderPlayerPts(p, gameObj, pHighlight)}
                 </tr>
               );
             })}
@@ -236,9 +261,9 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           {!showTopTotals ? (
             <tfoot>
               <tr>
-                <td colSpan={3} className="team-scores-total-row">
+                <td colSpan={3} className={`team-scores-total-row${benchIncludeProj ? ' team-scores-total-row--proj' : ''}`}>
                   <div className="team-scores-total-inner">
-                    Total: {Number(weekBreakdown.benchTotal || 0).toFixed(1)}
+                    {renderTotalLabel(weekBreakdown.benchTotal, benchIncludeProj)}
                   </div>
                 </td>
               </tr>
