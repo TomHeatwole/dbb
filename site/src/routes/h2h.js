@@ -19,11 +19,7 @@ const OG_TITLE = 'Head to Head';
 const OG_DESCRIPTION = '';
 
 function getAvailableYearsAndDefault() {
-  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
-  const prevYears = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
-  const availableYears = isPreSeason ? prevYears : allYears;
-  const defaultSeason = isPreSeason && prevYears.length > 0 ? prevYears[0] : CURRENT_YEAR;
-  return { availableYears, defaultSeason };
+  return { availableYears: allYears, defaultSeason: CURRENT_YEAR };
 }
 
 function H2hPage() {

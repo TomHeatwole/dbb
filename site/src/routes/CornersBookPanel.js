@@ -284,6 +284,15 @@ function BetButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFr
   );
 }
 
+function formatDkBothOdds(bet) {
+  if (bet.american != null) return formatAmericanOdds(bet.american);
+  const legs = bet.meta?.legs ?? [];
+  if (legs.length >= 2 && legs[0].american != null && legs[1].american != null) {
+    return `${formatAmericanOdds(legs[0].american)} / ${formatAmericanOdds(legs[1].american)}`;
+  }
+  return '—';
+}
+
 function DkBothYesButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFraction }) {
   const profitable = Boolean(bet.profitable);
   const edge = bet.analysis?.edgePoints;
@@ -311,7 +320,7 @@ function DkBothYesButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, k
     >
       <span className="corners-bet-label">{bet.label}</span>
       <span className="corners-bet-odds">
-        {bet.american != null ? formatAmericanOdds(bet.american) : 'cover both'}
+        {formatDkBothOdds(bet)}
       </span>
       <span className="corners-bet-tag corners-bet-tag--dk">DK both</span>
       {profitable && edge != null && (
