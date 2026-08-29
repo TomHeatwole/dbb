@@ -96,13 +96,13 @@ function fixtureKeyFromTeams(home, away) {
   return pair.join('|');
 }
 
-function fixtureKeyFromFdName(name) {
+export function fixtureKeyFromFdName(name) {
   const parts = String(name ?? '').split(/\s+v\s+/i);
   if (parts.length !== 2) return null;
   return fixtureKeyFromTeams(parts[0].trim(), parts[1].trim());
 }
 
-function parseKalshiFixture(title) {
+export function parseKalshiFixture(title) {
   const m = String(title ?? '').match(/^(.+?)\s+vs\s+(.+?)(?::|$)/i);
   if (!m) return null;
   return fixtureKeyFromTeams(m[1].trim(), m[2].trim());
@@ -121,7 +121,7 @@ function dateFromKalshiTicker(ticker) {
   return Date.UTC(2000 + Number(m[1]), month, Number(m[3]));
 }
 
-function pickKalshiEvent(events, openDate) {
+export function pickKalshiEvent(events, openDate) {
   const list = (events ?? []).filter(Boolean);
   if (!list.length) return null;
   if (list.length === 1 || !openDate) return list[0];
@@ -203,7 +203,7 @@ async function kalshiFetch(path) {
   });
 }
 
-async function fetchAllKalshiEvents(seriesTicker) {
+export async function fetchAllKalshiEvents(seriesTicker) {
   const cached = readCacheEntry(eventsCache, seriesTicker, KALSHI_EVENTS_CACHE_MS);
   if (cached) return cached;
 
@@ -223,7 +223,7 @@ async function fetchAllKalshiEvents(seriesTicker) {
   return events;
 }
 
-async function fetchMarketsForEvent(eventTicker) {
+export async function fetchMarketsForEvent(eventTicker) {
   const cached = readCacheEntry(marketsCache, eventTicker, KALSHI_MARKETS_CACHE_MS);
   if (cached) return cached;
 
@@ -253,7 +253,7 @@ async function loadMarketsForTickers(tickers) {
   return byEvent;
 }
 
-function kalshiAskToAmerican(askDollars) {
+export function kalshiAskToAmerican(askDollars) {
   const price = Number(askDollars);
   // Ignore locked / placeholder books (0.01 / 0.99 / 1.00).
   if (!Number.isFinite(price) || price <= 0.02 || price >= 0.98) return null;

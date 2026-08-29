@@ -5,12 +5,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import LoadingState from '../LoadingState';
 import {
+  baselineBookLabel,
   evaluateGameCorners,
   formatAmericanOdds,
   formatEdgePct,
   formatExpected,
   formatSharePct,
 } from '../corners/cornerModel';
+import { computeKellyStake, formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
+import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'corners-book-team-search';
@@ -101,16 +104,80 @@ function Toggle({ label, checked, onChange, hint, compact }) {
   );
 }
 
-function BetButton({ bet, selected, onSelect }) {
+function kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction) {
+  if (!kellyEnabled || bet?.baseline || !bet?.profitable) return null;
+  if (bet.pModel == null || bet.american == null) return null;
+  return computeKellyStake({
+    winProb: bet.pModel,
+    offeredAmerican: bet.american,
+    bankroll: kellyBudget,
+    kellyFraction,
+  });
+}
+
+function bookShort(book) {
+  if (book === 'klsh') return 'KLSH';
+  if (book === 'dk') return 'DK';
+  return 'FD';
+}
+
+function BaselineBookButton({ row, selected, onSelect }) {
+  const short = bookShort(row.book);
+  const className = [
+    'corners-baseline-book',
+    `corners-baseline-book--${row.book}`,
+    selected ? 'corners-baseline-book--selected' : '',
+  ].filter(Boolean).join(' ');
+  const title = selected
+    ? `${baselineBookLabel(row.book)} is the expected-total baseline`
+    : `Use ${baselineBookLabel(row.book)} as the expected-total baseline`;
+
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(row.book);
+      }}
+      aria-pressed={selected}
+      title={title}
+    >
+      <span className={`sop-exp-book-label sop-exp-book-label--${row.book}`}>{short}</span>
+      {row.kind === 'plus' ? (
+        <>
+          <span className="corners-bet-label">{row.n}+</span>
+          <span className="corners-bet-odds">{formatAmericanOdds(row.american)}</span>
+        </>
+      ) : (
+        <>
+          <span className="corners-bet-label">O/U {row.line}</span>
+          <span className="corners-baseline-odds">
+            {row.over?.american != null ? formatAmericanOdds(row.over.american) : '—'}
+            {' / '}
+            {row.under?.american != null ? formatAmericanOdds(row.under.american) : '—'}
+          </span>
+        </>
+      )}
+      {selected && <span className="corners-bet-tag">line</span>}
+    </button>
+  );
+}
+
+function BetButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFraction }) {
   const hasOdds = bet.american != null;
   const baseline = Boolean(bet.baseline);
   const profitable = !baseline && Boolean(bet.profitable);
   const edge = baseline ? null : bet.analysis?.edgePoints;
+  const book = bet.meta?.book;
+  const kellyStake = kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction);
   const className = [
     'corners-bet',
     profitable ? 'corners-bet--ev' : '',
     selected ? 'corners-bet--selected' : '',
     baseline ? 'corners-bet--baseline' : '',
+    book === 'dk' ? 'corners-bet--dk' : '',
+    book === 'klsh' ? 'corners-bet--klsh' : '',
     !hasOdds ? 'corners-bet--empty' : '',
   ].filter(Boolean).join(' ');
 
@@ -132,9 +199,22 @@ function BetButton({ bet, selected, onSelect }) {
       {baseline && (
         <span className="corners-bet-tag">line</span>
       )}
+      {book && !baseline && (
+        <span className={`corners-bet-tag corners-bet-tag--${book}`}>
+          {book === 'klsh' ? 'KLSH' : book.toUpperCase()}
+        </span>
+      )}
       {edge != null && (
         <span className={profitable ? 'sop-exp-edge-plus' : 'sop-exp-edge-minus'}>
           {formatEdgePct(edge)}
+        </span>
+      )}
+      {kellyEnabled && kellyStake != null && (
+        <span
+          className="sop-kelly-stake"
+          title={`${formatKellyFractionLabel(kellyFraction)} stake`}
+        >
+          Kelly Bet Size: {formatKellyStake(kellyStake)}
         </span>
       )}
     </button>
@@ -147,7 +227,7 @@ function bucketLabel(id, kind) {
   return id;
 }
 
-function WindowSection({ title, packed, selectedId, onSelect, bucketed }) {
+function WindowSection({ title, packed, selectedId, onSelect, bucketed, kellyEnabled, kellyBudget, kellyFraction }) {
   const windowMarket = packed?.windowMarket;
   const win = packed?.win;
   const plus = windowMarket?.plus ?? [];
@@ -196,6 +276,9 @@ function WindowSection({ title, packed, selectedId, onSelect, bucketed }) {
                 bet={bet}
                 selected={selectedId === bet.id}
                 onSelect={onSelect}
+                kellyEnabled={kellyEnabled}
+                kellyBudget={kellyBudget}
+                kellyFraction={kellyFraction}
               />
             );
           })}
@@ -213,6 +296,9 @@ function WindowSection({ title, packed, selectedId, onSelect, bucketed }) {
                 bet={bet}
                 selected={selectedId === bet.id}
                 onSelect={onSelect}
+                kellyEnabled={kellyEnabled}
+                kellyBudget={kellyBudget}
+                kellyFraction={kellyFraction}
               />
             );
           })}
@@ -225,10 +311,11 @@ function WindowSection({ title, packed, selectedId, onSelect, bucketed }) {
   );
 }
 
-function WorkPanel({ model, selectedId }) {
+function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction }) {
   const bet = model.bets.find((b) => b.id === selectedId);
   if (!bet) return null;
-  const h1Scope = bet.kind.startsWith('h1');
+  const kellyStake = kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction);
+  const h1Scope = bet.meta?.scope === 'h1' || bet.kind.startsWith('h1');
   const sourceRows = h1Scope ? model.h1Breakdown.rows : model.breakdown.rows;
   const futureRows = sourceRows.filter((r) => r.minutes > 0.02 && (!h1Scope || r.half === 1));
   const winBits = bet.kind.startsWith('next5')
@@ -252,15 +339,28 @@ function WorkPanel({ model, selectedId }) {
       <p className={`corners-work-verdict${bet.profitable ? ' corners-work-verdict--ev' : ''}`}>
         {bet.baseline
           ? 'Game line · baseline, not a bet'
-          : bet.profitable
-            ? 'Good bet'
-            : 'No edge'}
-        {!bet.baseline && bet.analysis?.edgePoints != null && ` · ${formatEdgePct(bet.analysis.edgePoints)} vs FanDuel`}
+          : bet.meta?.quoteOnly
+            ? 'Quote only · different bet than the FanDuel remaining model'
+            : bet.profitable
+              ? 'Good bet'
+              : 'No edge'}
+        {!bet.baseline && !bet.meta?.quoteOnly && bet.analysis?.edgePoints != null
+          && ` · ${formatEdgePct(bet.analysis.edgePoints)} vs implied remaining`}
       </p>
+      {kellyEnabled && kellyStake != null && (
+        <p className="sop-kelly-stake corners-work-kelly">
+          Kelly Bet Size: {formatKellyStake(kellyStake)}
+          <span> · {formatKellyFractionLabel(kellyFraction)}</span>
+        </p>
+      )}
       <ul className="corners-work-list">
         <li>
-          FanDuel {h1Scope ? 'H1' : 'total'} {implied?.line}
-          {implied && ` · vig-removed P(over) ${formatSharePct(implied.pOver)}`}
+          {h1Scope
+            ? `FanDuel H1 ${implied?.line}`
+            : implied?.kind === 'plus'
+              ? `Kalshi ${implied.n}+`
+              : `${baselineBookLabel(model.baselineBook)} total ${implied?.line}`}
+          {implied && ` · vig-removed P(${implied.kind === 'plus' ? `${implied.n}+` : 'over'}) ${formatSharePct(implied.pOver)}`}
           {' → implies '}
           <strong>{formatExpected(implied?.impliedTotal)}</strong>
           {' total ('}
@@ -285,7 +385,7 @@ function WorkPanel({ model, selectedId }) {
           <li>
             Model P({bet.label}) {formatSharePct(bet.pModel)}
             {' · '}fair {bet.fairAmerican != null ? formatAmericanOdds(bet.fairAmerican) : '—'}
-            {' · '}FD {bet.american != null ? formatAmericanOdds(bet.american) : '—'}
+            {' · '}{bet.american != null ? formatAmericanOdds(bet.american) : '—'}
             {' · '}implied {formatSharePct(bet.pMarket)}
           </li>
         )}
@@ -363,17 +463,23 @@ function stoppageHeadline(stoppage, clock) {
   return null;
 }
 
-function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
+function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, kellyBudget, kellyFraction }) {
   const [expanded, setExpanded] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [baselineBook, setBaselineBook] = useState('fd');
   const model = useMemo(
-    () => evaluateGameCorners(game, { bucketed }),
-    [game, bucketed],
+    () => evaluateGameCorners(game, { bucketed, baselineBook }),
+    [game, bucketed, baselineBook],
   );
   const stoppageText = stoppageHeadline(game.stoppage, model.clock);
-  const totalBets = model.bets.filter((b) => b.kind === 'total-over' || b.kind === 'total-under');
   const h1Bets = model.bets.filter((b) => b.kind === 'h1-over' || b.kind === 'h1-under');
+  const dkIntervalBets = model.bets.filter((b) => b.kind.startsWith('dk-interval'));
   const atHalf = Boolean(model.clock.halftime || game.stoppage?.halfTime);
+  const baselines = model.baselines ?? [];
+  const activeBook = model.baselineBook;
+  const baselineCopy = model.fullImplied?.kind === 'plus'
+    ? `${baselineBookLabel(activeBook)} ${model.fullImplied.n}+`
+    : `${baselineBookLabel(activeBook)} total ${model.baselineRow?.line ?? model.fullImplied?.line}`;
 
   const selectBet = (id) => {
     if (!showWork) onEnableShowWork?.();
@@ -382,7 +488,8 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
 
   useEffect(() => {
     setSelectedId(null);
-  }, [game.eventId, bucketed]);
+    setBaselineBook('fd');
+  }, [game.eventId]);
 
   return (
     <article className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}>
@@ -431,12 +538,15 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
                     {formatExpected(model.marketImpliedTotal)}
                   </span>
                   <span className="corners-implied-copy">
-                    FanDuel total {game.total?.line}
-                    {game.total?.over?.american != null && (
-                      <> · Over {formatAmericanOdds(game.total.over.american)}</>
+                    {baselineCopy}
+                    {model.baselineRow?.kind !== 'plus' && model.baselineRow?.over?.american != null && (
+                      <> · Over {formatAmericanOdds(model.baselineRow.over.american)}</>
                     )}
-                    {game.total?.under?.american != null && (
-                      <> / Under {formatAmericanOdds(game.total.under.american)}</>
+                    {model.baselineRow?.kind !== 'plus' && model.baselineRow?.under?.american != null && (
+                      <> / Under {formatAmericanOdds(model.baselineRow.under.american)}</>
+                    )}
+                    {model.baselineRow?.kind === 'plus' && model.baselineRow?.american != null && (
+                      <> · {formatAmericanOdds(model.baselineRow.american)}</>
                     )}
                     {model.fullImplied && ` · P(over) ${formatSharePct(model.fullImplied.pOver)} vig-removed`}
                     {' · '}{formatExpected(model.cornersSoFar, 0)} already
@@ -444,7 +554,7 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
                   </span>
                 </>
               ) : (
-                <p className="corners-empty-hint">No total corners O/U on FanDuel to invert.</p>
+                <p className="corners-empty-hint">No total corners line to invert.</p>
               )}
             </div>
             {model.halfImplied && (
@@ -467,19 +577,19 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
 
           <section className="corners-total">
             <div className="sop-exp-section-label">Game line (baseline)</div>
-            {totalBets.length > 0 ? (
-              <div className="corners-ou-row">
-                {totalBets.map((bet) => (
-                  <BetButton
-                    key={bet.id}
-                    bet={bet}
-                    selected={selectedId === bet.id}
-                    onSelect={selectBet}
+            {baselines.length > 0 ? (
+              <div className="corners-baseline-row">
+                {baselines.map((row) => (
+                  <BaselineBookButton
+                    key={row.book}
+                    row={row}
+                    selected={activeBook === row.book}
+                    onSelect={setBaselineBook}
                   />
                 ))}
               </div>
             ) : (
-              <p className="corners-empty-hint">No total corners O/U on FanDuel.</p>
+              <p className="corners-empty-hint">No total corners line on FanDuel, DraftKings, or Kalshi.</p>
             )}
           </section>
 
@@ -493,6 +603,9 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
                     bet={bet}
                     selected={selectedId === bet.id}
                     onSelect={selectBet}
+                    kellyEnabled={kellyEnabled}
+                    kellyBudget={kellyBudget}
+                    kellyFraction={kellyFraction}
                   />
                 ))}
               </div>
@@ -505,6 +618,9 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
             selectedId={selectedId}
             onSelect={selectBet}
             bucketed={bucketed}
+            kellyEnabled={kellyEnabled}
+            kellyBudget={kellyBudget}
+            kellyFraction={kellyFraction}
           />
           <WindowSection
             title="Next 10 min"
@@ -512,10 +628,38 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork }) {
             selectedId={selectedId}
             onSelect={selectBet}
             bucketed={bucketed}
+            kellyEnabled={kellyEnabled}
+            kellyBudget={kellyBudget}
+            kellyFraction={kellyFraction}
           />
 
+          {dkIntervalBets.length > 0 && (
+            <section className="corners-total">
+              <div className="sop-exp-section-label">DraftKings team windows</div>
+              <p className="corners-empty-hint">
+                Team-specific 1+ in a clock window — not the FanDuel either-team next 5/10.
+              </p>
+              <div className="corners-plus-grid">
+                {dkIntervalBets.map((bet) => (
+                  <BetButton
+                    key={bet.id}
+                    bet={bet}
+                    selected={selectedId === bet.id}
+                    onSelect={selectBet}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {selectedId && (
-            <WorkPanel model={model} selectedId={selectedId} />
+            <WorkPanel
+              model={model}
+              selectedId={selectedId}
+              kellyEnabled={kellyEnabled}
+              kellyBudget={kellyBudget}
+              kellyFraction={kellyFraction}
+            />
           )}
 
           <section className="corners-stoppage">
@@ -569,6 +713,16 @@ function CornersBookPanel({
   const [teamQuery, setTeamQuery] = useState('');
   const [bucketed, setBucketed] = useState(() => readFlag(BUCKETED_KEY, true));
   const [showWork, setShowWork] = useState(() => readFlag(SHOW_WORK_KEY, true));
+  const {
+    enabled: kellyEnabled,
+    setEnabled: setKellyEnabled,
+    budget: kellyBudget,
+    budgetInput: kellyBudgetInput,
+    setBudgetInput: setKellyBudgetInput,
+    commitBudget: commitKellyBudget,
+    kellyFraction,
+    setKellyFraction,
+  } = useSOPKellySettings();
   const teamNames = useMemo(() => collectTeamNames(games), [games]);
   const filteredGames = useMemo(() => {
     if (!teamQuery.trim()) return games;
@@ -599,7 +753,7 @@ function CornersBookPanel({
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">PL Corners</h1>
         <p className="sop-exp-subtitle">
-          Premier League · FanDuel totals + next 5/10
+          Premier League · FanDuel + DraftKings + Kalshi
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -629,6 +783,56 @@ function CornersBookPanel({
           compact
           hint="Click a line to see remaining buckets, extra time, and the Poisson math."
         />
+        <Toggle
+          label="Show Kelly Criterion"
+          checked={kellyEnabled}
+          onChange={setKellyEnabled}
+          hint="Stake size from model win probability vs FanDuel odds."
+        />
+        {kellyEnabled && (
+          <>
+            <label className="sop-kelly-budget">
+              <span className="sop-kelly-budget-label">Budget</span>
+              <span className="sop-kelly-budget-wrap">
+                <span className="sop-kelly-budget-prefix" aria-hidden="true">$</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="sop-kelly-budget-input"
+                  value={kellyBudgetInput}
+                  onChange={(e) => setKellyBudgetInput(e.target.value)}
+                  onBlur={(e) => commitKellyBudget(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      commitKellyBudget(e.currentTarget.value);
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  autoComplete="off"
+                />
+              </span>
+            </label>
+            <div className="sop-kelly-fraction">
+              <label className="sop-kelly-fraction-label" htmlFor="corners-kelly-fraction">
+                Kelly sizing
+              </label>
+              <div className="sop-kelly-fraction-row">
+                <input
+                  id="corners-kelly-fraction"
+                  type="range"
+                  className="sop-kelly-fraction-slider"
+                  min={MIN_KELLY_FRACTION}
+                  max={DEFAULT_KELLY_FRACTION}
+                  step={0.01}
+                  value={kellyFraction}
+                  onChange={(e) => setKellyFraction(Number(e.target.value))}
+                />
+                <span className="sop-kelly-fraction-value">{formatKellyFractionLabel(kellyFraction)}</span>
+              </div>
+            </div>
+          </>
+        )}
       </section>
       <p className="corners-bucket-legend">
         5-min slice is usually vs uniform on each window below.
@@ -681,6 +885,9 @@ function CornersBookPanel({
               bucketed={bucketed}
               showWork={showWork}
               onEnableShowWork={() => setShowWorkPersist(true)}
+              kellyEnabled={kellyEnabled}
+              kellyBudget={kellyBudget}
+              kellyFraction={kellyFraction}
             />
           ))}
         </div>

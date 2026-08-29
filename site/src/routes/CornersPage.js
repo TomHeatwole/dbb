@@ -5,6 +5,28 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PageMeta from '../PageMeta';
 import CornersBookPanel from './CornersBookPanel';
+import {
+  dkCornerGamesLoaded,
+  mergeDkCornersIntoFdGames,
+  mergeKalshiCornersIntoFdGames,
+} from '../corners/mergeCornerBooks';
+
+const DK_CLIENT_TIMEOUT_MS = 20000;
+const KALSHI_CLIENT_TIMEOUT_MS = 28000;
+
+async function fetchJsonWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
 
 const OG_TITLE = 'PL Corners';
 const OG_DESCRIPTION = 'Premier League corner totals, next 5/10 minutes, and expected stoppage';
@@ -45,6 +67,10 @@ function stoppageNotice(espn) {
   return 'Stoppage times unavailable — ESPN Premier League feed failed.';
 }
 
+function joinNotices(...parts) {
+  return parts.filter(Boolean).join(' ');
+}
+
 function CornersPage() {
   const [games, setGames] = useState([]);
   const [fetchedAt, setFetchedAt] = useState(null);
@@ -56,6 +82,9 @@ function CornersPage() {
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
     if (manual) setBookRefreshing(true);
     else setBookLoading(true);
+
+    let fdGames = [];
+    let espn = null;
     try {
       const res = await fetch('/api/pl-corners');
       if (!res.ok) {
@@ -63,16 +92,50 @@ function CornersPage() {
         throw new Error(body.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setGames(data.games ?? []);
+      fdGames = (data.games ?? []).map((game) => ({ ...game, dk: null, klsh: null }));
+      espn = data.espn;
+      setGames(fdGames);
       setFetchedAt(data.fetchedAt ?? null);
-      setNotice(stoppageNotice(data.espn));
+      setNotice(stoppageNotice(espn));
       setBookError(null);
     } catch (err) {
       setBookError(err.message || 'Failed to load corners');
-    } finally {
       setBookLoading(false);
       if (manual) setBookRefreshing(false);
+      return;
+    } finally {
+      setBookLoading(false);
     }
+
+    let dkData = null;
+    let kalshiData = null;
+    let dkNotice = null;
+
+    const applyMerges = () => {
+      setGames(
+        mergeKalshiCornersIntoFdGames(mergeDkCornersIntoFdGames(fdGames, dkData), kalshiData),
+      );
+    };
+
+    await Promise.all([
+      fetchJsonWithTimeout('/api/dk-corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
+        dkData = data;
+        applyMerges();
+        if (!dkCornerGamesLoaded(data)) {
+          dkNotice = 'DraftKings corners unavailable — showing FanDuel only.';
+          setNotice(joinNotices(stoppageNotice(espn), dkNotice));
+        } else {
+          setNotice(stoppageNotice(espn));
+        }
+      }),
+      fetchJsonWithTimeout('/api/kalshi-corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
+        kalshiData = data;
+        applyMerges();
+      }),
+    ]);
+
+    if (dkNotice) setNotice(joinNotices(stoppageNotice(espn), dkNotice));
+    if (manual) setBookRefreshing(false);
   }, []);
 
   useEffect(() => {

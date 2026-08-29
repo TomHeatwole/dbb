@@ -107,6 +107,106 @@ export function invertPoissonLambda(k, p) {
   return (lo + hi) / 2;
 }
 
+export function pickClosestPlus(plus) {
+  const rows = (plus ?? []).filter((row) => row?.american != null && Number.isFinite(row.n));
+  if (!rows.length) return null;
+  return [...rows].sort((a, b) => {
+    const da = Math.abs((americanToImpliedProb(a.american) ?? 1) - 0.5);
+    const db = Math.abs((americanToImpliedProb(b.american) ?? 1) - 0.5);
+    return da - db;
+  })[0];
+}
+
+/**
+ * Expected remaining corners implied by an N+ contract (Kalshi-style),
+ * given corners already taken. Yes = P(total >= n).
+ */
+export function impliedRemainingFromPlus(plusRow, cornersSoFar = 0) {
+  if (!plusRow || !Number.isFinite(plusRow.n)) return null;
+  const pOver = vigRemovedOverProb(plusRow.american, plusRow.noAmerican)
+    ?? americanToImpliedProb(plusRow.american);
+  if (pOver == null) return null;
+  const c = Math.max(0, Number(cornersSoFar) || 0);
+  const need = plusRow.n - c;
+  if (need <= 0) {
+    return {
+      line: plusRow.n - 0.5,
+      n: plusRow.n,
+      kind: 'plus',
+      pOver,
+      cornersSoFar: c,
+      remaining: 0,
+      impliedTotal: c,
+      alreadyOver: true,
+    };
+  }
+  const remaining = invertPoissonLambda(need, pOver);
+  return {
+    line: plusRow.n - 0.5,
+    n: plusRow.n,
+    kind: 'plus',
+    pOver,
+    cornersSoFar: c,
+    remaining,
+    impliedTotal: c + remaining,
+    alreadyOver: false,
+  };
+}
+
+export function listCornerBaselines(game) {
+  const c = Number.isFinite(game?.cornersSoFar) ? game.cornersSoFar : 0;
+  const rows = [];
+  if (game?.total && (game.total.over?.american != null || game.total.under?.american != null)) {
+    rows.push({
+      book: 'fd',
+      kind: 'ou',
+      line: game.total.line,
+      over: game.total.over ?? null,
+      under: game.total.under ?? null,
+      implied: impliedRemainingFromLine(game.total, c),
+    });
+  }
+  const dkTotal = game?.dk?.total
+    ?? (game?.dk?.totals ?? []).find((row) => row?.over?.american != null || row?.under?.american != null)
+    ?? null;
+  if (dkTotal && (dkTotal.over?.american != null || dkTotal.under?.american != null)) {
+    rows.push({
+      book: 'dk',
+      kind: 'ou',
+      line: dkTotal.line,
+      over: dkTotal.over ?? null,
+      under: dkTotal.under ?? null,
+      implied: impliedRemainingFromLine(dkTotal, c),
+    });
+  }
+  const plus = pickClosestPlus(game?.klsh?.plus);
+  if (plus) {
+    rows.push({
+      book: 'klsh',
+      kind: 'plus',
+      n: plus.n,
+      line: plus.n - 0.5,
+      american: plus.american,
+      noAmerican: plus.noAmerican ?? null,
+      implied: impliedRemainingFromPlus(plus, c),
+    });
+  }
+  return rows;
+}
+
+export function resolveCornerBaseline(game, requestedBook = 'fd') {
+  const rows = listCornerBaselines(game);
+  if (!rows.length) return { book: null, row: null, baselines: rows };
+  const row = rows.find((r) => r.book === requestedBook) ?? rows[0];
+  return { book: row.book, row, baselines: rows };
+}
+
+export function baselineBookLabel(book) {
+  if (book === 'dk') return 'DraftKings';
+  if (book === 'klsh') return 'Kalshi';
+  return 'FanDuel';
+}
+
 export function vigRemovedOverProb(overAmerican, underAmerican) {
   const over = americanToImpliedProb(overAmerican);
   const under = americanToImpliedProb(underAmerican);
@@ -523,7 +623,7 @@ function evalSide({ label, american, pModel, kind, meta, baseline = false }) {
   };
 }
 
-export function evaluateGameCorners(game, { bucketed = true } = {}) {
+export function evaluateGameCorners(game, { bucketed = true, baselineBook: requestedBook = 'fd' } = {}) {
   const mode = bucketed ? 'bucketed' : 'uniform';
   const clock = parseClockState(game.stoppage);
   const hasFirstHalfLine = Boolean(game.firstHalfTotal);
@@ -535,7 +635,10 @@ export function evaluateGameCorners(game, { bucketed = true } = {}) {
   const h1Breakdown = remainingBreakdown(clock, h1Plan, mode);
   const c = Number.isFinite(game.cornersSoFar) ? game.cornersSoFar : 0;
 
-  const fullImplied = impliedRemainingFromLine(game.total, c);
+  const resolved = resolveCornerBaseline(game, requestedBook);
+  const baselineBook = resolved.book;
+  const baselineRow = resolved.row;
+  const fullImplied = baselineRow?.implied ?? null;
   const halfImplied = hasFirstHalfLine
     ? impliedRemainingFromLine(game.firstHalfTotal, game.firstHalfCornersSoFar ?? c)
     : null;
@@ -549,26 +652,6 @@ export function evaluateGameCorners(game, { bucketed = true } = {}) {
   const marketImpliedTotal = fullImplied?.impliedTotal ?? null;
 
   const bets = [];
-
-  if (game.total && fullImplied) {
-    const need = Math.floor(game.total.line) + 1 - c;
-    bets.push(evalSide({
-      label: `O ${game.total.line}`,
-      american: game.total.over?.american,
-      pModel: null,
-      kind: 'total-over',
-      baseline: true,
-      meta: { line: game.total.line, scope: 'full', lambda: marketRemaining ?? ourRemaining, need },
-    }));
-    bets.push(evalSide({
-      label: `U ${game.total.line}`,
-      american: game.total.under?.american,
-      pModel: null,
-      kind: 'total-under',
-      baseline: true,
-      meta: { line: game.total.line, scope: 'full', lambda: marketRemaining ?? ourRemaining, need },
-    }));
-  }
 
   if (game.firstHalfTotal && halfImplied && clock.period !== 2 && clock.phase !== 'ht') {
     const cH1 = Number.isFinite(game.firstHalfCornersSoFar) ? game.firstHalfCornersSoFar : c;
@@ -633,6 +716,28 @@ export function evaluateGameCorners(game, { bucketed = true } = {}) {
   const next10 = attachWindow(game.next10, 'next10');
   bets.push(...windowBets);
 
+  for (const row of game.dk?.intervals ?? []) {
+    const windowLabel = row.window ? ` ${row.window}` : '';
+    if (row.yes?.american != null) {
+      bets.push(evalSide({
+        label: `${row.team} 1+${windowLabel}`,
+        american: row.yes.american,
+        pModel: null,
+        kind: 'dk-interval-yes',
+        meta: { book: 'dk', quoteOnly: true, team: row.team, window: row.window },
+      }));
+    }
+    if (row.no?.american != null) {
+      bets.push(evalSide({
+        label: `${row.team} none${windowLabel}`,
+        american: row.no.american,
+        pModel: null,
+        kind: 'dk-interval-no',
+        meta: { book: 'dk', quoteOnly: true, team: row.team, window: row.window },
+      }));
+    }
+  }
+
   const evCount = bets.filter((b) => b.profitable).length;
 
   return {
@@ -651,6 +756,9 @@ export function evaluateGameCorners(game, { bucketed = true } = {}) {
     marketImpliedTotal,
     fullImplied,
     halfImplied,
+    baselineBook,
+    baselineRow,
+    baselines: resolved.baselines,
     next5,
     next10,
     bets,

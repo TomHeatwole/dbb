@@ -50,7 +50,7 @@ const GOAL_TYPE_SELECTIONS = {
 
 const NO_GOAL_SELECTIONS = ['No Goal', 'No Goals', 'Neither'];
 
-function parseAmerican(raw) {
+export function parseAmerican(raw) {
   if (raw == null || raw === '') return null;
   const s = String(raw)
     .trim()
@@ -100,7 +100,7 @@ const TEAM_SLUG_ALIASES = {
   'wolverhampton-wanderers': 'wolves',
 };
 
-function fdNameToSlug(name) {
+export function fdNameToSlug(name) {
   return String(name)
     .toLowerCase()
     .replace(/\s+v\s+/i, '-vs-')
@@ -114,7 +114,7 @@ function normalizeTeamSlug(team) {
   return TEAM_SLUG_ALIASES[slug] ?? slug;
 }
 
-function fixtureTeamKey(name) {
+export function fixtureTeamKey(name) {
   const parts = String(name ?? '')
     .split(/\s+v\s+/i)
     .map((team) => normalizeTeamSlug(team))
@@ -151,7 +151,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function mapPool(items, concurrency, fn) {
+export async function mapPool(items, concurrency, fn) {
   const results = new Array(items.length);
   let nextIndex = 0;
 
@@ -226,7 +226,7 @@ function marketsUrl(eventId, subcategoryId) {
   return `${DK_NASH_BASE}/sportscontent/controldata/event/eventSubcategory/v1/markets?${qs}`;
 }
 
-function selectionQuote(selection) {
+export function selectionQuote(selection) {
   if (!selection) return null;
   const american = parseAmerican(selection.displayOdds?.american ?? selection.oddsAmerican);
   return {
@@ -362,7 +362,7 @@ function extractNoGoalFromNextGoalLive(markets, selections, score) {
   };
 }
 
-function marketSelectionsFor(selections, market) {
+export function marketSelectionsFor(selections, market) {
   if (!market) return [];
   const id = String(market.id);
   return (selections ?? []).filter((s) => String(s.marketId) === id);
@@ -461,7 +461,7 @@ async function fetchSubcategoryMarkets(eventId, subcategoryId, seoSlug) {
   };
 }
 
-async function fetchSubcategoryQuiet(eventId, subcategoryId, seoSlug) {
+export async function fetchSubcategoryQuiet(eventId, subcategoryId, seoSlug) {
   try {
     return await fetchSubcategoryMarkets(eventId, subcategoryId, seoSlug);
   } catch (_) {
@@ -718,7 +718,32 @@ async function probeMissingDkEvents(missingGames, slugToId) {
   return slugToId;
 }
 
-async function discoverDkEventsFromLeaguePage() {
+export async function listDkPremierLeagueEvents() {
+  try {
+    const payload = await nashFetch(
+      `${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${PL_LEAGUE_ID}`,
+      {
+        headerOpts: {
+          page: 'league',
+          referer: `https://sportsbook.draftkings.com/leagues/soccer/${PL_LEAGUE_SEO}`,
+        },
+      },
+    );
+    return (payload.events ?? [])
+      .filter((event) => event?.id && event?.name)
+      .map((event) => ({
+        eventId: String(event.id),
+        name: String(event.name).replace(/\s+vs\.?\s+/i, ' v '),
+        seoSlug: event.seoIdentifier ?? fdNameToSlug(event.name),
+        openDate: event.startEventDate ?? null,
+        inPlay: /start|live|in.?play/i.test(String(event.status ?? '')),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+export async function discoverDkEventsFromLeaguePage() {
   const map = loadStaticDkEventMap();
   try {
     const payload = await nashFetch(
@@ -745,7 +770,7 @@ async function discoverDkEventsFromLeaguePage() {
   return map;
 }
 
-function resolveDkEventIdSync(fdGame, slugToId) {
+export function resolveDkEventIdSync(fdGame, slugToId) {
   const slug = fdNameToSlug(fdGame.name);
   if (slugToId.has(slug)) return slugToId.get(slug);
 

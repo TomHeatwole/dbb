@@ -13,6 +13,14 @@
     "api/pl-corners.mjs": {
       "maxDuration": 30
     },
+    "api/dk-corners.mjs": {
+      "maxDuration": 30,
+      "includeFiles": "src/sop/sopModel.js"
+    },
+    "api/kalshi-corners.mjs": {
+      "maxDuration": 30,
+      "includeFiles": "src/sop/sopModel.js"
+    },
     "api/draftkings-goal-method.mjs": {
       "maxDuration": 30,
       "includeFiles": "src/sop/sopModel.js"

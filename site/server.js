@@ -90,6 +90,24 @@ async function main() {
     }
   });
 
+  app.get('/api/dk-corners', async (req, res) => {
+    try {
+      const { default: handler } = await import('./api/dk-corners.mjs');
+      return handler(req, res);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/kalshi-corners', async (req, res) => {
+    try {
+      const { default: handler } = await import('./api/kalshi-corners.mjs');
+      return handler(req, res);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  });
+
   app.get('/api/draftkings-goal-method', async (req, res) => {
     try {
       const { default: handler } = await import('./api/draftkings-goal-method.mjs');
