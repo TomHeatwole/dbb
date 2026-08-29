@@ -18156,8 +18156,26 @@ body.modal-open {
 .corners-ou-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.55rem;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 0.2rem 0 0.15rem;
+}
+
+.corners-ou-row .corners-bet {
+  min-width: 5.6rem;
+  flex: 0 0 auto;
+}
+
+.corners-plus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.6rem, 1fr));
+  gap: 0.75rem;
+  padding: 0.2rem 0 0.15rem;
+}
+
+.corners-plus-grid .corners-bet {
+  min-width: 0;
+  width: 100%;
 }
 
 .corners-total-line {
@@ -18167,12 +18185,6 @@ body.modal-open {
   font-variant-numeric: tabular-nums;
   line-height: 1;
   color: #ffe08a;
-}
-
-.corners-plus-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
-  gap: 0.35rem;
 }
 
 .corners-empty-hint {
@@ -18208,6 +18220,203 @@ body.modal-open {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.35rem;
+}
+
+.corners-settings {
+  margin-top: 0;
+}
+
+.corners-toggle--compact .sop-kelly-toggle-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  opacity: 0.82;
+}
+
+.corners-bucket-legend {
+  margin: -0.15rem 0 0.7rem;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: rgba(210, 240, 220, 0.6);
+}
+
+.corners-bucket-legend strong {
+  color: #ffe08a;
+  font-weight: 800;
+}
+
+.corners-implied {
+  margin-top: 0.85rem;
+}
+
+.corners-implied-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem 0.75rem;
+}
+
+.corners-implied-lambda {
+  font-size: 1.7rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #ffe08a;
+}
+
+.corners-implied-copy,
+.corners-implied-ours,
+.corners-bucket-share {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(210, 240, 220, 0.7);
+}
+
+.corners-bucket-share strong {
+  color: #ffe08a;
+  font-weight: 800;
+}
+
+.corners-window-lambda {
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  color: rgba(255, 224, 138, 0.8);
+}
+
+.corners-bet {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  min-width: 5.2rem;
+  min-height: 3.6rem;
+  padding: 0.45rem 0.4rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  font: inherit;
+  box-shadow: none;
+  outline: none;
+  overflow: hidden;
+}
+
+button.corners-bet:hover {
+  border-color: rgba(255, 224, 138, 0.45);
+}
+
+.corners-bet--ev {
+  border-color: rgba(255, 224, 138, 0.7);
+  background: linear-gradient(180deg, rgba(255, 224, 138, 0.22), rgba(0, 0, 0, 0.28));
+}
+
+.corners-bet--ev .corners-bet-odds {
+  color: #ffe08a;
+}
+
+.corners-bet--selected {
+  border-color: rgba(255, 224, 138, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(255, 224, 138, 0.55);
+}
+
+.corners-bet--baseline {
+  cursor: pointer;
+}
+
+.corners-bet-tag {
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(200, 220, 210, 0.5);
+}
+
+.corners-bet--empty {
+  opacity: 0.55;
+}
+
+.corners-bet-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.8);
+}
+
+.corners-bet-odds {
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.corners-bet .sop-exp-edge-plus,
+.corners-bet .sop-exp-edge-minus {
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+}
+
+.corners-work {
+  margin-top: 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.65rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 224, 138, 0.22);
+}
+
+.corners-work-verdict {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: rgba(200, 220, 210, 0.7);
+}
+
+.corners-work-verdict--ev {
+  color: #ffe08a;
+}
+
+.corners-work-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.75rem;
+  color: rgba(210, 240, 220, 0.75);
+}
+
+.corners-work-list strong {
+  color: #ffe08a;
+}
+
+.corners-work-sub {
+  margin: 0.7rem 0 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.7);
+}
+
+.corners-work-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.corners-work-table th,
+.corners-work-table td {
+  padding: 0.2rem 0.35rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.corners-work-table th {
+  color: rgba(255, 224, 138, 0.65);
+  font-weight: 700;
 }
 
 /* ── Trade Calculator ─────────────────────────────────────────────────────── */

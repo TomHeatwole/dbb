@@ -187,14 +187,16 @@ function findOverUnder(market, line) {
   return { over, under };
 }
 
-function extractTotalCorners(markets) {
+function pickClosestOverUnderMarket(markets, nameRe) {
   if (!markets) return null;
   const candidates = [];
   for (const market of Object.values(markets)) {
-    const match = String(market.marketName ?? '').match(/^Total Corners (\d+\.5)$/i);
+    const name = String(market.marketName ?? '');
+    const match = name.match(nameRe);
     if (!match) continue;
     if (String(market.marketStatus ?? '').toUpperCase() === 'CLOSED') continue;
     const line = Number(match[1]);
+    if (!Number.isFinite(line)) continue;
     const { over, under } = findOverUnder(market, line);
     if (!over || !under) continue;
     const ip = impliedProbFromAmerican(over.american);
@@ -211,6 +213,20 @@ function extractTotalCorners(markets) {
   if (!candidates[0]) return null;
   const { closeness, ...picked } = candidates[0];
   return picked;
+}
+
+function extractTotalCorners(markets) {
+  return pickClosestOverUnderMarket(markets, /^Total Corners (\d+\.5)$/i);
+}
+
+function extractFirstHalfCorners(markets) {
+  return pickClosestOverUnderMarket(
+    markets,
+    /^(?:1st|First)\s+Half(?:\s+Total)?\s+Corners (\d+\.5)$/i,
+  ) ?? pickClosestOverUnderMarket(
+    markets,
+    /^Half(?:\s+Time)?\s+Total Corners (\d+\.5)$/i,
+  );
 }
 
 function parseWindowBounds(label) {
@@ -282,9 +298,12 @@ function summarizeWindowMarket(market, minutes) {
   const name = String(market.marketName ?? '');
   const windowMatch = name.match(/\(([^)]+)\)/);
   const window = windowMatch ? windowMatch[1].replace(/\s+/g, '') : null;
+  const bounds = parseWindowBounds(window);
   return {
     minutes,
     window,
+    startSeconds: bounds?.startSeconds ?? null,
+    endSeconds: bounds?.endSeconds ?? null,
     market: name,
     status: market.marketStatus ?? null,
     ...extractWindowSelections(market),
@@ -471,6 +490,39 @@ function uniqueScoreboardDates(openDates) {
   return [...dates].filter(Boolean).slice(0, 8);
 }
 
+function boxscoreCorners(event) {
+  const competition = event?.competitions?.[0] ?? {};
+  let total = 0;
+  let found = false;
+  for (const team of competition.competitors ?? []) {
+    for (const s of team.statistics ?? []) {
+      const name = String(s?.name ?? s?.abbreviation ?? '').toLowerCase();
+      if (name === 'woncorners' || name === 'corners' || name === 'ck') {
+        const n = Number(s.displayValue ?? s.value);
+        if (Number.isFinite(n)) {
+          total += n;
+          found = true;
+        }
+      }
+    }
+  }
+  return found ? total : null;
+}
+
+function countCornerPlays(plays, period = null) {
+  if (!plays?.length) return null;
+  let n = 0;
+  for (const play of plays) {
+    if (period != null && playPeriod(play) !== period) continue;
+    const type = playType(play);
+    const text = playText(play);
+    if (type === 'corner-awarded' || type === 'corner' || /^corner[,.]/i.test(text)) {
+      n += 1;
+    }
+  }
+  return n;
+}
+
 function competitorsFromEspnEvent(event) {
   const competition = event?.competitions?.[0] ?? {};
   const competitors = competition.competitors ?? [];
@@ -566,6 +618,16 @@ function isLiveEspnStatus(status) {
 
 function isFinishedEspnStatus(status) {
   return String(status?.type?.state ?? '').toLowerCase() === 'post';
+}
+
+function isHalftimeEspnStatus(status) {
+  const bits = [
+    status?.type?.name,
+    status?.type?.description,
+    status?.type?.detail,
+    status?.type?.shortDetail,
+  ].filter(Boolean).join(' ');
+  return /HALF[\s_-]?TIME/i.test(bits) || /STATUS_HALFTIME/i.test(bits);
 }
 
 function delaySecondsFromPlays(plays, period) {
@@ -721,11 +783,50 @@ function extractEspnStoppage(event, plays) {
       : null;
 
   const matchStatus = status.type?.description ?? status.type?.detail ?? status.type?.name ?? null;
+  const boxCorners = boxscoreCorners(event);
+  const playCorners = countCornerPlays(plays);
+  const playCornersH1 = countCornerPlays(plays, 1);
+  const cornersSoFar = boxCorners ?? playCorners;
+  const firstHalfCornersSoFar = period === 1
+    ? (playCornersH1 ?? cornersSoFar)
+    : playCornersH1;
+  const halftime = isHalftimeEspnStatus(status) && !finished;
+
+  if (halftime) {
+    const shSeconds = 4.8 * 60;
+    return {
+      matchStatus: matchStatus || 'Halftime',
+      status: status.type?.state ?? 'in',
+      clock: 'HT',
+      elapsed: 45,
+      plus: 0,
+      inStoppage: false,
+      announced: null,
+      played: "0'",
+      expectedMinutes: 4.8,
+      remainingLabel: formatClockLabel(shSeconds),
+      expectedLabel: formatClockLabel(Math.round(shSeconds / 30) * 30),
+      playedLabel: "0'",
+      homeScore: teams.homeScore,
+      awayScore: teams.awayScore,
+      source: 'espn',
+      estimated: true,
+      period: 1,
+      halfTime: true,
+      breakdown: null,
+      breakdownLabel: 'First-half extra is done · second-half stoppage resets to typical 4.8′',
+      cornersSoFar,
+      firstHalfCornersSoFar,
+    };
+  }
 
   return {
     matchStatus,
     status: status.type?.state ?? null,
     clock: clock.display,
+    elapsed: clock.elapsed,
+    plus: clock.plus,
+    inStoppage: clock.inStoppage,
     announced: announcedMinutes != null ? `${announcedMinutes}:00` : null,
     played: playedSeconds != null ? formatClockLabel(playedSeconds) : null,
     expectedMinutes: expectedSeconds != null ? expectedSeconds / 60 : null,
@@ -743,6 +844,8 @@ function extractEspnStoppage(event, plays) {
     period,
     breakdown: estimate?.breakdown ?? null,
     breakdownLabel: breakdownLabel(estimate?.breakdown),
+    cornersSoFar,
+    firstHalfCornersSoFar,
   };
 }
 
@@ -855,6 +958,8 @@ function attachStoppage(game, matchSets) {
     ...game,
     stoppage: { ...stoppage, source: hit.source ?? 'espn' },
     espnId: hit.id,
+    cornersSoFar: stoppage.cornersSoFar ?? game.cornersSoFar ?? null,
+    firstHalfCornersSoFar: stoppage.firstHalfCornersSoFar ?? game.firstHalfCornersSoFar ?? null,
     next5: pickWindowMarket(game._markets, 5, clockPlayed) ?? game.next5,
     next10: pickWindowMarket(game._markets, 10, clockPlayed) ?? game.next10,
     score: stoppage.homeScore != null
@@ -886,6 +991,7 @@ async function fetchPlCornerBook() {
             score,
             scoreDisplay: scoreDisplay(score),
             total: extractTotalCorners(bundle.markets),
+            firstHalfTotal: extractFirstHalfCorners(bundle.markets),
             next5: pickWindowMarket(bundle.markets, 5, null),
             next10: pickWindowMarket(bundle.markets, 10, null),
             _markets: bundle.markets,
@@ -904,7 +1010,13 @@ async function fetchPlCornerBook() {
     .map((game) => {
       const merged = attachStoppage(game, matchSets);
       const { _markets, ...rest } = merged;
-      return rest;
+      return {
+        ...rest,
+        cornersSoFar: Number.isFinite(rest.cornersSoFar) ? rest.cornersSoFar : 0,
+        firstHalfCornersSoFar: Number.isFinite(rest.firstHalfCornersSoFar)
+          ? rest.firstHalfCornersSoFar
+          : (Number.isFinite(rest.cornersSoFar) ? rest.cornersSoFar : 0),
+      };
     })
     .sort((a, b) => {
       if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;

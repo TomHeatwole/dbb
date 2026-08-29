@@ -1,9 +1,7 @@
 /**
- * DraftKings World Cup First Goal Method scraper (Nash / controldata API).
- * Proxies DraftKings' undocumented sportsbook API — structure can change without notice.
- *
- * Event IDs: api/dk-wc-event-map.json (from npm run dk:discover-events), optional
- * DK_COOKIE for league-page link scraping, or Nash ID-range probe for missing games.
+ * DraftKings Premier League SOP + no-goal scraper (Nash / controldata API).
+ * Discovers events from the PL league feed (40253), then pulls goal-method,
+ * correct score, totals, first/next goal, and goalscorer markets.
  */
 
 import fs from 'fs';
@@ -20,12 +18,15 @@ import {
 const SITE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DK_COOKIE_FILE = path.join(SITE_DIR, '.dk-cookies.json');
 const DK_EVENT_MAP_FILE = path.join(SITE_DIR, 'api', 'dk-wc-event-map.json');
-const WC_LEAGUE_ID = '209533';
-const FIRST_GOAL_METHOD_SUBCATEGORY_ID = '6541';
-/** Live: "Next Goal (90 Mins)" — e.g. No 3rd Goal */
+const PL_LEAGUE_ID = '40253';
+const PL_LEAGUE_SEO = 'england---premier-league';
+const GOAL_METHOD_SUBCATEGORY_ID = '6541';
+const FIRST_GOAL_SUBCATEGORY_ID = '19742';
+const TOTAL_GOALS_SUBCATEGORY_ID = '13171';
+const CORRECT_SCORE_SUBCATEGORY_ID = '5844';
+const GOALSCORER_PRE_SUBCATEGORY_ID = '16604';
+const GOALSCORER_LIVE_SUBCATEGORY_ID = '20020';
 const NEXT_GOAL_LIVE_SUBCATEGORY_ID = '6007';
-/** Live: alternate totals ladder */
-const TOTAL_GOALS_LIVE_SUBCATEGORY_ID = '13171';
 
 const DK_PE_LOC = (() => {
   const raw = (process.env.DK_PE_LOC || 'US-NY').trim().toUpperCase();
@@ -37,7 +38,7 @@ const DK_FETCH_CONCURRENCY = Number(process.env.DK_FETCH_CONCURRENCY || 4);
 const DK_FETCH_RETRIES = Number(process.env.DK_FETCH_RETRIES || 1);
 const DK_FETCH_RETRY_MS = Number(process.env.DK_FETCH_RETRY_MS || 400);
 /** Whole handler budget — return partial/empty rather than hang SOP. */
-const DK_HANDLER_TIMEOUT_MS = Number(process.env.DK_HANDLER_TIMEOUT_MS || 2000);
+const DK_HANDLER_TIMEOUT_MS = Number(process.env.DK_HANDLER_TIMEOUT_MS || 20000);
 
 const GOAL_TYPE_SELECTIONS = {
   sop: ['Shot', 'Shot Open Play', 'Open Play', 'Shot - Open Play'],
@@ -73,12 +74,30 @@ function labelMatches(label, candidates) {
 }
 
 const TEAM_SLUG_ALIASES = {
-  usa: 'usa',
-  'united-states': 'usa',
-  us: 'usa',
-  'dr-congo': 'dr-congo',
-  'ivory-coast': 'ivory-coast',
-  'cape-verde': 'cape-verde',
+  hull: 'hull',
+  'hull-city': 'hull',
+  'nottm-forest': 'nottingham-forest',
+  'nottingham-forest': 'nottingham-forest',
+  'man-utd': 'man-utd',
+  'manchester-united': 'man-utd',
+  'man-city': 'man-city',
+  'manchester-city': 'man-city',
+  tottenham: 'tottenham',
+  'tottenham-hotspur': 'tottenham',
+  newcastle: 'newcastle',
+  'newcastle-united': 'newcastle',
+  brighton: 'brighton',
+  'brighton-hove-albion': 'brighton',
+  'brighton-and-hove-albion': 'brighton',
+  bournemouth: 'bournemouth',
+  'afc-bournemouth': 'bournemouth',
+  ipswich: 'ipswich',
+  'ipswich-town': 'ipswich',
+  leeds: 'leeds',
+  'leeds-united': 'leeds',
+  wolves: 'wolves',
+  wolverhampton: 'wolves',
+  'wolverhampton-wanderers': 'wolves',
 };
 
 function fdNameToSlug(name) {
@@ -149,7 +168,7 @@ async function mapPool(items, concurrency, fn) {
   return results;
 }
 
-function nashHeaders({ page = 'event', referer = 'https://sportsbook.draftkings.com/leagues/soccer/fifa-world-cup' } = {}) {
+function nashHeaders({ page = 'event', referer = `https://sportsbook.draftkings.com/leagues/soccer/${PL_LEAGUE_SEO}` } = {}) {
   const headers = {
     Accept: 'application/json, text/plain, */*',
     'Accept-Language': 'en-US,en;q=0.9',
@@ -320,14 +339,19 @@ function findNoNthGoalQuote(selections, goalNumber) {
 function extractNoGoalFromNextGoalLive(markets, selections, score) {
   const totalGoals = score.home + score.away;
   const goalNumber = totalGoals + 1;
+  const matchesGoalNumber = (name) =>
+    new RegExp(`${goalNumber}(?:${ordinalSuffix(goalNumber)})?\\s+goal`, 'i').test(name ?? '');
+  // Only treat "1st / First / Next Goal" as a fallback before anyone has scored.
   const market =
-    (markets ?? []).find((m) => new RegExp(`${goalNumber}(?:${ordinalSuffix(goalNumber)})?\\s+goal`, 'i').test(m.name ?? ''))
-    ?? (markets ?? []).find((m) => /next goal/i.test(m.name ?? ''))
-    ?? markets?.[0]
+    (markets ?? []).find((m) => matchesGoalNumber(m.name))
+    ?? (goalNumber === 1
+      ? (markets ?? []).find((m) => /(?:next|first|1st)\s+goal/i.test(m.name ?? ''))
+      : null)
+    ?? (goalNumber === 1 ? markets?.[0] : null)
     ?? null;
   if (!market) return null;
 
-  const marketSelections = selections.filter((s) => s.marketId === market.id);
+  const marketSelections = marketSelectionsFor(selections, market);
   const quote = findNoNthGoalQuote(marketSelections, goalNumber);
   if (!quote || quote.american == null) return null;
 
@@ -338,13 +362,72 @@ function extractNoGoalFromNextGoalLive(markets, selections, score) {
   };
 }
 
+function marketSelectionsFor(selections, market) {
+  if (!market) return [];
+  const id = String(market.id);
+  return (selections ?? []).filter((s) => String(s.marketId) === id);
+}
+
+function extractCorrectScoreQuote(markets, selections, score) {
+  const key = `${score.home}-${score.away}`;
+  const market =
+    (markets ?? []).find((m) => /correct score/i.test(m.name ?? ''))
+    ?? markets?.[0]
+    ?? null;
+  if (!market) return null;
+  const marketSelections = marketSelectionsFor(selections, market);
+  const quote = findSelectionQuote(marketSelections, [
+    key,
+    `${score.home} - ${score.away}`,
+    `${score.home}–${score.away}`,
+  ]);
+  if (!quote || quote.american == null) return null;
+  return {
+    market: market.name ?? 'Correct Score',
+    selection: key,
+    scoreUsed: key,
+    ...quote,
+  };
+}
+
+function extractNextGoalscorerQuote(markets, selections, goalNumber) {
+  const ranked = [...(markets ?? [])].sort((a, b) => {
+    const scoreName = (name) => {
+      const n = String(name ?? '');
+      if (goalNumber === 1 && /^(1st|first)\s+goalscorer$/i.test(n)) return 0;
+      if (new RegExp(`${goalNumber}(?:st|nd|rd|th)?\\s+goalscorer`, 'i').test(n)) return 1;
+      if (/^(1st|first)\s+goalscorer$/i.test(n)) return 2;
+      if (/goalscorer/i.test(n)) return 3;
+      return 4;
+    };
+    return scoreName(a.name) - scoreName(b.name);
+  });
+  for (const market of ranked) {
+    const name = String(market.name ?? '');
+    if (/anytime|2 or more|to score 2/i.test(name)) continue;
+    if (goalNumber === 1 && /^(2nd|3rd|4th|second|third)/i.test(name)) continue;
+    if (/\b(home|away)\b/i.test(name)) continue;
+    const marketSelections = marketSelectionsFor(selections, market);
+    const quote = findSelectionQuote(marketSelections, ['No Goalscorer', 'No Goal', 'No Goals']);
+    if (quote?.american != null) {
+      return {
+        market: market.name ?? 'Next Goalscorer',
+        selection: quote.runnerName ?? 'No Goalscorer',
+        goalNumber,
+        ...quote,
+      };
+    }
+  }
+  return null;
+}
+
 function extractTotalGoalsUnderLive(markets, selections, score) {
   const totalGoals = score.home + score.away;
   const underLine = totalGoals + 0.5;
   const lineStr = String(underLine);
 
   for (const market of markets ?? []) {
-    const marketSelections = selections.filter((s) => s.marketId === market.id);
+    const marketSelections = marketSelectionsFor(selections, market);
     const under = marketSelections.find((s) => {
       const label = String(s.label ?? '').toLowerCase();
       if (!label.startsWith('under')) return false;
@@ -378,78 +461,99 @@ async function fetchSubcategoryMarkets(eventId, subcategoryId, seoSlug) {
   };
 }
 
-async function fetchLiveDkBundle(eventId, eventMeta = {}) {
-  const seoSlug = eventMeta.seoSlug ?? 'world-cup';
-  const teams = eventMeta.teams ?? { home: null, away: null };
-  const score = eventMeta.score ?? { home: 0, away: 0 };
-  const base = extractNoGoalFromGoalMethod(null, [], score, teams, true);
-
-  let nextGoalMethod = null;
-  let totalGoalsUnder = null;
-  let marketName = null;
-
+async function fetchSubcategoryQuiet(eventId, subcategoryId, seoSlug) {
   try {
-    const nextGoal = await fetchSubcategoryMarkets(
-      eventId,
-      NEXT_GOAL_LIVE_SUBCATEGORY_ID,
-      seoSlug,
-    );
-    nextGoalMethod = extractNoGoalFromNextGoalLive(
-      nextGoal.markets,
-      nextGoal.selections,
-      score,
-    );
-    if (nextGoalMethod?.american != null) {
-      marketName = nextGoalMethod.market;
-    }
-  } catch (_) {}
-
-  try {
-    const totals = await fetchSubcategoryMarkets(
-      eventId,
-      TOTAL_GOALS_LIVE_SUBCATEGORY_ID,
-      seoSlug,
-    );
-    totalGoalsUnder = extractTotalGoalsUnderLive(totals.markets, totals.selections, score);
-  } catch (_) {}
-
-  const noGoalMarkets = {
-    ...base,
-    ...(nextGoalMethod?.american != null ? { nextGoalMethod } : {}),
-    ...(totalGoalsUnder?.american != null ? { totalGoalsUnder } : {}),
-  };
-
-  return {
-    goalTypes: null,
-    noGoalMarkets,
-    marketName,
-  };
+    return await fetchSubcategoryMarkets(eventId, subcategoryId, seoSlug);
+  } catch (_) {
+    return { markets: [], selections: [] };
+  }
 }
 
 async function fetchFirstGoalMethodBundle(eventId, eventMeta = {}) {
-  const seoSlug = eventMeta.seoSlug ?? 'world-cup';
+  const seoSlug = eventMeta.seoSlug ?? 'premier-league';
   const teams = eventMeta.teams ?? { home: null, away: null };
   const score = eventMeta.score ?? { home: 0, away: 0 };
   const inPlay = Boolean(eventMeta.inPlay);
+  const goalNumber = (score.home ?? 0) + (score.away ?? 0) + 1;
 
-  if (inPlay) {
-    return fetchLiveDkBundle(eventId, { seoSlug, teams, score });
-  }
+  const subcategoryIds = inPlay
+    ? [
+      NEXT_GOAL_LIVE_SUBCATEGORY_ID,
+      FIRST_GOAL_SUBCATEGORY_ID,
+      TOTAL_GOALS_SUBCATEGORY_ID,
+      CORRECT_SCORE_SUBCATEGORY_ID,
+      GOALSCORER_LIVE_SUBCATEGORY_ID,
+      GOAL_METHOD_SUBCATEGORY_ID,
+    ]
+    : [
+      GOAL_METHOD_SUBCATEGORY_ID,
+      FIRST_GOAL_SUBCATEGORY_ID,
+      TOTAL_GOALS_SUBCATEGORY_ID,
+      CORRECT_SCORE_SUBCATEGORY_ID,
+      GOALSCORER_PRE_SUBCATEGORY_ID,
+    ];
 
-  const { markets, selections } = await fetchSubcategoryMarkets(
-    eventId,
-    FIRST_GOAL_METHOD_SUBCATEGORY_ID,
-    seoSlug,
+  const bundles = await Promise.all(
+    subcategoryIds.map((id) => fetchSubcategoryQuiet(eventId, id, seoSlug)),
+  );
+  const byId = Object.fromEntries(subcategoryIds.map((id, i) => [id, bundles[i]]));
+
+  const method = byId[GOAL_METHOD_SUBCATEGORY_ID] ?? { markets: [], selections: [] };
+  const methodMarket =
+    (method.markets ?? []).find((m) => /goal method/i.test(m.name ?? ''))
+    ?? method.markets?.[0]
+    ?? null;
+  const methodSelections = marketSelectionsFor(method.selections ?? [], methodMarket);
+  const base = extractNoGoalFromGoalMethod(methodMarket, methodSelections, score, teams, inPlay);
+
+  const firstGoal = byId[FIRST_GOAL_SUBCATEGORY_ID];
+  const liveNext = byId[NEXT_GOAL_LIVE_SUBCATEGORY_ID];
+  const totals = byId[TOTAL_GOALS_SUBCATEGORY_ID];
+  const scores = byId[CORRECT_SCORE_SUBCATEGORY_ID];
+  const scorers = byId[inPlay ? GOALSCORER_LIVE_SUBCATEGORY_ID : GOALSCORER_PRE_SUBCATEGORY_ID];
+
+  const nextGoalLive = extractNoGoalFromNextGoalLive(
+    liveNext?.markets ?? [],
+    liveNext?.selections ?? [],
+    score,
+  );
+  const firstGoalNeither = extractNoGoalFromNextGoalLive(
+    firstGoal?.markets ?? [],
+    firstGoal?.selections ?? [],
+    score,
+  );
+  const totalGoalsUnder = extractTotalGoalsUnderLive(
+    totals?.markets ?? [],
+    totals?.selections ?? [],
+    score,
+  );
+  const correctScore = extractCorrectScoreQuote(
+    scores?.markets ?? [],
+    scores?.selections ?? [],
+    score,
+  );
+  const nextGoalscorer = extractNextGoalscorerQuote(
+    scorers?.markets ?? [],
+    scorers?.selections ?? [],
+    goalNumber,
   );
 
-  const market =
-    markets.find((m) => /goal method/i.test(m.name ?? '')) ?? markets[0] ?? null;
-  const marketSelections = selections.filter((s) => s.marketId === market?.id);
+  const nextGoalNeither = nextGoalLive?.american != null ? nextGoalLive : firstGoalNeither;
+  const nextGoalMethod = base.nextGoalMethod?.american != null
+    ? base.nextGoalMethod
+    : nextGoalNeither;
 
   return {
-    goalTypes: extractGoalTypes(marketSelections),
-    noGoalMarkets: extractNoGoalFromGoalMethod(market, marketSelections, score, teams, inPlay),
-    marketName: market?.name ?? null,
+    goalTypes: extractGoalTypes(methodSelections),
+    noGoalMarkets: {
+      ...base,
+      ...(nextGoalMethod?.american != null ? { nextGoalMethod } : {}),
+      ...(correctScore?.american != null ? { correctScore } : {}),
+      ...(totalGoalsUnder?.american != null ? { totalGoalsUnder } : {}),
+      ...(nextGoalNeither?.american != null ? { nthGoalNeither: { ...nextGoalNeither, goalNumber } } : {}),
+      ...(nextGoalscorer?.american != null ? { nextGoalscorer } : {}),
+    },
+    marketName: methodMarket?.name ?? nextGoalMethod?.market ?? null,
   };
 }
 
@@ -533,7 +637,7 @@ function friendlyGameError(message) {
 function saveStaticDkEventMap(events) {
   const payload = {
     fetchedAt: new Date().toISOString(),
-    leagueId: WC_LEAGUE_ID,
+    leagueId: PL_LEAGUE_ID,
     events: events.map((event) => ({
       eventId: event.eventId,
       name: event.name,
@@ -555,7 +659,7 @@ async function fetchDkEventMetaQuiet(eventId, attempt = 0) {
   }
   if (!res.ok) return null;
   const event = (await res.json()).events?.[0];
-  if (!event || String(event.leagueId) !== WC_LEAGUE_ID) return null;
+  if (!event || String(event.leagueId) !== PL_LEAGUE_ID) return null;
   return {
     eventId: String(event.id),
     name: event.name,
@@ -616,21 +720,28 @@ async function probeMissingDkEvents(missingGames, slugToId) {
 
 async function discoverDkEventsFromLeaguePage() {
   const map = loadStaticDkEventMap();
-  const cookie = loadDkCookieHeader();
-  if (!cookie) return map;
-
-  const res = await fetch('https://sportsbook.draftkings.com/leagues/soccer/fifa-world-cup', {
-    headers: {
-      ...nashHeaders({ page: 'league' }),
-      Accept: 'text/html',
-    },
-  });
-  if (!res.ok) return map;
-
-  const html = await res.text();
-  for (const match of html.matchAll(/\/event\/([a-z0-9-]+)\/(\d{7,8})/g)) {
-    map.set(match[1], match[2]);
-  }
+  try {
+    const payload = await nashFetch(
+      `${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${PL_LEAGUE_ID}`,
+      {
+        headerOpts: {
+          page: 'league',
+          referer: `https://sportsbook.draftkings.com/leagues/soccer/${PL_LEAGUE_SEO}`,
+        },
+      },
+    );
+    for (const event of payload.events ?? []) {
+      if (!event?.id) continue;
+      const id = String(event.id);
+      const name = event.name ?? '';
+      const slug = fdNameToSlug(event.seoIdentifier || name);
+      if (slug) map.set(slug, id);
+      const vsSlug = fdNameToSlug(name.replace(/\s+vs\.?\s+/i, ' v '));
+      if (vsSlug) map.set(vsSlug, id);
+      const key = fixtureTeamKey(name.replace(/\s+vs\.?\s+/i, ' v '));
+      if (key) map.set(key, id);
+    }
+  } catch (_) {}
   return map;
 }
 
@@ -639,12 +750,12 @@ function resolveDkEventIdSync(fdGame, slugToId) {
   if (slugToId.has(slug)) return slugToId.get(slug);
 
   const gameKey = fixtureTeamKey(fdGame.name);
+  if (gameKey && slugToId.has(gameKey)) return slugToId.get(gameKey);
 
-  // Fuzzy: ivory-coast-vs-norway vs ivory-coast-v-norway slug variants
   for (const [mapSlug, eventId] of slugToId.entries()) {
     const normalized = mapSlug.replace(/-v-/g, '-vs-');
     if (normalized === slug.replace(/-v-/g, '-vs-')) return eventId;
-    if (gameKey && slugTeamKey(mapSlug) === gameKey) return eventId;
+    if (gameKey && (mapSlug === gameKey || slugTeamKey(mapSlug) === gameKey)) return eventId;
   }
 
   return null;

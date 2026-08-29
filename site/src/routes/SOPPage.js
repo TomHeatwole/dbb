@@ -13,8 +13,8 @@ import { mergeDkIntoFdGames } from '../sop/mergeDkGames';
 import { mergeKalshiIntoFdGames } from '../sop/mergeKalshiGames';
 
 /** DK is flaky (Akamai / missing event map). Bail fast and render FanDuel. */
-const DK_CLIENT_TIMEOUT_MS = 2000;
-const KALSHI_CLIENT_TIMEOUT_MS = 8000;
+const DK_CLIENT_TIMEOUT_MS = 20000;
+const KALSHI_CLIENT_TIMEOUT_MS = 28000;
 
 async function fetchJsonWithTimeout(url, timeoutMs) {
   const controller = new AbortController();
@@ -183,7 +183,8 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
         dkData = data;
         applyMerges();
         const hasMergedDk = (data?.games ?? []).some(
-          (g) => g.goalTypes || g.noGoalMarkets,
+          (g) => g.goalTypes
+            || Object.values(g.noGoalMarkets ?? {}).some((q) => q?.american != null),
         );
         if (!data || !hasMergedDk) {
           setDkNotice('DraftKings odds unavailable — showing FanDuel only.');
