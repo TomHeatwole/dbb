@@ -19,6 +19,8 @@
 .pos-badge--k     { background: rgba(168, 85, 247, 0.30);  color: rgba(216, 180, 254, 0.95); }
 .pos-badge--def   { background: rgba(249, 115, 22, 0.30);  color: rgba(253, 186, 116, 0.95); }
 .pos-badge--other { background: rgba(255, 255, 255, 0.10); color: rgba(226, 232, 240, 0.80); }
+.pos-badge--flex  { background: rgba(45, 212, 191, 0.28);  color: rgba(153, 246, 228, 0.95); }
+.pos-badge--super { background: rgba(168, 85, 247, 0.30);  color: rgba(216, 180, 254, 0.95); }
 
 .standings-row--up {
   animation: pulse-up 3s ease-out;
@@ -1167,7 +1169,7 @@
 }
 
 .scores-lineup-owner,
-.scores-lineup-place {
+.scores-lineup-pf {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1177,10 +1179,14 @@
   font-weight: 700;
 }
 
-.scores-lineup-owner:hover,
-.scores-lineup-place:hover {
+.scores-lineup-owner:hover {
   text-decoration: underline;
   color: #fff;
+}
+
+.scores-lineup-pf {
+  color: #8ea0c8;
+  font-variant-numeric: tabular-nums;
 }
 
 .scores-lineup-owner-avatar {
@@ -1193,13 +1199,16 @@
 
 .scores-lineup-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.45rem;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: none;
   align-items: end;
   padding: 0.15rem 0 0.4rem;
 }
 
 .scores-lineup-kicker {
+  grid-column: 1;
+  justify-self: start;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1207,10 +1216,20 @@
   color: #f5d26a;
 }
 
+.scores-lineup-head .scores-lineup-nums {
+  grid-area: auto;
+  grid-column: 2;
+  justify-self: center;
+}
+
+.scores-lineup-head-spacer {
+  grid-column: 3;
+}
+
 .scores-lineup-head-col {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.08rem;
 }
 
@@ -1237,8 +1256,13 @@
 
 .scores-lineup-row {
   display: grid;
-  grid-template-columns: 3.4rem minmax(0, 1fr) auto;
-  gap: 0.45rem;
+  grid-template-columns: 2.55rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "slot player nums"
+    "slot game nums"
+    "hint hint hint";
+  column-gap: 0.45rem;
+  row-gap: 0.12rem;
   align-items: start;
   padding: 0.5rem 0.1rem;
   border-top: 1px solid rgba(53, 69, 110, 0.45);
@@ -1261,48 +1285,44 @@
 }
 
 .scores-lineup-slot {
+  grid-area: slot;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 1.85rem;
 }
 
-.scores-lineup-slot-pill {
-  min-width: 3.2rem;
-  padding: 0.12rem 0.4rem;
-  border-radius: 9999px;
-  background: rgba(159, 180, 222, 0.18);
-  border: 1px solid rgba(159, 180, 222, 0.4);
-  font-size: 0.66rem;
+.scores-lineup-slot-badge {
+  min-width: 2.35rem;
+  padding: 0.08rem 0.28rem;
+  border-radius: 0.28rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #cfe6ff;
-  text-align: center;
-}
-
-.scores-lineup-slot .pos-badge {
-  min-width: 2.1rem;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
   text-align: center;
 }
 
 .scores-lineup-player {
+  grid-area: player;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.14rem;
 }
 
-.scores-lineup-name-row,
-.scores-lineup-game-row {
+.scores-lineup-name-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   min-width: 0;
+  min-height: 1.85rem;
 }
 
-.scores-lineup-name-row {
-  min-height: 1.85rem;
+.scores-lineup-name-row .pos-badge {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  padding: 0.02rem 0.26rem;
 }
 
 .scores-lineup-avatar {
@@ -1313,7 +1333,7 @@
 
 .scores-lineup-name {
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1322,6 +1342,13 @@
 .scores-lineup-empty {
   color: #65729e;
   font-style: italic;
+}
+
+.scores-lineup-game-col {
+  grid-area: game;
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
 .scores-lineup-game {
@@ -1371,6 +1398,7 @@
 }
 
 .scores-lineup-nums {
+  grid-area: nums;
   display: grid;
   grid-template-columns: 3.1rem 3.1rem;
   column-gap: 0.45rem;
@@ -1403,24 +1431,25 @@
 }
 
 .scores-lineup-bench-hint {
-  grid-column: 1 / -1;
+  grid-area: hint;
   max-width: none;
   width: 100%;
   margin: 0;
-  font-size: 0.58rem;
+  padding-left: 2.55rem;
+  box-sizing: border-box;
+  font-size: 0.62rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   letter-spacing: 0.01em;
   color: #f5d26a;
   text-align: right;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
 }
 
 .scores-lineup-bench-toggle {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 2.55rem minmax(0, 1fr) auto;
+  grid-template-areas: "chevron label nums";
   align-items: center;
   gap: 0.45rem;
   width: 100%;
@@ -1442,7 +1471,21 @@
 }
 
 .scores-lineup-bench-chevron {
+  grid-area: chevron;
   opacity: 0.8;
+}
+
+.scores-lineup-bench-label {
+  grid-area: label;
+  text-align: left;
+}
+
+.scores-lineup-bench-toggle .scores-lineup-nums {
+  grid-area: nums;
+}
+
+.scores-lineup-bench-toggle .scores-lineup-game-col {
+  display: none;
 }
 
 .scores-lineup-bench-toggle .scores-lineup-pts-actual,
@@ -1463,12 +1506,13 @@
   }
   .scores-lineup-head,
   .scores-lineup-row {
-    gap: 0.3rem;
+    column-gap: 0.3rem;
     padding: 0.42rem 0;
   }
   .scores-lineup-head {
-    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0.15rem 0 0.35rem;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: none;
   }
   .scores-lineup-row {
     grid-template-columns: 2.4rem minmax(0, 1fr) auto;
@@ -1478,15 +1522,24 @@
     column-gap: 0.3rem;
   }
   .scores-lineup-bench-toggle {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  }
+  .scores-lineup-name-row .pos-badge {
+    display: none;
   }
   .scores-lineup-bench-hint {
-    font-size: 0.52rem;
+    font-size: 0.48rem;
+    line-height: 1.2;
+    padding-left: 2.4rem;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
-  .scores-lineup-slot-pill {
-    min-width: 2.3rem;
+  .scores-lineup-slot-badge {
+    min-width: 2.15rem;
     font-size: 0.55rem;
-    padding: 0.08rem 0.2rem;
+    padding: 0.06rem 0.18rem;
   }
   .scores-lineup-avatar {
     width: 1.4rem;
@@ -1511,8 +1564,42 @@
     gap: 0.35rem;
   }
   .scores-lineup-owner,
-  .scores-lineup-place {
+  .scores-lineup-pf {
     font-size: 0.68rem;
+  }
+}
+
+@media (min-width: 50.0625em) {
+  .scores-lineup-row {
+    grid-template-columns: 2.55rem minmax(0, 1.3fr) minmax(8.75rem, 1fr) auto;
+    grid-template-areas:
+      "slot player game nums"
+      "hint hint hint hint";
+    align-items: center;
+    column-gap: 0.65rem;
+  }
+  .scores-lineup-head {
+    padding: 0.15rem 0 0.4rem;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: none;
+  }
+  .scores-lineup-game {
+    margin-left: 0;
+    font-size: 0.78rem;
+  }
+  .scores-lineup-bench-hint {
+    padding-left: 0;
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+  .scores-lineup-bench-toggle {
+    grid-template-columns: 2.55rem minmax(0, 1.3fr) minmax(8.75rem, 1fr) auto;
+    grid-template-areas: "chevron label game nums";
+    column-gap: 0.65rem;
+  }
+  .scores-lineup-bench-toggle .scores-lineup-game-col {
+    display: block;
+    grid-area: game;
   }
 }
 

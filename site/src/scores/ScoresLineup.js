@@ -74,6 +74,28 @@ function GameLabel({ gameObj, isActiveWeek }) {
   );
 }
 
+function slotBadgeClass(slot) {
+  const s = String(slot || '').toUpperCase();
+  if (s.startsWith('QB')) return 'pos-badge--qb';
+  if (s.startsWith('RB')) return 'pos-badge--rb';
+  if (s.startsWith('WR')) return 'pos-badge--wr';
+  if (s.startsWith('TE')) return 'pos-badge--te';
+  if (s.startsWith('K')) return 'pos-badge--k';
+  if (s.includes('DEF') || s === 'DST') return 'pos-badge--def';
+  if (s.startsWith('FLEX')) return 'pos-badge--flex';
+  if (s.startsWith('SUPER')) return 'pos-badge--super';
+  return 'pos-badge--other';
+}
+
+function SlotBadge({ slot }) {
+  const label = slot || '—';
+  return (
+    <span className={`pos-badge scores-lineup-slot-badge ${slotBadgeClass(label)}`}>
+      {label}
+    </span>
+  );
+}
+
 function scoreDisplay(player) {
   if (player && typeof player.actualPts === 'number') {
     return player.actualPts.toFixed(1);
@@ -103,7 +125,6 @@ export default function ScoresLineup({
   ownerName,
   ownerAvatar,
   teamLink,
-  place,
   pfTotal,
 }) {
   const isMobileView = useIsMobile();
@@ -117,7 +138,8 @@ export default function ScoresLineup({
 
   const starterSplit = starterScoreSplit(weekBreakdown);
   const benchSplit = benchScoreSplit(weekBreakdown);
-  const hasMeta = Boolean(ownerName || place != null);
+  const hasPf = Number(pfTotal) > 0;
+  const hasMeta = Boolean(ownerName || hasPf);
 
   const InjuryBadge = ({ playerId, info }) => {
     let status = null;
@@ -143,13 +165,14 @@ export default function ScoresLineup({
       return (
         <div key={`empty-${i}`} className="scores-lineup-row scores-lineup-row--empty">
           <div className="scores-lineup-slot">
-            <span className="scores-lineup-slot-pill">{bench ? 'BN' : (STARTER_POSITION_NAMES[i] || '—')}</span>
+            <SlotBadge slot={bench ? 'BN' : (STARTER_POSITION_NAMES[i] || '—')} />
           </div>
           <div className="scores-lineup-player">
             <div className="scores-lineup-name-row">
               <span className="scores-lineup-empty">—</span>
             </div>
           </div>
+          <div className="scores-lineup-game-col" />
           <div className="scores-lineup-nums">
             <span className="scores-lineup-pts-actual">—</span>
             <span className="scores-lineup-pts-proj">—</span>
@@ -163,7 +186,7 @@ export default function ScoresLineup({
     const teamAbbr = snapshotTeam || gameObj.team || (info && (info.team || info.team_abbr)) || null;
     const rawName = info && info.name ? info.name : String(p.id);
     const highlight = playerHighlightMap && playerHighlightMap[String(p.id)];
-    const slot = bench ? (info && info.position) : (STARTER_POSITION_NAMES[i] || `S${i + 1}`);
+    const slot = bench ? 'BN' : (STARTER_POSITION_NAMES[i] || `S${i + 1}`);
     const isLive = Boolean(isActiveWeek && gameObj.live);
     const highlightClass = highlight === 'up' ? ' text-up text-bold' : (highlight === 'down' ? ' text-down text-bold' : '');
     const scoreHint = !bench && p.bestBenchScore ? p.bestBenchScore : null;
@@ -176,11 +199,7 @@ export default function ScoresLineup({
         onClick={() => info && setSelectedPlayer(info)}
       >
         <div className="scores-lineup-slot">
-          {bench && info && info.position ? (
-            <PositionBadge position={info.position} />
-          ) : (
-            <span className="scores-lineup-slot-pill">{slot || (bench ? 'BN' : '—')}</span>
-          )}
+          <SlotBadge slot={slot} />
         </div>
         <div className="scores-lineup-player">
           <div className="scores-lineup-name-row">
@@ -191,30 +210,31 @@ export default function ScoresLineup({
             />
             <span className="player-name scores-lineup-name">
               {formatPlayerNameForDisplay(rawName, isMobileView)}
-              {teamAbbr ? <span className="team-scores-team-abbr"> {teamAbbr}</span> : null}
-              <InjuryBadge playerId={p.id} info={info} />
             </span>
+            {info && info.position ? <PositionBadge position={info.position} /> : null}
+            {teamAbbr ? <span className="team-scores-team-abbr">{teamAbbr}</span> : null}
+            <InjuryBadge playerId={p.id} info={info} />
           </div>
-          <div className="scores-lineup-game-row">
-            <GameLabel gameObj={gameObj} isActiveWeek={isActiveWeek} />
-          </div>
+        </div>
+        <div className="scores-lineup-game-col">
+          <GameLabel gameObj={gameObj} isActiveWeek={isActiveWeek} />
         </div>
         <div className="scores-lineup-nums">
           <span className={`scores-lineup-pts-actual${highlightClass}`}>{scoreDisplay(p)}</span>
           <span className={`scores-lineup-pts-proj${highlightClass}`}>{projDisplay(p)}</span>
-          {hint ? (
-            <div
-              className="scores-lineup-bench-hint"
-              title={scoreHint
-                ? `${scoreHint.name} · ${Number(scoreHint.pts).toFixed(1)}`
-                : `${projHint.name} · ${Number(projHint.expected).toFixed(1)}`}
-            >
-              {formatPlayerNameForDisplay(scoreHint ? scoreHint.name : projHint.name, true)}
-              {' '}
-              {Number(scoreHint ? scoreHint.pts : projHint.expected).toFixed(1)}
-            </div>
-          ) : null}
         </div>
+        {hint ? (
+          <div
+            className="scores-lineup-bench-hint"
+            title={scoreHint
+              ? `${scoreHint.name} · ${Number(scoreHint.pts).toFixed(1)}`
+              : `${projHint.name} · ${Number(projHint.expected).toFixed(1)}`}
+          >
+            {scoreHint
+              ? `Score so far: ${formatPlayerNameForDisplay(scoreHint.name, isMobileView)} ${Number(scoreHint.pts).toFixed(1)}`
+              : `Higher Projection: ${formatPlayerNameForDisplay(projHint.name, isMobileView)} ${Number(projHint.expected).toFixed(1)}`}
+          </div>
+        ) : null}
       </div>
     );
   };
@@ -270,10 +290,8 @@ export default function ScoresLineup({
               </span>
             )
           ) : <span />}
-          {place != null ? (
-            <Link className="scores-lineup-place" to="/standings">
-              #{place}{Number(pfTotal) > 0 ? ` · ${Number(pfTotal).toFixed(1)} PF` : ''}
-            </Link>
+          {hasPf ? (
+            <span className="scores-lineup-pf">{Number(pfTotal).toFixed(1)} PF</span>
           ) : null}
         </div>
       ) : null}
@@ -297,6 +315,7 @@ export default function ScoresLineup({
             </span>
           </div>
         </div>
+        <span className="scores-lineup-head-spacer" aria-hidden="true" />
       </div>
 
       <div className="scores-lineup-list">
@@ -305,7 +324,8 @@ export default function ScoresLineup({
 
       <button type="button" className="scores-lineup-bench-toggle" onClick={onToggleBench}>
         <span className="scores-lineup-bench-chevron" aria-hidden="true">{benchOpen ? '▾' : '▸'}</span>
-        <span>{benchOpen ? 'Hide bench' : 'Show bench'}</span>
+        <span className="scores-lineup-bench-label">{benchOpen ? 'Hide bench' : 'Show bench'}</span>
+        <span className="scores-lineup-game-col" aria-hidden="true" />
         <div className="scores-lineup-nums">
           <span className="scores-lineup-pts-actual">
             {benchSplit.hasActual ? benchSplit.actual.toFixed(1) : '—'}

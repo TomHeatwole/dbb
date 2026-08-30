@@ -98,8 +98,23 @@ function impliedProbFromAmerican(american) {
   return Math.abs(american) / (Math.abs(american) + 100);
 }
 
+function statusToken(value) {
+  return String(value ?? '').trim().toUpperCase();
+}
+
+function isOpenMarketStatus(status) {
+  const token = statusToken(status);
+  return token === '' || token === 'OPEN';
+}
+
+function isActiveRunnerStatus(status) {
+  const token = statusToken(status);
+  return token === '' || token === 'ACTIVE' || token === 'OPEN';
+}
+
 function runnerQuote(runner) {
   if (!runner) return null;
+  if (!isActiveRunnerStatus(runner.runnerStatus)) return null;
   const american = americanOdds(runner);
   if (american == null) return null;
   return {
@@ -202,7 +217,7 @@ function pickClosestOverUnderMarket(markets, nameRe) {
     const name = String(market.marketName ?? '');
     const match = name.match(nameRe);
     if (!match) continue;
-    if (String(market.marketStatus ?? '').toUpperCase() === 'CLOSED') continue;
+    if (!marketIsOpen(market)) continue;
     const line = Number(match[1]);
     if (!Number.isFinite(line)) continue;
     const { over, under } = findOverUnder(market, line);
@@ -224,7 +239,7 @@ function pickClosestOverUnderMarket(markets, nameRe) {
 }
 
 function marketIsOpen(market) {
-  return String(market?.marketStatus ?? '').toUpperCase() !== 'CLOSED';
+  return isOpenMarketStatus(market?.marketStatus);
 }
 
 /** All FanDuel Total Corners X.5 books, including one-sided Under/Over. */
@@ -499,7 +514,7 @@ function pickWindowMarket(markets, minutes, clockPlayed) {
   for (const market of Object.values(markets)) {
     const name = String(market.marketName ?? '');
     if (!isCornerWindowMarket(name, minutes)) continue;
-    if (String(market.marketStatus ?? '').toUpperCase() === 'CLOSED') continue;
+    if (!marketIsOpen(market)) continue;
     const summarized = summarizeWindowMarket(market, minutes);
     if (!summarized.plus.length && !summarized.overUnder.length && !summarized.other.length) {
       continue;

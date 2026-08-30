@@ -124,9 +124,10 @@ export function pickClosestPlus(plus) {
  */
 export function impliedRemainingFromPlus(plusRow, cornersSoFar = 0) {
   if (!plusRow || !Number.isFinite(plusRow.n)) return null;
-  const pOver = vigRemovedOverProb(plusRow.american, plusRow.noAmerican)
-    ?? americanToImpliedProb(plusRow.american);
+  const twoWay = twoWayOverProb(plusRow.american, plusRow.noAmerican);
+  const pOver = twoWay?.pOver ?? americanToImpliedProb(plusRow.american);
   if (pOver == null) return null;
+  const pOverSource = twoWay?.source ?? 'over-only';
   const c = Math.max(0, Number(cornersSoFar) || 0);
   const need = plusRow.n - c;
   if (need <= 0) {
@@ -135,6 +136,7 @@ export function impliedRemainingFromPlus(plusRow, cornersSoFar = 0) {
       n: plusRow.n,
       kind: 'plus',
       pOver,
+      pOverSource,
       cornersSoFar: c,
       remaining: 0,
       impliedTotal: c,
@@ -147,6 +149,7 @@ export function impliedRemainingFromPlus(plusRow, cornersSoFar = 0) {
     n: plusRow.n,
     kind: 'plus',
     pOver,
+    pOverSource,
     cornersSoFar: c,
     remaining,
     impliedTotal: c + remaining,
@@ -226,19 +229,26 @@ function quoteKey(quote) {
   return `${quote.book}|${quote.line}|${quote.side}`;
 }
 
-function keepBetterQuote(map, quote) {
+function quoteIsLive(quote) {
+  const status = String(quote?.status ?? '').trim().toUpperCase();
+  return !status || status === 'ACTIVE' || status === 'OPEN';
+}
+
+function keepBetterQuote(map, quote, { fillOnly = false } = {}) {
+  if (!quoteIsLive(quote)) return;
   const p = americanToImpliedProb(quote.american);
   if (p == null || p <= 0 || p >= 1) return;
   const full = { ...quote, implied: p };
   const key = quoteKey(full);
   const prev = map.get(key);
+  if (fillOnly && prev) return;
   if (!prev || full.implied < prev.implied) map.set(key, full);
 }
 
 /** Top-of-book dollars below this is not a takeable arb print. */
 export const MIN_KLSH_ARB_DOLLARS = 15;
 
-function pushOuQuote(map, book, line, side, american, ticket, extra = {}) {
+function pushOuQuote(map, book, line, side, american, ticket, extra = {}, opts = {}) {
   const key = lineKey(line);
   if (key == null || !Number.isFinite(american)) return;
   keepBetterQuote(map, {
@@ -248,16 +258,16 @@ function pushOuQuote(map, book, line, side, american, ticket, extra = {}) {
     american,
     ticket: ticket ?? `${bookTag(book)} ${side === 'over' ? 'O' : 'U'} ${key}`,
     ...extra,
-  });
+  }, opts);
 }
 
-function pushOuRow(map, book, row) {
+function pushOuRow(map, book, row, opts = {}) {
   if (!row || !Number.isFinite(row.line)) return;
   const line = lineKey(row.line);
   if (line == null) return;
   const tag = bookTag(book);
-  pushOuQuote(map, book, line, 'over', row.over?.american, `${tag} O ${line}`);
-  pushOuQuote(map, book, line, 'under', row.under?.american, `${tag} U ${line}`);
+  pushOuQuote(map, book, line, 'over', row.over?.american, `${tag} O ${line}`, { status: row.over?.status }, opts);
+  pushOuQuote(map, book, line, 'under', row.under?.american, `${tag} U ${line}`, { status: row.under?.status }, opts);
 }
 
 function collectTotalOuQuotes(game) {
@@ -269,12 +279,30 @@ function collectTotalOuQuotes(game) {
   for (const row of game?.numberOfCorners?.unders ?? []) {
     if (!Number.isFinite(row?.n)) continue;
     // Under N ≡ total ≤ N−1 ≡ Under (N−0.5)
-    pushOuQuote(map, 'fd', row.n - 0.5, 'under', row.american, `FD Under ${row.n}`);
+    pushOuQuote(
+      map,
+      'fd',
+      row.n - 0.5,
+      'under',
+      row.american,
+      `FD Under ${row.n}`,
+      { status: row.status },
+      { fillOnly: true },
+    );
   }
   for (const row of game?.numberOfCorners?.overs ?? []) {
     if (!Number.isFinite(row?.n)) continue;
     // Over N ≡ total ≥ N+1 ≡ Over (N+0.5)
-    pushOuQuote(map, 'fd', row.n + 0.5, 'over', row.american, `FD Over ${row.n}`);
+    pushOuQuote(
+      map,
+      'fd',
+      row.n + 0.5,
+      'over',
+      row.american,
+      `FD Over ${row.n}`,
+      { status: row.status },
+      { fillOnly: true },
+    );
   }
 
   const dkRows = [];
@@ -641,15 +669,25 @@ export function assessArbFill(arb, total) {
   };
 }
 
-export function vigRemovedOverProb(overAmerican, underAmerican) {
+/**
+ * Fair P(over) from a two-way book.
+ * If the asks don't actually meet (stale Kalshi no vs a 93¢ yes, etc.),
+ * do not "vig-remove" — that pulls a lock-ish yes down toward 50%.
+ */
+export function twoWayOverProb(overAmerican, underAmerican) {
   const over = americanToImpliedProb(overAmerican);
   const under = americanToImpliedProb(underAmerican);
   if (over == null && under == null) return null;
-  if (over == null) return 1 - under;
-  if (under == null) return over;
+  if (over == null) return { pOver: 1 - under, source: 'under-only' };
+  if (under == null) return { pOver: over, source: 'over-only' };
   const sum = over + under;
-  if (sum <= 0) return null;
-  return over / sum;
+  if (!(sum > 0)) return null;
+  if (sum > 1.15 || sum < 0.92) return { pOver: over, source: 'over-only' };
+  return { pOver: over / sum, source: 'vig-removed' };
+}
+
+export function vigRemovedOverProb(overAmerican, underAmerican) {
+  return twoWayOverProb(overAmerican, underAmerican)?.pOver ?? null;
 }
 
 /**
@@ -658,8 +696,10 @@ export function vigRemovedOverProb(overAmerican, underAmerican) {
  */
 export function impliedRemainingFromLine(total, cornersSoFar = 0) {
   if (!total || !Number.isFinite(total.line)) return null;
-  const pOver = vigRemovedOverProb(total.over?.american, total.under?.american);
+  const twoWay = twoWayOverProb(total.over?.american, total.under?.american);
+  const pOver = twoWay?.pOver ?? null;
   if (pOver == null) return null;
+  const pOverSource = twoWay.source;
   const c = Math.max(0, Number(cornersSoFar) || 0);
   const overAt = Math.floor(total.line) + 1; // 10.5 → 11
   const need = overAt - c;
@@ -667,6 +707,7 @@ export function impliedRemainingFromLine(total, cornersSoFar = 0) {
     return {
       line: total.line,
       pOver,
+      pOverSource,
       cornersSoFar: c,
       remaining: 0,
       impliedTotal: c,
@@ -677,6 +718,7 @@ export function impliedRemainingFromLine(total, cornersSoFar = 0) {
   return {
     line: total.line,
     pOver,
+    pOverSource,
     cornersSoFar: c,
     remaining,
     impliedTotal: c + remaining,

@@ -279,60 +279,138 @@ function actualScore(player) {
   return typeof player.actualPts === 'number' ? player.actualPts : 0;
 }
 
-function attachBenchHints(computed, playersData, playerIdMap, lineupMode) {
+function playerKey(player) {
+  return player && player.id != null ? String(player.id) : null;
+}
+
+function isRealPlayer(player) {
+  const id = playerKey(player);
+  return Boolean(id && id !== '0');
+}
+
+function hintName(player, playersData, playerIdMap) {
+  const info = getPlayerInfo(player.id, playersData, playerIdMap);
+  return info && info.name ? info.name : String(player.id);
+}
+
+function attachScoreSoFarHints(starters, bench, playersData, playerIdMap) {
+  const usedFloorIds = new Set();
+  return starters.map((starter, index) => {
+    if (!isRealPlayer(starter)) {
+      return starter;
+    }
+    const slot = STARTER_POSITION_NAMES[index];
+    const starterRank = actualScore(starter);
+    let best = null;
+    let bestRank = 0;
+    for (const benchPlayer of bench) {
+      if (!isRealPlayer(benchPlayer) || typeof benchPlayer.actualPts !== 'number') {
+        continue;
+      }
+      if (usedFloorIds.has(playerKey(benchPlayer))) {
+        continue;
+      }
+      if (!isEligibleForSlot(slot, benchPlayer.position)) {
+        continue;
+      }
+      const pts = actualScore(benchPlayer);
+      if (pts > starterRank + 0.049 && (!best || pts > bestRank)) {
+        best = benchPlayer;
+        bestRank = pts;
+      }
+    }
+    if (!best) {
+      return starter;
+    }
+    usedFloorIds.add(playerKey(best));
+    return {
+      ...starter,
+      bestBenchScore: { id: best.id, name: hintName(best, playersData, playerIdMap), pts: bestRank },
+    };
+  });
+}
+
+/**
+ * Higher-projection hints follow the projection-optimal (best-ball) 11:
+ * a bench player is named on at most one starter, and only on someone
+ * who would sit in that optimal lineup.
+ */
+function attachBestballProjHints(displayStarters, optimalStarters, playersData, playerIdMap, withPos) {
+  const optimalIds = new Set((optimalStarters || []).filter(isRealPlayer).map(playerKey));
+  const displayIds = new Set((displayStarters || []).filter(isRealPlayer).map(playerKey));
+  const incoming = (optimalStarters || [])
+    .filter((player) => isRealPlayer(player) && !displayIds.has(playerKey(player)))
+    .map(withPos);
+  const usedIncoming = new Set();
+  return displayStarters.map((starter, index) => {
+    if (!isRealPlayer(starter)) {
+      return starter;
+    }
+    if (optimalIds.has(playerKey(starter))) {
+      return starter;
+    }
+    const slot = STARTER_POSITION_NAMES[index];
+    const slotOpt = optimalStarters && optimalStarters[index];
+    let pick = null;
+    let pickVal = 0;
+    const slotOptKey = playerKey(slotOpt);
+    if (
+      isRealPlayer(slotOpt)
+      && !displayIds.has(slotOptKey)
+      && !usedIncoming.has(slotOptKey)
+      && isEligibleForSlot(slot, withPos(slotOpt).position)
+    ) {
+      pick = slotOpt;
+      pickVal = projectionSlotValue(slotOpt);
+    }
+    if (!pick) {
+      for (const cand of incoming) {
+        const candKey = playerKey(cand);
+        if (usedIncoming.has(candKey) || !isEligibleForSlot(slot, cand.position)) {
+          continue;
+        }
+        const val = projectionSlotValue(cand);
+        if (!pick || val > pickVal) {
+          pick = cand;
+          pickVal = val;
+        }
+      }
+    }
+    if (!pick) {
+      return starter;
+    }
+    const starterVal = projectionSlotValue(starter);
+    if (pickVal <= starterVal + 0.049) {
+      return starter;
+    }
+    usedIncoming.add(playerKey(pick));
+    return {
+      ...starter,
+      higherBenchProj: {
+        id: pick.id,
+        name: hintName(pick, playersData, playerIdMap),
+        expected: pickVal,
+      },
+    };
+  });
+}
+
+function attachBenchHints(computed, playersData, playerIdMap, lineupMode, optimalStarters) {
   if (!computed) {
     return computed;
   }
   const withPos = (player) => {
-    if (!player || player.id == null || String(player.id) === '0') {
+    if (!isRealPlayer(player)) {
       return player;
     }
     const info = getPlayerInfo(player.id, playersData, playerIdMap);
     return { ...player, position: info && info.position ? info.position : null };
   };
   const bench = (computed.bench || []).map(withPos);
-  const starters = (computed.starters || []).map((player, index) => {
-    const starter = withPos(player);
-    const slot = STARTER_POSITION_NAMES[index];
-    if (!starter || starter.id == null || String(starter.id) === '0') {
-      return starter;
-    }
-    const starterRank = lineupMode === 'projections'
-      ? actualScore(starter)
-      : rankPtsForMode(starter, lineupMode);
-    let best = null;
-    let bestRank = 0;
-    for (const benchPlayer of bench) {
-      if (!isEligibleForSlot(slot, benchPlayer.position)) {
-        continue;
-      }
-      if (lineupMode === 'projections' && typeof benchPlayer.actualPts !== 'number') {
-        continue;
-      }
-      const expected = lineupMode === 'projections'
-        ? actualScore(benchPlayer)
-        : rankPtsForMode(benchPlayer, lineupMode);
-      if (expected > starterRank + 0.049 && (!best || expected > bestRank)) {
-        best = benchPlayer;
-        bestRank = expected;
-      }
-    }
-    if (!best) {
-      return starter;
-    }
-    const info = getPlayerInfo(best.id, playersData, playerIdMap);
-    const name = info && info.name ? info.name : String(best.id);
-    if (lineupMode === 'projections') {
-      return {
-        ...starter,
-        bestBenchScore: { id: best.id, name, pts: bestRank },
-      };
-    }
-    return {
-      ...starter,
-      higherBenchProj: { id: best.id, name, expected: bestRank },
-    };
-  });
+  const startersIn = (computed.starters || []).map(withPos);
+  const starters = lineupMode === 'projections'
+    ? attachScoreSoFarHints(startersIn, bench, playersData, playerIdMap)
+    : attachBestballProjHints(startersIn, optimalStarters, playersData, playerIdMap, withPos);
   return { ...computed, starters, bench };
 }
 
@@ -394,7 +472,7 @@ export function startSitWithProjections(
   const finalized = mode === 'projections'
     ? projFinalized
     : annotateProjectionSources(displaySorted, playerGameLabels, projectedPtsById);
-  const withHints = attachBenchHints(finalized, playersData, playerIdMap, mode);
+  const withHints = attachBenchHints(finalized, playersData, playerIdMap, mode, projFinalized.starters);
   return {
     ...withHints,
     lineupMode: mode,

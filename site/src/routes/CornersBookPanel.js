@@ -157,6 +157,13 @@ function arbLegPercents(legs) {
   return raw;
 }
 
+function pOverPhrase(implied) {
+  if (!implied || !Number.isFinite(implied.pOver)) return '';
+  const event = implied.kind === 'plus' ? `${implied.n}+` : 'over';
+  const how = implied.pOverSource === 'vig-removed' ? 'vig-removed' : 'from the ask';
+  return ` · P(${event}) ${formatSharePct(implied.pOver)} ${how}`;
+}
+
 function formatKalshiDecimal(decimal) {
   if (!Number.isFinite(decimal) || decimal <= 0) return null;
   return `${decimal.toFixed(2)}x`;
@@ -838,7 +845,7 @@ function WorkPanel({
             : implied?.kind === 'plus'
               ? `Kalshi ${implied.n}+`
               : `${baselineBookLabel(model.baselineBook)} total ${implied?.line}`}
-          {implied && ` · vig-removed P(${implied.kind === 'plus' ? `${implied.n}+` : 'over'}) ${formatSharePct(implied.pOver)}`}
+          {pOverPhrase(implied)}
           {' → implies '}
           <strong>{formatExpected(implied?.impliedTotal)}</strong>
           {' total ('}
@@ -1116,13 +1123,17 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
                     {model.baselineRow?.kind === 'plus' && model.baselineRow?.american != null && (
                       <> · {formatAmericanOdds(model.baselineRow.american)}</>
                     )}
-                    {model.fullImplied && ` · P(over) ${formatSharePct(model.fullImplied.pOver)} vig-removed`}
+                    {pOverPhrase(model.fullImplied)}
                     {' · '}{formatExpected(model.cornersSoFar, 0)} already
                     {model.lineRemaining != null && ` · ${formatExpected(model.lineRemaining)} more from the line`}
                   </span>
                 </>
               ) : (
-                <p className="corners-empty-hint">No total corners line to invert.</p>
+                <p className="corners-empty-hint">
+                  {game.inPlay
+                    ? 'FanDuel match-total corners are suspended — last prints are not used for arbs or the line.'
+                    : 'No total corners line to invert.'}
+                </p>
               )}
             </div>
             {model.halfImplied && (

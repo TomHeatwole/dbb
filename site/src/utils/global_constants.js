@@ -43,7 +43,7 @@ export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/12";
 export const CURRENT_WEEK_OVERRIDE = null;
 export const PREVIOUS_CURRENT_WEEK_OVERRIDE = null;
 export const HOME_OFFSEASON_OVERRIDE = null;
-export const SIMULATE_MIDWEEK = true;
+export const SIMULATE_MIDWEEK = false;
 
 
 // Firebase configuration values (non-secret parts)
