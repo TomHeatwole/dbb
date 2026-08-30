@@ -516,7 +516,6 @@ function ScoresView({
           const avatarUrl = getAvatar(rosterId);
           const isExpanded = !!expanded[rosterId];
           const weekBreakdown = breakdown;
-          const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
           const isActiveWeek =
             isCurrentSeason &&
             Number(week) === Number(currentWeekNum) &&
