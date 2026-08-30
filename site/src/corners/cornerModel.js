@@ -389,8 +389,6 @@ export function arbKindLabel(kind) {
   if (kind === '3way') return '3-way integer';
   if (kind === 'uu') return 'home U + away U + match O';
   if (kind === 'oo') return 'home O + away O + match U';
-  if (kind === 'each') return 'each team n+ vs match U';
-  if (kind === 'race-neither') return 'race neither vs match O';
   return 'same-line 2-way';
 }
 
@@ -505,56 +503,9 @@ function findTeamComboArbs(game, arbs, matchQuotes) {
     }
   }
 
-  for (const row of game?.teamCorners?.eachPlus ?? []) {
-    const implied = americanToImpliedProb(row.american);
-    if (implied == null || !Number.isFinite(row.n)) continue;
-    const each = {
-      book: 'fd',
-      line: row.n,
-      side: 'each',
-      n: row.n,
-      american: row.american,
-      implied,
-      ticket: `FD each ${row.n}+`,
-      scope: 'each',
-      cover: `both ≥ ${row.n}`,
-    };
-    const matchLine = lineKey(2 * row.n - 0.5);
-    if (matchLine == null) continue;
-    for (const under of matchQuotesOf(matchQuotes, 'under', matchLine)) {
-      pushCoverArb(arbs, [each, under], {
-        kind: 'each',
-        line: matchLine,
-        allowSameBook: true,
-      });
-    }
-  }
-
-  for (const race of game?.teamCorners?.races ?? []) {
-    if (!Number.isFinite(race?.n)) continue;
-    // Neither reaches n ⇒ both ≤ n−1 ⇒ total ≤ 2n−2. Cover with match Over (2n−1.5).
-    const matchLine = lineKey(2 * race.n - 1.5);
-    const implied = americanToImpliedProb(race.neither?.american);
-    if (implied == null || matchLine == null) continue;
-    const neither = {
-      book: 'fd',
-      line: matchLine,
-      side: 'neither',
-      n: race.n,
-      american: race.neither.american,
-      implied,
-      ticket: `FD race ${race.n} neither`,
-      scope: 'race',
-      cover: `both ≤ ${race.n - 1}`,
-    };
-    for (const over of matchQuotesOf(matchQuotes, 'over', matchLine)) {
-      pushCoverArb(arbs, [neither, over], {
-        kind: 'race-neither',
-        line: matchLine,
-        allowSameBook: true,
-      });
-    }
-  }
+  // Each-team n+ is one ticket that needs both ≥ n. Pairing it with
+  // match Under (2n−0.5) is not a cover: 6–4 / 7–3 / … lose both.
+  // Race "neither" vs match Over has the same hole (one team runs it up).
 }
 
 export function walkKalshiTake(levels, dollars) {

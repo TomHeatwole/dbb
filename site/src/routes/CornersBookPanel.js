@@ -174,8 +174,6 @@ function formatAskBook(leg) {
 function arbKindChip(kind) {
   if (kind === '3way') return '3-way';
   if (kind === 'uu' || kind === 'oo') return 'H+A';
-  if (kind === 'each') return 'each';
-  if (kind === 'race-neither') return 'race';
   return null;
 }
 
