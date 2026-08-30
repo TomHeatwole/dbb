@@ -35,9 +35,10 @@ export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/12";
  *
  * SIMULATE_MIDWEEK:
  *   Local only. When true, the current season's scoreboard is rewritten so
- *   roughly half the games are Final, a few are live, and the rest are still
- *   upcoming. Locked players use a stand-in actual (full proj if final,
- *   ~half if live) so Scores can show mixed pts / PROJ. Flip to false when done.
+ *   a couple of games are Final, a couple are live, and the rest are still
+ *   upcoming (~3 finished and ~3 in-play on a typical roster). Locked players
+ *   use a stand-in actual (full proj if final, ~half if live) so Scores can
+ *   show mixed pts / PROJ. Flip to false when done.
  */
 export const CURRENT_WEEK_OVERRIDE = null;
 export const PREVIOUS_CURRENT_WEEK_OVERRIDE = null;

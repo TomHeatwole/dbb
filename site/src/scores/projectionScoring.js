@@ -275,7 +275,11 @@ function attachSortKeys(teamScore, mode) {
   };
 }
 
-function attachBenchProjHints(computed, playersData, playerIdMap, lineupMode) {
+function actualScore(player) {
+  return typeof player.actualPts === 'number' ? player.actualPts : 0;
+}
+
+function attachBenchHints(computed, playersData, playerIdMap, lineupMode) {
   if (!computed) {
     return computed;
   }
@@ -293,14 +297,21 @@ function attachBenchProjHints(computed, playersData, playerIdMap, lineupMode) {
     if (!starter || starter.id == null || String(starter.id) === '0') {
       return starter;
     }
-    const starterRank = rankPtsForMode(starter, lineupMode);
+    const starterRank = lineupMode === 'projections'
+      ? actualScore(starter)
+      : rankPtsForMode(starter, lineupMode);
     let best = null;
     let bestRank = 0;
     for (const benchPlayer of bench) {
       if (!isEligibleForSlot(slot, benchPlayer.position)) {
         continue;
       }
-      const expected = rankPtsForMode(benchPlayer, lineupMode);
+      if (lineupMode === 'projections' && typeof benchPlayer.actualPts !== 'number') {
+        continue;
+      }
+      const expected = lineupMode === 'projections'
+        ? actualScore(benchPlayer)
+        : rankPtsForMode(benchPlayer, lineupMode);
       if (expected > starterRank + 0.049 && (!best || expected > bestRank)) {
         best = benchPlayer;
         bestRank = expected;
@@ -310,13 +321,16 @@ function attachBenchProjHints(computed, playersData, playerIdMap, lineupMode) {
       return starter;
     }
     const info = getPlayerInfo(best.id, playersData, playerIdMap);
+    const name = info && info.name ? info.name : String(best.id);
+    if (lineupMode === 'projections') {
+      return {
+        ...starter,
+        bestBenchScore: { id: best.id, name, pts: bestRank },
+      };
+    }
     return {
       ...starter,
-      higherBenchProj: {
-        id: best.id,
-        name: info && info.name ? info.name : String(best.id),
-        expected: bestRank,
-      },
+      higherBenchProj: { id: best.id, name, expected: bestRank },
     };
   });
   return { ...computed, starters, bench };
@@ -380,7 +394,7 @@ export function startSitWithProjections(
   const finalized = mode === 'projections'
     ? projFinalized
     : annotateProjectionSources(displaySorted, playerGameLabels, projectedPtsById);
-  const withHints = attachBenchProjHints(finalized, playersData, playerIdMap, mode);
+  const withHints = attachBenchHints(finalized, playersData, playerIdMap, mode);
   return {
     ...withHints,
     lineupMode: mode,

@@ -166,7 +166,9 @@ export default function ScoresLineup({
     const slot = bench ? (info && info.position) : (STARTER_POSITION_NAMES[i] || `S${i + 1}`);
     const isLive = Boolean(isActiveWeek && gameObj.live);
     const highlightClass = highlight === 'up' ? ' text-up text-bold' : (highlight === 'down' ? ' text-down text-bold' : '');
-    const hint = !bench && p.higherBenchProj ? p.higherBenchProj : null;
+    const scoreHint = !bench && p.bestBenchScore ? p.bestBenchScore : null;
+    const projHint = !bench && p.higherBenchProj ? p.higherBenchProj : null;
+    const hint = scoreHint || projHint;
     return (
       <div
         key={p.id}
@@ -203,9 +205,13 @@ export default function ScoresLineup({
           {hint ? (
             <div
               className="scores-lineup-bench-hint"
-              title={`${hint.name} · ${Number(hint.expected).toFixed(1)} proj`}
+              title={scoreHint
+                ? `${scoreHint.name} · ${Number(scoreHint.pts).toFixed(1)}`
+                : `${projHint.name} · ${Number(projHint.expected).toFixed(1)}`}
             >
-              {isMobileView ? 'Higher proj on bench' : 'Higher projection on bench'}
+              {formatPlayerNameForDisplay(scoreHint ? scoreHint.name : projHint.name, true)}
+              {' '}
+              {Number(scoreHint ? scoreHint.pts : projHint.expected).toFixed(1)}
             </div>
           ) : null}
         </div>

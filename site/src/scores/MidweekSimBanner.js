@@ -11,7 +11,7 @@ export default function MidweekSimBanner({ season }) {
   return (
     <div className="info-banner warning" role="status">
       <span className="banner-icon" aria-hidden="true">🧪</span>
-      Mid-week simulation is on — about half the games are Final, a few are live, the rest still show projections. Flip <code>SIMULATE_MIDWEEK</code> in <code>global_constants.js</code> to turn it off.
+      Mid-week simulation is on — a few games are Final, a few are live, the rest still show projections. Flip <code>SIMULATE_MIDWEEK</code> in <code>global_constants.js</code> to turn it off.
     </div>
   );
 }

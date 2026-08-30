@@ -82,8 +82,9 @@ function writeEventStatus(event, phase, index) {
 }
 
 /**
- * Local testing: rewrite the current-season scoreboard so ~half the games
- * are final, a couple are live, and the rest have not started.
+ * Local testing: rewrite the current-season scoreboard so a handful of games
+ * are final, a handful are live, and the rest have not started — enough for
+ * a typical roster to show ~3 finished and ~3 in-play.
  */
 export function applyMidweekSimulation(scoreboardJson, season) {
   if (!SIMULATE_MIDWEEK || !scoreboardJson) {
@@ -106,8 +107,8 @@ export function applyMidweekSimulation(scoreboardJson, season) {
     .map((event, i) => ({ event, i, t: eventStartMs(event) }))
     .sort((a, b) => (a.t - b.t) || String(a.event && a.event.id).localeCompare(String(b.event && b.event.id)));
   const n = ordered.length;
-  const finalCount = Math.max(1, Math.floor(n * 0.5));
-  const liveCount = n > 2 ? Math.max(1, Math.round(n * 0.15)) : 0;
+  const finalCount = Math.min(2, n);
+  const liveCount = Math.min(2, Math.max(0, n - finalCount));
   ordered.forEach((row, idx) => {
     const phase = idx < finalCount ? 'post' : (idx < finalCount + liveCount ? 'in' : 'pre');
     writeEventStatus(row.event, phase, idx);
