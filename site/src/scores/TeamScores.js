@@ -11,9 +11,10 @@ import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam, isScoreboardWeekComplete } from './GamesParser';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
-import MobileScaled from './MobileScaled';
 import useIsMobile from '../hooks/useIsMobile';
 import { createLiveScoresPoller } from '../utils/livePolling';
+import MidweekSimBanner from './MidweekSimBanner';
+import LineupModeToggle from './LineupModeToggle';
 
 // Lazy import to avoid circular deps at module init
 async function readPlayersSnapshotFromDb(season, week) {
@@ -47,6 +48,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const urlWeek = parseInt(searchParams.get('week'), 10);
   const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : getDefaultDisplayWeek(searchParams.get('year'));
   const [week, setWeek] = useState(initialWeek);
+  const [lineupMode, setLineupMode] = useState('scores');
   const [benchOpen, setBenchOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -340,7 +342,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   // Get week breakdown for this roster
   const rawWeekBreakdown = effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week)[rosterId] : null;
   const weekBreakdown = rawWeekBreakdown
-    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById)
+    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode)
     : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
@@ -396,6 +398,8 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   return (
     <div className="team-scores-container team-scores-container--modern">
       <WeekSelector week={week} onChange={handleSelect} />
+      <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+      <MidweekSimBanner season={season} />
 
       {isActiveWeek && (
         <div className="team-scores-activity-banner">
@@ -412,17 +416,13 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
         <div className="standings-row teams2-scores-row">
           <div className="teams2-scores-row-body">
             {(() => {
-              const breakdown = (
+              return (
                 <LeagueScoresTeamBreakdown
                   weekBreakdown={weekBreakdown}
-                  week={week}
-                  rosterId={rosterId}
                   benchOpen={benchOpen}
                   onToggleBench={() => setBenchOpen(open => !open)}
-                  benchTotal={weekBreakdown.benchTotal}
                   playersData={playersDataForWeek}
                   playerIdMap={playerIdMap}
-                  searchParams={searchParams}
                   playerGameLabels={playerGameLabels}
                   isActiveWeek={isActiveWeek}
                   injuriesMap={injuriesMap}
@@ -431,7 +431,6 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                   playersTeamMap={playersTeamMap}
                 />
               );
-              return isMobile ? <MobileScaled>{breakdown}</MobileScaled> : breakdown;
             })()}
           </div>
         </div>

@@ -12,6 +12,7 @@ import {
 } from './dataLoader.js';
 import {
   getCurrentNFLWeek, getCompletedWeeksCount, normalisePlayerName,
+  isPlaceholderPlayerName, sleeperPlayerQuality,
   buildTeamMap, getPlayerDisplayName, lookupKtc, fmt, fmtDate, findTeam,
 } from './helpers.js';
 
@@ -769,12 +770,21 @@ export async function getFreeAgents(position) {
     if ((ktcEntry.ktcValue_tep || 0) < 1000) continue; // skip low-value players
     if (position && ktcEntry.position?.toUpperCase() !== position.toUpperCase()) continue;
 
-    // Find the sleeper ID for this player
+    // Find the sleeper ID for this player. Same normalised name can hit a
+    // retired namesake (Kenneth Walker the WR vs Kenneth Walker III the RB).
     let sleeperId = null;
+    let bestQuality = -1;
+    const ktcPos = (ktcEntry.position || '').toUpperCase();
     for (const [pid, p] of Object.entries(playersData)) {
-      if (normalisePlayerName(getPlayerDisplayName(p)) === normName) {
+      const displayName = getPlayerDisplayName(p);
+      if (isPlaceholderPlayerName(displayName)) continue;
+      if (normalisePlayerName(displayName) !== normName) continue;
+      if (ktcPos && (p.position || '').toUpperCase() !== ktcPos) continue;
+      if (!p.active) continue;
+      const quality = sleeperPlayerQuality(p);
+      if (quality > bestQuality) {
+        bestQuality = quality;
         sleeperId = pid;
-        break;
       }
     }
 

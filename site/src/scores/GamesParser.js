@@ -1,5 +1,7 @@
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { fetchHistoriesByEspnIds, getTeamAtDate } from '../players/PlayerGameHistory';
+import { SIMULATE_MIDWEEK } from '../utils/global_constants';
+import { CURRENT_YEAR } from '../utils/DateHelper';
 
 const TEAM_ABBR_ALIASES = {
   WAS: 'WSH',
@@ -28,6 +30,90 @@ function extractEvents(scoreboardJson) {
     return scoreboardJson.leagues[0].events;
   }
   return [];
+}
+
+function eventStartMs(event) {
+  const comps = event && Array.isArray(event.competitions) ? event.competitions : [];
+  const comp = comps.length ? comps[0] : null;
+  const iso = (event && event.date) || (comp && comp.date);
+  const t = iso ? Date.parse(iso) : NaN;
+  return Number.isFinite(t) ? t : 0;
+}
+
+function writeEventStatus(event, phase, index) {
+  if (!event || typeof event !== 'object') {
+    return;
+  }
+  if (!Array.isArray(event.competitions) || !event.competitions.length) {
+    event.competitions = [{}];
+  }
+  const comp = event.competitions[0] || {};
+  event.competitions[0] = comp;
+  if (!Array.isArray(comp.competitors)) {
+    comp.competitors = [];
+  }
+  if (phase === 'post') {
+    const type = { state: 'post', completed: true, name: 'STATUS_FINAL' };
+    event.status = { ...(event.status || {}), type };
+    comp.status = { type, period: 4, displayClock: '0:00' };
+    comp.competitors.forEach((c, i) => {
+      if (!c) return;
+      c.score = String(17 + ((index + i) % 3) * 7);
+      c.winner = i === 1;
+    });
+    return;
+  }
+  if (phase === 'in') {
+    const type = { state: 'in', completed: false, name: 'STATUS_IN_PROGRESS' };
+    event.status = { ...(event.status || {}), type };
+    comp.status = { type, period: 2, displayClock: '8:21' };
+    comp.period = 2;
+    comp.displayClock = '8:21';
+    comp.competitors.forEach((c, i) => {
+      if (!c) return;
+      c.score = String(10 + ((index + i) % 2) * 4);
+      delete c.winner;
+    });
+    return;
+  }
+  const type = { state: 'pre', completed: false, name: 'STATUS_SCHEDULED' };
+  event.status = { ...(event.status || {}), type };
+  comp.status = { type };
+}
+
+/**
+ * Local testing: rewrite the current-season scoreboard so ~half the games
+ * are final, a couple are live, and the rest have not started.
+ */
+export function applyMidweekSimulation(scoreboardJson, season) {
+  if (!SIMULATE_MIDWEEK || !scoreboardJson) {
+    return scoreboardJson;
+  }
+  if (season != null && String(season) !== String(CURRENT_YEAR)) {
+    return scoreboardJson;
+  }
+  let copy;
+  try {
+    copy = JSON.parse(JSON.stringify(scoreboardJson));
+  } catch (_) {
+    return scoreboardJson;
+  }
+  const events = extractEvents(copy);
+  if (!events.length) {
+    return copy;
+  }
+  const ordered = events
+    .map((event, i) => ({ event, i, t: eventStartMs(event) }))
+    .sort((a, b) => (a.t - b.t) || String(a.event && a.event.id).localeCompare(String(b.event && b.event.id)));
+  const n = ordered.length;
+  const finalCount = Math.max(1, Math.floor(n * 0.5));
+  const liveCount = n > 2 ? Math.max(1, Math.round(n * 0.15)) : 0;
+  ordered.forEach((row, idx) => {
+    const phase = idx < finalCount ? 'post' : (idx < finalCount + liveCount ? 'in' : 'pre');
+    writeEventStatus(row.event, phase, idx);
+  });
+  copy._dbbSimulateMidweek = true;
+  return copy;
 }
 
 export function isScoreboardWeekComplete(scoreboardJson) {
@@ -224,7 +310,7 @@ export async function mapPlayersToGames(playerIds, playersData, playerIdMap, sco
   // Determine event date anchor and whether this week is entirely future
   const evs = extractEvents(scoreboardJson);
   const anchorIso = evs && evs.length ? (evs[0].date || (evs[0].competitions && evs[0].competitions[0] && evs[0].competitions[0].date)) : null;
-  const weekFuture = isWeekFuture(scoreboardJson);
+  const weekFuture = isWeekFuture(scoreboardJson) || Boolean(scoreboardJson && scoreboardJson._dbbSimulateMidweek);
 
   // Collect infos and ESPN IDs
   const pidToInfo = {};

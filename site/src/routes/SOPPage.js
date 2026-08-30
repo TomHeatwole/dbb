@@ -141,6 +141,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
   const [fetchedAt, setFetchedAt] = useState(null);
   const [bookError, setBookError] = useState(null);
   const [dkNotice, setDkNotice] = useState(null);
+  const [espnNotice, setEspnNotice] = useState(null);
   const [bookRefreshing, setBookRefreshing] = useState(false);
 
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
@@ -160,6 +161,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
       fdGames = fdData.games ?? [];
       setGames(fdGames.map((game) => ({ ...game, dk: null, klsh: null })));
       setFetchedAt(fdData.fetchedAt ?? null);
+      setEspnNotice(espnClockNotice(fdData.espn));
       setBookError(null);
       setBookLoaded(true);
     } catch (err) {
@@ -285,7 +287,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
                     games={games}
                     fetchedAt={fetchedAt}
                     error={bookError}
-                    dkNotice={dkNotice}
+                    dkNotice={[espnNotice, dkNotice].filter(Boolean).join(' ')}
                     refreshing={bookRefreshing}
                     loading={skipBootLoader && !bookLoaded}
                     onRefresh={() => refreshBook({ manual: true })}
@@ -308,6 +310,13 @@ function SOPPage() {
 
 export function SOP2Page() {
   return <SOPPageShell basePath="/SOP2" skipBootLoader />;
+}
+
+function espnClockNotice(espn) {
+  if (!espn) return null;
+  if (espn.ok) return null;
+  if (espn.error) return `ESPN clock: ${espn.error}`;
+  return 'Live clock unavailable — ESPN Premier League feed failed.';
 }
 
 export default SOPPage;

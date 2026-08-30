@@ -20,6 +20,7 @@ const KALSHI_MIN_INTERVAL_MS = Number(process.env.KALSHI_MIN_INTERVAL_MS || 120)
 const KALSHI_RESPONSE_CACHE_MS = Number(process.env.KALSHI_RESPONSE_CACHE_MS || 30_000);
 const KALSHI_EVENTS_CACHE_MS = Number(process.env.KALSHI_EVENTS_CACHE_MS || 5 * 60_000);
 const KALSHI_MARKETS_CACHE_MS = Number(process.env.KALSHI_MARKETS_CACHE_MS || 30_000);
+const KALSHI_ORDERBOOK_CACHE_MS = Number(process.env.KALSHI_ORDERBOOK_CACHE_MS || 20_000);
 const KALSHI_MAX_RETRIES = Number(process.env.KALSHI_MAX_RETRIES || 6);
 
 const TEAM_ALIASES = {
@@ -59,6 +60,7 @@ let lastKalshiRequestAt = 0;
 
 const eventsCache = new Map();
 const marketsCache = new Map();
+const orderbookCache = new Map();
 let responseCache = { key: null, at: 0, data: null, inflight: null };
 
 function stripTeamDecorators(name) {
@@ -221,6 +223,18 @@ export async function fetchAllKalshiEvents(seriesTicker) {
 
   writeCacheEntry(eventsCache, seriesTicker, events);
   return events;
+}
+
+export async function fetchKalshiOrderbook(ticker, depth = 40) {
+  const key = `${ticker}:${depth}`;
+  const cached = readCacheEntry(orderbookCache, key, KALSHI_ORDERBOOK_CACHE_MS);
+  if (cached) return cached;
+
+  const qs = new URLSearchParams({ depth: String(depth) });
+  const payload = await kalshiFetch(`/markets/${encodeURIComponent(ticker)}/orderbook?${qs}`);
+  const book = payload?.orderbook_fp ?? payload?.orderbook ?? payload ?? null;
+  writeCacheEntry(orderbookCache, key, book);
+  return book;
 }
 
 export async function fetchMarketsForEvent(eventTicker) {
@@ -568,7 +582,7 @@ export default async function handler(req, res) {
   }
 
   if (wantsCornersBook(req)) {
-    const { default: cornersHandler } = await import('../lib/kalshi-corners.mjs');
+    const { default: cornersHandler } = await import(`../lib/kalshi-corners.mjs?v=${Date.now()}`);
     return cornersHandler(req, res);
   }
 

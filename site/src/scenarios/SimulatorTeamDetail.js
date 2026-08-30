@@ -265,30 +265,57 @@ function SimulatorTeamDetail({
         <span className="simulator-team-detail-name">{team.teamName || `Team ${rosterId}`}</span>
       </div>
 
-      {(seasonExtremes?.best || seasonExtremes?.worst) && (
+      {(seasonExtremes?.bestByPlace || seasonExtremes?.worstByPlace
+        || seasonExtremes?.bestByScore || seasonExtremes?.worstByScore) && (
         <div className="simulator-team-detail-section simulator-team-detail-section--extremes">
           <div className="simulator-team-detail-section-title">Best and worst seasons</div>
           <div className="simulator-team-detail-subtitle">
-            Highest- and lowest-scoring runs for this team across {iterations.toLocaleString()} simulations
+            Best and worst finish, plus highest- and lowest-scoring runs, across {iterations.toLocaleString()} simulations
             {' '}· click to open the full outcome set
           </div>
-          <div className="simulator-extreme-grid">
-            <SeasonExtremeCard
-              label="Best season"
-              tone="best"
-              run={seasonExtremes.best}
-              originalRosters={originalRosters}
-              scenarioRosters={scenarioRosters}
-              seasonYear={seasonYear}
-            />
-            <SeasonExtremeCard
-              label="Worst season"
-              tone="worst"
-              run={seasonExtremes.worst}
-              originalRosters={originalRosters}
-              scenarioRosters={scenarioRosters}
-              seasonYear={seasonYear}
-            />
+          <div className="simulator-extreme-groups">
+            <div className="simulator-extreme-group">
+              <div className="simulator-extreme-group-title">By league finish</div>
+              <div className="simulator-extreme-grid">
+                <SeasonExtremeCard
+                  label="Best finish"
+                  tone="best"
+                  run={seasonExtremes.bestByPlace}
+                  originalRosters={originalRosters}
+                  scenarioRosters={scenarioRosters}
+                  seasonYear={seasonYear}
+                />
+                <SeasonExtremeCard
+                  label="Worst finish"
+                  tone="worst"
+                  run={seasonExtremes.worstByPlace}
+                  originalRosters={originalRosters}
+                  scenarioRosters={scenarioRosters}
+                  seasonYear={seasonYear}
+                />
+              </div>
+            </div>
+            <div className="simulator-extreme-group">
+              <div className="simulator-extreme-group-title">By total score</div>
+              <div className="simulator-extreme-grid">
+                <SeasonExtremeCard
+                  label="Highest score"
+                  tone="best"
+                  run={seasonExtremes.bestByScore}
+                  originalRosters={originalRosters}
+                  scenarioRosters={scenarioRosters}
+                  seasonYear={seasonYear}
+                />
+                <SeasonExtremeCard
+                  label="Lowest score"
+                  tone="worst"
+                  run={seasonExtremes.worstByScore}
+                  originalRosters={originalRosters}
+                  scenarioRosters={scenarioRosters}
+                  seasonYear={seasonYear}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -2,9 +2,17 @@
  * Premier League corner book: FanDuel totals + next 5/10 min lines,
  * plus expected stoppage estimated from ESPN play-by-play (no API key).
  *
- * ESPN does not publish an expected-stoppage field. We accumulate delay from
- * live events (goals, substitutions, cards, injuries/VAR) in the current half.
+ * ESPN does not publish an expected-stoppage field. Delay already earned
+ * this half (goals, subs, cards, VAR) plus typical extra × (regular time
+ * still left / 45).
  */
+
+import {
+  TYPICAL_FT_STOPPAGE_MIN,
+  TYPICAL_HT_STOPPAGE_MIN,
+  blendHalfStoppage,
+  regularMinutesLeftInHalf,
+} from '../src/corners/cornerModel.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -286,6 +294,101 @@ function extractNumberOfCorners(markets) {
     return { market: name, unders, overs, exact };
   }
   return null;
+}
+
+function extractOuLadder(markets, nameRe) {
+  if (!markets) return [];
+  const rows = [];
+  for (const market of Object.values(markets)) {
+    const name = String(market.marketName ?? '');
+    const match = name.match(nameRe);
+    if (!match || !marketIsOpen(market)) continue;
+    const line = Number(match[1]);
+    if (!Number.isFinite(line)) continue;
+    const { over, under } = findOverUnder(market, line);
+    if (!over && !under) continue;
+    rows.push({ line, market: name, over, under });
+  }
+  rows.sort((a, b) => a.line - b.line);
+  return rows;
+}
+
+function runnerSideForTeams(runnerName, teams) {
+  const raw = String(runnerName ?? '').trim();
+  const n = raw.toLowerCase();
+  if (!raw) return null;
+  if (/^(neither|no one|none|no team)$/i.test(raw)) return 'neither';
+  if (/^(draw|tie|equal)$/i.test(raw)) return 'draw';
+  if (teams?.home && namesMatch(raw, teams.home)) return 'home';
+  if (teams?.away && namesMatch(raw, teams.away)) return 'away';
+  return null;
+}
+
+function extractEachTeamPlus(markets) {
+  if (!markets) return [];
+  for (const market of Object.values(markets)) {
+    const name = String(market.marketName ?? '');
+    if (!/^Each Team Total Corners$/i.test(name) || !marketIsOpen(market)) continue;
+    const rows = [];
+    for (const runner of runnersList(market)) {
+      const quote = runnerQuote(runner);
+      if (!quote) continue;
+      const m = String(runner.runnerName ?? '').match(/^(\d+)\+\s+Corners Each Team/i);
+      if (!m) continue;
+      rows.push({ n: Number(m[1]), ...quote });
+    }
+    rows.sort((a, b) => a.n - b.n);
+    return rows;
+  }
+  return [];
+}
+
+function extractRaceMarkets(markets, teams) {
+  if (!markets) return [];
+  const races = [];
+  for (const market of Object.values(markets)) {
+    const name = String(market.marketName ?? '');
+    const match = name.match(/^Race to (\d+) Corners$/i);
+    if (!match || !marketIsOpen(market)) continue;
+    const n = Number(match[1]);
+    const row = { n, market: name, home: null, away: null, neither: null };
+    for (const runner of runnersList(market)) {
+      const quote = runnerQuote(runner);
+      if (!quote) continue;
+      const side = runnerSideForTeams(runner.runnerName, teams);
+      if (side === 'home' || side === 'away' || side === 'neither') row[side] = quote;
+    }
+    if (row.home || row.away || row.neither) races.push(row);
+  }
+  races.sort((a, b) => a.n - b.n);
+  return races;
+}
+
+function extractCornerMatchBet(markets, teams) {
+  if (!markets) return null;
+  for (const market of Object.values(markets)) {
+    const name = String(market.marketName ?? '');
+    if (!/^Corner Match Bet$/i.test(name) || !marketIsOpen(market)) continue;
+    const row = { market: name, home: null, away: null, draw: null };
+    for (const runner of runnersList(market)) {
+      const quote = runnerQuote(runner);
+      if (!quote) continue;
+      const side = runnerSideForTeams(runner.runnerName, teams);
+      if (side === 'home' || side === 'away' || side === 'draw') row[side] = quote;
+    }
+    if (row.home || row.away || row.draw) return row;
+  }
+  return null;
+}
+
+function extractTeamCornerMarkets(markets, teams) {
+  return {
+    home: extractOuLadder(markets, /^Home Total Corners (\d+\.5)$/i),
+    away: extractOuLadder(markets, /^Away Total Corners (\d+\.5)$/i),
+    eachPlus: extractEachTeamPlus(markets),
+    races: extractRaceMarkets(markets, teams),
+    matchBet: extractCornerMatchBet(markets, teams),
+  };
 }
 
 function extractFirstHalfCorners(markets) {
@@ -821,6 +924,58 @@ function breakdownLabel(breakdown) {
   return bits.length ? bits.join(' · ') : 'no delay events yet';
 }
 
+function earnedMinutesFromEstimate(estimate, period) {
+  if (!estimate || !Number.isFinite(estimate.seconds)) return 0;
+  const base = period === 1 ? STOPPAGE_SEC.baseFirst : STOPPAGE_SEC.baseSecond;
+  return Math.max(0, (estimate.seconds - base) / 60);
+}
+
+function espnClockForBlend({ finished, halftime, period, clock, status }) {
+  const state = String(status?.type?.state ?? '').toLowerCase();
+  if (finished) {
+    return {
+      phase: 'post',
+      period: 2,
+      elapsed: 90,
+      plus: clock.plus,
+      inStoppage: false,
+      finished: true,
+      halftime: false,
+    };
+  }
+  if (halftime) {
+    return {
+      phase: 'ht',
+      period: 1,
+      elapsed: 45,
+      plus: 0,
+      inStoppage: false,
+      finished: false,
+      halftime: true,
+    };
+  }
+  if (state !== 'in') {
+    return {
+      phase: 'pre',
+      period: null,
+      elapsed: 0,
+      plus: 0,
+      inStoppage: false,
+      finished: false,
+      halftime: false,
+    };
+  }
+  return {
+    phase: 'live',
+    period: period || ((clock.elapsed ?? 0) <= 45 ? 1 : 2),
+    elapsed: clock.elapsed,
+    plus: clock.plus,
+    inStoppage: clock.inStoppage,
+    finished: false,
+    halftime: false,
+  };
+}
+
 function extractEspnStoppage(event, plays) {
   const competition = event?.competitions?.[0] ?? {};
   const status = competition.status ?? {};
@@ -828,6 +983,7 @@ function extractEspnStoppage(event, plays) {
   const clock = parseEspnClock(status.displayClock);
   const period = currentPeriodFromStatus(status, clock);
   const finished = isFinishedEspnStatus(status);
+  const halftime = isHalftimeEspnStatus(status) && !finished;
   const estimate = plays?.length ? estimateStoppageFromPlays(plays, period) : null;
   const announcedMinutes = announcedFromPlays(plays, period);
   const addedSeconds = latestAddedClockSeconds(plays, period);
@@ -835,21 +991,21 @@ function extractEspnStoppage(event, plays) {
     addedSeconds
     ?? (clock.inStoppage ? clock.plus * 60 : finished && clock.plus ? clock.plus * 60 : null);
 
-  let expectedSeconds = estimate?.seconds ?? null;
-  if (announcedMinutes != null) {
-    expectedSeconds = Math.max(expectedSeconds ?? 0, announcedMinutes * 60);
-  }
-  if (playedSeconds != null && expectedSeconds != null) {
-    expectedSeconds = Math.max(expectedSeconds, playedSeconds);
-  }
-  if (finished && playedSeconds != null && expectedSeconds == null) {
-    expectedSeconds = playedSeconds;
-  }
-
-  const remainingSeconds =
-    expectedSeconds != null
-      ? Math.max(0, expectedSeconds - (playedSeconds ?? 0))
-      : null;
+  const earnedMinutes = earnedMinutesFromEstimate(estimate, period);
+  const playedMinutes = playedSeconds != null ? playedSeconds / 60 : (clock.inStoppage ? clock.plus : 0);
+  const clockLike = espnClockForBlend({ finished, halftime, period, clock, status });
+  const half = clockLike.period === 2 ? 2 : 1;
+  const typical = half === 2 ? TYPICAL_FT_STOPPAGE_MIN : TYPICAL_HT_STOPPAGE_MIN;
+  const blend = blendHalfStoppage({
+    typical,
+    earnedMinutes: clockLike.phase === 'live' ? earnedMinutes : 0,
+    announcedMinutes,
+    playedMinutes: clockLike.phase === 'live' || finished ? playedMinutes : 0,
+    regularLeft: regularMinutesLeftInHalf(clockLike, half),
+    inStoppage: Boolean(clockLike.inStoppage),
+  });
+  const expectedSeconds = blend.expected * 60;
+  const remainingSeconds = blend.remaining * 60;
 
   const matchStatus = status.type?.description ?? status.type?.detail ?? status.type?.name ?? null;
   const boxCorners = boxscoreCorners(event);
@@ -859,10 +1015,9 @@ function extractEspnStoppage(event, plays) {
   const firstHalfCornersSoFar = period === 1
     ? (playCornersH1 ?? cornersSoFar)
     : playCornersH1;
-  const halftime = isHalftimeEspnStatus(status) && !finished;
 
   if (halftime) {
-    const shSeconds = 4.8 * 60;
+    const shSeconds = TYPICAL_FT_STOPPAGE_MIN * 60;
     return {
       matchStatus: matchStatus || 'Halftime',
       status: status.type?.state ?? 'in',
@@ -872,7 +1027,10 @@ function extractEspnStoppage(event, plays) {
       inStoppage: false,
       announced: null,
       played: "0'",
-      expectedMinutes: 4.8,
+      expectedMinutes: TYPICAL_FT_STOPPAGE_MIN,
+      earnedMinutes: 0,
+      futureMinutes: TYPICAL_FT_STOPPAGE_MIN,
+      regularLeftMinutes: 45,
       remainingLabel: formatClockLabel(shSeconds),
       expectedLabel: formatClockLabel(Math.round(shSeconds / 30) * 30),
       playedLabel: "0'",
@@ -883,7 +1041,7 @@ function extractEspnStoppage(event, plays) {
       period: 1,
       halfTime: true,
       breakdown: null,
-      breakdownLabel: 'First-half extra is done · second-half stoppage resets to typical 4.8′',
+      breakdownLabel: 'First-half extra is done · second-half extra starts at typical 4.8′',
       cornersSoFar,
       firstHalfCornersSoFar,
     };
@@ -898,13 +1056,14 @@ function extractEspnStoppage(event, plays) {
     inStoppage: clock.inStoppage,
     announced: announcedMinutes != null ? `${announcedMinutes}:00` : null,
     played: playedSeconds != null ? formatClockLabel(playedSeconds) : null,
-    expectedMinutes: expectedSeconds != null ? expectedSeconds / 60 : null,
+    expectedMinutes: blend.expected,
+    earnedMinutes,
+    futureMinutes: blend.future,
+    regularLeftMinutes: blend.regularLeft,
     remainingLabel: finished
       ? (playedSeconds != null ? "0'" : null)
       : formatClockLabel(remainingSeconds),
-    expectedLabel: expectedSeconds != null
-      ? formatClockLabel(Math.round(expectedSeconds / 30) * 30)
-      : null,
+    expectedLabel: formatClockLabel(Math.round(expectedSeconds / 30) * 30),
     playedLabel: playedSeconds != null ? formatClockLabel(playedSeconds) : null,
     homeScore: teams.homeScore,
     awayScore: teams.awayScore,
@@ -912,7 +1071,12 @@ function extractEspnStoppage(event, plays) {
     estimated: Boolean(estimate) && announcedMinutes == null,
     period,
     breakdown: estimate?.breakdown ?? null,
-    breakdownLabel: breakdownLabel(estimate?.breakdown),
+    breakdownLabel: [
+      breakdownLabel(estimate?.breakdown),
+      blend.future > 0.05
+        ? `${blend.earned.toFixed(1)}′ earned + ${blend.future.toFixed(1)}′ still (${blend.regularLeft.toFixed(0)}′ of half)`
+        : null,
+    ].filter(Boolean).join(' · ') || null,
     cornersSoFar,
     firstHalfCornersSoFar,
   };
@@ -1017,7 +1181,7 @@ function attachStoppage(game, matchSets) {
     && (
       stoppage.status === 'in'
       || stoppage.status === 'post'
-      || stoppage.expectedLabel
+      || stoppage.halfTime
       || stoppage.played
     );
   if (!useful) return { ...game, stoppage: null };
@@ -1063,6 +1227,7 @@ async function fetchPlCornerBook() {
             totals,
             total: pickClosestFromLadder(totals),
             numberOfCorners: extractNumberOfCorners(bundle.markets),
+            teamCorners: extractTeamCornerMarkets(bundle.markets, teams),
             firstHalfTotal: extractFirstHalfCorners(bundle.markets),
             next5: pickWindowMarket(bundle.markets, 5, null),
             next10: pickWindowMarket(bundle.markets, 10, null),

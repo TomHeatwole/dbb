@@ -8,6 +8,7 @@ import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useIsMobile from '../hooks/useIsMobile';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
+import ScoreSplit, { starterScoreSplit, benchScoreSplit } from './ScoreSplit';
 
 export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, totalsPlacement = 'bottom', playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
   const isMobileView = useIsMobile();
@@ -56,17 +57,23 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
     );
   }
 
-  function renderTotalLabel(total, isProj) {
+  const starterSplit = starterScoreSplit(weekBreakdown);
+  const benchSplit = benchScoreSplit(weekBreakdown);
+  const startersIncludeProj = starterSplit.hasProj;
+  const benchIncludeProj = benchSplit.hasProj;
+
+  function renderTotalLabel(split) {
     return (
-      <>
-        Total: {Number(total || 0).toFixed(1)}
-        {isProj ? <span className="proj-tag"> proj</span> : ''}
-      </>
+      <ScoreSplit
+        actual={split.actual}
+        proj={split.proj}
+        hasActual={split.hasActual}
+        hasProj={split.hasProj}
+        prefix="Total: "
+        layout="inline"
+      />
     );
   }
-
-  const startersIncludeProj = Array.isArray(weekBreakdown.starters) && weekBreakdown.starters.some((p) => p && p.ptsSource === 'proj');
-  const benchIncludeProj = Array.isArray(weekBreakdown.bench) && weekBreakdown.bench.some((p) => p && p.ptsSource === 'proj');
 
   const InjuryBadge = ({ playerId, info }) => {
     let status = null;
@@ -96,7 +103,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
         <span>Starters</span>
         {showTopTotals ? (
           <span className="team-scores-total-top">
-            {renderTotalLabel(weekBreakdown.starterTotal, startersIncludeProj)}
+            {renderTotalLabel(starterSplit)}
           </span>
         ) : null}
       </div>
@@ -163,7 +170,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
             <tr>
               <td colSpan={4} className={`team-scores-total-row${startersIncludeProj ? ' team-scores-total-row--proj' : ''}`}>
                 <div className="team-scores-total-inner">
-                  {renderTotalLabel(weekBreakdown.starterTotal, startersIncludeProj)}
+                  {renderTotalLabel(starterSplit)}
                 </div>
               </td>
             </tr>
@@ -199,7 +206,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
           <span>Bench</span>
           {showTopTotals ? (
             <span className="team-scores-total-top">
-              {renderTotalLabel(weekBreakdown.benchTotal, benchIncludeProj)}
+              {renderTotalLabel(benchSplit)}
             </span>
           ) : null}
         </div>
@@ -263,7 +270,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               <tr>
                 <td colSpan={3} className={`team-scores-total-row${benchIncludeProj ? ' team-scores-total-row--proj' : ''}`}>
                   <div className="team-scores-total-inner">
-                    {renderTotalLabel(weekBreakdown.benchTotal, benchIncludeProj)}
+                    {renderTotalLabel(benchSplit)}
                   </div>
                 </td>
               </tr>

@@ -6,6 +6,8 @@ const DEFAULT_SEASON_TYPE = 'regular';
 const PROJECTIONS_TTL_MS = 6 * 60 * 60 * 1000;
 
 const memoryCache = new Map();
+const inflight = new Map();
+const SKIP_CACHE_STAT_KEYS = new Set(['adp', 'adp_dd_ppr', 'pos_adp_dd_ppr', 'gp']);
 
 /**
  * @typedef {Object} SleeperPlayerProjection
@@ -141,22 +143,60 @@ function remember(key, data, ts) {
   return data;
 }
 
-/**
- * Fetch Sleeper NFL weekly player projections.
- * Unofficial endpoint — failures return an empty map and never throw.
- *
- * @param {string|number} season
- * @param {string|number} week
- * @param {{ seasonType?: string, forceUpdate?: boolean }} [options]
- * @returns {Promise<SleeperWeeklyProjections>}
- */
-export async function getSleeperWeeklyProjections(season, week, options = {}) {
-  const seasonType = options.seasonType || DEFAULT_SEASON_TYPE;
-  const weekNum = Number(week);
-  if (!season || !Number.isFinite(weekNum) || weekNum < 1) {
-    return emptyResult(season || '', weekNum || 0, seasonType);
+function hasScorableStats(stats) {
+  if (!stats || typeof stats !== 'object') {
+    return false;
   }
+  for (const key of Object.keys(stats)) {
+    if (!SKIP_CACHE_STAT_KEYS.has(key)) {
+      return true;
+    }
+  }
+  return false;
+}
 
+function slimStats(stats) {
+  const out = {};
+  if (!stats || typeof stats !== 'object') {
+    return out;
+  }
+  for (const [key, value] of Object.entries(stats)) {
+    if (!SKIP_CACHE_STAT_KEYS.has(key)) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function slimForApiCache(byPlayerId) {
+  const out = {};
+  for (const [playerId, row] of Object.entries(byPlayerId || {})) {
+    if (!row || !hasScorableStats(row.stats)) {
+      continue;
+    }
+    out[playerId] = {
+      player_id: row.player_id,
+      stats: slimStats(row.stats),
+      team: row.team ?? null,
+      opponent: row.opponent ?? null,
+      game_id: row.game_id ?? null,
+    };
+  }
+  return out;
+}
+
+function resultFromCache(cached, season, week, seasonType) {
+  if (!cached || cached.data == null) {
+    return null;
+  }
+  const parsed = parseSleeperWeeklyProjections(cached.data, season, week, seasonType, cached.ts || null);
+  if (!parsed || !parsed.byPlayerId || Object.keys(parsed.byPlayerId).length === 0) {
+    return null;
+  }
+  return parsed;
+}
+
+async function loadSleeperWeeklyProjections(season, weekNum, seasonType, options) {
   const key = cacheKey(season, weekNum, seasonType);
   const url = projectionsUrl(season, weekNum, seasonType);
   const now = Date.now();
@@ -167,10 +207,11 @@ export async function getSleeperWeeklyProjections(season, week, options = {}) {
       return mem.data;
     }
 
+    // Same Firebase api_cache as live scores / ESPN scoreboard, 6h TTL.
     try {
       const cached = await readApiCacheLatestByKey(key);
-      if (cached && cached.data) {
-        const parsed = parseSleeperWeeklyProjections(cached.data, season, weekNum, seasonType, cached.ts || null);
+      const parsed = resultFromCache(cached, season, weekNum, seasonType);
+      if (parsed) {
         const age = now - (cached.ts || 0);
         if (age < PROJECTIONS_TTL_MS || PAUSE_SCRAPES) {
           return remember(key, parsed, cached.ts || now);
@@ -199,9 +240,13 @@ export async function getSleeperWeeklyProjections(season, week, options = {}) {
     }
     const json = await resp.json();
     const parsed = parseSleeperWeeklyProjections(json, season, weekNum, seasonType, now);
+    parsed.byPlayerId = slimForApiCache(parsed.byPlayerId);
     remember(key, parsed, now);
     try {
-      await writeApiCacheWithKey(key, url, parsed);
+      const written = await writeApiCacheWithKey(key, url, { byPlayerId: parsed.byPlayerId });
+      if (!written) {
+        console.warn(LOG_PREFIX, 'api_cache write failed', { key });
+      }
     } catch (_) {
       /* cache write is best-effort */
     }
@@ -211,6 +256,41 @@ export async function getSleeperWeeklyProjections(season, week, options = {}) {
     const mem = memoryCache.get(key);
     return mem && mem.data ? mem.data : emptyResult(season, weekNum, seasonType);
   }
+}
+
+/**
+ * Fetch Sleeper NFL weekly player projections.
+ * Unofficial endpoint — failures return an empty map and never throw.
+ * Cached in Firebase api_cache like live scores, refreshed every 6 hours.
+ *
+ * @param {string|number} season
+ * @param {string|number} week
+ * @param {{ seasonType?: string, forceUpdate?: boolean }} [options]
+ * @returns {Promise<SleeperWeeklyProjections>}
+ */
+export async function getSleeperWeeklyProjections(season, week, options = {}) {
+  const seasonType = options.seasonType || DEFAULT_SEASON_TYPE;
+  const weekNum = Number(week);
+  if (!season || !Number.isFinite(weekNum) || weekNum < 1) {
+    return emptyResult(season || '', weekNum || 0, seasonType);
+  }
+
+  const key = cacheKey(season, weekNum, seasonType);
+  if (!options.forceUpdate) {
+    const mem = memoryCache.get(key);
+    if (mem && mem.data && Date.now() - mem.ts < PROJECTIONS_TTL_MS) {
+      return mem.data;
+    }
+  }
+  if (inflight.has(key)) {
+    return inflight.get(key);
+  }
+  const pending = loadSleeperWeeklyProjections(season, weekNum, seasonType, options)
+    .finally(() => {
+      inflight.delete(key);
+    });
+  inflight.set(key, pending);
+  return pending;
 }
 
 export default getSleeperWeeklyProjections;

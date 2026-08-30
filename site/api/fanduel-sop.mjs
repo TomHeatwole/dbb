@@ -3,6 +3,8 @@
  * Proxies FanDuel's undocumented sbapi — structure can change without notice.
  */
 
+import { attachEspnClock, compactEspnError, fetchEspnPlScoreboard } from '../lib/espn-pl-scoreboard.mjs';
+
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
@@ -393,30 +395,41 @@ async function fetchEventBundle(eventId) {
   };
 }
 
-export async function fetchPremierLeagueSopOdds() {
+export async function fetchPremierLeagueSopOdds({ includeEspn = false } = {}) {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
   const events = plMatchEvents(sportPage);
 
-  const results = await Promise.all(
-    events.map(async (ev) => {
-      try {
-        const bundle = await fetchEventBundle(ev.eventId);
-        return {
-          ...ev,
-          inPlay: bundle.inPlay,
-          score: bundle.score,
-          scoreDisplay: scoreDisplay(bundle.score),
-          teams: bundle.teams,
-          goalTypes: bundle.goalTypes,
-          noGoalMarkets: bundle.noGoalMarkets,
-        };
-      } catch (err) {
-        return { ...ev, error: err.message };
-      }
-    }),
-  );
+  const espnPromise = includeEspn
+    ? fetchEspnPlScoreboard(events.map((ev) => ev.openDate))
+    : Promise.resolve(null);
 
-  results.sort((a, b) => {
+  const [results, espn] = await Promise.all([
+    Promise.all(
+      events.map(async (ev) => {
+        try {
+          const bundle = await fetchEventBundle(ev.eventId);
+          return {
+            ...ev,
+            inPlay: bundle.inPlay,
+            score: bundle.score,
+            scoreDisplay: scoreDisplay(bundle.score),
+            teams: bundle.teams,
+            goalTypes: bundle.goalTypes,
+            noGoalMarkets: bundle.noGoalMarkets,
+          };
+        } catch (err) {
+          return { ...ev, error: err.message };
+        }
+      }),
+    ),
+    espnPromise,
+  ]);
+
+  const games = espn
+    ? results.map((game) => attachEspnClock(game, espn.matches))
+    : results;
+
+  games.sort((a, b) => {
     if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
     if (!a.openDate) return 1;
     if (!b.openDate) return -1;
@@ -425,7 +438,15 @@ export async function fetchPremierLeagueSopOdds() {
 
   return {
     fetchedAt: new Date().toISOString(),
-    games: results,
+    games,
+    espn: espn
+      ? {
+        ok: espn.ok,
+        error: espn.error ? compactEspnError(espn.error) : null,
+        livePremierLeague: espn.livePremierLeague ?? 0,
+        matched: games.filter((g) => g.espn).length,
+      }
+      : undefined,
   };
 }
 
@@ -438,7 +459,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchPremierLeagueSopOdds();
+    const data = await fetchPremierLeagueSopOdds({ includeEspn: true });
     res.setHeader('Cache-Control', 'public, max-age=15');
     return res.status(200).json(data);
   } catch (err) {

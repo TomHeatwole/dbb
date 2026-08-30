@@ -2,7 +2,12 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { DATA_DIR } from './config.mjs';
-import { normalisePlayerName } from './helpers.mjs';
+import {
+  firstNamesCompatible,
+  isPlaceholderPlayerName,
+  normalisePlayerName,
+  sleeperPlayerQuality,
+} from './helpers.mjs';
 
 // All data is loaded once from disk and held in memory.
 
@@ -216,34 +221,44 @@ export function loadSeasonStats(season) {
 export function findPlayerByName(searchName) {
   const playersData = loadPlayersData();
   const normSearch  = normalisePlayerName(searchName);
+  if (!normSearch) return null;
 
-  let bestId     = null;
-  let bestPlayer = null;
-  let bestScore  = -1;
+  let bestId      = null;
+  let bestPlayer  = null;
+  let bestScore   = -1;
+  let bestQuality = -1;
 
   for (const [pid, p] of Object.entries(playersData)) {
     // Skip non-skill positions for performance
     const pos = p.position || '';
     if (!['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].includes(pos)) continue;
 
-    const normName = normalisePlayerName(
-      p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim()
-    );
+    const displayName = p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim();
+    if (isPlaceholderPlayerName(displayName)) continue;
+
+    const normName = normalisePlayerName(displayName);
+    if (!normName) continue;
 
     let score = 0;
-    if (normName === normSearch) score = 10;
-    else if (normName.startsWith(normSearch) || normSearch.startsWith(normName)) score = 6;
-    else if (normName.includes(normSearch) || normSearch.includes(normName)) score = 4;
-    else if (normName.split(' ').pop() === normSearch.split(' ').pop()) score = 2;
+    if (normName === normSearch) {
+      score = 10;
+    } else if (firstNamesCompatible(searchName, displayName)) {
+      if (normName.startsWith(normSearch) || normSearch.startsWith(normName)) score = 6;
+      else if (normName.includes(normSearch) || normSearch.includes(normName)) score = 4;
+      else if (normName.split(' ').pop() === normSearch.split(' ').pop()) score = 3;
+    }
 
-    if (score > bestScore) {
-      bestScore  = score;
-      bestId     = pid;
-      bestPlayer = p;
+    if (score === 0) continue;
+    const quality = sleeperPlayerQuality(p);
+    if (score > bestScore || (score === bestScore && quality > bestQuality)) {
+      bestScore   = score;
+      bestQuality = quality;
+      bestId      = pid;
+      bestPlayer  = p;
     }
   }
 
-  if (!bestPlayer || bestScore === 0) return null;
+  if (!bestPlayer) return null;
   return { playerId: bestId, player: bestPlayer };
 }
 

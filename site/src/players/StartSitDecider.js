@@ -68,12 +68,36 @@ function getInjuryCategory(playerId, playersData, playerIdMap, injuriesMap) {
 // 4. Game status (unplayed > in-progress > completed) – only when scores, injury and BYE are equal
 // 5. Season totals (highest first) – only when scores, injury, BYE and game status are equal
 // 6. Player ID (stable sort)
-function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap) {
+function sortPtsOf(player) {
+  if (typeof player.sortPts === 'number' && Number.isFinite(player.sortPts)) {
+    return player.sortPts;
+  }
+  return typeof player.pts === 'number' ? player.pts : 0;
+}
+
+function isStartedGame(label) {
+  return Boolean(label && (label.live || label.completed));
+}
+
+function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap, options) {
+  const preferStarted = Boolean(options && options.preferStarted);
   return function sortByGameAware(players) {
     return players.slice().sort((a, b) => {
+      if (preferStarted) {
+        const aLab = playerGameLabels && (playerGameLabels[a.id] || playerGameLabels[String(a.id)]);
+        const bLab = playerGameLabels && (playerGameLabels[b.id] || playerGameLabels[String(b.id)]);
+        const aStarted = isStartedGame(aLab);
+        const bStarted = isStartedGame(bLab);
+        if (aStarted !== bStarted) {
+          return aStarted ? -1 : 1;
+        }
+      }
+
       // RULE 1: Score - highest score wins
-      if (b.pts !== a.pts) {
-        return b.pts - a.pts;
+      const aPts = sortPtsOf(a);
+      const bPts = sortPtsOf(b);
+      if (bPts !== aPts) {
+        return bPts - aPts;
       }
 
       // From here down, scores are exactly equal.
@@ -174,6 +198,31 @@ function isEligibleForFlex(pos) {
   return pos === 'RB' || pos === 'WR' || pos === 'TE';
 }
 
+export function isEligibleForSlot(slotName, position) {
+  if (!slotName || !position) {
+    return false;
+  }
+  if (/^QB\d+$/i.test(slotName) || slotName === 'QB1') {
+    return position === 'QB';
+  }
+  if (/^RB\d+$/i.test(slotName)) {
+    return position === 'RB';
+  }
+  if (/^WR\d+$/i.test(slotName)) {
+    return position === 'WR';
+  }
+  if (/^TE\d+$/i.test(slotName) || slotName === 'TE1') {
+    return position === 'TE';
+  }
+  if (/^FLEX\d+$/i.test(slotName)) {
+    return isEligibleForFlex(position);
+  }
+  if (/^SUPER$/i.test(slotName) || /^SUPER\d+$/i.test(slotName)) {
+    return isEligibleForSuper(position);
+  }
+  return false;
+}
+
 // Extract positions using PlayerLookup
 function attachPositions(players, playersData, playerIdMap) {
   return players.map((p) => {
@@ -184,7 +233,14 @@ function attachPositions(players, playersData, playerIdMap) {
 }
 
 // Core export: compute optimal starters/bench
-export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabels = null, injuriesMap = null, playerSeasonTotalsMap = null) {
+function outputPts(player) {
+  if (typeof player.keepPts === 'number' && Number.isFinite(player.keepPts)) {
+    return player.keepPts;
+  }
+  return typeof player.pts === 'number' ? player.pts : 0;
+}
+
+export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabels = null, injuriesMap = null, playerSeasonTotalsMap = null, options = null) {
   if (!teamScore) {
     return teamScore;
   }
@@ -197,13 +253,15 @@ export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabe
   const combined = attachPositions(filtered, playersData, playerIdMap).map((p) => ({
     id: p.id,
     pts: typeof p.pts === 'number' ? p.pts : 0,
-    position: p.position || null
+    position: p.position || null,
+    sortPts: typeof p.sortPts === 'number' ? p.sortPts : undefined,
+    keepPts: typeof p.keepPts === 'number' ? p.keepPts : undefined,
   }));
 
   const counts = getPositionCountsFromConfig();
 
   // Group by position
-  const sortByPointsDesc = buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap);
+  const sortByPointsDesc = buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap, options);
   const qbs = sortByPointsDesc(combined.filter(p => p.position === 'QB'));
   const rbs = sortByPointsDesc(combined.filter(p => p.position === 'RB'));
   const wrs = sortByPointsDesc(combined.filter(p => p.position === 'WR'));
@@ -333,7 +391,7 @@ export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabe
   }
 
   // Clean nulls, fill with blank placeholders if necessary for rendering
-  const normalizedStarters = startersBySlot.map((p) => p ? { id: p.id, pts: p.pts } : { id: '0', pts: 0 });
+  const normalizedStarters = startersBySlot.map((p) => (p ? { id: p.id, pts: outputPts(p) } : { id: '0', pts: 0 }));
 
   // Bench is everyone else
   const selectedIds = new Set([
@@ -346,7 +404,7 @@ export function StartSitSort(teamScore, playersData, playerIdMap, playerGameLabe
   ]);
   const benchOut = sortByPointsDesc(
     combined.filter(p => !selectedIds.has(p.id) && p.id && String(p.id) !== '0')
-  ).map(p => ({ id: p.id, pts: p.pts }));
+  ).map((p) => ({ id: p.id, pts: outputPts(p) }));
 
   // Totals (rounded to nearest 0.01)
   const rawStarterTotal = normalizedStarters.reduce((sum, p) => sum + (typeof p.pts === 'number' ? p.pts : 0), 0);

@@ -50,6 +50,18 @@ const NO_GOAL_SOURCES = [
   },
 ];
 
+function liveClockLabel(game) {
+  const espn = game.espn;
+  if (!espn) return null;
+  if (espn.halfTime) return 'HT';
+  if (espn.finished) return 'FT';
+  if (espn.status !== 'in' && !game.inPlay) return null;
+  if (espn.clock) return espn.clock;
+  if (espn.period === 1) return '1H';
+  if (espn.period === 2) return '2H';
+  return espn.matchStatus || null;
+}
+
 function formatKickoff(iso) {
   if (!iso) return '';
   try {
@@ -259,6 +271,7 @@ function GameCard({
   kellyFraction,
 }) {
   const [expanded, setExpanded] = useState(true);
+  const clockLabel = liveClockLabel(game);
   const showDkGoals = !game.inPlay && Boolean(game.dk);
   const showDkNoGoal = shouldShowDkNoGoal(game);
   const showKlshNoGoal = shouldShowKlshNoGoal(game);
@@ -368,6 +381,11 @@ function GameCard({
             <span className="sop-exp-game-meta">
               {game.inPlay && <span className="sop-exp-live">LIVE</span>}
               <span className="sop-exp-score">{game.scoreDisplay ?? '0-0'}</span>
+              {clockLabel && (
+                <span className="sop-exp-clock" title={game.espn?.matchStatus || undefined}>
+                  {clockLabel}
+                </span>
+              )}
               {game.openDate && (
                 <span className="sop-exp-time">{formatKickoff(game.openDate)}</span>
               )}

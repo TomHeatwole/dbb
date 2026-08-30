@@ -9,6 +9,7 @@ import {
 } from './dataLoader.mjs';
 import {
   getCurrentNFLWeek, getCompletedWeeksCount, normalisePlayerName,
+  isPlaceholderPlayerName,
   buildTeamMap, getPlayerDisplayName, lookupKtc, fmt, fmtDate, findTeam,
 } from './helpers.mjs';
 import { runScenarioEval } from './scenarioEngine.mjs';
@@ -676,14 +677,16 @@ function renderPlayerValueSoft(displayName, pos, nflTeam, playerId) {
 
   const lines = [`**${displayName}** | ${pos} | ${nflTeam}${fc?.age ? ` | Age ${fc.age}` : ''}`, ''];
 
+  const rankPos = (entry, fallback = pos) => (entry?.position || fallback || '').toUpperCase();
+
   if (ktc) {
-    lines.push(`Market value (KTC): **${fmt(ktc.value)}** — ${pos}${ktc.posRank}, #${ktc.overallRank} overall`);
+    lines.push(`Market value (KTC): **${fmt(ktc.value)}** — ${rankPos(ktc)}${ktc.posRank}, #${ktc.overallRank} overall`);
   } else {
     lines.push('Market value (KTC): not ranked — deep bench / undrafted territory.');
   }
   if (fcEntry) {
     const trend = fc?.trend30day ? ` | 30-day trend ${fc.trend30day > 0 ? '+' : ''}${fc.trend30day}` : '';
-    lines.push(`FantasyCalc: ${fmt(fcEntry.value)} — ${pos}${fcEntry.posRank}${trend}`);
+    lines.push(`FantasyCalc: ${fmt(fcEntry.value)} — ${rankPos(fcEntry)}${fcEntry.posRank}${trend}`);
   }
 
   // Internal signals, expressed only as % vs the public KTC number + ranks
@@ -703,7 +706,7 @@ function renderPlayerValueSoft(displayName, pos, nflTeam, playerId) {
     lines.push(
       `In this league's format (2QB, TE-premium, best ball): ` +
       `${houseCmp.pctStr ? `${houseCmp.pctStr} ${houseCmp.dir}` : houseCmp.dir}` +
-      `${houseCmp.rank ? ` — ${pos}${houseCmp.rank} here` : ''}.`,
+      `${houseCmp.rank ? ` — ${rankPos(house)}${houseCmp.rank} here` : ''}.`,
     );
   }
   const winCmp = vsKtc(winNow);
@@ -711,7 +714,7 @@ function renderPlayerValueSoft(displayName, pos, nflTeam, playerId) {
     lines.push(
       `Win-now lens (${CURRENT_YEAR} impact): ` +
       `${winCmp.pctStr ? `${winCmp.pctStr} ${winCmp.dir}` : winCmp.dir}` +
-      `${winCmp.rank ? ` — ${pos}${winCmp.rank} among win-now assets` : ''}.`,
+      `${winCmp.rank ? ` — ${rankPos(winNow)}${winCmp.rank} among win-now assets` : ''}.`,
     );
   }
   const futCmp = vsKtc(future);
@@ -719,7 +722,7 @@ function renderPlayerValueSoft(displayName, pos, nflTeam, playerId) {
     lines.push(
       `Future-asset lens (factoring out ${CURRENT_YEAR}): ` +
       `${futCmp.pctStr ? `${futCmp.pctStr} ${futCmp.dir}` : futCmp.dir}` +
-      `${futCmp.rank ? ` — ${pos}${futCmp.rank} as a long-term hold` : ''}.`,
+      `${futCmp.rank ? ` — ${rankPos(future)}${futCmp.rank} as a long-term hold` : ''}.`,
     );
   }
 
@@ -1618,15 +1621,20 @@ export async function getFreeAgents(position) {
     const pos = (player.position || '').toUpperCase();
     if (!['QB', 'RB', 'WR', 'TE', 'K'].includes(pos)) continue;
     if (position && pos !== position.toUpperCase()) continue;
+    if (!player.active) continue;
 
     // Pure ID-based roster check — completely independent of name normalisation
     if (rostered.has(pid)) continue;
 
     // Enrich with KTC value via name lookup
     const displayName = getPlayerDisplayName(player);
+    if (isPlaceholderPlayerName(displayName)) continue;
     const normName    = normalisePlayerName(displayName);
     const ktc         = ktcMap.get(normName);
     if (!ktc || (ktc.ktcValue_tep || 0) < 1000) continue;
+    // Same normalised name can be a retired player at a different position
+    // (Kenneth Walker the WR vs Kenneth Walker III the RB). Don't steal values.
+    if (ktc.position && ktc.position.toUpperCase() !== pos) continue;
 
     // Prefer Sleeper ID for FC lookup, fall back to name
     const fc = fcById.get(pid) || fcByName.get(normName);

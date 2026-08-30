@@ -5,12 +5,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import LoadingState from '../LoadingState';
 import {
+  arbKindLabel,
+  assessArbFill,
   baselineBookLabel,
   evaluateGameCorners,
   formatAmericanOdds,
   formatEdgePct,
   formatExpected,
   formatSharePct,
+  breakevenStoppageForBet,
+  TYPICAL_FT_STOPPAGE_MIN,
+  TYPICAL_HT_STOPPAGE_MIN,
 } from '../corners/cornerModel';
 import { computeKellyStake, formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
 import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
@@ -19,6 +24,8 @@ const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'corners-book-team-search';
 const BUCKETED_KEY = 'corners-bucketed';
 const SHOW_WORK_KEY = 'corners-show-work';
+const DK_BOTH_SIZE_KEY = 'corners-dk-both-size';
+const DEFAULT_DK_BOTH_SIZE = '100';
 
 function readFlag(key, fallback) {
   try {
@@ -106,6 +113,22 @@ function Toggle({ label, checked, onChange, hint, compact }) {
 
 function kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction) {
   if (!kellyEnabled || bet?.baseline || !bet?.profitable) return null;
+  if (isDkBoth(bet)) {
+    let total = 0;
+    let any = false;
+    for (const leg of bet.meta?.legs ?? []) {
+      const stake = computeKellyStake({
+        winProb: leg.pModel ?? bet.pModel,
+        offeredAmerican: leg.american,
+        bankroll: kellyBudget,
+        kellyFraction,
+      });
+      if (stake == null) continue;
+      total += stake;
+      any = true;
+    }
+    return any ? total : null;
+  }
   if (bet.pModel == null || bet.american == null) return null;
   return computeKellyStake({
     winProb: bet.pModel,
@@ -134,22 +157,65 @@ function arbLegPercents(legs) {
   return raw;
 }
 
-function TotalArbChip({ arb, extraCount, selected, onSelect }) {
+function formatKalshiDecimal(decimal) {
+  if (!Number.isFinite(decimal) || decimal <= 0) return null;
+  return `${decimal.toFixed(2)}x`;
+}
+
+function formatAskBook(leg) {
+  if (leg?.book !== 'klsh') return null;
+  if (Number.isFinite(leg.askDollars)) {
+    const cts = Number.isFinite(leg.askContracts) ? `${Math.round(leg.askContracts)} cts` : null;
+    return cts ? `${formatSplitStake(leg.askDollars)} · ${cts}` : formatSplitStake(leg.askDollars);
+  }
+  return null;
+}
+
+function arbKindChip(kind) {
+  if (kind === '3way') return '3-way';
+  if (kind === 'uu' || kind === 'oo') return 'H+A';
+  if (kind === 'each') return 'each';
+  if (kind === 'race-neither') return 'race';
+  return null;
+}
+
+function pickHeadlineArb(arbs, sizeInput) {
+  const list = arbs ?? [];
+  if (!list.length) return null;
+  const total = parseStakeInput(sizeInput);
+  const ranked = list.map((arb) => ({ arb, fill: assessArbFill(arb, total) }));
+  ranked.sort((a, b) => {
+    const aLock = Boolean(a.fill?.allFilled && a.fill.roi >= 0.001);
+    const bLock = Boolean(b.fill?.allFilled && b.fill.roi >= 0.001);
+    if (aLock !== bLock) return aLock ? -1 : 1;
+    const aRoi = aLock ? a.fill.roi : a.arb.roi;
+    const bRoi = bLock ? b.fill.roi : b.arb.roi;
+    return (bRoi ?? -1) - (aRoi ?? -1);
+  });
+  return ranked[0];
+}
+
+function TotalArbChip({ arb, extraCount, selected, onSelect, sizeInput }) {
   const legs = arb.legs ?? [arb.over, arb.under].filter(Boolean);
-  const split = arbLegPercents(legs);
-  const threeWay = arb.kind === '3way';
+  const percents = arbLegPercents(legs);
+  const fill = assessArbFill(arb, parseStakeInput(sizeInput));
+  const sized = fill ?? sizeArbLegs(legs, parseStakeInput(sizeInput));
+  const takeable = Boolean(fill?.allFilled && fill.roi >= 0.001);
+  const thin = !takeable;
+  const shownRoi = takeable ? fill.roi : arb.roi;
+  const kindLabel = arbKindLabel(arb.kind);
   const title = [
-    threeWay
-      ? `Integer cover of ${arb.line}: ${legs.map((leg) => leg.label).join(' + ')}`
-      : `Same-line 2-way: ${arb.overLabel} vs ${arb.underLabel}`,
-    `implied ${((arb.pSum) * 100).toFixed(1)}% · lock ${formatArbRoi(arb.roi)}`,
+    `${kindLabel}: ${legs.map((leg) => leg.label).join(' + ')}`,
+    thin
+      ? `printed ${formatArbRoi(arb.roi)} but Kalshi has no size at that price`
+      : `implied ${((fill?.pSum ?? arb.pSum) * 100).toFixed(1)}% · lock ${formatArbRoi(shownRoi)}`,
     extraCount > 0 ? `${extraCount} more cover${extraCount === 1 ? '' : 's'}` : null,
   ].filter(Boolean).join(' · ');
 
   return (
     <button
       type="button"
-      className={`corners-arb-chip${selected ? ' corners-arb-chip--selected' : ''}`}
+      className={`corners-arb-chip${selected ? ' corners-arb-chip--selected' : ''}${thin ? ' corners-arb-chip--thin' : ''}`}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(arb.id);
@@ -158,15 +224,32 @@ function TotalArbChip({ arb, extraCount, selected, onSelect }) {
       title={title}
     >
       <span className="corners-arb-kicker">
-        ARB {formatArbRoi(arb.roi)}{threeWay ? ' · 3-way' : ''}
+        {thin ? 'THIN BOOK' : `ARB ${formatArbRoi(shownRoi)}`}{arbKindChip(arb.kind) ? ` · ${arbKindChip(arb.kind)}` : ''}
       </span>
-      {legs.map((leg) => (
-        <span key={`${leg.book}-${leg.side}-${leg.line}`} className="corners-arb-leg">
-          {leg.label} {formatAmericanOdds(leg.american)}
-        </span>
-      ))}
+      {legs.map((leg, i) => {
+        const row = fill?.rows?.[i];
+        const walked = row?.book === 'klsh' && row.fill && !row.fill.filled;
+        const vwap = row?.book === 'klsh' && row.fill?.filled && row.fillAmerican !== leg.american
+          ? formatKalshiDecimal(row.fill.decimal)
+          : null;
+        const book = formatAskBook(leg);
+        return (
+          <span key={`${leg.book}-${leg.side}-${leg.line}`} className="corners-arb-leg">
+            {leg.label} {formatAmericanOdds(leg.american)}
+            {sized ? ` · ${formatSplitStake(sized.rows[i].amount)}` : ''}
+            {walked && book ? ` · book ${book}` : ''}
+            {vwap ? ` · vw ${vwap}` : ''}
+          </span>
+        );
+      })}
       <span className="corners-arb-split">
-        {split.join('/')}
+        {thin
+          ? (fill && !fill.allFilled
+            ? 'no size'
+            : `print ${formatArbRoi(arb.roi)}`)
+          : sized
+            ? `lock ${formatSplitStake(sized.lockProfit)}`
+            : percents.join('/')}
         {extraCount > 0 ? ` · +${extraCount}` : ''}
       </span>
     </button>
@@ -200,6 +283,12 @@ function BaselineBookButton({ row, selected, onSelect }) {
         <>
           <span className="corners-bet-label">{row.n}+</span>
           <span className="corners-bet-odds">{formatAmericanOdds(row.american)}</span>
+          {Number.isFinite(row.yesAskDollars) && (
+            <span className="corners-bet-need">
+              {formatSplitStake(row.yesAskDollars)}
+              {Number.isFinite(row.yesAskSize) ? ` · ${Math.round(row.yesAskSize)} cts` : ''}
+            </span>
+          )}
         </>
       ) : (
         <>
@@ -284,6 +373,139 @@ function BetButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFr
   );
 }
 
+function isDkBoth(bet) {
+  return bet?.kind === 'dk-both-yes' || bet?.kind === 'dk-both-no';
+}
+
+function readDkBothSizeInput() {
+  try {
+    const value = window.sessionStorage.getItem(DK_BOTH_SIZE_KEY);
+    if (value != null && String(value).trim() !== '') return value;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_DK_BOTH_SIZE;
+}
+
+function persistDkBothSizeInput(value) {
+  try {
+    window.sessionStorage.setItem(DK_BOTH_SIZE_KEY, value);
+  } catch {
+    /* ignore */
+  }
+}
+
+function parseStakeInput(value) {
+  const parsed = Number(String(value ?? '').replace(/[,$]/g, '').trim());
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function formatSplitStake(amount) {
+  if (amount == null || !Number.isFinite(amount) || amount < 0) return '—';
+  const cents = Math.round(amount * 100);
+  if (cents % 100 === 0) return `$${(cents / 100).toLocaleString('en-US')}`;
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function splitStakeByShares(legs, total) {
+  if (!Number.isFinite(total) || total <= 0 || !legs?.length) return null;
+  const shares = legs.map((leg) => (Number.isFinite(leg.share) ? leg.share : 0));
+  const sum = shares.reduce((acc, share) => acc + share, 0);
+  if (sum <= 0) return null;
+  const rounded = shares.map((share) => Math.round((share / sum) * total * 100));
+  const target = Math.round(total * 100);
+  rounded[rounded.length - 1] += target - rounded.reduce((acc, cents) => acc + cents, 0);
+  return legs.map((leg, i) => ({
+    ...leg,
+    key: leg.key ?? `${leg.book ?? ''}-${leg.side ?? ''}-${leg.line ?? i}`,
+    team: leg.team,
+    label: leg.label ?? leg.team ?? `Leg ${i + 1}`,
+    amount: rounded[i] / 100,
+    share: shares[i] / sum,
+  }));
+}
+
+function sizeArbLegs(legs, total) {
+  const split = splitStakeByShares(legs, total);
+  if (!split) return null;
+  const rows = split.map((row) => {
+    const implied = Number(row.implied);
+    const payout = implied > 0 ? row.amount / implied : 0;
+    return {
+      ...row,
+      payout,
+      profit: payout - total,
+    };
+  });
+  const lockPayout = Math.min(...rows.map((row) => row.payout));
+  return {
+    rows,
+    total,
+    lockPayout,
+    lockProfit: lockPayout - total,
+  };
+}
+
+function StakeSplitAllocator({
+  legs,
+  sizeInput,
+  onSizeInputChange,
+  ariaLabel = 'Total stake to split',
+  footer = null,
+}) {
+  const split = splitStakeByShares(legs, parseStakeInput(sizeInput));
+  return (
+    <div className="corners-split-size">
+      <label className="corners-split-size-field">
+        <span className="sop-kelly-budget-label">Size</span>
+        <span className="sop-kelly-budget-wrap corners-split-size-wrap">
+          <span className="sop-kelly-budget-prefix" aria-hidden="true">$</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            className="sop-kelly-budget-input corners-split-size-input"
+            value={sizeInput}
+            onChange={(e) => onSizeInputChange(e.target.value)}
+            placeholder={DEFAULT_DK_BOTH_SIZE}
+            autoComplete="off"
+            aria-label={ariaLabel}
+          />
+        </span>
+      </label>
+      {split ? (
+        <div className="corners-split-size-legs" aria-live="polite">
+          {split.map((leg) => (
+            <span key={leg.key} className="corners-split-size-leg">
+              {formatSplitStake(leg.amount)}
+              {' '}
+              <span className="corners-split-size-team">{leg.label}</span>
+            </span>
+          ))}
+          {footer}
+        </div>
+      ) : (
+        <p className="corners-split-size-hint">Enter a size to split</p>
+      )}
+    </div>
+  );
+}
+
+function dkBothEventLabel(bet) {
+  return bet?.kind === 'dk-both-no' ? 'team blank' : 'team 1+';
+}
+
+function dkBothVerdict(bet) {
+  const noSide = bet.kind === 'dk-both-no';
+  if (bet.profitable) {
+    return noSide
+      ? 'Both No is +EV as two bets — neither-corners is extra, not required'
+      : 'Both Yes is +EV as two bets — both-corner is extra, not required';
+  }
+  return noSide
+    ? 'The two No prices are worse than the two team-blank probs'
+    : 'The two Yes prices are worse than the two team-1+ probs';
+}
+
 function formatDkBothOdds(bet) {
   const legs = bet.meta?.legs ?? [];
   if (legs.length >= 2 && legs[0].american != null && legs[1].american != null) {
@@ -293,12 +515,19 @@ function formatDkBothOdds(bet) {
   return '—';
 }
 
-function DkBothYesButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFraction }) {
+function DkBothPackageButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, kellyFraction }) {
   const profitable = Boolean(bet.profitable);
   const edge = bet.analysis?.edgePoints;
-  const needOdds = !profitable ? formatNeedOdds(bet.fairAmerican) : null;
-  const kellyStake = kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction);
   const legs = bet.meta?.legs ?? [];
+  const noSide = bet.kind === 'dk-both-no';
+  const kellyStakes = kellyEnabled && profitable
+    ? legs.map((leg) => computeKellyStake({
+      winProb: leg.pModel ?? bet.pModel,
+      offeredAmerican: leg.american,
+      bankroll: kellyBudget,
+      kellyFraction,
+    }))
+    : [];
   const className = [
     'corners-bet',
     'corners-bet--package',
@@ -322,22 +551,23 @@ function DkBothYesButton({ bet, selected, onSelect, kellyEnabled, kellyBudget, k
       <span className="corners-bet-odds">
         {formatDkBothOdds(bet)}
       </span>
-      <span className="corners-bet-tag corners-bet-tag--dk">DK both</span>
-      {profitable && edge != null && (
-        <span className="sop-exp-edge-plus">{formatEdgePct(edge)}</span>
+      <span className={`corners-bet-tag corners-bet-tag--dk${noSide ? ' corners-bet-tag--dk-no' : ''}`}>
+        {noSide ? 'DK no' : 'DK both'}
+      </span>
+      {edge != null && (
+        <span className={profitable ? 'sop-exp-edge-plus' : 'corners-bet-need'}>
+          {formatEdgePct(edge)}
+        </span>
       )}
-      {needOdds && (
-        <span className="corners-bet-need">{needOdds}</span>
-      )}
-      {legs.map((leg) => {
-        const split = kellyStake != null
-          ? formatKellyStake(kellyStake * (leg.share ?? 0))
-          : `${Math.round((leg.share ?? 0) * 100)}%`;
+      {legs.map((leg, i) => {
+        const stake = kellyStakes[i];
         return (
           <span key={leg.team} className="corners-package-leg">
             {leg.team}
             {' · '}
-            {kellyEnabled && kellyStake != null ? split : `${Math.round((leg.share ?? 0) * 100)}%`}
+            {stake != null
+              ? formatKellyStake(stake)
+              : `${Math.round((leg.share ?? 0) * 100)}%`}
           </span>
         );
       })}
@@ -435,36 +665,67 @@ function WindowSection({ title, packed, selectedId, onSelect, bucketed, kellyEna
   );
 }
 
-function ArbWorkPanel({ arb, extras }) {
+function ArbWorkPanel({ arb, extras, sizeInput, onSizeInputChange }) {
   const legs = arb.legs ?? [arb.over, arb.under].filter(Boolean);
   const percents = arbLegPercents(legs);
-  const threeWay = arb.kind === '3way';
+  const fill = assessArbFill(arb, parseStakeInput(sizeInput));
+  const sized = fill ?? sizeArbLegs(legs, parseStakeInput(sizeInput));
+  const takeable = Boolean(fill?.allFilled && fill.roi >= 0.001);
+  const kindLabel = arbKindLabel(arb.kind);
   return (
     <div className="corners-work">
-      <div className="sop-exp-section-label">Show my work · total corners arb</div>
-      <p className="corners-work-verdict corners-work-verdict--ev">
-        {threeWay
-          ? `Integer ${arb.line} cover, different books · lock ${formatArbRoi(arb.roi)}`
-          : `Same line, different books · lock ${formatArbRoi(arb.roi)}`}
+      <div className="corners-work-head corners-work-head--split">
+        <div className="sop-exp-section-label">Show my work · {kindLabel}</div>
+        <StakeSplitAllocator
+          legs={legs}
+          sizeInput={sizeInput}
+          onSizeInputChange={onSizeInputChange}
+          ariaLabel="Total exposure to split across arb books"
+          footer={sized && takeable ? (
+            <span className="corners-split-size-leg corners-split-size-lock">
+              lock {formatSplitStake(sized.lockProfit)}
+            </span>
+          ) : null}
+        />
+      </div>
+      <p className={`corners-work-verdict${takeable ? ' corners-work-verdict--ev' : ''}`}>
+        {takeable
+          ? `${kindLabel} · lock ${formatArbRoi(fill.roi)}`
+          : `Printed ${formatArbRoi(arb.roi)} — not fillable at this size`}
+        {takeable && sized ? ` · ${formatSplitStake(sized.lockProfit)} on ${formatSplitStake(sized.total)}` : ''}
       </p>
       <ul className="corners-work-list">
-        {legs.map((leg, i) => (
-          <li key={`${leg.book}-${leg.side}-${leg.line}`}>
-            {leg.label}
-            {' · '}{formatAmericanOdds(leg.american)}
-            {' · implied '}{formatSharePct(leg.implied)}
-            {' · '}{percents[i]}% of stake
-            {leg.side === 'under' && Number.isFinite(leg.line) && ` · total ≤ ${Math.floor(leg.line)}`}
-            {leg.side === 'over' && Number.isFinite(leg.line) && ` · total ≥ ${Math.floor(leg.line) + 1}`}
-            {leg.side === 'exact' && ` · total = ${leg.n ?? arb.line}`}
-          </li>
-        ))}
+        {legs.map((leg, i) => {
+          const row = fill?.rows?.[i];
+          const book = formatAskBook(leg);
+          const vwap = row?.fill?.decimal != null ? formatKalshiDecimal(row.fill.decimal) : null;
+          return (
+            <li key={`${leg.ticket ?? `${leg.book}-${leg.side}-${leg.line}-${i}`}`}>
+              {leg.label}
+              {' · '}{formatAmericanOdds(leg.american)}
+              {row?.fillAmerican != null && row.fillAmerican !== leg.american
+                && ` · fill ${formatAmericanOdds(row.fillAmerican)}${vwap ? ` / ${vwap}` : ''}`}
+              {' · implied '}{formatSharePct(leg.implied)}
+              {' · '}{percents[i]}% of stake
+              {sized ? ` · bet ${formatSplitStake(sized.rows[i].amount)}` : ''}
+              {takeable && sized ? ` · pays ${formatSplitStake(sized.rows[i].payout)}` : ''}
+              {leg.book === 'klsh' && book ? ` · top ${book}` : ''}
+              {row?.fill && !row.fill.filled && Number.isFinite(row.fill.spent)
+                && ` · walks ${formatSplitStake(row.fill.spent)} then empty`}
+              {leg.cover ? ` · ${leg.cover}` : ''}
+              {!leg.cover && leg.side === 'under' && Number.isFinite(leg.line) && ` · total ≤ ${Math.floor(leg.line)}`}
+              {!leg.cover && leg.side === 'over' && Number.isFinite(leg.line) && ` · total ≥ ${Math.floor(leg.line) + 1}`}
+              {leg.side === 'exact' && ` · total = ${leg.n ?? arb.line}`}
+            </li>
+          );
+        })}
         <li>
           Combined implied {formatSharePct(arb.pSum)}
-          {' < 100% · guaranteed '}{formatArbRoi(arb.roi)}
-          {threeWay
-            ? ' on the trio (Under / Exact / Over cover every total)'
-            : ' on the pair (no middle — one side wins)'}
+          {takeable
+            ? ` < 100% · guaranteed ${formatArbRoi(fill.roi)}`
+            : ` printed lock ${formatArbRoi(arb.roi)} — Kalshi size does not hold`}
+          {` · ${kindLabel} (one ticket wins)`}
+          {takeable && sized ? ` · lock ${formatSplitStake(sized.lockProfit)}` : ''}
         </li>
       </ul>
       {extras.length > 0 && (
@@ -473,10 +734,10 @@ function ArbWorkPanel({ arb, extras }) {
           <ul className="corners-work-list">
             {extras.map((row) => (
               <li key={row.id}>
-                {formatArbRoi(row.roi)}
-                {row.kind === '3way' ? ' · 3-way' : ''}
+                {row.thin ? 'thin · ' : ''}{formatArbRoi(row.roi)}
+                {row.kind !== '2way' ? ` · ${arbKindLabel(row.kind)}` : ''}
                 {' · '}{(row.legs ?? []).map((leg) => (
-                  `${leg.label} ${formatAmericanOdds(leg.american)}`
+                  `${leg.label} ${formatAmericanOdds(leg.american)}${formatAskBook(leg) ? ` (${formatAskBook(leg)})` : ''}`
                 )).join(' / ')}
               </li>
             ))}
@@ -487,14 +748,32 @@ function ArbWorkPanel({ arb, extras }) {
   );
 }
 
-function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction }) {
+function WorkPanel({
+  model,
+  selectedId,
+  kellyEnabled,
+  kellyBudget,
+  kellyFraction,
+  sizeInput,
+  onSizeInputChange,
+}) {
   const arb = (model.totalArbs ?? []).find((row) => row.id === selectedId);
   if (arb) {
-    return <ArbWorkPanel arb={arb} extras={(model.totalArbs ?? []).filter((row) => row.id !== arb.id)} />;
+    return (
+      <ArbWorkPanel
+        arb={arb}
+        extras={(model.totalArbs ?? []).filter((row) => row.id !== arb.id)}
+        sizeInput={sizeInput}
+        onSizeInputChange={onSizeInputChange}
+      />
+    );
   }
   const bet = model.bets.find((b) => b.id === selectedId);
   if (!bet) return null;
   const kellyStake = kellyStakeForBet(bet, kellyEnabled, kellyBudget, kellyFraction);
+  const dkBothSplit = isDkBoth(bet)
+    ? splitStakeByShares(bet.meta?.legs ?? [], parseStakeInput(sizeInput))
+    : null;
   const h1Scope = bet.meta?.scope === 'h1' || bet.kind.startsWith('h1');
   const sourceRows = h1Scope ? model.h1Breakdown.rows : model.breakdown.rows;
   const futureRows = sourceRows.filter((r) => r.minutes > 0.02 && (!h1Scope || r.half === 1));
@@ -502,7 +781,7 @@ function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction
     ? model.next5?.win?.bits
     : bet.kind.startsWith('next10')
       ? model.next10?.win?.bits
-      : bet.kind === 'dk-both-yes'
+      : isDkBoth(bet)
         ? bet.meta?.bits
         : null;
   const lambdaWin = bet.meta?.lambda
@@ -510,33 +789,44 @@ function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction
   const need = bet.meta?.need;
   const implied = h1Scope ? model.halfImplied : model.fullImplied;
   const ourLambda = h1Scope ? model.ourH1Remaining : model.ourRemaining;
-  const stoppageUsed = h1Scope ? model.h1Plan.used : model.plan.used;
   const scale = model.ourRemaining > 0
     ? (model.lineRemaining ?? model.ourRemaining) / model.ourRemaining
     : 1;
+  const beStoppage = breakevenStoppageForBet(model, bet);
 
   return (
     <div className="corners-work">
-      <div className="sop-exp-section-label">Show my work · {bet.label}</div>
+      <div className={`corners-work-head${isDkBoth(bet) ? ' corners-work-head--split' : ''}`}>
+        <div className="sop-exp-section-label">Show my work · {bet.label}</div>
+        {isDkBoth(bet) && (
+          <StakeSplitAllocator
+            legs={bet.meta?.legs ?? []}
+            sizeInput={sizeInput}
+            onSizeInputChange={onSizeInputChange}
+            ariaLabel="Total stake to split across both teams"
+          />
+        )}
+      </div>
       <p className={`corners-work-verdict${bet.profitable ? ' corners-work-verdict--ev' : ''}`}>
         {bet.baseline
           ? 'Game line · baseline, not a bet'
-          : bet.kind === 'dk-both-yes'
-            ? (bet.profitable
-              ? 'Bet both Yes · covers 1+ even if only one team corners'
-              : bet.meta?.coversOneTeam
-                ? 'No edge as a 1+ cover'
-                : 'Combined Yes prices are too short to cover 1+')
+          : isDkBoth(bet)
+            ? dkBothVerdict(bet)
             : bet.profitable
               ? 'Good bet'
               : 'No edge'}
-        {!bet.baseline && bet.kind !== 'dk-both-yes' && bet.analysis?.edgePoints != null
+        {!bet.baseline && !isDkBoth(bet) && bet.analysis?.edgePoints != null
           && ` · ${formatEdgePct(bet.analysis.edgePoints)} vs implied remaining`}
-        {bet.kind === 'dk-both-yes' && bet.analysis?.edgePoints != null
-          && ` · ${formatEdgePct(bet.analysis.edgePoints)} vs 1+`}
+        {isDkBoth(bet) && bet.analysis?.edgePoints != null
+          && ` · ${formatEdgePct(bet.analysis.edgePoints)} on the two bets`}
         {!bet.profitable && !bet.baseline && bet.fairAmerican != null
           && ` · need ${formatAmericanOdds(Math.round(bet.fairAmerican))}`}
       </p>
+      {beStoppage?.label && (
+        <p className="corners-work-be-stoppage">
+          <strong>{beStoppage.label}</strong>
+        </p>
+      )}
       {kellyEnabled && kellyStake != null && (
         <p className="sop-kelly-stake corners-work-kelly">
           Kelly Bet Size: {formatKellyStake(kellyStake)}
@@ -570,29 +860,59 @@ function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction
           {' '}({model.mode}, kickoff mean {formatExpected(model.meanKickoff)})
           {Number.isFinite(need) && ` · need ${need} more for the over`}
         </li>
-        <li>Stoppage: {stoppageUsed}</li>
-        {bet.kind === 'dk-both-yes' && (bet.meta?.legs ?? []).length > 0 && (
+        <li>
+          Stoppage · 1st half {stoppageHalfView(1, h1Scope ? model.h1Plan : model.plan, model.clock).display}
+          {' · 2nd half '}{h1Scope ? 'ignored (H1 line)' : stoppageHalfView(2, model.plan, model.clock).display}
+        </li>
+        {isDkBoth(bet) && (bet.meta?.legs ?? []).length > 0 && (
           <li>
-            Dutch both Yes so one-team hit pays the same
-            {' · '}combined implied {formatSharePct(bet.meta.combinedImplied)}
-            {' vs model P(1+) '}{formatSharePct(bet.pModel)}
+            Each team {dkBothEventLabel(bet)} is {formatSharePct(bet.pModel)} (even split of E[win] {formatExpected(bet.meta.lambda)}).
+            {' '}Those are two bets. EV does not add the implieds into one event — it adds the two expected values.
             {(bet.meta.legs).map((leg) => (
               <span key={leg.team}>
-                {' · '}{leg.team} {formatAmericanOdds(leg.american)} ({formatSharePct(leg.share)} of stake)
+                {' · '}{leg.team} {formatAmericanOdds(leg.american)}
+                {' book '}{formatSharePct(leg.implied)}
+                {' vs model '}{formatSharePct(leg.pModel ?? bet.pModel)}
               </span>
             ))}
+          </li>
+        )}
+        {isDkBoth(bet) && Number.isFinite(bet.meta?.expectedTickets) && (
+          <li>
+            Model expects {formatExpected(bet.meta.expectedTickets)} winning tickets
+            {' · books charge '}{formatExpected(bet.meta.ticketCost)}
+            {' for $1 back if only one hits → '}{formatEdgePct(bet.analysis?.edgePoints)}
+            {' on the combined stake. Split is only so a one-team hit pays the same'}
+            {(bet.meta.legs).map((leg) => {
+              const sized = dkBothSplit?.find((row) => row.team === leg.team);
+              return (
+                <span key={`split-${leg.team}`}>
+                  {' · '}{leg.team}{' '}
+                  {sized
+                    ? formatSplitStake(sized.amount)
+                    : `${Math.round((leg.share ?? 0) * 100)}%`}
+                </span>
+              );
+            })}
             {kellyEnabled && kellyStake != null && (
               <>
-                {' · '}{bet.meta.legs.map((leg) => (
-                  `${leg.team} ${formatKellyStake(kellyStake * (leg.share ?? 0))}`
-                )).join(' / ')}
+                {' · Kelly '}
+                {bet.meta.legs.map((leg) => {
+                  const stake = computeKellyStake({
+                    winProb: leg.pModel ?? bet.pModel,
+                    offeredAmerican: leg.american,
+                    bankroll: kellyBudget,
+                    kellyFraction,
+                  });
+                  return `${leg.team} ${stake != null ? formatKellyStake(stake) : '—'}`;
+                }).join(' / ')}
               </>
             )}
           </li>
         )}
-        {!bet.baseline && (
+        {!bet.baseline && !isDkBoth(bet) && (
           <li>
-            Model P({bet.kind === 'dk-both-yes' ? '1+' : bet.label}) {formatSharePct(bet.pModel)}
+            Model P({bet.label}) {formatSharePct(bet.pModel)}
             {' · '}fair {bet.fairAmerican != null ? formatAmericanOdds(bet.fairAmerican) : '—'}
             {' · '}{bet.american != null ? formatAmericanOdds(bet.american) : '—'}
             {' · '}implied {formatSharePct(bet.pMarket)}
@@ -652,40 +972,80 @@ function WorkPanel({ model, selectedId, kellyEnabled, kellyBudget, kellyFraction
   );
 }
 
-function stoppageHeadline(stoppage, clock) {
-  if (clock?.halftime || stoppage?.halfTime) {
-    return 'HT · typical SH stoppage 4.8′';
+function formatStoppageMinutes(minutes) {
+  return Number.isFinite(minutes) ? `${minutes.toFixed(1)}′` : '—';
+}
+
+function stoppageHalfView(half, plan, clock) {
+  const blend = half === 1 ? plan?.htBlend : plan?.ftBlend;
+  const typical = half === 1 ? TYPICAL_HT_STOPPAGE_MIN : TYPICAL_FT_STOPPAGE_MIN;
+  const label = half === 1 ? '1st half' : '2nd half';
+  const finished = Boolean(
+    clock?.finished
+    || clock?.phase === 'post'
+    || (half === 1 && (clock?.phase === 'ht' || clock?.period === 2)),
+  );
+  const active = Boolean(
+    !finished
+    && clock?.phase === 'live'
+    && clock?.period === half,
+  );
+  if (finished) {
+    return {
+      half,
+      label,
+      display: 'done',
+      detail: 'extra finished',
+      active: false,
+      done: true,
+    };
   }
-  if (!stoppage) return null;
-  if (stoppage.expectedLabel) {
-    if (stoppage.remainingLabel && stoppage.played && stoppage.status === 'in') {
-      const kind = stoppage.announced ? 'announced' : 'estimated';
-      return `${stoppage.expectedLabel} ${kind} · ${stoppage.remainingLabel} left`;
-    }
-    if (stoppage.status === 'post') {
-      return `${stoppage.played || stoppage.expectedLabel} played`;
-    }
-    return `${stoppage.expectedLabel} ${stoppage.announced ? 'announced' : 'estimated'}`;
-  }
-  if (stoppage.matchStatus && /half|live|started|in play/i.test(stoppage.matchStatus)) {
-    return 'Estimating from play-by-play…';
-  }
-  return null;
+  const minutes = blend?.expected;
+  const detail = active && blend && blend.future > 0.05
+    ? `${blend.earned.toFixed(1)}′ earned + ${blend.future.toFixed(1)}′ still (${blend.regularLeft.toFixed(0)}′ of half)`
+    : active && blend
+      ? `${blend.remaining.toFixed(1)}′ left`
+      : `typical ${typical.toFixed(1)}′`;
+  return {
+    half,
+    label,
+    display: formatStoppageMinutes(minutes),
+    detail,
+    active,
+    done: false,
+  };
+}
+
+function stoppageHeadline(stoppage, clock, plan) {
+  if (!plan) return null;
+  const ht = stoppageHalfView(1, plan, clock);
+  const ft = stoppageHalfView(2, plan, clock);
+  return `HT ${ht.display} · FT ${ft.display}`;
 }
 
 function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, kellyBudget, kellyFraction }) {
   const [expanded, setExpanded] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [baselineBook, setBaselineBook] = useState('fd');
+  const [actionSizeInput, setActionSizeInput] = useState(readDkBothSizeInput);
+  const setActionSize = (value) => {
+    setActionSizeInput(value);
+    persistDkBothSizeInput(value);
+  };
   const model = useMemo(
     () => evaluateGameCorners(game, { bucketed, baselineBook }),
     [game, bucketed, baselineBook],
   );
-  const stoppageText = stoppageHeadline(game.stoppage, model.clock);
+  const stoppageText = stoppageHeadline(game.stoppage, model.clock, model.plan);
   const h1Bets = model.bets.filter((b) => b.kind === 'h1-over' || b.kind === 'h1-under');
-  const dkBothBets = model.bets.filter((b) => b.kind === 'dk-both-yes');
+  const dkBothBets = model.bets.filter(isDkBoth);
   const atHalf = Boolean(model.clock.halftime || game.stoppage?.halfTime);
+  const stoppageHalves = [
+    stoppageHalfView(1, model.plan, model.clock),
+    stoppageHalfView(2, model.plan, model.clock),
+  ];
   const baselines = model.baselines ?? [];
+  const headlineArb = pickHeadlineArb(model.totalArbs, actionSizeInput);
   const activeBook = model.baselineBook;
   const baselineCopy = model.fullImplied?.kind === 'plus'
     ? `${baselineBookLabel(activeBook)} ${model.fullImplied.n}+`
@@ -797,12 +1157,13 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
                     onSelect={setBaselineBook}
                   />
                 ))}
-                {model.totalArbs?.[0] && (
+                {headlineArb && (
                   <TotalArbChip
-                    arb={model.totalArbs[0]}
-                    extraCount={Math.max(0, model.totalArbs.length - 1)}
-                    selected={selectedId === model.totalArbs[0].id}
+                    arb={headlineArb.arb}
+                    extraCount={Math.max(0, (model.totalArbs?.length ?? 0) - 1)}
+                    selected={selectedId === headlineArb.arb.id}
                     onSelect={selectBet}
+                    sizeInput={actionSizeInput}
                   />
                 )}
               </div>
@@ -853,13 +1214,13 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
 
           {dkBothBets.length > 0 && (
             <section className="corners-total">
-              <div className="sop-exp-section-label">DraftKings both 1+</div>
+              <div className="sop-exp-section-label">DraftKings both</div>
               <p className="corners-empty-hint">
-                Bet Yes on both teams, sized so one-team hit pays the same. Extra if both corner.
+                Yes on both teams, or No on both. Edge is the two bets added — whether they hit together does not change EV.
               </p>
               <div className="corners-plus-grid corners-plus-grid--packages">
                 {dkBothBets.map((bet) => (
-                  <DkBothYesButton
+                  <DkBothPackageButton
                     key={bet.id}
                     bet={bet}
                     selected={selectedId === bet.id}
@@ -880,41 +1241,47 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
               kellyEnabled={kellyEnabled}
               kellyBudget={kellyBudget}
               kellyFraction={kellyFraction}
+              sizeInput={actionSizeInput}
+              onSizeInputChange={setActionSize}
             />
           )}
 
           <section className="corners-stoppage">
             <div className="sop-exp-section-label">Expected stoppage</div>
-            {!game.stoppage && (
-              <p className="corners-empty-hint">
-                {game.inPlay
-                  ? 'No ESPN play-by-play matched this game yet. Using typical HT 3.3′ / FT 4.8′.'
-                  : 'Estimated from ESPN play-by-play once the match is live. Pre-match uses typical HT 3.3′ + FT 4.8′.'}
-              </p>
-            )}
-            {game.stoppage && (
-              <div className="corners-stoppage-card">
-                <div className="corners-stoppage-main">
-                  {atHalf ? '4.8′' : (game.stoppage.expectedLabel ?? '—')}
-                </div>
-                <div className="corners-stoppage-meta">
-                  {atHalf
-                    ? 'Half-time · first-half extra is done · second-half stoppage resets to typical 4.8′'
-                    : model.plan.used}
-                  {!atHalf && formatMatchStatus(game.stoppage.matchStatus) && ` · ${formatMatchStatus(game.stoppage.matchStatus)}`}
-                  {!atHalf && game.stoppage.clock && ` · ${game.stoppage.clock}`}
-                  {!atHalf && game.stoppage.announced && ` · announced ${game.stoppage.announced}`}
-                  {!atHalf && game.stoppage.played && ` · played ${game.stoppage.played}`}
-                  {!atHalf && game.stoppage.status === 'in' && game.stoppage.remainingLabel && ` · ${game.stoppage.remainingLabel} remaining`}
-                </div>
-                {!atHalf && game.stoppage.breakdownLabel && (
-                  <p className="corners-empty-hint">{game.stoppage.breakdownLabel}</p>
-                )}
-                {atHalf && (
-                  <p className="corners-empty-hint">{game.stoppage.breakdownLabel || 'H1 extra finished'}</p>
-                )}
-              </div>
-            )}
+            <div className="corners-stoppage-halves">
+              {stoppageHalves.map((half) => {
+                const liveHalf = half.active;
+                return (
+                  <div
+                    key={half.half}
+                    className={[
+                      'corners-stoppage-card',
+                      'corners-stoppage-half',
+                      half.active ? 'corners-stoppage-half--active' : '',
+                      half.done ? 'corners-stoppage-half--done' : '',
+                    ].filter(Boolean).join(' ')}
+                  >
+                    <div className="corners-stoppage-half-label">{half.label}</div>
+                    <div className="corners-stoppage-main">{half.display}</div>
+                    <div className="corners-stoppage-meta">
+                      {half.detail}
+                      {liveHalf && game.stoppage?.matchStatus && ` · ${formatMatchStatus(game.stoppage.matchStatus)}`}
+                      {liveHalf && game.stoppage?.clock && !atHalf && ` · ${game.stoppage.clock}`}
+                      {liveHalf && game.stoppage?.announced && ` · announced ${game.stoppage.announced}`}
+                      {liveHalf && game.stoppage?.played && ` · played ${game.stoppage.played}`}
+                    </div>
+                    {liveHalf && game.stoppage?.breakdownLabel && (
+                      <p className="corners-empty-hint">{game.stoppage.breakdownLabel}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="corners-empty-hint">
+              {game.inPlay && !game.stoppage
+                ? 'No ESPN play-by-play yet · extra is typical × time left in the current half'
+                : 'Each half: delay already earned + typical extra × share of that half still left'}
+            </p>
           </section>
         </div>
       )}

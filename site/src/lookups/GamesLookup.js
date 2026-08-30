@@ -1,6 +1,7 @@
 import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH, PAUSE_SCRAPES } from '../utils/global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { writeApiCacheWithKey, readApiCacheLatestByKey, recordRateLimitHit } from '../utils/database';
+import { applyMidweekSimulation } from '../scores/GamesParser';
 
 async function fetchJson(url, cacheKeyOverride = null) {
   // Helper to perform network fetch and write to cache with stable cache key
@@ -138,9 +139,9 @@ export async function fetchNflScoreboard(season, week) {
         if (ageMs > 60 * 60 * 1000) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
-            return validateSeasonYear(refreshed);
+            return applyMidweekSimulation(validateSeasonYear(refreshed), season);
           } catch (_) {
-            return validateSeasonYear(cached.data);
+            return applyMidweekSimulation(validateSeasonYear(cached.data), season);
           }
         }
       }
@@ -150,18 +151,18 @@ export async function fetchNflScoreboard(season, week) {
         if (ageMs > 60 * 1000) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
-            return validateSeasonYear(refreshed);
+            return applyMidweekSimulation(validateSeasonYear(refreshed), season);
           } catch (_) {
-            return validateSeasonYear(cached.data);
+            return applyMidweekSimulation(validateSeasonYear(cached.data), season);
           }
         }
       }
-      return validateSeasonYear(cached.data);
+      return applyMidweekSimulation(validateSeasonYear(cached.data), season);
     }
   } catch (_) {}
   // Only fetch if missing and this is the active week OR a past season (seed once)
   if (!isActiveWeek && !isPastSeason && !isFutureWeek) { return null; }
   if (PAUSE_SCRAPES) { return null; }
   const result = await fetchJson(url, cacheKey);
-  return validateSeasonYear(result);
+  return applyMidweekSimulation(validateSeasonYear(result), season);
 } 

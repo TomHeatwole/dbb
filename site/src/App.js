@@ -194,8 +194,8 @@ function AppInner() {
       <Route path="/SOP/*" element={<SOPPage />} />
       <Route path="/SOP2/*" element={<SOP2Page />} />
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
-      <Route path="/corners" element={<CornersPage />} />
-      <Route path="/CORNERS" element={<CornersPage />} />
+      <Route path="/corners/*" element={<CornersPage />} />
+      <Route path="/CORNERS/*" element={<CornersPage />} />
       <Route path="/dk/*" element={<DKPage />} />
       <Route path="/DK/*" element={<DKPage />} />
       <Route path="/preflop" element={<PreflopPage />} />

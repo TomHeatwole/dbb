@@ -36,6 +36,45 @@ export function normalisePlayerName(name) {
     .trim();
 }
 
+/**
+ * True when first names look like the same person under a nickname/short form
+ * (Kenny/Kenneth, Josh/Joshua), not merely the same initial.
+ * Keep in sync with site/src/utils/playerNameMatcher.js.
+ */
+export function firstNamesCompatible(nameA, nameB) {
+  const a = normalisePlayerName(nameA).split(' ')[0] || '';
+  const b = normalisePlayerName(nameB).split(' ')[0] || '';
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.startsWith(b) || b.startsWith(a)) return true;
+  const limit = Math.min(a.length, b.length);
+  let shared = 0;
+  while (shared < limit && a[shared] === b[shared]) shared += 1;
+  return shared >= 3;
+}
+
+/** Sleeper placeholder rows that collide with real players on normalised name. */
+export function isPlaceholderPlayerName(name) {
+  return /^(player invalid|duplicate player)$/i.test((name || '').trim());
+}
+
+/**
+ * Tie-break for Sleeper rows that share a normalised name (e.g. retired
+ * Kenneth Walker the WR vs Kenneth Walker III the RB). Prefer the active
+ * NFL player with a team, then Sleeper search_rank (lower = more relevant).
+ */
+export function sleeperPlayerQuality(player) {
+  if (!player) return 0;
+  let q = 0;
+  if (player.active) q += 50;
+  if (player.team) q += 30;
+  const rank = Number(player.search_rank);
+  if (Number.isFinite(rank) && rank > 0 && rank < 9_999_999) {
+    q += Math.max(0, 25 - Math.log10(rank) * 8);
+  }
+  return q;
+}
+
 // ─── Team / roster helpers ────────────────────────────────────────────────────
 
 export function buildTeamMap(rosters, users) {

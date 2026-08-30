@@ -10,11 +10,10 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { startSitWithProjections } from '../scores/projectionScoring';
+import ScoreSplit, { starterScoreSplit } from '../scores/ScoreSplit';
 import useWeeklyProjectedPoints from '../scores/useWeeklyProjectedPoints';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
-import MobileScaled from '../scores/MobileScaled';
-import MobileTeamScoreSummary from '../scores/MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
@@ -25,6 +24,8 @@ import YoffsLink from '../yoffs/YoffsLink';
 import { createLiveScoresPoller } from '../utils/livePolling';
 import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
+import MidweekSimBanner from '../scores/MidweekSimBanner';
+import LineupModeToggle from '../scores/LineupModeToggle';
 
 const OG_TITLE = 'Scores – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
@@ -40,7 +41,6 @@ function getAvailableYearsAndDefault() {
 
 function LeagueScores() {
 	// Toggle: when true, keep the current mobile summary behavior; when false, render the full web breakdown on mobile
-	const showFullScoreBreakdownOnMobile = false;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { availableYears, defaultSeason } = getAvailableYearsAndDefault();
 	const urlYear = searchParams.get('year');
@@ -51,6 +51,7 @@ function LeagueScores() {
 	const urlWeek = parseInt(searchParams.get('week'), 10);
 	const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= 17 ? urlWeek : getDefaultDisplayWeek(season);
 	const [week, setWeek] = useState(initialWeek);
+	const [lineupMode, setLineupMode] = useState('scores');
 	const [weeksParsedData, setWeeksParsedData] = useState(null);
 	const [rosters, setRosters] = useState(null);
 	const [users, setUsers] = useState(null);
@@ -94,7 +95,7 @@ function LeagueScores() {
 		const rows = weekEntries.map((e) => {
 			const rid = e.roster_id;
 			const raw = breakdownByRoster[rid];
-			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap, seasonTotalsMap, projectedPtsById) : null;
+			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap, seasonTotalsMap, projectedPtsById, lineupMode) : null;
 			const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 			const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
 			const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
@@ -112,7 +113,7 @@ function LeagueScores() {
 		const teams = {};
 		rows.forEach(r => { teams[r.rosterId] = { total: r.total, starters: r.starters, bench: r.bench }; });
 		return { order, teams };
-	}, [playersData, playerIdMap, playerGameLabels, injuriesMap, projectedPtsById]);
+	}, [playersData, playerIdMap, playerGameLabels, injuriesMap, projectedPtsById, lineupMode]);
 
 	function compareExpanded(prev, next) {
 		if (!prev || !next) { return []; }
@@ -575,8 +576,10 @@ function LeagueScores() {
 		<InfoPageWrapper title="Scores" subtitle={null} leftHeader={leftHeader}>
 			<div className="team-scores-container">
 				<WeekSelector week={week} onChange={setWeek} />
+				<LineupModeToggle value={lineupMode} onChange={setLineupMode} />
 			</div>
 			{week >= 15 ? <YoffsLink /> : null}
+			<MidweekSimBanner season={season} />
 			{loading ? (
 				<LoadingState label="Loading scores…" />
 			) : error || !weeksParsedData || !rosters || !users ? (
@@ -649,7 +652,7 @@ function LeagueScores() {
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
-							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById) : null;
+							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)
@@ -666,7 +669,6 @@ function LeagueScores() {
 							const avatarUrl = getAvatar(rosterId);
 							const isExpanded = !!expanded[rosterId];
 								const weekBreakdown = breakdown;
-							const benchTotal = weekBreakdown ? weekBreakdown.benchTotal : 0;
 							const isActiveWeek =
 								(String(season) === String(CURRENT_YEAR)) &&
 								(Number(week) === Number(getCurrentNFLWeek())) &&
@@ -717,6 +719,7 @@ function LeagueScores() {
 							const teamHighlight = teamHighlightMap && teamHighlightMap[String(rosterId)];
 							const rowClass = teamHighlight === 'row' ? ' standings-row--pulse' : (teamHighlight === 'up' ? ' standings-row--up' : (teamHighlight === 'down' ? ' standings-row--down' : ''));
 							const mine = isMyRoster(rosterId, myRosterId);
+							const weekSplit = starterScoreSplit(weekBreakdown);
 							return (
 								<div key={rosterId} className={`standings-row${rowClass}${mine ? ' standings-row--me' : ''}`}>
 									<button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
@@ -736,91 +739,43 @@ function LeagueScores() {
 												<span className="standings-activity-item">Live {activeCount}</span>
 											</div>
 										) : null}
-										<span
-											className={`standings-total${weekBreakdown && weekBreakdown.includesProjection ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
-											title={weekBreakdown && weekBreakdown.includesProjection ? 'Includes projections for players who have not played yet' : undefined}
-										>
-											{Number(points || 0).toFixed(1)}
-											{weekBreakdown && weekBreakdown.includesProjection ? <span className="proj-tag"> proj</span> : ' pts'}
-										</span>
+										<ScoreSplit
+											{...weekSplit}
+											layout="stack"
+											className={`standings-total${weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${weekSplit.hasProj && !weekSplit.hasActual ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
+										/>
 									</button>
-									{isExpanded && (
+									{isExpanded && (() => {
+										const roster = rosters && rosters.find(r => String(r.roster_id) === String(rosterId));
+										const owner = roster && users ? users.find(u => String(u.user_id) === String(roster.owner_id)) : null;
+										const ownerName = owner && owner.display_name ? owner.display_name : teamName;
+										const ownerAvatar = owner && (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url)
+											? (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url)
+											: avatarUrl;
+										const teamLink = `/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+										return (
 										<div className="standings-row-expand">
-											<div className="team-expanded-banner">
-												<div className="team-expanded-banner-left">
-													<span className="team-expanded-label">Owner:</span>
-													{(() => {
-														const roster = rosters && rosters.find(r => String(r.roster_id) === String(rosterId));
-														const owner = roster && users ? users.find(u => String(u.user_id) === String(roster.owner_id)) : null;
-														const ownerName = owner && owner.display_name ? owner.display_name : teamName;
-														const ownerAvatar = owner && (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url) ? (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url) : avatarUrl;
-														const teamLink = `/team/${rosterId}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-														return (
-															<Link className="team-expanded-owner" to={teamLink}>
-																{ownerAvatar ? <img className="team-expanded-owner-avatar" src={ownerAvatar} alt={`${ownerName} avatar`} /> : null}
-																<span className="team-expanded-owner-name">{ownerName}</span>
-															</Link>
-														);
-													})()}
-												</div>
-												<div className="team-expanded-banner-center">
-													<Link className="team-expanded-place" to="/standings">Place: #{place || 9999} ({Number(pfTotal || 0).toFixed(1)} PF)</Link>
-												</div>
-												<div className="team-expanded-banner-right" />
-											</div>
-											{isMobile && showFullScoreBreakdownOnMobile ? (
-												<MobileTeamScoreSummary
-													weekBreakdown={weekBreakdown}
-													week={week}
-													rosterId={rosterId}
-													searchParams={searchParams}
-													isActiveWeek={isActiveWeek}
-													activeCount={activeCount}
-													yetToPlayCount={yetToPlayCount}
-												/>
-											) : (
-												isMobile ? (
-													<MobileScaled>
-								<LeagueScoresTeamBreakdown
-															weekBreakdown={weekBreakdown}
-															week={week}
-															rosterId={rosterId}
-															benchOpen={!!benchOpen[rosterId]}
-															onToggleBench={() => toggleBench(rosterId)}
-															benchTotal={benchTotal}
-															playersData={playersData}
-															playerIdMap={playerIdMap}
-															searchParams={searchParams}
-															playerGameLabels={playerGameLabels}
-															isActiveWeek={isActiveWeek}
-															injuriesMap={injuriesMap}
-															showCurrentInjury={showCurrentInjury}
-									playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
-									playersTeamMap={playersTeamMap}
-														/>
-													</MobileScaled>
-												) : (
-									<LeagueScoresTeamBreakdown
-														weekBreakdown={weekBreakdown}
-														week={week}
-														rosterId={rosterId}
-														benchOpen={!!benchOpen[rosterId]}
-														onToggleBench={() => toggleBench(rosterId)}
-														benchTotal={benchTotal}
-														playersData={playersData}
-														playerIdMap={playerIdMap}
-														searchParams={searchParams}
-														playerGameLabels={playerGameLabels}
-														isActiveWeek={isActiveWeek}
-														injuriesMap={injuriesMap}
-														showCurrentInjury={showCurrentInjury}
-										playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
-										playersTeamMap={playersTeamMap}
-													/>
-												)
-											)}
+											<LeagueScoresTeamBreakdown
+												weekBreakdown={weekBreakdown}
+												benchOpen={!!benchOpen[rosterId]}
+												onToggleBench={() => toggleBench(rosterId)}
+												playersData={playersData}
+												playerIdMap={playerIdMap}
+												playerGameLabels={playerGameLabels}
+												isActiveWeek={isActiveWeek}
+												injuriesMap={injuriesMap}
+												showCurrentInjury={showCurrentInjury}
+												playerHighlightMap={playerHighlightMap && playerHighlightMap[String(rosterId)] ? playerHighlightMap[String(rosterId)] : {}}
+												playersTeamMap={playersTeamMap}
+												ownerName={ownerName}
+												ownerAvatar={ownerAvatar}
+												teamLink={teamLink}
+												place={place}
+												pfTotal={pfTotal}
+											/>
 										</div>
-									)}
+										);
+									})()}
 								</div>
 							);
 						});

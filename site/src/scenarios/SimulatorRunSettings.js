@@ -115,7 +115,7 @@ function SimulatorRunSettings({
       <p className="simulator-run-settings-hint">
         Histograms (finish + score distributions) work at any run count.
         Per-sim deep links are kept for runs up to {SIMULATOR_TEAM_DETAIL_MAX_ITERATIONS.toLocaleString()}.
-        Larger runs still keep each team&apos;s best and worst season.
+        Larger runs still keep each team&apos;s best and worst seasons by finish and by score.
       </p>
       <label className="simulator-run-settings-label" htmlFor="simulator-run-count">
         Number of runs (max {MAX_SIMULATOR_ITERATIONS.toLocaleString()})

@@ -228,7 +228,12 @@ function cloneRollMap(rolls) {
 function createTeamSeasonExtremes(rosterIds) {
   const byTeam = {};
   for (const rid of rosterIds) {
-    byTeam[rid] = { best: null, worst: null };
+    byTeam[rid] = {
+      bestByPlace: null,
+      worstByPlace: null,
+      bestByScore: null,
+      worstByScore: null,
+    };
   }
   return byTeam;
 }
@@ -254,20 +259,53 @@ function buildSeasonExtremeSample(simIndex, ctx, rosterId, totalScore, place) {
   };
 }
 
-/** Keep each team's highest- and lowest-scoring seasons (2 samples, any run size). */
+function isBetterPlaceSeason(place, totalScore, current) {
+  if (!current) return true;
+  if (place < current.place) return true;
+  if (place > current.place) return false;
+  return totalScore > current.totalScore;
+}
+
+function isWorsePlaceSeason(place, totalScore, current) {
+  if (!current) return true;
+  if (place > current.place) return true;
+  if (place < current.place) return false;
+  return totalScore < current.totalScore;
+}
+
+function isBetterScoreSeason(totalScore, place, current) {
+  if (!current) return true;
+  if (totalScore > current.totalScore) return true;
+  if (totalScore < current.totalScore) return false;
+  return place != null && current.place != null && place < current.place;
+}
+
+function isWorseScoreSeason(totalScore, place, current) {
+  if (!current) return true;
+  if (totalScore < current.totalScore) return true;
+  if (totalScore > current.totalScore) return false;
+  return place != null && current.place != null && place > current.place;
+}
+
+/** Keep each team's best/worst finish and highest/lowest score (4 samples, any run size). */
 function recordTeamSeasonExtreme(extremes, rosterId, simIndex, ctx, totalScore, place) {
   if (totalScore == null || !Number.isFinite(totalScore)) return;
   const rid = Number(rosterId);
   const team = extremes[rid];
   if (!team) return;
 
-  const isBest = !team.best || totalScore > team.best.totalScore;
-  const isWorst = !team.worst || totalScore < team.worst.totalScore;
-  if (!isBest && !isWorst) return;
+  const hasPlace = place != null && Number.isFinite(place);
+  const isBestByPlace = hasPlace && isBetterPlaceSeason(place, totalScore, team.bestByPlace);
+  const isWorstByPlace = hasPlace && isWorsePlaceSeason(place, totalScore, team.worstByPlace);
+  const isBestByScore = isBetterScoreSeason(totalScore, place, team.bestByScore);
+  const isWorstByScore = isWorseScoreSeason(totalScore, place, team.worstByScore);
+  if (!isBestByPlace && !isWorstByPlace && !isBestByScore && !isWorstByScore) return;
 
   const sample = buildSeasonExtremeSample(simIndex, ctx, rid, totalScore, place);
-  if (isBest) team.best = sample;
-  if (isWorst) team.worst = sample;
+  if (isBestByPlace) team.bestByPlace = sample;
+  if (isWorstByPlace) team.worstByPlace = sample;
+  if (isBestByScore) team.bestByScore = sample;
+  if (isWorstByScore) team.worstByScore = sample;
 }
 
 function recordTeamFinishSample(buckets, rosterId, simIndex, rolls, playoffRolls, teamResult) {

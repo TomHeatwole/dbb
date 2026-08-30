@@ -32,10 +32,17 @@ export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/12";
  *
  * HOME_OFFSEASON_OVERRIDE:
  *   null = derive (preseason OR week > 17). true/false = force home off-/in-season layout.
+ *
+ * SIMULATE_MIDWEEK:
+ *   Local only. When true, the current season's scoreboard is rewritten so
+ *   roughly half the games are Final, a few are live, and the rest are still
+ *   upcoming. Locked players use a stand-in actual (full proj if final,
+ *   ~half if live) so Scores can show mixed pts / PROJ. Flip to false when done.
  */
 export const CURRENT_WEEK_OVERRIDE = null;
 export const PREVIOUS_CURRENT_WEEK_OVERRIDE = null;
 export const HOME_OFFSEASON_OVERRIDE = null;
+export const SIMULATE_MIDWEEK = true;
 
 
 // Firebase configuration values (non-secret parts)

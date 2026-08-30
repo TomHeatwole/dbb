@@ -3,8 +3,10 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import PageMeta from '../PageMeta';
 import CornersBookPanel from './CornersBookPanel';
+import CornersArbCheckerPanel from './CornersArbCheckerPanel';
 import {
   dkCornerGamesLoaded,
   mergeDkCornersIntoFdGames,
@@ -12,7 +14,7 @@ import {
 } from '../corners/mergeCornerBooks';
 
 const DK_CLIENT_TIMEOUT_MS = 20000;
-const KALSHI_CLIENT_TIMEOUT_MS = 28000;
+const KALSHI_CLIENT_TIMEOUT_MS = 40000;
 
 async function fetchJsonWithTimeout(url, timeoutMs) {
   const controller = new AbortController();
@@ -71,7 +73,29 @@ function joinNotices(...parts) {
   return parts.filter(Boolean).join(' ');
 }
 
+function CornersTabBar() {
+  return (
+    <nav className="sop-tabs" aria-label="Corners mode">
+      <NavLink
+        to="/corners"
+        end
+        className={({ isActive }) => `sop-tab${isActive ? ' sop-tab--active' : ''}`}
+      >
+        Book
+      </NavLink>
+      <NavLink
+        to="/corners/arb"
+        className={({ isActive }) => `sop-tab${isActive ? ' sop-tab--active' : ''}`}
+      >
+        Arb checker
+      </NavLink>
+    </nav>
+  );
+}
+
 function CornersPage() {
+  const location = useLocation();
+  const onBookTab = !/\/arb\/?$/i.test(location.pathname);
   const [games, setGames] = useState([]);
   const [fetchedAt, setFetchedAt] = useState(null);
   const [bookError, setBookError] = useState(null);
@@ -139,13 +163,14 @@ function CornersPage() {
   }, []);
 
   useEffect(() => {
-    refreshBook();
-  }, [refreshBook]);
+    if (onBookTab) refreshBook();
+  }, [refreshBook, onBookTab]);
 
   useEffect(() => {
+    if (!onBookTab) return undefined;
     const id = window.setInterval(refreshBook, BOOK_REFRESH_MS);
     return () => window.clearInterval(id);
-  }, [refreshBook]);
+  }, [refreshBook, onBookTab]);
 
   return (
     <>
@@ -160,15 +185,20 @@ function CornersPage() {
           <div className="sop-spotlight sop-spotlight--right" aria-hidden="true" />
           <div className="sop-scanlines" aria-hidden="true" />
 
-          <CornersBookPanel
-            games={games}
-            fetchedAt={fetchedAt}
-            error={bookError}
-            notice={notice}
-            loading={bookLoading}
-            refreshing={bookRefreshing}
-            onRefresh={() => refreshBook({ manual: true })}
-          />
+          <CornersTabBar />
+          {onBookTab ? (
+            <CornersBookPanel
+              games={games}
+              fetchedAt={fetchedAt}
+              error={bookError}
+              notice={notice}
+              loading={bookLoading}
+              refreshing={bookRefreshing}
+              onRefresh={() => refreshBook({ manual: true })}
+            />
+          ) : (
+            <CornersArbCheckerPanel />
+          )}
         </div>
       </div>
     </>

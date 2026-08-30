@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import LoadingState from '../LoadingState';
 import { CURRENT_YEAR, getDefaultDisplayWeek, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from './WeekSelector';
@@ -7,52 +7,18 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { startSitWithProjections } from './projectionScoring';
+import ScoreSplit, { starterScoreSplit } from './ScoreSplit';
 import useWeeklyProjectedPoints from './useWeeklyProjectedPoints';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
-import MobileTeamScoreSummary from './MobileTeamScoreSummary';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from './GamesParser';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { readPlayersSnapshot } from '../utils/database';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
-
-function MobileScaled({ children, className = 'mobile-standings-scale-70' }) {
-  const innerRef = useRef(null);
-  const [heightPx, setHeightPx] = useState(null);
-
-  useEffect(() => {
-    const el = innerRef.current;
-    if (!el) {
-      return;
-    }
-    const compute = () => {
-      const rect = el.getBoundingClientRect();
-      setHeightPx(rect.height);
-    };
-    compute();
-    const ro = new ResizeObserver(() => compute());
-    ro.observe(el);
-    window.addEventListener('resize', compute);
-    return () => {
-      try {
-        ro.disconnect();
-      } catch (_) {
-        // ignore
-      }
-      window.removeEventListener('resize', compute);
-    };
-  }, []);
-
-  return (
-    <div style={{ height: heightPx != null ? `${heightPx}px` : 'auto' }}>
-      <div ref={innerRef} className={className}>
-        {children}
-      </div>
-    </div>
-  );
-}
+import MidweekSimBanner from './MidweekSimBanner';
+import LineupModeToggle from './LineupModeToggle';
 
 /**
  * Reusable league scores view (per-week scoreboard).
@@ -83,6 +49,7 @@ function ScoresView({
     const def = getDefaultDisplayWeek(season);
     return Math.min(safeMaxWeek, Math.max(safeMinWeek, def));
   });
+  const [lineupMode, setLineupMode] = useState('scores');
 
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [rosters, setRosters] = useState(null);
@@ -98,8 +65,6 @@ function ScoresView({
   const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
   const [injuriesMap, setInjuriesMap] = useState({});
   const [playersTeamMap, setPlayersTeamMap] = useState({});
-  const showFullScoreBreakdownOnMobile = false;
-
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
 
   const rosterFilter =
@@ -424,6 +389,7 @@ function ScoresView({
             minWeek={safeMinWeek}
             maxWeek={safeMaxWeek}
           />
+          <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
         </div>
         <div>No scores found for this week.</div>
       </>
@@ -499,7 +465,7 @@ function ScoresView({
     .map((e) => {
       const rid = e.roster_id;
       const raw = breakdownByRoster[rid];
-      const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById) : null;
+      const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode) : null;
       const pts = computed
         ? computed.starterTotal
         : typeof e.points === 'number'
@@ -537,7 +503,9 @@ function ScoresView({
           minWeek={safeMinWeek}
           maxWeek={safeMaxWeek}
         />
+        <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
       </div>
+      <MidweekSimBanner season={season} />
       <div
         className={
           'standings-list' + (hasAnyExpanded ? ' standings-list--expanded' : '')
@@ -580,6 +548,7 @@ function ScoresView({
           }
 
           const mine = isMyRoster(rosterId, myRosterId);
+          const weekSplit = starterScoreSplit(weekBreakdown);
           const baseRowClass = (usePlayoffTheme ? ' standings-row--playoff' : '') + (mine ? ' standings-row--me' : '');
 
           const seed =
@@ -648,121 +617,44 @@ function ScoresView({
                     </span>
                   </div>
                 ) : null}
-                <span
-                  className={`standings-total${weekBreakdown && weekBreakdown.includesProjection ? ' standings-total--proj' : ''}`}
-                  title={weekBreakdown && weekBreakdown.includesProjection ? 'Includes projections for players who have not played yet' : undefined}
-                >
-                  {Number(points || 0).toFixed(1)}
-                  {weekBreakdown && weekBreakdown.includesProjection ? <span className="proj-tag"> proj</span> : ' pts'}
-                </span>
+                <ScoreSplit
+                  {...weekSplit}
+                  layout="stack"
+                  className={`standings-total${weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${weekSplit.hasProj && !weekSplit.hasActual ? ' standings-total--proj' : ''}`}
+                />
               </button>
-              {isExpanded && (
+              {isExpanded && (() => {
+                const roster = rosters && rosters.find((r) => String(r.roster_id) === String(rosterId));
+                const owner = roster && users
+                  ? users.find((u) => String(u.user_id) === String(roster.owner_id))
+                  : null;
+                const ownerName = owner && owner.display_name ? owner.display_name : teamName;
+                const ownerAvatar = owner && (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url)
+                  ? (owner.user_avatar_url || owner.avatar_url || owner.team_avatar_url)
+                  : avatarUrl;
+                return (
                 <div className="standings-row-expand">
-                  <div className="team-expanded-banner">
-                    <div className="team-expanded-banner-left">
-                      <span className="team-expanded-label">Owner:</span>
-                      {(() => {
-                        const roster =
-                          rosters &&
-                          rosters.find(
-                            (r) => String(r.roster_id) === String(rosterId)
-                          );
-                        const owner =
-                          roster && users
-                            ? users.find(
-                                (u) =>
-                                  String(u.user_id) === String(roster.owner_id)
-                              )
-                            : null;
-                        const ownerName =
-                          owner && owner.display_name
-                            ? owner.display_name
-                            : teamName;
-                        const ownerAvatar =
-                          owner &&
-                          (owner.user_avatar_url ||
-                            owner.avatar_url ||
-                            owner.team_avatar_url)
-                            ? owner.user_avatar_url ||
-                              owner.avatar_url ||
-                              owner.team_avatar_url
-                            : avatarUrl;
-                        const teamLink = `/team/${rosterId}`;
-                        return (
-                          <a className="team-expanded-owner" href={teamLink}>
-                            {ownerAvatar ? (
-                              <img
-                                className="team-expanded-owner-avatar"
-                                src={ownerAvatar}
-                                alt={`${ownerName} avatar`}
-                              />
-                            ) : null}
-                            <span className="team-expanded-owner-name">
-                              {ownerName}
-                            </span>
-                          </a>
-                        );
-                      })()}
-                    </div>
-                    <div className="team-expanded-banner-center">
-                          <a className="team-expanded-place" href="/standings">
-                        Place: #{displayPlace || 9999} (
-                        {Number(displayPfTotal || 0).toFixed(1)} PF)
-                      </a>
-                    </div>
-                    <div className="team-expanded-banner-right" />
-                  </div>
-                  {isMobile && showFullScoreBreakdownOnMobile ? (
-                    <MobileTeamScoreSummary
-                      weekBreakdown={weekBreakdown}
-                      week={week}
-                      rosterId={rosterId}
-                      searchParams={null}
-                      isActiveWeek={isActiveWeek}
-                      activeCount={activeCount}
-                      yetToPlayCount={yetToPlayCount}
-                    />
-                  ) : isMobile ? (
-                    <MobileScaled>
-                      <LeagueScoresTeamBreakdown
-                        weekBreakdown={weekBreakdown}
-                        week={week}
-                        rosterId={rosterId}
-                        benchOpen={!!benchOpen[rosterId]}
-                        onToggleBench={() => toggleBench(rosterId)}
-                        benchTotal={benchTotal}
-                        playersData={playersData}
-                        playerIdMap={playerIdMap}
-                        searchParams={null}
-                        playerGameLabels={playerGameLabels}
-                        isActiveWeek={isActiveWeek}
-                        injuriesMap={injuriesMap}
-                        showCurrentInjury={showCurrentInjury}
-                        playerHighlightMap={{}}
-                        playersTeamMap={playersTeamMap}
-                      />
-                    </MobileScaled>
-                  ) : (
-                    <LeagueScoresTeamBreakdown
-                      weekBreakdown={weekBreakdown}
-                      week={week}
-                      rosterId={rosterId}
-                      benchOpen={!!benchOpen[rosterId]}
-                      onToggleBench={() => toggleBench(rosterId)}
-                      benchTotal={benchTotal}
-                      playersData={playersData}
-                      playerIdMap={playerIdMap}
-                      searchParams={null}
-                      playerGameLabels={playerGameLabels}
-                      isActiveWeek={isActiveWeek}
-                      injuriesMap={injuriesMap}
-                      showCurrentInjury={showCurrentInjury}
-                      playerHighlightMap={{}}
-                      playersTeamMap={playersTeamMap}
-                    />
-                  )}
+                  <LeagueScoresTeamBreakdown
+                    weekBreakdown={weekBreakdown}
+                    benchOpen={!!benchOpen[rosterId]}
+                    onToggleBench={() => toggleBench(rosterId)}
+                    playersData={playersData}
+                    playerIdMap={playerIdMap}
+                    playerGameLabels={playerGameLabels}
+                    isActiveWeek={isActiveWeek}
+                    injuriesMap={injuriesMap}
+                    showCurrentInjury={showCurrentInjury}
+                    playerHighlightMap={{}}
+                    playersTeamMap={playersTeamMap}
+                    ownerName={ownerName}
+                    ownerAvatar={ownerAvatar}
+                    teamLink={`/team/${rosterId}`}
+                    place={displayPlace}
+                    pfTotal={displayPfTotal}
+                  />
                 </div>
-              )}
+                );
+              })()}
             </div>
           );
         })}

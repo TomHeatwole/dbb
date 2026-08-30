@@ -489,7 +489,7 @@ export async function backupLatestData() {
       const val = rootSnap.val() || {};
       const latestByKey = {};
       for (const key of Object.keys(val)) {
-        const isSleeper = /^sleeper_v1_league_/.test(key);
+        const isSleeper = /^sleeper_v1_league_/.test(key) || /^sleeper_projections_/.test(key);
         const isEspn = /^espn_.*_sports_football_nfl_scoreboard_/.test(key) || /^espn_.*_scoreboard_/.test(key);
         if (!isSleeper && !isEspn) { continue; }
         // New format: value is the latest object directly under the key
