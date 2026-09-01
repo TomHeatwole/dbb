@@ -9,6 +9,7 @@
 //   listAll()            -> { offers, bets }
 //   createOffer(input)   -> offer     input: { marketKind, market, title,
 //                                     description, line, maxExposure,
+//                                     maxExposurePerPerson (null = off),
 //                                     minTake, expiresAt }
 //   takeOffer(offerId, stake) -> { bet, offer }
 //   updateOfferExposure(offerId, newRemaining) -> offer
@@ -17,13 +18,13 @@
 
 import {
   isValidLine, roundCents, takerWinAmount, validateTake, isEffectivelyFilled,
-  maxStakeForExposure,
+  maxStakeForExposure, exposureUsedByTaker,
 } from './oddsMath';
 import { buildTestSeed } from './testSeed';
 
 export const TEST_MODE_KEY = 'fredduel_test_mode';
 export const TEST_ACTOR_KEY = 'fredduel_test_actor';
-const TEST_DB_KEY = 'fredduel_test_db_v4';
+const TEST_DB_KEY = 'fredduel_test_db_v5';
 
 export function isTestMode() {
   try {
@@ -44,6 +45,17 @@ export function setTestMode(on) {
 // Shared validation (used by the test client; the API re-validates server-side)
 // ---------------------------------------------------------------------------
 
+/**
+ * Optional per-account ceiling. Off / omitted → null. Invalid number →
+ * undefined so callers can distinguish "not set" from "bad input".
+ */
+export function normalizePerPersonCap(value) {
+  if (value == null || value === '' || value === false) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 1) return undefined;
+  return roundCents(n);
+}
+
 export function validateOfferInput(input) {
   const title = String(input.title || '').trim();
   if (!title) return 'Offer needs a title.';
@@ -61,6 +73,20 @@ export function validateOfferInput(input) {
   if (minTake > maxStake) {
     return `Min take is too high: at ${Number(input.line) > 0 ? '+' : ''}${Number(input.line)} `
       + `a $${exposure} exposure covers at most a $${maxStake} take.`;
+  }
+  const perPerson = normalizePerPersonCap(input.maxExposurePerPerson);
+  if (perPerson === undefined) {
+    return 'Max exposure per person must be at least $1.';
+  }
+  if (perPerson != null) {
+    if (perPerson > 100000) return 'Max exposure per person is capped at $100,000.';
+    if (perPerson > exposure) {
+      return 'Max exposure per person cannot exceed your total max exposure.';
+    }
+    const perPersonStake = maxStakeForExposure(perPerson, Number(input.line));
+    if (minTake > perPersonStake) {
+      return `Per-person cap is too low: at this line it covers at most a $${perPersonStake} take.`;
+    }
   }
   const expires = new Date(input.expiresAt).getTime();
   if (!Number.isFinite(expires)) return 'Pick an expiry time.';
@@ -161,6 +187,7 @@ export function createTestClient(getActor) {
         line: Number(input.line),
         maxExposure: roundCents(input.maxExposure),
         remainingExposure: roundCents(input.maxExposure),
+        maxExposurePerPerson: normalizePerPersonCap(input.maxExposurePerPerson) ?? null,
         minTake: roundCents(input.minTake ?? 1),
         status: 'open',
         createdAt: new Date().toISOString(),
@@ -181,7 +208,8 @@ export function createTestClient(getActor) {
       if (offer.status !== 'open') throw new Error(`Offer is ${offer.status}.`);
       if (offer.creatorId === actor.id) throw new Error("You can't take your own offer.");
 
-      const check = validateTake(offer, stakeInput);
+      const usedByTaker = exposureUsedByTaker(db.bets, offer.id, actor.id);
+      const check = validateTake(offer, stakeInput, { usedByTaker });
       if (!check.ok) throw new Error(check.error);
 
       const creatorRisk = check.takerWin;
@@ -282,6 +310,7 @@ export function createRemoteClient(getToken) {
         description: String(input.description || '').trim(),
         line: Number(input.line),
         maxExposure: roundCents(input.maxExposure),
+        maxExposurePerPerson: normalizePerPersonCap(input.maxExposurePerPerson) ?? null,
         minTake: roundCents(input.minTake ?? 1),
         expiresAt: new Date(input.expiresAt).toISOString(),
       });

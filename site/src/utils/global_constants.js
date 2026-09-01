@@ -16,7 +16,7 @@ export const PREVIOUS_YEARS = parsedSettings.PREVIOUS_YEARS || {};
 export const PREVIOUS_ROSTER_OVERRIDES = parsedSettings.PREVIOUS_ROSTER_OVERRIDES || {};
 export const LOGO_LETTER_OVERLAY = parsedSettings.LOGO_LETTER_OVERLAY || {};
 export const PLAYER_ESPN_MAP_OVERRIDES = parsedSettings.PLAYER_ESPN_MAP_OVERRIDES || {};
-export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || "09/12";
+export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || parsedSettings.SEASON_START_DATE || "09/09";
 
 /* LOCAL DEBUG OVERRIDES — leave null before committing.
  * These are the knobs that DateHelper (and therefore home, teams-2, scores,

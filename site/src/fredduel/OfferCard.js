@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import {
   formatLine, formatMoney, formatPercent, impliedProbability,
-  minStakeForOffer, maxStakeForOffer, takerWinAmount, roundCents,
-  maxStakeForExposure,
+  minStakeForOffer, maxStakeForOffer, maxStakeForTaker, takerWinAmount,
+  roundCents, maxStakeForExposure, hasPerPersonCap, exposureUsedByTaker,
+  remainingPerPersonExposure,
 } from './oddsMath';
 import { validateExposureUpdate } from './exchangeClient';
 import { formatCountdown, formatTimestamp, isExpiringSoon } from './timeFmt';
@@ -22,9 +23,12 @@ function StatusBadge({ status }) {
 }
 
 // Inline expanding "take" panel: stake slider + input with live payout math.
-function TakePanel({ offer, onTake, onClose }) {
+function TakePanel({ offer, usedByTaker = 0, onTake, onClose }) {
   const min = minStakeForOffer(offer);
-  const max = maxStakeForOffer(offer);
+  const max = maxStakeForTaker(offer, usedByTaker);
+  const perPersonLeft = remainingPerPersonExposure(offer, usedByTaker);
+  const atPerPersonCap = max < min && perPersonLeft != null
+    && perPersonLeft < Number(offer.remainingExposure);
   const [stakeText, setStakeText] = useState(String(min));
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -47,14 +51,39 @@ function TakePanel({ offer, onTake, onClose }) {
     onClose();
   };
 
+  if (atPerPersonCap) {
+    return (
+      <div className="fd-take-panel">
+        <div className="fd-take-summary">
+          You've already used <strong>{formatMoney(usedByTaker)}</strong> of the{' '}
+          <strong>{formatMoney(offer.maxExposurePerPerson)}</strong> per-person cap
+          on this offer. Someone else can still take the leftover{' '}
+          {formatMoney(offer.remainingExposure)} on the board.
+        </div>
+        <div className="fd-take-actions">
+          <button className="fd-btn fd-btn-ghost" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fd-take-panel">
+      {hasPerPersonCap(offer) && (
+        <div className="fd-take-cap-note">
+          This offer caps any one account at {formatMoney(offer.maxExposurePerPerson)} of{' '}
+          {offer.creatorName}'s risk
+          {usedByTaker > 0
+            ? ` — you've used ${formatMoney(usedByTaker)}, ${formatMoney(perPersonLeft)} left for you.`
+            : '.'}
+        </div>
+      )}
       <div className="fd-take-row">
         <span className="fd-take-label">Your stake</span>
         <input
           type="range"
           min={min}
-          max={max}
+          max={Math.max(min, max)}
           step={max - min > 50 ? 1 : 0.01}
           value={stakeValid ? stake : min}
           onChange={(e) => setStakeText(e.target.value)}
@@ -143,6 +172,12 @@ function UpdateExposurePanel({ offer, onUpdate, onClose }) {
           <>
             Takers can still stake up to <strong>{formatMoney(newMaxStake)}</strong> at{' '}
             {formatLine(offer.line)} against it.
+            {hasPerPersonCap(offer) && (
+              <>
+                {' '}No one account can take more than{' '}
+                <strong>{formatMoney(offer.maxExposurePerPerson)}</strong> of your risk.
+              </>
+            )}
           </>
         ) : (
           <span className="fd-muted">{validationError}</span>
@@ -180,7 +215,11 @@ function OfferCard({
   const filled = roundCents(offer.maxExposure - offer.remainingExposure);
   const filledPct = Math.min(100, Math.max(0, (filled / offer.maxExposure) * 100));
   const minStake = minStakeForOffer(offer);
-  const maxStake = maxStakeForOffer(offer);
+  const usedByMe = actor && !isMine ? exposureUsedByTaker(linkedBets, offer.id, actor.id) : 0;
+  const maxStakeBoard = maxStakeForOffer(offer);
+  const maxStake = isMine ? maxStakeBoard : maxStakeForTaker(offer, usedByMe);
+  const perPersonLeft = !isMine ? remainingPerPersonExposure(offer, usedByMe) : null;
+  const atPerPersonCap = isOpen && !isMine && hasPerPersonCap(offer) && maxStake < minStake;
   const prob = useMemo(() => impliedProbability(offer.line), [offer.line]);
 
   const cancel = async () => {
@@ -199,6 +238,11 @@ function OfferCard({
       <div className="fd-card-top">
         <span className="fd-chip">{kindLabel(offer)}</span>
         {isMine && <span className="fd-chip fd-chip-mine">Yours</span>}
+        {hasPerPersonCap(offer) && (
+          <span className="fd-chip fd-chip-cap" title="No single account can take more than this of the offerer's risk">
+            {formatMoney(offer.maxExposurePerPerson)} / person
+          </span>
+        )}
         <StatusBadge status={offer.status} />
         <span className="fd-spacer" />
         {isOpen ? (
@@ -256,8 +300,22 @@ function OfferCard({
           </div>
           {isOpen && (
             <div className="fd-muted fd-small">
-              Take {formatMoney(minStake)}–{formatMoney(maxStake)}
-              {offer.minTake > 1 ? ` (min ${formatMoney(offer.minTake)})` : ''}
+              {atPerPersonCap ? (
+                <>
+                  {formatMoney(offer.remainingExposure)} still on the board for other accounts
+                </>
+              ) : (
+                <>
+                  Take {formatMoney(minStake)}–{formatMoney(maxStake)}
+                  {offer.minTake > 1 ? ` (min ${formatMoney(offer.minTake)})` : ''}
+                  {hasPerPersonCap(offer) && !isMine && usedByMe > 0 && perPersonLeft != null && (
+                    <> · you have {formatMoney(perPersonLeft)} of the {formatMoney(offer.maxExposurePerPerson)} per-person cap left</>
+                  )}
+                  {hasPerPersonCap(offer) && (isMine || usedByMe === 0) && (
+                    <> · max {formatMoney(offer.maxExposurePerPerson)} exposure per person</>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
@@ -265,10 +323,15 @@ function OfferCard({
 
       {isOpen && !taking && !updating && (
         <div className="fd-card-actions">
-          {!isMine && (
+          {!isMine && !atPerPersonCap && (
             <button className="fd-btn fd-btn-primary" onClick={() => setTaking(true)}>
               Take this bet
             </button>
+          )}
+          {!isMine && atPerPersonCap && (
+            <span className="fd-cap-blocked">
+              You've used your {formatMoney(offer.maxExposurePerPerson)} per-person cap
+            </span>
           )}
           {isMine && (
             <>
@@ -285,7 +348,12 @@ function OfferCard({
       {cancelError && <div className="fd-error">{cancelError}</div>}
 
       {isOpen && taking && (
-        <TakePanel offer={offer} onTake={onTake} onClose={() => setTaking(false)} />
+        <TakePanel
+          offer={offer}
+          usedByTaker={usedByMe}
+          onTake={onTake}
+          onClose={() => setTaking(false)}
+        />
       )}
       {isOpen && updating && (
         <UpdateExposurePanel

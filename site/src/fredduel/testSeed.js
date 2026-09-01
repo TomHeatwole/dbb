@@ -92,6 +92,7 @@ export function buildTestSeed(now = Date.now()) {
     creatorId: actor(9).id, creatorName: actor(9).name,
     marketKind: m2.kind, market: m2, title: describeMarket(m2),
     line: -150, maxExposure: 150, remainingExposure: 60, minTake: 5,
+    maxExposurePerPerson: 90,
     createdAt: iso(now - 26 * HOUR), expiresAt: iso(now + 6 * HOUR),
   });
   addBet({
@@ -157,7 +158,18 @@ export function buildTestSeed(now = Date.now()) {
     createdAt: iso(now - 30 * HOUR),
   });
 
-  // 7. An expired offer (for the "my offers" graveyard).
+  // 7. Per-person cap demo: $80 on the board, $25 max to any one account,
+  //    so one counterparty can't vacuum the whole offer.
+  const mPer = seasonMarket(2, 'make_playoffs');
+  addOffer({
+    creatorId: actor(2).id, creatorName: actor(2).name,
+    marketKind: mPer.kind, market: mPer, title: describeMarket(mPer),
+    line: 250, maxExposure: 80, remainingExposure: 80,
+    maxExposurePerPerson: 25,
+    createdAt: iso(now - 2 * HOUR), expiresAt: iso(now + 4 * DAY),
+  });
+
+  // 8. An expired offer (for the "my offers" graveyard).
   const m7 = weeklyMarket(9, 'weekly_points_over', 1, { points: 130 });
   addOffer({
     creatorId: actor(9).id, creatorName: actor(9).name,

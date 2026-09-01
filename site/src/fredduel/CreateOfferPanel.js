@@ -53,6 +53,8 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
   const [pctText, setPctText] = useState('50');
   const [exposureText, setExposureText] = useState('200');
   const [minTakeText, setMinTakeText] = useState('1');
+  const [perPersonOn, setPerPersonOn] = useState(false);
+  const [perPersonText, setPerPersonText] = useState('50');
   const [expiryChoice, setExpiryChoice] = useState('24h');
   const [customExpiry, setCustomExpiry] = useState(toDatetimeLocalValue(Date.now() + 24 * 60 * 60 * 1000));
   const [error, setError] = useState(null);
@@ -131,6 +133,29 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
   // otherwise the offer can never be taken.
   const minTake = Number(minTakeText) || 1;
   const minTakeConflict = fullTakeStake != null && minTake > fullTakeStake;
+  const perPerson = Number(perPersonText);
+  const perPersonOk = Number.isFinite(perPerson) && perPerson >= 1;
+  const perPersonOverTotal = perPersonOn && exposureOk && perPersonOk && perPerson > exposure;
+  const perPersonStake = perPersonOn && lineOk && perPersonOk
+    ? maxStakeForExposure(perPerson, line)
+    : null;
+  const perPersonMinConflict = perPersonStake != null && minTake > perPersonStake;
+  const perPersonBlocked = perPersonOn && (!perPersonOk || perPersonOverTotal || perPersonMinConflict);
+
+  const togglePerPerson = () => {
+    setPerPersonOn((on) => {
+      if (!on) {
+        const fallback = exposureOk
+          ? Math.max(1, Math.floor(exposure / 2))
+          : 50;
+        if (!perPersonText) setPerPersonText(String(fallback));
+        else if (exposureOk && Number(perPersonText) > exposure) {
+          setPerPersonText(String(fallback));
+        }
+      }
+      return !on;
+    });
+  };
 
   const submit = async () => {
     setError(null);
@@ -150,6 +175,7 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
       description: isCustom ? description.trim() : '',
       line,
       maxExposure: exposure,
+      maxExposurePerPerson: perPersonOn ? perPerson : null,
       minTake: Number(minTakeText) || 1,
       expiresAt: new Date(expiresAtMs).toISOString(),
     };
@@ -381,6 +407,69 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
         </div>
       )}
 
+      <div className={`fd-limit-card${perPersonOn ? ' fd-limit-card-on' : ''}`}>
+        <div className="fd-limit-head">
+          <div className="fd-limit-copy">
+            <h4>Max exposure per person</h4>
+            <p>
+              Keep one account from taking the whole book. Off by default —
+              turn it on to set a per-person ceiling on top of your total exposure.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={perPersonOn}
+            aria-label="Max exposure per person"
+            className={`fd-switch${perPersonOn ? ' fd-switch-on' : ''}`}
+            onClick={togglePerPerson}
+          >
+            <span className="fd-switch-knob" />
+            <span className="fd-switch-label">{perPersonOn ? 'On' : 'Off'}</span>
+          </button>
+        </div>
+        {perPersonOn && (
+          <div className="fd-limit-body">
+            <div className="fd-numbers-field">
+              <label>Per-person ceiling</label>
+              <div className={`fd-input-box${perPersonBlocked ? ' fd-input-bad' : ''}`}>
+                <span className="fd-unit">$</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={perPersonText}
+                  onChange={(e) => setPerPersonText(e.target.value)}
+                  aria-label="Max exposure per person in dollars"
+                />
+              </div>
+            </div>
+            <div className="fd-limit-note">
+              {perPersonOverTotal ? (
+                <span className="fd-error" style={{ marginTop: 0 }}>
+                  Can't exceed your {formatMoney(exposure)} total exposure.
+                </span>
+              ) : perPersonMinConflict ? (
+                <span className="fd-error" style={{ marginTop: 0 }}>
+                  Too low for a {formatMoney(minTake)} min take — at {formatLine(line)} this
+                  cap covers at most {formatMoney(perPersonStake)}.
+                </span>
+              ) : !perPersonOk ? (
+                <span className="fd-muted">Enter at least $1.</span>
+              ) : lineOk ? (
+                <span>
+                  One account can take up to <strong>{formatMoney(perPersonStake)}</strong> at{' '}
+                  {formatLine(line)} — that's {formatMoney(perPerson)} of your risk.
+                  Anyone else can still fill the rest of the book.
+                </span>
+              ) : (
+                <span className="fd-muted">Set a valid line to see what one person can take.</span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Payout math preview */}
       {lineOk && exposureOk && fullTakeStake > 0 && (
         <div className="fd-payout-preview">
@@ -391,6 +480,12 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
           {sampleWin != null && (
             <div className="fd-muted fd-small">
               e.g. a taker staking {formatMoney(sampleStake)} at {formatLine(line)} wins {formatMoney(sampleWin)} of your exposure.
+            </div>
+          )}
+          {perPersonOn && perPersonOk && !perPersonOverTotal && perPersonStake != null && (
+            <div className="fd-muted fd-small">
+              Per-person cap: no single account can take more than {formatMoney(perPerson)} of that risk
+              (a {formatMoney(perPersonStake)} take).
             </div>
           )}
         </div>
@@ -431,7 +526,7 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
       {error && <div className="fd-error">{error}</div>}
 
       <div className="fd-create-actions">
-        <button className="fd-btn fd-btn-primary" onClick={submit} disabled={busy || minTakeConflict}>
+        <button className="fd-btn fd-btn-primary" onClick={submit} disabled={busy || minTakeConflict || perPersonBlocked}>
           {busy ? 'Posting…' : 'Post offer'}
         </button>
         <button className="fd-btn fd-btn-ghost" onClick={onClose} disabled={busy}>Discard</button>

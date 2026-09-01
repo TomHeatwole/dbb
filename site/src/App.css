@@ -22322,6 +22322,12 @@ button.corners-bet:hover {
   color: #fca5a5;
 }
 
+.fd-chip-cap {
+  background: rgba(250, 204, 21, 0.1);
+  border-color: rgba(250, 204, 21, 0.4);
+  color: #facc15;
+}
+
 .fd-badge {
   font-size: 0.7rem;
   font-weight: 700;
@@ -22418,6 +22424,23 @@ button.corners-bet:hover {
 .fd-take-slider { flex: 1; accent-color: #4ade80; }
 
 .fd-take-summary { margin-top: 0.55rem; font-size: 0.92rem; }
+
+.fd-take-cap-note {
+  margin-bottom: 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+}
+
+.fd-cap-blocked {
+  font-size: 0.85rem;
+  color: #facc15;
+  align-self: center;
+}
 
 .fd-take-actions { margin-top: 0.7rem; display: flex; gap: 0.5rem; }
 
@@ -22822,6 +22845,119 @@ button.corners-bet:hover {
   .fd-numbers-row { gap: 0.7rem; }
   .fd-numbers-field > label { white-space: normal; }
   .fd-input-box input { width: 72px; }
+}
+
+/* Optional per-person exposure ceiling on the create-offer editor */
+.fd-limit-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.85rem;
+}
+
+.fd-limit-card-on {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(96, 165, 250, 0.06);
+}
+
+.fd-limit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.fd-limit-copy h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.fd-limit-copy p {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  opacity: 0.65;
+}
+
+.fd-limit-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fd-limit-note {
+  flex: 1;
+  min-width: 180px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  padding-bottom: 0.35rem;
+}
+
+.fd-switch {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fd-switch-knob {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  flex: 0 0 auto;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.fd-switch-knob::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  transition: transform 0.14s ease, background 0.14s ease;
+}
+
+.fd-switch-on .fd-switch-knob {
+  background: rgba(74, 222, 128, 0.28);
+  border-color: rgba(74, 222, 128, 0.6);
+}
+
+.fd-switch-on .fd-switch-knob::after {
+  background: #4ade80;
+  transform: translateX(18px);
+}
+
+.fd-switch-label {
+  min-width: 1.8em;
+  text-align: left;
+  opacity: 0.7;
+}
+
+.fd-switch-on .fd-switch-label { opacity: 1; color: #4ade80; }
+
+@media (max-width: 640px) {
+  .fd-limit-head { align-items: flex-start; }
 }
 
 /* FredDuel editor: read-only value (e.g. locked upcoming week) */

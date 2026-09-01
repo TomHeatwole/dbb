@@ -47,9 +47,50 @@ export function minStakeForOffer(offer) {
   return Math.max(1, Number(offer.minTake) || 1);
 }
 
-/** Largest taker stake an offer accepts right now. */
+/** Largest taker stake an offer accepts right now (board leftover only). */
 export function maxStakeForOffer(offer) {
   return maxStakeForExposure(Number(offer.remainingExposure), Number(offer.line));
+}
+
+/**
+ * True when this offer has a per-account exposure ceiling. Null / missing /
+ * non-positive values mean the setting is off.
+ */
+export function hasPerPersonCap(offer) {
+  const cap = Number(offer?.maxExposurePerPerson);
+  return Number.isFinite(cap) && cap >= 1;
+}
+
+/** Exposure this taker has already consumed on `offerId` (sum of creatorRisk). */
+export function exposureUsedByTaker(bets, offerId, takerId) {
+  if (!takerId) return 0;
+  let sum = 0;
+  for (const bet of bets || []) {
+    if (bet.offerId === offerId && bet.takerId === takerId) {
+      sum += Number(bet.creatorRisk) || 0;
+    }
+  }
+  return roundCents(sum);
+}
+
+/**
+ * How much of the per-person cap this taker still has. Null when the setting
+ * is off; 0 when they've used the whole allotment.
+ */
+export function remainingPerPersonExposure(offer, usedByTaker = 0) {
+  if (!hasPerPersonCap(offer)) return null;
+  return roundCents(Math.max(0, Number(offer.maxExposurePerPerson) - Number(usedByTaker || 0)));
+}
+
+/**
+ * Largest stake this specific taker can still put down: leftover board
+ * exposure, further clipped by their remaining per-person room.
+ */
+export function maxStakeForTaker(offer, usedByTaker = 0) {
+  const leftover = Number(offer.remainingExposure);
+  const perPerson = remainingPerPersonExposure(offer, usedByTaker);
+  const available = perPerson == null ? leftover : Math.min(leftover, perPerson);
+  return maxStakeForExposure(available, Number(offer.line));
 }
 
 /**
@@ -62,19 +103,36 @@ export function isEffectivelyFilled(offer) {
 
 /**
  * Validate a proposed taker stake against an offer.
+ * `opts.usedByTaker` is exposure this account has already consumed on it.
  * Returns { ok: true, stake, takerWin } or { ok: false, error }.
  */
-export function validateTake(offer, stakeInput) {
+export function validateTake(offer, stakeInput, opts = {}) {
   const stake = roundCents(stakeInput);
   if (!Number.isFinite(stake) || stake <= 0) {
     return { ok: false, error: 'Enter a stake amount.' };
   }
   const min = minStakeForOffer(offer);
-  const max = maxStakeForOffer(offer);
+  const max = maxStakeForTaker(offer, opts.usedByTaker);
+  const perPersonLeft = remainingPerPersonExposure(offer, opts.usedByTaker);
+  if (max < min) {
+    if (perPersonLeft != null && perPersonLeft < Number(offer.remainingExposure)) {
+      return {
+        ok: false,
+        error: `You've reached the ${formatMoney(offer.maxExposurePerPerson)} per-person cap on this offer.`,
+      };
+    }
+    return { ok: false, error: `Maximum stake left on this offer is ${formatMoney(max)}.` };
+  }
   if (stake < min) {
     return { ok: false, error: `Minimum stake for this offer is ${formatMoney(min)}.` };
   }
   if (stake > max) {
+    if (perPersonLeft != null && perPersonLeft < Number(offer.remainingExposure)) {
+      return {
+        ok: false,
+        error: `Per-person cap leaves at most ${formatMoney(max)} for you on this offer.`,
+      };
+    }
     return { ok: false, error: `Maximum stake left on this offer is ${formatMoney(max)}.` };
   }
   const takerWin = takerWinAmount(stake, Number(offer.line));

@@ -45,6 +45,8 @@ const statements = [
     line               INTEGER NOT NULL CHECK (line >= 100 OR line <= -100),
     max_exposure       NUMERIC(12,2) NOT NULL CHECK (max_exposure > 0),
     remaining_exposure NUMERIC(12,2) NOT NULL CHECK (remaining_exposure >= 0),
+    max_exposure_per_person NUMERIC(12,2)
+                       CHECK (max_exposure_per_person IS NULL OR max_exposure_per_person >= 1),
     min_take           NUMERIC(12,2) NOT NULL DEFAULT 1 CHECK (min_take >= 1),
     status             TEXT NOT NULL DEFAULT 'open'
                        CHECK (status IN ('open', 'filled', 'cancelled', 'expired')),
@@ -81,6 +83,14 @@ const statements = [
 
   `CREATE INDEX IF NOT EXISTS idx_fd_bets_taker
      ON fd_bets (taker_user_id, created_at DESC)`,
+
+  // Existing DBs created before per-person caps: add the column + lookup index.
+  `ALTER TABLE fd_offers
+     ADD COLUMN IF NOT EXISTS max_exposure_per_person NUMERIC(12,2)
+     CHECK (max_exposure_per_person IS NULL OR max_exposure_per_person >= 1)`,
+
+  `CREATE INDEX IF NOT EXISTS idx_fd_bets_offer_taker
+     ON fd_bets (offer_id, taker_user_id)`,
 
   // App-level profile for authenticated users (auth accounts live in
   // neon_auth.user, managed by Neon). A row here means the user completed
