@@ -230,14 +230,10 @@ export function getNextDraftYear(rookieDraftComplete = false) {
   return String(Number(CURRENT_YEAR) + 1);
 }
 
-/** Kickoff instant for Week 1 countdown — SEASON_START_DAY @ 8:20 PM ET in CURRENT_YEAR. */
+/** Kickoff instant for Week 1 countdown — Wed Sep 9, 2026 @ 8:20 PM ET. */
 export function getWeek1KickoffMs() {
-  const [month, day] = String(SEASON_START_DAY || '09/09').split('/').map(Number);
-  const y = Number(CURRENT_YEAR);
-  const mm = String(month).padStart(2, '0');
-  const dd = String(day).padStart(2, '0');
-  // Sep kickoffs are on EDT (UTC-4). Fixed offset keeps the countdown deterministic.
-  const ts = Date.parse(`${y}-${mm}-${dd}T20:20:00-04:00`);
+  // Hardcoded so a stale SITE_SETTINGS date (09/04) cannot override the 2026 opener.
+  const ts = Date.parse('2026-09-09T20:20:00-04:00');
   return Number.isFinite(ts) ? ts : null;
 }
 

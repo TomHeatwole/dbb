@@ -23,7 +23,7 @@ if (!LEAGUE_ID) {
 
 export const PREVIOUS_YEARS = settings.PREVIOUS_YEARS || {};
 export const STARTER_POSITION_NAMES = settings.STARTER_POSITION_NAMES || [];
-export const SEASON_START_DAY = settings.SEASON_START_DAY || settings.SEASON_START_DATE || '09/09';
+export const SEASON_START_DAY = '09/09';
 
 // Public URL of the deployed site — used to generate deep links
 export const SITE_BASE_URL = (process.env.SITE_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');

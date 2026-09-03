@@ -16,7 +16,9 @@ export const PREVIOUS_YEARS = parsedSettings.PREVIOUS_YEARS || {};
 export const PREVIOUS_ROSTER_OVERRIDES = parsedSettings.PREVIOUS_ROSTER_OVERRIDES || {};
 export const LOGO_LETTER_OVERLAY = parsedSettings.LOGO_LETTER_OVERLAY || {};
 export const PLAYER_ESPN_MAP_OVERRIDES = parsedSettings.PLAYER_ESPN_MAP_OVERRIDES || {};
-export const SEASON_START_DAY = parsedSettings.SEASON_START_DAY || parsedSettings.SEASON_START_DATE || "09/09";
+// 2026 kickoff is Wed Sep 9 (SEA vs NE). Do not read this from SITE_SETTINGS:
+// Vercel still has last year's 09/04 baked into REACT_APP_SITE_SETTINGS.
+export const SEASON_START_DAY = "09/09";
 
 /* LOCAL DEBUG OVERRIDES — leave null before committing.
  * These are the knobs that DateHelper (and therefore home, teams-2, scores,

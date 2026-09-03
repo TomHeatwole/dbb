@@ -21,7 +21,7 @@ if (!LEAGUE_ID) {
 
 export const PREVIOUS_YEARS = settings.PREVIOUS_YEARS || {};
 export const STARTER_POSITION_NAMES = settings.STARTER_POSITION_NAMES || [];
-export const SEASON_START_DAY = settings.SEASON_START_DAY || settings.SEASON_START_DATE || '09/09';
+export const SEASON_START_DAY = '09/09';
 
 export const SITE_BASE_URL = (process.env.SITE_BASE_URL || 'https://www.hwangdynasty.com').replace(/\/$/, '');
 
