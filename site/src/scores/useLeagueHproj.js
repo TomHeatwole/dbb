@@ -28,6 +28,11 @@ export default function useLeagueHproj({
     let cancelled = false;
     let timeoutId = null;
 
+    const yieldToPaint = () =>
+      new Promise((resolve) => {
+        timeoutId = setTimeout(resolve, 0);
+      });
+
     const run = async () => {
       const next = {};
       for (const roster of rosters) {
@@ -45,9 +50,7 @@ export default function useLeagueHproj({
           next[String(rid)] = result.p50.total;
           if (!cancelled) setByRoster({ ...next });
         }
-        await new Promise((resolve) => {
-          timeoutId = setTimeout(resolve, 0);
-        });
+        await yieldToPaint();
       }
     };
 
