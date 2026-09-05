@@ -633,23 +633,42 @@ function teamFromDkDriveName(name) {
     .trim();
 }
 
-function pickDkFirstDrive(markets, selections, teams) {
-  const ranked = [];
-  for (const market of markets ?? []) {
-    const converted = dkMarketToNextDrive(market, selections);
-    if (!converted) continue;
-    let score = Object.keys(converted.outcomes).length;
-    const team = teamFromDkDriveName(converted.marketName);
-    if (teams?.away && namesMatch(team, teams.away)) score += 2;
-    if (teams?.home && namesMatch(team, teams.home)) score += 1;
-    ranked.push({ ...converted, _score: score });
+function sideFromTeamName(team, teams) {
+  if (team && teams?.away && namesMatch(team, teams.away)) return 'away';
+  if (team && teams?.home && namesMatch(team, teams.home)) return 'home';
+  return null;
+}
+
+function annotateDriveMarket(market, teams, live = null) {
+  if (!market) return null;
+  const fromName = teamFromDkDriveName(market.marketName);
+  let side = sideFromTeamName(fromName, teams);
+  if (!side && (live?.possession === 'home' || live?.possession === 'away')) {
+    side = live.possession;
   }
-  ranked.sort((a, b) => b._score - a._score);
-  if (!ranked.length) return { nextDrive: null, names: [] };
-  const [{ _score, ...best }] = ranked;
+  const offenseName = side === 'away'
+    ? (teams?.away ?? fromName ?? live?.possessionName ?? null)
+    : side === 'home'
+      ? (teams?.home ?? fromName ?? live?.possessionName ?? null)
+      : (fromName && !/^drive\b/i.test(fromName) ? fromName : (live?.possessionName ?? null));
+  return { ...market, offenseSide: side, offenseName };
+}
+
+function pickDkFirstDrive(markets, selections, teams) {
+  const converted = [];
+  for (const market of markets ?? []) {
+    const row = dkMarketToNextDrive(market, selections);
+    if (!row) continue;
+    converted.push(annotateDriveMarket(row, teams));
+  }
+  converted.sort((a, b) => {
+    const rank = (s) => (s === 'away' ? 0 : s === 'home' ? 1 : 2);
+    return rank(a.offenseSide) - rank(b.offenseSide);
+  });
   return {
-    nextDrive: best,
-    names: ranked.map((row) => row.marketName),
+    drives: converted,
+    nextDrive: converted[0] ?? null,
+    names: converted.map((row) => row.marketName),
   };
 }
 
@@ -1029,7 +1048,7 @@ async function fetchNcaafDriveBook() {
         });
         return buildGame(ev, bundle, fdx);
       } catch (err) {
-        return { ...ev, teams: parseTeams(ev.name), error: err.message, nextDrive: null, lines: null, live: null };
+        return { ...ev, teams: parseTeams(ev.name), error: err.message, nextDrive: null, driveMarkets: [], lines: null, live: null };
       }
     }),
     fetchEspnGames(events.map((ev) => ev.openDate)).catch((err) => ({
@@ -1057,6 +1076,7 @@ async function fetchNcaafDriveBook() {
           dkEventId: match.eventId,
           dkMarketNames: picked.names,
           nextDrive: picked.nextDrive,
+          drives: picked.drives,
         });
       } catch (err) {
         dkByFdId.set(game.eventId, {
@@ -1071,11 +1091,15 @@ async function fetchNcaafDriveBook() {
   const games = fdGames
     .map((game) => {
       const dk = dkByFdId.get(game.eventId);
-      let nextDrive = game.nextDrive;
-      if (!nextDrive && dk?.nextDrive) nextDrive = dk.nextDrive;
-      return attachEspn({
+      let driveMarkets = [];
+      if (game.nextDrive) driveMarkets = [game.nextDrive];
+      else if (dk?.drives?.length) driveMarkets = dk.drives;
+      else if (dk?.nextDrive) driveMarkets = [dk.nextDrive];
+      const nextDrive = driveMarkets[0] ?? null;
+      const withEspn = attachEspn({
         ...game,
         nextDrive,
+        driveMarkets,
         debug: {
           ...(game.debug ?? {}),
           dkMatched: dk?.dkMatched ?? null,
@@ -1085,6 +1109,14 @@ async function fetchNcaafDriveBook() {
           nextDriveSource: nextDrive?.source || (nextDrive ? 'sbapi' : null),
         },
       }, espn.matches ?? []);
+      const annotated = (withEspn.driveMarkets ?? []).map((m) => (
+        annotateDriveMarket(m, withEspn.teams, withEspn.live)
+      ));
+      return {
+        ...withEspn,
+        driveMarkets: annotated,
+        nextDrive: annotated[0] ?? null,
+      };
     })
     .sort((a, b) => {
       if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
@@ -1099,9 +1131,15 @@ async function fetchNcaafDriveBook() {
     stats: {
       games: games.length,
       live: games.filter((g) => g.inPlay).length,
-      withDriveLine: games.filter((g) => g.nextDrive).length,
-      withFdDriveLine: games.filter((g) => g.nextDrive && g.nextDrive.source !== 'dk').length,
-      withDkFirstDrive: games.filter((g) => g.nextDrive?.source === 'dk').length,
+      withDriveLine: games.filter((g) => g.nextDrive || g.driveMarkets?.length).length,
+      withFdDriveLine: games.filter((g) => (
+        (g.driveMarkets ?? []).some((m) => m.source !== 'dk')
+        || (g.nextDrive && g.nextDrive.source !== 'dk')
+      )).length,
+      withDkFirstDrive: games.filter((g) => (
+        (g.driveMarkets ?? []).some((m) => m.source === 'dk')
+        || g.nextDrive?.source === 'dk'
+      )).length,
       espnMatched: games.filter((g) => g.espnId).length,
       fdxProbed: games.filter((g) => g.debug?.fdxStatus != null || g.debug?.fdxError).length,
       fdxQuickBets: games.filter((g) => g.debug?.isQuickBetsAvailable).length,

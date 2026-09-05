@@ -11,6 +11,8 @@ import {
   formatAmericanOdds,
   formatEdgePoints,
   formatSharePct,
+  hasDriveLine,
+  listDriveMarkets,
 } from '../drives/driveModel';
 import { predictDriveSituation } from '../drives/driveSituation';
 import { formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
@@ -303,6 +305,122 @@ function Toggle({ label, checked, onChange, hint }) {
   );
 }
 
+function driveHeading(game, market, model) {
+  const name = model?.offenseName || market?.offenseName;
+  if (game.inPlay && name) return `Betting ${name}'s drive`;
+  if (name) return `Betting ${name}'s 1st drive`;
+  if (game.inPlay) return 'Betting the next drive';
+  return market?.marketName ?? 'Drive result (no team line)';
+}
+
+function DriveSide({
+  game,
+  market,
+  model,
+  showWork,
+  kellyEnabled,
+  kellyFraction,
+}) {
+  const book = market?.source === 'dk' ? 'DK' : 'FD';
+  return (
+    <div className="drives-side">
+      <section className="sop-exp-goals">
+        <div className="sop-exp-section-label">{driveHeading(game, market, model)}</div>
+        {market?.marketName && (
+          <p className="drives-situation">{market.marketName}</p>
+        )}
+        {!model.hasBook && (
+          <p className="sop-exp-status drives-missing-line">
+            No drive-result line for this team yet.
+          </p>
+        )}
+        <ul className="sop-exp-goal-list">
+          {model.rows.map((row) => (
+            <li key={row.key} className="sop-exp-goal-row">
+              <div className="sop-exp-goal-label">{row.label}</div>
+              <div className="sop-exp-goal-books-single">
+                <div
+                  className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--fd${row.profitable ? ' sop-exp-goal-odds-box--ev' : ''}`}
+                >
+                  <span className="sop-exp-goal-odds-book">{book}</span>
+                  <span className="sop-exp-goal-odds-val">
+                    {row.american != null ? formatAmericanOdds(row.american) : '—'}
+                  </span>
+                </div>
+              </div>
+              <div className="sop-exp-goal-breakeven">
+                {row.fairAmerican != null ? (
+                  <>
+                    <span>{formatAmericanOdds(row.fairAmerican)}</span>
+                    <span className="sop-exp-goal-be-tag">model</span>
+                  </>
+                ) : (
+                  '—'
+                )}
+              </div>
+              <div className="sop-exp-goal-edge">
+                {row.profitable && row.edgePoints != null ? (
+                  <>
+                    <span className="sop-exp-edge-plus">
+                      {formatEdgePoints(row.edgePoints)} edge
+                    </span>
+                    {kellyEnabled && row.kellyStake != null && (
+                      <span
+                        className="sop-kelly-stake"
+                        title={`${formatKellyFractionLabel(kellyFraction)} stake`}
+                      >
+                        Kelly Bet Size: {formatKellyStake(row.kellyStake)}
+                      </span>
+                    )}
+                  </>
+                ) : row.edgePoints != null ? (
+                  <span className="sop-exp-edge-minus">
+                    {formatEdgePoints(row.edgePoints)}
+                  </span>
+                ) : (
+                  '—'
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {showWork && (
+        <section className="drives-work" aria-label="Model work">
+          <div className="sop-exp-section-label">Show work · {model.model?.label ?? 'model'}</div>
+          <p className="drives-work-note">
+            Trained 2023–24, held out 2025.
+            {model.pred?.layer === 'snap'
+              ? ` Snap log-loss ${LGBM_HOLDOUT.snap.logloss} vs raw ${LGBM_HOLDOUT.snap.raw} (n=${LGBM_HOLDOUT.snap.n.toLocaleString()}).`
+              : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
+            {model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
+            {model.vigPct != null ? ` Book vig ${model.vigPct.toFixed(1)}%.` : ''}
+          </p>
+          <ul className="drives-work-list">
+            {model.rows.map((row) => (
+              <li key={row.key}>
+                <strong>{row.label}</strong>
+                {' '}
+                model {formatSharePct(row.p)}
+                {' → '}
+                {formatAmericanOdds(row.fairAmerican)}
+                {row.marketP != null ? ` · destig ${formatSharePct(row.marketP)}` : ''}
+                {' · raw '}
+                {formatSharePct(row.rawP)}
+                {' → '}
+                {formatAmericanOdds(row.rawFairAmerican)}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <ModelReasoning game={game} pred={model.pred} mix={model.rows} />
+    </div>
+  );
+}
+
 function GameCard({
   game,
   defaultOpen,
@@ -312,13 +430,17 @@ function GameCard({
   kellyFraction,
 }) {
   const [expanded, setExpanded] = useState(defaultOpen);
-  const model = useMemo(
-    () => evaluateDriveGame(game, { kellyEnabled, kellyBudget, kellyFraction }),
-    [game, kellyEnabled, kellyBudget, kellyFraction],
-  );
+  const markets = useMemo(() => listDriveMarkets(game), [game]);
+  const models = useMemo(() => {
+    const opts = { kellyEnabled, kellyBudget, kellyFraction };
+    if (!markets.length) return [evaluateDriveGame(game, opts)];
+    return markets.map((market) => evaluateDriveGame(game, { ...opts, market }));
+  }, [game, markets, kellyEnabled, kellyBudget, kellyFraction]);
+  const evCount = models.reduce((sum, model) => sum + model.evCount, 0);
   const situation = liveSummary(game);
   const lines = lineSummary(game);
   const nextStart = useMemo(() => opponentStartSummary(game), [game]);
+  const paired = markets.length > 1;
 
   return (
     <article
@@ -344,8 +466,8 @@ function GameCard({
               {!game.inPlay && game.openDate && (
                 <span className="sop-exp-time">{formatKickoff(game.openDate)}</span>
               )}
-              {!expanded && model.evCount > 0 && (
-                <span className="sop-exp-ev-badge">{model.evCount} +EV</span>
+              {!expanded && evCount > 0 && (
+                <span className="sop-exp-ev-badge">{evCount} +EV</span>
               )}
             </span>
           </span>
@@ -356,107 +478,34 @@ function GameCard({
         <div className="sop-exp-game-body">
           <section className="sop-exp-no-goal">
             <div className="sop-exp-section-label">
-              {model.marketName ?? (game.inPlay ? 'Next drive result' : 'First / next drive')}
+              {paired
+                ? '1st-drive result · both teams'
+                : (models[0]?.marketName ?? (game.inPlay ? 'Next drive result' : 'First / next drive'))}
             </div>
             {situation && <p className="drives-situation">{situation}</p>}
             {nextStart?.line && <p className="drives-situation drives-situation--next">{nextStart.line}</p>}
             {lines && <p className="drives-situation drives-situation--lines">{lines}</p>}
-            {!model.hasBook && (
+            {!markets.length && (
               <p className="sop-exp-status drives-missing-line">
-                No drive-result line yet. FanDuel posts next-drive only after kickoff (Quick Bets). DraftKings 1st-drive is used when they hang it. Model prices below are the joint LightGBM.
+                No drive-result line yet. FanDuel posts next-drive only after kickoff (Quick Bets). DraftKings 1st-drive is used when they hang it.
               </p>
             )}
             {game.error && <p className="sop-exp-error">{game.error}</p>}
           </section>
 
-          <section className="sop-exp-goals">
-            <div className="sop-exp-section-label">
-              Drive result vs {model.model?.layerLabel ?? model.model?.label ?? 'model'}
-            </div>
-            <ul className="sop-exp-goal-list">
-              {model.rows.map((row) => (
-                <li key={row.key} className="sop-exp-goal-row">
-                  <div className="sop-exp-goal-label">{row.label}</div>
-                  <div className="sop-exp-goal-books-single">
-                    <div
-                      className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--fd${row.profitable ? ' sop-exp-goal-odds-box--ev' : ''}`}
-                    >
-                      <span className="sop-exp-goal-odds-book">{game.nextDrive?.source === 'dk' ? 'DK' : 'FD'}</span>
-                      <span className="sop-exp-goal-odds-val">
-                        {row.american != null ? formatAmericanOdds(row.american) : '—'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="sop-exp-goal-breakeven">
-                    {row.fairAmerican != null ? (
-                      <>
-                        <span>{formatAmericanOdds(row.fairAmerican)}</span>
-                        <span className="sop-exp-goal-be-tag">model</span>
-                      </>
-                    ) : (
-                      '—'
-                    )}
-                  </div>
-                  <div className="sop-exp-goal-edge">
-                    {row.profitable && row.edgePoints != null ? (
-                      <>
-                        <span className="sop-exp-edge-plus">
-                          {formatEdgePoints(row.edgePoints)} edge
-                        </span>
-                        {kellyEnabled && row.kellyStake != null && (
-                          <span
-                            className="sop-kelly-stake"
-                            title={`${formatKellyFractionLabel(kellyFraction)} stake`}
-                          >
-                            Kelly Bet Size: {formatKellyStake(row.kellyStake)}
-                          </span>
-                        )}
-                      </>
-                    ) : row.edgePoints != null ? (
-                      <span className="sop-exp-edge-minus">
-                        {formatEdgePoints(row.edgePoints)}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {showWork && (
-            <section className="drives-work" aria-label="Model work">
-              <div className="sop-exp-section-label">Show work · {model.model?.label ?? 'model'}</div>
-              <p className="drives-work-note">
-                Trained 2023–24, held out 2025.
-                {model.pred?.layer === 'snap'
-                  ? ` Snap log-loss ${LGBM_HOLDOUT.snap.logloss} vs raw ${LGBM_HOLDOUT.snap.raw} (n=${LGBM_HOLDOUT.snap.n.toLocaleString()}).`
-                  : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
-                {model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
-                {model.pred?.side ? ` Offense: ${model.pred.side}.` : ''}
-                {model.vigPct != null ? ` Book vig ${model.vigPct.toFixed(1)}%.` : ''}
-              </p>
-              <ul className="drives-work-list">
-                {model.rows.map((row) => (
-                  <li key={row.key}>
-                    <strong>{row.label}</strong>
-                    {' '}
-                    model {formatSharePct(row.p)}
-                    {' → '}
-                    {formatAmericanOdds(row.fairAmerican)}
-                    {row.marketP != null ? ` · destig ${formatSharePct(row.marketP)}` : ''}
-                    {' · raw '}
-                    {formatSharePct(row.rawP)}
-                    {' → '}
-                    {formatAmericanOdds(row.rawFairAmerican)}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <ModelReasoning game={game} pred={model.pred} mix={model.rows} />
+          <div className={`drives-sides${paired ? ' drives-sides--pair' : ''}`}>
+            {models.map((model, i) => (
+              <DriveSide
+                key={markets[i]?.marketName ?? model.offenseName ?? i}
+                game={game}
+                market={markets[i] ?? model.market}
+                model={model}
+                showWork={showWork}
+                kellyEnabled={kellyEnabled}
+                kellyFraction={kellyFraction}
+              />
+            ))}
+          </div>
         </div>
       )}
     </article>
@@ -493,7 +542,7 @@ function DrivesBookPanel({
   const filteredGames = useMemo(() => {
     return games.filter((game) => {
       if (liveOnly && !game.inPlay) return false;
-      if (linesOnly && !game.nextDrive) return false;
+      if (linesOnly && !hasDriveLine(game)) return false;
       return gameMatchesQuery(game, teamQuery);
     });
   }, [games, liveOnly, linesOnly, teamQuery]);
@@ -642,7 +691,7 @@ function DrivesBookPanel({
             <GameCard
               key={g.eventId}
               game={g}
-              defaultOpen={Boolean(g.inPlay || g.nextDrive)}
+              defaultOpen={Boolean(g.inPlay || hasDriveLine(g))}
               showWork={showWork}
               kellyEnabled={kellyEnabled}
               kellyBudget={kellyBudget}

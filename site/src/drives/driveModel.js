@@ -191,20 +191,36 @@ export function extractOverUnder(game) {
 }
 
 export function inferOffenseSide(game) {
-  const live = game?.live;
-  if (live?.possession === 'home' || live?.possession === 'away') return live.possession;
-  const market = game?.nextDrive?.marketName ?? '';
+  const market = game?.nextDrive;
+  if (market?.offenseSide === 'home' || market?.offenseSide === 'away') {
+    return market.offenseSide;
+  }
   const home = game?.teams?.home;
   const away = game?.teams?.away;
-  const homeHit = nameHits(market, home);
-  const awayHit = nameHits(market, away);
+  const named = market?.offenseName || market?.marketName || '';
+  const homeHit = nameHits(named, home);
+  const awayHit = nameHits(named, away);
   if (homeHit && !awayHit) return 'home';
   if (awayHit && !homeHit) return 'away';
+  const live = game?.live;
+  if (live?.possession === 'home' || live?.possession === 'away') return live.possession;
   if (live?.possessionName) {
     if (nameHits(live.possessionName, home)) return 'home';
     if (nameHits(live.possessionName, away)) return 'away';
   }
   return null;
+}
+
+export function listDriveMarkets(game) {
+  if (Array.isArray(game?.driveMarkets) && game.driveMarkets.length) {
+    return game.driveMarkets;
+  }
+  if (game?.nextDrive) return [game.nextDrive];
+  return [];
+}
+
+export function hasDriveLine(game) {
+  return listDriveMarkets(game).length > 0;
 }
 
 function scoreDiffForOffense(game, side) {
@@ -323,9 +339,18 @@ export function predictDriveResult(game) {
   };
 }
 
-export function evaluateDriveGame(game, { kellyEnabled = false, kellyBudget = 0, kellyFraction = 1 } = {}) {
-  const pred = predictDriveResult(game);
-  const outcomes = game?.nextDrive?.outcomes ?? {};
+export function evaluateDriveGame(game, {
+  kellyEnabled = false,
+  kellyBudget = 0,
+  kellyFraction = 1,
+  market = null,
+} = {}) {
+  const nextDrive = market ?? game?.nextDrive ?? null;
+  const view = nextDrive && nextDrive !== game?.nextDrive
+    ? { ...game, nextDrive }
+    : game;
+  const pred = predictDriveResult(view);
+  const outcomes = nextDrive?.outcomes ?? {};
   const rows = DRIVE_BUCKETS.map((bucket) => {
     const modelP = pred?.p?.[bucket.key];
     const p = Number.isFinite(modelP) ? modelP : bucket.p;
@@ -377,7 +402,12 @@ export function evaluateDriveGame(game, { kellyEnabled = false, kellyBudget = 0,
     evCount: rows.filter((row) => row.profitable).length,
     hasBook: rows.some((row) => row.american != null),
     vigPct: Number.isFinite(vigSum) ? (vigSum - 1) * 100 : null,
-    marketName: game?.nextDrive?.marketName ?? null,
+    marketName: nextDrive?.marketName ?? null,
+    market: nextDrive,
+    offenseName: pred?.side
+      ? (pred.side === 'away' ? game?.teams?.away : game?.teams?.home)
+      : (nextDrive?.offenseName ?? null),
+    offenseSide: pred?.side ?? nextDrive?.offenseSide ?? null,
   };
 }
 

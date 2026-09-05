@@ -3,7 +3,7 @@
  */
 
 import { shortTeamName } from '../sop/gameSnapshot';
-import { evaluateDriveGame, formatAmericanOdds } from './driveModel';
+import { evaluateDriveGame, formatAmericanOdds, listDriveMarkets } from './driveModel';
 
 function shortDriveTeam(name) {
   const raw = String(name ?? '')
@@ -49,7 +49,7 @@ const DRIVE_UPCOMING_MS = 6 * 60 * 60 * 1000;
 
 export function isActiveDriveMonitorGame(game, now = Date.now()) {
   if (game?.inPlay) return true;
-  if (!game?.nextDrive) return false;
+  if (!game?.nextDrive && !game?.driveMarkets?.length) return false;
   const kick = Date.parse(game?.openDate ?? '');
   if (!Number.isFinite(kick)) return false;
   return kick <= now + DRIVE_UPCOMING_MS;
@@ -73,9 +73,23 @@ function playLabel(row) {
 }
 
 export function buildDrivesGameSnapshot(game) {
-  const model = evaluateDriveGame(game);
-  const play = pickHeadlineDrivePlay(model);
-  const book = game?.nextDrive?.source === 'dk' ? 'dk' : 'fd';
+  const markets = listDriveMarkets(game);
+  const views = markets.length
+    ? markets.map((market) => ({ market, model: evaluateDriveGame(game, { market }) }))
+    : [{ market: game?.nextDrive ?? null, model: evaluateDriveGame(game) }];
+
+  let play = null;
+  let market = views[0]?.market ?? null;
+  for (const view of views) {
+    const candidate = pickHeadlineDrivePlay(view.model);
+    if (candidate && (!play || candidate.edgePoints > play.edgePoints)) {
+      play = candidate;
+      market = view.market;
+    }
+  }
+  const book = market?.source === 'dk' ? 'dk' : 'fd';
+  const team = shortDriveTeam(market?.offenseName);
+  const result = playLabel(play);
 
   return {
     eventId: game?.eventId,
@@ -84,7 +98,7 @@ export function buildDrivesGameSnapshot(game) {
     score: game?.scoreDisplay ?? '0-0',
     clock: drivesClockLabel(game),
     inPlay: Boolean(game?.inPlay),
-    market: playLabel(play),
+    market: team && result !== '—' ? `${team} ${result}` : result,
     oddsBook: play ? book : null,
     oddsAmerican: play?.american ?? null,
     lineLabel: play && Number.isFinite(play.fairAmerican)
