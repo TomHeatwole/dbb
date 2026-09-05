@@ -18158,6 +18158,170 @@ body.modal-open {
   color: rgba(255, 224, 138, 0.6);
 }
 
+.sop-monitor {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 8;
+  margin-bottom: 0.85rem;
+  padding: 0.55rem 0.6rem 0.45rem;
+  border-radius: 0.7rem;
+  background: rgba(6, 22, 12, 0.94);
+  border: 1px solid rgba(255, 224, 138, 0.28);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.sop-monitor-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+  margin-bottom: 0.4rem;
+}
+
+.sop-monitor-kicker {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffe08a;
+}
+
+.sop-monitor-caption {
+  font-size: 0.68rem;
+  color: rgba(210, 240, 220, 0.62);
+}
+
+.sop-monitor-ev-count {
+  margin-left: auto;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffe08a;
+}
+
+.sop-monitor-scroll {
+  overflow-x: auto;
+  max-height: 14.5rem;
+  overflow-y: auto;
+}
+
+.sop-monitor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.sop-monitor-table th {
+  padding: 0.15rem 0.35rem 0.3rem;
+  text-align: left;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.62);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sop-monitor-table th:last-child,
+.sop-monitor-table td:last-child {
+  text-align: right;
+}
+
+.sop-monitor-table td {
+  padding: 0.28rem 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.sop-monitor-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sop-monitor-row--ev td {
+  background: rgba(255, 224, 138, 0.08);
+}
+
+.sop-monitor-game {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sop-monitor-game-name {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.sop-monitor-game-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(210, 240, 220, 0.7);
+}
+
+.sop-monitor-market {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.88);
+}
+
+.sop-monitor-odds {
+  font-weight: 800;
+  color: #fff;
+  text-align: right;
+}
+
+.sop-monitor-book {
+  margin-right: 0.28rem;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: rgba(255, 224, 138, 0.75);
+}
+
+.sop-monitor-book--dk {
+  color: #9ec8ff;
+}
+
+.sop-monitor-book--klsh {
+  color: #8cffbe;
+}
+
+.sop-monitor-line {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(210, 240, 220, 0.72);
+}
+
+.sop-monitor-edge {
+  font-weight: 800;
+}
+
+.sop-monitor-edge--plus {
+  color: #ffe08a;
+}
+
+.sop-monitor-edge--minus {
+  color: rgba(200, 220, 210, 0.55);
+}
+
 .sop-exp-games {
   display: flex;
   flex-direction: column;
@@ -18165,6 +18329,7 @@ body.modal-open {
 }
 
 .sop-exp-game {
+  scroll-margin-top: 8.5rem;
   border-radius: 0.9rem;
   background: rgba(0, 0, 0, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.14);

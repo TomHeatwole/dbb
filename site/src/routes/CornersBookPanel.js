@@ -19,6 +19,9 @@ import {
 } from '../corners/cornerModel';
 import { computeKellyStake, formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
 import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
+import { buildCornersMonitorRows } from '../corners/gameSnapshot';
+import { gameAnchorId } from '../sop/gameSnapshot';
+import GameMonitorTable from './GameMonitorTable';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'corners-book-team-search';
@@ -1067,7 +1070,10 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
   }, [game.eventId]);
 
   return (
-    <article className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}>
+    <article
+      id={gameAnchorId(game.eventId)}
+      className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}
+    >
       <header className="sop-exp-game-header">
         <button
           type="button"
@@ -1396,6 +1402,15 @@ function CornersBookPanel({
         <p className="sop-exp-dk-notice" role="status">
           {notice}
         </p>
+      )}
+
+      {!error && games.length > 0 && (
+        <GameMonitorTable
+          rows={buildCornersMonitorRows(filteredGames, { bucketed })}
+          marketHeader="Play"
+          caption="Best window vs longest total"
+          showMarket
+        />
       )}
 
       <section className="sop-book-settings corners-settings" aria-label="Corners model settings">

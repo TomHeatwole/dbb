@@ -18,6 +18,8 @@ import {
 import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
 import { useSOPLongestNoGoal } from '../sop/useSOPLongestNoGoal';
 import { findLongestNoGoalPick } from '../sop/longestNoGoalPick';
+import { buildSopMonitorRows, gameAnchorId, liveClockLabel } from '../sop/gameSnapshot';
+import GameMonitorTable from './GameMonitorTable';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'sop-book-team-search';
@@ -49,18 +51,6 @@ const NO_GOAL_SOURCES = [
     desc: 'Next Goalscorer → No Goalscorer',
   },
 ];
-
-function liveClockLabel(game) {
-  const espn = game.espn;
-  if (!espn) return null;
-  if (espn.halfTime) return 'HT';
-  if (espn.finished) return 'FT';
-  if (espn.status !== 'in' && !game.inPlay) return null;
-  if (espn.clock) return espn.clock;
-  if (espn.period === 1) return '1H';
-  if (espn.period === 2) return '2H';
-  return espn.matchStatus || null;
-}
 
 function formatKickoff(iso) {
   if (!iso) return '';
@@ -365,7 +355,10 @@ function GameCard({
   const evCount = goalAnalyses.filter((row) => row.highlightFd || row.highlightDk).length;
 
   return (
-    <article className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}>
+    <article
+      id={gameAnchorId(game.eventId)}
+      className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}
+    >
       <header className="sop-exp-game-header">
         <button
           type="button"
@@ -710,6 +703,14 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
         <p className="sop-exp-dk-notice" role="status">
           {dkNotice}
         </p>
+      )}
+
+      {!error && games.length > 0 && (
+        <GameMonitorTable
+          rows={buildSopMonitorRows(filteredGames)}
+          marketHeader="SOP"
+          caption="SOP vs longest no-goal"
+        />
       )}
 
       <SOPBookSettings
