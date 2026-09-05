@@ -9,6 +9,7 @@ import {
   assessArbFill,
   baselineBookLabel,
   evaluateGameCorners,
+  parseClockState,
   formatAmericanOdds,
   formatEdgePct,
   formatExpected,
@@ -93,6 +94,42 @@ function collectTeamNames(games) {
     }
   }
   return [...names].sort((a, b) => a.localeCompare(b));
+}
+
+function withCornersAlready(game, already) {
+  if (!Number.isFinite(already) || already < 0) return game;
+  const n = Math.round(already);
+  const clock = parseClockState(game.stoppage);
+  const next = { ...game, cornersSoFar: n };
+  if (clock.period !== 2 && clock.phase !== 'ht' && clock.phase !== 'post') {
+    next.firstHalfCornersSoFar = n;
+  }
+  return next;
+}
+
+function parseCornersAlreadyInput(raw) {
+  const t = String(raw ?? '').trim();
+  if (t === '') return null;
+  if (!/^\d+$/.test(t)) return undefined;
+  return Math.min(40, Number(t));
+}
+
+function CornersAlreadyInput({ value, overridden, onDraftChange }) {
+  return (
+    <label className={`corners-already${overridden ? ' corners-already--override' : ''}`}>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        className="corners-already-input"
+        value={value}
+        onChange={(e) => onDraftChange(e.target.value)}
+        aria-label="Corners already taken"
+        title={overridden ? 'Manual corners already — FanDuel feed overridden' : 'Corners already taken'}
+      />
+      already
+    </label>
+  );
 }
 
 function Toggle({ label, checked, onChange, hint, compact }) {
@@ -1031,19 +1068,42 @@ function stoppageHeadline(stoppage, clock, plan) {
   return `HT ${ht.display} · FT ${ft.display}`;
 }
 
-function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, kellyBudget, kellyFraction }) {
+function GameCard({
+  game,
+  bucketed,
+  showWork,
+  onEnableShowWork,
+  kellyEnabled,
+  kellyBudget,
+  kellyFraction,
+  cornersAlready,
+  onCornersAlreadyChange,
+}) {
   const [expanded, setExpanded] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [baselineBook, setBaselineBook] = useState('fd');
   const [actionSizeInput, setActionSizeInput] = useState(readDkBothSizeInput);
+  const feedAlready = Number.isFinite(game.cornersSoFar) ? game.cornersSoFar : 0;
+  const usedAlready = Number.isFinite(cornersAlready) ? cornersAlready : feedAlready;
+  const [alreadyInput, setAlreadyInput] = useState(() => String(usedAlready));
+  const patchedGame = useMemo(
+    () => withCornersAlready(game, cornersAlready),
+    [game, cornersAlready],
+  );
   const setActionSize = (value) => {
     setActionSizeInput(value);
     persistDkBothSizeInput(value);
   };
   const model = useMemo(
-    () => evaluateGameCorners(game, { bucketed, baselineBook }),
-    [game, bucketed, baselineBook],
+    () => evaluateGameCorners(patchedGame, { bucketed, baselineBook }),
+    [patchedGame, bucketed, baselineBook],
   );
+  const commitAlreadyDraft = (raw) => {
+    setAlreadyInput(raw);
+    const parsed = parseCornersAlreadyInput(raw);
+    if (parsed === undefined) return;
+    onCornersAlreadyChange?.(parsed === feedAlready ? null : parsed);
+  };
   const stoppageText = stoppageHeadline(game.stoppage, model.clock, model.plan);
   const h1Bets = model.bets.filter((b) => b.kind === 'h1-over' || b.kind === 'h1-under');
   const dkBothBets = model.bets.filter(isDkBoth);
@@ -1068,6 +1128,10 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
     setSelectedId(null);
     setBaselineBook('fd');
   }, [game.eventId]);
+
+  useEffect(() => {
+    setAlreadyInput(String(usedAlready));
+  }, [game.eventId, usedAlready]);
 
   return (
     <article
@@ -1130,12 +1194,23 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
                       <> · {formatAmericanOdds(model.baselineRow.american)}</>
                     )}
                     {pOverPhrase(model.fullImplied)}
-                    {' · '}{formatExpected(model.cornersSoFar, 0)} already
+                    {' · '}
+                    <CornersAlreadyInput
+                      value={alreadyInput}
+                      overridden={Number.isFinite(cornersAlready)}
+                      onDraftChange={commitAlreadyDraft}
+                    />
                     {model.lineRemaining != null && ` · ${formatExpected(model.lineRemaining)} more from the line`}
                   </span>
                 </>
               ) : (
                 <p className="corners-empty-hint">
+                  <CornersAlreadyInput
+                    value={alreadyInput}
+                    overridden={Number.isFinite(cornersAlready)}
+                    onDraftChange={commitAlreadyDraft}
+                  />
+                  {' · '}
                   {game.inPlay
                     ? 'FanDuel match-total corners are suspended — last prints are not used for arbs or the line.'
                     : 'No total corners line to invert.'}
@@ -1348,6 +1423,7 @@ function CornersBookPanel({
   const [teamQuery, setTeamQuery] = useState('');
   const [bucketed, setBucketed] = useState(() => readFlag(BUCKETED_KEY, true));
   const [showWork, setShowWork] = useState(() => readFlag(SHOW_WORK_KEY, true));
+  const [alreadyByEvent, setAlreadyByEvent] = useState({});
   const {
     enabled: kellyEnabled,
     setEnabled: setKellyEnabled,
@@ -1363,6 +1439,10 @@ function CornersBookPanel({
     if (!teamQuery.trim()) return games;
     return games.filter((g) => gameMatchesQuery(g, teamQuery));
   }, [games, teamQuery]);
+  const monitorGames = useMemo(
+    () => filteredGames.map((game) => withCornersAlready(game, alreadyByEvent[game.eventId])),
+    [filteredGames, alreadyByEvent],
+  );
 
   const setBucketedPersist = (v) => {
     setBucketed(v);
@@ -1406,7 +1486,7 @@ function CornersBookPanel({
 
       {!error && games.length > 0 && (
         <GameMonitorTable
-          rows={buildCornersMonitorRows(filteredGames, { bucketed })}
+          rows={buildCornersMonitorRows(monitorGames, { bucketed })}
           marketHeader="Play"
           caption="Best window vs longest total"
           showMarket
@@ -1532,6 +1612,19 @@ function CornersBookPanel({
               kellyEnabled={kellyEnabled}
               kellyBudget={kellyBudget}
               kellyFraction={kellyFraction}
+              cornersAlready={alreadyByEvent[g.eventId]}
+              onCornersAlreadyChange={(value) => {
+                setAlreadyByEvent((prev) => {
+                  if (!Number.isFinite(value)) {
+                    if (!Number.isFinite(prev[g.eventId])) return prev;
+                    const next = { ...prev };
+                    delete next[g.eventId];
+                    return next;
+                  }
+                  if (prev[g.eventId] === value) return prev;
+                  return { ...prev, [g.eventId]: value };
+                });
+              }}
             />
           ))}
         </div>

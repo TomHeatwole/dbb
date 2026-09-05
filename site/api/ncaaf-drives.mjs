@@ -47,7 +47,11 @@ const GET_MARKET_PRICES = `query GetMarketPrices($ids: [String]!) {
   }
 }`;
 
-const DK_NASH_BASE = 'https://sportsbook-nash.draftkings.com/sites/US-NY-SB/api';
+// NJ hangs both the 4-way and Granular (pass/rush TD) menus. NY is 4-way only;
+// IL/TN are Granular only; VA/AZ/OR omit the market. Prefer NJ so we can
+// show the tickets a non-NY book actually posts.
+const DK_PE_LOC = 'US-NJ';
+const DK_NASH_BASE = `https://sportsbook-nash.draftkings.com/sites/${DK_PE_LOC}-SB/api`;
 const DK_NCAAF_LEAGUE_ID = '87637';
 const DK_FIRST_DRIVE_RESULT_SUB = '13561';
 const DK_HEADERS = {
@@ -64,7 +68,7 @@ const DK_HEADERS = {
   'x-pe-cn': 'web',
   'x-pe-cv': '1.14.0',
   'x-pe-ep': 'SB',
-  'x-pe-loc': 'US-NY',
+  'x-pe-loc': DK_PE_LOC,
 };
 
 const EVENT_POOL = 10;
@@ -292,6 +296,57 @@ function catalogToFdMarket(row) {
   };
 }
 
+function liveFromFdxPbp(pbp) {
+  const score = pbp?.score;
+  if (!score || typeof score !== 'object') return null;
+  const possession = score.possession === 'home' || score.possession === 'away'
+    ? score.possession
+    : null;
+  const loc = String(score.location ?? '').trim();
+  const downM = loc.match(/(\d)(?:st|nd|rd|th)\s*&\s*(\d+)/i);
+  const spotM = loc.match(/\|\s*(.+)$/);
+  const clock = typeof score.clock === 'string' && score.clock.trim() ? score.clock.trim() : null;
+  if (!possession && !clock && !loc) return null;
+  return {
+    possession,
+    clock,
+    down: downM ? Number(downM[1]) : null,
+    distance: downM ? Number(downM[2]) : null,
+    possessionText: (spotM?.[1] || loc || '').trim() || null,
+    downDistance: downM ? `${downM[1]}${['', 'st', 'nd', 'rd', 'th'][Number(downM[1])] || 'th'} & ${downM[2]}` : null,
+    isRedZone: Boolean(score.isRedZone),
+  };
+}
+
+function mergeFdxLive(game, fdxLive) {
+  if (!fdxLive) return game;
+  const live = { ...(game.live ?? {}) };
+  let changed = false;
+  if (!live.possession && (fdxLive.possession === 'home' || fdxLive.possession === 'away')) {
+    live.possession = fdxLive.possession;
+    live.possessionName = fdxLive.possession === 'away'
+      ? (game.teams?.away ?? null)
+      : (game.teams?.home ?? null);
+    changed = true;
+  }
+  if (!live.down && Number.isFinite(fdxLive.down)) {
+    live.down = fdxLive.down;
+    live.distance = Number.isFinite(fdxLive.distance) ? fdxLive.distance : live.distance;
+    if (fdxLive.downDistance && !live.downDistance) live.downDistance = fdxLive.downDistance;
+    changed = true;
+  }
+  if ((!live.clock || live.clock === '0:00') && fdxLive.clock) {
+    live.clock = fdxLive.clock;
+    changed = true;
+  }
+  if (!live.possessionText && fdxLive.possessionText) {
+    live.possessionText = fdxLive.possessionText;
+    changed = true;
+  }
+  if (!changed && game.live) return game;
+  return { ...game, live };
+}
+
 function fdxToNextDrive(markets) {
   let best = null;
   for (const row of markets) {
@@ -403,6 +458,7 @@ async function fetchFdxDebug(eventId, { inPlay = false, openDate = null } = {}) 
       fdxResultNames: extracted.resultNames,
       fdxMarketCount: catalog.length,
       nextDrive: fdxToNextDrive(catalog),
+      live: liveFromFdxPbp(pbp?.json),
     };
   } catch (err) {
     return { fdxError: compactProviderError(err.message || err) };
@@ -506,6 +562,9 @@ function bucketFromRunnerName(runnerName) {
   const n = String(runnerName ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
   if (!n) return null;
   if (n === 'punt' || n.startsWith('punt')) return 'punt';
+  if (n.includes('passing touchdown') || n.includes('rushing touchdown')) return 'td';
+  if (n.includes('field goal made') || n.includes('field goal missed')) return 'fg';
+  if (n.includes('interception') || n.includes('fumble')) return 'other';
   if (n.includes('field goal attempt') || n === 'fg attempt') return 'fg';
   if (n.includes('offensive touchdown') || n === 'offensive td') return 'td';
   if (n.includes('turnover') || n.includes('safety')) return 'other';
@@ -515,13 +574,48 @@ function bucketFromRunnerName(runnerName) {
   return null;
 }
 
+function americanToImplied(american) {
+  if (!Number.isFinite(american) || american === 0) return null;
+  if (american > 0) return 100 / (american + 100);
+  return Math.abs(american) / (Math.abs(american) + 100);
+}
+
+function impliedToAmerican(prob) {
+  if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
+  if (prob >= 0.5) return -(100 * prob) / (1 - prob);
+  return (100 * (1 - prob)) / prob;
+}
+
+function combineExclusiveQuotes(legs) {
+  const ps = (legs ?? []).map((leg) => americanToImplied(leg.american)).filter((p) => Number.isFinite(p));
+  if (!ps.length) return null;
+  return impliedToAmerican(Math.min(0.999, ps.reduce((a, b) => a + b, 0)));
+}
+
 function extractDriveOutcomes(market) {
-  const outcomes = {};
+  const buckets = {
+    punt: [],
+    fg: [],
+    td: [],
+    other: [],
+  };
   for (const runner of runnersList(market)) {
     const key = bucketFromRunnerName(runner.runnerName);
-    if (!key || outcomes[key]) continue;
     const quote = runnerQuote(runner);
-    if (quote) outcomes[key] = quote;
+    if (key && quote) buckets[key].push(quote);
+  }
+  const outcomes = {};
+  for (const [key, legs] of Object.entries(buckets)) {
+    if (!legs.length) continue;
+    if (legs.length === 1) {
+      outcomes[key] = legs[0];
+      continue;
+    }
+    outcomes[key] = {
+      american: combineExclusiveQuotes(legs),
+      runnerName: legs.map((leg) => leg.runnerName).filter(Boolean).join(' + '),
+      legs,
+    };
   }
   return outcomes;
 }
@@ -629,13 +723,22 @@ function dkMarketToNextDrive(market, selections) {
 function teamFromDkDriveName(name) {
   return String(name ?? '')
     .replace(/^1st\s+/i, '')
-    .replace(/\s+drive result(?:\s+grouped)?$/i, '')
+    .replace(/\s+drive result(?:\s+(?:grouped|granular))?$/i, '')
     .trim();
 }
 
 function sideFromTeamName(team, teams) {
-  if (team && teams?.away && namesMatch(team, teams.away)) return 'away';
-  if (team && teams?.home && namesMatch(team, teams.home)) return 'home';
+  if (!team) return null;
+  const awayHit = Boolean(teams?.away && namesMatch(team, teams.away));
+  const homeHit = Boolean(teams?.home && namesMatch(team, teams.home));
+  if (awayHit && homeHit) {
+    const teamLen = expandAlias(team).length;
+    const awayLen = expandAlias(teams.away).length;
+    const homeLen = expandAlias(teams.home).length;
+    return Math.abs(teamLen - awayLen) <= Math.abs(teamLen - homeLen) ? 'away' : 'home';
+  }
+  if (awayHit) return 'away';
+  if (homeHit) return 'home';
   return null;
 }
 
@@ -654,20 +757,28 @@ function annotateDriveMarket(market, teams, live = null) {
   return { ...market, offenseSide: side, offenseName };
 }
 
+function isGranularDriveName(name) {
+  return /granular/i.test(String(name ?? ''));
+}
+
 function pickDkFirstDrive(markets, selections, teams) {
   const converted = [];
   for (const market of markets ?? []) {
     const row = dkMarketToNextDrive(market, selections);
     if (!row) continue;
-    converted.push(annotateDriveMarket(row, teams));
+    converted.push({
+      ...annotateDriveMarket(row, teams),
+      granular: isGranularDriveName(row.marketName),
+    });
   }
   converted.sort((a, b) => {
+    if (Boolean(a.granular) !== Boolean(b.granular)) return a.granular ? 1 : -1;
     const rank = (s) => (s === 'away' ? 0 : s === 'home' ? 1 : 2);
     return rank(a.offenseSide) - rank(b.offenseSide);
   });
   return {
     drives: converted,
-    nextDrive: converted[0] ?? null,
+    nextDrive: converted.find((row) => !row.granular) ?? converted[0] ?? null,
     names: converted.map((row) => row.marketName),
   };
 }
@@ -725,17 +836,22 @@ function shouldFetchEvent(ev) {
 }
 
 async function fetchEventBundle(eventId, { inPlayHint = false } = {}) {
-  const payloads = [await fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=popular`)];
+  const qb = inPlayHint ? '&useQuickBets=true' : '';
+  const payloads = [await fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=popular${qb}`)];
   const event = mergeEvent(payloads);
   const inPlay = Boolean(event?.inPlay ?? inPlayHint);
   const extra = inPlay
     ? ['live-sgp', 'live', 'quick-bets', 'game-specials', 'scoring', 'drive-sgp', 'drive', 'same-game-parlay']
     : ['same-game-parlay', 'game-specials', 'scoring'];
   const extraPayloads = await Promise.all(
-    extra.map((tab) => fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=${tab}`).catch(() => null)),
+    extra.map((tab) => fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=${tab}${inPlay ? '&useQuickBets=true' : ''}`).catch(() => null)),
   );
   for (const payload of extraPayloads) {
     if (payload) payloads.push(payload);
+  }
+  if (inPlay) {
+    const qbPage = await fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&useQuickBets=true`).catch(() => null);
+    if (qbPage) payloads.push(qbPage);
   }
   return {
     event: mergeEvent(payloads) ?? event,
@@ -832,17 +948,36 @@ function teamTokens(name) {
     .filter((w) => w && !MASCOT_STOP.has(w) && w.length > 1);
 }
 
+/** Extra tokens that mean a different school (Texas vs Texas State). */
+const SCHOOL_QUALIFIERS = new Set([
+  'state', 'st', 'tech', 'am', 'aandm',
+  'southern', 'northern', 'eastern', 'western', 'central', 'middle',
+  'coastal', 'international', 'atlantic',
+  'north', 'south', 'east', 'west', 'new',
+]);
+
 function namesMatch(a, b) {
   const ca = expandAlias(a);
   const cb = expandAlias(b);
   if (!ca || !cb) return false;
   if (ca === cb) return true;
-  if (ca.includes(cb) || cb.includes(ca)) return true;
   const ta = teamTokens(a);
   const tb = teamTokens(b);
   if (!ta.length || !tb.length) return false;
+  if (ta.length === tb.length && ta.every((t) => tb.includes(t)) && tb.every((t) => ta.includes(t))) {
+    return true;
+  }
   const [shorter, longer] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
-  return shorter.every((tok) => longer.includes(tok));
+  let contig = false;
+  for (let i = 0; i <= longer.length - shorter.length; i += 1) {
+    if (shorter.every((w, j) => longer[i + j] === w)) {
+      contig = true;
+      break;
+    }
+  }
+  if (!contig) return false;
+  const extra = longer.filter((t) => !shorter.includes(t));
+  return extra.length > 0 && extra.every((t) => !SCHOOL_QUALIFIERS.has(t));
 }
 
 function parseEspnEvent(event) {
@@ -1021,6 +1156,7 @@ function buildGame(ev, bundle, fdx = null) {
       fdxError: fdx?.fdxError ?? null,
       nextDriveSource: nextDrive?.source || (nextDrive ? 'sbapi' : null),
     },
+    fdxLive: fdx?.live ?? null,
   };
 }
 
@@ -1096,7 +1232,7 @@ async function fetchNcaafDriveBook() {
       else if (dk?.drives?.length) driveMarkets = dk.drives;
       else if (dk?.nextDrive) driveMarkets = [dk.nextDrive];
       const nextDrive = driveMarkets[0] ?? null;
-      const withEspn = attachEspn({
+      const withEspn = mergeFdxLive(attachEspn({
         ...game,
         nextDrive,
         driveMarkets,
@@ -1108,12 +1244,14 @@ async function fetchNcaafDriveBook() {
           dkError: dk?.dkError ?? null,
           nextDriveSource: nextDrive?.source || (nextDrive ? 'sbapi' : null),
         },
-      }, espn.matches ?? []);
+      }, espn.matches ?? []), game.fdxLive);
       const annotated = (withEspn.driveMarkets ?? []).map((m) => (
         annotateDriveMarket(m, withEspn.teams, withEspn.live)
       ));
+      const clean = { ...withEspn };
+      delete clean.fdxLive;
       return {
-        ...withEspn,
+        ...clean,
         driveMarkets: annotated,
         nextDrive: annotated[0] ?? null,
       };

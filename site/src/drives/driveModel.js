@@ -27,7 +27,7 @@ export const DRIVE_BUCKETS = [
   },
   {
     key: 'td',
-    label: 'Offensive TD',
+    label: 'OTD',
     n: 29888,
     runnerHints: ['offensive touchdown', 'offensive td', 'touchdown', 'td'],
   },
@@ -39,7 +39,7 @@ export const DRIVE_BUCKETS = [
   },
   {
     key: 'fg',
-    label: 'FG Attempt',
+    label: 'FGA',
     n: 13698,
     runnerHints: ['field goal attempt', 'fg attempt', 'field goal'],
   },
@@ -81,8 +81,6 @@ const DIST_CODES = DRIVE_RESULT_MODEL.meta?.distCodes ?? {
 };
 const TIME_CODES = DRIVE_RESULT_MODEL.meta?.timeCodes ?? { late: 0, mid: 1, early: 2 };
 
-const NAME_STOP = new Set(['university', 'college', 'the', 'of', 'team', 'and']);
-
 export function formatSharePct(p) {
   if (!Number.isFinite(p)) return '—';
   return `${(p * 100).toFixed(1)}%`;
@@ -103,17 +101,42 @@ function normalizeName(s) {
     .replace(/['’`]/g, '')
     .replace(/&/g, 'and')
     .replace(/[^\w\s]/g, ' ')
+    .replace(/\bst\b/g, 'state')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-function nameHits(hay, needle) {
+function nameWords(s) {
+  return normalizeName(s).split(' ').filter(Boolean);
+}
+
+/**
+ * How strongly `needle` (a team name) appears as a phrase in `hay`
+ * (runner, market, or possession). Longer phrases beat shorter ones so
+ * "Texas State" outranks "Texas" inside "1st Texas State Drive Result".
+ */
+export function nameMatchScore(hay, needle) {
   const h = normalizeName(hay);
   const n = normalizeName(needle);
-  if (!h || !n) return false;
-  if (h.includes(n) || n.includes(h)) return true;
-  const toks = n.split(' ').filter((t) => t.length > 2 && !NAME_STOP.has(t));
-  return toks.length > 0 && toks.every((t) => h.includes(t));
+  if (!h || !n) return 0;
+  if (h === n) return 1000 + n.length;
+  const hWords = nameWords(h);
+  const nWords = nameWords(n);
+  if (!nWords.length || nWords.length > hWords.length) return 0;
+  for (let i = 0; i <= hWords.length - nWords.length; i += 1) {
+    if (nWords.every((w, j) => hWords[i + j] === w)) {
+      return 100 + nWords.length * 20 + n.length;
+    }
+  }
+  return 0;
+}
+
+function pickNamedSide(named, home, away) {
+  const homeScore = nameMatchScore(named, home);
+  const awayScore = nameMatchScore(named, away);
+  if (homeScore > awayScore && homeScore > 0) return 'home';
+  if (awayScore > homeScore && awayScore > 0) return 'away';
+  return null;
 }
 
 function fpCode(ytg) {
@@ -173,10 +196,25 @@ export function extractHomeSpread(game) {
   const runners = game?.lines?.spread?.runners ?? [];
   const home = game?.teams?.home;
   const away = game?.teams?.away;
-  const homeHit = runners.find((r) => nameHits(r.runnerName, home) && Number.isFinite(r.handicap));
-  if (homeHit) return homeHit.handicap;
-  const awayHit = runners.find((r) => nameHits(r.runnerName, away) && Number.isFinite(r.handicap));
-  if (awayHit) return -awayHit.handicap;
+  let bestHome = null;
+  let bestHomeScore = 0;
+  let bestAway = null;
+  let bestAwayScore = 0;
+  for (const runner of runners) {
+    if (!Number.isFinite(runner.handicap)) continue;
+    const homeScore = nameMatchScore(runner.runnerName, home);
+    const awayScore = nameMatchScore(runner.runnerName, away);
+    if (homeScore > awayScore && homeScore > bestHomeScore) {
+      bestHomeScore = homeScore;
+      bestHome = runner;
+    }
+    if (awayScore > homeScore && awayScore > bestAwayScore) {
+      bestAwayScore = awayScore;
+      bestAway = runner;
+    }
+  }
+  if (bestHome) return bestHome.handicap;
+  if (bestAway) return -bestAway.handicap;
   const finite = runners.filter((r) => Number.isFinite(r.handicap));
   if (finite.length === 1) return finite[0].handicap;
   return NaN;
@@ -190,33 +228,53 @@ export function extractOverUnder(game) {
   return any ? any.handicap : NaN;
 }
 
-export function inferOffenseSide(game) {
-  const market = game?.nextDrive;
-  if (market?.offenseSide === 'home' || market?.offenseSide === 'away') {
-    return market.offenseSide;
-  }
+export function inferOffenseSide(game, market = null) {
+  const row = market || game?.nextDrive;
   const home = game?.teams?.home;
   const away = game?.teams?.away;
-  const named = market?.offenseName || market?.marketName || '';
-  const homeHit = nameHits(named, home);
-  const awayHit = nameHits(named, away);
-  if (homeHit && !awayHit) return 'home';
-  if (awayHit && !homeHit) return 'away';
+  // Market title first: DK "1st Texas Drive Result" vs a stale offenseSide
+  // that confused Texas with Texas State.
+  const fromMarketName = pickNamedSide(row?.marketName || '', home, away);
+  if (fromMarketName) return fromMarketName;
+  const fromOffenseName = pickNamedSide(row?.offenseName || '', home, away);
+  if (fromOffenseName) return fromOffenseName;
+  if (row?.offenseSide === 'home' || row?.offenseSide === 'away') {
+    return row.offenseSide;
+  }
   const live = game?.live;
   if (live?.possession === 'home' || live?.possession === 'away') return live.possession;
-  if (live?.possessionName) {
-    if (nameHits(live.possessionName, home)) return 'home';
-    if (nameHits(live.possessionName, away)) return 'away';
-  }
-  return null;
+  return pickNamedSide(live?.possessionName || '', home, away);
 }
 
-export function listDriveMarkets(game) {
-  if (Array.isArray(game?.driveMarkets) && game.driveMarkets.length) {
-    return game.driveMarkets;
-  }
-  if (game?.nextDrive) return [game.nextDrive];
-  return [];
+export function resolveOffenseTeam(game, market = null) {
+  const side = inferOffenseSide(game, market);
+  const row = market || game?.nextDrive;
+  const liveName = game?.live?.possessionName || null;
+  const name = side === 'away'
+    ? (game?.teams?.away || row?.offenseName || liveName || null)
+    : side === 'home'
+      ? (game?.teams?.home || row?.offenseName || liveName || null)
+      : (row?.offenseName || liveName || null);
+  return { side, name };
+}
+
+export function possessiveTeam(name) {
+  const raw = String(name ?? '').trim();
+  if (!raw) return '';
+  return /s$/i.test(raw) ? `${raw}'` : `${raw}'s`;
+}
+
+export function listDriveMarkets(game, { granular = false } = {}) {
+  const raw = Array.isArray(game?.driveMarkets) && game.driveMarkets.length
+    ? game.driveMarkets
+    : (game?.nextDrive ? [game.nextDrive] : []);
+  if (!raw.length) return [];
+  const hasFlag = raw.some((market) => typeof market?.granular === 'boolean');
+  if (!hasFlag) return raw;
+  const match = raw.filter((market) => Boolean(market.granular) === Boolean(granular));
+  if (match.length) return match;
+  const fallback = raw.filter((market) => Boolean(market.granular) !== Boolean(granular));
+  return fallback.length ? fallback : raw;
 }
 
 export function hasDriveLine(game) {
@@ -250,7 +308,7 @@ export function featuresFromGame(game) {
     && ytgLive >= 1
     && ytgLive <= 99;
 
-  const side = inferOffenseSide(game);
+  const side = inferOffenseSide(game, game?.nextDrive);
   const homeSpread = extractHomeSpread(game);
   const ou = extractOverUnder(game);
   const offenseSpread = !side
@@ -350,19 +408,32 @@ export function evaluateDriveGame(game, {
     ? { ...game, nextDrive }
     : game;
   const pred = predictDriveResult(view);
+  const offense = resolveOffenseTeam(view, nextDrive);
   const outcomes = nextDrive?.outcomes ?? {};
   const rows = DRIVE_BUCKETS.map((bucket) => {
     const modelP = pred?.p?.[bucket.key];
     const p = Number.isFinite(modelP) ? modelP : bucket.p;
     const fairAmerican = probToAmerican(p);
     const quote = outcomes[bucket.key] ?? null;
-    const american = Number.isFinite(quote?.american) ? quote.american : null;
-    const analysis = analyzeAgainstBreakeven(american, fairAmerican);
-    const profitable = Boolean(analysis?.profitable && american != null);
+    const source = nextDrive?.source;
+    const fdAmerican = Number.isFinite(quote?.fd?.american)
+      ? quote.fd.american
+      : (source !== 'dk' && Number.isFinite(quote?.american) ? quote.american : null);
+    const dkAmerican = Number.isFinite(quote?.dk?.american)
+      ? quote.dk.american
+      : (source === 'dk' && Number.isFinite(quote?.american) ? quote.american : null);
+    const american = fdAmerican ?? dkAmerican ?? (Number.isFinite(quote?.american) ? quote.american : null);
+    const fdAnalysis = analyzeAgainstBreakeven(fdAmerican, fairAmerican);
+    const dkAnalysis = analyzeAgainstBreakeven(dkAmerican, fairAmerican);
+    const analysis = (dkAnalysis?.edgePoints ?? -Infinity) > (fdAnalysis?.edgePoints ?? -Infinity)
+      ? dkAnalysis
+      : fdAnalysis;
+    const offeredForKelly = (analysis === dkAnalysis ? dkAmerican : fdAmerican) ?? american;
+    const profitable = Boolean(analysis?.profitable && offeredForKelly != null);
     const kellyStake = kellyEnabled && profitable
       ? computeKellyStake({
         winProb: p,
-        offeredAmerican: american,
+        offeredAmerican: offeredForKelly,
         bankroll: kellyBudget,
         kellyFraction,
       })
@@ -376,8 +447,14 @@ export function evaluateDriveGame(game, {
       fairAmerican,
       rawFairAmerican: bucket.fairAmerican,
       american,
+      fdAmerican,
+      dkAmerican,
+      dualBooks: fdAmerican != null && dkAmerican != null,
       runnerName: quote?.runnerName ?? null,
+      legs: Array.isArray(quote?.legs) ? quote.legs : null,
       analysis,
+      fdAnalysis,
+      dkAnalysis,
       profitable,
       edgePoints: analysis?.edgePoints ?? null,
       kellyStake,
@@ -404,10 +481,8 @@ export function evaluateDriveGame(game, {
     vigPct: Number.isFinite(vigSum) ? (vigSum - 1) * 100 : null,
     marketName: nextDrive?.marketName ?? null,
     market: nextDrive,
-    offenseName: pred?.side
-      ? (pred.side === 'away' ? game?.teams?.away : game?.teams?.home)
-      : (nextDrive?.offenseName ?? null),
-    offenseSide: pred?.side ?? nextDrive?.offenseSide ?? null,
+    offenseName: offense.name,
+    offenseSide: offense.side,
   };
 }
 

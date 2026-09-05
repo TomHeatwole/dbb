@@ -13,17 +13,21 @@ import {
   formatSharePct,
   hasDriveLine,
   listDriveMarkets,
+  possessiveTeam,
+  resolveOffenseTeam,
 } from '../drives/driveModel';
 import { predictDriveSituation } from '../drives/driveSituation';
 import { formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
 import { useSOPKellySettings } from '../sop/useSOPKellySettings';
-import { buildDrivesMonitorRows } from '../drives/gameSnapshot';
+import { buildDrivesMonitorRows, maxDriveEdgePoints } from '../drives/gameSnapshot';
 import { gameAnchorId } from '../sop/gameSnapshot';
 import GameMonitorTable from './GameMonitorTable';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'drives-book-team-search';
 const SHOW_WORK_KEY = 'drives-show-work';
+const SORT_EDGE_KEY = 'drives-sort-edge';
+const DK_GRANULAR_KEY = 'drives-dk-granular';
 
 function readFlag(key, fallback) {
   try {
@@ -125,8 +129,34 @@ function liveSummary(game) {
     live.downDistance,
     spot,
   ].filter(Boolean);
-  if (live.possessionName) bits.push(live.possessionName);
   return bits.join(' · ') || null;
+}
+
+function possessionHeadline(game, market, model) {
+  const name = model?.offenseName || resolveOffenseTeam(game, market).name;
+  if (name && game.inPlay) return `${name} on offense`;
+  return null;
+}
+
+function shortBookLeg(name) {
+  const n = String(name ?? '');
+  if (/passing touchdown/i.test(n)) return 'Pass TD';
+  if (/rushing touchdown/i.test(n)) return 'Rush TD';
+  if (/field goal made/i.test(n)) return 'FG made';
+  if (/field goal missed/i.test(n)) return 'FG miss';
+  if (/interception/i.test(n)) return 'INT';
+  if (/fumble/i.test(n)) return 'Fumble';
+  if (/turnover on downs/i.test(n)) return 'Downs';
+  return n;
+}
+
+function driveHeading(game, market, model) {
+  const name = model?.offenseName || resolveOffenseTeam(game, market).name;
+  const whose = name ? possessiveTeam(name) : '';
+  if (game.inPlay && whose) return `Betting ${whose} next drive`;
+  if (whose) return `Betting ${whose} 1st drive`;
+  if (game.inPlay) return 'Next drive · possession unknown';
+  return market?.marketName ?? 'Drive result (no team line)';
 }
 
 function opponentStartSummary(game) {
@@ -253,13 +283,13 @@ function reasoningRows(game, pred) {
   return rows;
 }
 
-function ModelReasoning({ game, pred, mix }) {
+function ModelReasoning({ game, pred, mix, heading, highlightKey }) {
   const rows = reasoningRows(game, pred);
   const mixRows = (mix ?? []).filter((row) => Number.isFinite(row.p));
   if (!rows.length && !mixRows.length) return null;
   return (
-    <section className="drives-reason" aria-label="Model reasoning">
-      <div className="sop-exp-section-label">Why this price</div>
+    <section className="drives-reason" aria-label="Model reasoning" id={`drives-why-${game.eventId}`}>
+      <div className="sop-exp-section-label">{heading ?? 'Why this price'}</div>
       <div className="drives-reason-grid">
         {rows.length > 0 && (
           <ul className="drives-reason-list">
@@ -274,7 +304,10 @@ function ModelReasoning({ game, pred, mix }) {
         {mixRows.length > 0 && (
           <ul className="drives-reason-mix">
             {mixRows.map((row) => (
-              <li key={row.key}>
+              <li
+                key={row.key}
+                className={row.key === highlightKey ? 'drives-reason-mix-item--on' : undefined}
+              >
                 <span>{row.label}</span>
                 <span className="drives-reason-mix-pct">{formatSharePct(row.p)}</span>
               </li>
@@ -305,14 +338,6 @@ function Toggle({ label, checked, onChange, hint }) {
   );
 }
 
-function driveHeading(game, market, model) {
-  const name = model?.offenseName || market?.offenseName;
-  if (game.inPlay && name) return `Betting ${name}'s drive`;
-  if (name) return `Betting ${name}'s 1st drive`;
-  if (game.inPlay) return 'Betting the next drive';
-  return market?.marketName ?? 'Drive result (no team line)';
-}
-
 function DriveSide({
   game,
   market,
@@ -320,7 +345,10 @@ function DriveSide({
   showWork,
   kellyEnabled,
   kellyFraction,
+  selectedKey,
+  onSelectLine,
 }) {
+  const dual = model.rows.some((row) => row.dualBooks);
   const book = market?.source === 'dk' ? 'DK' : 'FD';
   return (
     <div className="drives-side">
@@ -329,6 +357,11 @@ function DriveSide({
         {market?.marketName && (
           <p className="drives-situation">{market.marketName}</p>
         )}
+        {market?.granular && (
+          <p className="drives-situation">
+            DK Granular — pass/rush TD are separate tickets. Edge is versus the model bucket if you bet every split in that row.
+          </p>
+        )}
         {!model.hasBook && (
           <p className="sop-exp-status drives-missing-line">
             No drive-result line for this team yet.
@@ -336,17 +369,57 @@ function DriveSide({
         )}
         <ul className="sop-exp-goal-list">
           {model.rows.map((row) => (
-            <li key={row.key} className="sop-exp-goal-row">
-              <div className="sop-exp-goal-label">{row.label}</div>
-              <div className="sop-exp-goal-books-single">
-                <div
-                  className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--fd${row.profitable ? ' sop-exp-goal-odds-box--ev' : ''}`}
-                >
-                  <span className="sop-exp-goal-odds-book">{book}</span>
-                  <span className="sop-exp-goal-odds-val">
-                    {row.american != null ? formatAmericanOdds(row.american) : '—'}
+            <li key={row.key}>
+              <button
+                type="button"
+                className={`sop-exp-goal-row drives-line-btn${dual ? ' sop-exp-goal-row--dual' : ''}${selectedKey === row.key ? ' drives-line-btn--open' : ''}`}
+                onClick={() => onSelectLine(row.key)}
+                aria-expanded={selectedKey === row.key}
+                aria-controls={`drives-why-${game.eventId}`}
+              >
+              <div className="sop-exp-goal-label">
+                {row.legs?.length > 1 ? `${row.label} · bet all` : row.label}
+                {row.legs?.length > 1 ? (
+                  <span className="drives-book-sel">
+                    {row.legs.map((leg) => (
+                      `${shortBookLeg(leg.runnerName)} ${formatAmericanOdds(leg.american)}`
+                    )).join(' · ')}
                   </span>
-                </div>
+                ) : row.runnerName && row.runnerName !== row.label ? (
+                  <span className="drives-book-sel">{row.runnerName}</span>
+                ) : null}
+              </div>
+              <div className={dual ? 'sop-exp-goal-books-pair' : 'sop-exp-goal-books-single'}>
+                {(dual || book === 'FD') && (
+                  <div
+                    className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--fd${row.fdAnalysis?.profitable ? ' sop-exp-goal-odds-box--ev' : ''}`}
+                  >
+                    <span className="sop-exp-goal-odds-book">FD</span>
+                    <span className="sop-exp-goal-odds-val">
+                      {row.fdAmerican != null ? formatAmericanOdds(row.fdAmerican) : '—'}
+                    </span>
+                  </div>
+                )}
+                {(dual || book === 'DK') && (
+                  <div
+                    className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--dk${row.dkAnalysis?.profitable ? ' sop-exp-goal-odds-box--ev' : ''}`}
+                  >
+                    <span className="sop-exp-goal-odds-book">DK</span>
+                    <span className="sop-exp-goal-odds-val">
+                      {row.dkAmerican != null ? formatAmericanOdds(row.dkAmerican) : '—'}
+                    </span>
+                  </div>
+                )}
+                {!dual && book !== 'FD' && book !== 'DK' && (
+                  <div
+                    className={`sop-exp-goal-odds-box sop-exp-goal-odds-box--fd${row.profitable ? ' sop-exp-goal-odds-box--ev' : ''}`}
+                  >
+                    <span className="sop-exp-goal-odds-book">{book}</span>
+                    <span className="sop-exp-goal-odds-val">
+                      {row.american != null ? formatAmericanOdds(row.american) : '—'}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="sop-exp-goal-breakeven">
                 {row.fairAmerican != null ? (
@@ -381,6 +454,7 @@ function DriveSide({
                   '—'
                 )}
               </div>
+              </button>
             </li>
           ))}
         </ul>
@@ -415,8 +489,6 @@ function DriveSide({
           </ul>
         </section>
       )}
-
-      <ModelReasoning game={game} pred={model.pred} mix={model.rows} />
     </div>
   );
 }
@@ -428,9 +500,11 @@ function GameCard({
   kellyEnabled,
   kellyBudget,
   kellyFraction,
+  dkGranular = false,
 }) {
   const [expanded, setExpanded] = useState(defaultOpen);
-  const markets = useMemo(() => listDriveMarkets(game), [game]);
+  const [openLine, setOpenLine] = useState(null);
+  const markets = useMemo(() => listDriveMarkets(game, { granular: dkGranular }), [game, dkGranular]);
   const models = useMemo(() => {
     const opts = { kellyEnabled, kellyBudget, kellyFraction };
     if (!markets.length) return [evaluateDriveGame(game, opts)];
@@ -441,6 +515,12 @@ function GameCard({
   const lines = lineSummary(game);
   const nextStart = useMemo(() => opponentStartSummary(game), [game]);
   const paired = markets.length > 1;
+  const ballOn = possessionHeadline(game, markets[0], models[0]);
+  const cardKicker = paired
+    ? '1st-drive result · both teams'
+    : (ballOn || models[0]?.marketName || (game.inPlay ? 'Next drive · possession unknown' : 'First / next drive'));
+  const openModel = openLine ? models[openLine.sideIndex] : null;
+  const openMarket = openLine ? (markets[openLine.sideIndex] ?? openModel?.market) : null;
 
   return (
     <article
@@ -477,17 +557,17 @@ function GameCard({
       {expanded && (
         <div className="sop-exp-game-body">
           <section className="sop-exp-no-goal">
-            <div className="sop-exp-section-label">
-              {paired
-                ? '1st-drive result · both teams'
-                : (models[0]?.marketName ?? (game.inPlay ? 'Next drive result' : 'First / next drive'))}
+            <div className={`sop-exp-section-label${ballOn ? ' drives-possession-label' : ''}`}>
+              {cardKicker}
             </div>
             {situation && <p className="drives-situation">{situation}</p>}
             {nextStart?.line && <p className="drives-situation drives-situation--next">{nextStart.line}</p>}
             {lines && <p className="drives-situation drives-situation--lines">{lines}</p>}
             {!markets.length && (
               <p className="sop-exp-status drives-missing-line">
-                No drive-result line yet. FanDuel posts next-drive only after kickoff (Quick Bets). DraftKings 1st-drive is used when they hang it.
+                {game.inPlay
+                  ? 'No FanDuel next-drive line. Drive Result is a live Quick Bet, and FanDuel is not posting it on this game right now. DraftKings 1st-drive is pregame only.'
+                  : 'No drive-result line yet. FanDuel posts next-drive only after kickoff (Quick Bets). DraftKings 1st-drive is used when they hang it.'}
               </p>
             )}
             {game.error && <p className="sop-exp-error">{game.error}</p>}
@@ -503,9 +583,24 @@ function GameCard({
                 showWork={showWork}
                 kellyEnabled={kellyEnabled}
                 kellyFraction={kellyFraction}
+                selectedKey={openLine?.sideIndex === i ? openLine.key : null}
+                onSelectLine={(key) => setOpenLine((prev) => (
+                  prev?.sideIndex === i && prev.key === key
+                    ? null
+                    : { sideIndex: i, key }
+                ))}
               />
             ))}
           </div>
+          {openModel && (
+            <ModelReasoning
+              game={game}
+              pred={openModel.pred}
+              mix={openModel.rows}
+              highlightKey={openLine.key}
+              heading={`Why this price · ${driveHeading(game, openMarket, openModel)}`}
+            />
+          )}
         </div>
       )}
     </article>
@@ -526,6 +621,8 @@ function DrivesBookPanel({
   const [liveOnly, setLiveOnly] = useState(false);
   const [linesOnly, setLinesOnly] = useState(false);
   const [showWork, setShowWork] = useState(() => readFlag(SHOW_WORK_KEY, false));
+  const [sortByEdge, setSortByEdge] = useState(() => readFlag(SORT_EDGE_KEY, false));
+  const [dkGranular, setDkGranular] = useState(() => readFlag(DK_GRANULAR_KEY, false));
   const {
     enabled: kellyEnabled,
     setEnabled: setKellyEnabled,
@@ -540,12 +637,28 @@ function DrivesBookPanel({
   const teamNames = useMemo(() => collectTeamNames(games), [games]);
 
   const filteredGames = useMemo(() => {
-    return games.filter((game) => {
+    const list = games.filter((game) => {
       if (liveOnly && !game.inPlay) return false;
       if (linesOnly && !hasDriveLine(game)) return false;
       return gameMatchesQuery(game, teamQuery);
     });
-  }, [games, liveOnly, linesOnly, teamQuery]);
+    if (!sortByEdge) return list;
+    const live = [];
+    const upcoming = [];
+    for (const game of list) {
+      if (game.inPlay) live.push(game);
+      else upcoming.push(game);
+    }
+    upcoming.sort((a, b) => {
+      const ae = maxDriveEdgePoints(a, { granular: dkGranular });
+      const be = maxDriveEdgePoints(b, { granular: dkGranular });
+      const aEdge = Number.isFinite(ae) ? ae : -Infinity;
+      const bEdge = Number.isFinite(be) ? be : -Infinity;
+      if (bEdge !== aEdge) return bEdge - aEdge;
+      return (Date.parse(a.openDate) || 0) - (Date.parse(b.openDate) || 0);
+    });
+    return [...live, ...upcoming];
+  }, [games, liveOnly, linesOnly, teamQuery, sortByEdge, dkGranular]);
 
   if (loading) {
     return (
@@ -580,7 +693,7 @@ function DrivesBookPanel({
 
       {!error && games.length > 0 && (
         <GameMonitorTable
-          rows={buildDrivesMonitorRows(filteredGames)}
+          rows={buildDrivesMonitorRows(filteredGames, Date.now(), { granular: dkGranular })}
           marketHeader="Play"
           caption="Best drive result vs model"
           showMarket
@@ -606,6 +719,24 @@ function DrivesBookPanel({
           label="Has drive line"
           checked={linesOnly}
           onChange={setLinesOnly}
+        />
+        <Toggle
+          label="Largest edge first"
+          checked={sortByEdge}
+          onChange={(v) => {
+            setSortByEdge(v);
+            writeFlag(SORT_EDGE_KEY, v);
+          }}
+          hint="Keep live games on top; sort pregame by the biggest model edge"
+        />
+        <Toggle
+          label="DK granular"
+          checked={dkGranular}
+          onChange={(v) => {
+            setDkGranular(v);
+            writeFlag(DK_GRANULAR_KEY, v);
+          }}
+          hint="DraftKings pass/rush TD and FG made/missed instead of the 4-way menu"
         />
         <Toggle
           label="Show Kelly Criterion"
@@ -696,6 +827,7 @@ function DrivesBookPanel({
               kellyEnabled={kellyEnabled}
               kellyBudget={kellyBudget}
               kellyFraction={kellyFraction}
+              dkGranular={dkGranular}
             />
           ))}
         </div>

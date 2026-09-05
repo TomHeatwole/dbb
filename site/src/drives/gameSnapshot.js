@@ -3,7 +3,7 @@
  */
 
 import { shortTeamName } from '../sop/gameSnapshot';
-import { evaluateDriveGame, formatAmericanOdds, listDriveMarkets } from './driveModel';
+import { evaluateDriveGame, formatAmericanOdds, listDriveMarkets, resolveOffenseTeam } from './driveModel';
 
 function shortDriveTeam(name) {
   const raw = String(name ?? '')
@@ -65,15 +65,28 @@ export function pickHeadlineDrivePlay(model) {
   ));
 }
 
+export function maxDriveEdgePoints(game, { granular = false } = {}) {
+  const markets = listDriveMarkets(game, { granular });
+  const views = markets.length
+    ? markets.map((market) => evaluateDriveGame(game, { market }))
+    : [evaluateDriveGame(game)];
+  let best = null;
+  for (const model of views) {
+    const play = pickHeadlineDrivePlay(model);
+    if (play && Number.isFinite(play.edgePoints) && (best == null || play.edgePoints > best)) {
+      best = play.edgePoints;
+    }
+  }
+  return best;
+}
+
 function playLabel(row) {
   if (!row) return '—';
-  if (row.key === 'td') return 'TD';
-  if (row.key === 'fg') return 'FG';
   return row.label ?? '—';
 }
 
-export function buildDrivesGameSnapshot(game) {
-  const markets = listDriveMarkets(game);
+export function buildDrivesGameSnapshot(game, { granular = false } = {}) {
+  const markets = listDriveMarkets(game, { granular });
   const views = markets.length
     ? markets.map((market) => ({ market, model: evaluateDriveGame(game, { market }) }))
     : [{ market: game?.nextDrive ?? null, model: evaluateDriveGame(game) }];
@@ -88,8 +101,11 @@ export function buildDrivesGameSnapshot(game) {
     }
   }
   const book = market?.source === 'dk' ? 'dk' : 'fd';
-  const team = shortDriveTeam(market?.offenseName);
+  const team = shortDriveTeam(resolveOffenseTeam(game, market).name);
   const result = playLabel(play);
+  const marketLabel = team && result !== '—'
+    ? `${team} ${result}`
+    : (team && game?.inPlay ? `${team} drive` : result);
 
   return {
     eventId: game?.eventId,
@@ -98,7 +114,7 @@ export function buildDrivesGameSnapshot(game) {
     score: game?.scoreDisplay ?? '0-0',
     clock: drivesClockLabel(game),
     inPlay: Boolean(game?.inPlay),
-    market: team && result !== '—' ? `${team} ${result}` : result,
+    market: marketLabel,
     oddsBook: play ? book : null,
     oddsAmerican: play?.american ?? null,
     lineLabel: play && Number.isFinite(play.fairAmerican)
@@ -109,8 +125,8 @@ export function buildDrivesGameSnapshot(game) {
   };
 }
 
-export function buildDrivesMonitorRows(games, now = Date.now()) {
+export function buildDrivesMonitorRows(games, now = Date.now(), { granular = false } = {}) {
   return (games ?? [])
     .filter((game) => isActiveDriveMonitorGame(game, now))
-    .map((game) => buildDrivesGameSnapshot(game));
+    .map((game) => buildDrivesGameSnapshot(game, { granular }));
 }

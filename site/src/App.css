@@ -18948,6 +18948,16 @@ body.modal-open {
   color: rgba(230, 255, 240, 0.85);
 }
 
+.drives-book-sel {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: rgba(200, 220, 210, 0.55);
+}
+
 .sop-exp-goal-breakeven {
   display: flex;
   align-items: baseline;
@@ -19508,6 +19518,36 @@ button.corners-arb-chip--thin:hover,
   margin: 0.2rem 0 0;
   font-size: 0.75rem;
   color: rgba(210, 240, 220, 0.7);
+}
+
+.corners-already {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+}
+
+.corners-already-input {
+  width: 2.4rem;
+  padding: 0.04rem 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 0.28rem;
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+}
+
+.corners-already-input:focus {
+  border-color: #ffe08a;
+  color: #ffe08a;
+}
+
+.corners-already--override .corners-already-input {
+  border-color: rgba(255, 224, 138, 0.75);
+  color: #ffe08a;
 }
 
 .corners-bucket-share strong {
@@ -23867,6 +23907,11 @@ button.corners-bet:hover {
   color: rgba(220, 235, 255, 0.82);
 }
 
+.drives-possession-label {
+  color: rgba(180, 255, 210, 0.95);
+  letter-spacing: 0.04em;
+}
+
 .drives-situation--lines {
   color: rgba(255, 224, 138, 0.78);
 }
@@ -23929,16 +23974,39 @@ button.corners-bet:hover {
   }
 }
 
+.drives-line-btn {
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.drives-line-btn:hover {
+  border-color: rgba(255, 224, 138, 0.28);
+  background: rgba(255, 224, 138, 0.06);
+}
+
+.drives-line-btn--open {
+  border-color: rgba(255, 224, 138, 0.45);
+  background: rgba(255, 224, 138, 0.1);
+}
+
 .drives-reason {
-  margin-top: 0.85rem;
+  margin-top: 0.95rem;
+  padding: 0.75rem 0.85rem 0.85rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .drives-reason-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem 2.25rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.85rem 2.5rem;
   align-items: start;
-  margin-top: 0.25rem;
+  margin-top: 0.45rem;
 }
 
 .drives-reason-list {
@@ -23965,11 +24033,10 @@ button.corners-bet:hover {
   margin: 0;
   padding: 0;
   list-style: none;
-  min-width: 11.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.22rem;
-  font-size: 0.78rem;
+  gap: 0.28rem;
+  font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
   color: rgba(235, 240, 255, 0.88);
 }
@@ -23978,6 +24045,12 @@ button.corners-bet:hover {
   display: flex;
   justify-content: space-between;
   gap: 1.4rem;
+  padding: 0.12rem 0.2rem;
+  border-radius: 0.3rem;
+}
+
+.drives-reason-mix-item--on {
+  background: rgba(255, 224, 138, 0.12);
 }
 
 .drives-reason-mix-pct {
