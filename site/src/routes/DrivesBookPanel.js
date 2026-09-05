@@ -15,6 +15,9 @@ import {
 import { predictDriveSituation } from '../drives/driveSituation';
 import { formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
 import { useSOPKellySettings } from '../sop/useSOPKellySettings';
+import { buildDrivesMonitorRows } from '../drives/gameSnapshot';
+import { gameAnchorId } from '../sop/gameSnapshot';
+import GameMonitorTable from './GameMonitorTable';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'drives-book-team-search';
@@ -318,7 +321,10 @@ function GameCard({
   const nextStart = useMemo(() => opponentStartSummary(game), [game]);
 
   return (
-    <article className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}>
+    <article
+      id={gameAnchorId(game.eventId)}
+      className={`sop-exp-game${expanded ? ' sop-exp-game--open' : ''}`}
+    >
       <header className="sop-exp-game-header">
         <button
           type="button"
@@ -521,6 +527,15 @@ function DrivesBookPanel({
         <p className="sop-exp-dk-notice" role="status">
           {notice}
         </p>
+      )}
+
+      {!error && games.length > 0 && (
+        <GameMonitorTable
+          rows={buildDrivesMonitorRows(filteredGames)}
+          marketHeader="Play"
+          caption="Best drive result vs model"
+          showMarket
+        />
       )}
 
       <section className="sop-book-settings" aria-label="Scanner settings">

@@ -42,7 +42,10 @@ function GameMonitorTable({
   const evCount = rows.filter((row) => row.profitable).length;
 
   return (
-    <section className="sop-monitor" aria-label="Game snapshot">
+    <section
+      className={`sop-monitor${showMarket ? ' sop-monitor--play' : ''}`}
+      aria-label="Game snapshot"
+    >
       <div className="sop-monitor-head">
         <span className="sop-monitor-kicker">Snapshot</span>
         <span className="sop-monitor-caption">{caption}</span>
@@ -51,53 +54,51 @@ function GameMonitorTable({
         )}
       </div>
       <div className="sop-monitor-scroll">
-        <table className="sop-monitor-table">
-          <thead>
-            <tr>
-              <th>Game</th>
-              {showMarket && <th>{marketHeader}</th>}
-              <th>{showMarket ? 'Odds' : marketHeader}</th>
-              <th>Line</th>
-              <th>Edge</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.eventId}
-                className={row.profitable ? 'sop-monitor-row--ev' : undefined}
+        <div className="sop-monitor-cols" aria-hidden="true">
+          <span>Game</span>
+          <span className="sop-monitor-quotes">
+            {showMarket && <span>{marketHeader}</span>}
+            <span>{showMarket ? 'Odds' : marketHeader}</span>
+            <span>Line</span>
+          </span>
+          <span>Edge</span>
+        </div>
+        <ul className="sop-monitor-list">
+          {rows.map((row) => (
+            <li
+              key={row.eventId}
+              className={`sop-monitor-row${row.profitable ? ' sop-monitor-row--ev' : ''}`}
+            >
+              <button
+                type="button"
+                className="sop-monitor-game"
+                onClick={() => scrollToGame(row.eventId)}
+                title={row.fullName}
               >
-                <td>
-                  <button
-                    type="button"
-                    className="sop-monitor-game"
-                    onClick={() => scrollToGame(row.eventId)}
-                    title={row.fullName}
-                  >
-                    <span className="sop-monitor-game-name">{row.name}</span>
-                    <span className="sop-monitor-game-meta">
-                      {row.inPlay && <span className="sop-exp-live">LIVE</span>}
-                      <span>{row.score}</span>
-                      {row.clock && <span>{row.clock}</span>}
-                    </span>
-                  </button>
-                </td>
+                <span className="sop-monitor-game-name">{row.name}</span>
+                <span className="sop-monitor-game-meta">
+                  {row.inPlay && <span className="sop-exp-live">LIVE</span>}
+                  <span>{row.score}</span>
+                  {row.clock && <span>{row.clock}</span>}
+                </span>
+              </button>
+              <span className="sop-monitor-quotes">
                 {showMarket && (
-                  <td className="sop-monitor-market">{row.market}</td>
+                  <span className="sop-monitor-market">{row.market}</span>
                 )}
-                <td className="sop-monitor-odds">
+                <span className="sop-monitor-odds">
                   <OddsCell book={row.oddsBook} american={row.oddsAmerican} />
-                </td>
-                <td className="sop-monitor-line">{row.lineLabel}</td>
-                <td
-                  className={`sop-monitor-edge${row.profitable ? ' sop-monitor-edge--plus' : ' sop-monitor-edge--minus'}`}
-                >
-                  {formatEdge(row.edgePoints)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </span>
+                <span className="sop-monitor-line">{row.lineLabel}</span>
+              </span>
+              <span
+                className={`sop-monitor-edge${row.profitable ? ' sop-monitor-edge--plus' : ' sop-monitor-edge--minus'}`}
+              >
+                {formatEdge(row.edgePoints)}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
