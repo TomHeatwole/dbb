@@ -26,6 +26,9 @@ import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import MidweekSimBanner from '../scores/MidweekSimBanner';
 import LineupModeToggle from '../scores/LineupModeToggle';
+import useLeagueHproj from '../scores/useLeagueHproj';
+import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
+import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 
 const OG_TITLE = 'Scores – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
@@ -79,6 +82,18 @@ function LeagueScores() {
 		return getPlayerSeasonTotalsMap(weeksParsedData);
 	}, [weeksParsedData]);
 	const projectedPtsById = useWeeklyProjectedPoints(season, week);
+	const hprojByRoster = useLeagueHproj({
+		season,
+		week,
+		rosters,
+		playersData,
+		projectedPtsById,
+		enabled: HPROJ_ON_SCORES,
+	});
+	const hprojFirstNameCounts = useMemo(
+		() => ownerFirstNameCounts(rosters, users),
+		[rosters, users],
+	);
 
 	const buildExpandedData = useCallback((srcWeeksParsedData, targetWeek, labels, seasonTotalsMap) => {
 		if (!srcWeeksParsedData) { return null; }
@@ -523,6 +538,14 @@ function LeagueScores() {
 		return `Team ${rosterId}`;
 	}
 
+	function getOwnerName(rosterId) {
+		if (!rosters || !users) return '';
+		const roster = rosters.find(r => String(r.roster_id) === String(rosterId));
+		if (!roster) return '';
+		const user = users.find(u => String(u.user_id) === String(roster.owner_id));
+		return (user && user.display_name) ? user.display_name : '';
+	}
+
 	function getAvatar(rosterId) {
 		if (!rosters || !users) return null;
 		const roster = rosters.find(r => String(r.roster_id) === String(rosterId));
@@ -658,9 +681,16 @@ function LeagueScores() {
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)
 								? liveTotalByRosterId[String(rid)]
 								: (basePointsByRoster[String(rid)] || 0);
-							return { rosterId: rid, points: pts, place, pfTotal, breakdown: computed };
+							const hproj = hprojByRoster[String(rid)];
+							return { rosterId: rid, points: pts, place, pfTotal, breakdown: computed, hproj };
 						}).sort((a, b) => {
-							if (b.points !== a.points) { return b.points - a.points; }
+							if (lineupMode === 'projections' && HPROJ_ON_SCORES) {
+								const ah = Number.isFinite(a.hproj) ? a.hproj : a.points;
+								const bh = Number.isFinite(b.hproj) ? b.hproj : b.points;
+								if (bh !== ah) { return bh - ah; }
+							} else if (b.points !== a.points) {
+								return b.points - a.points;
+							}
 							if ((a.place || 9999) !== (b.place || 9999)) { return (a.place || 9999) - (b.place || 9999); }
 							return String(a.rosterId).localeCompare(String(b.rosterId));
 						});
@@ -720,6 +750,11 @@ function LeagueScores() {
 							const rowClass = teamHighlight === 'row' ? ' standings-row--pulse' : (teamHighlight === 'up' ? ' standings-row--up' : (teamHighlight === 'down' ? ' standings-row--down' : ''));
 							const mine = isMyRoster(rosterId, myRosterId);
 							const weekSplit = starterScoreSplit(weekBreakdown);
+							const showHproj = HPROJ_ON_SCORES && String(season) === String(CURRENT_YEAR) && weekSplit.hasProj;
+							const hprojHref = showHproj
+								? hprojPageHref(week, { rosterId, ownerName: getOwnerName(rosterId) }, hprojFirstNameCounts)
+								: null;
+							const hprojValue = hprojByRoster[String(rosterId)] ?? null;
 							return (
 								<div key={rosterId} className={`standings-row${rowClass}${mine ? ' standings-row--me' : ''}`}>
 									<button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
@@ -742,6 +777,8 @@ function LeagueScores() {
 										<ScoreSplit
 											{...weekSplit}
 											layout="stack"
+											hprojHref={hprojHref}
+											hprojValue={hprojValue}
 											className={`standings-total${weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${weekSplit.hasProj && !weekSplit.hasActual ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
 										/>
 									</button>
@@ -772,6 +809,8 @@ function LeagueScores() {
 												teamLink={teamLink}
 												place={place}
 												pfTotal={pfTotal}
+												hprojHref={hprojHref}
+												hprojValue={hprojValue}
 											/>
 										</div>
 										);

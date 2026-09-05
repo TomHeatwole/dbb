@@ -33,10 +33,13 @@ import LeagueHistoryPage from './routes/LeagueHistoryPage';
 import SandboxPage from './routes/SandboxPage';
 import ValueSandboxPage from './routes/ValueSandboxPage';
 import RedraftDashPage from './routes/RedraftDashPage';
+import LiveDraftPage from './routes/LiveDraftPage';
 import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
 import SOPPage, { SOP2Page } from './routes/SOPPage';
 import CornersPage from './routes/CornersPage';
+import DrivesPage from './routes/DrivesPage';
+import HprojPage from './routes/HprojPage';
 import DKPage from './routes/DKPage';
 import PreflopPage from './routes/PreflopPage';
 import FredDuelPage from './routes/FredDuelPage';
@@ -135,6 +138,7 @@ function AppInner() {
     pathUpper === '/SOP' || pathUpper.startsWith('/SOP/')
     || pathUpper === '/SOP2' || pathUpper.startsWith('/SOP2/')
     || pathUpper === '/CORNERS' || pathUpper.startsWith('/CORNERS/')
+    || pathUpper === '/DRIVES' || pathUpper.startsWith('/DRIVES/')
     || pathUpper === '/DK' || pathUpper.startsWith('/DK/');
   
   // Determine main content class based on viewport mode
@@ -189,6 +193,7 @@ function AppInner() {
       <Route path="/sandbox" element={<RequireAdmin><SandboxPage /></RequireAdmin>} />
       <Route path="/valuesandbox" element={<RequireAdmin><ValueSandboxPage /></RequireAdmin>} />
       <Route path="/redraftdash" element={<RequireAdmin allow={canAccessRedraftDash}><RedraftDashPage /></RequireAdmin>} />
+      <Route path="/livedraft" element={<RequireAdmin allow={canAccessRedraftDash}><LiveDraftPage /></RequireAdmin>} />
       <Route path="/hwangai" element={<HwangAIPage />} />
       <Route path="/teams-2" element={<Navigate to="/teams" replace />} />
       <Route path="/SOP/*" element={<SOPPage />} />
@@ -196,6 +201,10 @@ function AppInner() {
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
       <Route path="/corners/*" element={<CornersPage />} />
       <Route path="/CORNERS/*" element={<CornersPage />} />
+      <Route path="/drives/*" element={<DrivesPage />} />
+      <Route path="/DRIVES/*" element={<DrivesPage />} />
+      <Route path="/hproj" element={<HprojPage />} />
+      <Route path="/HPROJ" element={<HprojPage />} />
       <Route path="/dk/*" element={<DKPage />} />
       <Route path="/DK/*" element={<DKPage />} />
       <Route path="/preflop" element={<PreflopPage />} />

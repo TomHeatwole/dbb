@@ -13,6 +13,9 @@ export const MAIN_FEATURES = {
   HEAD_TO_HEAD_ENABLED: true,
 };
 
+/** Green HProj chip + P50 sort on /scores (and ScoresView). /hproj stays reachable either way. */
+export const HPROJ_ON_SCORES = false;
+
 /**
  * Check if a feature is enabled
  * @param {string} featureName - Name of the feature to check

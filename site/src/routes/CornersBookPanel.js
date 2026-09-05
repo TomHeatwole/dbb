@@ -1179,6 +1179,38 @@ function GameCard({ game, bucketed, showWork, onEnableShowWork, kellyEnabled, ke
             ) : (
               <p className="corners-empty-hint">No total corners line on FanDuel, DraftKings, or Kalshi.</p>
             )}
+            {(game.klsh?.plus ?? []).length > 0 && (
+              <div className="corners-plus-grid">
+                {game.klsh.plus.map((row) => (
+                  <button
+                    key={`klsh-${row.n}`}
+                    type="button"
+                    className={[
+                      'corners-bet',
+                      'corners-bet--klsh',
+                      activeBook === 'klsh' && model.baselineRow?.n === row.n ? 'corners-bet--selected' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBaselineBook('klsh');
+                    }}
+                    title="Kalshi match total"
+                  >
+                    <span className="sop-exp-book-label sop-exp-book-label--klsh">KLSH</span>
+                    <span className="corners-bet-label">{row.n}+</span>
+                    <span className="corners-bet-odds">
+                      {row.american != null ? formatAmericanOdds(row.american) : '—'}
+                    </span>
+                    {Number.isFinite(row.yesAskDollars) && (
+                      <span className="corners-bet-need">
+                        {formatSplitStake(row.yesAskDollars)}
+                        {Number.isFinite(row.yesAskSize) ? ` · ${Math.round(row.yesAskSize)} cts` : ''}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
           {h1Bets.length > 0 && (

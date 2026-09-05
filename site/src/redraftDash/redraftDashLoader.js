@@ -346,9 +346,23 @@ function parseEtrDefenses(text, format = DEFAULT_DRAFT_FORMAT) {
   const posIdx = header.indexOf('position');
   const teamIdx = header.indexOf('team');
   const isSf = format !== '1qb';
-  const rankIdx = header.indexOf(isSf ? 'rank_2qb_half' : 'rank_half');
-  const posRankIdx = header.indexOf(isSf ? 'pos_rank_2qb_half' : 'pos_rank_half');
-  const tierIdx = header.indexOf(isSf ? 'tier_2qb_half' : 'tier_half');
+  // Prefer underscored headers; fall back to glued Datawrapper labels (rankhalf).
+  const headerIdx = (...names) => {
+    for (const n of names) {
+      const i = header.indexOf(n);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+  const rankIdx = isSf
+    ? headerIdx('rank_2qb_half', 'rank2qbhalf')
+    : headerIdx('rank_half', 'rankhalf');
+  const posRankIdx = isSf
+    ? headerIdx('pos_rank_2qb_half', 'pos_rank2qbhalf', 'posrank_2qb_half')
+    : headerIdx('pos_rank_half', 'pos_rankhalf', 'posrank_half');
+  const tierIdx = isSf
+    ? headerIdx('tier_2qb_half', 'tier2qbhalf')
+    : headerIdx('tier_half', 'tierhalf');
   const adpIdx = isSf
     ? headerIndex(header, ['adp_2qb', 'adp_half', 'adp_ppr'])
     : headerIndex(header, ['adp_half', 'adp_ppr', 'adp_2qb']);

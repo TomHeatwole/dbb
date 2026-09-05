@@ -10,6 +10,9 @@
     "api/fanduel-sop.mjs": {
       "maxDuration": 30
     },
+    "api/ncaaf-drives.mjs": {
+      "maxDuration": 30
+    },
     "api/pl-corners.mjs": {
       "maxDuration": 30
     },

@@ -1,4 +1,5 @@
 import React from 'react';
+import HprojHint from './HprojHint';
 
 function formatPts(n) {
   return Number(n || 0).toFixed(1);
@@ -16,7 +17,12 @@ export default function ScoreSplit({
   prefix = null,
   layout = 'stack',
   className = '',
+  hprojHref = null,
+  hprojValue = null,
 }) {
+  const hprojNode = hasProj && hprojHref
+    ? <HprojHint href={hprojHref} value={hprojValue} size="lg" />
+    : null;
   const projNode = (
     <>
       {formatPts(proj)}
@@ -28,9 +34,10 @@ export default function ScoreSplit({
   const classes = [
     className,
     mixed ? 'score-split score-split--mixed' : null,
-    mixed && layout === 'stack' ? 'score-split--stack' : null,
+    layout === 'stack' && (mixed || hprojNode) ? 'score-split--stack' : null,
     mixed && layout === 'inline' ? 'score-split--inline' : null,
     hasProj && !hasActual ? 'score-split--proj-only' : null,
+    hprojNode ? 'score-split--has-hproj' : null,
   ].filter(Boolean).join(' ');
 
   if (mixed && layout === 'inline') {
@@ -39,6 +46,7 @@ export default function ScoreSplit({
         {prefix}
         <span className="score-split-actual">{actualNode}</span>
         <span className="score-split-plus"> + </span>
+        {hprojNode}
         <span className="score-split-proj">{projNode}</span>
       </span>
     );
@@ -47,6 +55,7 @@ export default function ScoreSplit({
     return (
       <span className={classes}>
         <span className="score-split-actual">{actualNode}</span>
+        {hprojNode}
         <span className="score-split-proj">{projNode}</span>
       </span>
     );
@@ -55,7 +64,8 @@ export default function ScoreSplit({
     return (
       <span className={classes}>
         {prefix}
-        {projNode}
+        {hprojNode}
+        <span className="score-split-proj">{projNode}</span>
       </span>
     );
   }

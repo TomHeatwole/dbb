@@ -9,6 +9,7 @@ import CornersBookPanel from './CornersBookPanel';
 import CornersArbCheckerPanel from './CornersArbCheckerPanel';
 import {
   dkCornerGamesLoaded,
+  kalshiCornerGamesLoaded,
   mergeDkCornersIntoFdGames,
   mergeKalshiCornersIntoFdGames,
 } from '../corners/mergeCornerBooks';
@@ -102,10 +103,11 @@ function CornersPage() {
   const [notice, setNotice] = useState(null);
   const [bookLoading, setBookLoading] = useState(true);
   const [bookRefreshing, setBookRefreshing] = useState(false);
+  const dkHold = React.useRef(null);
+  const kalshiHold = React.useRef(null);
 
   const refreshBook = useCallback(async ({ manual = false } = {}) => {
     if (manual) setBookRefreshing(true);
-    else setBookLoading(true);
 
     let fdGames = [];
     let espn = null;
@@ -118,7 +120,6 @@ function CornersPage() {
       const data = await res.json();
       fdGames = (data.games ?? []).map((game) => ({ ...game, dk: null, klsh: null }));
       espn = data.espn;
-      setGames(fdGames);
       setFetchedAt(data.fetchedAt ?? null);
       setNotice(stoppageNotice(espn));
       setBookError(null);
@@ -131,9 +132,10 @@ function CornersPage() {
       setBookLoading(false);
     }
 
-    let dkData = null;
-    let kalshiData = null;
+    let dkData = dkHold.current;
+    let kalshiData = kalshiHold.current;
     let dkNotice = null;
+    let kalshiNotice = null;
 
     const applyMerges = () => {
       setGames(
@@ -141,24 +143,30 @@ function CornersPage() {
       );
     };
 
+    applyMerges();
+
     await Promise.all([
       fetchJsonWithTimeout('/api/draftkings-goal-method?book=corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
-        dkData = data;
-        applyMerges();
-        if (!dkCornerGamesLoaded(data)) {
+        if (dkCornerGamesLoaded(data)) {
+          dkHold.current = data;
+          dkData = data;
+        } else if (!dkHold.current) {
           dkNotice = 'DraftKings corners unavailable — showing FanDuel only.';
-          setNotice(joinNotices(stoppageNotice(espn), dkNotice));
-        } else {
-          setNotice(stoppageNotice(espn));
         }
+        applyMerges();
       }),
       fetchJsonWithTimeout('/api/kalshi-sop?book=corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
-        kalshiData = data;
+        if (kalshiCornerGamesLoaded(data)) {
+          kalshiHold.current = data;
+          kalshiData = data;
+        } else if (!kalshiHold.current) {
+          kalshiNotice = 'Kalshi corners unavailable — showing FanDuel / DraftKings.';
+        }
         applyMerges();
       }),
     ]);
 
-    if (dkNotice) setNotice(joinNotices(stoppageNotice(espn), dkNotice));
+    setNotice(joinNotices(stoppageNotice(espn), dkNotice, kalshiNotice));
     if (manual) setBookRefreshing(false);
   }, []);
 

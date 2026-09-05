@@ -5,7 +5,6 @@
 
 import {
   fetchAllKalshiEvents,
-  fetchKalshiOrderbook,
   fetchMarketsForEvent,
   kalshiAskToAmerican,
   parseKalshiFixture,
@@ -43,52 +42,11 @@ function numFp(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-function roundPrice(value) {
-  return Math.round(value * 10000) / 10000;
-}
-
-function parseBookLevels(fpLevels, intLevels) {
-  if (Array.isArray(fpLevels) && fpLevels.length) {
-    return fpLevels
-      .map(([price, count]) => ({ price: numFp(price), contracts: numFp(count) }))
-      .filter((row) => row.price > 0 && row.contracts > 0);
-  }
-  if (Array.isArray(intLevels) && intLevels.length) {
-    return intLevels
-      .map(([cents, count]) => ({ price: numFp(cents) / 100, contracts: numFp(count) }))
-      .filter((row) => row.price > 0 && row.contracts > 0);
-  }
-  return [];
-}
-
-/** Opposite-side bids become the take ladder (best ask first). */
-function asksFromOppositeBids(bids) {
-  return bids
-    .map((row) => ({ price: roundPrice(1 - row.price), contracts: row.contracts }))
-    .filter((row) => row.price > 0 && row.price < 1)
-    .sort((a, b) => a.price - b.price);
-}
-
 function topDollars(price, contracts) {
   if (!Number.isFinite(price) || !Number.isFinite(contracts) || price <= 0 || contracts <= 0) {
     return null;
   }
   return Math.round(price * contracts * 100) / 100;
-}
-
-function attachOrderbook(plusRow, book) {
-  if (!plusRow || !book) return plusRow;
-  const fp = book.orderbook_fp ?? book;
-  const raw = book.orderbook ?? {};
-  const noBids = parseBookLevels(fp.no_dollars, raw.no);
-  const yesBids = parseBookLevels(fp.yes_dollars, raw.yes);
-  const yesTake = asksFromOppositeBids(noBids);
-  const noTake = asksFromOppositeBids(yesBids);
-  return {
-    ...plusRow,
-    yesTake: yesTake.length ? yesTake : plusRow.yesTake,
-    noTake: noTake.length ? noTake : plusRow.noTake,
-  };
 }
 
 function extractPlusLadder(markets) {
@@ -137,18 +95,6 @@ function extractPlusLadder(markets) {
   });
 }
 
-async function attachOrderbooks(plus) {
-  return mapPool(plus, 1, async (row) => {
-    if (!row.ticker) return row;
-    try {
-      const book = await fetchKalshiOrderbook(row.ticker, 40);
-      return attachOrderbook(row, book);
-    } catch {
-      return row;
-    }
-  });
-}
-
 async function mapPool(items, concurrency, fn) {
   const results = new Array(items.length);
   let nextIndex = 0;
@@ -183,7 +129,7 @@ export async function fetchKalshiCornerOdds() {
     const event = pickKalshiEvent(list, null);
     if (!event?.event_ticker) return null;
     const markets = await fetchMarketsForEvent(event.event_ticker);
-    const plus = await attachOrderbooks(extractPlusLadder(markets));
+    const plus = extractPlusLadder(markets);
     if (!plus.length) return null;
     return {
       name: displayNameFromTitle(event.title || event.sub_title),

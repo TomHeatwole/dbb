@@ -46,6 +46,7 @@ const server = http.createServer(async (req, res) => {
 
   const getHandlers = {
     '/api/fanduel-sop': './api/fanduel-sop.mjs',
+    '/api/ncaaf-drives': './api/ncaaf-drives.mjs',
     '/api/pl-corners': './api/pl-corners.mjs',
     '/api/dk-corners': './lib/dk-corners.mjs',
     '/api/kalshi-corners': './lib/kalshi-corners.mjs',

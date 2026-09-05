@@ -81,6 +81,15 @@ async function main() {
     }
   });
 
+  app.get('/api/ncaaf-drives', async (req, res) => {
+    try {
+      const { default: handler } = await import('./api/ncaaf-drives.mjs');
+      return handler(req, res);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  });
+
   app.get('/api/pl-corners', async (req, res) => {
     try {
       const { default: handler } = await import('./api/pl-corners.mjs');

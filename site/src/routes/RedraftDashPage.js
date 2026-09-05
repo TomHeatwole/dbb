@@ -14,11 +14,16 @@ function RedraftDashPage() {
       title="Redraft Dash"
       subtitle="2026 Cross-Source Rankings — Local or Public snapshot"
       leftHeader={
-        showSandboxLink ? (
-          <Link to="/sandbox" className="sandbox-back-btn">
-            ← Sandbox
+        <div className="rdd-page-links">
+          {showSandboxLink ? (
+            <Link to="/sandbox" className="sandbox-back-btn">
+              ← Sandbox
+            </Link>
+          ) : null}
+          <Link to="/livedraft" className="sandbox-back-btn">
+            Live Draft →
           </Link>
-        ) : null
+        </div>
       }
     >
       <RedraftDash />

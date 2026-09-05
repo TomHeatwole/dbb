@@ -64,13 +64,16 @@ function slotBucketForName(name) {
 }
 
 /**
- * Optimal starters for one team/week — points per STARTER_POSITION_NAMES slot.
- *
- * @returns {number[]}
+ * Optimal lineup for one team/week, with slot points and starter-position totals.
  */
-export function computeOptimalWeekStarters(playerList, weekPts, playerPositions, seasonTotals) {
+export function computeOptimalWeekDetail(playerList, weekPts, playerPositions, seasonTotals) {
   const slotNames = STARTER_POSITION_NAMES || [];
-  const empty = () => new Array(slotNames.length).fill(0);
+  const empty = () => ({
+    slotPts: new Array(slotNames.length).fill(0),
+    starters: [],
+    byPos: { QB: 0, RB: 0, WR: 0, TE: 0 },
+    total: 0,
+  });
 
   const combined = [];
   for (let i = 0; i < playerList.length; i++) {
@@ -147,8 +150,8 @@ export function computeOptimalWeekStarters(playerList, weekPts, playerPositions,
 
   if (counts.SUPER > 0) {
     let superLeft = counts.SUPER;
-    for (let i = 0; i < combined.length && superLeft > 0; i++) {
-      const p = combined[i];
+    for (let i = 0; i < remaining.length && superLeft > 0; i++) {
+      const p = remaining[i];
       if (usedIds.has(p.id) || !isEligibleForSuper(p.position)) continue;
       usedIds.add(p.id);
       selectedSUPER.push(p);
@@ -179,13 +182,31 @@ export function computeOptimalWeekStarters(playerList, weekPts, playerPositions,
   }
 
   const slotPts = new Array(slotNames.length).fill(0);
+  const starters = [];
+  const byPos = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  let total = 0;
   for (let i = 0; i < slotNames.length; i++) {
     const bucketName = slotBucketForName(slotNames[i]);
     const p = bucketName ? popNext(bucketName) : null;
-    slotPts[i] = p ? p.pts : 0;
+    const pts = p ? p.pts : 0;
+    slotPts[i] = pts;
+    total += pts;
+    if (p) {
+      starters.push({ slot: slotNames[i], id: p.id, position: p.position, pts });
+      if (byPos[p.position] != null) byPos[p.position] += pts;
+    }
   }
 
-  return slotPts;
+  return { slotPts, starters, byPos, total };
+}
+
+/**
+ * Optimal starters for one team/week — points per STARTER_POSITION_NAMES slot.
+ *
+ * @returns {number[]}
+ */
+export function computeOptimalWeekStarters(playerList, weekPts, playerPositions, seasonTotals) {
+  return computeOptimalWeekDetail(playerList, weekPts, playerPositions, seasonTotals).slotPts;
 }
 
 /**

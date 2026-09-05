@@ -453,9 +453,25 @@ export async function fetchPremierLeagueSopOdds({ includeEspn = false } = {}) {
 /** @deprecated alias — DK/Kalshi helpers still import this name */
 export const fetchWorldCupSopOdds = fetchPremierLeagueSopOdds;
 
+function wantsDrivesBook(req) {
+  const q = req.query || {};
+  if (q.book === 'drives' || q.drives === '1') return true;
+  try {
+    const url = new URL(req.url || '', 'http://localhost');
+    return url.searchParams.get('book') === 'drives';
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (wantsDrivesBook(req)) {
+    const { default: drivesHandler } = await import(`./ncaaf-drives.mjs?v=${Date.now()}`);
+    return drivesHandler(req, res);
   }
 
   try {

@@ -9,6 +9,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
 import { starterScoreSplit, benchScoreSplit } from './ScoreSplit';
+import HprojHint from './HprojHint';
 import { rankPtsForMode } from './projectionScoring';
 
 function formatPlayerNameForDisplay(nameOrId, compact) {
@@ -126,6 +127,8 @@ export default function ScoresLineup({
   ownerAvatar,
   teamLink,
   pfTotal,
+  hprojHref = null,
+  hprojValue = null,
 }) {
   const isMobileView = useIsMobile();
   const [searchParams] = useSearchParams();
@@ -298,13 +301,19 @@ export default function ScoresLineup({
 
       <div className="scores-lineup-head">
         <span className="scores-lineup-kicker">Starters</span>
-        <div className="scores-lineup-nums scores-lineup-nums--head">
+        <div className="scores-lineup-head-stats">
           <div className="scores-lineup-head-col">
             <span className="scores-lineup-col-label">Score</span>
             <span className="scores-lineup-pts-actual">
               {starterSplit.hasActual ? starterSplit.actual.toFixed(1) : '—'}
             </span>
           </div>
+          {hprojHref ? (
+            <div className="scores-lineup-head-col">
+              <span className="scores-lineup-col-label scores-lineup-col-label--hproj">HProj</span>
+              <HprojHint href={hprojHref} value={hprojValue} size="lg" showTag={false} />
+            </div>
+          ) : null}
           <div
             className="scores-lineup-head-col"
             title="Finished scores plus the highest remaining projections, even if that mix is not the lineup below"
@@ -315,7 +324,6 @@ export default function ScoresLineup({
             </span>
           </div>
         </div>
-        <span className="scores-lineup-head-spacer" aria-hidden="true" />
       </div>
 
       <div className="scores-lineup-list">

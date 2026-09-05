@@ -18,6 +18,8 @@ export default function LeagueScoresTeamBreakdown({
   teamLink,
   place,
   pfTotal,
+  hprojHref = null,
+  hprojValue = null,
 }) {
   return (
     <ScoresLineup
@@ -37,6 +39,8 @@ export default function LeagueScoresTeamBreakdown({
       teamLink={teamLink}
       place={place}
       pfTotal={pfTotal}
+      hprojHref={hprojHref}
+      hprojValue={hprojValue}
     />
   );
 }
