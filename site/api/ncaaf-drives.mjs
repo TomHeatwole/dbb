@@ -871,16 +871,40 @@ function parseClockSeconds(display) {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
-function ytgFromSituation(situation, possessionText) {
+function normAbbr(s) {
+  return String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function abbrClose(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.startsWith(b) || b.startsWith(a)) return Math.min(a.length, b.length) >= 2;
+  return false;
+}
+
+function ytgFromSituation(situation, possessionText, teams = {}) {
   const ytg = Number(situation?.yardsToEndzone);
   if (Number.isFinite(ytg) && ytg >= 1 && ytg <= 99) return ytg;
-  const m = String(possessionText ?? '').trim().match(/(\d+)\s*$/);
+  const text = String(possessionText ?? '').trim();
+  if (text === '50') return 50;
+  const m = text.match(/^(.+?)\s+(\d+)$/);
   if (!m) return null;
-  const yl = Number(m[1]);
-  if (!Number.isFinite(yl) || yl < 1 || yl > 99) return null;
+  const yl = Number(m[2]);
+  if (!Number.isFinite(yl) || yl < 0 || yl > 50) return null;
   if (yl === 50) return 50;
-  if (yl <= 49) return 100 - yl;
-  return yl;
+  if (yl === 0) return 99;
+  const tok = normAbbr(m[1]);
+  const off = teams.possession === 'home'
+    ? normAbbr(teams.homeAbbr)
+    : teams.possession === 'away'
+      ? normAbbr(teams.awayAbbr)
+      : '';
+  const home = normAbbr(teams.homeAbbr);
+  const away = normAbbr(teams.awayAbbr);
+  const own = (off && (tok === off || abbrClose(tok, off)))
+    || (teams.possession === 'home' && abbrClose(tok, home))
+    || (teams.possession === 'away' && abbrClose(tok, away));
+  return own ? 100 - yl : yl;
 }
 
 function compactProviderError(err) {
@@ -1030,7 +1054,11 @@ function parseEspnEvent(event) {
     down: Number.isFinite(down) && down > 0 ? down : null,
     distance: Number.isFinite(distance) ? distance : null,
     yardLine: Number.isFinite(Number(situation.yardLine)) ? Number(situation.yardLine) : null,
-    yardsToEndzone: ytgFromSituation(situation, possessionText),
+    yardsToEndzone: ytgFromSituation(situation, possessionText, {
+      possession,
+      homeAbbr: home?.team?.abbreviation,
+      awayAbbr: away?.team?.abbreviation,
+    }),
     downDistance: situation.shortDownDistanceText ?? null,
     possessionText,
     possession,

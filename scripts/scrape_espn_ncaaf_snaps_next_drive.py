@@ -29,6 +29,9 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ncaaf_field_buckets import yards_to_goal  # noqa: E402
+
 UA = (
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
     'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
@@ -214,10 +217,15 @@ def offensive_start(drive):
                 'clock_sec': clock_sec,
                 'text': st.get('possessionText') or start_obj.get('text') or '',
             }
-    ytg = start_obj.get('yardLine')
+    ytg = yards_to_goal(
+        start_obj.get('text'),
+        offense_abbr=team_abbr(drive),
+        yards_to_endzone=start_obj.get('yardsToEndzone'),
+        yard_line=start_obj.get('yardLine'),
+    )
     period = (start_obj.get('period') or {}).get('number')
     clock_sec = parse_clock_seconds((start_obj.get('clock') or {}).get('displayValue'))
-    if ytg not in (None, ''):
+    if ytg is not None:
         return {
             'ytg': int(ytg),
             'period': period,

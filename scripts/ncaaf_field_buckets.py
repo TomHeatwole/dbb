@@ -8,7 +8,11 @@ Field buckets (ESPN yards-to-goal: 95 = own 5, 25 = opp 25):
              (user said “35 to opp 45”; own 31–34 is folded in so
              every yard line belongs to exactly one bucket)
   favorable  already inside opp 45  ytg 1–44
+
+ESPN ``drive.start.yardLine`` is a 0–50 hash-mark, not yards-to-goal.
+Use ``yards_to_goal`` / start text (``STAN 25``) to recover ytg.
 """
+import re
 
 FP_BUCKETS = (
     ('deep', 'Deep (inside own 15)', 86, 99),
@@ -92,4 +96,97 @@ def half_bin(period):
         return 'h2'
     if p > 4:
         return 'ot'
+    return None
+
+
+_SPOT_RE = re.compile(r'^(.+?)\s+(\d+)$')
+
+
+def norm_abbr(s):
+    return re.sub(r'[^A-Z0-9]', '', str(s or '').upper())
+
+
+def _edit_distance(a, b):
+    if a == b:
+        return 0
+    if abs(len(a) - len(b)) > 2:
+        return 9
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(cur[-1] + 1, prev[j] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def _token_matches(tok, abbr):
+    if not tok or not abbr:
+        return False
+    return tok == abbr or _edit_distance(tok, abbr) <= 1
+
+
+def _token_owner(tok, offense_abbr, home_abbr, away_abbr, offense_side):
+    """Return 'own' or 'opp' when the spot text names a known team."""
+    if not tok:
+        return None
+    off = norm_abbr(offense_abbr)
+    home = norm_abbr(home_abbr)
+    away = norm_abbr(away_abbr)
+    if tok == off or (offense_side == 'home' and tok == home) or (offense_side == 'away' and tok == away):
+        return 'own'
+    if tok == home or tok == away:
+        return 'opp'
+    if _token_matches(tok, off):
+        return 'own'
+    if offense_side == 'home' and _token_matches(tok, home):
+        return 'own'
+    if offense_side == 'away' and _token_matches(tok, away):
+        return 'own'
+    if _token_matches(tok, home) or _token_matches(tok, away):
+        return 'opp'
+    return None
+
+
+def yards_to_goal(
+    start_text,
+    *,
+    offense_abbr='',
+    home_abbr='',
+    away_abbr='',
+    offense_side='',
+    yards_to_endzone=None,
+    yard_line=None,
+):
+    """Yards-to-goal from an ESPN drive start.
+
+    ``drive.start.yardLine`` is a 0–50 hash-mark, not yards-to-goal.
+    ``STAN 25`` means the 25 of the team whose abbreviation is in the
+    text. Prefer ``yardsToEndzone`` when ESPN already sent it.
+    """
+    try:
+        yte = int(yards_to_endzone)
+        if 1 <= yte <= 99:
+            return yte
+    except (TypeError, ValueError):
+        pass
+
+    text = str(start_text or '').strip()
+    if text == '50':
+        return 50
+    m = _SPOT_RE.match(text)
+    if not m:
+        return None
+    token, yl = m.group(1), int(m.group(2))
+    if yl == 50:
+        return 50
+    if yl < 0 or yl > 49:
+        return None
+    if yl == 0:
+        return 99
+    owner = _token_owner(norm_abbr(token), offense_abbr, home_abbr, away_abbr, offense_side)
+    if owner == 'own':
+        return 100 - yl
+    if owner == 'opp':
+        return yl
     return None

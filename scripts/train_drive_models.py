@@ -501,7 +501,8 @@ def main():
         'timeCodes': TIME_CODES,
         'note': (
             'LightGBM multiclass on joint inputs. Drive-start for pregame '
-            '1st-drive; snap for live current-drive. FG includes makes and misses.'
+            '1st-drive; snap for live current-drive. FG includes makes and misses. '
+            'Drive-start ytg is recovered from ESPN start text (yardLine is a hash-mark).'
         ),
     }
     drive_feat = {

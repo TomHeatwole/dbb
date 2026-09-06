@@ -34,6 +34,7 @@ from ncaaf_field_buckets import (  # noqa: E402
     half_bin,
     next_fp_bucket,
     time_bin,
+    yards_to_goal,
 )
 
 UA = (
@@ -280,8 +281,13 @@ def offensive_start(drive):
                 'text': st.get('possessionText') or start_obj.get('text') or '',
                 'kickoff': play_started_with_kickoff(drive),
             }
-    ytg = start_obj.get('yardLine')
-    if ytg in (None, ''):
+    ytg = yards_to_goal(
+        start_obj.get('text'),
+        offense_abbr=team_abbr(drive),
+        yards_to_endzone=start_obj.get('yardsToEndzone'),
+        yard_line=start_obj.get('yardLine'),
+    )
+    if ytg is None:
         return None
     period = (start_obj.get('period') or {}).get('number')
     clock_sec = parse_clock_seconds((start_obj.get('clock') or {}).get('displayValue'))

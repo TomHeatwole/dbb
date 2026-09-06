@@ -8,7 +8,16 @@ describe('drives game snapshot', () => {
     teams: { home: 'North Dakota State', away: 'Jacksonville State' },
     inPlay: true,
     scoreDisplay: '7-0',
-    live: { period: 1, clock: '8:42' },
+    live: {
+      period: 1,
+      clock: '8:42',
+      possession: 'home',
+      possessionName: 'North Dakota State',
+      down: 2,
+      distance: 7,
+      yardsToEndzone: 60,
+      state: 'in',
+    },
     nextDrive: {
       source: 'fd',
       marketName: 'Drive Result',
@@ -30,7 +39,7 @@ describe('drives game snapshot', () => {
     const model = evaluateDriveGame(game);
     const play = pickHeadlineDrivePlay(model);
 
-    expect(snap.market).toBe(play.label);
+    expect(snap.market).toBe(`Jacksonville ${play.label}`);
     expect(snap.oddsBook).toBe('fd');
     expect(snap.oddsAmerican).toBe(play.american);
     expect(snap.lineLabel).toMatch(/^model /);

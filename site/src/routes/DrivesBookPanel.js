@@ -13,7 +13,7 @@ import {
   formatSharePct,
   hasDriveLine,
   isHalftimeLive,
-  listDriveMarkets,
+  listDriveSides,
   liveClockSeconds,
   possessiveTeam,
   resolveOffenseTeam,
@@ -123,26 +123,43 @@ function liveSummary(game) {
   const live = game.live;
   if (!live) return null;
   if (live.state === 'pre' && !game.inPlay) return null;
+  if (isHalftimeLive(live)) return 'Halftime';
   let spot = live.possessionText;
   if (spot && /^\d+$/.test(String(spot))) spot = `at ${spot}`;
+  const poss = live.possession;
+  const who = poss === 'away'
+    ? (game.teams?.away ?? live.possessionName)
+    : poss === 'home'
+      ? (game.teams?.home ?? live.possessionName)
+      : live.possessionName;
+  const noSnap = live.down == null || live.yardsToEndzone == null;
+  const last = noSnap && live.lastPlay
+    ? String(live.lastPlay).replace(/\s+/g, ' ').trim().slice(0, 88)
+    : null;
   const bits = [
     periodLabel(live.period),
-    isHalftimeLive(live) ? 'HT' : (live.clock && live.clock !== '0:00' ? live.clock : null),
+    live.clock && live.clock !== '0:00' ? live.clock : null,
     live.downDistance,
     spot,
+    who && !spot ? who : null,
+    last,
   ].filter(Boolean);
   return bits.join(' · ') || null;
 }
 
-function possessionHeadline(game) {
+function situationHeadline(game) {
   if (!game.inPlay) return null;
-  const poss = game.live?.possession;
+  if (isHalftimeLive(game.live)) return 'Halftime';
+  const live = game.live;
+  const poss = live?.possession;
   const name = poss === 'away'
-    ? (game.teams?.away ?? game.live?.possessionName)
+    ? (game.teams?.away ?? live?.possessionName)
     : poss === 'home'
-      ? (game.teams?.home ?? game.live?.possessionName)
-      : game.live?.possessionName;
-  return name ? `${name} on offense` : null;
+      ? (game.teams?.home ?? live?.possessionName)
+      : live?.possessionName;
+  if (name) return `${name} on offense`;
+  if (live?.period || live?.clock || live?.statusText) return 'Between possessions';
+  return null;
 }
 
 function shortBookLeg(name) {
@@ -205,7 +222,7 @@ function teamOnSide(game, side) {
 }
 
 function yardLineLabel(ytg) {
-  const y = Number(ytg);
+  const y = Math.round(Number(ytg));
   if (!Number.isFinite(y) || y < 1 || y > 99) return null;
   if (y === 50) return 'midfield';
   if (y > 50) return `own ${100 - y}`;
@@ -261,7 +278,13 @@ function reasoningRows(game, pred) {
         : 'Own 25 · opening kickoff (assumed)',
     ]);
   } else if (pred.predictedStart && spot) {
-    rows.push(['Spot', `Projected ${spot} · after this drive`]);
+    const prior = teamOnSide(game, pred.priorSide);
+    rows.push([
+      'Spot',
+      prior
+        ? `Projected ${spot} · after ${possessiveTeam(prior)} drive`
+        : 'Projected start · after this drive',
+    ]);
   } else if (downDist && spot) {
     rows.push(['Spot', `${downDist} · ${spot}`]);
   } else if (spot) {
@@ -303,7 +326,12 @@ function reasoningRows(game, pred) {
     rows.push(['Total', total]);
   }
 
-  if (pred.predictedStart) {
+  if (pred.afterPriorDrive) {
+    const prior = teamOnSide(game, pred.priorSide);
+    rows.push(['Drive', prior ? `After ${possessiveTeam(prior)} possession` : 'After the current possession']);
+  } else if (pred.firstUp) {
+    rows.push(['Drive', 'Next up']);
+  } else if (pred.predictedStart) {
     rows.push(['Drive', 'Next possession']);
   } else if (pred.layer === 'driveStart' && f.drive_n === 1) {
     rows.push(['Drive', 'First possession']);
@@ -367,6 +395,24 @@ function Toggle({ label, checked, onChange, hint }) {
   );
 }
 
+function sideStartLine(game, pred) {
+  if (!pred?.features) return null;
+  const spot = yardLineLabel(pred.features.ytg);
+  const clock = clockLabel(pred);
+  if (pred.afterPriorDrive) {
+    const prior = teamOnSide(game, pred.priorSide);
+    return [
+      prior ? `After ${possessiveTeam(prior)} possession` : 'After the current possession',
+      spot ? `projected ${spot}` : null,
+      clock,
+    ].filter(Boolean).join(' · ');
+  }
+  if (pred.firstUp) {
+    return ['Next up', spot, clock].filter(Boolean).join(' · ');
+  }
+  return null;
+}
+
 function DriveSide({
   game,
   market,
@@ -379,10 +425,14 @@ function DriveSide({
 }) {
   const dual = model.rows.some((row) => row.dualBooks);
   const book = market?.source === 'dk' ? 'DK' : 'FD';
+  const startLine = sideStartLine(game, model.pred);
   return (
     <div className="drives-side">
       <section className="sop-exp-goals">
         <div className="sop-exp-section-label">{driveHeading(game, market, model)}</div>
+        {startLine && (
+          <p className="drives-situation">{startLine}</p>
+        )}
         {market?.marketName && (
           <p className="drives-situation">{market.marketName}</p>
         )}
@@ -533,7 +583,7 @@ function GameCard({
 }) {
   const [expanded, setExpanded] = useState(defaultOpen);
   const [openLine, setOpenLine] = useState(null);
-  const markets = useMemo(() => listDriveMarkets(game, { granular: dkGranular }), [game, dkGranular]);
+  const markets = useMemo(() => listDriveSides(game, { granular: dkGranular }), [game, dkGranular]);
   const models = useMemo(() => {
     const opts = { kellyEnabled, kellyBudget, kellyFraction };
     if (!markets.length) return [evaluateDriveGame(game, opts)];
@@ -544,10 +594,16 @@ function GameCard({
   const lines = lineSummary(game);
   const nextStart = useMemo(() => opponentStartSummary(game), [game]);
   const paired = markets.length > 1;
-  const ballOn = possessionHeadline(game);
-  const cardKicker = paired
-    ? '1st-drive result · both teams'
-    : (ballOn || models[0]?.marketName || (game.inPlay ? 'Next drive · possession unknown' : 'First / next drive'));
+  const liveSpot = situationHeadline(game);
+  const pairLabel = paired
+    ? (isHalftimeLive(game.live)
+      ? 'Both next drives'
+      : (game.inPlay ? 'Next drive · both teams' : '1st-drive result · both teams'))
+    : null;
+  const cardKicker = liveSpot
+    || pairLabel
+    || models[0]?.marketName
+    || (game.inPlay ? 'Next drive · possession unknown' : 'First / next drive');
   const openModel = openLine ? models[openLine.sideIndex] : null;
   const openMarket = openLine ? (markets[openLine.sideIndex] ?? openModel?.market) : null;
 
@@ -586,13 +642,18 @@ function GameCard({
       {expanded && (
         <div className="sop-exp-game-body">
           <section className="sop-exp-no-goal">
-            <div className={`sop-exp-section-label${ballOn ? ' drives-possession-label' : ''}`}>
+            <div className={`sop-exp-section-label${liveSpot ? ' drives-possession-label' : ''}`}>
               {cardKicker}
             </div>
-            {situation && <p className="drives-situation">{situation}</p>}
+            {pairLabel && liveSpot && (
+              <p className="drives-situation">{pairLabel}</p>
+            )}
+            {situation && situation !== cardKicker && (
+              <p className="drives-situation">{situation}</p>
+            )}
             {nextStart?.line && <p className="drives-situation drives-situation--next">{nextStart.line}</p>}
             {lines && <p className="drives-situation drives-situation--lines">{lines}</p>}
-            {!markets.length && (
+            {!hasDriveLine(game) && !paired && (
               <p className="sop-exp-status drives-missing-line">
                 {game.inPlay
                   ? 'No FanDuel next-drive line. Drive Result is a live Quick Bet, and FanDuel is not posting it on this game right now. DraftKings 1st-drive is pregame only.'

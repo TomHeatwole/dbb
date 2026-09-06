@@ -3,7 +3,7 @@
  */
 
 import { shortTeamName } from '../sop/gameSnapshot';
-import { evaluateDriveGame, formatAmericanOdds, isHalftimeLive, listDriveMarkets, resolveOffenseTeam } from './driveModel';
+import { evaluateDriveGame, formatAmericanOdds, isHalftimeLive, listDriveSides, resolveOffenseTeam } from './driveModel';
 
 function shortDriveTeam(name) {
   const raw = String(name ?? '')
@@ -67,7 +67,7 @@ export function pickHeadlineDrivePlay(model) {
 }
 
 export function maxDriveEdgePoints(game, { granular = false } = {}) {
-  const markets = listDriveMarkets(game, { granular });
+  const markets = listDriveSides(game, { granular });
   const views = markets.length
     ? markets.map((market) => evaluateDriveGame(game, { market }))
     : [evaluateDriveGame(game)];
@@ -87,7 +87,7 @@ function playLabel(row) {
 }
 
 export function buildDrivesGameSnapshot(game, { granular = false } = {}) {
-  const markets = listDriveMarkets(game, { granular });
+  const markets = listDriveSides(game, { granular });
   const views = markets.length
     ? markets.map((market) => ({ market, model: evaluateDriveGame(game, { market }) }))
     : [{ market: game?.nextDrive ?? null, model: evaluateDriveGame(game) }];

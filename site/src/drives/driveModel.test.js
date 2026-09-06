@@ -3,8 +3,10 @@ import {
   extractHomeSpread,
   featuresFromGame,
   inferOffenseSide,
+  listDriveSides,
   livePossessionSide,
   listDriveMarkets,
+  shouldShowBothDriveSides,
   liveClockSeconds,
   nameMatchScore,
   predictDriveResult,
@@ -221,6 +223,86 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(live.features.ytg).not.toBe(94);
     expect(live.features.offense_spread).toBe(-20.5);
     expect(live.p.other).toBeLessThan(0.3);
+  });
+
+  it('shows both next drives at halftime, each from own 25', () => {
+    const game = wazzuAtWashington({
+      clockSeconds: null,
+      clock: 'Halftime',
+      statusText: 'Halftime',
+      halfTime: true,
+    });
+    expect(shouldShowBothDriveSides(game)).toBe(true);
+    const sides = listDriveSides(game);
+    expect(sides).toHaveLength(2);
+    expect(sides.map((row) => row.offenseSide)).toEqual(['away', 'home']);
+    const txst = evaluateDriveGame(game, { market: sides[0] });
+    const uw = evaluateDriveGame(game, { market: sides[1] });
+    expect(txst.offenseSide).toBe('away');
+    expect(uw.offenseSide).toBe('home');
+    expect(txst.pred.features.ytg).toBe(75);
+    expect(uw.pred.features.ytg).toBe(75);
+    expect(txst.pred.features.period).toBe(3);
+    expect(uw.pred.features.period).toBe(3);
+    expect(txst.pred.features.offense_spread).toBe(20.5);
+    expect(uw.pred.features.offense_spread).toBe(-20.5);
+    expect(txst.rows.find((row) => row.key === 'td').p)
+      .toBeLessThan(uw.rows.find((row) => row.key === 'td').p);
+  });
+
+  it('prices the waiting team after the current possession, not the same start', () => {
+    const game = wazzuAtWashington({
+      period: 4,
+      clockSeconds: 8 * 60,
+      clock: '8:00',
+      down: null,
+      distance: null,
+      yardsToEndzone: null,
+      possession: 'away',
+      possessionName: 'Washington State',
+    });
+    const sides = listDriveSides(game);
+    const txst = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const uw = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(txst.side).toBe('away');
+    expect(txst.afterPriorDrive).toBeFalsy();
+    expect(txst.firstUp).toBe(true);
+    expect(txst.features.ytg).toBe(75);
+    expect(txst.features.sec_left).toBe(480);
+    expect(uw.side).toBe('home');
+    expect(uw.afterPriorDrive).toBe(true);
+    expect(uw.priorSide).toBe('away');
+    expect(uw.predictedStart).toBe(true);
+    expect(uw.features.sec_left).toBeLessThan(txst.features.sec_left);
+    expect(uw.features.ytg).not.toBe(txst.features.ytg);
+  });
+
+  it('names both 1st drives pregame even with no book line', () => {
+    const game = {
+      inPlay: false,
+      teams: { home: 'Notre Dame', away: 'Wisconsin' },
+      lines: {
+        spread: { runners: [{ runnerName: 'Notre Dame', handicap: -21.5 }] },
+        total: { runners: [{ runnerName: 'Over', handicap: 46.5 }] },
+      },
+    };
+    expect(shouldShowBothDriveSides(game)).toBe(true);
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => row.offenseName)).toEqual(['Wisconsin', 'Notre Dame']);
+    const wis = evaluateDriveGame(game, { market: sides[0] });
+    const nd = evaluateDriveGame(game, { market: sides[1] });
+    expect(wis.offenseName).toBe('Wisconsin');
+    expect(nd.offenseName).toBe('Notre Dame');
+    expect(wis.pred.features.offense_spread).toBe(21.5);
+    expect(nd.pred.features.offense_spread).toBe(-21.5);
+    expect(wis.rows.find((row) => row.key === 'td').p)
+      .toBeLessThan(nd.rows.find((row) => row.key === 'td').p);
+  });
+
+  it('does not pair both teams while a live snap is on', () => {
+    const game = wazzuAtWashington({ clockSeconds: 7 * 60, clock: '7:00' });
+    expect(shouldShowBothDriveSides(game)).toBe(false);
+    expect(listDriveSides(game)).toEqual([]);
   });
 
   it('rolls End of 1st into Q2 so the next-drive clock is not stuck at 0:00', () => {

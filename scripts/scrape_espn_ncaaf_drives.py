@@ -21,9 +21,13 @@ import os
 import random
 import re
 import ssl
+import sys
 import time
 import urllib.error
 import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ncaaf_field_buckets import yards_to_goal  # noqa: E402
 
 UA = (
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
@@ -66,7 +70,7 @@ DRIVE_FIELDS = [
     'drive_n', 'drive_id',
     'offense', 'offense_abbr', 'offense_side',
     'start_period', 'start_clock', 'start_seconds_left',
-    'start_yard', 'start_text',
+    'start_yard', 'start_yard_line', 'start_text',
     'start_home_score', 'start_away_score',
     'start_offense_score', 'start_defense_score',
     'raw_result', 'display_result', 'result_bucket',
@@ -403,6 +407,15 @@ def scrape_game(game_id, listing=None):
             off_score = def_score = ''
 
         bucket = classify_bucket(drive)
+        start_ytg = yards_to_goal(
+            start.get('text'),
+            offense_abbr=offense_abbr,
+            home_abbr=home['abbr'],
+            away_abbr=away['abbr'],
+            offense_side=side,
+            yards_to_endzone=start.get('yardsToEndzone'),
+            yard_line=start.get('yardLine'),
+        )
         key = offense_abbr or offense or f'drive-{i}'
         prior = off_so_far.setdefault(key, {BUCKET_TD: 0, BUCKET_FG: 0, BUCKET_PUNT: 0, BUCKET_OTHER: 0})
 
@@ -430,7 +443,8 @@ def scrape_game(game_id, listing=None):
             'start_period': period,
             'start_clock': clock,
             'start_seconds_left': seconds_left_in_game(period, clock),
-            'start_yard': (start.get('yardLine') if start.get('yardLine') is not None else ''),
+            'start_yard': '' if start_ytg is None else start_ytg,
+            'start_yard_line': (start.get('yardLine') if start.get('yardLine') is not None else ''),
             'start_text': start.get('text') or '',
             'start_home_score': sh,
             'start_away_score': sa,
