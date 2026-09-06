@@ -12,7 +12,9 @@ import {
   formatEdgePoints,
   formatSharePct,
   hasDriveLine,
+  isHalftimeLive,
   listDriveMarkets,
+  liveClockSeconds,
   possessiveTeam,
   resolveOffenseTeam,
 } from '../drives/driveModel';
@@ -125,17 +127,22 @@ function liveSummary(game) {
   if (spot && /^\d+$/.test(String(spot))) spot = `at ${spot}`;
   const bits = [
     periodLabel(live.period),
-    live.clock && live.clock !== '0:00' ? live.clock : null,
+    isHalftimeLive(live) ? 'HT' : (live.clock && live.clock !== '0:00' ? live.clock : null),
     live.downDistance,
     spot,
   ].filter(Boolean);
   return bits.join(' · ') || null;
 }
 
-function possessionHeadline(game, market, model) {
-  const name = model?.offenseName || resolveOffenseTeam(game, market).name;
-  if (name && game.inPlay) return `${name} on offense`;
-  return null;
+function possessionHeadline(game) {
+  if (!game.inPlay) return null;
+  const poss = game.live?.possession;
+  const name = poss === 'away'
+    ? (game.teams?.away ?? game.live?.possessionName)
+    : poss === 'home'
+      ? (game.teams?.home ?? game.live?.possessionName)
+      : game.live?.possessionName;
+  return name ? `${name} on offense` : null;
 }
 
 function shortBookLeg(name) {
@@ -162,13 +169,16 @@ function driveHeading(game, market, model) {
 function opponentStartSummary(game) {
   const live = game.live;
   if (!live) return null;
+  if (isHalftimeLive(live)) return null;
   if (live.down == null || live.yardsToEndzone == null || live.period == null) return null;
+  const clockSec = liveClockSeconds(live);
+  if (!Number.isFinite(clockSec)) return null;
   const sit = {
     down: live.down,
     distance: live.distance ?? 10,
     yardsToEndzone: live.yardsToEndzone,
     period: live.period,
-    clockSeconds: live.clockSeconds ?? 0,
+    clockSeconds: clockSec,
   };
   const pred = predictDriveSituation(sit);
   if (!pred?.n) return null;
@@ -210,15 +220,25 @@ function downDistanceLabel(down, distance) {
   return `${d}${suffix} & ${dist}`;
 }
 
-function clockLabel(secLeft, period, assumed) {
-  if (assumed || secLeft === 3600) return 'Opening kickoff';
-  const s = Number(secLeft);
-  if (!Number.isFinite(s)) return null;
-  const q = periodLabel(period);
+function formatQuarterClock(clockSec) {
+  const s = Number(clockSec);
+  if (!Number.isFinite(s) || s < 0) return null;
   const mins = Math.floor(s / 60);
   const secs = Math.round(s % 60);
-  const left = `${mins}:${String(secs).padStart(2, '0')} left`;
-  return q ? `${q} · ${left}` : left;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function clockLabel(pred) {
+  if (pred?.assumed) {
+    if (Number(pred.features?.period) === 3) return '2nd half kickoff (assumed)';
+    return 'Opening kickoff';
+  }
+  const q = periodLabel(pred?.features?.period);
+  const qclock = formatQuarterClock(pred?.features?.clock_sec);
+  if (q && qclock) return `${q} · ${qclock}`;
+  if (qclock) return qclock;
+  if (q) return q;
+  return null;
 }
 
 function reasoningRows(game, pred) {
@@ -234,15 +254,22 @@ function reasoningRows(game, pred) {
   const spot = yardLineLabel(f.ytg);
   const downDist = downDistanceLabel(f.down, f.distance);
   if (pred.assumed) {
-    rows.push(['Spot', 'Own 25 · opening kickoff (assumed)']);
+    rows.push([
+      'Spot',
+      Number(f.period) === 3
+        ? 'Own 25 · 2nd half kickoff (assumed)'
+        : 'Own 25 · opening kickoff (assumed)',
+    ]);
+  } else if (pred.predictedStart && spot) {
+    rows.push(['Spot', `Projected ${spot} · after this drive`]);
   } else if (downDist && spot) {
     rows.push(['Spot', `${downDist} · ${spot}`]);
   } else if (spot) {
     rows.push(['Spot', spot]);
   }
 
-  const clock = clockLabel(f.sec_left, f.period, pred.assumed);
-  if (clock && !pred.assumed) rows.push(['Clock', clock]);
+  const clock = clockLabel(pred);
+  if (clock) rows.push(['Clock', clock]);
 
   if (Number.isFinite(f.score_diff)) {
     const board = game.scoreDisplay ?? '0-0';
@@ -276,7 +303,9 @@ function reasoningRows(game, pred) {
     rows.push(['Total', total]);
   }
 
-  if (pred.layer === 'driveStart' && f.drive_n === 1) {
+  if (pred.predictedStart) {
+    rows.push(['Drive', 'Next possession']);
+  } else if (pred.layer === 'driveStart' && f.drive_n === 1) {
     rows.push(['Drive', 'First possession']);
   }
 
@@ -515,7 +544,7 @@ function GameCard({
   const lines = lineSummary(game);
   const nextStart = useMemo(() => opponentStartSummary(game), [game]);
   const paired = markets.length > 1;
-  const ballOn = possessionHeadline(game, markets[0], models[0]);
+  const ballOn = possessionHeadline(game);
   const cardKicker = paired
     ? '1st-drive result · both teams'
     : (ballOn || models[0]?.marketName || (game.inPlay ? 'Next drive · possession unknown' : 'First / next drive'));

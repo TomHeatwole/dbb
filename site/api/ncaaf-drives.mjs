@@ -337,6 +337,10 @@ function mergeFdxLive(game, fdxLive) {
   }
   if ((!live.clock || live.clock === '0:00') && fdxLive.clock) {
     live.clock = fdxLive.clock;
+    if (live.clockSeconds == null) {
+      const parsed = parseClockSeconds(fdxLive.clock);
+      if (parsed != null) live.clockSeconds = parsed;
+    }
     changed = true;
   }
   if (!live.possessionText && fdxLive.possessionText) {
@@ -747,7 +751,8 @@ function annotateDriveMarket(market, teams, live = null) {
   const fromName = teamFromDkDriveName(market.marketName);
   let side = sideFromTeamName(fromName, teams);
   if (!side && (live?.possession === 'home' || live?.possession === 'away')) {
-    side = live.possession;
+    // Untitled live "next drive" is the upcoming possession, not the team with the ball.
+    side = live.possession === 'home' ? 'away' : 'home';
   }
   const offenseName = side === 'away'
     ? (teams?.away ?? fromName ?? live?.possessionName ?? null)
@@ -1001,6 +1006,9 @@ function parseEspnEvent(event) {
     }
   }
   const state = String(status?.type?.state ?? '').toLowerCase();
+  const typeName = String(status?.type?.name ?? '');
+  const statusText = status?.type?.shortDetail ?? status?.type?.detail ?? null;
+  const halfTime = /HALFTIME/i.test(typeName) || /HALFTIME/i.test(String(statusText ?? ''));
   const possessionText = situation.possessionText ?? null;
   const down = Number(situation.down);
   const distance = Number(situation.distance);
@@ -1017,7 +1025,8 @@ function parseEspnEvent(event) {
     period: Number(status?.period) || null,
     clock: status?.displayClock ?? null,
     clockSeconds: parseClockSeconds(status?.displayClock),
-    statusText: status?.type?.shortDetail ?? status?.type?.detail ?? null,
+    statusText,
+    halfTime,
     down: Number.isFinite(down) && down > 0 ? down : null,
     distance: Number.isFinite(distance) ? distance : null,
     yardLine: Number.isFinite(Number(situation.yardLine)) ? Number(situation.yardLine) : null,
@@ -1106,6 +1115,7 @@ function attachEspn(game, espnGames) {
       clock: hit.clock,
       clockSeconds: hit.clockSeconds ?? null,
       statusText: hit.statusText,
+      halfTime: Boolean(hit.halfTime),
       down: hit.down ?? null,
       distance: hit.distance ?? null,
       yardLine: hit.yardLine ?? null,
@@ -1115,7 +1125,7 @@ function attachEspn(game, espnGames) {
       possession: hit.possession,
       possessionName,
       lastPlay: hit.lastPlay,
-      state: hit.state,
+      state: hit.halfTime ? 'halftime' : hit.state,
     },
   };
 }

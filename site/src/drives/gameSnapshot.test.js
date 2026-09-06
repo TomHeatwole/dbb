@@ -39,7 +39,7 @@ describe('drives game snapshot', () => {
     expect(snap.profitable).toBe(Boolean(play.profitable));
   });
 
-  it('labels a live card with who has the ball when there is no book line', () => {
+  it('labels a live card with the next drive, not the team that has the ball', () => {
     const live = {
       eventId: 'd2',
       name: 'East Carolina @ Alabama',
@@ -54,6 +54,6 @@ describe('drives game snapshot', () => {
       },
     };
     const snap = buildDrivesGameSnapshot(live);
-    expect(snap.market).toBe('Alabama drive');
+    expect(snap.market).toBe('East Carolina next');
   });
 });

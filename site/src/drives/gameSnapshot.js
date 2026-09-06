@@ -3,7 +3,7 @@
  */
 
 import { shortTeamName } from '../sop/gameSnapshot';
-import { evaluateDriveGame, formatAmericanOdds, listDriveMarkets, resolveOffenseTeam } from './driveModel';
+import { evaluateDriveGame, formatAmericanOdds, isHalftimeLive, listDriveMarkets, resolveOffenseTeam } from './driveModel';
 
 function shortDriveTeam(name) {
   const raw = String(name ?? '')
@@ -40,6 +40,7 @@ function periodLabel(period) {
 function drivesClockLabel(game) {
   const live = game?.live;
   if (!game?.inPlay) return null;
+  if (isHalftimeLive(live)) return 'HT';
   const q = periodLabel(live?.period);
   const clock = live?.clock && live.clock !== '0:00' ? live.clock : null;
   return [q, clock].filter(Boolean).join(' ') || 'LIVE';
@@ -105,7 +106,7 @@ export function buildDrivesGameSnapshot(game, { granular = false } = {}) {
   const result = playLabel(play);
   const marketLabel = team && result !== '—'
     ? `${team} ${result}`
-    : (team && game?.inPlay ? `${team} drive` : result);
+    : (team && game?.inPlay ? `${team} next` : result);
 
   return {
     eventId: game?.eventId,

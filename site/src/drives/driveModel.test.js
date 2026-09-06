@@ -3,8 +3,11 @@ import {
   extractHomeSpread,
   featuresFromGame,
   inferOffenseSide,
+  livePossessionSide,
   listDriveMarkets,
+  liveClockSeconds,
   nameMatchScore,
+  predictDriveResult,
 } from './driveModel';
 
 function texasStateAtTexas(overrides = {}) {
@@ -144,5 +147,93 @@ describe('DK granular market filter', () => {
   it('falls back when the requested flavor is missing', () => {
     expect(listDriveMarkets({ driveMarkets: [granular] })).toEqual([granular]);
     expect(listDriveMarkets({ driveMarkets: [fourWay] }, { granular: true })).toEqual([fourWay]);
+  });
+});
+
+function wazzuAtWashington(live) {
+  return {
+    inPlay: true,
+    teams: { home: 'Washington', away: 'Washington State' },
+    score: { home: 10, away: 0 },
+    scoreDisplay: '10-0',
+    lines: {
+      spread: {
+        runners: [
+          { runnerName: 'Washington State', handicap: 20.5, american: -110 },
+          { runnerName: 'Washington', handicap: -20.5, american: -110 },
+        ],
+      },
+      total: { runners: [{ runnerName: 'Over', handicap: 33.5, american: -110 }] },
+    },
+    live: {
+      period: 2,
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 94,
+      possession: 'away',
+      possessionName: 'Washington State',
+      state: 'in',
+      ...live,
+    },
+  };
+}
+
+describe('live clock vs stale end-of-half snaps', () => {
+  it('does not treat a missing clockSeconds as 0:00', () => {
+    expect(liveClockSeconds({ clockSeconds: null, clock: 'Halftime' })).toBeNaN();
+    expect(liveClockSeconds({ clockSeconds: undefined })).toBeNaN();
+    expect(liveClockSeconds({ clock: '7:42' })).toBe(462);
+    expect(liveClockSeconds({ clockSeconds: 0, clock: '0:00' })).toBe(0);
+  });
+
+  it('treats Halftime + a stale own-6 snap as 2nd-half kickoff', () => {
+    const pred = predictDriveResult(wazzuAtWashington({
+      clockSeconds: null,
+      clock: 'Halftime',
+      statusText: 'Halftime',
+      halfTime: true,
+    }));
+    expect(pred.layer).toBe('driveStart');
+    expect(pred.assumed).toBe(true);
+    expect(pred.features.period).toBe(3);
+    expect(pred.features.ytg).toBe(75);
+    expect(pred.features.clock_sec).toBe(900);
+    expect(pred.p.other).toBeLessThan(0.45);
+  });
+
+  it('does not price Q2 0:00 / own-6 as 88% Other', () => {
+    const dead = predictDriveResult(wazzuAtWashington({ clockSeconds: 0, clock: '0:00' }));
+    expect(dead.layer).toBe('driveStart');
+    expect(dead.assumed).toBe(true);
+    expect(dead.features.period).toBe(3);
+    expect(dead.features.ytg).toBe(75);
+    expect(dead.p.other).toBeLessThan(0.45);
+  });
+
+  it('prices the team that does not have the ball, from a projected start', () => {
+    const game = wazzuAtWashington({ clockSeconds: 7 * 60, clock: '7:00' });
+    expect(livePossessionSide(game)).toBe('away');
+    expect(inferOffenseSide(game)).toBe('home');
+    const live = predictDriveResult(game);
+    expect(live.side).toBe('home');
+    expect(live.layer).toBe('driveStart');
+    expect(live.predictedStart).toBe(true);
+    expect(live.features.ytg).not.toBe(94);
+    expect(live.features.offense_spread).toBe(-20.5);
+    expect(live.p.other).toBeLessThan(0.3);
+  });
+
+  it('rolls End of 1st into Q2 so the next-drive clock is not stuck at 0:00', () => {
+    const feat = featuresFromGame(wazzuAtWashington({
+      period: 1,
+      clockSeconds: null,
+      clock: 'End of 1st',
+      statusText: 'End of 1st',
+    }));
+    expect(feat.side).toBe('home');
+    expect(feat.layer).toBe('driveStart');
+    expect(feat.predictedStart).toBe(true);
+    expect(feat.features.period).toBeGreaterThanOrEqual(2);
+    expect(feat.features.sec_left).toBeLessThanOrEqual(2700);
   });
 });
