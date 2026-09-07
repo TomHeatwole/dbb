@@ -13,6 +13,7 @@ import {
   evaluateDriveGame,
   firstUpSide,
   formatAmericanOdds,
+  situationOffenseLabel,
   formatEdgePoints,
   formatSharePct,
   hasDriveLine,
@@ -158,18 +159,7 @@ function liveSummary(game) {
 }
 
 function situationHeadline(game) {
-  if (!game.inPlay) return null;
-  if (isHalftimeLive(game.live)) return 'Halftime';
-  const live = game.live;
-  const poss = live?.possession;
-  const name = poss === 'away'
-    ? (game.teams?.away ?? live?.possessionName)
-    : poss === 'home'
-      ? (game.teams?.home ?? live?.possessionName)
-      : live?.possessionName;
-  if (name) return `${name} on offense`;
-  if (live?.period || live?.clock || live?.statusText) return 'Between possessions';
-  return null;
+  return situationOffenseLabel(game);
 }
 
 function shortBookLeg(name) {

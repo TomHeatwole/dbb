@@ -1,0 +1,568 @@
+{
+  "source": "fanduel-sportsbook-android",
+  "scrapedAt": "2026-09-07T04:22:43.221Z",
+  "udid": "emulator-5554",
+  "gameCount": 56,
+  "games": [
+    {
+      "eventId": "35660086",
+      "date": "Mon. 9/7",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "6:30 PM Central Time",
+      "overUnder": 53.5,
+      "homeSpread": 2.5,
+      "awaySpread": -2.5
+    },
+    {
+      "eventId": "35993112",
+      "date": "Thu. 9/10",
+      "away": "Florida A&M",
+      "home": "Miami Florida",
+      "start": "7:00 PM Central Time",
+      "overUnder": 60.5,
+      "homeSpread": -53.5,
+      "awaySpread": 53.5
+    },
+    {
+      "eventId": "35993117",
+      "date": "Fri. 9/11",
+      "away": "Mercyhurst",
+      "home": "New Mexico",
+      "start": "9:00 AM Central Time",
+      "overUnder": 52.5,
+      "homeSpread": -41.5,
+      "awaySpread": 41.5
+    },
+    {
+      "eventId": "35993115",
+      "date": "Fri. 9/11",
+      "away": "Norfolk State",
+      "home": "Virginia",
+      "start": "6:00 PM Central Time",
+      "overUnder": 54.5,
+      "homeSpread": -43.5,
+      "awaySpread": 43.5
+    },
+    {
+      "eventId": "35993113",
+      "date": "Fri. 9/11",
+      "away": "Richmond",
+      "home": "NC State",
+      "start": "6:00 PM Central Time",
+      "overUnder": 49.5,
+      "homeSpread": -30.5,
+      "awaySpread": 30.5
+    },
+    {
+      "eventId": "36029909",
+      "date": "Fri. 9/11",
+      "away": "Villanova",
+      "home": "Louisville",
+      "start": "6:00 PM Central Time",
+      "overUnder": 55.5,
+      "homeSpread": -36.5,
+      "awaySpread": 36.5
+    },
+    {
+      "eventId": "35993114",
+      "date": "Fri. 9/11",
+      "away": "Rutgers",
+      "home": "Boston College",
+      "start": "6:30 PM Central Time",
+      "overUnder": 54.5,
+      "homeSpread": -3.5,
+      "awaySpread": 3.5
+    },
+    {
+      "eventId": "35632817",
+      "date": "Fri. 9/11",
+      "away": "Missouri",
+      "home": "Kansas",
+      "start": "7:00 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": 6.5,
+      "awaySpread": -6.5
+    },
+    {
+      "eventId": "35993163",
+      "date": "Sat. 9/12",
+      "away": "Appalachian State",
+      "home": "East Carolina",
+      "start": "11:00 AM Central Time",
+      "overUnder": 56.5,
+      "homeSpread": -8.5,
+      "awaySpread": 8.5
+    },
+    {
+      "eventId": "35993165",
+      "date": "Sat. 9/12",
+      "away": "Arizona State",
+      "home": "Texas A&M",
+      "start": "11:00 AM Central Time",
+      "overUnder": 52.5,
+      "homeSpread": -14.5,
+      "awaySpread": 14.5
+    },
+    {
+      "eventId": "35360156",
+      "date": "Sat. 9/12",
+      "away": "Arkansas",
+      "home": "Utah",
+      "start": "11:00 AM Central Time",
+      "overUnder": 56.5,
+      "homeSpread": -11.5,
+      "awaySpread": 11.5
+    },
+    {
+      "eventId": "35993166",
+      "date": "Sat. 9/12",
+      "away": "East Tennessee State",
+      "home": "North Carolina",
+      "start": "11:00 AM Central Time",
+      "overUnder": 51.5,
+      "homeSpread": -35.5,
+      "awaySpread": 35.5
+    },
+    {
+      "eventId": "35170578",
+      "date": "Sat. 9/12",
+      "away": "Oklahoma",
+      "home": "Michigan",
+      "start": "11:00 AM Central Time",
+      "overUnder": 43.5,
+      "homeSpread": 6.5,
+      "awaySpread": -6.5
+    },
+    {
+      "eventId": "35993169",
+      "date": "Sat. 9/12",
+      "away": "Old Dominion",
+      "home": "Virginia Tech",
+      "start": "11:00 AM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": -17.5,
+      "awaySpread": 17.5
+    },
+    {
+      "eventId": "35632815",
+      "date": "Sat. 9/12",
+      "away": "Oregon",
+      "home": "Oklahoma State",
+      "start": "11:00 AM Central Time",
+      "overUnder": 57.5,
+      "homeSpread": 22.5,
+      "awaySpread": -22.5
+    },
+    {
+      "eventId": "35993160",
+      "date": "Sat. 9/12",
+      "away": "Penn State",
+      "home": "Temple",
+      "start": "11:00 AM Central Time",
+      "overUnder": 49.5,
+      "homeSpread": 23.5,
+      "awaySpread": -23.5
+    },
+    {
+      "eventId": "35993162",
+      "date": "Sat. 9/12",
+      "away": "South Florida",
+      "home": "Army",
+      "start": "11:00 AM Central Time",
+      "overUnder": 48.5,
+      "homeSpread": -3.5,
+      "awaySpread": 3.5
+    },
+    {
+      "eventId": "35993164",
+      "date": "Sat. 9/12",
+      "away": "Wake Forest",
+      "home": "Purdue",
+      "start": "11:00 AM Central Time",
+      "overUnder": 49.5,
+      "homeSpread": 4.5,
+      "awaySpread": -4.5
+    },
+    {
+      "eventId": "35993161",
+      "date": "Sat. 9/12",
+      "away": "Washington State",
+      "home": "Kansas State",
+      "start": "11:00 AM Central Time",
+      "overUnder": 51.5,
+      "homeSpread": -18.5,
+      "awaySpread": 18.5
+    },
+    {
+      "eventId": "35993263",
+      "date": "Sat. 9/12",
+      "away": "Wofford",
+      "home": "Kent State",
+      "start": "11:00 AM Central Time",
+      "overUnder": 46.5,
+      "homeSpread": -14.5,
+      "awaySpread": 14.5
+    },
+    {
+      "eventId": "35993266",
+      "date": "Sat. 9/12",
+      "away": "Colgate",
+      "home": "Central Michigan",
+      "start": "12:00 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": -26.5,
+      "awaySpread": 26.5
+    },
+    {
+      "eventId": "35993284",
+      "date": "Sat. 9/12",
+      "away": "Holy Cross",
+      "home": "Miami Ohio",
+      "start": "12:00 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": -33.5,
+      "awaySpread": 33.5
+    },
+    {
+      "eventId": "35993268",
+      "date": "Sat. 9/12",
+      "away": "Stony Brook",
+      "home": "Ball State",
+      "start": "1:00 PM Central Time",
+      "overUnder": 56.5,
+      "homeSpread": -15.5,
+      "awaySpread": 15.5
+    },
+    {
+      "eventId": "35993271",
+      "date": "Sat. 9/12",
+      "away": "Alabama",
+      "home": "Kentucky",
+      "start": "2:30 PM Central Time",
+      "overUnder": 48.5,
+      "homeSpread": 10.5,
+      "awaySpread": -10.5
+    },
+    {
+      "eventId": "35993299",
+      "date": "Sat. 9/12",
+      "away": "Arizona",
+      "home": "BYU",
+      "start": "2:30 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": -7.5,
+      "awaySpread": 7.5
+    },
+    {
+      "eventId": "35993478",
+      "date": "Sat. 9/12",
+      "away": "California",
+      "home": "Syracuse",
+      "start": "2:30 PM Central Time",
+      "overUnder": 56.5,
+      "homeSpread": -3.5,
+      "awaySpread": 3.5
+    },
+    {
+      "eventId": "35993576",
+      "date": "Sat. 9/12",
+      "away": "Eastern Michigan",
+      "home": "Michigan State",
+      "start": "2:30 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": -17.5,
+      "awaySpread": 17.5
+    },
+    {
+      "eventId": "35993582",
+      "date": "Sat. 9/12",
+      "away": "Maryland",
+      "home": "Connecticut",
+      "start": "2:30 PM Central Time",
+      "overUnder": 53.5,
+      "homeSpread": 12.5,
+      "awaySpread": -12.5
+    },
+    {
+      "eventId": "35993273",
+      "date": "Sat. 9/12",
+      "away": "Mississippi State",
+      "home": "Minnesota",
+      "start": "2:30 PM Central Time",
+      "overUnder": 55.5,
+      "homeSpread": 1.5,
+      "awaySpread": -1.5
+    },
+    {
+      "eventId": "36042345",
+      "date": "Sat. 9/12",
+      "away": "Rice",
+      "home": "Notre Dame",
+      "start": "2:30 PM Central Time",
+      "overUnder": 54.5,
+      "homeSpread": -42.5,
+      "awaySpread": 42.5
+    },
+    {
+      "eventId": "35993625",
+      "date": "Sat. 9/12",
+      "away": "Robert Morris",
+      "home": "Akron",
+      "start": "2:30 PM Central Time",
+      "overUnder": 43.5,
+      "homeSpread": -28.5,
+      "awaySpread": 28.5
+    },
+    {
+      "eventId": "35993480",
+      "date": "Sat. 9/12",
+      "away": "UCF",
+      "home": "Pittsburgh",
+      "start": "2:30 PM Central Time",
+      "overUnder": 57.5,
+      "homeSpread": -7.5,
+      "awaySpread": 7.5
+    },
+    {
+      "eventId": "35993624",
+      "date": "Sat. 9/12",
+      "away": "UL Monroe",
+      "home": "UAB",
+      "start": "2:30 PM Central Time",
+      "overUnder": 55.5,
+      "homeSpread": -12.5,
+      "awaySpread": 12.5
+    },
+    {
+      "eventId": "35993301",
+      "date": "Sat. 9/12",
+      "away": "Utah State",
+      "home": "Washington",
+      "start": "2:30 PM Central Time",
+      "overUnder": 55.5,
+      "homeSpread": -25.5,
+      "awaySpread": 25.5
+    },
+    {
+      "eventId": "35993579",
+      "date": "Sat. 9/12",
+      "away": "UTSA",
+      "home": "Texas State",
+      "start": "2:30 PM Central Time",
+      "overUnder": 64.5,
+      "homeSpread": 1.5,
+      "awaySpread": -1.5
+    },
+    {
+      "eventId": "35993477",
+      "date": "Sat. 9/12",
+      "away": "Weber State",
+      "home": "Colorado",
+      "start": "2:30 PM Central Time",
+      "overUnder": 52.5,
+      "homeSpread": -36.5,
+      "awaySpread": 36.5
+    },
+    {
+      "eventId": "35993667",
+      "date": "Sat. 9/12",
+      "away": "UNLV",
+      "home": "North Texas",
+      "start": "2:45 PM Central Time",
+      "overUnder": 57.5,
+      "homeSpread": 4.5,
+      "awaySpread": -4.5
+    },
+    {
+      "eventId": "35993678",
+      "date": "Sat. 9/12",
+      "away": "Delaware",
+      "home": "Vanderbilt",
+      "start": "3:15 PM Central Time",
+      "overUnder": 53.5,
+      "homeSpread": -20.5,
+      "awaySpread": 20.5
+    },
+    {
+      "eventId": "35993685",
+      "date": "Sat. 9/12",
+      "away": "Buffalo",
+      "home": "FIU",
+      "start": "5:00 PM Central Time",
+      "overUnder": 48.5,
+      "homeSpread": -9.5,
+      "awaySpread": 9.5
+    },
+    {
+      "eventId": "35993695",
+      "date": "Sat. 9/12",
+      "away": "Jacksonville State",
+      "home": "Ohio",
+      "start": "5:00 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": -1.5,
+      "awaySpread": 1.5
+    },
+    {
+      "eventId": "35993684",
+      "date": "Sat. 9/12",
+      "away": "Memphis",
+      "home": "Boise State",
+      "start": "5:00 PM Central Time",
+      "overUnder": 55.5,
+      "homeSpread": -8.5,
+      "awaySpread": 8.5
+    },
+    {
+      "eventId": "35993710",
+      "date": "Sat. 9/12",
+      "away": "Bowling Green",
+      "home": "Nebraska",
+      "start": "6:00 PM Central Time",
+      "overUnder": 51.5,
+      "homeSpread": -28.5,
+      "awaySpread": 28.5
+    },
+    {
+      "eventId": "35993707",
+      "date": "Sat. 9/12",
+      "away": "South Alabama",
+      "home": "Tulane",
+      "start": "6:00 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": -10.5,
+      "awaySpread": 10.5
+    },
+    {
+      "eventId": "36042337",
+      "date": "Sat. 9/12",
+      "away": "South Alabama",
+      "home": "Arkansas State",
+      "start": "6:00 PM Central Time",
+      "overUnder": 49.5,
+      "homeSpread": -10.5,
+      "awaySpread": 10.5
+    },
+    {
+      "eventId": "35993696",
+      "date": "Sat. 9/12",
+      "away": "Tennessee",
+      "home": "Georgia Tech",
+      "start": "6:00 PM Central Time",
+      "overUnder": 54.5,
+      "homeSpread": 13.5,
+      "awaySpread": -13.5
+    },
+    {
+      "eventId": "35993709",
+      "date": "Sat. 9/12",
+      "away": "Tulsa",
+      "home": "Sam Houston State",
+      "start": "6:00 PM Central Time",
+      "overUnder": 51.5,
+      "homeSpread": 13.5,
+      "awaySpread": -13.5
+    },
+    {
+      "eventId": "36029139",
+      "date": "Sat. 9/12",
+      "away": "San Diego State",
+      "home": "UCLA",
+      "start": "6:15 PM Central Time",
+      "overUnder": 53.5,
+      "homeSpread": -10.5,
+      "awaySpread": 10.5
+    },
+    {
+      "eventId": "36042367",
+      "date": "Sat. 9/12",
+      "away": "Georgia Southern",
+      "home": "Clemson",
+      "start": "6:30 PM Central Time",
+      "overUnder": 55.5,
+      "homeSpread": -20.5,
+      "awaySpread": 20.5
+    },
+    {
+      "eventId": "35632809",
+      "date": "Sat. 9/12",
+      "away": "Iowa State",
+      "home": "Iowa",
+      "start": "6:30 PM Central Time",
+      "overUnder": 40.5,
+      "homeSpread": -14.5,
+      "awaySpread": 14.5
+    },
+    {
+      "eventId": "36042365",
+      "date": "Sat. 9/12",
+      "away": "Louisiana Tech",
+      "home": "LSU",
+      "start": "6:30 PM Central Time",
+      "overUnder": 55.5,
+      "homeSpread": -32.5,
+      "awaySpread": 32.5
+    },
+    {
+      "eventId": "36042366",
+      "date": "Sat. 9/12",
+      "away": "Navy",
+      "home": "Florida Atlantic",
+      "start": "6:30 PM Central Time",
+      "overUnder": 58.5,
+      "homeSpread": 5.5,
+      "awaySpread": -5.5
+    },
+    {
+      "eventId": "35170581",
+      "date": "Sat. 9/12",
+      "away": "Ohio State",
+      "home": "Texas",
+      "start": "6:30 PM Central Time",
+      "overUnder": 48.5,
+      "homeSpread": -1.5,
+      "awaySpread": 1.5
+    },
+    {
+      "eventId": "36029136",
+      "date": "Sat. 9/12",
+      "away": "Texas Tech",
+      "home": "Oregon State",
+      "start": "6:30 PM Central Time",
+      "overUnder": 50.5,
+      "homeSpread": 26.5,
+      "awaySpread": -26.5
+    },
+    {
+      "eventId": "36042369",
+      "date": "Sat. 9/12",
+      "away": "Southern Miss",
+      "home": "Auburn",
+      "start": "6:45 PM Central Time",
+      "overUnder": 52.5,
+      "homeSpread": -29.5,
+      "awaySpread": 29.5
+    },
+    {
+      "eventId": "36042371",
+      "date": "Sat. 9/12",
+      "away": "Prairie View",
+      "home": "Baylor",
+      "start": "7:00 PM Central Time",
+      "overUnder": 54.5,
+      "homeSpread": -38.5,
+      "awaySpread": 38.5
+    },
+    {
+      "eventId": "35993116",
+      "date": "Sat. 9/12",
+      "away": "Cal Poly",
+      "home": "San Jose State",
+      "start": "8:00 PM Central Time",
+      "overUnder": 57.5,
+      "homeSpread": -20.5,
+      "awaySpread": 20.5
+    }
+  ]
+}

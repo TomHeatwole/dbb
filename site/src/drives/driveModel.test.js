@@ -5,10 +5,13 @@ import {
   driveCardRole,
   driveNumberFromName,
   driveNumberForSide,
+  firstUpSide,
   formatDriveOrdinal,
   inferOffenseSide,
   listDriveSides,
   livePossessionSide,
+  scoringSideAfterMadeKick,
+  situationOffenseLabel,
   listDriveMarkets,
   shouldShowBothDriveSides,
   liveClockSeconds,
@@ -387,7 +390,13 @@ describe('live clock vs stale end-of-half snaps', () => {
       if (abbr === 'LOU') return 'away';
       return null;
     });
-    expect(chart).toEqual({ homeStarted: 7, awayStarted: 7, currentSide: null });
+    expect(chart).toEqual({
+      homeStarted: 7,
+      awayStarted: 7,
+      currentSide: null,
+      currentResult: 'Touchdown',
+      finishedSide: 'home',
+    });
     const game = wazzuAtWashington({
       period: 3,
       clockSeconds: 8 * 60 + 53,
@@ -401,6 +410,116 @@ describe('live clock vs stale end-of-half snaps', () => {
     });
     expect(driveNumberForSide(game, 'away', { role: 'next' })).toBe(8);
     expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(8);
+  });
+
+  it('after a TD treats the other team as first up for the kickoff', () => {
+    const game = wazzuAtWashington({
+      period: 4,
+      clockSeconds: 4 * 60 + 42,
+      clock: '4:42',
+      down: null,
+      distance: null,
+      yardsToEndzone: null,
+      possession: 'away',
+      possessionName: 'Washington State',
+      lastPlay: 'Kienholz pass complete for 54 yards TOUCHDOWN',
+      lastPlayType: 'Passing Touchdown',
+      lastPlaySide: 'away',
+      driveChart: {
+        homeStarted: 8,
+        awayStarted: 8,
+        currentSide: null,
+        currentResult: 'Touchdown',
+        finishedSide: 'away',
+      },
+    });
+    expect(scoringSideAfterMadeKick(game)).toBe('away');
+    expect(firstUpSide(game)).toBe('home');
+    expect(situationOffenseLabel(game)).toBe('Washington gets the ball');
+    const sides = listDriveSides(game);
+    expect(sides[0].offenseSide).toBe('home');
+    expect(sides[1].offenseSide).toBe('away');
+    const recv = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const scorer = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(recv.firstUp).toBe(true);
+    expect(recv.afterPriorDrive).toBeFalsy();
+    expect(recv.features.ytg).toBe(75);
+    expect(driveCardRole(game, recv)).toBe('current');
+    expect(scorer.afterPriorDrive).toBe(true);
+    expect(driveCardRole(game, scorer)).toBe('next');
+    expect(driveNumberForSide(game, 'home', { pred: recv })).toBe(9);
+    expect(driveNumberForSide(game, 'away', { pred: scorer })).toBe(9);
+  });
+
+  it('after the extra point, a kickoff-only ESPN current is not the scoring team on offense', () => {
+    const sideOf = (drive) => {
+      const abbr = drive?.team?.abbreviation;
+      if (abbr === 'MISS') return 'home';
+      if (abbr === 'LOU') return 'away';
+      return null;
+    };
+    const chart = parseEspnDriveBlob({
+      previous: [
+        { id: 'td', team: { abbreviation: 'LOU' }, result: { displayName: 'Touchdown' }, offensivePlays: 6 },
+        {
+          id: 'ko',
+          team: { abbreviation: 'LOU' },
+          offensivePlays: 0,
+          plays: [{ type: { text: 'Kickoff' }, text: 'Keller kickoff 65 yards to the Miss00, Touchback' }],
+        },
+      ],
+      current: {
+        id: 'ko',
+        team: { abbreviation: 'LOU' },
+        offensivePlays: 0,
+        plays: [{ type: { text: 'Kickoff' }, text: 'Keller kickoff 65 yards to the Miss00, Touchback' }],
+      },
+    }, sideOf);
+    expect(chart).toEqual({
+      homeStarted: 0,
+      awayStarted: 1,
+      currentSide: null,
+      currentResult: null,
+      finishedSide: null,
+    });
+    const game = wazzuAtWashington({
+      period: 4,
+      clockSeconds: 4 * 60 + 42,
+      clock: '4:42',
+      down: null,
+      yardsToEndzone: null,
+      possession: 'home',
+      possessionName: 'Washington',
+      lastPlay: '(C. Hilbert KICK)',
+      lastPlayType: 'Extra Point Good',
+      lastPlaySide: 'away',
+      driveChart: chart,
+    });
+    expect(scoringSideAfterMadeKick(game)).toBe('away');
+    expect(firstUpSide(game)).toBe('home');
+    expect(situationOffenseLabel(game)).toBe('Washington gets the ball');
+  });
+
+  it('does not treat a missed FG as a kickoff to the other team', () => {
+    const game = wazzuAtWashington({
+      clockSeconds: 6 * 60,
+      clock: '6:00',
+      down: null,
+      yardsToEndzone: null,
+      possession: 'away',
+      lastPlayType: 'Field Goal Missed',
+      lastPlaySide: 'away',
+      driveChart: {
+        homeStarted: 5,
+        awayStarted: 5,
+        currentSide: null,
+        currentResult: 'Missed FG',
+        finishedSide: 'away',
+      },
+    });
+    expect(scoringSideAfterMadeKick(game)).toBeNull();
+    expect(firstUpSide(game)).toBeNull();
+    expect(situationOffenseLabel(game)).toBe('Between possessions');
   });
 
   it('assigns an untitled live FanDuel line to the team with the ball', () => {

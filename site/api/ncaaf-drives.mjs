@@ -1057,6 +1057,15 @@ function parseEspnEvent(event) {
   const possessionText = situation.possessionText ?? null;
   const down = Number(situation.down);
   const distance = Number(situation.distance);
+  const last = situation.lastPlay;
+  const lastPlay = last?.text ?? null;
+  const lastPlayType = last?.type?.text ?? null;
+  let lastPlaySide = null;
+  if (last?.team?.id != null) {
+    const tid = String(last.team.id);
+    if (String(home?.team?.id) === tid || String(home?.id) === tid) lastPlaySide = 'home';
+    else if (String(away?.team?.id) === tid || String(away?.id) === tid) lastPlaySide = 'away';
+  }
   return {
     id: String(event?.id ?? ''),
     home: home?.team?.displayName ?? home?.team?.name ?? null,
@@ -1085,7 +1094,9 @@ function parseEspnEvent(event) {
     downDistance: situation.shortDownDistanceText ?? null,
     possessionText,
     possession,
-    lastPlay: situation.lastPlay?.text ?? null,
+    lastPlay,
+    lastPlayType,
+    lastPlaySide,
   };
 }
 
@@ -1233,6 +1244,8 @@ function attachEspn(game, espnGames) {
       possession: hit.possession,
       possessionName,
       lastPlay: hit.lastPlay,
+      lastPlayType: hit.lastPlayType ?? null,
+      lastPlaySide: hit.lastPlaySide ?? null,
       state: hit.halfTime ? 'halftime' : hit.state,
     },
   };

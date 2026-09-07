@@ -1,0 +1,2398 @@
+{
+  "note": "Current = snap LightGBM at every down. Next = last snap of the prior drive, next-start tables + drive-start LightGBM vs the actual following opposing drive. Drive-start = first play of each drive.",
+  "typical": {
+    "driveStartLogloss": 1.1544,
+    "snapLogloss": 1.0389,
+    "nextLogloss": 1.2558
+  },
+  "games": [
+    {
+      "label": "Louisville @ Ole Miss",
+      "espnId": "401856661",
+      "away": "Louisville Cardinals",
+      "home": "Ole Miss Rebels",
+      "awayAbbr": "LOU",
+      "homeAbbr": "MISS",
+      "score": "31-38",
+      "homeSpread": -6.5,
+      "ou": 54.5,
+      "nDrives": 26,
+      "driveStart": {
+        "n": 26,
+        "logloss": 1.2227,
+        "meanPActual": 0.3506,
+        "obs": {
+          "punt": 0.3077,
+          "td": 0.3077,
+          "fg": 0.1923,
+          "other": 0.1923
+        },
+        "model": {
+          "punt": 0.3552,
+          "td": 0.2722,
+          "fg": 0.1398,
+          "other": 0.2328
+        },
+        "nLong": 3,
+        "nBomb": 0
+      },
+      "currentSnaps": {
+        "n": 157,
+        "logloss": 1.1391,
+        "meanPActual": 0.3899,
+        "obs": {
+          "punt": 0.2548,
+          "td": 0.2994,
+          "fg": 0.3185,
+          "other": 0.1274
+        },
+        "model": {
+          "punt": 0.3429,
+          "td": 0.2852,
+          "fg": 0.1956,
+          "other": 0.1763
+        },
+        "nLong": 21,
+        "nBomb": 4
+      },
+      "nextLastSnap": {
+        "n": 24,
+        "logloss": 1.3277,
+        "meanPActual": 0.2942,
+        "obs": {
+          "punt": 0.2917,
+          "td": 0.3333,
+          "fg": 0.2083,
+          "other": 0.1667
+        },
+        "model": {
+          "punt": 0.3681,
+          "td": 0.2788,
+          "fg": 0.1167,
+          "other": 0.2364
+        },
+        "nLong": 3,
+        "nBomb": 0
+      },
+      "drives": [
+        {
+          "n": 1,
+          "offense": "MISS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q1 15:00",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.437,
+            "td": 0.2973,
+            "fg": 0.1032,
+            "other": 0.1624
+          },
+          "pActual": 0.437,
+          "logloss": 0.828,
+          "surprise": "chalk"
+        },
+        {
+          "n": 2,
+          "offense": "LOU",
+          "spot": "own 46",
+          "ytg": 54,
+          "clock": "Q1 13:52",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.32,
+            "td": 0.3233,
+            "fg": 0.1768,
+            "other": 0.1799
+          },
+          "pActual": 0.1768,
+          "logloss": 1.733,
+          "surprise": "mild"
+        },
+        {
+          "n": 3,
+          "offense": "MISS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q1 7:19",
+          "score": "0-0",
+          "result": "other",
+          "raw": "Fumble",
+          "p": {
+            "punt": 0.4441,
+            "td": 0.2768,
+            "fg": 0.1173,
+            "other": 0.1618
+          },
+          "pActual": 0.1618,
+          "logloss": 1.821,
+          "surprise": "mild"
+        },
+        {
+          "n": 4,
+          "offense": "LOU",
+          "spot": "own 40",
+          "ytg": 60,
+          "clock": "Q1 4:27",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.4187,
+            "td": 0.265,
+            "fg": 0.1579,
+            "other": 0.1584
+          },
+          "pActual": 0.4187,
+          "logloss": 0.871,
+          "surprise": "chalk"
+        },
+        {
+          "n": 5,
+          "offense": "MISS",
+          "spot": "own 15",
+          "ytg": 85,
+          "clock": "Q1 3:25",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.4628,
+            "td": 0.2632,
+            "fg": 0.1103,
+            "other": 0.1637
+          },
+          "pActual": 0.1103,
+          "logloss": 2.204,
+          "surprise": "long"
+        },
+        {
+          "n": 6,
+          "offense": "LOU",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q2 14:51",
+          "score": "0-0",
+          "result": "other",
+          "raw": "Fumble",
+          "p": {
+            "punt": 0.4932,
+            "td": 0.224,
+            "fg": 0.1206,
+            "other": 0.1622
+          },
+          "pActual": 0.1622,
+          "logloss": 1.819,
+          "surprise": "mild"
+        },
+        {
+          "n": 7,
+          "offense": "MISS",
+          "spot": "opp 12",
+          "ytg": 12,
+          "clock": "Q2 11:51",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.1116,
+            "td": 0.586,
+            "fg": 0.2244,
+            "other": 0.078
+          },
+          "pActual": 0.586,
+          "logloss": 0.534,
+          "surprise": "chalk"
+        },
+        {
+          "n": 8,
+          "offense": "LOU",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q2 10:38",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.4871,
+            "td": 0.2238,
+            "fg": 0.1264,
+            "other": 0.1627
+          },
+          "pActual": 0.4871,
+          "logloss": 0.719,
+          "surprise": "chalk"
+        },
+        {
+          "n": 9,
+          "offense": "MISS",
+          "spot": "own 42",
+          "ytg": 58,
+          "clock": "Q2 9:30",
+          "score": "0-0",
+          "result": "other",
+          "raw": "Interception",
+          "p": {
+            "punt": 0.2768,
+            "td": 0.3891,
+            "fg": 0.1748,
+            "other": 0.1592
+          },
+          "pActual": 0.1592,
+          "logloss": 1.837,
+          "surprise": "mild"
+        },
+        {
+          "n": 10,
+          "offense": "LOU",
+          "spot": "own 44",
+          "ytg": 56,
+          "clock": "Q2 8:45",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.3122,
+            "td": 0.3204,
+            "fg": 0.1904,
+            "other": 0.177
+          },
+          "pActual": 0.3122,
+          "logloss": 1.164,
+          "surprise": "normal"
+        },
+        {
+          "n": 11,
+          "offense": "MISS",
+          "spot": "own 20",
+          "ytg": 80,
+          "clock": "Q2 6:38",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Missed FG",
+          "p": {
+            "punt": 0.4378,
+            "td": 0.262,
+            "fg": 0.1266,
+            "other": 0.1737
+          },
+          "pActual": 0.1266,
+          "logloss": 2.067,
+          "surprise": "mild"
+        },
+        {
+          "n": 12,
+          "offense": "LOU",
+          "spot": "own 29",
+          "ytg": 71,
+          "clock": "Q2 1:43",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.389,
+            "td": 0.1959,
+            "fg": 0.1534,
+            "other": 0.2617
+          },
+          "pActual": 0.1534,
+          "logloss": 1.874,
+          "surprise": "mild"
+        },
+        {
+          "n": 13,
+          "offense": "LOU",
+          "spot": "own 1",
+          "ytg": 99,
+          "clock": "Q2 0:06",
+          "score": "0-0",
+          "result": "other",
+          "raw": "End Of Half",
+          "p": {
+            "punt": 0.0322,
+            "td": 0.0186,
+            "fg": 0.0166,
+            "other": 0.9326
+          },
+          "pActual": 0.9326,
+          "logloss": 0.07,
+          "surprise": "chalk"
+        },
+        {
+          "n": 14,
+          "offense": "LOU",
+          "spot": "own 23",
+          "ytg": 77,
+          "clock": "Q3 14:52",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.4839,
+            "td": 0.2159,
+            "fg": 0.1235,
+            "other": 0.1766
+          },
+          "pActual": 0.2159,
+          "logloss": 1.533,
+          "surprise": "normal"
+        },
+        {
+          "n": 15,
+          "offense": "MISS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q3 10:51",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.3862,
+            "td": 0.3101,
+            "fg": 0.1286,
+            "other": 0.1751
+          },
+          "pActual": 0.3101,
+          "logloss": 1.171,
+          "surprise": "normal"
+        },
+        {
+          "n": 16,
+          "offense": "LOU",
+          "spot": "own 7",
+          "ytg": 93,
+          "clock": "Q3 8:47",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.5451,
+            "td": 0.1684,
+            "fg": 0.089,
+            "other": 0.1975
+          },
+          "pActual": 0.5451,
+          "logloss": 0.607,
+          "surprise": "chalk"
+        },
+        {
+          "n": 17,
+          "offense": "MISS",
+          "spot": "own 32",
+          "ytg": 68,
+          "clock": "Q3 6:34",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.3235,
+            "td": 0.3557,
+            "fg": 0.1432,
+            "other": 0.1776
+          },
+          "pActual": 0.3235,
+          "logloss": 1.128,
+          "surprise": "normal"
+        },
+        {
+          "n": 18,
+          "offense": "LOU",
+          "spot": "own 22",
+          "ytg": 78,
+          "clock": "Q3 4:47",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.4672,
+            "td": 0.2329,
+            "fg": 0.1247,
+            "other": 0.1752
+          },
+          "pActual": 0.1247,
+          "logloss": 2.082,
+          "surprise": "mild"
+        },
+        {
+          "n": 19,
+          "offense": "MISS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q3 2:22",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.3861,
+            "td": 0.319,
+            "fg": 0.125,
+            "other": 0.17
+          },
+          "pActual": 0.319,
+          "logloss": 1.143,
+          "surprise": "normal"
+        },
+        {
+          "n": 20,
+          "offense": "LOU",
+          "spot": "own 15",
+          "ytg": 85,
+          "clock": "Q3 0:57",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.5102,
+            "td": 0.1843,
+            "fg": 0.118,
+            "other": 0.1875
+          },
+          "pActual": 0.1843,
+          "logloss": 1.691,
+          "surprise": "mild"
+        },
+        {
+          "n": 21,
+          "offense": "MISS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q3 0:16",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.3917,
+            "td": 0.31,
+            "fg": 0.1273,
+            "other": 0.171
+          },
+          "pActual": 0.31,
+          "logloss": 1.171,
+          "surprise": "normal"
+        },
+        {
+          "n": 22,
+          "offense": "LOU",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q4 12:45",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.4563,
+            "td": 0.2373,
+            "fg": 0.1321,
+            "other": 0.1743
+          },
+          "pActual": 0.4563,
+          "logloss": 0.785,
+          "surprise": "chalk"
+        },
+        {
+          "n": 23,
+          "offense": "MISS",
+          "spot": "own 46",
+          "ytg": 54,
+          "clock": "Q4 10:34",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.2408,
+            "td": 0.414,
+            "fg": 0.1739,
+            "other": 0.1712
+          },
+          "pActual": 0.414,
+          "logloss": 0.882,
+          "surprise": "chalk"
+        },
+        {
+          "n": 24,
+          "offense": "LOU",
+          "spot": "opp 35",
+          "ytg": 35,
+          "clock": "Q4 6:43",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.0791,
+            "td": 0.4011,
+            "fg": 0.3408,
+            "other": 0.179
+          },
+          "pActual": 0.4011,
+          "logloss": 0.914,
+          "surprise": "chalk"
+        },
+        {
+          "n": 25,
+          "offense": "MISS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q4 4:42",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.3358,
+            "td": 0.272,
+            "fg": 0.1779,
+            "other": 0.2144
+          },
+          "pActual": 0.3358,
+          "logloss": 1.091,
+          "surprise": "normal"
+        },
+        {
+          "n": 26,
+          "offense": "LOU",
+          "spot": "own 1",
+          "ytg": 99,
+          "clock": "Q4",
+          "score": "0-0",
+          "result": "other",
+          "raw": "Any Other",
+          "p": {
+            "punt": 0.007,
+            "td": 0.0106,
+            "fg": 0.0315,
+            "other": 0.9509
+          },
+          "pActual": 0.9509,
+          "logloss": 0.05,
+          "surprise": "chalk"
+        }
+      ],
+      "longshotDrives": [
+        {
+          "n": 5,
+          "offense": "MISS",
+          "spot": "own 15",
+          "ytg": 85,
+          "clock": "Q1 3:25",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.4628,
+            "td": 0.2632,
+            "fg": 0.1103,
+            "other": 0.1637
+          },
+          "pActual": 0.1103,
+          "logloss": 2.204,
+          "surprise": "long"
+        },
+        {
+          "n": 11,
+          "offense": "MISS",
+          "spot": "own 20",
+          "ytg": 80,
+          "clock": "Q2 6:38",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Missed FG",
+          "p": {
+            "punt": 0.4378,
+            "td": 0.262,
+            "fg": 0.1266,
+            "other": 0.1737
+          },
+          "pActual": 0.1266,
+          "logloss": 2.067,
+          "surprise": "mild"
+        },
+        {
+          "n": 18,
+          "offense": "LOU",
+          "spot": "own 22",
+          "ytg": 78,
+          "clock": "Q3 4:47",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.4672,
+            "td": 0.2329,
+            "fg": 0.1247,
+            "other": 0.1752
+          },
+          "pActual": 0.1247,
+          "logloss": 2.082,
+          "surprise": "mild"
+        }
+      ],
+      "longshotSnaps": [
+        {
+          "drive": 5,
+          "offense": "MISS",
+          "down": 1,
+          "distance": 10,
+          "spot": "own 15",
+          "ytg": 85,
+          "period": 1,
+          "clock": "Q1 3:25",
+          "result": "fg",
+          "p": {
+            "punt": 0.4602,
+            "td": 0.2449,
+            "fg": 0.1129,
+            "other": 0.1821
+          },
+          "pActual": 0.1129,
+          "logloss": 2.181,
+          "surprise": "long"
+        },
+        {
+          "drive": 5,
+          "offense": "MISS",
+          "down": 2,
+          "distance": 8,
+          "spot": "own 17",
+          "ytg": 83,
+          "period": 1,
+          "clock": "Q1 3:25",
+          "result": "fg",
+          "p": {
+            "punt": 0.5406,
+            "td": 0.2057,
+            "fg": 0.0979,
+            "other": 0.1558
+          },
+          "pActual": 0.0979,
+          "logloss": 2.324,
+          "surprise": "long"
+        },
+        {
+          "drive": 5,
+          "offense": "MISS",
+          "down": 3,
+          "distance": 3,
+          "spot": "own 22",
+          "ytg": 78,
+          "period": 1,
+          "clock": "Q1 3:25",
+          "result": "fg",
+          "p": {
+            "punt": 0.5923,
+            "td": 0.1799,
+            "fg": 0.0835,
+            "other": 0.1443
+          },
+          "pActual": 0.0835,
+          "logloss": 2.483,
+          "surprise": "long"
+        },
+        {
+          "drive": 5,
+          "offense": "MISS",
+          "down": 2,
+          "distance": 10,
+          "spot": "own 27",
+          "ytg": 73,
+          "period": 1,
+          "clock": "Q1 3:25",
+          "result": "fg",
+          "p": {
+            "punt": 0.5162,
+            "td": 0.2291,
+            "fg": 0.1084,
+            "other": 0.1464
+          },
+          "pActual": 0.1084,
+          "logloss": 2.222,
+          "surprise": "long"
+        },
+        {
+          "drive": 6,
+          "offense": "LOU",
+          "down": 3,
+          "distance": 12,
+          "spot": "own 36",
+          "ytg": 64,
+          "period": 2,
+          "clock": "Q2 14:51",
+          "result": "other",
+          "p": {
+            "punt": 0.7261,
+            "td": 0.1099,
+            "fg": 0.062,
+            "other": 0.102
+          },
+          "pActual": 0.102,
+          "logloss": 2.282,
+          "surprise": "long"
+        },
+        {
+          "drive": 6,
+          "offense": "LOU",
+          "down": 4,
+          "distance": 7,
+          "spot": "own 41",
+          "ytg": 59,
+          "period": 2,
+          "clock": "Q2 11:51",
+          "result": "other",
+          "p": {
+            "punt": 0.9541,
+            "td": 0.0155,
+            "fg": 0.009,
+            "other": 0.0214
+          },
+          "pActual": 0.0214,
+          "logloss": 3.842,
+          "surprise": "bomb"
+        },
+        {
+          "drive": 9,
+          "offense": "MISS",
+          "down": 3,
+          "distance": 8,
+          "spot": "own 44",
+          "ytg": 56,
+          "period": 2,
+          "clock": "Q2 8:45",
+          "result": "other",
+          "p": {
+            "punt": 0.559,
+            "td": 0.217,
+            "fg": 0.1086,
+            "other": 0.1153
+          },
+          "pActual": 0.1153,
+          "logloss": 2.16,
+          "surprise": "long"
+        },
+        {
+          "drive": 11,
+          "offense": "MISS",
+          "down": 1,
+          "distance": 10,
+          "spot": "own 20",
+          "ytg": 80,
+          "period": 2,
+          "clock": "Q2 6:38",
+          "result": "fg",
+          "p": {
+            "punt": 0.4386,
+            "td": 0.273,
+            "fg": 0.119,
+            "other": 0.1694
+          },
+          "pActual": 0.119,
+          "logloss": 2.129,
+          "surprise": "long"
+        },
+        {
+          "drive": 11,
+          "offense": "MISS",
+          "down": 2,
+          "distance": 6,
+          "spot": "own 24",
+          "ytg": 76,
+          "period": 2,
+          "clock": "Q2 6:38",
+          "result": "fg",
+          "p": {
+            "punt": 0.454,
+            "td": 0.2762,
+            "fg": 0.1138,
+            "other": 0.156
+          },
+          "pActual": 0.1138,
+          "logloss": 2.174,
+          "surprise": "long"
+        },
+        {
+          "drive": 18,
+          "offense": "LOU",
+          "down": 1,
+          "distance": 10,
+          "spot": "own 22",
+          "ytg": 78,
+          "period": 3,
+          "clock": "Q3 4:47",
+          "result": "fg",
+          "p": {
+            "punt": 0.4939,
+            "td": 0.2068,
+            "fg": 0.1102,
+            "other": 0.1891
+          },
+          "pActual": 0.1102,
+          "logloss": 2.206,
+          "surprise": "long"
+        },
+        {
+          "drive": 18,
+          "offense": "LOU",
+          "down": 2,
+          "distance": 7,
+          "spot": "own 25",
+          "ytg": 75,
+          "period": 3,
+          "clock": "Q3 4:47",
+          "result": "fg",
+          "p": {
+            "punt": 0.534,
+            "td": 0.1887,
+            "fg": 0.1096,
+            "other": 0.1676
+          },
+          "pActual": 0.1096,
+          "logloss": 2.211,
+          "surprise": "long"
+        },
+        {
+          "drive": 23,
+          "offense": "MISS",
+          "down": 4,
+          "distance": 11,
+          "spot": "opp 40",
+          "ytg": 40,
+          "period": 4,
+          "clock": "Q4 10:34",
+          "result": "td",
+          "p": {
+            "punt": 0.8526,
+            "td": 0.0326,
+            "fg": 0.0588,
+            "other": 0.0559
+          },
+          "pActual": 0.0326,
+          "logloss": 3.423,
+          "surprise": "bomb"
+        }
+      ],
+      "nextDrives": [
+        {
+          "afterDrive": 1,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "own 13",
+          "down": 4,
+          "predSpot": "own 44",
+          "result": "fg",
+          "p": {
+            "punt": 0.327,
+            "td": 0.3212,
+            "fg": 0.1819,
+            "other": 0.1699
+          },
+          "pActual": 0.1819,
+          "logloss": 1.705,
+          "surprise": "mild"
+        },
+        {
+          "afterDrive": 2,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "opp 7",
+          "down": 4,
+          "predSpot": "own 27",
+          "result": "other",
+          "p": {
+            "punt": 0.4369,
+            "td": 0.2771,
+            "fg": 0.1166,
+            "other": 0.1695
+          },
+          "pActual": 0.1695,
+          "logloss": 1.775,
+          "surprise": "mild"
+        },
+        {
+          "afterDrive": 3,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "opp 45",
+          "down": 4,
+          "predSpot": "own 29",
+          "result": "punt",
+          "p": {
+            "punt": 0.4646,
+            "td": 0.2529,
+            "fg": 0.1245,
+            "other": 0.158
+          },
+          "pActual": 0.4646,
+          "logloss": 0.767,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 4,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "opp 40",
+          "down": 4,
+          "predSpot": "own 22",
+          "result": "fg",
+          "p": {
+            "punt": 0.4329,
+            "td": 0.2938,
+            "fg": 0.1069,
+            "other": 0.1664
+          },
+          "pActual": 0.1069,
+          "logloss": 2.235,
+          "surprise": "long"
+        },
+        {
+          "afterDrive": 5,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "opp 25",
+          "down": 4,
+          "predSpot": "own 27",
+          "result": "other",
+          "p": {
+            "punt": 0.469,
+            "td": 0.2335,
+            "fg": 0.1299,
+            "other": 0.1676
+          },
+          "pActual": 0.1676,
+          "logloss": 1.786,
+          "surprise": "mild"
+        },
+        {
+          "afterDrive": 6,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "own 41",
+          "down": 4,
+          "predSpot": "own 21",
+          "result": "td",
+          "p": {
+            "punt": 0.4247,
+            "td": 0.2933,
+            "fg": 0.12,
+            "other": 0.162
+          },
+          "pActual": 0.2933,
+          "logloss": 1.227,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 7,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "opp 1",
+          "down": 1,
+          "predSpot": "own 27",
+          "result": "punt",
+          "p": {
+            "punt": 0.4619,
+            "td": 0.2335,
+            "fg": 0.1211,
+            "other": 0.1836
+          },
+          "pActual": 0.4619,
+          "logloss": 0.772,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 8,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "own 13",
+          "down": 4,
+          "predSpot": "own 44",
+          "result": "other",
+          "p": {
+            "punt": 0.2472,
+            "td": 0.4133,
+            "fg": 0.1836,
+            "other": 0.1559
+          },
+          "pActual": 0.1559,
+          "logloss": 1.858,
+          "surprise": "mild"
+        },
+        {
+          "afterDrive": 9,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "own 44",
+          "down": 3,
+          "predSpot": "own 23",
+          "result": "punt",
+          "p": {
+            "punt": 0.4855,
+            "td": 0.2217,
+            "fg": 0.1053,
+            "other": 0.1874
+          },
+          "pActual": 0.4855,
+          "logloss": 0.722,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 10,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "own 43",
+          "down": 4,
+          "predSpot": "own 20",
+          "result": "fg",
+          "p": {
+            "punt": 0.437,
+            "td": 0.2748,
+            "fg": 0.1188,
+            "other": 0.1694
+          },
+          "pActual": 0.1188,
+          "logloss": 2.13,
+          "surprise": "long"
+        },
+        {
+          "afterDrive": 11,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "opp 29",
+          "down": 4,
+          "predSpot": "own 28",
+          "result": "fg",
+          "p": {
+            "punt": 0.2865,
+            "td": 0.1285,
+            "fg": 0.1547,
+            "other": 0.4303
+          },
+          "pActual": 0.1547,
+          "logloss": 1.866,
+          "surprise": "mild"
+        },
+        {
+          "afterDrive": 12,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "opp 29",
+          "down": 4,
+          "predSpot": "own 29",
+          "result": "td",
+          "p": {
+            "punt": 0.3854,
+            "td": 0.3106,
+            "fg": 0.1304,
+            "other": 0.1736
+          },
+          "pActual": 0.3106,
+          "logloss": 1.169,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 14,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "opp 30",
+          "down": 2,
+          "predSpot": "own 26",
+          "result": "td",
+          "p": {
+            "punt": 0.3561,
+            "td": 0.3088,
+            "fg": 0.1212,
+            "other": 0.214
+          },
+          "pActual": 0.3088,
+          "logloss": 1.175,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 15,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "own 38",
+          "down": 2,
+          "predSpot": "own 25",
+          "result": "punt",
+          "p": {
+            "punt": 0.4261,
+            "td": 0.2274,
+            "fg": 0.1166,
+            "other": 0.2299
+          },
+          "pActual": 0.4261,
+          "logloss": 0.853,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 16,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "own 27",
+          "down": 4,
+          "predSpot": "own 33",
+          "result": "punt",
+          "p": {
+            "punt": 0.3259,
+            "td": 0.3683,
+            "fg": 0.1373,
+            "other": 0.1685
+          },
+          "pActual": 0.3259,
+          "logloss": 1.121,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 17,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "own 38",
+          "down": 4,
+          "predSpot": "own 20",
+          "result": "fg",
+          "p": {
+            "punt": 0.465,
+            "td": 0.1992,
+            "fg": 0.114,
+            "other": 0.2217
+          },
+          "pActual": 0.114,
+          "logloss": 2.171,
+          "surprise": "long"
+        },
+        {
+          "afterDrive": 18,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "opp 27",
+          "down": 4,
+          "predSpot": "own 26",
+          "result": "td",
+          "p": {
+            "punt": 0.3935,
+            "td": 0.3149,
+            "fg": 0.1244,
+            "other": 0.1672
+          },
+          "pActual": 0.3149,
+          "logloss": 1.156,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 19,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "own 38",
+          "down": 1,
+          "predSpot": "own 26",
+          "result": "td",
+          "p": {
+            "punt": 0.3948,
+            "td": 0.2653,
+            "fg": 0.0789,
+            "other": 0.261
+          },
+          "pActual": 0.2653,
+          "logloss": 1.327,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 20,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "own 38",
+          "down": 1,
+          "predSpot": "own 27",
+          "result": "td",
+          "p": {
+            "punt": 0.3882,
+            "td": 0.3099,
+            "fg": 0.1336,
+            "other": 0.1683
+          },
+          "pActual": 0.3099,
+          "logloss": 1.171,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 21,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "opp 35",
+          "down": 2,
+          "predSpot": "own 25",
+          "result": "punt",
+          "p": {
+            "punt": 0.3787,
+            "td": 0.2722,
+            "fg": 0.0647,
+            "other": 0.2845
+          },
+          "pActual": 0.3787,
+          "logloss": 0.971,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 22,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "own 11",
+          "down": 4,
+          "predSpot": "own 44",
+          "result": "td",
+          "p": {
+            "punt": 0.262,
+            "td": 0.4018,
+            "fg": 0.1749,
+            "other": 0.1614
+          },
+          "pActual": 0.4018,
+          "logloss": 0.912,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 23,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "opp 5",
+          "down": 3,
+          "predSpot": "own 26",
+          "result": "td",
+          "p": {
+            "punt": 0.1727,
+            "td": 0.3109,
+            "fg": 0.0356,
+            "other": 0.4809
+          },
+          "pActual": 0.3109,
+          "logloss": 1.168,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 24,
+          "currentOffense": "LOU",
+          "nextOffense": "MISS",
+          "fromSpot": "own 46",
+          "down": 3,
+          "predSpot": "own 33",
+          "result": "punt",
+          "p": {
+            "punt": 0.3008,
+            "td": 0.1466,
+            "fg": 0.063,
+            "other": 0.4896
+          },
+          "pActual": 0.3008,
+          "logloss": 1.201,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 25,
+          "currentOffense": "MISS",
+          "nextOffense": "LOU",
+          "fromSpot": "own 31",
+          "down": 4,
+          "predSpot": "own 31",
+          "result": "other",
+          "p": {
+            "punt": 0.1124,
+            "td": 0.3119,
+            "fg": 0.0422,
+            "other": 0.5335
+          },
+          "pActual": 0.5335,
+          "logloss": 0.628,
+          "surprise": "chalk"
+        }
+      ],
+      "resultCounts": {
+        "punt": 8,
+        "td": 8,
+        "fg": 5,
+        "other": 5
+      }
+    },
+    {
+      "label": "Wisconsin @ Notre Dame",
+      "espnId": "401858438",
+      "away": "Wisconsin Badgers",
+      "home": "Notre Dame Fighting Irish",
+      "awayAbbr": "WIS",
+      "homeAbbr": "ND",
+      "score": "13-41",
+      "homeSpread": -21.0,
+      "ou": 45.5,
+      "nDrives": 20,
+      "driveStart": {
+        "n": 20,
+        "logloss": 1.0551,
+        "meanPActual": 0.4011,
+        "obs": {
+          "punt": 0.4,
+          "td": 0.25,
+          "fg": 0.2,
+          "other": 0.15
+        },
+        "model": {
+          "punt": 0.4018,
+          "td": 0.2404,
+          "fg": 0.1523,
+          "other": 0.2054
+        },
+        "nLong": 3,
+        "nBomb": 0
+      },
+      "currentSnaps": {
+        "n": 139,
+        "logloss": 1.0137,
+        "meanPActual": 0.4469,
+        "obs": {
+          "punt": 0.3309,
+          "td": 0.2662,
+          "fg": 0.3022,
+          "other": 0.1007
+        },
+        "model": {
+          "punt": 0.316,
+          "td": 0.2505,
+          "fg": 0.189,
+          "other": 0.2445
+        },
+        "nLong": 20,
+        "nBomb": 7
+      },
+      "nextLastSnap": {
+        "n": 19,
+        "logloss": 1.0298,
+        "meanPActual": 0.4128,
+        "obs": {
+          "punt": 0.4211,
+          "td": 0.2105,
+          "fg": 0.1579,
+          "other": 0.2105
+        },
+        "model": {
+          "punt": 0.3841,
+          "td": 0.2352,
+          "fg": 0.1167,
+          "other": 0.264
+        },
+        "nLong": 2,
+        "nBomb": 0
+      },
+      "drives": [
+        {
+          "n": 1,
+          "offense": "WIS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q1 15:00",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.6245,
+            "td": 0.1098,
+            "fg": 0.1079,
+            "other": 0.1577
+          },
+          "pActual": 0.6245,
+          "logloss": 0.471,
+          "surprise": "chalk"
+        },
+        {
+          "n": 2,
+          "offense": "ND",
+          "spot": "own 21",
+          "ytg": 79,
+          "clock": "Q1 12:43",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.3995,
+            "td": 0.3366,
+            "fg": 0.1248,
+            "other": 0.1391
+          },
+          "pActual": 0.3995,
+          "logloss": 0.918,
+          "surprise": "chalk"
+        },
+        {
+          "n": 3,
+          "offense": "WIS",
+          "spot": "opp 37",
+          "ytg": 37,
+          "clock": "Q1 10:53",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.1319,
+            "td": 0.2346,
+            "fg": 0.4516,
+            "other": 0.1818
+          },
+          "pActual": 0.4516,
+          "logloss": 0.795,
+          "surprise": "chalk"
+        },
+        {
+          "n": 4,
+          "offense": "ND",
+          "spot": "own 18",
+          "ytg": 82,
+          "clock": "Q1 6:27",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.4168,
+            "td": 0.3348,
+            "fg": 0.1035,
+            "other": 0.145
+          },
+          "pActual": 0.1035,
+          "logloss": 2.268,
+          "surprise": "long"
+        },
+        {
+          "n": 5,
+          "offense": "ND",
+          "spot": "opp 13",
+          "ytg": 13,
+          "clock": "Q1 1:28",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.0717,
+            "td": 0.6415,
+            "fg": 0.2261,
+            "other": 0.0607
+          },
+          "pActual": 0.6415,
+          "logloss": 0.444,
+          "surprise": "chalk"
+        },
+        {
+          "n": 6,
+          "offense": "WIS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q1 0:22",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.6239,
+            "td": 0.1103,
+            "fg": 0.1161,
+            "other": 0.1497
+          },
+          "pActual": 0.6239,
+          "logloss": 0.472,
+          "surprise": "chalk"
+        },
+        {
+          "n": 7,
+          "offense": "ND",
+          "spot": "own 1",
+          "ytg": 99,
+          "clock": "Q2 14:35",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.3389,
+            "td": 0.3273,
+            "fg": 0.1405,
+            "other": 0.1933
+          },
+          "pActual": 0.3389,
+          "logloss": 1.082,
+          "surprise": "normal"
+        },
+        {
+          "n": 8,
+          "offense": "WIS",
+          "spot": "opp 48",
+          "ytg": 48,
+          "clock": "Q2 13:04",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.344,
+            "td": 0.1776,
+            "fg": 0.274,
+            "other": 0.2045
+          },
+          "pActual": 0.1776,
+          "logloss": 1.728,
+          "surprise": "mild"
+        },
+        {
+          "n": 9,
+          "offense": "ND",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q2 12:36",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.3764,
+            "td": 0.3498,
+            "fg": 0.1248,
+            "other": 0.149
+          },
+          "pActual": 0.1248,
+          "logloss": 2.081,
+          "surprise": "mild"
+        },
+        {
+          "n": 10,
+          "offense": "WIS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q2 8:53",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.6136,
+            "td": 0.1087,
+            "fg": 0.1201,
+            "other": 0.1576
+          },
+          "pActual": 0.6136,
+          "logloss": 0.488,
+          "surprise": "chalk"
+        },
+        {
+          "n": 11,
+          "offense": "ND",
+          "spot": "own 20",
+          "ytg": 80,
+          "clock": "Q2 4:50",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.397,
+            "td": 0.3329,
+            "fg": 0.1209,
+            "other": 0.1492
+          },
+          "pActual": 0.397,
+          "logloss": 0.924,
+          "surprise": "chalk"
+        },
+        {
+          "n": 12,
+          "offense": "WIS",
+          "spot": "own 28",
+          "ytg": 72,
+          "clock": "Q2 2:12",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.537,
+            "td": 0.1114,
+            "fg": 0.1504,
+            "other": 0.2012
+          },
+          "pActual": 0.537,
+          "logloss": 0.622,
+          "surprise": "chalk"
+        },
+        {
+          "n": 13,
+          "offense": "ND",
+          "spot": "own 12",
+          "ytg": 88,
+          "clock": "Q2 0:39",
+          "score": "0-0",
+          "result": "other",
+          "raw": "End Of Half",
+          "p": {
+            "punt": 0.1136,
+            "td": 0.1068,
+            "fg": 0.0752,
+            "other": 0.7043
+          },
+          "pActual": 0.7043,
+          "logloss": 0.35,
+          "surprise": "chalk"
+        },
+        {
+          "n": 14,
+          "offense": "ND",
+          "spot": "own 30",
+          "ytg": 70,
+          "clock": "Q3 15:00",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.3087,
+            "td": 0.3557,
+            "fg": 0.1445,
+            "other": 0.191
+          },
+          "pActual": 0.3557,
+          "logloss": 1.034,
+          "surprise": "chalk"
+        },
+        {
+          "n": 15,
+          "offense": "WIS",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q3 10:23",
+          "score": "0-0",
+          "result": "other",
+          "raw": "Interception Touchdown",
+          "p": {
+            "punt": 0.5679,
+            "td": 0.117,
+            "fg": 0.1198,
+            "other": 0.1953
+          },
+          "pActual": 0.1953,
+          "logloss": 1.633,
+          "surprise": "mild"
+        },
+        {
+          "n": 16,
+          "offense": "WIS",
+          "spot": "own 35",
+          "ytg": 65,
+          "clock": "Q3 8:52",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.511,
+            "td": 0.1483,
+            "fg": 0.131,
+            "other": 0.2096
+          },
+          "pActual": 0.131,
+          "logloss": 2.033,
+          "surprise": "mild"
+        },
+        {
+          "n": 17,
+          "offense": "ND",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q3 0:14",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.3417,
+            "td": 0.3623,
+            "fg": 0.1327,
+            "other": 0.1632
+          },
+          "pActual": 0.3623,
+          "logloss": 1.015,
+          "surprise": "chalk"
+        },
+        {
+          "n": 18,
+          "offense": "WIS",
+          "spot": "own 23",
+          "ytg": 77,
+          "clock": "Q4 10:48",
+          "score": "0-0",
+          "result": "punt",
+          "raw": "Punt",
+          "p": {
+            "punt": 0.559,
+            "td": 0.1318,
+            "fg": 0.1054,
+            "other": 0.2038
+          },
+          "pActual": 0.559,
+          "logloss": 0.582,
+          "surprise": "chalk"
+        },
+        {
+          "n": 19,
+          "offense": "ND",
+          "spot": "own 12",
+          "ytg": 88,
+          "clock": "Q4 7:51",
+          "score": "0-0",
+          "result": "td",
+          "raw": "Touchdown",
+          "p": {
+            "punt": 0.3863,
+            "td": 0.3155,
+            "fg": 0.1108,
+            "other": 0.1873
+          },
+          "pActual": 0.3155,
+          "logloss": 1.154,
+          "surprise": "normal"
+        },
+        {
+          "n": 20,
+          "offense": "WIS",
+          "spot": "own 24",
+          "ytg": 76,
+          "clock": "Q4 1:47",
+          "score": "0-0",
+          "result": "other",
+          "raw": "End of Half",
+          "p": {
+            "punt": 0.3727,
+            "td": 0.0957,
+            "fg": 0.1667,
+            "other": 0.365
+          },
+          "pActual": 0.365,
+          "logloss": 1.008,
+          "surprise": "chalk"
+        }
+      ],
+      "longshotDrives": [
+        {
+          "n": 4,
+          "offense": "ND",
+          "spot": "own 18",
+          "ytg": 82,
+          "clock": "Q1 6:27",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.4168,
+            "td": 0.3348,
+            "fg": 0.1035,
+            "other": 0.145
+          },
+          "pActual": 0.1035,
+          "logloss": 2.268,
+          "surprise": "long"
+        },
+        {
+          "n": 9,
+          "offense": "ND",
+          "spot": "own 25",
+          "ytg": 75,
+          "clock": "Q2 12:36",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.3764,
+            "td": 0.3498,
+            "fg": 0.1248,
+            "other": 0.149
+          },
+          "pActual": 0.1248,
+          "logloss": 2.081,
+          "surprise": "mild"
+        },
+        {
+          "n": 16,
+          "offense": "WIS",
+          "spot": "own 35",
+          "ytg": 65,
+          "clock": "Q3 8:52",
+          "score": "0-0",
+          "result": "fg",
+          "raw": "Field Goal",
+          "p": {
+            "punt": 0.511,
+            "td": 0.1483,
+            "fg": 0.131,
+            "other": 0.2096
+          },
+          "pActual": 0.131,
+          "logloss": 2.033,
+          "surprise": "mild"
+        }
+      ],
+      "longshotSnaps": [
+        {
+          "drive": 4,
+          "offense": "ND",
+          "down": 1,
+          "distance": 10,
+          "spot": "own 18",
+          "ytg": 82,
+          "period": 1,
+          "clock": "Q1 6:17",
+          "result": "fg",
+          "p": {
+            "punt": 0.4445,
+            "td": 0.2901,
+            "fg": 0.1119,
+            "other": 0.1535
+          },
+          "pActual": 0.1119,
+          "logloss": 2.19,
+          "surprise": "long"
+        },
+        {
+          "drive": 4,
+          "offense": "ND",
+          "down": 4,
+          "distance": 1,
+          "spot": "own 42",
+          "ytg": 58,
+          "period": 1,
+          "clock": "Q1 3:56",
+          "result": "fg",
+          "p": {
+            "punt": 0.5544,
+            "td": 0.1976,
+            "fg": 0.0658,
+            "other": 0.1823
+          },
+          "pActual": 0.0658,
+          "logloss": 2.721,
+          "surprise": "bomb"
+        },
+        {
+          "drive": 10,
+          "offense": "WIS",
+          "down": 1,
+          "distance": 10,
+          "spot": "opp 36",
+          "ytg": 36,
+          "period": 2,
+          "clock": "Q2 6:01",
+          "result": "punt",
+          "p": {
+            "punt": 0.1184,
+            "td": 0.2094,
+            "fg": 0.4331,
+            "other": 0.239
+          },
+          "pActual": 0.1184,
+          "logloss": 2.134,
+          "surprise": "long"
+        },
+        {
+          "drive": 12,
+          "offense": "WIS",
+          "down": 1,
+          "distance": 10,
+          "spot": "opp 41",
+          "ytg": 41,
+          "period": 2,
+          "clock": "Q2 1:03",
+          "result": "punt",
+          "p": {
+            "punt": 0.1077,
+            "td": 0.1493,
+            "fg": 0.4604,
+            "other": 0.2826
+          },
+          "pActual": 0.1077,
+          "logloss": 2.228,
+          "surprise": "long"
+        },
+        {
+          "drive": 16,
+          "offense": "WIS",
+          "down": 1,
+          "distance": 10,
+          "spot": "own 35",
+          "ytg": 65,
+          "period": 3,
+          "clock": "Q3 8:46",
+          "result": "fg",
+          "p": {
+            "punt": 0.5205,
+            "td": 0.1119,
+            "fg": 0.0878,
+            "other": 0.2797
+          },
+          "pActual": 0.0878,
+          "logloss": 2.432,
+          "surprise": "long"
+        },
+        {
+          "drive": 16,
+          "offense": "WIS",
+          "down": 2,
+          "distance": 9,
+          "spot": "own 36",
+          "ytg": 64,
+          "period": 3,
+          "clock": "Q3 8:02",
+          "result": "fg",
+          "p": {
+            "punt": 0.6001,
+            "td": 0.1022,
+            "fg": 0.0709,
+            "other": 0.2268
+          },
+          "pActual": 0.0709,
+          "logloss": 2.646,
+          "surprise": "bomb"
+        },
+        {
+          "drive": 16,
+          "offense": "WIS",
+          "down": 3,
+          "distance": 3,
+          "spot": "own 42",
+          "ytg": 58,
+          "period": 3,
+          "clock": "Q3 7:21",
+          "result": "fg",
+          "p": {
+            "punt": 0.532,
+            "td": 0.1134,
+            "fg": 0.1031,
+            "other": 0.2514
+          },
+          "pActual": 0.1031,
+          "logloss": 2.272,
+          "surprise": "long"
+        },
+        {
+          "drive": 16,
+          "offense": "WIS",
+          "down": 4,
+          "distance": 1,
+          "spot": "own 44",
+          "ytg": 56,
+          "period": 3,
+          "clock": "Q3 6:37",
+          "result": "fg",
+          "p": {
+            "punt": 0.449,
+            "td": 0.1397,
+            "fg": 0.0609,
+            "other": 0.3504
+          },
+          "pActual": 0.0609,
+          "logloss": 2.798,
+          "surprise": "bomb"
+        },
+        {
+          "drive": 16,
+          "offense": "WIS",
+          "down": 2,
+          "distance": 13,
+          "spot": "own 43",
+          "ytg": 57,
+          "period": 3,
+          "clock": "Q3 5:29",
+          "result": "fg",
+          "p": {
+            "punt": 0.5074,
+            "td": 0.1367,
+            "fg": 0.0903,
+            "other": 0.2656
+          },
+          "pActual": 0.0903,
+          "logloss": 2.405,
+          "surprise": "long"
+        },
+        {
+          "drive": 16,
+          "offense": "WIS",
+          "down": 3,
+          "distance": 7,
+          "spot": "own 49",
+          "ytg": 51,
+          "period": 3,
+          "clock": "Q3 4:40",
+          "result": "fg",
+          "p": {
+            "punt": 0.4878,
+            "td": 0.1392,
+            "fg": 0.0762,
+            "other": 0.2968
+          },
+          "pActual": 0.0762,
+          "logloss": 2.575,
+          "surprise": "bomb"
+        },
+        {
+          "drive": 19,
+          "offense": "ND",
+          "down": 3,
+          "distance": 6,
+          "spot": "own 41",
+          "ytg": 59,
+          "period": 4,
+          "clock": "Q4 5:18",
+          "result": "td",
+          "p": {
+            "punt": 0.6155,
+            "td": 0.0862,
+            "fg": 0.0416,
+            "other": 0.2567
+          },
+          "pActual": 0.0862,
+          "logloss": 2.451,
+          "surprise": "long"
+        }
+      ],
+      "nextDrives": [
+        {
+          "afterDrive": 1,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "own 34",
+          "down": 4,
+          "predSpot": "own 31",
+          "result": "punt",
+          "p": {
+            "punt": 0.3072,
+            "td": 0.3916,
+            "fg": 0.1452,
+            "other": 0.1561
+          },
+          "pActual": 0.3072,
+          "logloss": 1.18,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 2,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "own 16",
+          "down": 4,
+          "predSpot": "own 44",
+          "result": "fg",
+          "p": {
+            "punt": 0.4217,
+            "td": 0.1725,
+            "fg": 0.2259,
+            "other": 0.1799
+          },
+          "pActual": 0.2259,
+          "logloss": 1.488,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 3,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "opp 9",
+          "down": 4,
+          "predSpot": "own 27",
+          "result": "fg",
+          "p": {
+            "punt": 0.3953,
+            "td": 0.3435,
+            "fg": 0.1124,
+            "other": 0.1488
+          },
+          "pActual": 0.1124,
+          "logloss": 2.186,
+          "surprise": "long"
+        },
+        {
+          "afterDrive": 4,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "opp 34",
+          "down": 4,
+          "predSpot": "own 27",
+          "result": "punt",
+          "p": {
+            "punt": 0.6109,
+            "td": 0.1175,
+            "fg": 0.1183,
+            "other": 0.1533
+          },
+          "pActual": 0.6109,
+          "logloss": 0.493,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 5,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "opp 3",
+          "down": 2,
+          "predSpot": "own 27",
+          "result": "punt",
+          "p": {
+            "punt": 0.5824,
+            "td": 0.1231,
+            "fg": 0.1161,
+            "other": 0.1784
+          },
+          "pActual": 0.5824,
+          "logloss": 0.541,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 6,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "own 29",
+          "down": 4,
+          "predSpot": "own 32",
+          "result": "punt",
+          "p": {
+            "punt": 0.2898,
+            "td": 0.4238,
+            "fg": 0.1337,
+            "other": 0.1527
+          },
+          "pActual": 0.2898,
+          "logloss": 1.239,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 7,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "own 5",
+          "down": 4,
+          "predSpot": "own 48",
+          "result": "td",
+          "p": {
+            "punt": 0.3914,
+            "td": 0.1755,
+            "fg": 0.2167,
+            "other": 0.2165
+          },
+          "pActual": 0.1755,
+          "logloss": 1.74,
+          "surprise": "mild"
+        },
+        {
+          "afterDrive": 8,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "opp 28",
+          "down": 1,
+          "predSpot": "own 26",
+          "result": "fg",
+          "p": {
+            "punt": 0.3824,
+            "td": 0.3491,
+            "fg": 0.1251,
+            "other": 0.1434
+          },
+          "pActual": 0.1251,
+          "logloss": 2.079,
+          "surprise": "mild"
+        },
+        {
+          "afterDrive": 9,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "opp 8",
+          "down": 4,
+          "predSpot": "own 27",
+          "result": "punt",
+          "p": {
+            "punt": 0.5839,
+            "td": 0.1174,
+            "fg": 0.1229,
+            "other": 0.1759
+          },
+          "pActual": 0.5839,
+          "logloss": 0.538,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 10,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "opp 36",
+          "down": 4,
+          "predSpot": "own 18",
+          "result": "punt",
+          "p": {
+            "punt": 0.3994,
+            "td": 0.3439,
+            "fg": 0.1099,
+            "other": 0.1468
+          },
+          "pActual": 0.3994,
+          "logloss": 0.918,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 11,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "own 21",
+          "down": 4,
+          "predSpot": "own 29",
+          "result": "punt",
+          "p": {
+            "punt": 0.5238,
+            "td": 0.1124,
+            "fg": 0.1507,
+            "other": 0.2131
+          },
+          "pActual": 0.5238,
+          "logloss": 0.647,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 12,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "opp 47",
+          "down": 4,
+          "predSpot": "own 20",
+          "result": "other",
+          "p": {
+            "punt": 0.0567,
+            "td": 0.0794,
+            "fg": 0.0498,
+            "other": 0.8141
+          },
+          "pActual": 0.8141,
+          "logloss": 0.206,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 13,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "own 12",
+          "down": 2,
+          "predSpot": "own 36",
+          "result": "other",
+          "p": {
+            "punt": 0.4503,
+            "td": 0.1523,
+            "fg": 0.1395,
+            "other": 0.2579
+          },
+          "pActual": 0.2579,
+          "logloss": 1.355,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 14,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "opp 3",
+          "down": 2,
+          "predSpot": "own 26",
+          "result": "other",
+          "p": {
+            "punt": 0.5309,
+            "td": 0.1279,
+            "fg": 0.0911,
+            "other": 0.2501
+          },
+          "pActual": 0.2501,
+          "logloss": 1.386,
+          "surprise": "normal"
+        },
+        {
+          "afterDrive": 15,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "own 45",
+          "down": 2,
+          "predSpot": "own 29",
+          "result": "td",
+          "p": {
+            "punt": 0.2906,
+            "td": 0.4246,
+            "fg": 0.1218,
+            "other": 0.1629
+          },
+          "pActual": 0.4246,
+          "logloss": 0.857,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 16,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "opp 18",
+          "down": 4,
+          "predSpot": "own 22",
+          "result": "td",
+          "p": {
+            "punt": 0.3579,
+            "td": 0.383,
+            "fg": 0.0973,
+            "other": 0.1618
+          },
+          "pActual": 0.383,
+          "logloss": 0.96,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 17,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "opp 5",
+          "down": 2,
+          "predSpot": "own 26",
+          "result": "punt",
+          "p": {
+            "punt": 0.442,
+            "td": 0.1388,
+            "fg": 0.0389,
+            "other": 0.3803
+          },
+          "pActual": 0.442,
+          "logloss": 0.816,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 18,
+          "currentOffense": "WIS",
+          "nextOffense": "ND",
+          "fromSpot": "own 50",
+          "down": 4,
+          "predSpot": "own 35",
+          "result": "td",
+          "p": {
+            "punt": 0.2522,
+            "td": 0.4345,
+            "fg": 0.0898,
+            "other": 0.2236
+          },
+          "pActual": 0.4345,
+          "logloss": 0.833,
+          "surprise": "chalk"
+        },
+        {
+          "afterDrive": 19,
+          "currentOffense": "ND",
+          "nextOffense": "WIS",
+          "fromSpot": "opp 28",
+          "down": 3,
+          "predSpot": "own 28",
+          "result": "other",
+          "p": {
+            "punt": 0.0286,
+            "td": 0.058,
+            "fg": 0.0127,
+            "other": 0.9007
+          },
+          "pActual": 0.9007,
+          "logloss": 0.105,
+          "surprise": "chalk"
+        }
+      ],
+      "resultCounts": {
+        "punt": 8,
+        "td": 5,
+        "fg": 4,
+        "other": 3
+      }
+    }
+  ]
+}

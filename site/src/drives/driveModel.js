@@ -15,6 +15,7 @@ import {
   probToAmerican,
 } from '../sop/sopModel.js';
 import { DRIVE_RESULT_MODEL, scoreLgbmLayer } from './driveResultLgbm.js';
+import { isMadeScoreLabel } from './espnDriveChart.js';
 import { predictOpponentStart } from './nextDriveStart.js';
 import { ytgFromSpot } from './ytgFromSpot.js';
 
@@ -294,11 +295,63 @@ export function livePossessionSide(game) {
   return pickNamedSide(live?.possessionName || '', game?.teams?.home, game?.teams?.away);
 }
 
-/** Who is actually up now. Halftime last-snap possession is ignored. */
+export function hasLiveOffensiveSnap(game) {
+  const live = game?.live;
+  const down = Number(live?.down);
+  if (!Number.isFinite(down) || down < 1) return false;
+  const ytg = Number(live?.yardsToEndzone);
+  return Number.isFinite(ytg) && ytg >= 1 && ytg <= 99;
+}
+
+/**
+ * Team that just scored a TD / made FG. That series is over; ESPN often
+ * still tags them as possession through the PAT. Kickoff goes the other way.
+ */
+export function scoringSideAfterMadeKick(game) {
+  if (!game?.inPlay || isHalftimeLive(game.live)) return null;
+  if (hasLiveOffensiveSnap(game)) return null;
+  const chart = game?.live?.driveChart;
+  if (chart?.currentSide === 'home' || chart?.currentSide === 'away') return null;
+  const driveResult = chart?.currentResult;
+  const playResult = game?.live?.lastPlayType || game?.live?.lastPlay;
+  if (!isMadeScoreLabel(driveResult) && !isMadeScoreLabel(playResult)) return null;
+  if (isMadeScoreLabel(driveResult) && (chart?.finishedSide === 'home' || chart?.finishedSide === 'away')) {
+    return chart.finishedSide;
+  }
+  if (game?.live?.lastPlaySide === 'home' || game?.live?.lastPlaySide === 'away') {
+    return game.live.lastPlaySide;
+  }
+  return null;
+}
+
+/** Who is actually up now. After a score, the other team is getting the kickoff. */
 export function firstUpSide(game) {
   if (!game?.inPlay || game?.live?.state === 'pre') return null;
   if (isHalftimeLive(game.live)) return null;
+  if (hasLiveOffensiveSnap(game)) return livePossessionSide(game);
+  const scorer = scoringSideAfterMadeKick(game);
+  if (scorer) return flipSide(scorer);
+  const chartSide = game?.live?.driveChart?.currentSide;
+  if (chartSide === 'home' || chartSide === 'away') return chartSide;
+  const finished = game?.live?.driveChart?.finishedSide;
+  // Punt / INT / missed FG: series is over, but the next snap is not a kickoff.
+  if (finished === 'home' || finished === 'away') return null;
   return livePossessionSide(game);
+}
+
+export function situationOffenseLabel(game) {
+  if (!game?.inPlay) return null;
+  if (isHalftimeLive(game.live)) return 'Halftime';
+  const side = firstUpSide(game);
+  const name = side === 'away'
+    ? (game?.teams?.away ?? game?.live?.possessionName)
+    : side === 'home'
+      ? (game?.teams?.home ?? game?.live?.possessionName)
+      : null;
+  if (scoringSideAfterMadeKick(game) && name) return `${name} gets the ball`;
+  if (name) return `${name} on offense`;
+  if (game?.live?.period || game?.live?.clock || game?.live?.statusText) return 'Between possessions';
+  return null;
 }
 
 export function inferOffenseSide(game, market = null) {
