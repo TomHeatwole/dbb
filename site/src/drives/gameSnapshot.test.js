@@ -1,5 +1,5 @@
 import { buildDrivesGameSnapshot, pickHeadlineDrivePlay, shortDriveGameName } from './gameSnapshot';
-import { evaluateDriveGame } from './driveModel';
+import { evaluateDriveGame, listDriveSides } from './driveModel';
 
 describe('drives game snapshot', () => {
   const game = {
@@ -36,10 +36,14 @@ describe('drives game snapshot', () => {
 
   it('snapshots the highest-edge drive result vs the model', () => {
     const snap = buildDrivesGameSnapshot(game);
-    const model = evaluateDriveGame(game);
-    const play = pickHeadlineDrivePlay(model);
+    const sides = listDriveSides(game);
+    const views = sides.map((market) => evaluateDriveGame(game, { market }));
+    const plays = views.map((model) => pickHeadlineDrivePlay(model)).filter(Boolean);
+    const play = plays.reduce((best, cur) => (
+      cur.edgePoints > best.edgePoints ? cur : best
+    ));
 
-    expect(snap.market).toBe(`Jacksonville ${play.label}`);
+    expect(snap.market).toMatch(/^(Jacksonville|ND St) /);
     expect(snap.oddsBook).toBe('fd');
     expect(snap.oddsAmerican).toBe(play.american);
     expect(snap.lineLabel).toMatch(/^model /);
@@ -48,7 +52,7 @@ describe('drives game snapshot', () => {
     expect(snap.profitable).toBe(Boolean(play.profitable));
   });
 
-  it('labels a live card with the next drive, not the team that has the ball', () => {
+  it('labels a live dead-ball card with the team that is up now', () => {
     const live = {
       eventId: 'd2',
       name: 'East Carolina @ Alabama',
@@ -63,6 +67,6 @@ describe('drives game snapshot', () => {
       },
     };
     const snap = buildDrivesGameSnapshot(live);
-    expect(snap.market).toBe('East Carolina next');
+    expect(snap.market).toBe('Alabama current');
   });
 });

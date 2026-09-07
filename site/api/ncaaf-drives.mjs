@@ -7,6 +7,8 @@
  * DraftKings posts 1st Drive Result on Nash before kickoff.
  */
 
+import { parseEspnDriveBlob } from '../src/drives/espnDriveChart.js';
+
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
@@ -15,6 +17,10 @@ const NCAAF_COMPETITION_ID = 12529073;
 const ESPN_SCOREBOARD_URLS = [
   'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard',
   'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard',
+];
+const ESPN_SUMMARY_URLS = [
+  'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary',
+  'https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary',
 ];
 const ESPN_HEADERS = {
   Accept: 'application/json',
@@ -351,15 +357,16 @@ function mergeFdxLive(game, fdxLive) {
   return { ...game, live };
 }
 
+function fdxToDriveMarkets(markets) {
+  const fake = {};
+  (markets ?? []).forEach((row, i) => {
+    fake[`fdx-${i}`] = catalogToFdMarket(row);
+  });
+  return listDriveResultMarkets(fake, { inPlay: true, source: 'fdx' });
+}
+
 function fdxToNextDrive(markets) {
-  let best = null;
-  for (const row of markets) {
-    if (!isDriveResultMarket(row.marketName)) continue;
-    const ranked = scoreDriveMarket(catalogToFdMarket(row), { inPlay: true });
-    if (!best || ranked.score > best.score) best = ranked;
-  }
-  if (!best || !Object.keys(best.outcomes).length) return null;
-  return { marketName: best.name, marketStatus: 'OPEN', outcomes: best.outcomes, source: 'fdx' };
+  return fdxToDriveMarkets(markets)[0] ?? null;
 }
 
 async function fetchFdMarketPrices(ids) {
@@ -462,6 +469,7 @@ async function fetchFdxDebug(eventId, { inPlay = false, openDate = null } = {}) 
       fdxResultNames: extracted.resultNames,
       fdxMarketCount: catalog.length,
       nextDrive: fdxToNextDrive(catalog),
+      driveMarkets: fdxToDriveMarkets(catalog),
       live: liveFromFdxPbp(pbp?.json),
     };
   } catch (err) {
@@ -630,6 +638,8 @@ function scoreDriveMarket(market, { inPlay, possessionName }) {
   let score = 0;
   const driveNum = n.match(/\bdrive\s+(\d+)\b/);
   if (driveNum) score += 40 + Number(driveNum[1]);
+  if (n.includes('current')) score += 36;
+  if (/\bdrive\s+\d+\s*[-–:]/.test(n) && inPlay) score += 34;
   if (n.includes('next')) score += 30;
   if (n.includes('first') || n.includes('1st') || n.includes('opening')) score += 18;
   if (possessionName && n.includes(String(possessionName).toLowerCase())) score += 12;
@@ -641,20 +651,26 @@ function scoreDriveMarket(market, { inPlay, possessionName }) {
 }
 
 function pickDriveMarket(markets, { inPlay, possessionName } = {}) {
-  let best = null;
+  const listed = listDriveResultMarkets(markets, { inPlay, possessionName });
+  return listed[0] ?? null;
+}
+
+function listDriveResultMarkets(markets, { inPlay, possessionName, source } = {}) {
+  const out = [];
   for (const market of Object.values(markets ?? {})) {
     if (!isDriveResultMarket(market?.marketName)) continue;
     const ranked = scoreDriveMarket(market, { inPlay, possessionName });
-    if (!best || ranked.score > best.score) {
-      best = { ...ranked, marketStatus: market.marketStatus ?? null };
-    }
+    if (Object.keys(ranked.outcomes).length < 3) continue;
+    out.push({
+      marketName: ranked.name,
+      marketStatus: market.marketStatus ?? ranked.marketStatus ?? null,
+      outcomes: ranked.outcomes,
+      source,
+      _score: ranked.score,
+    });
   }
-  if (!best) return null;
-  return {
-    marketName: best.name,
-    marketStatus: best.marketStatus,
-    outcomes: best.outcomes,
-  };
+  out.sort((a, b) => b._score - a._score);
+  return out.map(({ _score, ...row }) => row);
 }
 
 function shouldFetchDkFirstDrive(ev) {
@@ -751,8 +767,13 @@ function annotateDriveMarket(market, teams, live = null) {
   const fromName = teamFromDkDriveName(market.marketName);
   let side = sideFromTeamName(fromName, teams);
   if (!side && (live?.possession === 'home' || live?.possession === 'away')) {
-    // Untitled live "next drive" is the upcoming possession, not the team with the ball.
-    side = live.possession === 'home' ? 'away' : 'home';
+    const n = String(market.marketName ?? '').toLowerCase();
+    const namedNext = n.includes('next') && !n.includes('current');
+    // Untitled live "Drive Result" is the current possession (FanDuel).
+    // A market that says "next" is the waiting team.
+    side = namedNext
+      ? (live.possession === 'home' ? 'away' : 'home')
+      : live.possession;
   }
   const offenseName = side === 'away'
     ? (teams?.away ?? fromName ?? live?.possessionName ?? null)
@@ -887,24 +908,24 @@ function ytgFromSituation(situation, possessionText, teams = {}) {
   if (Number.isFinite(ytg) && ytg >= 1 && ytg <= 99) return ytg;
   const text = String(possessionText ?? '').trim();
   if (text === '50') return 50;
-  const m = text.match(/^(.+?)\s+(\d+)$/);
+  const m = text.match(/^(?:at\s+)?(.+?)\s+(\d{1,2})$/i);
   if (!m) return null;
   const yl = Number(m[2]);
   if (!Number.isFinite(yl) || yl < 0 || yl > 50) return null;
   if (yl === 50) return 50;
   if (yl === 0) return 99;
   const tok = normAbbr(m[1]);
-  const off = teams.possession === 'home'
-    ? normAbbr(teams.homeAbbr)
-    : teams.possession === 'away'
-      ? normAbbr(teams.awayAbbr)
-      : '';
-  const home = normAbbr(teams.homeAbbr);
-  const away = normAbbr(teams.awayAbbr);
-  const own = (off && (tok === off || abbrClose(tok, off)))
-    || (teams.possession === 'home' && abbrClose(tok, home))
-    || (teams.possession === 'away' && abbrClose(tok, away));
-  return own ? 100 - yl : yl;
+  const initials = (name) => {
+    const words = String(name ?? '').split(/\s+/).filter(Boolean);
+    return words.length >= 2 ? normAbbr(words.map((w) => w[0]).join('')) : '';
+  };
+  const homeToks = [normAbbr(teams.homeAbbr), normAbbr(teams.home), initials(teams.home)].filter(Boolean);
+  const awayToks = [normAbbr(teams.awayAbbr), normAbbr(teams.away), initials(teams.away)].filter(Boolean);
+  const offToks = teams.possession === 'home' ? homeToks : teams.possession === 'away' ? awayToks : [];
+  const hit = (toks) => toks.some((t) => t === tok || abbrClose(tok, t));
+  if (hit(offToks)) return 100 - yl;
+  if (hit(homeToks) || hit(awayToks)) return yl;
+  return yl;
 }
 
 function compactProviderError(err) {
@@ -1058,6 +1079,8 @@ function parseEspnEvent(event) {
       possession,
       homeAbbr: home?.team?.abbreviation,
       awayAbbr: away?.team?.abbreviation,
+      home: home?.team?.displayName ?? home?.team?.name,
+      away: away?.team?.displayName ?? away?.team?.name,
     }),
     downDistance: situation.shortDownDistanceText ?? null,
     possessionText,
@@ -1105,6 +1128,59 @@ async function fetchEspnGames(openDates) {
   return { ok, error, matches };
 }
 
+function espnDriveSide(drive, teams) {
+  const team = drive?.team ?? {};
+  const abbr = String(team.abbreviation ?? '').toUpperCase();
+  const name = team.displayName || team.shortDisplayName || team.name || '';
+  if (abbr && teams.homeAbbr && abbr === String(teams.homeAbbr).toUpperCase()) return 'home';
+  if (abbr && teams.awayAbbr && abbr === String(teams.awayAbbr).toUpperCase()) return 'away';
+  if (name && namesMatch(name, teams.home)) return 'home';
+  if (name && namesMatch(name, teams.away)) return 'away';
+  return null;
+}
+
+function parseEspnDriveChart(summary, teams) {
+  return parseEspnDriveBlob(summary?.drives, (drive) => espnDriveSide(drive, teams));
+}
+
+async function fetchEspnDriveChart(espnId, teams) {
+  let lastErr = null;
+  for (const base of ESPN_SUMMARY_URLS) {
+    try {
+      const summary = await espnGetJson(`${base}?event=${espnId}`);
+      return parseEspnDriveChart(summary, teams);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  if (lastErr) return null;
+  return null;
+}
+
+async function attachEspnDriveCharts(games) {
+  const live = games.filter((game) => game?.inPlay && game?.espnId);
+  if (!live.length) return games;
+  const charts = new Map();
+  await mapPool(live, 4, async (game) => {
+    const chart = await fetchEspnDriveChart(game.espnId, {
+      home: game.teams?.home ?? game.espnHome,
+      away: game.teams?.away ?? game.espnAway,
+      homeAbbr: game.espnHomeAbbr,
+      awayAbbr: game.espnAwayAbbr,
+    });
+    if (chart) charts.set(game.eventId, chart);
+  });
+  if (!charts.size) return games;
+  return games.map((game) => {
+    const chart = charts.get(game.eventId);
+    if (!chart) return game;
+    return {
+      ...game,
+      live: { ...(game.live ?? {}), driveChart: chart },
+    };
+  });
+}
+
 function attachEspn(game, espnGames) {
   const hit = espnGames.find((row) => (
     namesMatch(game.teams?.home, row.home) && namesMatch(game.teams?.away, row.away)
@@ -1128,6 +1204,10 @@ function attachEspn(game, espnGames) {
   return {
     ...game,
     espnId: hit.id,
+    espnHome: hit.home,
+    espnAway: hit.away,
+    espnHomeAbbr: hit.homeAbbr,
+    espnAwayAbbr: hit.awayAbbr,
     inPlay: game.inPlay || hit.inPlay,
     score,
     scoreDisplay: scoreDisplay(score),
@@ -1165,9 +1245,10 @@ function buildGame(ev, bundle, fdx = null) {
   const inPlay = Boolean(event?.inPlay ?? ev.inPlay);
   const score = parseEventScore(event) ?? { home: 0, away: 0 };
   const sbapi = summarizeSbapiMarkets(markets);
-  let nextDrive = pickDriveMarket(markets, { inPlay });
-  if (nextDrive) nextDrive = { ...nextDrive, source: 'sbapi' };
-  if (!nextDrive && fdx?.nextDrive) nextDrive = fdx.nextDrive;
+  let driveMarkets = listDriveResultMarkets(markets, { inPlay, source: 'sbapi' });
+  if (!driveMarkets.length && fdx?.driveMarkets?.length) driveMarkets = fdx.driveMarkets;
+  else if (!driveMarkets.length && fdx?.nextDrive) driveMarkets = [fdx.nextDrive];
+  const nextDrive = driveMarkets[0] ?? null;
   return {
     ...ev,
     inPlay,
@@ -1177,6 +1258,7 @@ function buildGame(ev, bundle, fdx = null) {
     scoreDisplay: scoreDisplay(score),
     lines: extractMainLines(markets),
     nextDrive,
+    driveMarkets,
     live: null,
     debug: {
       tabs: bundle?.tabs ?? null,
@@ -1266,7 +1348,8 @@ async function fetchNcaafDriveBook() {
     .map((game) => {
       const dk = dkByFdId.get(game.eventId);
       let driveMarkets = [];
-      if (game.nextDrive) driveMarkets = [game.nextDrive];
+      if (game.driveMarkets?.length) driveMarkets = game.driveMarkets;
+      else if (game.nextDrive) driveMarkets = [game.nextDrive];
       else if (dk?.drives?.length) driveMarkets = dk.drives;
       else if (dk?.nextDrive) driveMarkets = [dk.nextDrive];
       const nextDrive = driveMarkets[0] ?? null;
@@ -1293,38 +1376,39 @@ async function fetchNcaafDriveBook() {
         driveMarkets: annotated,
         nextDrive: annotated[0] ?? null,
       };
-    })
-    .sort((a, b) => {
-      if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
-      if (!a.openDate) return 1;
-      if (!b.openDate) return -1;
-      return new Date(a.openDate) - new Date(b.openDate);
     });
+
+  const numbered = (await attachEspnDriveCharts(games)).sort((a, b) => {
+    if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
+    if (!a.openDate) return 1;
+    if (!b.openDate) return -1;
+    return new Date(a.openDate) - new Date(b.openDate);
+  });
 
   return {
     fetchedAt: new Date().toISOString(),
-    games,
+    games: numbered,
     stats: {
-      games: games.length,
-      live: games.filter((g) => g.inPlay).length,
-      withDriveLine: games.filter((g) => g.nextDrive || g.driveMarkets?.length).length,
-      withFdDriveLine: games.filter((g) => (
+      games: numbered.length,
+      live: numbered.filter((g) => g.inPlay).length,
+      withDriveLine: numbered.filter((g) => g.nextDrive || g.driveMarkets?.length).length,
+      withFdDriveLine: numbered.filter((g) => (
         (g.driveMarkets ?? []).some((m) => m.source !== 'dk')
         || (g.nextDrive && g.nextDrive.source !== 'dk')
       )).length,
-      withDkFirstDrive: games.filter((g) => (
+      withDkFirstDrive: numbered.filter((g) => (
         (g.driveMarkets ?? []).some((m) => m.source === 'dk')
         || g.nextDrive?.source === 'dk'
       )).length,
-      espnMatched: games.filter((g) => g.espnId).length,
-      fdxProbed: games.filter((g) => g.debug?.fdxStatus != null || g.debug?.fdxError).length,
-      fdxQuickBets: games.filter((g) => g.debug?.isQuickBetsAvailable).length,
-      dkMatched: games.filter((g) => g.debug?.dkMatched).length,
+      espnMatched: numbered.filter((g) => g.espnId).length,
+      fdxProbed: numbered.filter((g) => g.debug?.fdxStatus != null || g.debug?.fdxError).length,
+      fdxQuickBets: numbered.filter((g) => g.debug?.isQuickBetsAvailable).length,
+      dkMatched: numbered.filter((g) => g.debug?.dkMatched).length,
     },
     espn: {
       ok: Boolean(espn.ok),
       error: espn.error ? compactProviderError(espn.error) : null,
-      matched: games.filter((g) => g.espnId).length,
+      matched: numbered.filter((g) => g.espnId).length,
     },
   };
 }

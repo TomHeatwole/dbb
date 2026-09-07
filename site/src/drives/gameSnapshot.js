@@ -3,7 +3,7 @@
  */
 
 import { shortTeamName } from '../sop/gameSnapshot';
-import { evaluateDriveGame, formatAmericanOdds, isHalftimeLive, listDriveSides, resolveOffenseTeam } from './driveModel';
+import { driveCardRole, evaluateDriveGame, formatAmericanOdds, formatDriveOrdinal, isHalftimeLive, listDriveSides, resolveOffenseTeam } from './driveModel';
 
 function shortDriveTeam(name) {
   const raw = String(name ?? '')
@@ -94,19 +94,26 @@ export function buildDrivesGameSnapshot(game, { granular = false } = {}) {
 
   let play = null;
   let market = views[0]?.market ?? null;
+  let headline = views[0] ?? null;
   for (const view of views) {
     const candidate = pickHeadlineDrivePlay(view.model);
     if (candidate && (!play || candidate.edgePoints > play.edgePoints)) {
       play = candidate;
       market = view.market;
+      headline = view;
     }
   }
   const book = market?.source === 'dk' ? 'dk' : 'fd';
   const team = shortDriveTeam(resolveOffenseTeam(game, market).name);
   const result = playLabel(play);
+  const role = driveCardRole(game, headline?.model?.pred);
+  const roleWord = role === 'current' ? 'current' : role === 'first' ? '1st' : 'next';
+  const ord = formatDriveOrdinal(headline?.model?.driveNumber);
   const marketLabel = team && result !== '—'
     ? `${team} ${result}`
-    : (team && game?.inPlay ? `${team} next` : result);
+    : (team
+      ? [team, role === 'first' ? null : ord, roleWord].filter(Boolean).join(' ')
+      : result);
 
   return {
     eventId: game?.eventId,

@@ -1,9 +1,10 @@
 /**
- * NCAAF next-drive model — LightGBM joint probabilities vs FanDuel/DK
- * four-way settlement (Punt / Offensive TD / FG Attempt / Other).
+ * NCAAF drive-result model — LightGBM joint probabilities vs FanDuel/DK
+ * four-way settlement (OTD / FGA / Punt / Other), FanDuel board order.
  *
- * Drive-start trees for pregame 1st-drive; snap trees when ESPN has
- * down / distance / yards-to-goal. Trained 2023–24, held out 2025.
+ * Drive-start trees for pregame 1st-drive and the opponent's next drive.
+ * Snap trees for the live current drive when ESPN has down / distance /
+ * yards-to-goal. Trained 2023–24, held out 2025.
  */
 
 import {
@@ -15,17 +16,12 @@ import {
 } from '../sop/sopModel.js';
 import { DRIVE_RESULT_MODEL, scoreLgbmLayer } from './driveResultLgbm.js';
 import { predictOpponentStart } from './nextDriveStart.js';
+import { ytgFromSpot } from './ytgFromSpot.js';
 
 /** ESPN scrape: example_data/ncaaf_drive_results/espn_ncaaf_drives.csv */
 export const RAW_DRIVE_N = 113712;
 
 export const DRIVE_BUCKETS = [
-  {
-    key: 'punt',
-    label: 'Punt',
-    n: 41261,
-    runnerHints: ['punt'],
-  },
   {
     key: 'td',
     label: 'OTD',
@@ -33,16 +29,22 @@ export const DRIVE_BUCKETS = [
     runnerHints: ['offensive touchdown', 'offensive td', 'touchdown', 'td'],
   },
   {
-    key: 'other',
-    label: 'Other',
-    n: 28865,
-    runnerHints: ['other', 'any other'],
-  },
-  {
     key: 'fg',
     label: 'FGA',
     n: 13698,
     runnerHints: ['field goal attempt', 'fg attempt', 'field goal'],
+  },
+  {
+    key: 'punt',
+    label: 'Punt',
+    n: 41261,
+    runnerHints: ['punt'],
+  },
+  {
+    key: 'other',
+    label: 'Other',
+    n: 28865,
+    runnerHints: ['other', 'any other'],
   },
 ];
 
@@ -62,6 +64,7 @@ export const RAW_MODEL_META = {
 export const LGBM_HOLDOUT = {
   driveStart: { logloss: 1.1544, raw: 1.3238, acc: 0.499, n: 39573 },
   snap: { logloss: 1.0389, raw: 1.3597, acc: 0.552, n: 258190 },
+  nextDrive: { logloss: 1.2558, raw: 1.3258, acc: 0.445, n: 36046, ytgMae: 10.13 },
 };
 
 export const LGBM_MODEL_META = {
@@ -312,12 +315,9 @@ export function inferOffenseSide(game, market = null) {
     return row.offenseSide;
   }
 
-  const inPlay = Boolean(game?.inPlay) && game?.live?.state !== 'pre';
-  const poss = livePossessionSide(game);
-  // Live snap: price the team that does not have the ball.
-  // Dead-ball / halftime windows use explicit sides on each card instead.
-  if (inPlay && poss && !shouldShowBothDriveSides(game)) return flipSide(poss);
-  return poss;
+  // Untitled live FanDuel "Drive Result" is the current possession.
+  // The waiting team's next-drive card gets an explicit offenseSide.
+  return livePossessionSide(game);
 }
 
 export function resolveOffenseTeam(game, market = null) {
@@ -351,18 +351,68 @@ export function listDriveMarkets(game, { granular = false } = {}) {
   return fallback.length ? fallback : raw;
 }
 
-function hasLiveSnap(live) {
-  const down = Number(live?.down);
-  const ytg = Number(live?.yardsToEndzone);
-  return Number.isFinite(down) && down > 0 && Number.isFinite(ytg) && ytg >= 1 && ytg <= 99;
+/** Both team cards whenever we can name home and away. */
+export function shouldShowBothDriveSides(game) {
+  return Boolean(game?.teams?.home && game?.teams?.away);
 }
 
-/** Pregame 1st drives, plus live dead-ball / halftime — both team cards. */
-export function shouldShowBothDriveSides(game) {
-  if (!game?.teams?.home || !game?.teams?.away) return false;
-  if (!game?.inPlay || game?.live?.state === 'pre') return true;
-  if (isHalftimeLive(game.live)) return true;
-  return !hasLiveSnap(game.live);
+/** current = team with the ball (or next up); next = opponent after that. */
+export function driveCardRole(game, pred) {
+  if (!game?.inPlay || game?.live?.state === 'pre') return 'first';
+  if (isHalftimeLive(game.live)) return 'next';
+  if (pred?.layer === 'snap' || pred?.firstUp) return 'current';
+  if (pred?.afterPriorDrive || pred?.predictedStart) return 'next';
+  const poss = firstUpSide(game);
+  const side = pred?.side;
+  if (poss && side && side === poss) return 'current';
+  if (poss && side && side !== poss) return 'next';
+  return 'next';
+}
+
+export function driveNumberFromName(name) {
+  const n = String(name ?? '');
+  const ordinal = n.match(/(\d+)(?:st|nd|rd|th)\s+drive/i);
+  if (ordinal) return Number(ordinal[1]);
+  const numbered = n.match(/\bdrive\s+(\d+)\b/i);
+  if (numbered) return Number(numbered[1]);
+  return null;
+}
+
+export function formatDriveOrdinal(n) {
+  const i = Math.round(Number(n));
+  if (!Number.isFinite(i) || i < 1) return null;
+  const mod100 = i % 100;
+  const mod10 = i % 10;
+  const suf = mod100 >= 11 && mod100 <= 13
+    ? 'th'
+    : mod10 === 1 ? 'st'
+      : mod10 === 2 ? 'nd'
+        : mod10 === 3 ? 'rd'
+          : 'th';
+  return `${i}${suf}`;
+}
+
+/** FanDuel-style team drive number (ND's 6th). */
+export function driveNumberForSide(game, side, extras = {}) {
+  const fromMarket = driveNumberFromName(extras.market?.marketName);
+  if (Number.isFinite(fromMarket) && fromMarket >= 1) return fromMarket;
+  const role = extras.role ?? driveCardRole(game, extras.pred);
+  if (role === 'first' || !game?.inPlay || game?.live?.state === 'pre') return 1;
+  const chart = game?.live?.driveChart;
+  if (!chart || (side !== 'home' && side !== 'away')) return null;
+  const startedRaw = side === 'home' ? chart.homeStarted : chart.awayStarted;
+  const completedRaw = side === 'home' ? chart.homeCompleted : chart.awayCompleted;
+  let started = Number(startedRaw);
+  if (!Number.isFinite(started)) {
+    const completed = Number(completedRaw);
+    if (!Number.isFinite(completed) || completed < 0) return null;
+    started = completed + (chart.currentSide === side ? 1 : 0);
+  }
+  if (started < 0) return null;
+  // Only the in-progress series uses the started count. A completed ESPN
+  // "current" (just-scored TD, etc.) is already in started; next is +1.
+  if (chart.currentSide === side) return started || 1;
+  return started + 1;
 }
 
 function driveSideShell(game, side) {
@@ -391,8 +441,10 @@ function pairBothDriveSides(game, books) {
     if (side && !assigned[side]) assigned[side] = market;
     else untitled.push(market);
   }
+  const poss = firstUpSide(game);
   for (const market of untitled) {
-    if (!assigned.away) assigned.away = market;
+    if (poss && !assigned[poss]) assigned[poss] = market;
+    else if (!assigned.away) assigned.away = market;
     else if (!assigned.home) assigned.home = market;
   }
   const stamp = (side) => {
@@ -407,11 +459,16 @@ function pairBothDriveSides(game, books) {
   return [stamp('away'), stamp('home')];
 }
 
-/** Book markets, or both team cards at halftime / dead ball even with no line. */
+/** Book markets plus a card for each team. Live: current drive, then next. */
 export function listDriveSides(game, opts = {}) {
   const books = listDriveMarkets(game, opts);
-  if (shouldShowBothDriveSides(game)) return pairBothDriveSides(game, books);
-  return books;
+  if (!shouldShowBothDriveSides(game)) return books;
+  const pair = pairBothDriveSides(game, books);
+  const poss = firstUpSide(game);
+  if (!poss) return pair;
+  const current = pair.find((row) => row.offenseSide === poss);
+  const next = pair.find((row) => row.offenseSide !== poss);
+  return [current, next].filter(Boolean);
 }
 
 export function hasDriveLine(game) {
@@ -437,14 +494,24 @@ export function featuresFromGame(game) {
   const period = clock.period;
   const clockSec = clock.clockSec;
   const ytgRaw = Number(live.yardsToEndzone);
-  const ytgLive = Number.isFinite(ytgRaw) && ytgRaw >= 1 && ytgRaw <= 99 ? ytgRaw : NaN;
+  let ytgLive = Number.isFinite(ytgRaw) && ytgRaw >= 1 && ytgRaw <= 99 ? ytgRaw : NaN;
+  if (!Number.isFinite(ytgLive)) {
+    const fromText = ytgFromSpot(live.possessionText, {
+      possession: livePossessionSide(game),
+      home: game?.teams?.home,
+      away: game?.teams?.away,
+    });
+    if (Number.isFinite(fromText)) ytgLive = fromText;
+  }
   const down = Number(live.down);
   const distance = Number(live.distance);
   const poss = livePossessionSide(game);
   const side = inferOffenseSide(game, game?.nextDrive);
   const firstUp = firstUpSide(game);
   const isWaiting = Boolean(inPlay && firstUp && side && side !== firstUp);
-  const pricingCurrentDrive = Boolean(side && firstUp && side === firstUp && hasLiveSnap(live));
+  const hasSnap = Number.isFinite(down) && down > 0
+    && Number.isFinite(ytgLive) && ytgLive >= 1 && ytgLive <= 99;
+  const pricingCurrentDrive = Boolean(side && firstUp && side === firstUp && hasSnap);
   const canSnap = pricingCurrentDrive
     && inPlay
     && !clock.halfKickoff
@@ -471,9 +538,9 @@ export function featuresFromGame(game) {
 
   if (isWaiting) {
     const sit = {
-      down: hasLiveSnap(live) ? down : 1,
-      distance: hasLiveSnap(live) && Number.isFinite(distance) ? distance : 10,
-      yardsToEndzone: hasLiveSnap(live) ? ytgLive : 75,
+      down: hasSnap ? down : 1,
+      distance: hasSnap && Number.isFinite(distance) ? distance : 10,
+      yardsToEndzone: hasSnap ? ytgLive : 75,
       scoreDiff: scoreDiffForOffense(game, firstUp),
       period,
       clockSeconds: Number.isFinite(clockSec) ? clockSec : NaN,
@@ -559,6 +626,7 @@ export function featuresFromGame(game) {
     return {
       layer: 'snap',
       assumed: false,
+      firstUp: true,
       side,
       features: {
         down,
@@ -744,6 +812,7 @@ export function evaluateDriveGame(game, {
     market: nextDrive,
     offenseName: offense.name,
     offenseSide: offense.side,
+    driveNumber: driveNumberForSide(view, offense.side, { market: nextDrive, pred }),
   };
 }
 

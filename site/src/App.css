@@ -24064,6 +24064,73 @@ button.corners-bet:hover {
   }
 }
 
+.drives-quote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.7rem 1.15rem;
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.drives-quote-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.drives-quote-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.7);
+}
+
+.drives-quote-wrap {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.drives-quote-wrap:focus-within {
+  border-color: #ffe08a;
+  box-shadow: 0 0 0 2px rgba(255, 224, 138, 0.2);
+}
+
+.drives-quote-input {
+  width: 7.2rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.drives-quote-result {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: 2.4rem;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.drives-quote-kelly {
+  color: rgba(235, 240, 255, 0.88);
+}
+
+.drives-quote-hint {
+  color: rgba(235, 240, 255, 0.62);
+  max-width: 28rem;
+}
+
 .league-history-error {
   color: #ff6b6b;
   font-size: 0.9rem;

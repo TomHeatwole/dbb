@@ -2,6 +2,10 @@ import {
   evaluateDriveGame,
   extractHomeSpread,
   featuresFromGame,
+  driveCardRole,
+  driveNumberFromName,
+  driveNumberForSide,
+  formatDriveOrdinal,
   inferOffenseSide,
   listDriveSides,
   livePossessionSide,
@@ -11,6 +15,8 @@ import {
   nameMatchScore,
   predictDriveResult,
 } from './driveModel';
+import { parseEspnDriveBlob } from './espnDriveChart';
+import { ytgFromSpot } from './ytgFromSpot';
 
 function texasStateAtTexas(overrides = {}) {
   const awayMarket = {
@@ -212,17 +218,18 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(dead.p.other).toBeLessThan(0.45);
   });
 
-  it('prices the team that does not have the ball, from a projected start', () => {
+  it('defaults a live snap to the team that has the ball', () => {
     const game = wazzuAtWashington({ clockSeconds: 7 * 60, clock: '7:00' });
     expect(livePossessionSide(game)).toBe('away');
-    expect(inferOffenseSide(game)).toBe('home');
+    expect(inferOffenseSide(game)).toBe('away');
     const live = predictDriveResult(game);
-    expect(live.side).toBe('home');
-    expect(live.layer).toBe('driveStart');
-    expect(live.predictedStart).toBe(true);
-    expect(live.features.ytg).not.toBe(94);
-    expect(live.features.offense_spread).toBe(-20.5);
-    expect(live.p.other).toBeLessThan(0.3);
+    expect(live.side).toBe('away');
+    expect(live.layer).toBe('snap');
+    expect(live.firstUp).toBe(true);
+    expect(live.features.ytg).toBe(94);
+    expect(live.features.down).toBe(1);
+    expect(live.features.offense_spread).toBe(20.5);
+    expect(driveCardRole(game, live)).toBe('current');
   });
 
   it('shows both next drives at halftime, each from own 25', () => {
@@ -299,23 +306,162 @@ describe('live clock vs stale end-of-half snaps', () => {
       .toBeLessThan(nd.rows.find((row) => row.key === 'td').p);
   });
 
-  it('does not pair both teams while a live snap is on', () => {
+  it('shows the current snap and the opponent next drive while a live snap is on', () => {
     const game = wazzuAtWashington({ clockSeconds: 7 * 60, clock: '7:00' });
-    expect(shouldShowBothDriveSides(game)).toBe(false);
-    expect(listDriveSides(game)).toEqual([]);
+    expect(shouldShowBothDriveSides(game)).toBe(true);
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => row.offenseSide)).toEqual(['away', 'home']);
+    const current = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const next = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(current.side).toBe('away');
+    expect(current.layer).toBe('snap');
+    expect(current.features.ytg).toBe(94);
+    expect(driveCardRole(game, current)).toBe('current');
+    expect(next.side).toBe('home');
+    expect(next.afterPriorDrive).toBe(true);
+    expect(next.predictedStart).toBe(true);
+    expect(next.features.ytg).not.toBe(94);
+    expect(next.features.offense_spread).toBe(-20.5);
+    expect(driveCardRole(game, next)).toBe('next');
+    expect(evaluateDriveGame(game, { market: sides[1] }).pred.p.other).toBeLessThan(0.3);
+  });
+
+  it('reads FanDuel-style drive numbers and ESPN drive-chart counts', () => {
+    expect(driveNumberFromName("ND's 6th Drive Result")).toBe(6);
+    expect(driveNumberFromName('Wisconsin Drive 5 - Result')).toBe(5);
+    expect(formatDriveOrdinal(1)).toBe('1st');
+    expect(formatDriveOrdinal(2)).toBe('2nd');
+    expect(formatDriveOrdinal(3)).toBe('3rd');
+    expect(formatDriveOrdinal(11)).toBe('11th');
+    expect(formatDriveOrdinal(22)).toBe('22nd');
+    const game = wazzuAtWashington({
+      clockSeconds: 7 * 60,
+      clock: '7:00',
+      driveChart: { homeStarted: 4, awayStarted: 6, currentSide: 'away' },
+    });
+    const sides = listDriveSides(game);
+    const current = evaluateDriveGame(game, { market: sides[0] });
+    const next = evaluateDriveGame(game, { market: sides[1] });
+    expect(current.offenseSide).toBe('away');
+    expect(current.driveNumber).toBe(6);
+    expect(next.offenseSide).toBe('home');
+    expect(next.driveNumber).toBe(5);
+    expect(driveNumberForSide(game, 'home', {
+      market: { marketName: "Washington's 8th Drive Result" },
+    })).toBe(8);
+  });
+
+  it('uses unique ESPN starts, not completed+1, so a current drive is not counted twice', () => {
+    const game = wazzuAtWashington({
+      clockSeconds: 7 * 60,
+      clock: '7:00',
+      driveChart: { homeStarted: 6, awayStarted: 8, currentSide: 'away' },
+    });
+    expect(driveNumberForSide(game, 'away', { role: 'current' })).toBe(8);
+    expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(7);
+  });
+
+  it('does not count an End of Half kickoff stub; next is completed series + 1', () => {
+    const chart = parseEspnDriveBlob({
+      previous: [
+        { id: 'm1', team: { abbreviation: 'MISS' }, result: { displayName: 'Punt' }, offensivePlays: 3 },
+        { id: 'l1', team: { abbreviation: 'LOU' }, result: { displayName: 'Field Goal' }, offensivePlays: 10 },
+        { id: 'm2', team: { abbreviation: 'MISS' }, result: { displayName: 'Fumble' }, offensivePlays: 7 },
+        { id: 'l2', team: { abbreviation: 'LOU' }, result: { displayName: 'Punt' }, offensivePlays: 3 },
+        { id: 'm3', team: { abbreviation: 'MISS' }, result: { displayName: 'Field Goal' }, offensivePlays: 11 },
+        { id: 'l3', team: { abbreviation: 'LOU' }, result: { displayName: 'Fumble' }, offensivePlays: 7 },
+        { id: 'm4', team: { abbreviation: 'MISS' }, result: { displayName: 'Touchdown' }, offensivePlays: 4 },
+        { id: 'l4', team: { abbreviation: 'LOU' }, result: { displayName: 'Punt' }, offensivePlays: 3 },
+        { id: 'm5', team: { abbreviation: 'MISS' }, result: { displayName: 'Interception' }, offensivePlays: 3 },
+        { id: 'l5', team: { abbreviation: 'LOU' }, result: { displayName: 'Punt' }, offensivePlays: 3 },
+        { id: 'm6', team: { abbreviation: 'MISS' }, result: { displayName: 'Missed FG' }, offensivePlays: 14 },
+        { id: 'l6', team: { abbreviation: 'LOU' }, result: { displayName: 'Field Goal' }, offensivePlays: 8 },
+        { id: 'eoh', team: { abbreviation: 'LOU' }, result: { displayName: 'END OF HALF' }, offensivePlays: 0 },
+        { id: 'l7', team: { abbreviation: 'LOU' }, result: { displayName: 'Touchdown' }, offensivePlays: 9 },
+        { id: 'm7', team: { abbreviation: 'MISS' }, result: { displayName: 'Touchdown' }, offensivePlays: 5 },
+      ],
+      current: { id: 'm7', team: { abbreviation: 'MISS' }, result: { displayName: 'Touchdown' }, offensivePlays: 5 },
+    }, (drive) => {
+      const abbr = drive?.team?.abbreviation;
+      if (abbr === 'MISS') return 'home';
+      if (abbr === 'LOU') return 'away';
+      return null;
+    });
+    expect(chart).toEqual({ homeStarted: 7, awayStarted: 7, currentSide: null });
+    const game = wazzuAtWashington({
+      period: 3,
+      clockSeconds: 8 * 60 + 53,
+      clock: '8:53',
+      possession: null,
+      possessionName: null,
+      down: null,
+      distance: null,
+      yardsToEndzone: null,
+      driveChart: chart,
+    });
+    expect(driveNumberForSide(game, 'away', { role: 'next' })).toBe(8);
+    expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(8);
+  });
+
+  it('assigns an untitled live FanDuel line to the team with the ball', () => {
+    const game = {
+      ...wazzuAtWashington({ clockSeconds: 7 * 60, clock: '7:00' }),
+      nextDrive: {
+        source: 'fd',
+        marketName: 'Drive Result',
+        outcomes: { td: { american: 220 } },
+      },
+    };
+    const sides = listDriveSides(game);
+    expect(sides[0].offenseSide).toBe('away');
+    expect(sides[0].source).toBe('fd');
+    expect(sides[0].outcomes.td.american).toBe(220);
+    expect(sides[1].offenseSide).toBe('home');
+    expect(sides[1].synthetic).toBe(true);
   });
 
   it('rolls End of 1st into Q2 so the next-drive clock is not stuck at 0:00', () => {
-    const feat = featuresFromGame(wazzuAtWashington({
+    const game = wazzuAtWashington({
       period: 1,
       clockSeconds: null,
       clock: 'End of 1st',
       statusText: 'End of 1st',
-    }));
-    expect(feat.side).toBe('home');
-    expect(feat.layer).toBe('driveStart');
-    expect(feat.predictedStart).toBe(true);
-    expect(feat.features.period).toBeGreaterThanOrEqual(2);
-    expect(feat.features.sec_left).toBeLessThanOrEqual(2700);
+    });
+    const sides = listDriveSides(game);
+    const current = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const next = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(current.side).toBe('away');
+    expect(current.layer).toBe('snap');
+    expect(current.features.period).toBe(2);
+    expect(current.features.clock_sec).toBe(900);
+    expect(next.side).toBe('home');
+    expect(next.layer).toBe('driveStart');
+    expect(next.predictedStart).toBe(true);
+    expect(next.features.period).toBeGreaterThanOrEqual(2);
+    expect(next.features.sec_left).toBeLessThanOrEqual(2700);
+  });
+
+  it('recovers yards-to-goal from ND 33 when ESPN omits yardsToEndzone', () => {
+    expect(ytgFromSpot('ND 33', {
+      possession: 'away',
+      home: 'Notre Dame',
+      away: 'Wisconsin',
+    })).toBe(33);
+    const game = wazzuAtWashington({
+      possession: 'away',
+      possessionName: 'Wisconsin',
+      possessionText: 'ND 33',
+      down: 3,
+      distance: 6,
+      yardsToEndzone: null,
+      clockSeconds: 10 * 60 + 8,
+      clock: '10:08',
+      period: 1,
+    });
+    game.teams = { home: 'Notre Dame', away: 'Wisconsin' };
+    const pred = predictDriveResult(game);
+    expect(pred.layer).toBe('snap');
+    expect(pred.features.ytg).toBe(33);
+    expect(pred.features.down).toBe(3);
   });
 });

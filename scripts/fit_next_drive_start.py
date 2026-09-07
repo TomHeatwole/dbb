@@ -191,6 +191,7 @@ def load_snaps(path):
             if not hb:
                 continue
             rows.append({
+                'season': to_int(raw.get('season')),
                 'down': down,
                 'dist': dist_bin(dist),
                 'field': fb,
@@ -203,6 +204,10 @@ def load_snaps(path):
                 'next_kind': raw.get('next_kind') or '',
                 'this_result': raw.get('this_result') or '',
                 'period': period,
+                'sec_left_game': to_int(raw.get('sec_left_game')),
+                'score_diff': to_int(raw.get('score_diff')),
+                'game_id': raw.get('game_id') or '',
+                'drive_n': to_int(raw.get('drive_n')),
             })
     return rows
 
@@ -302,13 +307,8 @@ def time_curve(rows):
     return {}
 
 
-def main():
-    if not os.path.isfile(SNAP_PATH):
-        raise SystemExit(f'missing {SNAP_PATH}')
-    rows = load_snaps(SNAP_PATH)
-    print(f'loaded {len(rows)} snaps')
-
-    tables = {
+def build_tables(rows):
+    return {
         'full': keep_cells(
             group(rows, ['down', 'dist', 'field', 'score', 'time', 'half']),
             MIN_N,
@@ -343,6 +343,15 @@ def main():
         ),
         'global': compact(summarize(rows)),
     }
+
+
+def main():
+    if not os.path.isfile(SNAP_PATH):
+        raise SystemExit(f'missing {SNAP_PATH}')
+    rows = load_snaps(SNAP_PATH)
+    print(f'loaded {len(rows)} snaps')
+
+    tables = build_tables(rows)
     meta = {
         'nSnaps': len(rows),
         'nGames': None,

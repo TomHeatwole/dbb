@@ -1,0 +1,189 @@
+{
+  "testSeason": 2025,
+  "trainSeasons": [
+    2023,
+    2024
+  ],
+  "currentDrive": {
+    "note": "Snap LightGBM on the last 2025 snap of each drive.",
+    "n": 39383,
+    "logloss": 0.6003,
+    "raw": 1.3233,
+    "acc": 0.763,
+    "calibration": [
+      {
+        "bucket": "punt",
+        "model": 0.4003,
+        "obs": 0.3607
+      },
+      {
+        "bucket": "td",
+        "model": 0.2179,
+        "obs": 0.2637
+      },
+      {
+        "bucket": "fg",
+        "model": 0.1978,
+        "obs": 0.1212
+      },
+      {
+        "bucket": "other",
+        "model": 0.184,
+        "obs": 0.2544
+      }
+    ]
+  },
+  "nextDrive": {
+    "note": "Next-start tables fit on 2023\u201324 only, then drive-start LightGBM at the predicted opponent start.",
+    "lastSnap": {
+      "n": 36046,
+      "logloss": 1.2558,
+      "raw": 1.3258,
+      "acc": 0.445,
+      "calibration": [
+        {
+          "bucket": "punt",
+          "model": 0.3592,
+          "obs": 0.353
+        },
+        {
+          "bucket": "td",
+          "model": 0.2593,
+          "obs": 0.2614
+        },
+        {
+          "bucket": "fg",
+          "model": 0.1075,
+          "obs": 0.1212
+        },
+        {
+          "bucket": "other",
+          "model": 0.274,
+          "obs": 0.2643
+        }
+      ],
+      "ytgMae": 10.13,
+      "oracle": {
+        "n": 36046,
+        "logloss": 1.3012,
+        "raw": 1.3258,
+        "acc": 0.481,
+        "calibration": [
+          {
+            "bucket": "punt",
+            "model": 0.3246,
+            "obs": 0.353
+          },
+          {
+            "bucket": "td",
+            "model": 0.2551,
+            "obs": 0.2614
+          },
+          {
+            "bucket": "fg",
+            "model": 0.1113,
+            "obs": 0.1212
+          },
+          {
+            "bucket": "other",
+            "model": 0.309,
+            "obs": 0.2643
+          }
+        ]
+      }
+    },
+    "allSnaps": {
+      "n": 238902,
+      "logloss": 1.2454,
+      "raw": 1.3185,
+      "acc": 0.449,
+      "calibration": [
+        {
+          "bucket": "punt",
+          "model": 0.3658,
+          "obs": 0.3608
+        },
+        {
+          "bucket": "td",
+          "model": 0.2585,
+          "obs": 0.2484
+        },
+        {
+          "bucket": "fg",
+          "model": 0.1078,
+          "obs": 0.1159
+        },
+        {
+          "bucket": "other",
+          "model": 0.268,
+          "obs": 0.2748
+        }
+      ],
+      "ytgMae": 9.99,
+      "oracle": {
+        "n": 238902,
+        "logloss": 1.2917,
+        "raw": 1.3185,
+        "acc": 0.486,
+        "calibration": [
+          {
+            "bucket": "punt",
+            "model": 0.3311,
+            "obs": 0.3608
+          },
+          {
+            "bucket": "td",
+            "model": 0.2446,
+            "obs": 0.2484
+          },
+          {
+            "bucket": "fg",
+            "model": 0.1062,
+            "obs": 0.1159
+          },
+          {
+            "bucket": "other",
+            "model": 0.3181,
+            "obs": 0.2748
+          }
+        ]
+      }
+    }
+  },
+  "publishedSnapHoldout": {
+    "trainSeasons": [
+      2023,
+      2024
+    ],
+    "testSeason": 2025,
+    "classes": [
+      "punt",
+      "td",
+      "fg",
+      "other"
+    ],
+    "fpCodes": {
+      "deep": 0,
+      "kickoff": 1,
+      "midfield": 2,
+      "favorable": 3
+    },
+    "halfCodes": {
+      "h1": 0,
+      "h2": 1,
+      "ot": 2
+    },
+    "distCodes": {
+      "short": 0,
+      "med": 1,
+      "long": 2,
+      "xlong": 3
+    },
+    "timeCodes": {
+      "late": 0,
+      "mid": 1,
+      "early": 2
+    },
+    "note": "LightGBM multiclass on joint inputs. Drive-start for pregame 1st-drive; snap for live current-drive. FG includes makes and misses."
+  }
+}

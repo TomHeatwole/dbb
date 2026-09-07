@@ -30,7 +30,7 @@ export function probToAmerican(prob) {
 
 export function formatAmericanOdds(american) {
   if (!Number.isFinite(american)) return '—';
-  const rounded = Math.round(american * 10) / 10;
+  const rounded = Math.round(american);
   if (rounded > 0) return `+${rounded}`;
   return String(rounded);
 }
@@ -39,6 +39,15 @@ export function formatAmericanOdds(american) {
  * Parse NO GOAL American odds from user input.
  * Include "-" for favorites; omit "+" for underdogs (per spreadsheet).
  */
+/** American odds from a typed quote. Accepts -110, +240, or 240. */
+export function parseAmericanOdds(raw) {
+  const trimmed = String(raw ?? '').trim().replace(/[,\s]/g, '');
+  if (!trimmed || trimmed === '+' || trimmed === '-') return null;
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n === 0) return null;
+  return n;
+}
+
 export function parseNoGoalAmericanOdds(raw) {
   const trimmed = String(raw ?? '').trim();
   if (!trimmed) return null;

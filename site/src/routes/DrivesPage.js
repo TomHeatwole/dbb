@@ -1,5 +1,5 @@
 /**
- * DrivesPage — SOP-style NCAAF next-drive book.
+ * DrivesPage — SOP-style NCAAF current-drive + next-drive book.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -7,7 +7,7 @@ import PageMeta from '../PageMeta';
 import DrivesBookPanel from './DrivesBookPanel';
 
 const OG_TITLE = 'NCAAF Drives';
-const OG_DESCRIPTION = 'College football next-drive result vs joint LightGBM';
+const OG_DESCRIPTION = 'College football current-drive and next-drive results vs joint LightGBM';
 const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/data/sop.jpeg`;
 const SOP_COLLAGE_SRC = '/data/sop.jpeg';
 const COLLAGE_TILE_W = 200;

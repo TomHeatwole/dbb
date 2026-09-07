@@ -2,12 +2,16 @@
  * NCAAF drive book — FanDuel/DK drive result vs joint LightGBM.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import LoadingState from '../LoadingState';
 import {
   LGBM_HOLDOUT,
+  driveCardRole,
+  driveNumberForSide,
   extractHomeSpread,
+  formatDriveOrdinal,
   evaluateDriveGame,
+  firstUpSide,
   formatAmericanOdds,
   formatEdgePoints,
   formatSharePct,
@@ -19,7 +23,13 @@ import {
   resolveOffenseTeam,
 } from '../drives/driveModel';
 import { predictDriveSituation } from '../drives/driveSituation';
-import { formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
+import {
+  analyzeAgainstBreakeven,
+  computeKellyStake,
+  formatKellyFractionLabel,
+  formatKellyStake,
+  parseAmericanOdds,
+} from '../sop/sopModel';
 import { useSOPKellySettings } from '../sop/useSOPKellySettings';
 import { buildDrivesMonitorRows, maxDriveEdgePoints } from '../drives/gameSnapshot';
 import { gameAnchorId } from '../sop/gameSnapshot';
@@ -174,12 +184,27 @@ function shortBookLeg(name) {
   return n;
 }
 
+function driveOrdinalFor(game, market, model) {
+  const side = model?.offenseSide || resolveOffenseTeam(game, market).side;
+  const n = Number.isFinite(model?.driveNumber)
+    ? model.driveNumber
+    : driveNumberForSide(game, side, { market, pred: model?.pred });
+  return formatDriveOrdinal(n);
+}
+
 function driveHeading(game, market, model) {
   const name = model?.offenseName || resolveOffenseTeam(game, market).name;
   const whose = name ? possessiveTeam(name) : '';
-  if (game.inPlay && whose) return `Betting ${whose} next drive`;
-  if (whose) return `Betting ${whose} 1st drive`;
-  if (game.inPlay) return 'Next drive · possession unknown';
+  const role = driveCardRole(game, model?.pred);
+  const ord = driveOrdinalFor(game, market, model);
+  if (whose && role === 'current') {
+    return ord ? `Betting ${whose} ${ord} drive · current` : `Betting ${whose} current drive`;
+  }
+  if (whose && role === 'next') {
+    return ord ? `Betting ${whose} ${ord} drive · next` : `Betting ${whose} next drive`;
+  }
+  if (whose) return `Betting ${whose} ${ord || '1st'} drive`;
+  if (game.inPlay) return 'Drive result · possession unknown';
   return market?.marketName ?? 'Drive result (no team line)';
 }
 
@@ -326,13 +351,23 @@ function reasoningRows(game, pred) {
     rows.push(['Total', total]);
   }
 
+  const driveN = formatDriveOrdinal(driveNumberForSide(game, pred.side, { pred }));
   if (pred.afterPriorDrive) {
     const prior = teamOnSide(game, pred.priorSide);
-    rows.push(['Drive', prior ? `After ${possessiveTeam(prior)} possession` : 'After the current possession']);
+    rows.push([
+      'Drive',
+      [
+        driveN,
+        'Next',
+        prior ? `after ${possessiveTeam(prior)} possession` : 'after the current possession',
+      ].filter(Boolean).join(' · '),
+    ]);
+  } else if (pred.layer === 'snap') {
+    rows.push(['Drive', driveN ? `Current · ${driveN}` : 'Current possession']);
   } else if (pred.firstUp) {
-    rows.push(['Drive', 'Next up']);
+    rows.push(['Drive', driveN ? `Current · ${driveN}` : 'Current drive']);
   } else if (pred.predictedStart) {
-    rows.push(['Drive', 'Next possession']);
+    rows.push(['Drive', driveN ? `Next · ${driveN}` : 'Next possession']);
   } else if (pred.layer === 'driveStart' && f.drive_n === 1) {
     rows.push(['Drive', 'First possession']);
   }
@@ -340,10 +375,38 @@ function reasoningRows(game, pred) {
   return rows;
 }
 
-function ModelReasoning({ game, pred, mix, heading, highlightKey }) {
+function ModelReasoning({
+  game,
+  pred,
+  mix,
+  heading,
+  highlightKey,
+  quoteDraft,
+  onQuoteDraftChange,
+  kellyBudget,
+  kellyFraction,
+}) {
   const rows = reasoningRows(game, pred);
   const mixRows = (mix ?? []).filter((row) => Number.isFinite(row.p));
-  if (!rows.length && !mixRows.length) return null;
+  const highlightRow = mixRows.find((row) => row.key === highlightKey) ?? null;
+  const needsQuote = Boolean(
+    highlightRow
+    && !Number.isFinite(highlightRow.fdAmerican)
+    && !Number.isFinite(highlightRow.american),
+  );
+  const offered = needsQuote ? parseAmericanOdds(quoteDraft) : null;
+  const quoteAnalysis = offered != null && highlightRow
+    ? analyzeAgainstBreakeven(offered, highlightRow.fairAmerican)
+    : null;
+  const quoteStake = offered != null && highlightRow
+    ? computeKellyStake({
+      winProb: highlightRow.p,
+      offeredAmerican: offered,
+      bankroll: kellyBudget,
+      kellyFraction,
+    })
+    : null;
+  if (!rows.length && !mixRows.length && !needsQuote) return null;
   return (
     <section className="drives-reason" aria-label="Model reasoning" id={`drives-why-${game.eventId}`}>
       <div className="sop-exp-section-label">{heading ?? 'Why this price'}</div>
@@ -372,6 +435,51 @@ function ModelReasoning({ game, pred, mix, heading, highlightKey }) {
           </ul>
         )}
       </div>
+      {needsQuote && highlightRow && (
+        <form
+          className="drives-quote"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <label className="drives-quote-field">
+            <span className="drives-quote-label">Offered odds</span>
+            <span className="drives-quote-wrap">
+              <input
+                className="drives-quote-input"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="-110 or +240"
+                value={quoteDraft}
+                onChange={(event) => onQuoteDraftChange(event.target.value)}
+                aria-label={`Offered American odds for ${highlightRow.label}`}
+              />
+            </span>
+          </label>
+          <p className="drives-quote-result" aria-live="polite">
+            {offered != null && quoteAnalysis ? (
+              <>
+                <span className={quoteAnalysis.profitable ? 'sop-exp-edge-plus' : 'sop-exp-edge-minus'}>
+                  {quoteAnalysis.edgePoints != null
+                    ? `${formatEdgePoints(quoteAnalysis.edgePoints)}${quoteAnalysis.profitable ? ' edge' : ''}`
+                    : '—'}
+                </span>
+                <span className="drives-quote-kelly">
+                  {quoteStake != null
+                    ? `Kelly ${formatKellyStake(quoteStake)} · ${formatKellyFractionLabel(kellyFraction)} of $${Number(kellyBudget).toLocaleString()}`
+                    : 'Kelly —'}
+                </span>
+              </>
+            ) : String(quoteDraft ?? '').trim() ? (
+              <span className="drives-quote-hint">Use American odds like -110 or +240</span>
+            ) : (
+              <span className="drives-quote-hint">
+                FanDuel is not posting this line. Type the price you see to get edge and Kelly.
+              </span>
+            )}
+          </p>
+        </form>
+      )}
     </section>
   );
 }
@@ -407,8 +515,12 @@ function sideStartLine(game, pred) {
       clock,
     ].filter(Boolean).join(' · ');
   }
+  if (pred.layer === 'snap') {
+    const downDist = downDistanceLabel(pred.features?.down, pred.features?.distance);
+    return [downDist, spot, clock].filter(Boolean).join(' · ') || null;
+  }
   if (pred.firstUp) {
-    return ['Next up', spot, clock].filter(Boolean).join(' · ');
+    return ['Current drive', spot, clock].filter(Boolean).join(' · ');
   }
   return null;
 }
@@ -545,8 +657,10 @@ function DriveSide({
           <p className="drives-work-note">
             Trained 2023–24, held out 2025.
             {model.pred?.layer === 'snap'
-              ? ` Snap log-loss ${LGBM_HOLDOUT.snap.logloss} vs raw ${LGBM_HOLDOUT.snap.raw} (n=${LGBM_HOLDOUT.snap.n.toLocaleString()}).`
-              : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
+              ? ` Current-drive snap log-loss ${LGBM_HOLDOUT.snap.logloss} vs raw ${LGBM_HOLDOUT.snap.raw} (n=${LGBM_HOLDOUT.snap.n.toLocaleString()}).`
+              : model.pred?.afterPriorDrive && LGBM_HOLDOUT.nextDrive
+                ? ` Next-drive log-loss ${LGBM_HOLDOUT.nextDrive.logloss} vs raw ${LGBM_HOLDOUT.nextDrive.raw} (n=${LGBM_HOLDOUT.nextDrive.n.toLocaleString()}; start ytg MAE ${LGBM_HOLDOUT.nextDrive.ytgMae}).`
+                : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
             {model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
             {model.vigPct != null ? ` Book vig ${model.vigPct.toFixed(1)}%.` : ''}
           </p>
@@ -583,6 +697,10 @@ function GameCard({
 }) {
   const [expanded, setExpanded] = useState(defaultOpen);
   const [openLine, setOpenLine] = useState(null);
+  const [quoteDraft, setQuoteDraft] = useState('');
+  useEffect(() => {
+    setQuoteDraft('');
+  }, [openLine?.sideIndex, openLine?.key, game.eventId]);
   const markets = useMemo(() => listDriveSides(game, { granular: dkGranular }), [game, dkGranular]);
   const models = useMemo(() => {
     const opts = { kellyEnabled, kellyBudget, kellyFraction };
@@ -597,13 +715,15 @@ function GameCard({
   const liveSpot = situationHeadline(game);
   const pairLabel = paired
     ? (isHalftimeLive(game.live)
-      ? 'Both next drives'
-      : (game.inPlay ? 'Next drive · both teams' : '1st-drive result · both teams'))
+      ? 'Both 2nd-half kickoffs'
+      : (game.inPlay
+        ? (firstUpSide(game) ? 'Current drive + next drive' : 'Next drive · both teams')
+        : '1st-drive result · both teams'))
     : null;
   const cardKicker = liveSpot
     || pairLabel
     || models[0]?.marketName
-    || (game.inPlay ? 'Next drive · possession unknown' : 'First / next drive');
+    || (game.inPlay ? 'Drive result · possession unknown' : 'First / next drive');
   const openModel = openLine ? models[openLine.sideIndex] : null;
   const openMarket = openLine ? (markets[openLine.sideIndex] ?? openModel?.market) : null;
 
@@ -656,8 +776,8 @@ function GameCard({
             {!hasDriveLine(game) && !paired && (
               <p className="sop-exp-status drives-missing-line">
                 {game.inPlay
-                  ? 'No FanDuel next-drive line. Drive Result is a live Quick Bet, and FanDuel is not posting it on this game right now. DraftKings 1st-drive is pregame only.'
-                  : 'No drive-result line yet. FanDuel posts next-drive only after kickoff (Quick Bets). DraftKings 1st-drive is used when they hang it.'}
+                  ? 'No FanDuel current-drive line. Drive Result is a live Quick Bet, and FanDuel is not posting it on this game right now. DraftKings 1st-drive is pregame only.'
+                  : 'No drive-result line yet. FanDuel posts current-drive after kickoff (Quick Bets). DraftKings 1st-drive is used when they hang it.'}
               </p>
             )}
             {game.error && <p className="sop-exp-error">{game.error}</p>}
@@ -689,6 +809,10 @@ function GameCard({
               mix={openModel.rows}
               highlightKey={openLine.key}
               heading={`Why this price · ${driveHeading(game, openMarket, openModel)}`}
+              quoteDraft={quoteDraft}
+              onQuoteDraftChange={setQuoteDraft}
+              kellyBudget={kellyBudget}
+              kellyFraction={kellyFraction}
             />
           )}
         </div>
@@ -765,7 +889,7 @@ function DrivesBookPanel({
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">NCAAF Drive Book</h1>
         <p className="sop-exp-subtitle">
-          FanDuel live next-drive · DK 1st-drive · joint LightGBM
+          FanDuel current drive · next drive · DK 1st-drive · joint LightGBM
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
