@@ -303,6 +303,154 @@ export function hasLiveOffensiveSnap(game) {
   return Number.isFinite(ytg) && ytg >= 1 && ytg <= 99;
 }
 
+const SERIES_OVER_PLAY = /punt|interception|intercepted|fumble|safety|turnover on downs|downs turnover|field goal missed|missed field goal|blocked/i;
+const DEAD_BALL_CLOCK = /timeout|two-minute|two minute|end (of )?(the )?(1st|2nd|3rd|4th|first|second|third|fourth|quarter|period|half)/i;
+
+export function playYardageFromText(text) {
+  const s = String(text ?? '');
+  const loss = s.match(/loss of (\d+)\s*yards?/i);
+  if (loss) return -Number(loss[1]);
+  const forY = s.match(/for (-?\d+)\s*yards?/i);
+  if (forY) return Number(forY[1]);
+  return null;
+}
+
+function lastPlayEndedSeries(type, text) {
+  if (isMadeScoreLabel(type) || isMadeScoreLabel(text)) return true;
+  return SERIES_OVER_PLAY.test(type) || SERIES_OVER_PLAY.test(text);
+}
+
+function isDeadBallClockPlay(type, text) {
+  return DEAD_BALL_CLOCK.test(type) || DEAD_BALL_CLOCK.test(text);
+}
+
+/**
+ * ESPN often updates lastPlay before down / distance / YTG. FanDuel live
+ * drive SGP reprices on the actual snap. Scoring the lagged spot vs those
+ * prices invents edges that are not there.
+ */
+export function espnSituationLagsLastPlay(game) {
+  const live = game?.live;
+  if (!game?.inPlay || isHalftimeLive(live)) return false;
+  const type = String(live?.lastPlayType ?? '');
+  const text = String(live?.lastPlay ?? '');
+  if (!type && !text) return false;
+  if (!hasLiveOffensiveSnap(game)) return false;
+  if (isDeadBallClockPlay(type, text)) return false;
+
+  const playSide = live?.lastPlaySide;
+  const poss = livePossessionSide(game);
+  const sameTeam = !playSide || !poss || playSide === poss;
+  if (sameTeam && lastPlayEndedSeries(type, text)) return true;
+
+  const yards = Number.isFinite(Number(live?.lastPlayYards))
+    ? Number(live.lastPlayYards)
+    : playYardageFromText(text);
+  const startYl = Number(live?.lastPlayStartYardLine);
+  const sitYl = Number(live?.yardLine);
+  const endYl = Number(live?.lastPlayEndYardLine);
+  const down = Number(live?.down);
+  const distance = Number(live?.distance);
+
+  if (
+    Number.isFinite(startYl)
+    && Number.isFinite(sitYl)
+    && Math.abs(startYl - sitYl) <= 1
+    && Number.isFinite(yards)
+    && Math.abs(yards) >= 3
+  ) {
+    return true;
+  }
+
+  if (
+    Number.isFinite(endYl)
+    && Number.isFinite(sitYl)
+    && Math.abs(endYl - sitYl) >= 8
+    && Number.isFinite(yards)
+    && Math.abs(yards) >= 3
+  ) {
+    return true;
+  }
+
+  if (
+    Number.isFinite(yards)
+    && yards >= 3
+    && Number.isFinite(down)
+    && down > 1
+    && Number.isFinite(distance)
+    && yards >= distance
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function liveSpotKey(game) {
+  const live = game?.live ?? {};
+  return [
+    live.possession ?? '',
+    live.down ?? '',
+    live.distance ?? '',
+    live.yardsToEndzone ?? '',
+    live.period ?? '',
+    live.clock ?? '',
+    live.lastPlayId || live.lastPlay || '',
+  ].join('|');
+}
+
+function fdAmericanOf(market, key) {
+  const quote = market?.outcomes?.[key];
+  if (Number.isFinite(quote?.fd?.american) && quote.fd.american !== 0) return quote.fd.american;
+  if (market?.source === 'dk') return null;
+  return Number.isFinite(quote?.american) && quote.american !== 0 ? quote.american : null;
+}
+
+export function driveOddsKey(game) {
+  return (game?.driveMarkets ?? [])
+    .map((market) => [
+      market?.driveN ?? '',
+      market?.offenseSide ?? '',
+      fdAmericanOf(market, 'td'),
+      fdAmericanOf(market, 'fg'),
+      fdAmericanOf(market, 'punt'),
+      fdAmericanOf(market, 'other'),
+    ].join(':'))
+    .sort()
+    .join('|');
+}
+
+export function oddsMovedWhileSpotHeld(prev, next) {
+  if (!next?.inPlay || !prev) return false;
+  const spot = liveSpotKey(next);
+  if (!spot || spot === '||||||') return false;
+  if (liveSpotKey(prev) !== spot) return false;
+  const nextOdds = driveOddsKey(next);
+  if (!nextOdds) return false;
+  return driveOddsKey(prev) !== nextOdds;
+}
+
+/** Keep the lag flag until ESPN's down/clock/last play actually changes. */
+export function applyOddsAheadFlags(prevGames, nextGames) {
+  const prevById = new Map((prevGames ?? []).map((game) => [String(game?.eventId ?? ''), game]));
+  return (nextGames ?? []).map((game) => {
+    const id = String(game?.eventId ?? '');
+    const prev = prevById.get(id);
+    const held = oddsMovedWhileSpotHeld(prev, game);
+    const stillHeld = Boolean(prev?.live?.oddsAheadOfSpot)
+      && liveSpotKey(prev) === liveSpotKey(game);
+    if (!held && !stillHeld) return game;
+    return {
+      ...game,
+      live: { ...(game.live ?? {}), oddsAheadOfSpot: true },
+    };
+  });
+}
+
+export function situationUntrusted(game) {
+  return Boolean(game?.live?.oddsAheadOfSpot) || espnSituationLagsLastPlay(game);
+}
+
 /**
  * Team that just scored a TD / made FG. That series is over; ESPN often
  * still tags them as possession through the PAT. Kickoff goes the other way.
@@ -829,26 +977,31 @@ export function evaluateDriveGame(game, {
   const outcomes = marketMatchesDriveNumber(view, nextDrive, offense.side, { pred })
     ? (nextDrive?.outcomes ?? {})
     : {};
+  const lag = situationUntrusted(view);
+  const hideEdges = Boolean(view?.inPlay && lag && (
+    pred?.layer === 'snap' || pred?.afterPriorDrive || pred?.firstUp
+  ));
   const rows = DRIVE_BUCKETS.map((bucket) => {
     const modelP = pred?.p?.[bucket.key];
     const p = Number.isFinite(modelP) ? modelP : bucket.p;
-    const fairAmerican = probToAmerican(p);
+    const fairAmerican = hideEdges ? null : probToAmerican(p);
     const quote = outcomes[bucket.key] ?? null;
     const source = nextDrive?.source;
-    const fdAmerican = Number.isFinite(quote?.fd?.american)
+    const fdAmerican = Number.isFinite(quote?.fd?.american) && quote.fd.american !== 0
       ? quote.fd.american
-      : (source !== 'dk' && Number.isFinite(quote?.american) ? quote.american : null);
-    const dkAmerican = Number.isFinite(quote?.dk?.american)
+      : (source !== 'dk' && Number.isFinite(quote?.american) && quote.american !== 0 ? quote.american : null);
+    const dkAmerican = Number.isFinite(quote?.dk?.american) && quote.dk.american !== 0
       ? quote.dk.american
-      : (source === 'dk' && Number.isFinite(quote?.american) ? quote.american : null);
-    const american = fdAmerican ?? dkAmerican ?? (Number.isFinite(quote?.american) ? quote.american : null);
-    const fdAnalysis = analyzeAgainstBreakeven(fdAmerican, fairAmerican);
-    const dkAnalysis = analyzeAgainstBreakeven(dkAmerican, fairAmerican);
+      : (source === 'dk' && Number.isFinite(quote?.american) && quote.american !== 0 ? quote.american : null);
+    const american = fdAmerican ?? dkAmerican
+      ?? (Number.isFinite(quote?.american) && quote.american !== 0 ? quote.american : null);
+    const fdAnalysis = hideEdges ? null : analyzeAgainstBreakeven(fdAmerican, fairAmerican);
+    const dkAnalysis = hideEdges ? null : analyzeAgainstBreakeven(dkAmerican, fairAmerican);
     const analysis = (dkAnalysis?.edgePoints ?? -Infinity) > (fdAnalysis?.edgePoints ?? -Infinity)
       ? dkAnalysis
       : fdAnalysis;
     const offeredForKelly = (analysis === dkAnalysis ? dkAmerican : fdAmerican) ?? american;
-    const profitable = Boolean(analysis?.profitable && offeredForKelly != null);
+    const profitable = Boolean(!hideEdges && analysis?.profitable && offeredForKelly != null);
     const kellyStake = kellyEnabled && profitable
       ? computeKellyStake({
         winProb: p,
@@ -875,7 +1028,7 @@ export function evaluateDriveGame(game, {
       fdAnalysis,
       dkAnalysis,
       profitable,
-      edgePoints: analysis?.edgePoints ?? null,
+      edgePoints: hideEdges ? null : (analysis?.edgePoints ?? null),
       kellyStake,
     };
   });
@@ -903,6 +1056,7 @@ export function evaluateDriveGame(game, {
     offenseName: offense.name,
     offenseSide: offense.side,
     driveNumber: driveNumberForSide(view, offense.side, { pred }),
+    situationLag: hideEdges,
   };
 }
 

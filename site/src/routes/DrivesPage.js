@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PageMeta from '../PageMeta';
 import DrivesBookPanel from './DrivesBookPanel';
+import { applyOddsAheadFlags } from '../drives/driveModel';
 
 const OG_TITLE = 'NCAAF Drives';
 const OG_DESCRIPTION = 'College football current-drive and next-drive results vs joint LightGBM';
@@ -13,6 +14,7 @@ const SOP_COLLAGE_SRC = '/data/sop.jpeg';
 const COLLAGE_TILE_W = 200;
 const COLLAGE_TILE_H = Math.round(COLLAGE_TILE_W * (1442 / 1916));
 const BOOK_REFRESH_MS = 60_000;
+const LIVE_REFRESH_MS = 8_000;
 
 function DrivesCollageGrid() {
   const [tileCount, setTileCount] = useState(48);
@@ -57,7 +59,7 @@ function DrivesPage() {
         throw new Error(body.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setGames(data.games ?? []);
+      setGames((prev) => applyOddsAheadFlags(prev, data.games ?? []));
       setFetchedAt(data.fetchedAt ?? null);
       setStats(data.stats ?? null);
       const bits = [];
@@ -81,10 +83,13 @@ function DrivesPage() {
     refreshBook();
   }, [refreshBook]);
 
+  const hasLive = games.some((game) => game.inPlay);
+  const refreshMs = hasLive ? LIVE_REFRESH_MS : BOOK_REFRESH_MS;
+
   useEffect(() => {
-    const id = window.setInterval(refreshBook, BOOK_REFRESH_MS);
+    const id = window.setInterval(refreshBook, refreshMs);
     return () => window.clearInterval(id);
-  }, [refreshBook]);
+  }, [refreshBook, refreshMs]);
 
   return (
     <>
@@ -107,6 +112,7 @@ function DrivesPage() {
             notice={notice}
             loading={bookLoading}
             refreshing={bookRefreshing}
+            refreshMs={refreshMs}
             onRefresh={() => refreshBook({ manual: true })}
           />
         </div>

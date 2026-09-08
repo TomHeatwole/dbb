@@ -1,40 +1,106 @@
 {
   "markets": {
-    "35660086|Florida St Drive 1 - Result": {
-      "ts": "2026-09-08T00:47:57.480Z",
+    "35660086|SMU Drive 4 - Result": {
+      "ts": "2026-09-08T02:10:40.668Z",
       "eventId": "35660086",
       "away": "SMU",
       "home": "Florida State",
-      "start": "9:15 PM Eastern Time",
+      "start": "",
       "date": null,
-      "marketName": "Florida St Drive 1 - Result",
-      "offense": "Florida St",
-      "drive": 1,
-      "outcomes": {
-        "td": 240,
-        "fg": 500,
-        "punt": 105,
-        "other": 460
-      },
-      "seenAt": "2026-09-08T00:47:57.481Z"
-    },
-    "35660086|SMU Drive 1 - Result": {
-      "ts": "2026-09-08T00:47:57.481Z",
-      "eventId": "35660086",
-      "away": "SMU",
-      "home": "Florida State",
-      "start": "9:15 PM Eastern Time",
-      "date": null,
-      "marketName": "SMU Drive 1 - Result",
+      "marketName": "SMU Drive 4 - Result",
       "offense": "SMU",
-      "drive": 1,
+      "drive": 4,
       "outcomes": {
-        "td": 250,
-        "fg": 470,
-        "punt": 110,
-        "other": 480
+        "td": 130,
+        "fg": 230,
+        "punt": 500,
+        "other": 380
       },
-      "seenAt": "2026-09-08T00:47:57.481Z"
+      "seenAt": "2026-09-08T02:10:40.670Z"
+    },
+    "35660086|Florida St Drive 4 - Result": {
+      "ts": "2026-09-08T02:24:02.433Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "Florida St Drive 4 - Result",
+      "offense": "Florida St",
+      "drive": 4,
+      "outcomes": {
+        "td": -100000,
+        "fg": -100000,
+        "punt": -100000,
+        "other": -100000
+      },
+      "seenAt": "2026-09-08T02:24:02.433Z"
+    },
+    "35660086|SMU Drive 5 - Result": {
+      "ts": "2026-09-08T02:32:05.332Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "SMU Drive 5 - Result",
+      "offense": "SMU",
+      "drive": 5,
+      "outcomes": {
+        "other": 10000
+      },
+      "seenAt": "2026-09-08T02:32:05.332Z"
+    },
+    "35660086|Florida St Drive 5 - Result": {
+      "ts": "2026-09-08T02:41:05.748Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "Florida St Drive 5 - Result",
+      "offense": "Florida St",
+      "drive": 5,
+      "outcomes": {
+        "td": 3000,
+        "fg": 3000,
+        "punt": -7000,
+        "other": 3000
+      },
+      "seenAt": "2026-09-08T02:41:05.748Z"
+    },
+    "35660086|SMU Drive 7 - Result": {
+      "ts": "2026-09-08T03:01:20.621Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "SMU Drive 7 - Result",
+      "offense": "SMU",
+      "drive": 7,
+      "outcomes": {
+        "other": 500
+      },
+      "seenAt": "2026-09-08T03:01:20.621Z"
+    },
+    "35660086|Florida St Drive 6 - Result": {
+      "ts": "2026-09-08T03:01:20.621Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "Florida St Drive 6 - Result",
+      "offense": "Florida St",
+      "drive": 6,
+      "outcomes": {
+        "td": 270,
+        "fg": 600,
+        "punt": 100,
+        "other": 390
+      },
+      "seenAt": "2026-09-08T03:01:20.621Z"
     }
   },
   "schedule": {
@@ -83,14 +149,14 @@
     "35660086": {
       "nextTryAt": 0,
       "missStreak": 0,
-      "lastTriedAt": "2026-09-08T00:47:57.980Z",
+      "lastTriedAt": "2026-09-08T03:01:20.621Z",
       "lastHadMarket": true,
       "kickoffAt": null
     },
     "35993112": {
       "nextTryAt": 0,
       "missStreak": 0,
-      "lastTriedAt": "2026-09-08T00:48:58.796Z",
+      "lastTriedAt": "2026-09-08T01:32:27.233Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-11T00:00:00.000Z"
     },
@@ -137,9 +203,9 @@
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
     "35993161": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788917701075,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:35:01.075Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
@@ -193,37 +259,37 @@
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
     "35993266": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788917921214,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:38:41.214Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T17:00:00.000Z"
     },
     "35993268": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918109395,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:41:49.395Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T18:00:00.000Z"
     },
     "35993271": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918510437,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:48:30.437Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
     "35993273": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918379575,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:46:19.575Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
     "35993284": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918015445,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:40:15.445Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T17:00:00.000Z"
     },
@@ -242,9 +308,9 @@
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
     "35993477": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788919254327,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T02:00:54.327Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
@@ -256,16 +322,16 @@
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
     "35993480": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918600126,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:50:00.126Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
     "35993482": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918751161,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:52:31.161Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
@@ -291,9 +357,9 @@
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
     "35993624": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918291423,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:44:51.423Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
@@ -473,9 +539,9 @@
       "kickoffAt": "2026-09-11T23:00:00.000Z"
     },
     "36042345": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788918899269,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:54:59.269Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T19:30:00.000Z"
     },
@@ -578,9 +644,9 @@
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
     "36042436": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788917833899,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:37:13.899Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T16:45:00.000Z"
     },

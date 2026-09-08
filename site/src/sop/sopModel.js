@@ -29,8 +29,9 @@ export function probToAmerican(prob) {
 }
 
 export function formatAmericanOdds(american) {
-  if (!Number.isFinite(american)) return '—';
+  if (!Number.isFinite(american) || american === 0) return '—';
   const rounded = Math.round(american);
+  if (rounded === 0) return '—';
   if (rounded > 0) return `+${rounded}`;
   return String(rounded);
 }

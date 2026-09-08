@@ -23917,6 +23917,27 @@ button.corners-bet:hover {
   line-height: 1.3;
 }
 
+.sop-exp-lag-badge {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #1a1a1a;
+  background: #f59e0b;
+}
+
+.drives-situation--lag {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.drives-edge-lag {
+  color: rgba(251, 191, 36, 0.9);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .drives-situation {
   margin: 0.35rem 0 0;
   font-size: 0.78rem;

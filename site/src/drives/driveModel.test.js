@@ -12,6 +12,10 @@ import {
   livePossessionSide,
   scoringSideAfterMadeKick,
   situationOffenseLabel,
+  situationUntrusted,
+  espnSituationLagsLastPlay,
+  applyOddsAheadFlags,
+  playYardageFromText,
   listDriveMarkets,
   shouldShowBothDriveSides,
   liveClockSeconds,
@@ -446,6 +450,71 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(8);
   });
 
+  it('counts an End of Half series that had offensive plays (SMU Drive 6 → next is 7)', () => {
+    const sideOf = (drive) => {
+      const abbr = drive?.team?.abbreviation;
+      if (abbr === 'FSU') return 'home';
+      if (abbr === 'SMU') return 'away';
+      return null;
+    };
+    const chart = parseEspnDriveBlob({
+      previous: [
+        { id: 's1', team: { abbreviation: 'SMU' }, result: { displayName: 'Fumble' }, offensivePlays: 6 },
+        { id: 'f1', team: { abbreviation: 'FSU' }, result: { displayName: 'Punt' }, offensivePlays: 3 },
+        { id: 's2', team: { abbreviation: 'SMU' }, result: { displayName: 'Touchdown' }, offensivePlays: 6 },
+        { id: 'f2', team: { abbreviation: 'FSU' }, result: { displayName: 'Touchdown' }, offensivePlays: 13 },
+        { id: 's3', team: { abbreviation: 'SMU' }, result: { displayName: 'Missed FG' }, offensivePlays: 12 },
+        { id: 'f3', team: { abbreviation: 'FSU' }, result: { displayName: 'Downs' }, offensivePlays: 6 },
+        { id: 's4', team: { abbreviation: 'SMU' }, result: { displayName: 'Touchdown' }, offensivePlays: 8 },
+        { id: 'f4', team: { abbreviation: 'FSU' }, result: { displayName: 'Field Goal' }, offensivePlays: 5 },
+        { id: 's5', team: { abbreviation: 'SMU' }, result: { displayName: 'Field Goal' }, offensivePlays: 5 },
+        { id: 'f5', team: { abbreviation: 'FSU' }, result: { displayName: 'Punt' }, offensivePlays: 5 },
+        {
+          id: 's6',
+          team: { abbreviation: 'SMU' },
+          result: { displayName: 'End of Half' },
+          offensivePlays: 4,
+          plays: [
+            { type: { text: 'Rush' } },
+            { type: { text: 'Pass Incompletion' } },
+            { type: { text: 'Pass Incompletion' } },
+            { type: { text: 'Rush' } },
+            { type: { text: 'End of Half' } },
+          ],
+        },
+      ],
+      current: {
+        id: 's6',
+        team: { abbreviation: 'SMU' },
+        result: { displayName: 'End of Half' },
+        offensivePlays: 4,
+      },
+    }, sideOf);
+    expect(chart).toEqual({
+      homeStarted: 5,
+      awayStarted: 6,
+      currentSide: null,
+      currentResult: 'End of Half',
+      finishedSide: 'away',
+    });
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      live: {
+        period: 2,
+        clock: '0:00',
+        clockSeconds: 0,
+        statusText: 'Halftime',
+        halfTime: true,
+        state: 'halftime',
+        lastPlayType: 'End of Half',
+        driveChart: chart,
+      },
+    };
+    expect(driveNumberForSide(game, 'away', { role: 'next' })).toBe(7);
+    expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(6);
+  });
+
   it('after a TD treats the other team as first up for the kickoff', () => {
     const game = wazzuAtWashington({
       period: 4,
@@ -616,5 +685,150 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(pred.layer).toBe('snap');
     expect(pred.features.ytg).toBe(33);
     expect(pred.features.down).toBe(3);
+  });
+});
+
+function liveFdGame(live, outcomes) {
+  const game = wazzuAtWashington(live);
+  const market = {
+    source: 'fd',
+    driveN: 6,
+    offenseSide: 'away',
+    offenseName: 'Washington State',
+    marketName: 'Washington St Drive 6 - Result',
+    outcomes,
+  };
+  game.driveMarkets = [market];
+  game.nextDrive = market;
+  game.eventId = 'wazzu-uw';
+  game.live = {
+    ...game.live,
+    driveChart: { homeStarted: 4, awayStarted: 6, currentSide: 'away' },
+  };
+  return game;
+}
+
+const goalLineFd = {
+  td: { american: -120, fd: { american: -120 } },
+  fg: { american: 280, fd: { american: 280 } },
+  punt: { american: 900, fd: { american: 900 } },
+  other: { american: 700, fd: { american: 700 } },
+};
+
+describe('ESPN situation lag vs live FanDuel prices', () => {
+  it('parses gain/loss yardage from last-play text', () => {
+    expect(playYardageFromText('Smith pass complete to Jones for 42 yards')).toBe(42);
+    expect(playYardageFromText('Williams sacked for a loss of 8 yards')).toBe(-8);
+  });
+
+  it('hides a fake snap +EV that the lagged 3rd-and-long spot would have shown', () => {
+    const snap = {
+      clockSeconds: 7 * 60,
+      clock: '7:00',
+      down: 3,
+      distance: 8,
+      yardsToEndzone: 50,
+      yardLine: 50,
+    };
+    const naive = liveFdGame(snap, goalLineFd);
+    const naiveView = evaluateDriveGame(naive, { market: listDriveSides(naive)[0] });
+    expect(naiveView.pred.layer).toBe('snap');
+    expect(naiveView.situationLag).toBe(false);
+    expect(naiveView.evCount).toBeGreaterThan(0);
+
+    const lagged = liveFdGame({
+      ...snap,
+      lastPlay: 'Kienholz pass complete for 42 yards to the WAS 8',
+      lastPlayType: 'Pass Reception',
+      lastPlaySide: 'away',
+      lastPlayYards: 42,
+      lastPlayStartYardLine: 50,
+      lastPlayEndYardLine: 8,
+    }, goalLineFd);
+    expect(espnSituationLagsLastPlay(lagged)).toBe(true);
+    const view = evaluateDriveGame(lagged, { market: listDriveSides(lagged)[0] });
+    expect(view.situationLag).toBe(true);
+    expect(view.evCount).toBe(0);
+    expect(view.rows.every((row) => row.edgePoints == null)).toBe(true);
+  });
+
+  it('shows model edges again after ESPN applies the same chunk play', () => {
+    const caughtUp = liveFdGame({
+      clockSeconds: 6 * 60 + 40,
+      clock: '6:40',
+      down: 1,
+      distance: 8,
+      yardsToEndzone: 8,
+      yardLine: 8,
+      lastPlay: 'Kienholz pass complete for 42 yards to the WAS 8',
+      lastPlayType: 'Pass Reception',
+      lastPlaySide: 'away',
+      lastPlayYards: 42,
+      lastPlayStartYardLine: 50,
+      lastPlayEndYardLine: 8,
+    }, goalLineFd);
+    expect(espnSituationLagsLastPlay(caughtUp)).toBe(false);
+    const liveView = evaluateDriveGame(caughtUp, { market: listDriveSides(caughtUp)[0] });
+    expect(liveView.pred.layer).toBe('snap');
+    expect(liveView.situationLag).toBe(false);
+    expect(liveView.rows.every((row) => row.edgePoints == null)).toBe(false);
+  });
+
+  it('does not flag a timeout that leaves the snap unchanged', () => {
+    const game = liveFdGame({
+      clockSeconds: 6 * 60 + 35,
+      clock: '6:35',
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 51,
+      yardLine: 49,
+      lastPlay: 'Official Timeout at 06:35.',
+      lastPlayType: 'Official Timeout',
+      lastPlayYards: 0,
+      lastPlayStartYardLine: 49,
+      lastPlayEndYardLine: 49,
+    }, goalLineFd);
+    expect(espnSituationLagsLastPlay(game)).toBe(false);
+  });
+
+  it('keeps the odds-ahead flag until ESPN’s spot actually changes', () => {
+    const spot = {
+      clockSeconds: 7 * 60,
+      clock: '7:00',
+      down: 3,
+      distance: 8,
+      yardsToEndzone: 50,
+      yardLine: 50,
+    };
+    const prev = liveFdGame(spot, {
+      td: { american: 220, fd: { american: 220 } },
+      punt: { american: -150, fd: { american: -150 } },
+    });
+    const next = liveFdGame(spot, {
+      td: { american: -120, fd: { american: -120 } },
+      punt: { american: 400, fd: { american: 400 } },
+    });
+    const flagged = applyOddsAheadFlags([prev], [next]);
+    expect(flagged[0].live.oddsAheadOfSpot).toBe(true);
+    expect(evaluateDriveGame(flagged[0], { market: listDriveSides(flagged[0])[0] }).situationLag)
+      .toBe(true);
+
+    const still = applyOddsAheadFlags(flagged, [next]);
+    expect(still[0].live.oddsAheadOfSpot).toBe(true);
+
+    const moved = liveFdGame({
+      ...spot,
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 8,
+      yardLine: 8,
+      clock: '6:40',
+      clockSeconds: 6 * 60 + 40,
+    }, {
+      td: { american: -120, fd: { american: -120 } },
+      punt: { american: 400, fd: { american: 400 } },
+    });
+    const cleared = applyOddsAheadFlags(still, [moved]);
+    expect(cleared[0].live.oddsAheadOfSpot).toBeUndefined();
   });
 });

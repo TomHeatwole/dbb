@@ -22,6 +22,7 @@ import {
   liveClockSeconds,
   possessiveTeam,
   resolveOffenseTeam,
+  situationUntrusted,
 } from '../drives/driveModel';
 import { predictDriveSituation } from '../drives/driveSituation';
 import {
@@ -36,7 +37,6 @@ import { buildDrivesMonitorRows, maxDriveEdgePoints } from '../drives/gameSnapsh
 import { gameAnchorId } from '../sop/gameSnapshot';
 import GameMonitorTable from './GameMonitorTable';
 
-const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'drives-book-team-search';
 const SHOW_WORK_KEY = 'drives-show-work';
 const SORT_EDGE_KEY = 'drives-sort-edge';
@@ -144,7 +144,8 @@ function liveSummary(game) {
       ? (game.teams?.home ?? live.possessionName)
       : live.possessionName;
   const noSnap = live.down == null || live.yardsToEndzone == null;
-  const last = noSnap && live.lastPlay
+  const lag = situationUntrusted(game);
+  const last = (noSnap || lag) && live.lastPlay
     ? String(live.lastPlay).replace(/\s+/g, ' ').trim().slice(0, 88)
     : null;
   const bits = [
@@ -535,6 +536,11 @@ function DriveSide({
         {startLine && (
           <p className="drives-situation">{startLine}</p>
         )}
+        {model.situationLag && (
+          <p className="drives-situation drives-situation--lag" role="status">
+            ESPN spot may lag the board — live +EV is hidden until the situation catches up.
+          </p>
+        )}
         {market?.marketName && (
           <p className="drives-situation">{market.marketName}</p>
         )}
@@ -604,7 +610,9 @@ function DriveSide({
               </div>
               <div className="drives-line-model">
                 <div className="sop-exp-goal-breakeven">
-                  {row.fairAmerican != null ? (
+                  {model.situationLag ? (
+                    <span className="sop-exp-goal-be-tag">spot lag</span>
+                  ) : row.fairAmerican != null ? (
                     <>
                       <span>{formatAmericanOdds(row.fairAmerican)}</span>
                       <span className="sop-exp-goal-be-tag">model</span>
@@ -614,7 +622,9 @@ function DriveSide({
                   )}
                 </div>
                 <div className="sop-exp-goal-edge">
-                  {row.profitable && row.edgePoints != null ? (
+                  {model.situationLag ? (
+                    <span className="drives-edge-lag">hidden</span>
+                  ) : row.profitable && row.edgePoints != null ? (
                     <>
                       <span className="sop-exp-edge-plus">
                         {formatEdgePoints(row.edgePoints)} edge
@@ -654,6 +664,7 @@ function DriveSide({
                 ? ` Next-drive log-loss ${LGBM_HOLDOUT.nextDrive.logloss} vs raw ${LGBM_HOLDOUT.nextDrive.raw} (n=${LGBM_HOLDOUT.nextDrive.n.toLocaleString()}; start ytg MAE ${LGBM_HOLDOUT.nextDrive.ytgMae}).`
                 : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
             {model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
+            {model.situationLag ? ' Live +EV is hidden: ESPN down/distance looks behind the book.' : ''}
             {model.vigPct != null ? ` Book vig ${model.vigPct.toFixed(1)}%.` : ''}
           </p>
           <ul className="drives-work-list">
@@ -700,6 +711,7 @@ function GameCard({
     return markets.map((market) => evaluateDriveGame(game, { ...opts, market }));
   }, [game, markets, kellyEnabled, kellyBudget, kellyFraction]);
   const evCount = models.reduce((sum, model) => sum + model.evCount, 0);
+  const lagCount = models.filter((model) => model.situationLag).length;
   const situation = liveSummary(game);
   const lines = lineSummary(game);
   const nextStart = useMemo(() => opponentStartSummary(game), [game]);
@@ -742,6 +754,9 @@ function GameCard({
               {situation && <span className="sop-exp-time">{situation}</span>}
               {!game.inPlay && game.openDate && (
                 <span className="sop-exp-time">{formatKickoff(game.openDate)}</span>
+              )}
+              {!expanded && lagCount > 0 && (
+                <span className="sop-exp-lag-badge">spot lag</span>
               )}
               {!expanded && evCount > 0 && (
                 <span className="sop-exp-ev-badge">{evCount} +EV</span>
@@ -821,6 +836,7 @@ function DrivesBookPanel({
   notice,
   refreshing,
   loading = false,
+  refreshMs = 60_000,
   onRefresh,
 }) {
   const [teamQuery, setTeamQuery] = useState('');
@@ -1060,7 +1076,7 @@ function DrivesBookPanel({
       )}
 
       <footer className="sop-exp-footer">
-        Auto-refreshes every {REFRESH_MS / 1000}s · model is joint LightGBM (train 2023–24, hold out 2025) ·
+        Auto-refreshes every {refreshMs / 1000}s{refreshMs < 30_000 ? ' while games are live' : ''} · model is joint LightGBM (train 2023–24, hold out 2025) ·
         FanDuel drive-result prices are read from the database
         {stats ? ` · ${stats.games} games` : ''}
       </footer>

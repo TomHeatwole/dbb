@@ -35,8 +35,7 @@ export function adbUiDump(udid = lastUdid) {
 
 export function listXml(sessionXml) {
   if (parseGames(sessionXml, { value: null }).length) return sessionXml;
-  const dump = adbUiDump();
-  return dump && parseGames(dump, { value: null }).length ? dump : sessionXml;
+  return sessionXml;
 }
 
 function elementId(el) {
@@ -325,7 +324,12 @@ export async function scrollToTop(sessionId) {
 }
 
 const GAME_RE = /^(?:(Live|In[- ]play|Final)\s+)?(?:Scheduled\s+)?game\s+(.+?)\s+versus\s+(.+?)(?:\s+start at\s+(.+?))?(?:\s+O\/U\s+([0-9.]+),\s*([+-]?[0-9.]+))?$/i;
+const LIVE_SCORE_RE = /^(?:Live|In[- ]play)\s+game\s+(.+?)\s+(\d+)\s+(.+?)\s+(\d+)\s+(?:QUARTER|Q[1-4]|HALF(?:TIME)?|OT|OVERTIME)\b/i;
 const SHORT_DATE_RE = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\.\s+\d{1,2}\/\d{1,2}$/;
+
+function eventIdFromResource(resourceId) {
+  return (String(resourceId || '').match(/event-card-(\d+)/) || [])[1] || null;
+}
 
 export function parseGames(xml, dateState) {
   const games = [];
@@ -347,7 +351,23 @@ export function parseGames(xml, dateState) {
       dateState.value = date;
       continue;
     }
-    if (!/\bgame\s+.+\s+versus\s+/i.test(desc)) continue;
+    if (!/\bgame\s+/i.test(desc)) continue;
+    const liveScore = LIVE_SCORE_RE.exec(desc);
+    if (liveScore) {
+      games.push({
+        eventId: eventIdFromResource(resourceId),
+        date,
+        away: liveScore[1].trim(),
+        home: liveScore[3].trim(),
+        start: '',
+        live: true,
+        final: false,
+        overUnder: null,
+        homeSpread: null,
+      });
+      continue;
+    }
+    if (!/\bversus\b/i.test(desc)) continue;
     if (!/^(?:Live|In[- ]play|Final|Scheduled)\b/i.test(desc) && !desc.startsWith('Scheduled game')) {
       continue;
     }
@@ -357,9 +377,8 @@ export function parseGames(xml, dateState) {
     const away = gm[2].trim();
     const home = gm[3].trim();
     const start = (gm[4] || '').replace(/\s+O\/U.*$/, '').trim();
-    const eventId = (resourceId.match(/event-card-(\d+)/) || [])[1] || null;
     games.push({
-      eventId,
+      eventId: eventIdFromResource(resourceId),
       date,
       away,
       home,
@@ -466,9 +485,14 @@ export async function collectSlate(sessionId, onProgress, opts = {}) {
   mergeGames(byId, parseGames(xml, dateState));
   if (!byId.size) mergeGames(byId, await harvestSlateGames(sessionId));
   onProgress?.(byId.size, 0);
+  const listed = () => [...byId.values()];
+  if (opts.stopAfterLive && listed().some((g) => g.live) && listed().some((g) => !g.live && !g.final)) {
+    await scrollToTop(sessionId);
+    return listed().filter((g) => g.eventId);
+  }
   let stagnant = 0;
   let liveStagnant = 0;
-  let lastLive = [...byId.values()].filter((g) => g.live).length;
+  let lastLive = listed().filter((g) => g.live).length;
   for (let i = 0; i < 50 && stagnant < 4; i += 1) {
     await scrollGameList(sessionId, 'down');
     await sleep(450);
@@ -476,12 +500,12 @@ export async function collectSlate(sessionId, onProgress, opts = {}) {
     const added = mergeGames(byId, parseGames(xml, dateState));
     onProgress?.(byId.size, i + 1);
     stagnant = added === 0 ? stagnant + 1 : 0;
-    const liveNow = [...byId.values()].filter((g) => g.live).length;
+    const liveNow = listed().filter((g) => g.live).length;
     liveStagnant = liveNow && liveNow === lastLive ? liveStagnant + 1 : 0;
     lastLive = liveNow;
     const page = parseGames(xml, { value: dateState.value });
     const pastLive = page.some((g) => !g.live && !g.final);
-    if (opts.stopAfterLive && liveNow && pastLive && liveStagnant >= 2) break;
+    if (opts.stopAfterLive && liveNow && pastLive && liveStagnant >= 1) break;
   }
   await scrollToTop(sessionId);
   return [...byId.values()].filter((g) => g.eventId);
@@ -557,6 +581,12 @@ export function isOnEventPage(xml) {
     || /content-desc="Navigate up"/.test(xml);
 }
 
+export function pageLooksFinal(xml) {
+  return /content-desc="[^"]*Final game/i.test(xml)
+    || /\bFinal\s+game\b/i.test(xml)
+    || /content-desc="[^"]*\bFINAL\b/i.test(xml);
+}
+
 function cardIsSelected(xml, eventId) {
   const tag = cardTag(xml, eventId);
   return Boolean(tag && /selected="true"/.test(tag));
@@ -602,6 +632,9 @@ async function findEventCard(sessionId, eventId, game = null) {
     eventId ? `new UiSelector().resourceId("event-card-${eventId}")` : null,
     game?.away && game?.home
       ? `new UiSelector().descriptionContains("${game.away} versus ${game.home}")`
+      : null,
+    game?.away && game?.home
+      ? `new UiSelector().descriptionContains("${game.away}").descriptionContains("${game.home}")`
       : null,
   ].filter(Boolean);
   for (const selector of selectors) {
@@ -667,8 +700,9 @@ export async function openGame(sessionId, eventId, game = null) {
     if (await waitLanded(sessionId, eventId, game, xml)) return true;
   }
 
+  const maxScrolls = game?.live ? 6 : 20;
   const tryFind = async (direction) => {
-    for (let i = 0; i < 20; i += 1) {
+    for (let i = 0; i < maxScrolls; i += 1) {
       if (await cardSelectedNow(sessionId, eventId)) {
         xml = await closeGameList(sessionId, await source(sessionId));
         if (await waitLanded(sessionId, eventId, game, xml)) return true;
@@ -711,7 +745,8 @@ export function classifyOutcome(name) {
 export function parseAmerican(token) {
   if (/even/i.test(token)) return 100;
   const n = Number(token);
-  return Number.isFinite(n) ? n : null;
+  if (!Number.isFinite(n) || n === 0) return null;
+  return n;
 }
 
 export function parseDriveMarkets(xml) {
@@ -828,10 +863,14 @@ function marketComplete(market) {
   return DRIVE_OUTCOMES.every((row) => market.outcomes[row.key] != null);
 }
 
-export async function scrapeDriveResults(sessionId) {
+export async function scrapeDriveResults(sessionId, opts = {}) {
   let xml = await source(sessionId);
   if (await slateModalOpen(sessionId, xml)) {
     xml = await closeGameList(sessionId, xml);
+  }
+  if (opts.quick) {
+    const rows = parseDriveMarkets(xml).filter((m) => Object.keys(m.outcomes).length);
+    if (rows.some((row) => marketComplete(row))) return rows;
   }
   xml = await revealDriveTab(sessionId);
   await scrollMarketsToTop(sessionId);

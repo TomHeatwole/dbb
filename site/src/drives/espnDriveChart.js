@@ -2,13 +2,16 @@
  * ESPN summary drives → team start counts for FanDuel-style drive numbers.
  *
  * Counts a team's offensive series. Does not count:
- *   - End of Half / End of Game clock stubs
+ *   - End of Half / End of Game clock stubs with no offensive plays
  *   - Kickoff-only rows (0 offensive plays, no series result), including
  *     the post-PAT "current" drive ESPN opens before the return team snaps
  *
- * Louisville @ Ole Miss (401856661), Q3 after Miss TD: ESPN lists 8 LOU
- * rows including a 0:06 kickoff + "End of 2nd quarter" tagged LOU. That
- * is not a Louisville drive. Next LOU series is the 8th.
+ * A series that actually ran (rushes/passes) and then expired at the half
+ * DOES count. SMU @ FSU (401858212): SMU's 0:31 1H drive ended "End of Half"
+ * with 4 offensive plays — that is Drive 6; FanDuel's 2H market is Drive 7.
+ *
+ * Louisville @ Ole Miss (401856661) 0:06 kickoff + "End of 2nd quarter"
+ * tagged LOU is still not a drive.
  */
 
 const CLOCK_STUB = /end of (half|game)/i;
@@ -19,7 +22,11 @@ export function espnDriveResultName(drive) {
 }
 
 export function isClockStubDrive(drive) {
-  return CLOCK_STUB.test(espnDriveResultName(drive));
+  if (!CLOCK_STUB.test(espnDriveResultName(drive))) return false;
+  const off = Number(drive?.offensivePlays);
+  // Real series that ran out the clock (SMU 1H: 4 offensive plays).
+  if (Number.isFinite(off) && off > 0) return false;
+  return true;
 }
 
 /** Made TD / FG / PAT — that series is over; kickoff goes the other way. */

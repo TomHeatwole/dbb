@@ -74,4 +74,18 @@ describe('fdDriveOdds', () => {
     expect(smu.outcomes.td.dk.american).toBe(250);
     expect(merged.find((m) => m.offenseSide === 'home').outcomes.td.american).toBe(280);
   });
+
+  it('drops FanDuel 0 as an unpriced leg, not a real American line', () => {
+    const market = fdDriveMarketFromRow({
+      ...smuRow,
+      td_american: 0,
+      fg_american: 0,
+      punt_american: 0,
+      other_american: 500,
+    });
+    expect(market.outcomes.td).toBeUndefined();
+    expect(market.outcomes.fg).toBeUndefined();
+    expect(market.outcomes.punt).toBeUndefined();
+    expect(market.outcomes.other.american).toBe(500);
+  });
 });

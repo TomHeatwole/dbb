@@ -12,7 +12,8 @@ const BUCKETS = [
 
 function signedAmerican(raw) {
   const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
+  if (!Number.isFinite(n) || n === 0) return null;
+  return n;
 }
 
 export function fdDriveMarketFromRow(row) {

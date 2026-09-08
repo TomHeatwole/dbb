@@ -77,10 +77,14 @@ export async function upsertFdDriveOdds(row) {
   if (!Number.isFinite(driveN) || driveN < 1) {
     throw new Error(`invalid drive_n ${row.drive_n}`);
   }
-  const td = row.td_american ?? null;
-  const fg = row.fg_american ?? null;
-  const punt = row.punt_american ?? null;
-  const other = row.other_american ?? null;
+  const price = (raw) => {
+    const n = Number(raw);
+    return Number.isFinite(n) && n !== 0 ? n : null;
+  };
+  const td = price(row.td_american);
+  const fg = price(row.fg_american);
+  const punt = price(row.punt_american);
+  const other = price(row.other_american);
   if (td == null && fg == null && punt == null && other == null) {
     throw new Error('no American prices to write');
   }

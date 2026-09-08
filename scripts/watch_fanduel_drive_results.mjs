@@ -5,8 +5,9 @@
  * Walks the NCAA Football slate, expands Drive Result (Quick Bets / Drive SGP),
  * logs American odds, and upserts them into Neon fd_drive_odds so /drives
  * can serve live FanDuel lines. Ended games are deleted from the table.
- * When nothing is live it idles (hourly, or daily if the slate is empty)
- * and always wakes at least an hour before the next kickoff.
+ * When exactly one game is live it stays on that event page and polls odds
+ * as fast as Appium allows. --single-game <eventId> forces that pin.
+ * --backfill restores the full-slate walk.
  *
  * Usage:
  *   scripts/watch-fanduel-drive-results.sh
@@ -14,10 +15,12 @@
  *   node scripts/watch_fanduel_drive_results.mjs --once --max-games 4
  *   node scripts/watch_fanduel_drive_results.mjs --no-db
  *   node scripts/watch_fanduel_drive_results.mjs --backfill
+ *   node scripts/watch_fanduel_drive_results.mjs --single-game 35660086
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   APPIUM,
@@ -27,7 +30,11 @@ import {
   createSession,
   deleteSession,
   openGame,
+  pageLooksFinal,
+  pageLooksLikeGame,
+  parseDriveMarkets,
   scrapeDriveResults,
+  source,
   sleep,
 } from './lib/fanduelAppium.mjs';
 import {
@@ -50,6 +57,8 @@ const LIVE_MISS_CAP_MS = 6 * HOUR_MS;
 const GAME_ENDED_AFTER_MS = 8 * HOUR_MS;
 const MISSING_SLATE_GRACE_MS = 45 * 60 * 1000;
 const PRE_KICKOFF_WAKE_MS = HOUR_MS;
+const LIVE_SLATE_LEAD_MS = 2 * 60 * 1000;
+const PIN_HEARTBEAT_MS = 20 * 1000;
 const IDLE_WITH_UPCOMING_MS = HOUR_MS;
 const IDLE_NO_UPCOMING_MS = DAY_MS;
 
@@ -95,6 +104,7 @@ function parseArgs(argv) {
     once: false,
     noDb: false,
     backfill: false,
+    singleGame: null,
     maxGames: Infinity,
     pauseMs: 800,
   };
@@ -105,6 +115,8 @@ function parseArgs(argv) {
     else if (argv[i] === '--once') args.once = true;
     else if (argv[i] === '--no-db') args.noDb = true;
     else if (argv[i] === '--backfill') args.backfill = true;
+    else if (argv[i] === '--single-game') args.singleGame = String(argv[++i] || '').trim();
+    else if (argv[i].startsWith('--single-game=')) args.singleGame = argv[i].slice('--single-game='.length).trim();
     else if (argv[i] === '--max-games') args.maxGames = Number(argv[++i]);
     else if (argv[i] === '--pause-ms') args.pauseMs = Number(argv[++i]);
   }
@@ -180,30 +192,51 @@ function kickoffOf(game, state) {
   return parseKickoff(game);
 }
 
-function nextKickoff(slate, state, now = Date.now()) {
+function nextUpcomingKickoff(slate, state, now = Date.now()) {
   let soonest = null;
-  for (const game of slate) {
-    if (game.final) continue;
-    const kick = kickoffOf(game, state);
-    if (!kick || kick.getTime() <= now) continue;
+  const take = (kick) => {
+    if (!kick || Number.isNaN(kick.getTime()) || kick.getTime() <= now) return;
     if (!soonest || kick < soonest) soonest = kick;
+  };
+  for (const game of slate || []) {
+    if (game.final || game.live) continue;
+    take(kickoffOf(game, state));
+  }
+  const onSlate = new Map((slate || []).filter((g) => g.eventId).map((g) => [g.eventId, g]));
+  for (const [eventId, sched] of Object.entries(state.schedule || {})) {
+    const row = onSlate.get(eventId);
+    if (row?.live || row?.final) continue;
+    if (!sched?.kickoffAt) continue;
+    take(new Date(sched.kickoffAt));
   }
   return soonest;
 }
 
 function slateHasLive(slate, state, now = Date.now()) {
-  return slate.some((game) => {
+  return (slate || []).some((game) => {
     if (game.final) return false;
     return gameIsLive(game, kickoffOf(game, state), now);
   });
+}
+
+function liveGamesOf(slate, state, now = Date.now()) {
+  return (slate || []).filter((game) => (
+    game.eventId && !game.final && gameIsLive(game, kickoffOf(game, state), now)
+  ));
+}
+
+function slateRefreshAt(slate, state, now = Date.now()) {
+  const next = nextUpcomingKickoff(slate, state, now);
+  if (!next) return now + DAY_MS;
+  return Math.max(now + 15_000, next.getTime() - LIVE_SLATE_LEAD_MS);
 }
 
 function idlePlan(slate, state, now = Date.now()) {
   if (slateHasLive(slate, state, now)) {
     return { ms: 0, reason: 'live games' };
   }
-  const next = nextKickoff(slate, state, now);
-  const unknownUpcoming = slate.some((game) => (
+  const next = nextUpcomingKickoff(slate, state, now);
+  const unknownUpcoming = (slate || []).some((game) => (
     !game.final && !gameIsLive(game, kickoffOf(game, state), now) && !kickoffOf(game, state)
   ));
   const upcoming = Boolean(next) || unknownUpcoming;
@@ -240,18 +273,24 @@ function shouldVisit(game, sched, now = Date.now(), opts = {}) {
   if (game.final) return { visit: false, reason: 'final' };
   const live = gameIsLive(game, sched.kickoffAt ? new Date(sched.kickoffAt) : parseKickoff(game), now);
   if (opts.liveOnly && !live) return { visit: false, reason: 'not live' };
+  if (opts.hammer && live) return { visit: true, reason: null };
   if (sched.nextTryAt && now < sched.nextTryAt) {
     return { visit: false, reason: `hold ${formatDelay(sched.nextTryAt - now)}` };
   }
   return { visit: true, reason: null };
 }
 
-function markTried(game, sched, hadMarket, now = Date.now()) {
+function markTried(game, sched, hadMarket, now = Date.now(), opts = {}) {
   const kickoffAt = sched.kickoffAt ? new Date(sched.kickoffAt) : parseKickoff(game);
   const live = gameIsLive(game, kickoffAt, now);
   sched.lastTriedAt = new Date(now).toISOString();
   sched.lastHadMarket = hadMarket;
   if (kickoffAt) sched.kickoffAt = kickoffAt.toISOString();
+  if (opts.hammer && live) {
+    sched.missStreak = hadMarket ? 0 : (sched.missStreak || 0) + 1;
+    sched.nextTryAt = 0;
+    return;
+  }
   if (hadMarket) {
     sched.missStreak = 0;
     if (kickoffAt && kickoffAt.getTime() - now > FAR_KICKOFF_MS) {
@@ -333,10 +372,23 @@ function matchup(game) {
   return `${game.away} @ ${game.home}`;
 }
 
-async function connect(udid) {
-  if (!(await appiumUp())) {
-    throw new Error(`Appium is not reachable at ${APPIUM}. Start it with scripts/start-appium.sh`);
+async function ensureAppium() {
+  if (await appiumUp()) return;
+  logLine(`starting Appium at ${APPIUM}…`);
+  const child = spawn(path.join(ROOT, 'scripts', 'start-appium.sh'), [], {
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+  for (let i = 0; i < 50; i += 1) {
+    await sleep(400);
+    if (await appiumUp()) return;
   }
+  throw new Error(`Appium is not reachable at ${APPIUM}. See /tmp/appium-watch.log`);
+}
+
+async function connect(udid) {
+  await ensureAppium();
   logLine(`connecting ${APPIUM}  udid=${udid}`);
   const sessionId = await createSession(udid);
   logLine(`session ${sessionId}`);
@@ -468,18 +520,113 @@ function applyMarkets(args, state, game, markets) {
   return { news, changes };
 }
 
+async function pinGame(sessionId, args, state, game, opts = {}) {
+  logLine(`pin   ${matchup(game)}  event ${game.eventId}  fast refresh`);
+  let ok = await openGame(sessionId, game.eventId, game);
+  if (!ok) {
+    logLine(`MISS  ${matchup(game)}  could not pin event ${game.eventId}`);
+    return { opened: false, final: false, news: 0, changes: 0, wrote: 0, polls: 0 };
+  }
+  await scrapeDriveResults(sessionId);
+  const sched = scheduleFor(state, game.eventId);
+  let news = 0;
+  let changes = 0;
+  let wrote = 0;
+  let polls = 0;
+  let lastBeat = Date.now();
+  const until = Number(opts.until) || 0;
+  const kickoffAt = kickoffOf(game, state);
+
+  while (true) {
+    if (until && Date.now() >= until) {
+      logLine(`pin   ${matchup(game)}  next kickoff approaching, releasing`);
+      break;
+    }
+    polls += 1;
+    let xml = await source(sessionId);
+    if (pageLooksFinal(xml)) {
+      logLine(`over  ${matchup(game)}  pinned game final after ${polls} polls`);
+      return { opened: true, final: true, news, changes, wrote, polls };
+    }
+    if (!pageLooksLikeGame(xml, game)) {
+      ok = await openGame(sessionId, game.eventId, game);
+      if (!ok) {
+        logLine(`MISS  ${matchup(game)}  lost pinned page`);
+        return { opened: false, final: false, news, changes, wrote, polls };
+      }
+    }
+    let markets = await scrapeDriveResults(sessionId, { quick: true });
+    if (markets.length) {
+      const rec = applyMarkets(args, state, game, markets);
+      news += rec.news;
+      changes += rec.changes;
+      if ((rec.news || rec.changes) && !args.noDb) {
+        try {
+          const n = await writeMarketsToDb(game, markets, kickoffAt);
+          wrote += n;
+          if (n) logLine(`db+   ${matchup(game)}  upserted ${n} row${n === 1 ? '' : 's'}`);
+        } catch (err) {
+          logLine(`db!   ${matchup(game)}  ${err.message}`);
+        }
+      }
+      markTried(game, sched, true, Date.now(), { hammer: true });
+      saveState(args.state, state);
+    }
+    if (Date.now() - lastBeat >= PIN_HEARTBEAT_MS) {
+      const snap = markets.length
+        ? markets.map((m) => formatOutcomes(m.outcomes)).join(' | ')
+        : 'no Drive Result';
+      logLine(`pin   ${matchup(game)}  ${polls} polls  ${snap}`);
+      lastBeat = Date.now();
+    }
+  }
+  return { opened: true, final: false, news, changes, wrote, polls };
+}
+
+async function resolvePinnedGame(sessionId, args, state, cache) {
+  const eventId = String(args.singleGame || '');
+  const fromCache = (cache.slate || []).find((g) => g.eventId === eventId)
+    || (cache.live || []).find((g) => g.eventId === eventId);
+  if (fromCache) return fromCache;
+  logLine(`locating event ${eventId}…`);
+  const slate = await collectSlate(sessionId, (n, scroll) => {
+    if (scroll === 0 || scroll % 4 === 0) logLine(`slate  ${n} games  (scroll ${scroll})`);
+  }, { stopAfterLive: !args.backfill });
+  cache.slate = slate;
+  cache.refreshAt = slateRefreshAt(slate, state);
+  for (const game of slate) {
+    if (!game.eventId) continue;
+    const sched = scheduleFor(state, game.eventId);
+    const kickoffAt = parseKickoff(game);
+    if (kickoffAt) sched.kickoffAt = kickoffAt.toISOString();
+  }
+  const hit = slate.find((g) => g.eventId === eventId);
+  if (hit) return hit;
+  return {
+    eventId,
+    away: 'Unknown',
+    home: 'Unknown',
+    live: true,
+    final: false,
+    start: '',
+  };
+}
+
 async function visitGame(sessionId, args, state, game) {
   logLine(`open  ${matchup(game)}  event ${game.eventId}`);
   const ok = await openGame(sessionId, game.eventId, game);
   if (!ok) {
     logLine(`MISS  ${matchup(game)}  could not open event ${game.eventId}`);
-    return { news: 0, changes: 0, markets: 0, wrote: 0 };
+    const xml = await source(sessionId).catch(() => '');
+    return { news: 0, changes: 0, markets: 0, wrote: 0, final: pageLooksFinal(xml) };
   }
   const markets = await scrapeDriveResults(sessionId);
+  const xml = await source(sessionId).catch(() => '');
+  const ended = pageLooksFinal(xml);
   const kickoffAt = parseKickoff(game);
   if (!markets.length) {
-    logLine(`skip  ${matchup(game)}  no Drive Result`);
-    return { news: 0, changes: 0, markets: 0, wrote: 0 };
+    logLine(`skip  ${matchup(game)}  ${ended ? 'final' : 'no Drive Result'}`);
+    return { news: 0, changes: 0, markets: 0, wrote: 0, final: ended };
   }
   const { news, changes } = applyMarkets(args, state, game, markets);
   if (!news && !changes) {
@@ -494,33 +641,54 @@ async function visitGame(sessionId, args, state, game) {
       logLine(`db!   ${matchup(game)}  ${err.message}`);
     }
   }
-  return { news, changes, markets: markets.length, wrote };
+  return { news, changes, markets: markets.length, wrote, final: ended };
 }
 
-async function runCycle(sessionId, args, state, cycle) {
-  logLine(`cycle ${cycle}  loading NCAA Football slate…`);
-  const slate = await collectSlate(sessionId, (n, scroll) => {
-    if (scroll === 0 || scroll % 4 === 0) logLine(`slate  ${n} games  (scroll ${scroll})`);
-  }, { stopAfterLive: !args.backfill });
-  for (const game of slate) {
-    if (!game.eventId) continue;
-    const sched = scheduleFor(state, game.eventId);
-    const kickoffAt = parseKickoff(game);
-    if (kickoffAt) sched.kickoffAt = kickoffAt.toISOString();
+function shouldLoadSlate(args, cache, now = Date.now()) {
+  if (args.backfill) return true;
+  if (!cache.slate) return true;
+  if (now >= (cache.refreshAt || 0)) return true;
+  if (!liveGamesOf(cache.slate, cache.state || { schedule: {} }, now).length && !cache.live?.length) {
+    return true;
   }
-  await purgeEnded(args, state, slate);
+  return false;
+}
 
+async function runCycle(sessionId, args, state, cycle, cache) {
   const now = Date.now();
+  const loadSlate = shouldLoadSlate(args, { ...cache, state }, now);
+  let slate;
+  if (loadSlate) {
+    logLine(`cycle ${cycle}  loading NCAA Football slate…`);
+    slate = await collectSlate(sessionId, (n, scroll) => {
+      if (scroll === 0 || scroll % 4 === 0) logLine(`slate  ${n} games  (scroll ${scroll})`);
+    }, { stopAfterLive: !args.backfill });
+    for (const game of slate) {
+      if (!game.eventId) continue;
+      const sched = scheduleFor(state, game.eventId);
+      const kickoffAt = parseKickoff(game);
+      if (kickoffAt) sched.kickoffAt = kickoffAt.toISOString();
+    }
+    await purgeEnded(args, state, slate);
+    cache.slate = slate;
+    cache.refreshAt = slateRefreshAt(slate, state);
+  } else {
+    slate = cache.slate || [];
+    const until = cache.refreshAt ? cache.refreshAt - now : 0;
+    logLine(`cycle ${cycle}  hammer ${liveGamesOf(slate, state, now).length} live  next slate ${until > 0 ? formatDelay(until) : 'now'}`);
+  }
+
   const anyLive = slateHasLive(slate, state, now);
   const liveOnly = Boolean(anyLive && !args.backfill);
-  const ranked = slate.filter((g) => g.eventId);
+  const hammer = Boolean(liveOnly && !loadSlate);
+  const ranked = (hammer ? liveGamesOf(slate, state, now) : slate.filter((g) => g.eventId));
   const visitList = [];
   let held = 0;
   let farHeld = 0;
   let liveHeld = 0;
   for (const game of ranked) {
     const sched = scheduleFor(state, game.eventId);
-    const decision = shouldVisit(game, sched, now, { liveOnly });
+    const decision = shouldVisit(game, sched, now, { liveOnly, hammer });
     if (!decision.visit) {
       held += 1;
       if (decision.reason === 'not live') {
@@ -537,12 +705,41 @@ async function runCycle(sessionId, args, state, cycle) {
   if (liveHeld) logLine(`hold  ${liveHeld} upcoming  (live slate; pass --backfill to scrape them)`);
   if (farHeld) logLine(`hold  ${farHeld} game${farHeld === 1 ? '' : 's'} more than 3 days out (once daily)`);
   const games = visitList.slice(0, Number.isFinite(args.maxGames) ? args.maxGames : visitList.length);
-  logLine(`cycle ${cycle}  ${slate.length} on slate  ${held} held  visiting ${games.length}${liveOnly ? '  live-only' : ''}`);
+  const liveNow = liveGamesOf(slate, state, Date.now());
+  const pinTarget = args.singleGame
+    ? games.find((g) => g.eventId === args.singleGame) || liveNow.find((g) => g.eventId === args.singleGame)
+    : (!args.backfill && liveNow.length === 1 ? liveNow[0] : null);
+
+  if (pinTarget && !args.backfill && !args.once) {
+    const rec = await pinGame(sessionId, args, state, pinTarget, { until: cache.refreshAt });
+    if (rec.final) {
+      pinTarget.final = true;
+      await forgetGame(args, state, pinTarget, 'slate marked final');
+      cache.live = [];
+      cache.refreshAt = 0;
+    } else {
+      cache.live = rec.opened ? [pinTarget] : [];
+    }
+    logLine(`cycle ${cycle}  done  pin ${rec.polls || 0} polls  +${rec.news} new  ${rec.changes} changed  db ${rec.wrote}`);
+    const idle = idlePlan(slate, state);
+    return {
+      slate: slate.length,
+      visited: rec.opened ? 1 : 0,
+      withMarkets: rec.wrote || rec.news ? 1 : 0,
+      news: rec.news,
+      changes: rec.changes,
+      wrote: rec.wrote,
+      idle: rec.final || !rec.opened ? idle : { ms: 0, reason: 'pinned live game' },
+    };
+  }
+
+  logLine(`cycle ${cycle}  ${slate.length} on slate  ${held} held  visiting ${games.length}${liveOnly ? '  live-only' : ''}${hammer ? '  pinned' : ''}`);
 
   let withMarkets = 0;
   let news = 0;
   let changes = 0;
   let wrote = 0;
+  const stillLive = [];
   for (const game of games) {
     const sched = scheduleFor(state, game.eventId);
     try {
@@ -551,8 +748,15 @@ async function runCycle(sessionId, args, state, cycle) {
       news += rec.news;
       changes += rec.changes;
       wrote += rec.wrote || 0;
-      markTried(game, sched, Boolean(rec.markets));
-      if (!rec.markets && sched.nextTryAt) {
+      markTried(game, sched, Boolean(rec.markets), Date.now(), { hammer });
+      if (rec.final) {
+        logLine(`over  ${matchup(game)}  dropping from live pin`);
+        game.final = true;
+        await forgetGame(args, state, game, 'slate marked final');
+      } else if (gameIsLive(game, kickoffOf(game, state))) {
+        stillLive.push(game);
+      }
+      if (!rec.markets && sched.nextTryAt && !hammer) {
         logLine(`back  ${matchup(game)}  next try in ${formatDelay(sched.nextTryAt - Date.now())}`);
       }
       saveState(args.state, state);
@@ -562,6 +766,12 @@ async function runCycle(sessionId, args, state, cycle) {
       throw err;
     }
   }
+
+  cache.slate = slate;
+  cache.live = stillLive;
+  if (!stillLive.length && anyLive) cache.refreshAt = 0;
+  else if (loadSlate || !cache.refreshAt) cache.refreshAt = slateRefreshAt(slate, state);
+
   logLine(`cycle ${cycle}  done  ${withMarkets}/${games.length} with Drive Result  +${news} new  ${changes} changed  db ${wrote}`);
   const idle = idlePlan(slate, state);
   return { slate: slate.length, visited: games.length, withMarkets, news, changes, wrote, idle };
@@ -574,16 +784,53 @@ async function main() {
     throw new Error('DATABASE_URL missing (site/.env.local). Pass --no-db to log only.');
   }
   const state = loadState(args.state);
+  const mode = args.singleGame
+    ? `single-game ${args.singleGame}`
+    : (args.backfill ? 'backfill (all games)' : 'live pin until next kickoff');
   process.stdout.write(
-    `FanDuel Drive Result watcher\n  log    ${args.log}\n  state  ${args.state}\n  db     ${args.noDb ? 'off' : 'neon fd_drive_odds'}\n  mode   ${args.backfill ? 'backfill (all games)' : 'live-only when anything is live'}\n\n`,
+    `FanDuel Drive Result watcher\n  log    ${args.log}\n  state  ${args.state}\n  db     ${args.noDb ? 'off' : 'neon fd_drive_odds'}\n  mode   ${mode}\n\n`,
   );
 
   let sessionId = null;
   let cycle = 0;
+  const cache = { slate: null, live: [], refreshAt: 0 };
   const run = async () => {
     if (!sessionId) sessionId = await connect(args.udid);
     cycle += 1;
-    return runCycle(sessionId, args, state, cycle);
+    if (args.singleGame) {
+      const game = await resolvePinnedGame(sessionId, args, state, cache);
+      if (args.once) {
+        const rec = await visitGame(sessionId, args, state, game);
+        return {
+          slate: cache.slate?.length || 0,
+          visited: 1,
+          withMarkets: rec.markets ? 1 : 0,
+          news: rec.news,
+          changes: rec.changes,
+          wrote: rec.wrote,
+          idle: { ms: 0, reason: 'once' },
+        };
+      }
+      const rec = await pinGame(sessionId, args, state, game, { until: cache.refreshAt });
+      if (rec.final) {
+        game.final = true;
+        await forgetGame(args, state, game, 'slate marked final');
+        cache.live = [];
+        cache.refreshAt = 0;
+      }
+      return {
+        slate: cache.slate?.length || 0,
+        visited: rec.opened ? 1 : 0,
+        withMarkets: rec.news || rec.wrote ? 1 : 0,
+        news: rec.news,
+        changes: rec.changes,
+        wrote: rec.wrote,
+        idle: rec.final || args.once
+          ? idlePlan(cache.slate || [], state)
+          : { ms: 0, reason: 'single-game pin' },
+      };
+    }
+    return runCycle(sessionId, args, state, cycle, cache);
   };
 
   if (args.once) {

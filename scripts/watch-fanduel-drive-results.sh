@@ -25,8 +25,9 @@ fi
 
 if ! curl -sf "$APPIUM_URL/status" >/dev/null; then
   echo "Starting Appium on ${APPIUM_URL}…"
-  "$ROOT/scripts/start-appium.sh" >>/tmp/appium-watch.log 2>&1 &
-  for _ in $(seq 1 40); do
+  nohup "$ROOT/scripts/start-appium.sh" >>/tmp/appium-watch.log 2>&1 &
+  disown || true
+  for _ in $(seq 1 50); do
     if curl -sf "$APPIUM_URL/status" >/dev/null; then
       break
     fi

@@ -7,7 +7,6 @@
  * DraftKings 1st Drive Result still comes from Nash before kickoff.
  */
 
-import { parseEspnDriveBlob } from '../src/drives/espnDriveChart.js';
 import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
 import { fdDriveRowsForGame, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
 
@@ -168,9 +167,9 @@ function runnersList(market) {
 
 function parseSignedAmerican(raw) {
   if (raw == null || raw === '') return null;
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw !== 0) return raw;
   const n = Number(String(raw).trim().replace(/\u2212/g, '-').replace(/^\+/, ''));
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) && n !== 0 ? n : null;
 }
 
 function americanOdds(runner) {
@@ -1062,6 +1061,9 @@ function parseEspnEvent(event) {
   const last = situation.lastPlay;
   const lastPlay = last?.text ?? null;
   const lastPlayType = last?.type?.text ?? null;
+  const lastPlayYards = Number(last?.statYardage);
+  const lastPlayStartYardLine = Number(last?.start?.yardLine);
+  const lastPlayEndYardLine = Number(last?.end?.yardLine);
   let lastPlaySide = null;
   if (last?.team?.id != null) {
     const tid = String(last.team.id);
@@ -1099,6 +1101,10 @@ function parseEspnEvent(event) {
     lastPlay,
     lastPlayType,
     lastPlaySide,
+    lastPlayId: last?.id != null ? String(last.id) : null,
+    lastPlayYards: Number.isFinite(lastPlayYards) ? lastPlayYards : null,
+    lastPlayStartYardLine: Number.isFinite(lastPlayStartYardLine) ? lastPlayStartYardLine : null,
+    lastPlayEndYardLine: Number.isFinite(lastPlayEndYardLine) ? lastPlayEndYardLine : null,
   };
 }
 
@@ -1152,7 +1158,8 @@ function espnDriveSide(drive, teams) {
   return null;
 }
 
-function parseEspnDriveChart(summary, teams) {
+async function parseEspnDriveChart(summary, teams) {
+  const { parseEspnDriveBlob } = await import(`../src/drives/espnDriveChart.js?v=${Date.now()}`);
   return parseEspnDriveBlob(summary?.drives, (drive) => espnDriveSide(drive, teams));
 }
 
@@ -1161,7 +1168,7 @@ async function fetchEspnDriveChart(espnId, teams) {
   for (const base of ESPN_SUMMARY_URLS) {
     try {
       const summary = await espnGetJson(`${base}?event=${espnId}`);
-      return parseEspnDriveChart(summary, teams);
+      return await parseEspnDriveChart(summary, teams);
     } catch (err) {
       lastErr = err;
     }
@@ -1248,6 +1255,10 @@ function attachEspn(game, espnGames) {
       lastPlay: hit.lastPlay,
       lastPlayType: hit.lastPlayType ?? null,
       lastPlaySide: hit.lastPlaySide ?? null,
+      lastPlayId: hit.lastPlayId ?? null,
+      lastPlayYards: hit.lastPlayYards ?? null,
+      lastPlayStartYardLine: hit.lastPlayStartYardLine ?? null,
+      lastPlayEndYardLine: hit.lastPlayEndYardLine ?? null,
       state: hit.halfTime ? 'halftime' : hit.state,
     },
   };
@@ -1456,7 +1467,12 @@ export default async function handler(req, res) {
 
   try {
     const data = await fetchNcaafDriveBook();
-    res.setHeader('Cache-Control', 'public, max-age=15');
+    res.setHeader(
+      'Cache-Control',
+      data?.stats?.live > 0
+        ? 'private, max-age=0, must-revalidate'
+        : 'public, max-age=15',
+    );
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console
