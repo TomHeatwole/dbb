@@ -13,6 +13,7 @@
  *   node scripts/watch_fanduel_drive_results.mjs
  *   node scripts/watch_fanduel_drive_results.mjs --once --max-games 4
  *   node scripts/watch_fanduel_drive_results.mjs --no-db
+ *   node scripts/watch_fanduel_drive_results.mjs --backfill
  */
 
 import fs from 'node:fs';
@@ -93,6 +94,7 @@ function parseArgs(argv) {
     state: DEFAULT_STATE,
     once: false,
     noDb: false,
+    backfill: false,
     maxGames: Infinity,
     pauseMs: 800,
   };
@@ -102,6 +104,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--state') args.state = path.resolve(argv[++i]);
     else if (argv[i] === '--once') args.once = true;
     else if (argv[i] === '--no-db') args.noDb = true;
+    else if (argv[i] === '--backfill') args.backfill = true;
     else if (argv[i] === '--max-games') args.maxGames = Number(argv[++i]);
     else if (argv[i] === '--pause-ms') args.pauseMs = Number(argv[++i]);
   }
@@ -233,8 +236,10 @@ function scheduleFor(state, eventId) {
   return state.schedule[eventId];
 }
 
-function shouldVisit(game, sched, now = Date.now()) {
+function shouldVisit(game, sched, now = Date.now(), opts = {}) {
   if (game.final) return { visit: false, reason: 'final' };
+  const live = gameIsLive(game, sched.kickoffAt ? new Date(sched.kickoffAt) : parseKickoff(game), now);
+  if (opts.liveOnly && !live) return { visit: false, reason: 'not live' };
   if (sched.nextTryAt && now < sched.nextTryAt) {
     return { visit: false, reason: `hold ${formatDelay(sched.nextTryAt - now)}` };
   }
@@ -496,7 +501,7 @@ async function runCycle(sessionId, args, state, cycle) {
   logLine(`cycle ${cycle}  loading NCAA Football slate…`);
   const slate = await collectSlate(sessionId, (n, scroll) => {
     if (scroll === 0 || scroll % 4 === 0) logLine(`slate  ${n} games  (scroll ${scroll})`);
-  });
+  }, { stopAfterLive: !args.backfill });
   for (const game of slate) {
     if (!game.eventId) continue;
     const sched = scheduleFor(state, game.eventId);
@@ -506,15 +511,22 @@ async function runCycle(sessionId, args, state, cycle) {
   await purgeEnded(args, state, slate);
 
   const now = Date.now();
+  const anyLive = slateHasLive(slate, state, now);
+  const liveOnly = Boolean(anyLive && !args.backfill);
   const ranked = slate.filter((g) => g.eventId);
   const visitList = [];
   let held = 0;
   let farHeld = 0;
+  let liveHeld = 0;
   for (const game of ranked) {
     const sched = scheduleFor(state, game.eventId);
-    const decision = shouldVisit(game, sched, now);
+    const decision = shouldVisit(game, sched, now, { liveOnly });
     if (!decision.visit) {
       held += 1;
+      if (decision.reason === 'not live') {
+        liveHeld += 1;
+        continue;
+      }
       const liveHold = (sched.missStreak || 0) > 0 || gameIsLive(game, sched.kickoffAt && new Date(sched.kickoffAt), now);
       if (liveHold || game.final) logLine(`hold  ${matchup(game).padEnd(36)}  ${decision.reason}`);
       else farHeld += 1;
@@ -522,9 +534,10 @@ async function runCycle(sessionId, args, state, cycle) {
     }
     visitList.push(game);
   }
+  if (liveHeld) logLine(`hold  ${liveHeld} upcoming  (live slate; pass --backfill to scrape them)`);
   if (farHeld) logLine(`hold  ${farHeld} game${farHeld === 1 ? '' : 's'} more than 3 days out (once daily)`);
   const games = visitList.slice(0, Number.isFinite(args.maxGames) ? args.maxGames : visitList.length);
-  logLine(`cycle ${cycle}  ${slate.length} on slate  ${held} held  visiting ${games.length}`);
+  logLine(`cycle ${cycle}  ${slate.length} on slate  ${held} held  visiting ${games.length}${liveOnly ? '  live-only' : ''}`);
 
   let withMarkets = 0;
   let news = 0;
@@ -562,7 +575,7 @@ async function main() {
   }
   const state = loadState(args.state);
   process.stdout.write(
-    `FanDuel Drive Result watcher\n  log    ${args.log}\n  state  ${args.state}\n  db     ${args.noDb ? 'off' : 'neon fd_drive_odds'}\n\n`,
+    `FanDuel Drive Result watcher\n  log    ${args.log}\n  state  ${args.state}\n  db     ${args.noDb ? 'off' : 'neon fd_drive_odds'}\n  mode   ${args.backfill ? 'backfill (all games)' : 'live-only when anything is live'}\n\n`,
   );
 
   let sessionId = null;

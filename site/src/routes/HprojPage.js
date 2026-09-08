@@ -634,7 +634,7 @@ function HprojPage() {
               <h2 className="hproj-col-title">Player outcomes</h2>
               <div className="hproj-hero">
                 <div className="hproj-hero-value">{fmt(manual.total)}</div>
-                <div className="hproj-hero-label">Manual best-ball</div>
+                <div className="hproj-hero-label">Manual bestball</div>
                 <div className="hproj-hero-sub">
                   {signed(manual.total - result.naiveTotal)} vs starter proj {fmt(result.naiveTotal)}
                 </div>

@@ -459,7 +459,7 @@ export async function openNcaafList(sessionId) {
   return source(sessionId);
 }
 
-export async function collectSlate(sessionId, onProgress) {
+export async function collectSlate(sessionId, onProgress, opts = {}) {
   let xml = await openNcaafList(sessionId);
   const byId = new Map();
   const dateState = { value: null };
@@ -467,6 +467,8 @@ export async function collectSlate(sessionId, onProgress) {
   if (!byId.size) mergeGames(byId, await harvestSlateGames(sessionId));
   onProgress?.(byId.size, 0);
   let stagnant = 0;
+  let liveStagnant = 0;
+  let lastLive = [...byId.values()].filter((g) => g.live).length;
   for (let i = 0; i < 50 && stagnant < 4; i += 1) {
     await scrollGameList(sessionId, 'down');
     await sleep(450);
@@ -474,6 +476,12 @@ export async function collectSlate(sessionId, onProgress) {
     const added = mergeGames(byId, parseGames(xml, dateState));
     onProgress?.(byId.size, i + 1);
     stagnant = added === 0 ? stagnant + 1 : 0;
+    const liveNow = [...byId.values()].filter((g) => g.live).length;
+    liveStagnant = liveNow && liveNow === lastLive ? liveStagnant + 1 : 0;
+    lastLive = liveNow;
+    const page = parseGames(xml, { value: dateState.value });
+    const pastLive = page.some((g) => !g.live && !g.final);
+    if (opts.stopAfterLive && liveNow && pastLive && liveStagnant >= 2) break;
   }
   await scrollToTop(sessionId);
   return [...byId.values()].filter((g) => g.eventId);

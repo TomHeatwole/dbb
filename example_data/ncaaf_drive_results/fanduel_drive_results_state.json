@@ -39,9 +39,9 @@
   },
   "schedule": {
     "35170578": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788916320826,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:12:00.826Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
@@ -130,9 +130,9 @@
       "kickoffAt": "2026-09-12T20:00:00.000Z"
     },
     "35993160": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788916467755,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:14:27.755Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
@@ -158,9 +158,9 @@
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
     "35993164": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788916079025,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:07:59.025Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
@@ -571,9 +571,9 @@
       "kickoffAt": "2026-09-12T23:45:00.000Z"
     },
     "36042424": {
-      "nextTryAt": 0,
+      "nextTryAt": 1788916179336,
       "missStreak": 0,
-      "lastTriedAt": null,
+      "lastTriedAt": "2026-09-08T01:09:39.336Z",
       "lastHadMarket": false,
       "kickoffAt": "2026-09-12T16:00:00.000Z"
     },
