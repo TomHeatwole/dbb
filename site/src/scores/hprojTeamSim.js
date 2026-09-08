@@ -247,7 +247,7 @@ export function simulateTeamHproj({
     const playerPct = {};
     for (const p of players) {
       const u = rng();
-      weekPts[p.id] = p.proj + (sampleHprojResidual(p.resid, u) || 0);
+      weekPts[p.id] = Math.max(0, p.proj + (sampleHprojResidual(p.resid, u, p.pos, p.proj) || 0));
       playerPct[p.id] = Math.max(0, Math.min(99, Math.round(u * 100)));
     }
     const scored = computeOptimalWeekDetail(ids, weekPts, positions, null);

@@ -1,8 +1,11 @@
 /**
  * HProj weekly residual buckets + outcome quantiles.
  *
- * Static table: ./hprojVarianceBuckets.json
- * Outcome at percentile p = projection + residual_p for that position band.
+ * Static table: ./hprojVarianceBuckets.json — games-played residuals
+ * (week − season PPG). The mid (P25–P80) stays on that table so averages
+ * hold. Tails are reshaped: injury/DNP zeros on the floor, fatter boom
+ * games at P90–P99. The raw table never sees inactive weeks, so a "clean"
+ * residual CDF never ducks to 0 and clips real ceilings.
  */
 
 import table from './hprojVarianceBuckets.json';
@@ -27,6 +30,73 @@ const RESID_KEYS = [
   [10, 'p10'], [20, 'p20'], [25, 'p25'], [50, 'p50'],
   [75, 'p75'], [80, 'p80'], [90, 'p90'], [95, 'p95'],
 ];
+
+/** Percentile through which outcome is 0 (injury / sit / leave early). */
+const ZERO_THROUGH = { QB: 7, RB: 12, WR: 11, TE: 10 };
+
+/** P99 outcome ≈ projection × this. Real boom weeks, not residual P95. */
+const P99_MULT = { QB: 2.2, RB: 2.55, WR: 2.65, TE: 2.45 };
+
+function interpolateKnots(knots, t) {
+  if (!knots || !knots.length) return null;
+  const x = Number(t);
+  if (!Number.isFinite(x)) return null;
+  if (x <= knots[0][0]) return knots[0][1];
+  const last = knots[knots.length - 1];
+  if (x >= last[0]) {
+    if (knots.length < 2) return last[1];
+    const [p0, v0] = knots[knots.length - 2];
+    const [p1, v1] = last;
+    const den = p1 - p0 || 1;
+    return v1 + ((v1 - v0) / den) * (x - p1);
+  }
+  for (let i = 1; i < knots.length; i += 1) {
+    if (x <= knots[i][0]) {
+      const [p0, v0] = knots[i - 1];
+      const [p1, v1] = knots[i];
+      const den = p1 - p0 || 1;
+      return v0 + ((v1 - v0) / den) * (x - p0);
+    }
+  }
+  return last[1];
+}
+
+/**
+ * Games-played residuals, with a zero floor and a stretched ceiling.
+ * Knots are [0–1, residual]. Outcome = max(0, projection + residual).
+ */
+export function residualKnots(resid, position, projection) {
+  const x = Number(projection);
+  if (!resid || !Number.isFinite(x)) return null;
+  const pos = ZERO_THROUGH[position] != null ? position : 'WR';
+  const floor = -Math.max(0, x);
+  const zeroP = ZERO_THROUGH[pos] / 100;
+  const p99Resid = Math.max(
+    x * ((P99_MULT[pos] || 2.5) - 1),
+    (Number(resid.p95) || 0) * 1.65,
+  );
+  const p90 = Number(resid.p90);
+  const p95 = Number(resid.p95);
+  const raw = [
+    [0, floor],
+    [zeroP, floor],
+    [0.25, resid.p25],
+    [0.50, resid.p50],
+    [0.75, resid.p75],
+    [0.80, resid.p80],
+    [0.90, p90 + 0.28 * (p99Resid - p90)],
+    [0.95, p95 + 0.55 * (p99Resid - p95)],
+    [0.99, p99Resid],
+  ];
+  let prev = floor;
+  return raw.map(([p, v]) => {
+    let y = Number(v);
+    if (!Number.isFinite(y)) y = prev;
+    y = Math.max(y, floor, prev);
+    prev = y;
+    return [p, y];
+  });
+}
 
 /**
  * Residual band for a weekly projection. Negative / missing proj uses the
@@ -92,9 +162,13 @@ export function hprojQuantile(position, projection, percentile) {
   const band = lookupHprojVariance(position, projection);
   const x = Number(projection);
   if (!band?.resid || !Number.isFinite(x)) return null;
-  const offset = residualQuantile(band.resid, percentile);
+  const raw = Number(percentile);
+  if (!Number.isFinite(raw)) return null;
+  const t = raw > 0 && raw <= 1 ? raw : raw / 100;
+  const knots = residualKnots(band.resid, position, x);
+  const offset = interpolateKnots(knots, t);
   if (offset == null) return null;
-  return round1(x + offset);
+  return round1(Math.max(0, x + offset));
 }
 
 /**
@@ -112,30 +186,18 @@ export function hprojQuantile(position, projection, percentile) {
  * @param {number} u
  * @returns {number|null}
  */
-export function sampleHprojResidual(resid, u) {
+export function sampleHprojResidual(resid, u, position, projection) {
   if (!resid) return null;
-  const x = Number(u);
-  if (!Number.isFinite(x)) return null;
-  const knots = RESID_KEYS.map(([p, key]) => [p / 100, resid[key]]);
-  if (x <= knots[0][0]) {
-    const [p0, v0] = knots[0];
-    const [p1, v1] = knots[1];
-    return v0 + ((v1 - v0) / (p1 - p0)) * (x - p0);
-  }
-  const last = knots[knots.length - 1];
-  if (x >= last[0]) {
-    const [p0, v0] = knots[knots.length - 2];
-    const [p1, v1] = last;
-    return v1 + ((v1 - v0) / (p1 - p0)) * (x - p1);
-  }
-  for (let i = 1; i < knots.length; i += 1) {
-    if (x <= knots[i][0]) {
-      const [p0, v0] = knots[i - 1];
-      const [p1, v1] = knots[i];
-      return v0 + ((v1 - v0) / (p1 - p0)) * (x - p0);
-    }
-  }
-  return last[1];
+  const t = Number(u);
+  if (!Number.isFinite(t)) return null;
+  const x = Number(projection);
+  const knots = Number.isFinite(x)
+    ? residualKnots(resid, position, x)
+    : RESID_KEYS.map(([p, key]) => [p / 100, resid[key]]);
+  const offset = interpolateKnots(knots, t);
+  if (offset == null) return null;
+  if (Number.isFinite(x)) return Math.max(-x, offset);
+  return offset;
 }
 
 export function hprojRange(position, projection) {
@@ -144,11 +206,13 @@ export function hprojRange(position, projection) {
   if (!band?.resid || !Number.isFinite(x)) return null;
   return {
     band,
-    p10: round1(x + band.resid.p10),
-    p20: round1(x + band.resid.p20),
-    p50: round1(x + band.resid.p50),
-    p80: round1(x + band.resid.p80),
-    p90: round1(x + band.resid.p90),
-    p95: round1(x + band.resid.p95),
+    p0: hprojQuantile(position, x, 0),
+    p10: hprojQuantile(position, x, 10),
+    p20: hprojQuantile(position, x, 20),
+    p50: hprojQuantile(position, x, 50),
+    p80: hprojQuantile(position, x, 80),
+    p90: hprojQuantile(position, x, 90),
+    p95: hprojQuantile(position, x, 95),
+    p99: hprojQuantile(position, x, 99),
   };
 }

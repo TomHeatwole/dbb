@@ -1,3 +1,481 @@
 {
-  "markets": {}
+  "markets": {},
+  "schedule": {
+    "35170578": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35170581": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:30:00.000Z"
+    },
+    "35360156": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T02:15:00.000Z"
+    },
+    "35632809": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:30:00.000Z"
+    },
+    "35632815": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35632817": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T00:00:00.000Z"
+    },
+    "35660086": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": "2026-09-08T00:37:44.312Z",
+      "lastHadMarket": false,
+      "kickoffAt": null
+    },
+    "35993112": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-11T00:00:00.000Z"
+    },
+    "35993113": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-11T23:00:00.000Z"
+    },
+    "35993114": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-11T23:30:00.000Z"
+    },
+    "35993115": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-11T23:00:00.000Z"
+    },
+    "35993116": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T01:00:00.000Z"
+    },
+    "35993117": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T20:00:00.000Z"
+    },
+    "35993160": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993161": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993162": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993163": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993164": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993165": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993166": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993169": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993263": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "35993266": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T17:00:00.000Z"
+    },
+    "35993268": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T18:00:00.000Z"
+    },
+    "35993271": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993273": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993284": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T17:00:00.000Z"
+    },
+    "35993299": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993301": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993477": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993478": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993480": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993482": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993576": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993579": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993582": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993624": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993625": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993664": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993665": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993666": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "35993667": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:45:00.000Z"
+    },
+    "35993675": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T20:00:00.000Z"
+    },
+    "35993676": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T20:00:00.000Z"
+    },
+    "35993678": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T20:15:00.000Z"
+    },
+    "35993682": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T21:30:00.000Z"
+    },
+    "35993689": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T22:00:00.000Z"
+    },
+    "35993708": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:00:00.000Z"
+    },
+    "36029136": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:30:00.000Z"
+    },
+    "36029139": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:15:00.000Z"
+    },
+    "36029909": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-11T23:00:00.000Z"
+    },
+    "36042345": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T19:30:00.000Z"
+    },
+    "36042365": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:30:00.000Z"
+    },
+    "36042366": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:30:00.000Z"
+    },
+    "36042367": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:30:00.000Z"
+    },
+    "36042368": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:30:00.000Z"
+    },
+    "36042369": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:45:00.000Z"
+    },
+    "36042371": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T00:00:00.000Z"
+    },
+    "36042372": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T00:00:00.000Z"
+    },
+    "36042377": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T01:00:00.000Z"
+    },
+    "36042382": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T02:30:00.000Z"
+    },
+    "36042383": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T02:30:00.000Z"
+    },
+    "36042385": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T03:59:00.000Z"
+    },
+    "36042388": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T03:00:00.000Z"
+    },
+    "36042389": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T23:45:00.000Z"
+    },
+    "36042424": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:00:00.000Z"
+    },
+    "36042436": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-12T16:45:00.000Z"
+    },
+    "36045302": {
+      "nextTryAt": 0,
+      "missStreak": 0,
+      "lastTriedAt": null,
+      "lastHadMarket": false,
+      "kickoffAt": "2026-09-13T02:00:00.000Z"
+    }
+  }
 }
