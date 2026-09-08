@@ -296,14 +296,29 @@ export async function scrollMarkets(sessionId, direction = 'down') {
   else await swipe(sessionId, 540, 900, 540, 1750, 320);
 }
 
+export async function scrollMarketsToTop(sessionId) {
+  let stagnant = 0;
+  let lastSig = '';
+  for (let i = 0; i < 10 && stagnant < 2; i += 1) {
+    await scrollMarkets(sessionId, 'up');
+    await sleep(280);
+    const xml = await source(sessionId);
+    const sig = (xml.match(/content-desc="[^"]*Drive\s+\d+[^"]*"/) || [])[0] || '';
+    stagnant = sig && sig === lastSig ? stagnant + 1 : 0;
+    lastSig = sig;
+  }
+}
+
 export async function scrollToTop(sessionId) {
   let stagnant = 0;
   let lastFirst = '';
   for (let i = 0; i < 12 && stagnant < 2; i += 1) {
     await scrollGameList(sessionId, 'up');
     await sleep(280);
-    const xml = await source(sessionId);
-    const first = (xml.match(/resource-id="event-card-\d+"/) || [])[0] || '';
+    const harvested = await harvestSlateGames(sessionId);
+    const first = harvested[0]?.eventId
+      || ((await source(sessionId)).match(/resource-id="event-card-\d+"/) || [])[0]
+      || '';
     stagnant = first && first === lastFirst ? stagnant + 1 : 0;
     lastFirst = first;
   }
@@ -456,8 +471,7 @@ export async function collectSlate(sessionId, onProgress) {
     await scrollGameList(sessionId, 'down');
     await sleep(450);
     xml = await slateXml(sessionId);
-    let added = mergeGames(byId, parseGames(xml, dateState));
-    if (!added) added = mergeGames(byId, await harvestSlateGames(sessionId));
+    const added = mergeGames(byId, parseGames(xml, dateState));
     onProgress?.(byId.size, i + 1);
     stagnant = added === 0 ? stagnant + 1 : 0;
   }
@@ -754,6 +768,8 @@ export async function scrapeDriveResults(sessionId) {
     xml = await closeGameList(sessionId, xml);
   }
   xml = await revealDriveTab(sessionId);
+  await scrollMarketsToTop(sessionId);
+  xml = await source(sessionId);
   const seen = new Map();
   const ingest = (rows) => {
     for (const row of rows) {
