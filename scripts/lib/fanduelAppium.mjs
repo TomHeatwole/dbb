@@ -325,6 +325,7 @@ export async function scrollToTop(sessionId) {
 
 const GAME_RE = /^(?:(Live|In[- ]play|Final)\s+)?(?:Scheduled\s+)?game\s+(.+?)\s+versus\s+(.+?)(?:\s+start at\s+(.+?))?(?:\s+O\/U\s+([0-9.]+),\s*([+-]?[0-9.]+))?$/i;
 const LIVE_SCORE_RE = /^(?:Live|In[- ]play)\s+game\s+(.+?)\s+(\d+)\s+(.+?)\s+(\d+)\s+(?:QUARTER|Q[1-4]|HALF(?:TIME)?|OT|OVERTIME)\b/i;
+const FINAL_SCORE_RE = /^(?:Final)\s+game\s+(.+?)\s+(\d+)\s+(.+?)\s+(\d+)\b/i;
 const SHORT_DATE_RE = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\.\s+\d{1,2}\/\d{1,2}$/;
 
 function eventIdFromResource(resourceId) {
@@ -362,6 +363,21 @@ export function parseGames(xml, dateState) {
         start: '',
         live: true,
         final: false,
+        overUnder: null,
+        homeSpread: null,
+      });
+      continue;
+    }
+    const finalScore = !/\bversus\b/i.test(desc) && FINAL_SCORE_RE.exec(desc);
+    if (finalScore) {
+      games.push({
+        eventId: eventIdFromResource(resourceId),
+        date,
+        away: finalScore[1].trim(),
+        home: finalScore[3].trim(),
+        start: '',
+        live: false,
+        final: true,
         overUnder: null,
         homeSpread: null,
       });
@@ -582,9 +598,25 @@ export function isOnEventPage(xml) {
 }
 
 export function pageLooksFinal(xml) {
-  return /content-desc="[^"]*Final game/i.test(xml)
-    || /\bFinal\s+game\b/i.test(xml)
-    || /content-desc="[^"]*\bFINAL\b/i.test(xml);
+  const blob = String(xml || '');
+  if (/content-desc="[^"]*Final game/i.test(blob)) return true;
+  if (/\bFinal\s+game\b/i.test(blob)) return true;
+  if (/(?:content-desc|text)="FINAL"/i.test(blob)) return true;
+  if (/content-desc="[^"]*\bFINAL\b/i.test(blob)) return true;
+  if (/content-desc="[^"]*Final Score/i.test(blob)) return true;
+  if (/content-desc="[^"]*Game is final/i.test(blob)) return true;
+  if (/this (?:game|event) has ended/i.test(blob)) return true;
+  if (/content-desc="[^"]*Watch replay/i.test(blob)) return true;
+  return false;
+}
+
+/** Slate card for this matchup is already a Final game, even if we are not on the event page. */
+export function slateMarksGameFinal(xml, game) {
+  if (pageLooksFinal(xml) && (!game || namesOnPage(xml, game))) return true;
+  if (!game?.away || !game?.home) return false;
+  const blob = foldTeamText(xml);
+  if (!blob.includes('final game')) return false;
+  return blob.includes(foldTeamText(game.away)) && blob.includes(foldTeamText(game.home));
 }
 
 function cardIsSelected(xml, eventId) {

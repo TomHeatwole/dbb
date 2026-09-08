@@ -3,6 +3,9 @@
  * Neon columns onto a snapshot, and decide when that snapshot is ahead of ESPN.
  */
 
+import { ytgFromSpot } from './ytgFromSpot.js';
+import { isMadeScoreLabel } from './espnDriveChart.js';
+
 function decodeXml(s) {
   return String(s || '')
     .replace(/&amp;/g, '&')
@@ -30,6 +33,12 @@ function intOrNull(raw) {
   return Number.isFinite(n) ? n : null;
 }
 
+function ytgOrNull(raw) {
+  const n = intOrNull(raw);
+  if (n == null || n < 1 || n > 99) return null;
+  return n;
+}
+
 const DOWN_RE = /(\d)(?:st|nd|rd|th)\s*(?:&|and)\s*(\d{1,2})/i;
 const MINUTES_LEFT_RE = /(\d+)\s+minutes?\s+remaining/i;
 const QUARTER_RE = /\b(?:QUARTER|Q)\s*([1-4])\b|\b([1-4])(?:st|nd|rd|th)\s+quarter\b/i;
@@ -37,6 +46,13 @@ const OT_RE = /\b(?:OT|OVERTIME)\b/i;
 const HALF_RE = /\bHALFTIME\b/i;
 const LIVE_SCORE_RE = /(?:Live|In[- ]play)\s+game\s+(.+?)\s+(\d+)\s+(.+?)\s+(\d+)\s+(?:QUARTER|Q[1-4]|HALF(?:TIME)?|OT|OVERTIME)\b/i;
 const AT_SPOT_RE = /\b(?:at|on)\s+(?:the\s+)?([A-Za-z.'][A-Za-z.' ]*?)\s+(\d{1,2})\b/i;
+const BALL_ON_RE = /\bball on\s+(?:the\s+)?([A-Za-z.'][A-Za-z.' ]*?)\s+(\d{1,2})\b/i;
+const BARE_SPOT_RE = /^([A-Za-z.][A-Za-z.' ]{0,28}?)\s+(\d{1,2})$/;
+const SPOT_NOISE = /drive|quarter|result|touchdown|field goal|punt|odds|live game|in-?play|timeout|minutes? remaining/i;
+const HAS_BALL_RE = /^(.+?)\s+(?:has (?:the )?ball|possession|on offense)$/i;
+const ARROW_LEFT_RE = /arrow(?:\s+pointing)?\s+left|pointing left|possession(?:_| )?(?:away|left)|ic_possession_left|[◀◄←◂]/i;
+const ARROW_RIGHT_RE = /arrow(?:\s+pointing)?\s+right|pointing right|possession(?:_| )?(?:home|right)|ic_possession_right|[▶►→▸]/i;
+const ARROW_TEAM_RE = /^(?:[◀◄←]\s*)(.+?)(?:\s+[▶►→])?$|^(.+?)\s+[▶►→]$/;
 
 function parseClockToken(text, { allowLoose = false } = {}) {
   const raw = String(text || '');
@@ -82,6 +98,62 @@ function parsePeriodToken(text) {
     || t.match(/\bQTR\s*([1-4])\b/i)
     || t.match(/\bQuarter\s+([1-4])\b/i);
   if (q) return { period: Number(q[1] || q[2]) };
+  return null;
+}
+
+function parseSpotToken(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!t || SPOT_NOISE.test(t)) return null;
+  const ball = t.match(BALL_ON_RE);
+  if (ball) return `${ball[1].trim()} ${ball[2]}`;
+  const at = t.match(AT_SPOT_RE);
+  if (at) return `${at[1].trim()} ${at[2]}`;
+  const bare = t.match(BARE_SPOT_RE);
+  if (!bare) return null;
+  const yl = Number(bare[2]);
+  if (!Number.isFinite(yl) || yl < 0 || yl > 50) return null;
+  const name = bare[1].trim();
+  if (name.length < 2 || /^(q|ot|down)$/i.test(name)) return null;
+  return `${name} ${yl}`;
+}
+
+function parsePossessionToken(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!t) return null;
+  if (ARROW_LEFT_RE.test(t) && !ARROW_TEAM_RE.test(t)) return { possessionArrow: 'left' };
+  if (ARROW_RIGHT_RE.test(t) && !ARROW_TEAM_RE.test(t)) return { possessionArrow: 'right' };
+  const named = t.match(HAS_BALL_RE);
+  if (named) return { possessionName: named[1].trim() };
+  const arrowTeam = t.match(ARROW_TEAM_RE);
+  if (arrowTeam) {
+    const name = (arrowTeam[1] || arrowTeam[2] || '').trim();
+    if (name && !SPOT_NOISE.test(name) && !/^\d+$/.test(name)) {
+      return { possessionName: name };
+    }
+  }
+  return null;
+}
+
+export function resolveFdPossessionSide(sit, teams = {}) {
+  if (!sit) return null;
+  if (sit.possession === 'home' || sit.possession === 'away') return sit.possession;
+  if (sit.possessionSide === 'home' || sit.possessionSide === 'away') return sit.possessionSide;
+  const name = String(sit.possessionName || '').trim();
+  if (name) {
+    const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const n = norm(name);
+    const home = norm(teams.home);
+    const away = norm(teams.away);
+    if (n && n === home && n !== away) return 'home';
+    if (n && n === away && n !== home) return 'away';
+    const homeHit = home && (n.includes(home) || home.includes(n));
+    const awayHit = away && (n.includes(away) || away.includes(n));
+    if (homeHit && !awayHit) return 'home';
+    if (awayHit && !homeHit) return 'away';
+    if (homeHit && awayHit) return home.length >= away.length ? 'home' : 'away';
+  }
+  if (sit.possessionArrow === 'left') return 'away';
+  if (sit.possessionArrow === 'right') return 'home';
   return null;
 }
 
@@ -210,13 +282,31 @@ function clockSecondsOf(sit) {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
+/**
+ * ESPN's clock has run further than FanDuel's (less time left, or a later quarter).
+ * Missing FanDuel period/clock is not "ahead."
+ */
+export function espnClockAheadOfFd(espn, fd) {
+  if (!espn || !fd) return false;
+  const ePeriod = intOrNull(espn.period);
+  const fPeriod = intOrNull(fd.period);
+  if (ePeriod != null && fPeriod != null && ePeriod > fPeriod) return true;
+  if (ePeriod != null && fPeriod != null && ePeriod < fPeriod) return false;
+  const eClock = clockSecondsOf(espn);
+  const fClock = clockSecondsOf(fd);
+  if (eClock == null || fClock == null) return false;
+  return eClock + 2 < fClock;
+}
+
 function spotToken(sit) {
   return String(sit?.possessionText || '').replace(/^\s*at\s+/i, '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 /**
  * True only when both sources posted a field and those values conflict.
- * Missing quarter / yardline on FanDuel is not a discrepancy.
+ * Missing quarter / yardline on FanDuel is not a discrepancy. Hidden
+ * yards-to-endzone on FanDuel is ignored — it is often leftover from an
+ * earlier snap and is not shown in the compare line.
  */
 export function liveSpotsDisagree(a, b) {
   if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
@@ -243,15 +333,23 @@ export function liveSpotsDisagree(a, b) {
     if (aDist != null && bDist != null && aDist !== bDist) return true;
   }
 
-  const aYtg = intOrNull(a.yardsToEndzone);
-  const bYtg = intOrNull(b.yardsToEndzone);
-  if (aYtg != null && bYtg != null && Math.abs(aYtg - bYtg) >= 5) return true;
-
   const aSpot = spotToken(a);
   const bSpot = spotToken(b);
   if (aSpot && bSpot && aSpot !== bSpot) return true;
 
   return false;
+}
+
+/** Posted clock / down / distance agree. FanDuel omitting yardline still counts as a match. */
+export function liveSnapsAgree(a, b) {
+  if (!a || !b) return false;
+  const aDown = intOrNull(a.down);
+  const bDown = intOrNull(b.down);
+  const aClock = clockSecondsOf(a);
+  const bClock = clockSecondsOf(b);
+  if (aDown == null || bDown == null) return false;
+  if (aClock == null || bClock == null) return false;
+  return !liveSpotsDisagree(a, b);
 }
 
 export function formatFdLiveSpot(sit) {
@@ -294,9 +392,14 @@ export function parseFdLiveSituation(xml) {
       out.distance = down.distance;
       out.downDistance = downDistanceLabel(down.down, down.distance);
     }
-    const spot = text.match(AT_SPOT_RE);
+    const spot = parseSpotToken(text);
     if (spot && !out.possessionText) {
-      out.possessionText = `${spot[1].trim()} ${spot[2]}`;
+      out.possessionText = spot;
+    }
+    const poss = parsePossessionToken(text);
+    if (poss) {
+      if (poss.possessionName && !out.possessionName) out.possessionName = poss.possessionName;
+      if (poss.possessionArrow && !out.possessionArrow) out.possessionArrow = poss.possessionArrow;
     }
   }
 
@@ -315,6 +418,8 @@ export function parseFdLiveSituation(xml) {
   }
   const situationText = formatFdLiveSpot(out);
   if (situationText) out.situationText = situationText;
+  const possessionSide = resolveFdPossessionSide(out);
+  if (possessionSide) out.possession = possessionSide;
 
   if (
     out.period == null
@@ -352,8 +457,13 @@ export function fdLiveFromRows(rows) {
     down,
     distance,
     downDistance: downDistanceLabel(down, distance),
-    yardsToEndzone: intOrNull(row.yards_to_endzone),
+    yardsToEndzone: ytgOrNull(row.yards_to_endzone),
     possessionText: row.possession_text || null,
+    possessionName: row.possession_name || null,
+    possessionArrow: row.possession_arrow || null,
+    possession: row.possession_side === 'home' || row.possession_side === 'away'
+      ? row.possession_side
+      : null,
     homeScore: intOrNull(row.home_score),
     awayScore: intOrNull(row.away_score),
     situationText: row.situation_text || formatFdLiveSpot({
@@ -434,6 +544,7 @@ export function fdStateAheadOfEspn(fdRaw, espnRaw) {
   const fdPeriod = intOrNull(fd.period);
   const espnPeriod = intOrNull(espn.period);
   if (fdPeriod != null && espnPeriod != null && fdPeriod > espnPeriod) return true;
+  if (espnClockAheadOfFd(espn, fd)) return false;
 
   const slack = fd.clockApproximate ? 45 : 12;
   const fdClock = intOrNull(fd.clockSeconds);
@@ -457,7 +568,7 @@ export function fdStateAheadOfEspn(fdRaw, espnRaw) {
   if (samePeriod && clocksClose) {
     const fdDown = intOrNull(fd.down);
     const espnDown = intOrNull(espn.down);
-    if (fdDown != null && espnDown != null && fdDown > espnDown) return true;
+    if (fdDown != null && espnDown != null && fdDown !== espnDown) return true;
 
     if (
       fdDown != null
@@ -491,16 +602,111 @@ export function fdStateAheadOfEspn(fdRaw, espnRaw) {
   return false;
 }
 
-export function fdLiveToDbRow(sit) {
+const SERIES_OVER_PLAY = /punt|interception|intercepted|fumble|safety|turnover on downs|downs turnover|field goal missed|missed field goal|blocked/i;
+
+function lastPlayEndedSeries(type, text) {
+  if (isMadeScoreLabel(type) || isMadeScoreLabel(text)) return true;
+  return SERIES_OVER_PLAY.test(type) || SERIES_OVER_PLAY.test(text);
+}
+
+function finiteYtg(raw) {
+  const y = Number(raw);
+  return Number.isFinite(y) && y >= 1 && y <= 99 ? y : NaN;
+}
+
+/**
+ * When FanDuel's live header is ahead of ESPN, copy that snap onto `live`
+ * so the model and labels use FD instead of a stale ESPN spot.
+ */
+export function applyFdAheadLive(game) {
+  if (!game?.inPlay || game.live?.spotSource === 'fd') return game;
+  const espn = game.live ?? {};
+  const fd = espn.fd || game.fdLive;
+  if (!fd || typeof fd !== 'object') return game;
+  if (!fdStateAheadOfEspn(fd, espn)) return game;
+
+  const live = { ...espn, fd };
+  const fdDown = Number(fd.down);
+  const espnDown = Number(espn.down);
+  const downChanged = Number.isFinite(fdDown) && fdDown >= 1
+    && Number.isFinite(espnDown) && espnDown >= 1
+    && fdDown !== espnDown;
+
+  if (Number.isFinite(Number(fd.period)) && Number(fd.period) > 0) live.period = Number(fd.period);
+  const fdClock = Number(fd.clockSeconds);
+  if (Number.isFinite(fdClock) && fdClock >= 0) {
+    live.clockSeconds = fdClock;
+    if (fd.clock) live.clock = fd.clock;
+  } else if (fd.clock) {
+    live.clock = fd.clock;
+  }
+  if (Number.isFinite(fdDown) && fdDown >= 1) {
+    live.down = fdDown;
+    if (Number.isFinite(Number(fd.distance))) live.distance = Number(fd.distance);
+    live.downDistance = fd.downDistance || downDistanceLabel(fdDown, live.distance);
+  }
+  if (fd.halfTime) {
+    live.halfTime = true;
+    live.state = 'halftime';
+  }
+
+  let possession = resolveFdPossessionSide(fd, game.teams)
+    || (fd.possession === 'home' || fd.possession === 'away' ? fd.possession : null);
+  if (!possession) {
+    const playSide = espn.lastPlaySide;
+    if (
+      (playSide === 'home' || playSide === 'away')
+      && !lastPlayEndedSeries(espn.lastPlayType, espn.lastPlay)
+    ) {
+      possession = playSide;
+    }
+  }
+  if (possession) {
+    live.possession = possession;
+    live.possessionName = possession === 'away'
+      ? (game.teams?.away ?? fd.possessionName ?? live.possessionName)
+      : (game.teams?.home ?? fd.possessionName ?? live.possessionName);
+  } else if (fd.possessionName) {
+    live.possessionName = fd.possessionName;
+  }
+
+  let ytg = finiteYtg(fd.yardsToEndzone);
+  if (!Number.isFinite(ytg) && fd.possessionText) {
+    ytg = finiteYtg(ytgFromSpot(fd.possessionText, {
+      possession: live.possession,
+      home: game.teams?.home,
+      away: game.teams?.away,
+    }));
+  }
+  if (Number.isFinite(ytg)) live.yardsToEndzone = ytg;
+  else if (downChanged) live.yardsToEndzone = null;
+  if (fd.possessionText) live.possessionText = fd.possessionText;
+  else if (downChanged) live.possessionText = null;
+
+  const hs = Number(fd.homeScore);
+  const as = Number(fd.awayScore);
+  if (Number.isFinite(hs) && Number.isFinite(as) && hs + as > 0) {
+    live.homeScore = hs;
+    live.awayScore = as;
+  }
+
+  live.spotSource = 'fd';
+  live.fdAheadOfEspn = true;
+  return { ...game, live };
+}
+
+export function fdLiveToDbRow(sit, teams = {}) {
   if (!sit) return {};
+  const possessionSide = resolveFdPossessionSide(sit, teams);
   return {
     period: sit.period ?? null,
     clock_seconds: sit.clockSeconds ?? null,
     clock_text: sit.clock ?? null,
     down: sit.down ?? null,
     distance: sit.distance ?? null,
-    yards_to_endzone: sit.yardsToEndzone ?? null,
+    yards_to_endzone: ytgOrNull(sit.yardsToEndzone),
     possession_text: sit.possessionText ?? null,
+    possession_side: possessionSide,
     home_score: sit.homeScore ?? null,
     away_score: sit.awayScore ?? null,
     situation_text: sit.situationText || formatFdLiveSpot(sit) || null,

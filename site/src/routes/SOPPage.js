@@ -9,11 +9,11 @@ import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
 import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
 import SOPBookPanel from './SOPBookPanel';
 import SOPManualPanel from './SOPManualPanel';
-import { mergeDkIntoFdGames } from '../sop/mergeDkGames';
+import { keepSopDisplayGames, mergeDkIntoFdGames } from '../sop/mergeDkGames';
 import { mergeKalshiIntoFdGames } from '../sop/mergeKalshiGames';
 
 /** DK is flaky (Akamai / missing event map). Bail fast and render FanDuel. */
-const DK_CLIENT_TIMEOUT_MS = 20000;
+const DK_CLIENT_TIMEOUT_MS = 25000;
 const KALSHI_CLIENT_TIMEOUT_MS = 28000;
 
 async function fetchJsonWithTimeout(url, timeoutMs) {
@@ -52,7 +52,7 @@ const LOADING_MESSAGES = [
   'Initializing pitch sensors…',
   'Calibrating offside trap algorithms…',
   'Syncing with FIFA VAR mainframe…',
-  'Pulling FanDuel Premier League odds…',
+  'Pulling FanDuel Premier League + Champions League odds…',
   'Loading corner kick coefficients…',
   'Warming up the fourth official…',
   'Parsing xG regression tables…',
@@ -159,7 +159,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
 
       const fdData = await fdRes.json();
       fdGames = fdData.games ?? [];
-      setGames(fdGames.map((game) => ({ ...game, dk: null, klsh: null })));
+      setGames(keepSopDisplayGames(fdGames.map((game) => ({ ...game, dk: null, klsh: null }))));
       setFetchedAt(fdData.fetchedAt ?? null);
       setEspnNotice(espnClockNotice(fdData.espn));
       setBookError(null);
@@ -176,7 +176,9 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
 
     const applyMerges = () => {
       setGames(
-        mergeKalshiIntoFdGames(mergeDkIntoFdGames(fdGames, dkData), kalshiData),
+        keepSopDisplayGames(
+          mergeKalshiIntoFdGames(mergeDkIntoFdGames(fdGames, dkData), kalshiData),
+        ),
       );
     };
 
@@ -316,7 +318,7 @@ function espnClockNotice(espn) {
   if (!espn) return null;
   if (espn.ok) return null;
   if (espn.error) return `ESPN clock: ${espn.error}`;
-  return 'Live clock unavailable — ESPN Premier League feed failed.';
+  return 'Live clock unavailable — ESPN soccer feed failed.';
 }
 
 export default SOPPage;

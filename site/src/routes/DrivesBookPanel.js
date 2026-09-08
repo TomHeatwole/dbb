@@ -11,6 +11,7 @@ import {
   extractHomeSpread,
   formatDriveOrdinal,
   evaluateDriveGame,
+  espnStateUnreachable,
   firstUpSide,
   formatAmericanOdds,
   situationOffenseLabel,
@@ -24,6 +25,7 @@ import {
   puntStyleWarningForOffense,
   resolveOffenseTeam,
   situationUntrusted,
+  applyFdAheadLive,
 } from '../drives/driveModel';
 import { predictDriveSituation } from '../drives/driveSituation';
 import {
@@ -130,6 +132,18 @@ function lineSummary(game) {
     bits.push(`O/U ${total.handicap}`);
   }
   return bits.join(' · ');
+}
+
+function EspnUnreachableBanner() {
+  return (
+    <div className="drives-espn-down-warn" role="alert">
+      <svg className="drives-espn-down-tri" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 2.2 L23.2 21.6 H0.8 Z" />
+        <path className="drives-espn-down-bang" d="M11.15 8.4 h1.7 v7.1 h-1.7 Z M11.15 16.7 h1.7 v1.9 h-1.7 Z" />
+      </svg>
+      <p>Can't reach ESPN for game state — assuming own 25.</p>
+    </div>
+  );
 }
 
 function SpotLagCompare({ detail }) {
@@ -702,7 +716,9 @@ function DriveSide({
               : model.pred?.afterPriorDrive && LGBM_HOLDOUT.nextDrive
                 ? ` Next-drive log-loss ${LGBM_HOLDOUT.nextDrive.logloss} vs raw ${LGBM_HOLDOUT.nextDrive.raw} (n=${LGBM_HOLDOUT.nextDrive.n.toLocaleString()}; start ytg MAE ${LGBM_HOLDOUT.nextDrive.ytgMae}).`
                 : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
-            {model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
+            {model.pred?.assumed && espnStateUnreachable(game)
+              ? ' Can\'t reach ESPN for game state — assuming own 25.'
+              : model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
             {model.situationLag && model.situationLagDetail?.rows?.length
               ? ` ${model.situationLagDetail.rows.map((row) => `${row.label} ${row.value}`).join(' · ')}`
               : ''}
@@ -742,27 +758,29 @@ function GameCard({
   const [expanded, setExpanded] = useState(defaultOpen);
   const [openLine, setOpenLine] = useState(null);
   const [quoteDraft, setQuoteDraft] = useState('');
+  const view = useMemo(() => applyFdAheadLive(game), [game]);
   useEffect(() => {
     setQuoteDraft('');
   }, [openLine?.sideIndex, openLine?.key, game.eventId]);
-  const markets = useMemo(() => listDriveSides(game, { granular: dkGranular }), [game, dkGranular]);
+  const markets = useMemo(() => listDriveSides(view, { granular: dkGranular }), [view, dkGranular]);
   const models = useMemo(() => {
     const opts = { kellyEnabled, kellyBudget, kellyFraction };
-    if (!markets.length) return [evaluateDriveGame(game, opts)];
-    return markets.map((market) => evaluateDriveGame(game, { ...opts, market }));
-  }, [game, markets, kellyEnabled, kellyBudget, kellyFraction]);
+    if (!markets.length) return [evaluateDriveGame(view, opts)];
+    return markets.map((market) => evaluateDriveGame(view, { ...opts, market }));
+  }, [view, markets, kellyEnabled, kellyBudget, kellyFraction]);
   const evCount = models.reduce((sum, model) => sum + model.evCount, 0);
   const lagCount = models.filter((model) => model.situationLagKind === 'espnBehind').length;
-  const situation = liveSummary(game);
-  const lines = lineSummary(game);
-  const nextStart = useMemo(() => opponentStartSummary(game), [game]);
+  const espnDown = espnStateUnreachable(view);
+  const situation = liveSummary(view);
+  const lines = lineSummary(view);
+  const nextStart = useMemo(() => opponentStartSummary(view), [view]);
   const paired = markets.length > 1;
-  const liveSpot = situationHeadline(game);
+  const liveSpot = situationHeadline(view);
   const pairLabel = paired
-    ? (isHalftimeLive(game.live)
+    ? (isHalftimeLive(view.live)
       ? 'Both 2nd-half kickoffs'
-      : (game.inPlay
-        ? (firstUpSide(game) ? 'Current drive + next drive' : 'Next drive · both teams')
+      : (view.inPlay
+        ? (firstUpSide(view) ? 'Current drive + next drive' : 'Next drive · both teams')
         : '1st-drive result · both teams'))
     : null;
   const cardKicker = liveSpot
@@ -796,6 +814,9 @@ function GameCard({
               {!game.inPlay && game.openDate && (
                 <span className="sop-exp-time">{formatKickoff(game.openDate)}</span>
               )}
+              {!expanded && espnDown && (
+                <span className="sop-exp-espn-down-badge">no ESPN</span>
+              )}
               {!expanded && lagCount > 0 && (
                 <span className="sop-exp-lag-badge">spot lag</span>
               )}
@@ -806,6 +827,7 @@ function GameCard({
           </span>
         </button>
       </header>
+      {espnDown && <EspnUnreachableBanner />}
       {expanded && (
         <div className="sop-exp-game-body">
           <section className="sop-exp-no-goal">
@@ -834,7 +856,7 @@ function GameCard({
             {models.map((model, i) => (
               <DriveSide
                 key={markets[i]?.marketName ?? model.offenseName ?? i}
-                game={game}
+                game={view}
                 market={markets[i] ?? model.market}
                 model={model}
                 showWork={showWork}

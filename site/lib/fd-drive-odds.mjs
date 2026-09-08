@@ -28,6 +28,7 @@ export async function readFdDriveOdds() {
       distance,
       yards_to_endzone,
       possession_text,
+      possession_side,
       home_score,
       away_score,
       situation_text,
@@ -111,6 +112,9 @@ export async function upsertFdDriveOdds(row) {
   const awayScore = intCol(row.away_score);
   const clockText = row.clock_text ?? null;
   const possessionText = row.possession_text ?? null;
+  const possessionSide = row.possession_side === 'home' || row.possession_side === 'away'
+    ? row.possession_side
+    : null;
   const situationText = row.situation_text ?? null;
   const hasSit = period != null || clockSeconds != null || down != null;
   if (td == null && fg == null && punt == null && other == null) {
@@ -124,6 +128,7 @@ export async function upsertFdDriveOdds(row) {
         distance = ${distance},
         yards_to_endzone = ${yardsToEndzone},
         possession_text = ${possessionText},
+        possession_side = ${possessionSide},
         home_score = ${homeScore},
         away_score = ${awayScore},
         situation_text = ${situationText},
@@ -143,7 +148,7 @@ export async function upsertFdDriveOdds(row) {
       offense_side, offense_name, drive_n, market_name, market_status,
       td_american, fg_american, punt_american, other_american,
       period, clock_seconds, clock_text, down, distance, yards_to_endzone,
-      possession_text, home_score, away_score, situation_text
+      possession_text, possession_side, home_score, away_score, situation_text
     ) VALUES (
       ${row.event_id ?? null},
       ${row.home_team},
@@ -165,6 +170,7 @@ export async function upsertFdDriveOdds(row) {
       ${distance},
       ${yardsToEndzone},
       ${possessionText},
+      ${possessionSide},
       ${homeScore},
       ${awayScore},
       ${situationText}
@@ -214,6 +220,11 @@ export async function upsertFdDriveOdds(row) {
           OR EXCLUDED.clock_seconds IS NOT NULL
           OR EXCLUDED.down IS NOT NULL
         THEN EXCLUDED.possession_text ELSE fd_drive_odds.possession_text END,
+      possession_side = CASE
+        WHEN EXCLUDED.period IS NOT NULL
+          OR EXCLUDED.clock_seconds IS NOT NULL
+          OR EXCLUDED.down IS NOT NULL
+        THEN EXCLUDED.possession_side ELSE fd_drive_odds.possession_side END,
       home_score = CASE
         WHEN EXCLUDED.period IS NOT NULL
           OR EXCLUDED.clock_seconds IS NOT NULL

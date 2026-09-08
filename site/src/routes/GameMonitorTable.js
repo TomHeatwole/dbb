@@ -116,7 +116,12 @@ function GameMonitorTable({
                   onClick={() => scrollToGame(row.eventId)}
                   title={row.fullName}
                 >
-                  <span className="sop-monitor-game-name">{row.name}</span>
+                  <span className="sop-monitor-game-name">
+                    {row.competition === 'ucl' && (
+                      <span className="sop-exp-comp sop-exp-comp--ucl">UCL</span>
+                    )}
+                    {row.name}
+                  </span>
                   <span className="sop-monitor-game-meta">
                     {row.inPlay && <span className="sop-exp-live">LIVE</span>}
                     <span>{row.score}</span>

@@ -487,7 +487,7 @@ function fetchOneKalshiGame(fdGame, indexes, marketsByKind) {
 }
 
 async function fetchWorldCupKalshiOddsInner({ upcomingOnly = true } = {}) {
-  const fdPayload = await fetchFanDuelGames();
+  const fdPayload = await fetchFanDuelGames({ includeChampionsLeague: false });
   const scheduleGames = upcomingOnly
     ? fdPayload.games.filter(isUpcomingGame)
     : fdPayload.games;

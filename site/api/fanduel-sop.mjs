@@ -1,14 +1,16 @@
 /**
- * FanDuel Premier League SOP scraper — no-goal proxies + goal-type odds.
+ * FanDuel Premier League + Champions League SOP scraper — no-goal proxies + goal-type odds.
  * Proxies FanDuel's undocumented sbapi — structure can change without notice.
  */
 
-import { attachEspnClock, compactEspnError, fetchEspnPlScoreboard } from '../lib/espn-pl-scoreboard.mjs';
+import { attachEspnClock, compactEspnError, fetchEspnSoccerScoreboards } from '../lib/espn-pl-scoreboard.mjs';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
 const PL_COMPETITION_ID = 10932509;
+const CL_COMPETITION_ID = 228;
+const FD_EVENT_CONCURRENCY = Number(process.env.FD_SOP_CONCURRENCY || 8);
 
 const FD_HEADERS = {
   Accept: 'application/json',
@@ -99,16 +101,53 @@ async function fdFetch(path) {
   return res.json();
 }
 
-function plMatchEvents(payload) {
+function competitionMeta(competitionId) {
+  if (Number(competitionId) === CL_COMPETITION_ID) {
+    return {
+      competitionId: CL_COMPETITION_ID,
+      competition: 'ucl',
+      competitionName: 'Champions League',
+    };
+  }
+  return {
+    competitionId: PL_COMPETITION_ID,
+    competition: 'pl',
+    competitionName: 'Premier League',
+  };
+}
+
+function sopMatchEvents(payload, competitionIds) {
+  const allowed = new Set([...competitionIds].map(Number));
   const events = payload?.attachments?.events ?? {};
   return Object.entries(events)
-    .filter(([, ev]) => ev.competitionId === PL_COMPETITION_ID && String(ev.name ?? '').includes(' v '))
+    .filter(([, ev]) => allowed.has(Number(ev.competitionId)) && String(ev.name ?? '').includes(' v '))
     .map(([id, ev]) => ({
       eventId: Number(id),
       name: ev.name,
       openDate: ev.openDate ?? null,
       inPlay: Boolean(ev.inPlay),
+      ...competitionMeta(ev.competitionId),
     }));
+}
+
+async function mapPool(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await fn(items[index], index);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, Math.max(items.length, 1)) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 function parseEventScore(event) {
@@ -395,33 +434,37 @@ async function fetchEventBundle(eventId) {
   };
 }
 
-export async function fetchPremierLeagueSopOdds({ includeEspn = false } = {}) {
+export async function fetchPremierLeagueSopOdds({
+  includeEspn = false,
+  includeChampionsLeague = true,
+} = {}) {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
-  const events = plMatchEvents(sportPage);
+  const competitionIds = [PL_COMPETITION_ID];
+  if (includeChampionsLeague) competitionIds.push(CL_COMPETITION_ID);
+  const events = sopMatchEvents(sportPage, competitionIds);
+  const espnLeagues = includeChampionsLeague ? ['pl', 'ucl'] : ['pl'];
 
   const espnPromise = includeEspn
-    ? fetchEspnPlScoreboard(events.map((ev) => ev.openDate))
+    ? fetchEspnSoccerScoreboards(events.map((ev) => ev.openDate), espnLeagues)
     : Promise.resolve(null);
 
   const [results, espn] = await Promise.all([
-    Promise.all(
-      events.map(async (ev) => {
-        try {
-          const bundle = await fetchEventBundle(ev.eventId);
-          return {
-            ...ev,
-            inPlay: bundle.inPlay,
-            score: bundle.score,
-            scoreDisplay: scoreDisplay(bundle.score),
-            teams: bundle.teams,
-            goalTypes: bundle.goalTypes,
-            noGoalMarkets: bundle.noGoalMarkets,
-          };
-        } catch (err) {
-          return { ...ev, error: err.message };
-        }
-      }),
-    ),
+    mapPool(events, FD_EVENT_CONCURRENCY, async (ev) => {
+      try {
+        const bundle = await fetchEventBundle(ev.eventId);
+        return {
+          ...ev,
+          inPlay: bundle.inPlay,
+          score: bundle.score,
+          scoreDisplay: scoreDisplay(bundle.score),
+          teams: bundle.teams,
+          goalTypes: bundle.goalTypes,
+          noGoalMarkets: bundle.noGoalMarkets,
+        };
+      } catch (err) {
+        return { ...ev, error: err.message };
+      }
+    }),
     espnPromise,
   ]);
 
@@ -444,6 +487,7 @@ export async function fetchPremierLeagueSopOdds({ includeEspn = false } = {}) {
         ok: espn.ok,
         error: espn.error ? compactEspnError(espn.error) : null,
         livePremierLeague: espn.livePremierLeague ?? 0,
+        liveMatches: espn.liveMatches ?? espn.livePremierLeague ?? 0,
         matched: games.filter((g) => g.espn).length,
       }
       : undefined,

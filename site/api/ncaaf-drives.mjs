@@ -9,7 +9,8 @@
 
 import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
 import { fdDriveRowsForGame, matchingFdDriveRows, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
-import { fdLiveFromRows, fdStateAheadOfEspn } from '../src/drives/fdLiveSituation.js';
+import { fdLiveFromRows, fdStateAheadOfEspn, applyFdAheadLive } from '../src/drives/fdLiveSituation.js';
+import { uniqueScoreboardDates } from '../src/drives/espnScoreboardDates.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -937,43 +938,6 @@ function compactProviderError(err) {
   return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
 }
 
-function yyyymmddFromIso(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0, 10).replace(/-/g, '');
-}
-
-function yyyymmddInTimeZone(date, timeZone) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const year = parts.find((p) => p.type === 'year')?.value;
-  const month = parts.find((p) => p.type === 'month')?.value;
-  const day = parts.find((p) => p.type === 'day')?.value;
-  if (!year || !month || !day) return null;
-  return `${year}${month}${day}`;
-}
-
-function uniqueScoreboardDates(openDates) {
-  const dates = new Set();
-  const now = new Date();
-  dates.add(yyyymmddInTimeZone(now, 'UTC'));
-  dates.add(yyyymmddInTimeZone(now, 'America/New_York'));
-  dates.add(yyyymmddInTimeZone(new Date(now.getTime() + 24 * 60 * 60 * 1000), 'America/New_York'));
-  for (const iso of openDates) {
-    const t = Date.parse(iso);
-    if (!Number.isFinite(t)) continue;
-    if (Math.abs(t - now.getTime()) > TEN_DAYS_MS) continue;
-    const key = yyyymmddFromIso(iso);
-    if (key) dates.add(key);
-  }
-  return [...dates].filter(Boolean).slice(0, 8);
-}
-
 function expandAlias(raw) {
   const n = normalizeTeam(raw);
   if (!n) return '';
@@ -1565,7 +1529,7 @@ async function fetchNcaafDriveBook(opts = {}) {
   const numbered = (await refreshEspnIfFdAhead(
     await attachEspnDriveCharts(games),
     { espnRefresh: opts.espnRefresh },
-  )).sort((a, b) => {
+  )).map((game) => applyFdAheadLive(game)).sort((a, b) => {
     if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
     if (!a.openDate) return 1;
     if (!b.openDate) return -1;

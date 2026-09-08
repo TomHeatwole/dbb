@@ -12,10 +12,12 @@ import {
   livePossessionSide,
   scoringSideAfterMadeKick,
   situationOffenseLabel,
+  espnStateUnreachable,
   situationUntrusted,
   spotLagKind,
   espnSituationLagsLastPlay,
   applyOddsAheadFlags,
+  applyFdAheadLive,
   playYardageFromText,
   describeSpotLag,
   listDriveMarkets,
@@ -202,6 +204,21 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(liveClockSeconds({ clockSeconds: undefined })).toBeNaN();
     expect(liveClockSeconds({ clock: '7:42' })).toBe(462);
     expect(liveClockSeconds({ clockSeconds: 0, clock: '0:00' })).toBe(0);
+  });
+
+  it('flags a live game with no ESPN attach as unreachable', () => {
+    expect(espnStateUnreachable({
+      inPlay: true,
+      debug: { espnMatched: false },
+      live: { state: 'in' },
+    })).toBe(true);
+    expect(espnStateUnreachable({
+      inPlay: true,
+      espnId: '401858212',
+      debug: { espnMatched: true },
+      live: { state: 'in', down: 1, yardsToEndzone: 75 },
+    })).toBe(false);
+    expect(espnStateUnreachable({ inPlay: false })).toBe(false);
   });
 
   it('treats Halftime + a stale own-6 snap as 2nd-half kickoff', () => {
@@ -393,6 +410,72 @@ describe('live clock vs stale end-of-half snaps', () => {
     const liveView = evaluateDriveGame(liveGame, { market: listDriveSides(liveGame)[0] });
     expect(liveView.driveNumber).toBe(6);
     expect(liveView.rows.find((row) => row.key === 'td').fdAmerican).toBe(180);
+  });
+
+  it('does not keep a leftover SMU Drive 9 current while FanDuel has FSU Drive 10', () => {
+    const fsu10 = {
+      source: 'fd',
+      driveN: 10,
+      offenseSide: 'home',
+      offenseName: 'Florida State',
+      marketName: 'Florida St Drive 10 - Result',
+      outcomes: { td: { american: 250, fd: { american: 250 } } },
+    };
+    const smu9 = {
+      source: 'fd',
+      driveN: 9,
+      offenseSide: 'away',
+      offenseName: 'SMU',
+      marketName: 'SMU Drive 9 - Result',
+      outcomes: { td: { american: 180, fd: { american: 180 } } },
+    };
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      driveMarkets: [smu9, fsu10],
+      live: {
+        period: 4,
+        clock: '13:42',
+        clockSeconds: 13 * 60 + 42,
+        down: 1,
+        distance: 10,
+        yardsToEndzone: 83,
+        possession: 'away',
+        possessionName: 'SMU',
+        possessionText: 'SMU 17',
+        state: 'in',
+        driveChart: { homeStarted: 9, awayStarted: 9, currentSide: 'away' },
+        fdAheadOfEspn: true,
+        fd: {
+          period: 4,
+          clock: '13:20',
+          clockSeconds: 13 * 60 + 20,
+          down: 1,
+          distance: 10,
+          possessionText: 'SMU 17',
+          possession: 'home',
+          possessionName: 'Florida State',
+          yardsToEndzone: 17,
+        },
+      },
+    };
+    expect(firstUpSide(game)).toBe('home');
+    expect(driveNumberForSide(game, 'home', { role: 'current' })).toBe(10);
+    expect(driveNumberForSide(game, 'away', { role: 'next' })).toBe(10);
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => [row.offenseSide, row.driveN ?? row.synthetic])).toEqual([
+      ['home', 10],
+      ['away', true],
+    ]);
+    const current = evaluateDriveGame(game, { market: sides[0] });
+    const next = evaluateDriveGame(game, { market: sides[1] });
+    expect(current.offenseName).toBe('Florida State');
+    expect(current.driveNumber).toBe(10);
+    expect(driveCardRole(game, current.pred)).toBe('current');
+    expect(next.offenseName).toBe('SMU');
+    expect(next.driveNumber).toBe(10);
+    expect(driveCardRole(game, next.pred)).toBe('next');
+    expect(next.rows.find((row) => row.key === 'td').fdAmerican).toBeNull();
   });
 
   it('uses unique ESPN starts, not completed+1, so a current drive is not counted twice', () => {
@@ -887,17 +970,79 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
       yardsToEndzone: 75,
       possessionText: 'Florida State 25',
     };
-    expect(situationUntrusted(game)).toBe(true);
+    expect(situationUntrusted(game)).toBe(false);
+    expect(spotLagKind(game)).toBeNull();
+    const overlaid = applyFdAheadLive(game);
+    expect(overlaid.live.spotSource).toBe('fd');
+    expect(overlaid.live.down).toBe(1);
+    expect(overlaid.live.yardsToEndzone).toBe(75);
     const view = evaluateDriveGame(game, { market: listDriveSides(game)[0] });
-    expect(view.situationLag).toBe(true);
-    expect(view.situationLagKind).toBe('espnBehind');
-    expect(view.situationLagDetail.kind).toBe('espnBehind');
+    expect(view.situationLag).toBe(false);
+    expect(view.pred.layer).toBe('snap');
+    expect(view.pred.features.down).toBe(1);
+    expect(view.pred.features.ytg).toBe(75);
     expect(view.evCount).toBeGreaterThan(0);
-    expect(view.situationLagDetail.fdLine).toBe('Q3 2:00  1st and 10  at Florida State 25');
-    expect(view.situationLagDetail.text).toBe([
-      'ESPN shows: Q3 2:08  4th and Goal  at SMU 2',
-      'FD shows: Q3 2:00  1st and 10  at Florida State 25',
-    ].join('\n'));
+  });
+
+  it('uses FanDuel possession and yardline when FD is ahead of a leftover book drive', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      score: { home: 24, away: 24 },
+      driveMarkets: [
+        {
+          marketName: 'Florida St Drive 12 - Result',
+          offenseName: 'Florida St',
+          offenseSide: 'home',
+          driveN: 12,
+          outcomes: goalLineFd,
+        },
+        {
+          marketName: 'SMU Drive 11 - Result',
+          offenseName: 'SMU',
+          offenseSide: 'away',
+          driveN: 11,
+          outcomes: {},
+        },
+      ],
+      live: {
+        period: 4,
+        clock: '3:45',
+        clockSeconds: 3 * 60 + 45,
+        down: 3,
+        distance: 10,
+        yardsToEndzone: 39,
+        possession: 'home',
+        possessionName: 'Florida State',
+        possessionText: 'SMU 39',
+        lastPlay: 'Raphael, Kendrick rush for 27 yards to the FLORIDAST25, PENALTY SMU holding 9 yards',
+        lastPlayType: 'Rush',
+        lastPlaySide: 'away',
+        state: 'in',
+        fdAheadOfEspn: true,
+        fd: {
+          period: 4,
+          clock: '2:50',
+          clockSeconds: 2 * 60 + 50,
+          down: 1,
+          distance: 10,
+          possessionText: 'Florida State 25',
+          possession: 'away',
+          possessionName: 'SMU',
+        },
+      },
+    };
+    expect(firstUpSide(game)).toBe('away');
+    expect(situationOffenseLabel(game)).toBe('SMU on offense');
+    expect(spotLagKind(game)).toBeNull();
+    const sides = listDriveSides(game);
+    expect(sides[0].offenseSide).toBe('away');
+    const view = evaluateDriveGame(game, { market: sides[0] });
+    expect(view.situationLag).toBe(false);
+    expect(view.pred.layer).toBe('snap');
+    expect(view.pred.features.down).toBe(1);
+    expect(view.pred.features.ytg).toBe(25);
+    expect(view.pred.features.clock_sec).toBe(2 * 60 + 50);
   });
 
   it('treats ESPN-ahead of FanDuel as stale odds, not a lagged-spot warning', () => {
@@ -930,6 +1075,38 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     expect(view.evCount).toBeGreaterThan(0);
   });
 
+  it('does not red-warn when ESPN clock has run further than FanDuel even if last play lagged', () => {
+    const game = liveFdGame({
+      period: 3,
+      clockSeconds: 36,
+      clock: '0:36',
+      down: 3,
+      distance: 10,
+      yardsToEndzone: 61,
+      possessionText: 'SMU 39',
+      lastPlay: 'Kienholz pass complete for 12 yards to the SMU 39',
+      lastPlayType: 'Pass Reception',
+      lastPlaySide: 'away',
+      lastPlayYards: 12,
+      lastPlayStartYardLine: 49,
+      lastPlayEndYardLine: 39,
+    }, goalLineFd);
+    game.live.fdAheadOfEspn = true;
+    game.live.fd = {
+      clock: '0:45',
+      clockSeconds: 45,
+      down: 3,
+      distance: 10,
+    };
+    expect(espnSituationLagsLastPlay(game)).toBe(true);
+    expect(spotLagKind(game)).toBe('oddsStale');
+    expect(situationUntrusted(game)).toBe(false);
+    const view = evaluateDriveGame(game, { market: listDriveSides(game)[0] });
+    expect(view.situationLagKind).toBe('oddsStale');
+    expect(view.situationLagDetail.espnLine).toMatch(/0:36/);
+    expect(view.situationLagDetail.fdLine).toMatch(/0:45/);
+  });
+
   it('does not flag matching ESPN and FanDuel spots when FD omits quarter and yardline', () => {
     const game = liveFdGame({
       period: 3,
@@ -945,6 +1122,30 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
       clockSeconds: 45,
       down: 3,
       distance: 10,
+    };
+    expect(spotLagKind(game)).toBeNull();
+    expect(evaluateDriveGame(game, { market: listDriveSides(game)[0] }).situationLag).toBe(false);
+  });
+
+  it('does not red-warn when clock and down match even if leftover FD yards-to-endzone disagrees', () => {
+    const game = liveFdGame({
+      period: 4,
+      clockSeconds: 13 * 60 + 42,
+      clock: '13:42',
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 83,
+      possessionText: 'SMU 17',
+    }, goalLineFd);
+    game.live.fdAheadOfEspn = true;
+    game.live.oddsAheadOfSpot = true;
+    game.live.fd = {
+      period: 4,
+      clock: '13:42',
+      clockSeconds: 13 * 60 + 42,
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 75,
     };
     expect(spotLagKind(game)).toBeNull();
     expect(evaluateDriveGame(game, { market: listDriveSides(game)[0] }).situationLag).toBe(false);

@@ -18,7 +18,9 @@ import { DRIVE_RESULT_MODEL, scoreLgbmLayer } from './driveResultLgbm.js';
 import { isMadeScoreLabel } from './espnDriveChart.js';
 import { predictOpponentStart } from './nextDriveStart.js';
 import { ytgFromSpot } from './ytgFromSpot.js';
-import { formatDownAndDistance, formatDownAndDistanceSpoken, formatLiveSituationLine, liveSpotsDisagree } from './fdLiveSituation.js';
+import { formatDownAndDistance, formatDownAndDistanceSpoken, formatLiveSituationLine, liveSpotsDisagree, liveSnapsAgree, espnClockAheadOfFd, applyFdAheadLive } from './fdLiveSituation.js';
+
+export { applyFdAheadLive };
 
 /** ESPN scrape: example_data/ncaaf_drive_results/espn_ncaaf_drives.csv */
 export const RAW_DRIVE_N = 113712;
@@ -344,6 +346,13 @@ export function hasLiveOffensiveSnap(game) {
   return Number.isFinite(ytg) && ytg >= 1 && ytg <= 99;
 }
 
+/** Live card with no ESPN attach — model falls back to own-25 kickoff. */
+export function espnStateUnreachable(game) {
+  if (!game?.inPlay || isHalftimeLive(game.live)) return false;
+  if (game.debug?.espnMatched === true || game.espnId) return false;
+  return true;
+}
+
 const SERIES_OVER_PLAY = /punt|interception|intercepted|fumble|safety|turnover on downs|downs turnover|field goal missed|missed field goal|blocked/i;
 const DEAD_BALL_CLOCK = /timeout|two-minute|two minute|end (of )?(the )?(1st|2nd|3rd|4th|first|second|third|fourth|quarter|period|half)/i;
 
@@ -497,13 +506,20 @@ export function situationUntrusted(game) {
  * oddsStale: ESPN is ahead of FanDuel, so the posted price may be old.
  */
 export function spotLagKind(game) {
-  if (!game?.inPlay || isHalftimeLive(game.live)) return null;
-  const behind = Boolean(game?.live?.oddsAheadOfSpot)
-    || Boolean(game?.live?.fdAheadOfEspn)
+  const view = applyFdAheadLive(game);
+  if (view.live?.spotSource === 'fd') return null;
+  if (!view?.inPlay || isHalftimeLive(view.live)) return null;
+  const espn = view?.live;
+  const fd = espn?.fd || game?.fdLive;
+  if (liveSnapsAgree(espn, fd)) return null;
+  const behind = Boolean(espn?.oddsAheadOfSpot)
+    || Boolean(espn?.fdAheadOfEspn)
     || espnSituationLagsLastPlay(game);
-  if (behind) return 'espnBehind';
-  const fd = game?.live?.fd || game?.fdLive;
-  if (liveSpotsDisagree(game?.live, fd)) return 'oddsStale';
+  if (behind) {
+    if (espnClockAheadOfFd(espn, fd)) return 'oddsStale';
+    return 'espnBehind';
+  }
+  if (liveSpotsDisagree(espn, fd) || espnClockAheadOfFd(espn, fd)) return 'oddsStale';
   return null;
 }
 
@@ -556,9 +572,10 @@ export function describeSpotLag(game) {
     ? `${implied.label}${implied.why ? ` (${implied.why})` : ''}`
     : null;
 
+  const fdDiffers = liveSpotsDisagree(live, fd) || espnClockAheadOfFd(live, fd);
   const rows = [];
   rows.push({ key: 'espn', label: 'ESPN shows', value: espnLine || '—' });
-  if (fdLine && liveSpotsDisagree(live, fd)) {
+  if (fdLine && fdDiffers) {
     rows.push({ key: 'fd', label: 'FD shows', value: fdLine });
   } else if (lastPlayLine && lastPlayLine !== espnSpot) {
     rows.push({ key: 'play', label: 'Last play', value: lastPlayLine });
@@ -572,7 +589,7 @@ export function describeSpotLag(game) {
     impliedSpot: fdLine || impliedSpot,
     espnLine: espnLine || null,
     fdLine: fdLine || null,
-    lastPlayLine: fdLine && liveSpotsDisagree(live, fd) ? null : lastPlayLine,
+    lastPlayLine: fdDiffers ? null : lastPlayLine,
     rows,
     text,
   };
@@ -601,31 +618,42 @@ export function scoringSideAfterMadeKick(game) {
 
 /** Who is actually up now. After a score, the other team is getting the kickoff. */
 export function firstUpSide(game) {
-  if (!game?.inPlay || game?.live?.state === 'pre') return null;
-  if (isHalftimeLive(game.live)) return null;
-  if (hasLiveOffensiveSnap(game)) return livePossessionSide(game);
-  const scorer = scoringSideAfterMadeKick(game);
+  const view = applyFdAheadLive(game);
+  if (!view?.inPlay || view?.live?.state === 'pre') return null;
+  if (isHalftimeLive(view.live)) return null;
+  if (view.live?.spotSource === 'fd') {
+    const fdPoss = livePossessionSide(view);
+    if (fdPoss) return fdPoss;
+  }
+  if (hasLiveOffensiveSnap(view)) {
+    const snapPoss = livePossessionSide(view);
+    if (snapPoss) return snapPoss;
+  }
+  const book = bookLiveDrive(view);
+  if (book?.lead) return book.lead;
+  const scorer = scoringSideAfterMadeKick(view);
   if (scorer) return flipSide(scorer);
-  const chartSide = game?.live?.driveChart?.currentSide;
+  const chartSide = view?.live?.driveChart?.currentSide;
   if (chartSide === 'home' || chartSide === 'away') return chartSide;
-  const finished = game?.live?.driveChart?.finishedSide;
+  const finished = view?.live?.driveChart?.finishedSide;
   // Punt / INT / missed FG: series is over, but the next snap is not a kickoff.
   if (finished === 'home' || finished === 'away') return null;
-  return livePossessionSide(game);
+  return livePossessionSide(view);
 }
 
 export function situationOffenseLabel(game) {
-  if (!game?.inPlay) return null;
-  if (isHalftimeLive(game.live)) return 'Halftime';
-  const side = firstUpSide(game);
+  const view = applyFdAheadLive(game);
+  if (!view?.inPlay) return null;
+  if (isHalftimeLive(view.live)) return 'Halftime';
+  const side = firstUpSide(view);
   const name = side === 'away'
-    ? (game?.teams?.away ?? game?.live?.possessionName)
+    ? (view?.teams?.away ?? view?.live?.possessionName)
     : side === 'home'
-      ? (game?.teams?.home ?? game?.live?.possessionName)
+      ? (view?.teams?.home ?? view?.live?.possessionName)
       : null;
-  if (scoringSideAfterMadeKick(game) && name) return `${name} gets the ball`;
+  if (scoringSideAfterMadeKick(view) && name) return `${name} gets the ball`;
   if (name) return `${name} on offense`;
-  if (game?.live?.period || game?.live?.clock || game?.live?.statusText) return 'Between possessions';
+  if (view?.live?.period || view?.live?.clock || view?.live?.statusText) return 'Between possessions';
   return null;
 }
 
@@ -712,6 +740,42 @@ export function marketDriveNumber(market) {
   return driveNumberFromName(market?.marketName);
 }
 
+function marketTeamSide(game, market) {
+  return pickNamedSide(market?.marketName || '', game?.teams?.home, game?.teams?.away)
+    || pickNamedSide(market?.offenseName || '', game?.teams?.home, game?.teams?.away)
+    || (market?.offenseSide === 'home' || market?.offenseSide === 'away' ? market.offenseSide : null);
+}
+
+/** Highest FanDuel/DK drive N still on the board for each team. */
+export function bookDriveHighs(game) {
+  const highs = { home: 0, away: 0 };
+  const rows = Array.isArray(game?.driveMarkets) ? game.driveMarkets : [];
+  for (const market of rows) {
+    const side = marketTeamSide(game, market);
+    const n = marketDriveNumber(market);
+    if ((side === 'home' || side === 'away') && Number.isFinite(n) && n > highs[side]) {
+      highs[side] = n;
+    }
+  }
+  return highs;
+}
+
+/**
+ * When FanDuel has opened Drive N+1 for one team and the other is still on N,
+ * that new series is the live possession. Stale ESPN currentSide / leftover
+ * Drive N markets should not keep the previous team "current."
+ */
+export function bookLiveDrive(game) {
+  const highs = bookDriveHighs(game);
+  if (highs.home < 1 || highs.away < 1) return null;
+  if (highs.home === highs.away) return null;
+  const lead = highs.home > highs.away ? 'home' : 'away';
+  const n = Math.max(highs.home, highs.away);
+  const trailN = Math.min(highs.home, highs.away);
+  if (n !== trailN + 1) return null;
+  return { lead, n, trailN };
+}
+
 /** True when this book market is the drive we are actually pricing. */
 export function marketMatchesDriveNumber(game, market, side, extras = {}) {
   const wanted = driveNumberForSide(game, side, { ...extras, market: undefined });
@@ -739,6 +803,10 @@ export function formatDriveOrdinal(n) {
 export function driveNumberForSide(game, side, extras = {}) {
   const role = extras.role ?? driveCardRole(game, extras.pred);
   if (role === 'first' || !game?.inPlay || game?.live?.state === 'pre') return 1;
+  const book = bookLiveDrive(game);
+  if (book?.lead && (side === 'home' || side === 'away')) {
+    return book.n;
+  }
   const chart = game?.live?.driveChart;
   if (chart && (side === 'home' || side === 'away')) {
     const startedRaw = side === 'home' ? chart.homeStarted : chart.awayStarted;
@@ -825,10 +893,11 @@ function pairBothDriveSides(game, books) {
 
 /** Book markets plus a card for each team. Live: current drive, then next. */
 export function listDriveSides(game, opts = {}) {
-  const books = listDriveMarkets(game, opts);
-  if (!shouldShowBothDriveSides(game)) return books;
-  const pair = pairBothDriveSides(game, books);
-  const poss = firstUpSide(game);
+  const view = applyFdAheadLive(game);
+  const books = listDriveMarkets(view, opts);
+  if (!shouldShowBothDriveSides(view)) return books;
+  const pair = pairBothDriveSides(view, books);
+  const poss = firstUpSide(view);
   if (!poss) return pair;
   const current = pair.find((row) => row.offenseSide === poss);
   const next = pair.find((row) => row.offenseSide !== poss);
@@ -852,8 +921,9 @@ function scoreDiffForOffense(game, side) {
  * Build the feature map the trees expect. `layer` is driveStart | snap.
  */
 export function featuresFromGame(game) {
-  const live = game?.live ?? {};
-  const inPlay = Boolean(game?.inPlay) && live.state !== 'pre';
+  const view = applyFdAheadLive(game);
+  const live = view?.live ?? {};
+  const inPlay = Boolean(view?.inPlay) && live.state !== 'pre';
   const clock = normalizeLiveClock(live);
   const period = clock.period;
   const clockSec = clock.clockSec;
@@ -861,17 +931,17 @@ export function featuresFromGame(game) {
   let ytgLive = Number.isFinite(ytgRaw) && ytgRaw >= 1 && ytgRaw <= 99 ? ytgRaw : NaN;
   if (!Number.isFinite(ytgLive)) {
     const fromText = ytgFromSpot(live.possessionText, {
-      possession: livePossessionSide(game),
-      home: game?.teams?.home,
-      away: game?.teams?.away,
+      possession: livePossessionSide(view),
+      home: view?.teams?.home,
+      away: view?.teams?.away,
     });
     if (Number.isFinite(fromText)) ytgLive = fromText;
   }
   const down = Number(live.down);
   const distance = Number(live.distance);
-  const poss = livePossessionSide(game);
-  const side = inferOffenseSide(game, game?.nextDrive);
-  const firstUp = firstUpSide(game);
+  const poss = livePossessionSide(view);
+  const side = inferOffenseSide(view, view?.nextDrive);
+  const firstUp = firstUpSide(view);
   const isWaiting = Boolean(inPlay && firstUp && side && side !== firstUp);
   const hasSnap = Number.isFinite(down) && down > 0
     && Number.isFinite(ytgLive) && ytgLive >= 1 && ytgLive <= 99;
@@ -898,14 +968,14 @@ export function featuresFromGame(game) {
   const expDef = Number.isFinite(ou) && Number.isFinite(offenseSpread)
     ? (ou + offenseSpread) / 2
     : NaN;
-  const scoreDiff = scoreDiffForOffense(game, side || 'home');
+  const scoreDiff = scoreDiffForOffense(view, side || 'home');
 
   if (isWaiting) {
     const sit = {
       down: hasSnap ? down : 1,
       distance: hasSnap && Number.isFinite(distance) ? distance : 10,
       yardsToEndzone: hasSnap ? ytgLive : 75,
-      scoreDiff: scoreDiffForOffense(game, firstUp),
+      scoreDiff: scoreDiffForOffense(view, firstUp),
       period,
       clockSeconds: Number.isFinite(clockSec) ? clockSec : NaN,
     };
@@ -1024,7 +1094,7 @@ export function featuresFromGame(game) {
       down,
       distance: Number.isFinite(distance) ? distance : 10,
       yardsToEndzone: ytgLive,
-      scoreDiff: scoreDiffForOffense(game, poss),
+      scoreDiff: scoreDiffForOffense(view, poss),
       period,
       clockSeconds: clockSec,
     })
@@ -1097,9 +1167,10 @@ export function evaluateDriveGame(game, {
   market = null,
 } = {}) {
   const nextDrive = market ?? game?.nextDrive ?? null;
-  const view = nextDrive && nextDrive !== game?.nextDrive
-    ? { ...game, nextDrive }
-    : game;
+  const base = applyFdAheadLive(game);
+  const view = nextDrive && nextDrive !== base.nextDrive
+    ? { ...base, nextDrive }
+    : base;
   const pred = predictDriveResult(view);
   const offense = resolveOffenseTeam(view, nextDrive);
   const outcomes = marketMatchesDriveNumber(view, nextDrive, offense.side, { pred })

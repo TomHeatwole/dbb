@@ -18,7 +18,7 @@
     },
     "api/draftkings-goal-method.mjs": {
       "maxDuration": 30,
-      "includeFiles": "src/sop/sopModel.js,lib/dk-corners.mjs"
+      "includeFiles": "src/sop/sopModel.js,src/sop/fixtureKey.js,lib/dk-corners.mjs"
     },
     "api/kalshi-sop.mjs": {
       "maxDuration": 30,

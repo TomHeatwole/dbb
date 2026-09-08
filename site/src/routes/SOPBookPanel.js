@@ -1,5 +1,5 @@
 /**
- * SOP Book tab — live FanDuel Premier League +EV scanner.
+ * SOP Book tab — live FanDuel Premier League + Champions League +EV scanner.
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -370,7 +370,12 @@ function GameCard({
             {expanded ? '▼' : '▶'}
           </span>
           <span className="sop-exp-game-toggle-main">
-            <span className="sop-exp-game-title">{game.name}</span>
+            <span className="sop-exp-game-title">
+              {game.competition === 'ucl' && (
+                <span className="sop-exp-comp sop-exp-comp--ucl">UCL</span>
+              )}
+              {game.name}
+            </span>
             <span className="sop-exp-game-meta">
               {game.inPlay && <span className="sop-exp-live">LIVE</span>}
               <span className="sop-exp-score">{game.scoreDisplay ?? '0-0'}</span>
@@ -677,8 +682,8 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
   if (loading) {
     return (
       <LoadingState
-        label="Loading Premier League odds…"
-        ariaLabel="Loading Premier League odds"
+        label="Loading SOP odds…"
+        ariaLabel="Loading SOP odds"
         className="sop-book-loading"
       />
     );
@@ -689,7 +694,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">SOP +EV Scanner</h1>
         <p className="sop-exp-subtitle">
-          Premier League · FanDuel + DraftKings + Kalshi
+          Premier League + Champions League · FanDuel + DraftKings + Kalshi
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -783,7 +788,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       )}
 
       {!error && games.length === 0 && (
-        <p className="sop-exp-status">No Premier League games found on FanDuel.</p>
+        <p className="sop-exp-status">No Premier League or Champions League games found.</p>
       )}
 
       <footer className="sop-exp-footer">

@@ -3,16 +3,27 @@
  * Scoreboard only; play-by-play / stoppage estimates stay in pl-corners.
  */
 
-const ESPN_SCOREBOARD_URLS = [
-  'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
-  'https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
-];
+const ESPN_LEAGUES = {
+  pl: {
+    urls: [
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+      'https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+    ],
+    referer: 'https://www.espn.com/soccer/scoreboard/_/league/eng.1',
+  },
+  ucl: {
+    urls: [
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
+      'https://site.web.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
+    ],
+    referer: 'https://www.espn.com/soccer/scoreboard/_/league/uefa.champions',
+  },
+};
 
 const ESPN_HEADERS = {
   Accept: 'application/json',
   'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-  Referer: 'https://www.espn.com/soccer/scoreboard/_/league/eng.1',
 };
 
 const TEAM_CANON = [
@@ -42,12 +53,31 @@ const TEAM_CANON = [
   ['brentford', 'brentford fc'],
   ['sunderland', 'sunderland afc'],
   ['burnley', 'burnley fc'],
+  ['paris saint germain', 'paris st germain', 'paris st g', 'psg'],
+  ['internazionale', 'inter milan', 'inter'],
+  ['real betis', 'betis'],
+  ['psv eindhoven', 'psv'],
+  ['shakhtar donetsk', 'shakhtar'],
+  ['as roma', 'roma'],
+  ['bayern munich', 'bayern munchen', 'fc bayern', 'bayern'],
+  ['borussia dortmund', 'dortmund'],
+  ['fc porto', 'porto'],
+  ['sporting cp', 'sporting lisbon', 'sporting'],
+  ['atletico madrid', 'atletico'],
+  ['bodo glimt', 'bodo/glimt', 'glimt'],
+  ['rb leipzig', 'leipzig'],
+  ['club brugge', 'brugge'],
+  ['aek athens', 'aek'],
+  ['lask linz', 'lask'],
+  ['slovan bratislava', 'slovan'],
+  ['sabah', 'fc sabah', 'sabah fk'],
 ];
 
 function canonTeam(name) {
   const raw = String(name ?? '')
     .toLowerCase()
     .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\w\s&']/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -192,8 +222,10 @@ function uniqueScoreboardDates(openDates) {
   return [...dates].filter(Boolean).slice(0, 8);
 }
 
-async function espnGetJson(url) {
-  const res = await fetch(url, { headers: ESPN_HEADERS });
+async function espnGetJson(url, referer) {
+  const res = await fetch(url, {
+    headers: { ...ESPN_HEADERS, Referer: referer },
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`ESPN ${url} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
@@ -201,18 +233,20 @@ async function espnGetJson(url) {
   return res.json();
 }
 
-let espnScoreboardBase = null;
+const espnScoreboardBaseByLeague = {};
 
-async function espnGetScoreboard(dates) {
+async function espnGetScoreboard(leagueKey, dates) {
+  const league = ESPN_LEAGUES[leagueKey] ?? ESPN_LEAGUES.pl;
   const suffix = dates ? `?dates=${dates}` : '';
-  const bases = espnScoreboardBase
-    ? [espnScoreboardBase, ...ESPN_SCOREBOARD_URLS.filter((url) => url !== espnScoreboardBase)]
-    : ESPN_SCOREBOARD_URLS;
+  const preferred = espnScoreboardBaseByLeague[leagueKey];
+  const bases = preferred
+    ? [preferred, ...league.urls.filter((url) => url !== preferred)]
+    : league.urls;
   let lastErr = null;
   for (const base of bases) {
     try {
-      const payload = await espnGetJson(`${base}${suffix}`);
-      espnScoreboardBase = base;
+      const payload = await espnGetJson(`${base}${suffix}`, league.referer);
+      espnScoreboardBaseByLeague[leagueKey] = base;
       return payload;
     } catch (err) {
       lastErr = err;
@@ -231,38 +265,55 @@ function summarizeEspnEvent(event) {
   };
 }
 
-export async function fetchEspnPlScoreboard(openDates = []) {
+async function fetchEspnLeagueScoreboard(leagueKey, openDates = []) {
+  const dates = uniqueScoreboardDates(openDates);
+  const payloads = await Promise.all(
+    dates.map(async (date) => {
+      try {
+        return await espnGetScoreboard(leagueKey, date);
+      } catch (err) {
+        return { __error: err, date, leagueKey };
+      }
+    }),
+  );
+
+  const eventsById = new Map();
+  const scoreboardErrors = [];
+  for (const payload of payloads) {
+    if (payload?.__error) {
+      scoreboardErrors.push(`${payload.date}: ${payload.__error.message}`);
+      continue;
+    }
+    for (const event of payload?.events ?? []) {
+      if (event?.id) eventsById.set(String(event.id), event);
+    }
+  }
+
+  return { eventsById, scoreboardErrors };
+}
+
+export async function fetchEspnSoccerScoreboards(openDates = [], leagueKeys = ['pl']) {
   try {
-    const dates = uniqueScoreboardDates(openDates);
-    const payloads = await Promise.all(
-      dates.map(async (date) => {
-        try {
-          return await espnGetScoreboard(date);
-        } catch (err) {
-          return { __error: err, date };
-        }
-      }),
+    const leagueResults = await Promise.all(
+      leagueKeys.map((key) => fetchEspnLeagueScoreboard(key, openDates)),
     );
 
     const eventsById = new Map();
     const scoreboardErrors = [];
-    for (const payload of payloads) {
-      if (payload?.__error) {
-        scoreboardErrors.push(`${payload.date}: ${payload.__error.message}`);
-        continue;
-      }
-      for (const event of payload?.events ?? []) {
-        if (event?.id) eventsById.set(String(event.id), event);
+    for (const result of leagueResults) {
+      scoreboardErrors.push(...result.scoreboardErrors);
+      for (const [id, event] of result.eventsById) {
+        eventsById.set(id, event);
       }
     }
 
     if (!eventsById.size) {
-      const err = scoreboardErrors[0] || 'ESPN scoreboard returned no Premier League games';
+      const err = scoreboardErrors[0] || 'ESPN scoreboard returned no soccer games';
       return { ok: false, error: err, matches: [] };
     }
 
     const matches = [...eventsById.values()].map(summarizeEspnEvent);
-    const livePremierLeague = matches.filter(
+    const liveCount = matches.filter(
       (m) => m.clock?.status === 'in' || m.clock?.halfTime,
     ).length;
 
@@ -270,7 +321,8 @@ export async function fetchEspnPlScoreboard(openDates = []) {
       ok: true,
       error: null,
       matches,
-      livePremierLeague,
+      livePremierLeague: liveCount,
+      liveMatches: liveCount,
     };
   } catch (err) {
     return {
@@ -279,6 +331,10 @@ export async function fetchEspnPlScoreboard(openDates = []) {
       matches: [],
     };
   }
+}
+
+export async function fetchEspnPlScoreboard(openDates = []) {
+  return fetchEspnSoccerScoreboards(openDates, ['pl']);
 }
 
 export function findEspnMatch(game, matches) {

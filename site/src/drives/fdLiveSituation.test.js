@@ -1,10 +1,13 @@
 import {
+  espnClockAheadOfFd,
   fdLiveFromRows,
   fdStateAheadOfEspn,
   formatFdLiveSpot,
   formatLiveSituationLine,
   liveSpotsDisagree,
+  liveSnapsAgree,
   parseFdLiveSituation,
+  resolveFdPossessionSide,
   situationKey,
 } from './fdLiveSituation';
 
@@ -80,6 +83,32 @@ describe('parseFdLiveSituation', () => {
     expect(parseFdLiveSituation(xmlWith([
       'Scheduled game SMU versus Florida State start at 7:30',
     ]))).toBeNull();
+  });
+
+  it('reads the possession arrow and a bare yardline', () => {
+    const sit = parseFdLiveSituation(xmlWith([
+      'Q4',
+      '2:50',
+      '1st &amp; 10',
+      'Florida State 25',
+      'SMU has the ball',
+    ]));
+    expect(sit.down).toBe(1);
+    expect(sit.distance).toBe(10);
+    expect(sit.possessionText).toBe('Florida State 25');
+    expect(sit.possessionName).toBe('SMU');
+    expect(resolveFdPossessionSide(sit, { home: 'Florida State', away: 'SMU' })).toBe('away');
+  });
+
+  it('treats a left/right possession arrow as away/home', () => {
+    expect(resolveFdPossessionSide(
+      parseFdLiveSituation(xmlWith(['Q4', '2:50', '1st & 10', 'Arrow pointing left'])),
+      { home: 'Florida State', away: 'SMU' },
+    )).toBe('away');
+    expect(resolveFdPossessionSide(
+      { possessionArrow: 'right' },
+      { home: 'Florida State', away: 'SMU' },
+    )).toBe('home');
   });
 });
 
@@ -221,21 +250,24 @@ describe('formatLiveSituationLine', () => {
 describe('liveSpotsDisagree', () => {
   it('does not treat a thinner FanDuel snapshot as a mismatch', () => {
     const espn = {
-      period: 3,
-      clock: '0:45',
-      clockSeconds: 45,
-      down: 3,
+      period: 4,
+      clock: '13:42',
+      clockSeconds: 13 * 60 + 42,
+      down: 1,
       distance: 10,
-      yardsToEndzone: 61,
-      possessionText: 'SMU 39',
+      yardsToEndzone: 83,
+      possessionText: 'SMU 17',
     };
     const fd = {
-      clock: '0:45',
-      clockSeconds: 45,
-      down: 3,
+      period: 4,
+      clock: '13:42',
+      clockSeconds: 13 * 60 + 42,
+      down: 1,
       distance: 10,
+      yardsToEndzone: 75,
     };
     expect(liveSpotsDisagree(espn, fd)).toBe(false);
+    expect(liveSnapsAgree(espn, fd)).toBe(true);
     expect(formatLiveSituationLine(espn)).not.toBe(formatLiveSituationLine(fd));
   });
 
@@ -244,5 +276,22 @@ describe('liveSpotsDisagree', () => {
       { period: 3, clock: '2:08', down: 4, distance: 2, yardsToEndzone: 2 },
       { period: 3, clock: '2:00', down: 1, distance: 10, yardsToEndzone: 75 },
     )).toBe(true);
+  });
+});
+
+describe('espnClockAheadOfFd', () => {
+  it('is true when ESPN has less time remaining', () => {
+    expect(espnClockAheadOfFd(
+      { period: 3, clock: '0:36', clockSeconds: 36 },
+      { period: 3, clock: '0:45', clockSeconds: 45 },
+    )).toBe(true);
+    expect(espnClockAheadOfFd(
+      { period: 3, clock: '2:08', clockSeconds: 128 },
+      { period: 3, clock: '2:00', clockSeconds: 120 },
+    )).toBe(false);
+    expect(espnClockAheadOfFd(
+      { period: 3, clock: '0:45', clockSeconds: 45 },
+      { clock: '0:45', clockSeconds: 45 },
+    )).toBe(false);
   });
 });

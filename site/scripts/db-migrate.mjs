@@ -161,6 +161,7 @@ const statements = [
   `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS home_score INTEGER`,
   `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS away_score INTEGER`,
   `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS situation_text TEXT`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS possession_side TEXT`,
 ];
 
 for (const stmt of statements) {

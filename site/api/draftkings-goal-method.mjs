@@ -1,13 +1,19 @@
 /**
- * DraftKings Premier League SOP + no-goal scraper (Nash / controldata API).
- * Discovers events from the PL league feed (40253), then pulls goal-method,
- * correct score, totals, first/next goal, and goalscorer markets.
+ * DraftKings Premier League + Champions League SOP + no-goal scraper (Nash / controldata API).
+ * Discovers events from the PL (40253) and UCL (40685) league feeds, then pulls
+ * goal-method, correct score, totals, first/next goal, and goalscorer markets.
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchWorldCupSopOdds as fetchFanDuelGames } from './fanduel-sop.mjs';
+import {
+  fdNameToSlug,
+  fixtureTeamKey,
+  normalizeTeamSlug,
+  splitFixtureTeams,
+} from '../src/sop/fixtureKey.js';
 import {
   analyzeAgainstBreakeven,
   computeBreakevenOdds,
@@ -20,6 +26,13 @@ const DK_COOKIE_FILE = path.join(SITE_DIR, '.dk-cookies.json');
 const DK_EVENT_MAP_FILE = path.join(SITE_DIR, 'api', 'dk-wc-event-map.json');
 const PL_LEAGUE_ID = '40253';
 const PL_LEAGUE_SEO = 'england---premier-league';
+const CL_LEAGUE_ID = '40685';
+const CL_LEAGUE_SEO = 'uefa-champions-league';
+const DK_SOP_LEAGUES = [
+  { id: PL_LEAGUE_ID, seo: PL_LEAGUE_SEO, competition: 'pl', competitionName: 'Premier League' },
+  { id: CL_LEAGUE_ID, seo: CL_LEAGUE_SEO, competition: 'ucl', competitionName: 'Champions League' },
+];
+const DK_SOP_LEAGUE_IDS = new Set(DK_SOP_LEAGUES.map((league) => league.id));
 const GOAL_METHOD_SUBCATEGORY_ID = '6541';
 const FIRST_GOAL_SUBCATEGORY_ID = '19742';
 const TOTAL_GOALS_SUBCATEGORY_ID = '13171';
@@ -38,7 +51,7 @@ const DK_FETCH_CONCURRENCY = Number(process.env.DK_FETCH_CONCURRENCY || 4);
 const DK_FETCH_RETRIES = Number(process.env.DK_FETCH_RETRIES || 1);
 const DK_FETCH_RETRY_MS = Number(process.env.DK_FETCH_RETRY_MS || 400);
 /** Whole handler budget — return partial/empty rather than hang SOP. */
-const DK_HANDLER_TIMEOUT_MS = Number(process.env.DK_HANDLER_TIMEOUT_MS || 20000);
+const DK_HANDLER_TIMEOUT_MS = Number(process.env.DK_HANDLER_TIMEOUT_MS || 25000);
 
 const GOAL_TYPE_SELECTIONS = {
   sop: ['Shot', 'Shot Open Play', 'Open Play', 'Shot - Open Play'],
@@ -73,55 +86,7 @@ function labelMatches(label, candidates) {
   return candidates.some((c) => target === normalizeLabel(c));
 }
 
-const TEAM_SLUG_ALIASES = {
-  hull: 'hull',
-  'hull-city': 'hull',
-  'nottm-forest': 'nottingham-forest',
-  'nottingham-forest': 'nottingham-forest',
-  'man-utd': 'man-utd',
-  'manchester-united': 'man-utd',
-  'man-city': 'man-city',
-  'manchester-city': 'man-city',
-  tottenham: 'tottenham',
-  'tottenham-hotspur': 'tottenham',
-  newcastle: 'newcastle',
-  'newcastle-united': 'newcastle',
-  brighton: 'brighton',
-  'brighton-hove-albion': 'brighton',
-  'brighton-and-hove-albion': 'brighton',
-  bournemouth: 'bournemouth',
-  'afc-bournemouth': 'bournemouth',
-  ipswich: 'ipswich',
-  'ipswich-town': 'ipswich',
-  leeds: 'leeds',
-  'leeds-united': 'leeds',
-  wolves: 'wolves',
-  wolverhampton: 'wolves',
-  'wolverhampton-wanderers': 'wolves',
-};
-
-export function fdNameToSlug(name) {
-  return String(name)
-    .toLowerCase()
-    .replace(/\s+v\s+/i, '-vs-')
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-function normalizeTeamSlug(team) {
-  const slug = fdNameToSlug(team);
-  return TEAM_SLUG_ALIASES[slug] ?? slug;
-}
-
-export function fixtureTeamKey(name) {
-  const parts = String(name ?? '')
-    .split(/\s+v\s+/i)
-    .map((team) => normalizeTeamSlug(team))
-    .filter(Boolean)
-    .sort();
-  return parts.length === 2 ? parts.join('|') : null;
-}
+export { fdNameToSlug, fixtureTeamKey, normalizeTeamSlug };
 
 function slugTeamKey(slug) {
   const normalized = String(slug ?? '').replace(/-v-/g, '-vs-');
@@ -659,7 +624,7 @@ async function fetchDkEventMetaQuiet(eventId, attempt = 0) {
   }
   if (!res.ok) return null;
   const event = (await res.json()).events?.[0];
-  if (!event || String(event.leagueId) !== PL_LEAGUE_ID) return null;
+  if (!event || !DK_SOP_LEAGUE_IDS.has(String(event.leagueId))) return null;
   return {
     eventId: String(event.id),
     name: event.name,
@@ -718,14 +683,28 @@ async function probeMissingDkEvents(missingGames, slugToId) {
   return slugToId;
 }
 
-export async function listDkPremierLeagueEvents() {
+function indexDkLeagueEvents(payload, map) {
+  for (const event of payload.events ?? []) {
+    if (!event?.id) continue;
+    const id = String(event.id);
+    const name = event.name ?? '';
+    const slug = fdNameToSlug(event.seoIdentifier || name);
+    if (slug) map.set(slug, id);
+    const vsSlug = fdNameToSlug(name.replace(/\s+vs\.?\s+/i, ' v '));
+    if (vsSlug) map.set(vsSlug, id);
+    const key = fixtureTeamKey(name);
+    if (key) map.set(key, id);
+  }
+}
+
+export async function listDkLeagueEvents(leagueId, seo) {
   try {
     const payload = await nashFetch(
-      `${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${PL_LEAGUE_ID}`,
+      `${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${leagueId}`,
       {
         headerOpts: {
           page: 'league',
-          referer: `https://sportsbook.draftkings.com/leagues/soccer/${PL_LEAGUE_SEO}`,
+          referer: `https://sportsbook.draftkings.com/leagues/soccer/${seo}`,
         },
       },
     );
@@ -737,37 +716,42 @@ export async function listDkPremierLeagueEvents() {
         seoSlug: event.seoIdentifier ?? fdNameToSlug(event.name),
         openDate: event.startEventDate ?? null,
         inPlay: /start|live|in.?play/i.test(String(event.status ?? '')),
+        leagueId: String(event.leagueId ?? leagueId),
       }));
   } catch {
     return [];
   }
 }
 
-export async function discoverDkEventsFromLeaguePage() {
+export async function listDkPremierLeagueEvents() {
+  return listDkLeagueEvents(PL_LEAGUE_ID, PL_LEAGUE_SEO);
+}
+
+export async function discoverDkEventsFromLeagues(leagues = DK_SOP_LEAGUES) {
   const map = loadStaticDkEventMap();
-  try {
-    const payload = await nashFetch(
-      `${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${PL_LEAGUE_ID}`,
-      {
-        headerOpts: {
-          page: 'league',
-          referer: `https://sportsbook.draftkings.com/leagues/soccer/${PL_LEAGUE_SEO}`,
-        },
-      },
-    );
-    for (const event of payload.events ?? []) {
-      if (!event?.id) continue;
-      const id = String(event.id);
-      const name = event.name ?? '';
-      const slug = fdNameToSlug(event.seoIdentifier || name);
-      if (slug) map.set(slug, id);
-      const vsSlug = fdNameToSlug(name.replace(/\s+vs\.?\s+/i, ' v '));
-      if (vsSlug) map.set(vsSlug, id);
-      const key = fixtureTeamKey(name.replace(/\s+vs\.?\s+/i, ' v '));
-      if (key) map.set(key, id);
-    }
-  } catch (_) {}
+  await Promise.all(
+    leagues.map(async (league) => {
+      try {
+        const payload = await nashFetch(
+          `${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${league.id}`,
+          {
+            headerOpts: {
+              page: 'league',
+              referer: `https://sportsbook.draftkings.com/leagues/soccer/${league.seo}`,
+            },
+          },
+        );
+        indexDkLeagueEvents(payload, map);
+      } catch (_) {}
+    }),
+  );
   return map;
+}
+
+export async function discoverDkEventsFromLeaguePage() {
+  return discoverDkEventsFromLeagues([
+    { id: PL_LEAGUE_ID, seo: PL_LEAGUE_SEO },
+  ]);
 }
 
 export function resolveDkEventIdSync(fdGame, slugToId) {
@@ -799,6 +783,9 @@ async function fetchOneDkGame(fdGame, slugToId) {
     score: fdGame.score,
     scoreDisplay: fdGame.scoreDisplay,
     teams: fdGame.teams,
+    competition: fdGame.competition ?? null,
+    competitionId: fdGame.competitionId ?? null,
+    competitionName: fdGame.competitionName ?? null,
   };
 
   try {
@@ -883,6 +870,103 @@ function buildDkPayload(results, { timedOut = false } = {}) {
   };
 }
 
+function teamsFromEventName(name) {
+  const parts = splitFixtureTeams(name);
+  if (parts.length !== 2) return { home: null, away: null };
+  return { home: parts[0], away: parts[1] };
+}
+
+function dkGameHasOdds(game) {
+  if (game?.goalTypes) return true;
+  return Object.values(game?.noGoalMarkets ?? {}).some((q) => q?.american != null);
+}
+
+async function fetchOneDkStandaloneEvent(event, league) {
+  const name = String(event.name ?? '').replace(/\s+vs\.?\s+/i, ' v ');
+  const teams = event.teams ?? teamsFromEventName(name);
+  const score = event.score ?? { home: 0, away: 0 };
+  const inPlay = Boolean(event.inPlay);
+  const bundle = await fetchFirstGoalMethodBundle(event.eventId, {
+    seoSlug: event.seoSlug ?? fdNameToSlug(name),
+    teams,
+    score,
+    inPlay,
+  });
+  return {
+    eventId: event.eventId,
+    name,
+    openDate: event.openDate ?? null,
+    inPlay,
+    score,
+    scoreDisplay: `${score.home}-${score.away}`,
+    teams,
+    competition: league.competition,
+    competitionName: league.competitionName,
+    dkEventId: event.eventId,
+    marketName: bundle.marketName,
+    goalTypes: bundle.goalTypes,
+    noGoalMarkets: bundle.noGoalMarkets,
+  };
+}
+
+async function fetchUnmatchedDkLeagueGames(scheduleGames, fetchedResults, remaining) {
+  const knownKeys = new Set();
+  for (const game of [...scheduleGames, ...fetchedResults]) {
+    const key = fixtureTeamKey(game?.name);
+    if (key) knownKeys.add(key);
+  }
+
+  const extraEvents = [];
+  await Promise.all(
+    DK_SOP_LEAGUES.filter((league) => league.competition === 'ucl').map(async (league) => {
+      const listed = await listDkLeagueEvents(league.id, league.seo);
+      for (const event of listed) {
+        const key = fixtureTeamKey(event.name);
+        if (!key || knownKeys.has(key)) continue;
+        knownKeys.add(key);
+        extraEvents.push({ event, league });
+      }
+    }),
+  );
+
+  if (!extraEvents.length || remaining() <= 0) return [];
+
+  return mapPool(extraEvents, DK_FETCH_CONCURRENCY, async ({ event, league }) => {
+    if (remaining() <= 0) {
+      return {
+        eventId: event.eventId,
+        name: event.name,
+        openDate: event.openDate,
+        inPlay: event.inPlay,
+        score: { home: 0, away: 0 },
+        scoreDisplay: '0-0',
+        teams: teamsFromEventName(event.name),
+        competition: league.competition,
+        competitionName: league.competitionName,
+        dkEventId: event.eventId,
+        error: 'DraftKings timed out',
+        errorCode: 'timed_out',
+      };
+    }
+    try {
+      const row = await fetchOneDkStandaloneEvent(event, league);
+      return dkGameHasOdds(row) ? row : null;
+    } catch (err) {
+      return {
+        eventId: event.eventId,
+        name: event.name,
+        openDate: event.openDate,
+        inPlay: event.inPlay,
+        competition: league.competition,
+        competitionName: league.competitionName,
+        dkEventId: event.eventId,
+        error: friendlyGameError(err.message),
+        errorCode: /403|akamai|access denied/i.test(err.message) ? 'markets_blocked' : 'markets_error',
+      };
+    }
+  }).then((rows) => rows.filter(Boolean));
+}
+
 export async function fetchWorldCupGoalMethodOdds({
   upcomingOnly = true,
   timeoutMs = DK_HANDLER_TIMEOUT_MS,
@@ -896,7 +980,7 @@ export async function fetchWorldCupGoalMethodOdds({
   const scheduleGames = upcomingOnly
     ? fdPayload.games.filter(isUpcomingGame)
     : fdPayload.games;
-  let slugToId = await discoverDkEventsFromLeaguePage();
+  let slugToId = await discoverDkEventsFromLeagues();
   if (remaining() <= 0) return emptyDkPayload({ timedOut: true });
 
   // Probe is optional and slow — only run when explicitly enabled and we have budget.
@@ -921,6 +1005,9 @@ export async function fetchWorldCupGoalMethodOdds({
         score: fdGame.score,
         scoreDisplay: fdGame.scoreDisplay,
         teams: fdGame.teams,
+        competition: fdGame.competition ?? null,
+        competitionId: fdGame.competitionId ?? null,
+        competitionName: fdGame.competitionName ?? null,
         dkEventId: resolveDkEventIdSync(fdGame, slugToId),
         error: 'DraftKings timed out',
         errorCode: 'timed_out',
@@ -928,6 +1015,11 @@ export async function fetchWorldCupGoalMethodOdds({
     }
     return fetchOneDkGame(fdGame, slugToId);
   });
+
+  if (remaining() > 400) {
+    const extras = await fetchUnmatchedDkLeagueGames(scheduleGames, results, remaining);
+    results.push(...extras.filter(dkGameHasOdds));
+  }
 
   return buildDkPayload(results, { timedOut: remaining() <= 0 });
 }

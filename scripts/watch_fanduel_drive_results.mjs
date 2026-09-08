@@ -34,6 +34,7 @@ import {
   openGame,
   pageLooksFinal,
   pageLooksLikeGame,
+  slateMarksGameFinal,
   parseDriveMarkets,
   scrapeDriveResults,
   source,
@@ -173,9 +174,11 @@ function parseKickoff(game, now = new Date()) {
 }
 
 function gameIsLive(game, kickoffAt, now = Date.now()) {
-  if (game.live) return true;
-  if (game.final) return false;
-  return Boolean(kickoffAt && kickoffAt.getTime() < now - 30_000);
+  if (game?.final || game?.skipLive) return false;
+  if (game?.live) return true;
+  if (!kickoffAt) return false;
+  const age = now - kickoffAt.getTime();
+  return age >= 30_000 && age < GAME_ENDED_AFTER_MS;
 }
 
 function gameHasEnded(game, kickoffAt, onSlate, now = Date.now()) {
@@ -418,7 +421,7 @@ async function connect(udid) {
 
 async function writeMarketsToDb(game, markets, kickoffAt, situation = null) {
   let wrote = 0;
-  const sit = fdLiveToDbRow(situation);
+  const sit = fdLiveToDbRow(situation, { home: game.home, away: game.away });
   for (const market of markets) {
     const side = inferOffenseSide(market.offense, game.home, game.away);
     if (!side) {
@@ -548,6 +551,11 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
   logLine(`pin   ${matchup(game)}  event ${game.eventId}  fast refresh`);
   let ok = await openGame(sessionId, game.eventId, game);
   if (!ok) {
+    const lost = await source(sessionId).catch(() => '');
+    if (pageLooksFinal(lost) || slateMarksGameFinal(lost, game)) {
+      logLine(`over  ${matchup(game)}  event already final`);
+      return { opened: true, final: true, news: 0, changes: 0, wrote: 0, polls: 0 };
+    }
     logLine(`MISS  ${matchup(game)}  could not pin event ${game.eventId}`);
     return { opened: false, final: false, news: 0, changes: 0, wrote: 0, polls: 0 };
   }
@@ -559,6 +567,7 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
   let polls = 0;
   let lastBeat = Date.now();
   let lastSitKey = '';
+  let noMarketAt = 0;
   const until = Number(opts.until) || 0;
   const kickoffAt = kickoffOf(game, state);
 
@@ -569,7 +578,7 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
     }
     polls += 1;
     let xml = await source(sessionId);
-    if (pageLooksFinal(xml)) {
+    if (pageLooksFinal(xml) || slateMarksGameFinal(xml, game)) {
       logLine(`over  ${matchup(game)}  pinned game final after ${polls} polls`);
       return { opened: true, final: true, news, changes, wrote, polls };
     }
@@ -577,13 +586,27 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
       if (namesOnPage(xml, game)) {
         xml = await dismissEventOverlays(sessionId, xml);
       }
+      if (pageLooksFinal(xml) || slateMarksGameFinal(xml, game)) {
+        logLine(`over  ${matchup(game)}  pinned game final after ${polls} polls`);
+        return { opened: true, final: true, news, changes, wrote, polls };
+      }
       if (!pageLooksLikeGame(xml, game)) {
         ok = false;
         for (let attempt = 0; attempt < 3 && !ok; attempt += 1) {
           if (attempt) await sleep(800);
           ok = await openGame(sessionId, game.eventId, game);
+          const landed = await source(sessionId).catch(() => '');
+          if (pageLooksFinal(landed) || slateMarksGameFinal(landed, game)) {
+            logLine(`over  ${matchup(game)}  pinned game final after ${polls} polls`);
+            return { opened: true, final: true, news, changes, wrote, polls };
+          }
         }
         if (!ok) {
+          const lost = await source(sessionId).catch(() => '');
+          if (pageLooksFinal(lost) || slateMarksGameFinal(lost, game)) {
+            logLine(`over  ${matchup(game)}  pinned game final after ${polls} polls`);
+            return { opened: true, final: true, news, changes, wrote, polls };
+          }
           logLine(`MISS  ${matchup(game)}  lost pinned page`);
           return { opened: false, final: false, news, changes, wrote, polls };
         }
@@ -593,6 +616,7 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
     const sitKey = situationKey(situation);
     let markets = await scrapeDriveResults(sessionId, { quick: true });
     if (markets.length) {
+      noMarketAt = 0;
       const rec = applyMarkets(args, state, game, markets);
       news += rec.news;
       changes += rec.changes;
@@ -612,6 +636,12 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
       }
       markTried(game, sched, true, Date.now(), { hammer: true });
       saveState(args.state, state);
+    } else {
+      if (!noMarketAt) noMarketAt = Date.now();
+      if (Date.now() - noMarketAt >= 45_000 && !situation) {
+        logLine(`over  ${matchup(game)}  no Drive Result for 45s, treating as final`);
+        return { opened: true, final: true, news, changes, wrote, polls };
+      }
     }
     if (Date.now() - lastBeat >= PIN_HEARTBEAT_MS) {
       const snap = markets.length
@@ -760,14 +790,22 @@ async function runCycle(sessionId, args, state, cycle, cache) {
     const rec = await pinGame(sessionId, args, state, pinTarget, { until: cache.refreshAt });
     if (rec.final) {
       pinTarget.final = true;
+      pinTarget.live = false;
       await forgetGame(args, state, pinTarget, 'slate marked final');
       cache.live = [];
       cache.refreshAt = 0;
+    } else if (!rec.opened) {
+      pinTarget.skipLive = true;
+      pinTarget.live = false;
+      cache.live = [];
+      cache.refreshAt = 0;
+      logLine(`pin   ${matchup(pinTarget)}  dropped; will reload NCAA slate`);
     } else {
-      cache.live = rec.opened ? [pinTarget] : [];
+      cache.live = [pinTarget];
     }
     logLine(`cycle ${cycle}  done  pin ${rec.polls || 0} polls  +${rec.news} new  ${rec.changes} changed  db ${rec.wrote}`);
     const idle = idlePlan(slate, state);
+    const keepPin = rec.opened && !rec.final;
     return {
       slate: slate.length,
       visited: rec.opened ? 1 : 0,
@@ -775,7 +813,7 @@ async function runCycle(sessionId, args, state, cycle, cache) {
       news: rec.news,
       changes: rec.changes,
       wrote: rec.wrote,
-      idle: rec.final || !rec.opened ? idle : { ms: 0, reason: 'pinned live game' },
+      idle: keepPin ? { ms: 0, reason: 'pinned live game' } : idle,
     };
   }
 
@@ -860,9 +898,16 @@ async function main() {
       const rec = await pinGame(sessionId, args, state, game, { until: cache.refreshAt });
       if (rec.final) {
         game.final = true;
+        game.live = false;
         await forgetGame(args, state, game, 'slate marked final');
         cache.live = [];
         cache.refreshAt = 0;
+      } else if (!rec.opened) {
+        game.skipLive = true;
+        game.live = false;
+        cache.live = [];
+        cache.refreshAt = 0;
+        logLine(`pin   ${matchup(game)}  dropped; will reload NCAA slate`);
       }
       return {
         slate: cache.slate?.length || 0,
@@ -871,7 +916,7 @@ async function main() {
         news: rec.news,
         changes: rec.changes,
         wrote: rec.wrote,
-        idle: rec.final || args.once
+        idle: rec.final || !rec.opened || args.once
           ? idlePlan(cache.slate || [], state)
           : { ms: 0, reason: 'single-game pin' },
       };
