@@ -39,6 +39,49 @@ const TEAM_ALIASES = {
   villa: 'villa',
   'sheffield united': 'sheff utd',
   'west bromwich albion': 'west brom',
+  psg: 'psg',
+  'paris st g': 'psg',
+  'paris st germain': 'psg',
+  'paris saint germain': 'psg',
+  inter: 'inter',
+  'inter milan': 'inter',
+  internazionale: 'inter',
+  betis: 'betis',
+  'real betis': 'betis',
+  psv: 'psv',
+  'psv eindhoven': 'psv',
+  shakhtar: 'shakhtar',
+  'shakhtar donetsk': 'shakhtar',
+  roma: 'roma',
+  'as roma': 'roma',
+  bayern: 'bayern',
+  'bayern munich': 'bayern',
+  'bayern munchen': 'bayern',
+  'fc bayern': 'bayern',
+  sabah: 'sabah',
+  'fc sabah': 'sabah',
+  'sabah fk': 'sabah',
+  dortmund: 'dortmund',
+  'borussia dortmund': 'dortmund',
+  porto: 'porto',
+  'fc porto': 'porto',
+  sporting: 'sporting',
+  'sporting cp': 'sporting',
+  'sporting lisbon': 'sporting',
+  atletico: 'atletico',
+  'atletico madrid': 'atletico',
+  glimt: 'glimt',
+  'bodo glimt': 'glimt',
+  leipzig: 'leipzig',
+  'rb leipzig': 'leipzig',
+  brugge: 'brugge',
+  'club brugge': 'brugge',
+  aek: 'aek',
+  'aek athens': 'aek',
+  lask: 'lask',
+  'lask linz': 'lask',
+  slovan: 'slovan',
+  'slovan bratislava': 'slovan',
 };
 
 function stripTeamDecorators(name) {
@@ -111,23 +154,94 @@ function klshHasQuotes(game) {
   return (game?.plus ?? []).some((row) => row?.american != null);
 }
 
+function windowHasQuotes(window) {
+  if (!window) return false;
+  if ((window.plus ?? []).some((row) => row?.american != null)) return true;
+  if ((window.overUnder ?? []).some((row) => row?.over?.american != null || row?.under?.american != null)) {
+    return true;
+  }
+  return false;
+}
+
+function fdHasQuotes(game) {
+  if (dkHasQuotes(game)) return true;
+  if (game?.numberOfCorners?.unders?.length || game?.numberOfCorners?.overs?.length) return true;
+  if (windowHasQuotes(game?.next5) || windowHasQuotes(game?.next10)) return true;
+  if (game?.teamCorners && Object.values(game.teamCorners).some(Boolean)) return true;
+  return false;
+}
+
+export function gameHasFdOrDkCornerLines(game) {
+  return fdHasQuotes(game) || dkHasQuotes(game?.dk);
+}
+
+function dkPayloadFor(dk) {
+  return {
+    total: dk.total ?? null,
+    totals: dk.totals ?? null,
+    firstHalfTotal: dk.firstHalfTotal ?? null,
+    secondHalfTotal: dk.secondHalfTotal ?? null,
+    intervals: dk.intervals ?? null,
+    dkEventId: dk.dkEventId ?? dk.eventId ?? null,
+    error: dk.error ?? null,
+  };
+}
+
+function teamsFromName(name) {
+  const parts = String(name ?? '').split(/\s+vs\.?\s+|\s+v\s+/i);
+  if (parts.length !== 2) return { home: null, away: null };
+  return { home: parts[0].trim(), away: parts[1].trim() };
+}
+
+function dkOnlyToFdShape(dk) {
+  const dkEventId = dk.dkEventId ?? dk.eventId ?? null;
+  return {
+    eventId: dkEventId != null ? `dk-${dkEventId}` : dk.eventId,
+    name: dk.name,
+    openDate: dk.openDate ?? null,
+    inPlay: Boolean(dk.inPlay),
+    score: dk.score ?? { home: 0, away: 0 },
+    scoreDisplay: dk.scoreDisplay ?? '0-0',
+    teams: dk.teams ?? teamsFromName(dk.name),
+    competition: dk.competition ?? 'ucl',
+    competitionId: dk.competitionId ?? null,
+    competitionName: dk.competitionName ?? 'Champions League',
+    totals: [],
+    total: null,
+    firstHalfTotal: null,
+    numberOfCorners: null,
+    teamCorners: null,
+    next5: null,
+    next10: null,
+    dk: dkPayloadFor(dk),
+  };
+}
+
 export function mergeDkCornersIntoFdGames(fdGames, dkPayload) {
-  const byKey = indexByFixture(dkPayload?.games);
-  return (fdGames ?? []).map((game) => {
+  const dkGames = dkPayload?.games ?? [];
+  const byKey = indexByFixture(dkGames);
+  const used = new Set();
+
+  const merged = (fdGames ?? []).map((game) => {
     const dk = byKey.get(cornerFixtureKey(game.name));
     if (!dk || !dkHasQuotes(dk)) return { ...game, dk: null };
-    return {
-      ...game,
-      dk: {
-        total: dk.total ?? null,
-        totals: dk.totals ?? null,
-        firstHalfTotal: dk.firstHalfTotal ?? null,
-        secondHalfTotal: dk.secondHalfTotal ?? null,
-        intervals: dk.intervals ?? null,
-        dkEventId: dk.dkEventId ?? dk.eventId ?? null,
-        error: dk.error ?? null,
-      },
-    };
+    used.add(dk);
+    return { ...game, dk: dkPayloadFor(dk) };
+  });
+
+  for (const dk of dkGames) {
+    if (used.has(dk) || !dkHasQuotes(dk)) continue;
+    merged.push(dkOnlyToFdShape(dk));
+  }
+
+  return merged;
+}
+
+/** Premier League stays on the board; UCL only if FD or DK posted corner lines. */
+export function keepCornersDisplayGames(games) {
+  return (games ?? []).filter((game) => {
+    if (game?.competition === 'ucl') return gameHasFdOrDkCornerLines(game);
+    return true;
   });
 }
 

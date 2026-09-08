@@ -101,6 +101,7 @@ export function buildCornersGameSnapshot(game, { bucketed = true } = {}) {
     score: formatCornersScore(game),
     clock: cornersClockLabel(game),
     inPlay: Boolean(game?.inPlay),
+    competition: game?.competition ?? 'pl',
     market: playLabel(play),
     oddsBook: play?.meta?.book ?? (play ? 'fd' : null),
     oddsAmerican: play?.american ?? null,

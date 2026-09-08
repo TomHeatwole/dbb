@@ -1,5 +1,5 @@
 /**
- * Corners book tab — FanDuel Premier League totals, next 5/10 min, stoppage.
+ * Corners book tab — FanDuel Premier League + Champions League totals, next 5/10 min, stoppage.
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -1149,7 +1149,12 @@ function GameCard({
             {expanded ? '▼' : '▶'}
           </span>
           <span className="sop-exp-game-toggle-main">
-            <span className="sop-exp-game-title">{game.name}</span>
+            <span className="sop-exp-game-title">
+              {game.competition === 'ucl' && (
+                <span className="sop-exp-comp sop-exp-comp--ucl">UCL</span>
+              )}
+              {game.name}
+            </span>
             <span className="sop-exp-game-meta">
               {game.inPlay && <span className="sop-exp-live">LIVE</span>}
               <span className="sop-exp-score">{game.scoreDisplay ?? '0-0'}</span>
@@ -1456,8 +1461,8 @@ function CornersBookPanel({
   if (loading) {
     return (
       <LoadingState
-        label="Loading Premier League corners…"
-        ariaLabel="Loading Premier League corners"
+        label="Loading corners…"
+        ariaLabel="Loading corners"
         className="sop-book-loading"
       />
     );
@@ -1466,9 +1471,9 @@ function CornersBookPanel({
   return (
     <div className="sop-exp-content">
       <header className="sop-exp-header">
-        <h1 className="sop-exp-title">PL Corners</h1>
+        <h1 className="sop-exp-title">Corners</h1>
         <p className="sop-exp-subtitle">
-          Premier League · FanDuel + DraftKings + Kalshi
+          Premier League + Champions League · FanDuel + DraftKings + Kalshi
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -1635,7 +1640,7 @@ function CornersBookPanel({
       )}
 
       {!error && games.length === 0 && (
-        <p className="sop-exp-status">No Premier League games found on FanDuel.</p>
+        <p className="sop-exp-status">No Premier League or Champions League games found.</p>
       )}
 
       <p className="sop-exp-footer">

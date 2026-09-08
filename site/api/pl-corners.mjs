@@ -1,5 +1,5 @@
 /**
- * Premier League corner book: FanDuel totals + next 5/10 min lines,
+ * Premier League + Champions League corner book: FanDuel totals + next 5/10 min lines,
  * plus expected stoppage estimated from ESPN play-by-play (no API key).
  *
  * ESPN does not publish an expected-stoppage field. Delay already earned
@@ -18,18 +18,32 @@ const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
 const PL_COMPETITION_ID = 10932509;
+const CL_COMPETITION_ID = 228;
+const FD_EVENT_CONCURRENCY = Number(process.env.FD_CORNER_CONCURRENCY || 8);
 
-const ESPN_SCOREBOARD_URLS = [
-  'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
-  'https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
-];
-const ESPN_PLAYS_URL =
-  'https://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/events';
+const ESPN_LEAGUES = {
+  pl: {
+    slug: 'eng.1',
+    urls: [
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+      'https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+    ],
+    referer: 'https://www.espn.com/soccer/scoreboard/_/league/eng.1',
+  },
+  ucl: {
+    slug: 'uefa.champions',
+    urls: [
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
+      'https://site.web.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
+    ],
+    referer: 'https://www.espn.com/soccer/scoreboard/_/league/uefa.champions',
+  },
+};
+const ESPN_PLAYS_BASE = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues';
 const ESPN_HEADERS = {
   Accept: 'application/json',
   'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-  Referer: 'https://www.espn.com/soccer/scoreboard/_/league/eng.1',
 };
 
 const STOPPAGE_SEC = {
@@ -78,6 +92,24 @@ const TEAM_CANON = [
   ['brentford', 'brentford fc'],
   ['sunderland', 'sunderland afc'],
   ['burnley', 'burnley fc'],
+  ['paris saint germain', 'paris st germain', 'paris st g', 'psg'],
+  ['internazionale', 'inter milan', 'inter'],
+  ['real betis', 'betis'],
+  ['psv eindhoven', 'psv'],
+  ['shakhtar donetsk', 'shakhtar'],
+  ['as roma', 'roma'],
+  ['bayern munich', 'bayern munchen', 'fc bayern', 'bayern'],
+  ['borussia dortmund', 'dortmund'],
+  ['fc porto', 'porto'],
+  ['sporting cp', 'sporting lisbon', 'sporting'],
+  ['atletico madrid', 'atletico'],
+  ['bodo glimt', 'bodo/glimt', 'glimt'],
+  ['rb leipzig', 'leipzig'],
+  ['club brugge', 'brugge'],
+  ['aek athens', 'aek'],
+  ['lask linz', 'lask'],
+  ['slovan bratislava', 'slovan'],
+  ['sabah', 'fc sabah', 'sabah fk'],
 ];
 
 function runnersList(market) {
@@ -169,16 +201,53 @@ function scoreDisplay(score) {
   return `${score.home}-${score.away}`;
 }
 
-function plMatchEvents(payload) {
+function competitionMeta(competitionId) {
+  if (Number(competitionId) === CL_COMPETITION_ID) {
+    return {
+      competitionId: CL_COMPETITION_ID,
+      competition: 'ucl',
+      competitionName: 'Champions League',
+    };
+  }
+  return {
+    competitionId: PL_COMPETITION_ID,
+    competition: 'pl',
+    competitionName: 'Premier League',
+  };
+}
+
+function cornerMatchEvents(payload) {
+  const allowed = new Set([PL_COMPETITION_ID, CL_COMPETITION_ID]);
   const events = payload?.attachments?.events ?? {};
   return Object.entries(events)
-    .filter(([, ev]) => ev.competitionId === PL_COMPETITION_ID && String(ev.name ?? '').includes(' v '))
+    .filter(([, ev]) => allowed.has(Number(ev.competitionId)) && String(ev.name ?? '').includes(' v '))
     .map(([id, ev]) => ({
       eventId: Number(id),
       name: ev.name,
       openDate: ev.openDate ?? null,
       inPlay: Boolean(ev.inPlay),
+      ...competitionMeta(ev.competitionId),
     }));
+}
+
+async function mapPool(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await fn(items[index], index);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, Math.max(items.length, 1)) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 function mergeMarkets(payloads) {
@@ -565,6 +634,7 @@ function canonTeam(name) {
   const raw = String(name ?? '')
     .toLowerCase()
     .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\w\s&']/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -727,8 +797,10 @@ function competitorsFromEspnEvent(event) {
   };
 }
 
-async function espnGetJson(url) {
-  const res = await fetch(url, { headers: ESPN_HEADERS });
+async function espnGetJson(url, referer) {
+  const res = await fetch(url, {
+    headers: referer ? { ...ESPN_HEADERS, Referer: referer } : ESPN_HEADERS,
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`ESPN ${url} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
@@ -736,18 +808,20 @@ async function espnGetJson(url) {
   return res.json();
 }
 
-let espnScoreboardBase = null;
+const espnScoreboardBaseByLeague = {};
 
-async function espnGetScoreboard(dates) {
+async function espnGetScoreboard(leagueKey, dates) {
+  const league = ESPN_LEAGUES[leagueKey] ?? ESPN_LEAGUES.pl;
   const suffix = dates ? `?dates=${dates}` : '';
-  const bases = espnScoreboardBase
-    ? [espnScoreboardBase, ...ESPN_SCOREBOARD_URLS.filter((url) => url !== espnScoreboardBase)]
-    : ESPN_SCOREBOARD_URLS;
+  const preferred = espnScoreboardBaseByLeague[leagueKey];
+  const bases = preferred
+    ? [preferred, ...league.urls.filter((url) => url !== preferred)]
+    : league.urls;
   let lastErr = null;
   for (const base of bases) {
     try {
-      const payload = await espnGetJson(`${base}${suffix}`);
-      espnScoreboardBase = base;
+      const payload = await espnGetJson(`${base}${suffix}`, league.referer);
+      espnScoreboardBaseByLeague[leagueKey] = base;
       return payload;
     } catch (err) {
       lastErr = err;
@@ -756,14 +830,14 @@ async function espnGetScoreboard(dates) {
   throw lastErr ?? new Error('ESPN scoreboard fetch failed');
 }
 
-function playsUrl(gameId, page) {
+function playsUrl(gameId, page, leagueSlug = 'eng.1') {
   const id = encodeURIComponent(String(gameId));
   const pageQ = page > 1 ? `&page=${page}` : '';
-  return `${ESPN_PLAYS_URL}/${id}/competitions/${id}/plays?limit=${ESPN_PLAYS_LIMIT}${pageQ}`;
+  return `${ESPN_PLAYS_BASE}/${leagueSlug}/events/${id}/competitions/${id}/plays?limit=${ESPN_PLAYS_LIMIT}${pageQ}`;
 }
 
-async function fetchEspnPlays(gameId) {
-  const first = await espnGetJson(playsUrl(gameId, 1));
+async function fetchEspnPlays(gameId, leagueSlug = 'eng.1') {
+  const first = await espnGetJson(playsUrl(gameId, 1, leagueSlug));
   const pageCount = Math.min(
     Number(first?.pageCount) || 1,
     ESPN_PLAYS_MAX_PAGES,
@@ -771,7 +845,7 @@ async function fetchEspnPlays(gameId) {
   const pages = [first];
   if (pageCount > 1) {
     const rest = await Promise.all(
-      Array.from({ length: pageCount - 1 }, (_, i) => espnGetJson(playsUrl(gameId, i + 2))),
+      Array.from({ length: pageCount - 1 }, (_, i) => espnGetJson(playsUrl(gameId, i + 2, leagueSlug))),
     );
     pages.push(...rest);
   }
@@ -1110,35 +1184,37 @@ function summarizeEspnEvent(event, plays) {
 async function fetchEspnStoppage(openDates) {
   try {
     const dates = uniqueScoreboardDates(openDates);
+    const leagueKeys = Object.keys(ESPN_LEAGUES);
     const payloads = await Promise.all(
-      dates.map(async (date) => {
+      leagueKeys.flatMap((leagueKey) => dates.map(async (date) => {
         try {
-          return await espnGetScoreboard(date);
+          return { leagueKey, date, payload: await espnGetScoreboard(leagueKey, date) };
         } catch (err) {
-          return { __error: err, date };
+          return { leagueKey, date, __error: err };
         }
-      }),
+      })),
     );
 
     const eventsById = new Map();
     const scoreboardErrors = [];
-    for (const payload of payloads) {
-      if (payload?.__error) {
-        scoreboardErrors.push(`${payload.date}: ${payload.__error.message}`);
+    for (const row of payloads) {
+      if (row?.__error) {
+        scoreboardErrors.push(`${row.date}: ${row.__error.message}`);
         continue;
       }
-      for (const event of payload?.events ?? []) {
-        if (event?.id) eventsById.set(String(event.id), event);
+      const leagueSlug = ESPN_LEAGUES[row.leagueKey]?.slug ?? 'eng.1';
+      for (const event of row.payload?.events ?? []) {
+        if (event?.id) eventsById.set(String(event.id), { event, leagueSlug });
       }
     }
 
     if (!eventsById.size) {
-      const err = scoreboardErrors[0] || 'ESPN scoreboard returned no Premier League games';
+      const err = scoreboardErrors[0] || 'ESPN scoreboard returned no soccer games';
       return { ok: false, error: err, matches: [] };
     }
 
-    const events = [...eventsById.values()];
-    const needPlays = events.filter((event) => {
+    const rows = [...eventsById.values()];
+    const needPlays = rows.filter(({ event }) => {
       const status = event?.competitions?.[0]?.status;
       return isLiveEspnStatus(status);
     });
@@ -1146,9 +1222,9 @@ async function fetchEspnStoppage(openDates) {
     const playsById = new Map();
     const playErrors = [];
     await Promise.all(
-      needPlays.map(async (event) => {
+      needPlays.map(async ({ event, leagueSlug }) => {
         try {
-          playsById.set(String(event.id), await fetchEspnPlays(event.id));
+          playsById.set(String(event.id), await fetchEspnPlays(event.id, leagueSlug));
         } catch (err) {
           playErrors.push(`${event.id}: ${err.message}`);
           playsById.set(String(event.id), []);
@@ -1156,7 +1232,7 @@ async function fetchEspnStoppage(openDates) {
       }),
     );
 
-    const matches = events.map((event) => summarizeEspnEvent(event, playsById.get(String(event.id)) ?? []));
+    const matches = rows.map(({ event }) => summarizeEspnEvent(event, playsById.get(String(event.id)) ?? []));
     return {
       ok: playErrors.length === 0,
       error: playErrors.length ? compactProviderError(playErrors[0]) : null,
@@ -1221,38 +1297,36 @@ function attachStoppage(game, matchSets) {
 
 async function fetchPlCornerBook() {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
-  const events = plMatchEvents(sportPage);
+  const events = cornerMatchEvents(sportPage);
 
   const [fdGames, espn] = await Promise.all([
-    Promise.all(
-      events.map(async (ev) => {
-        try {
-          const bundle = await fetchEventBundle(ev.eventId);
-          const teams = parseTeams(bundle.event?.name ?? ev.name);
-          const inPlay = Boolean(bundle.event?.inPlay ?? ev.inPlay);
-          const score = parseEventScore(bundle.event) ?? { home: 0, away: 0 };
-          const totals = extractTotalCornersLadder(bundle.markets);
-          return {
-            ...ev,
-            inPlay,
-            name: bundle.event?.name ?? ev.name,
-            teams,
-            score,
-            scoreDisplay: scoreDisplay(score),
-            totals,
-            total: pickClosestFromLadder(totals),
-            numberOfCorners: extractNumberOfCorners(bundle.markets),
-            teamCorners: extractTeamCornerMarkets(bundle.markets, teams),
-            firstHalfTotal: extractFirstHalfCorners(bundle.markets),
-            next5: pickWindowMarket(bundle.markets, 5, null),
-            next10: pickWindowMarket(bundle.markets, 10, null),
-            _markets: bundle.markets,
-          };
-        } catch (err) {
-          return { ...ev, error: err.message, stoppage: null };
-        }
-      }),
-    ),
+    mapPool(events, FD_EVENT_CONCURRENCY, async (ev) => {
+      try {
+        const bundle = await fetchEventBundle(ev.eventId);
+        const teams = parseTeams(bundle.event?.name ?? ev.name);
+        const inPlay = Boolean(bundle.event?.inPlay ?? ev.inPlay);
+        const score = parseEventScore(bundle.event) ?? { home: 0, away: 0 };
+        const totals = extractTotalCornersLadder(bundle.markets);
+        return {
+          ...ev,
+          inPlay,
+          name: bundle.event?.name ?? ev.name,
+          teams,
+          score,
+          scoreDisplay: scoreDisplay(score),
+          totals,
+          total: pickClosestFromLadder(totals),
+          numberOfCorners: extractNumberOfCorners(bundle.markets),
+          teamCorners: extractTeamCornerMarkets(bundle.markets, teams),
+          firstHalfTotal: extractFirstHalfCorners(bundle.markets),
+          next5: pickWindowMarket(bundle.markets, 5, null),
+          next10: pickWindowMarket(bundle.markets, 10, null),
+          _markets: bundle.markets,
+        };
+      } catch (err) {
+        return { ...ev, error: err.message, stoppage: null };
+      }
+    }),
     fetchEspnStoppage(events.map((ev) => ev.openDate)),
   ]);
 
@@ -1301,6 +1375,6 @@ export default async function handler(req, res) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[pl-corners]', err);
-    return res.status(502).json({ error: err.message || 'Premier League corners fetch failed' });
+    return res.status(502).json({ error: err.message || 'Corners fetch failed' });
   }
 }

@@ -1,13 +1,14 @@
 /**
- * DraftKings Premier League corner totals (full, 1H, 2H) and live team intervals.
+ * DraftKings Premier League + Champions League corner totals (full, 1H, 2H) and live team intervals.
  */
 
 import { americanToImpliedProb } from '../src/sop/sopModel.js';
 import {
-  discoverDkEventsFromLeaguePage,
+  DK_SOP_LEAGUES,
+  discoverDkEventsFromLeagues,
   fetchSubcategoryQuiet,
   fdNameToSlug,
-  listDkPremierLeagueEvents,
+  listDkLeagueEvents,
   mapPool,
   marketSelectionsFor,
   selectionQuote,
@@ -20,7 +21,7 @@ const SECOND_HALF_ID = '17902';
 const INTERVAL_ID = '19840';
 
 const DK_FETCH_CONCURRENCY = Number(process.env.DK_FETCH_CONCURRENCY || 4);
-const DK_HANDLER_TIMEOUT_MS = Number(process.env.DK_HANDLER_TIMEOUT_MS || 20000);
+const DK_HANDLER_TIMEOUT_MS = Number(process.env.DK_HANDLER_TIMEOUT_MS || 25000);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,10 +35,21 @@ function nameFromSlug(slug) {
 }
 
 async function listDkCornerEvents() {
-  const listed = await listDkPremierLeagueEvents();
+  const listed = (
+    await Promise.all(
+      DK_SOP_LEAGUES.map(async (league) => {
+        const events = await listDkLeagueEvents(league.id, league.seo);
+        return events.map((event) => ({
+          ...event,
+          competition: league.competition,
+          competitionName: league.competitionName,
+        }));
+      }),
+    )
+  ).flat();
   if (listed.length) return listed;
 
-  const map = await discoverDkEventsFromLeaguePage();
+  const map = await discoverDkEventsFromLeagues();
   const byId = new Map();
   for (const [slug, id] of map.entries()) {
     if (!id || String(slug).includes('|')) continue;
@@ -198,6 +210,8 @@ async function fetchCornerBundle(event) {
     inPlay,
     dkEventId: eventId,
     eventId,
+    competition: event.competition ?? null,
+    competitionName: event.competitionName ?? null,
     total: pickClosestLine(totals),
     totals,
     firstHalfTotal: pickClosestLine(h1),
@@ -228,6 +242,8 @@ export async function fetchDkCornerOdds({ timeoutMs = DK_HANDLER_TIMEOUT_MS } = 
       return {
         name: event.name,
         dkEventId: event.eventId,
+        competition: event.competition ?? null,
+        competitionName: event.competitionName ?? null,
         error: 'DraftKings timed out',
         total: null,
         totals: [],
@@ -242,6 +258,8 @@ export async function fetchDkCornerOdds({ timeoutMs = DK_HANDLER_TIMEOUT_MS } = 
       return {
         name: event.name,
         dkEventId: event.eventId,
+        competition: event.competition ?? null,
+        competitionName: event.competitionName ?? null,
         error: err.message || 'DraftKings markets failed',
         total: null,
         totals: [],

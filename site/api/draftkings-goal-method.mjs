@@ -28,7 +28,7 @@ const PL_LEAGUE_ID = '40253';
 const PL_LEAGUE_SEO = 'england---premier-league';
 const CL_LEAGUE_ID = '40685';
 const CL_LEAGUE_SEO = 'uefa-champions-league';
-const DK_SOP_LEAGUES = [
+export const DK_SOP_LEAGUES = [
   { id: PL_LEAGUE_ID, seo: PL_LEAGUE_SEO, competition: 'pl', competitionName: 'Premier League' },
   { id: CL_LEAGUE_ID, seo: CL_LEAGUE_SEO, competition: 'ucl', competitionName: 'Champions League' },
 ];

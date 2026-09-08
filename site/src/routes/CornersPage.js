@@ -1,5 +1,5 @@
 /**
- * CornersPage — SOP2-style Premier League corner book.
+ * CornersPage — SOP2-style Premier League + Champions League corner book.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -10,11 +10,12 @@ import CornersArbCheckerPanel from './CornersArbCheckerPanel';
 import {
   dkCornerGamesLoaded,
   kalshiCornerGamesLoaded,
+  keepCornersDisplayGames,
   mergeDkCornersIntoFdGames,
   mergeKalshiCornersIntoFdGames,
 } from '../corners/mergeCornerBooks';
 
-const DK_CLIENT_TIMEOUT_MS = 20000;
+const DK_CLIENT_TIMEOUT_MS = 25000;
 const KALSHI_CLIENT_TIMEOUT_MS = 40000;
 
 async function fetchJsonWithTimeout(url, timeoutMs) {
@@ -31,8 +32,8 @@ async function fetchJsonWithTimeout(url, timeoutMs) {
   }
 }
 
-const OG_TITLE = 'PL Corners';
-const OG_DESCRIPTION = 'Premier League corner totals, next 5/10 minutes, and expected stoppage';
+const OG_TITLE = 'Corners';
+const OG_DESCRIPTION = 'Premier League + Champions League corner totals, next 5/10 minutes, and expected stoppage';
 const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/data/sop.jpeg`;
 const SOP_COLLAGE_SRC = '/data/sop.jpeg';
 const COLLAGE_TILE_W = 200;
@@ -67,7 +68,7 @@ function stoppageNotice(espn) {
   if (!espn) return null;
   if (espn.ok) return null;
   if (espn.error) return `ESPN stoppage: ${espn.error}`;
-  return 'Stoppage times unavailable — ESPN Premier League feed failed.';
+  return 'Stoppage times unavailable — ESPN soccer feed failed.';
 }
 
 function joinNotices(...parts) {
@@ -123,6 +124,7 @@ function CornersPage() {
       setFetchedAt(data.fetchedAt ?? null);
       setNotice(stoppageNotice(espn));
       setBookError(null);
+      setGames(keepCornersDisplayGames(fdGames));
     } catch (err) {
       setBookError(err.message || 'Failed to load corners');
       setBookLoading(false);
@@ -139,7 +141,9 @@ function CornersPage() {
 
     const applyMerges = () => {
       setGames(
-        mergeKalshiCornersIntoFdGames(mergeDkCornersIntoFdGames(fdGames, dkData), kalshiData),
+        keepCornersDisplayGames(
+          mergeKalshiCornersIntoFdGames(mergeDkCornersIntoFdGames(fdGames, dkData), kalshiData),
+        ),
       );
     };
 
