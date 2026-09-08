@@ -197,6 +197,7 @@ export function hprojRandomOutcome(sorted, percentile, salt = 0) {
       id: s.id,
       position: s.position,
       pts: round1(s.pts),
+      playerPct: s.playerPct,
     })),
     window: slice.length,
   };
@@ -243,17 +244,22 @@ export function simulateTeamHproj({
   const sims = [];
   for (let i = 0; i < iterations; i += 1) {
     const weekPts = {};
+    const playerPct = {};
     for (const p of players) {
-      weekPts[p.id] = p.proj + (sampleHprojResidual(p.resid, rng()) || 0);
+      const u = rng();
+      weekPts[p.id] = p.proj + (sampleHprojResidual(p.resid, u) || 0);
+      playerPct[p.id] = Math.max(0, Math.min(99, Math.round(u * 100)));
     }
     const scored = computeOptimalWeekDetail(ids, weekPts, positions, null);
     const row = { total: scored.total, byPos: scored.byPos };
     if (keepLineups) {
+      row.playerPct = playerPct;
       row.starters = scored.starters.map((s) => ({
         slot: s.slot,
         id: s.id,
         position: s.position,
         pts: s.pts,
+        playerPct: playerPct[s.id],
       }));
     }
     sims.push(row);

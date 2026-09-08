@@ -1,8 +1,96 @@
 /** Shared Appium + FanDuel Sportsbook helpers (Android / UiAutomator2). */
 
+import { execFileSync } from 'node:child_process';
+
 export const APPIUM = process.env.APPIUM_URL || 'http://127.0.0.1:4723';
 export const PACKAGE = 'com.fanduel.sportsbook';
 export const ACTIVITY = 'com.fanduel.sportsbook.Launcher';
+
+let lastUdid = process.env.ANDROID_SERIAL || 'emulator-5554';
+
+function adbBin() {
+  const home = process.env.ANDROID_HOME || `${process.env.HOME}/Library/Android/sdk`;
+  return `${home}/platform-tools/adb`;
+}
+
+export function setDeviceUdid(udid) {
+  if (udid) lastUdid = udid;
+}
+
+export function adbUiDump(udid = lastUdid) {
+  try {
+    const adb = adbBin();
+    execFileSync(adb, ['-s', udid, 'shell', 'uiautomator', 'dump', '/sdcard/uidump.xml'], {
+      stdio: 'pipe',
+      timeout: 8000,
+    });
+    return execFileSync(adb, ['-s', udid, 'exec-out', 'cat', '/sdcard/uidump.xml'], {
+      encoding: 'utf8',
+      timeout: 5000,
+    });
+  } catch {
+    return '';
+  }
+}
+
+export function listXml(sessionXml) {
+  if (parseGames(sessionXml, { value: null }).length) return sessionXml;
+  const dump = adbUiDump();
+  return dump && parseGames(dump, { value: null }).length ? dump : sessionXml;
+}
+
+function elementId(el) {
+  if (!el) return null;
+  if (typeof el === 'string') return el;
+  return el.ELEMENT || el['element-6066-11e4-a52e-4f735466cecf'] || null;
+}
+
+export async function findUi(sessionId, selector) {
+  try {
+    const el = await wd('POST', `/session/${sessionId}/element`, {
+      using: '-android uiautomator',
+      value: selector,
+    });
+    return elementId(el);
+  } catch {
+    return null;
+  }
+}
+
+export async function findAllUi(sessionId, selector) {
+  try {
+    const els = await wd('POST', `/session/${sessionId}/elements`, {
+      using: '-android uiautomator',
+      value: selector,
+    });
+    return (els || []).map(elementId).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export async function elementAttr(sessionId, id, name) {
+  if (!id) return null;
+  try {
+    return await wd('GET', `/session/${sessionId}/element/${id}/attribute/${name}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function clickUi(sessionId, selector) {
+  const id = await findUi(sessionId, selector);
+  if (!id) return false;
+  try {
+    await wd('POST', `/session/${sessionId}/element/${id}/click`);
+    return true;
+  } catch {
+    const rect = await wd('GET', `/session/${sessionId}/element/${id}/rect`).catch(() => null);
+    if (!rect) return false;
+    await tap(sessionId, Math.round(rect.x + rect.width / 2), Math.round(rect.y + rect.height / 2));
+    return true;
+  }
+}
 
 export function decodeXml(s) {
   return String(s || '')
@@ -11,7 +99,7 @@ export function decodeXml(s) {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/\u00a0/g, ' ');
+    .replace(/[\u00a0\u202f\u2007]/g, ' ');
 }
 
 export function sleep(ms) {
@@ -65,6 +153,7 @@ export async function createSession(udid, extras = {}) {
       },
     },
   });
+  if (udid) lastUdid = udid;
   return created.sessionId;
 }
 
@@ -91,20 +180,31 @@ export function center(bounds) {
 }
 
 export async function tap(sessionId, x, y) {
-  await wd('POST', `/session/${sessionId}/actions`, {
-    actions: [{
-      type: 'pointer',
-      id: 'finger1',
-      parameters: { pointerType: 'touch' },
-      actions: [
-        { type: 'pointerMove', duration: 0, x, y },
-        { type: 'pointerDown', button: 0 },
-        { type: 'pause', duration: 70 },
-        { type: 'pointerUp', button: 0 },
-      ],
-    }],
+  const px = Math.round(x);
+  const py = Math.round(y);
+  try {
+    await wd('POST', `/session/${sessionId}/actions`, {
+      actions: [{
+        type: 'pointer',
+        id: 'finger1',
+        parameters: { pointerType: 'touch' },
+        actions: [
+          { type: 'pointerMove', duration: 0, x: px, y: py },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pause', duration: 70 },
+          { type: 'pointerUp', button: 0 },
+        ],
+      }],
+    });
+    await wd('POST', `/session/${sessionId}/actions`, { actions: [] }).catch(() => {});
+    return;
+  } catch {
+    await wd('POST', `/session/${sessionId}/actions`, { actions: [] }).catch(() => {});
+  }
+  await wd('POST', `/session/${sessionId}/execute/sync`, {
+    script: 'mobile: clickGesture',
+    args: [{ x: px, y: py }],
   });
-  await wd('POST', `/session/${sessionId}/actions`, { actions: [] }).catch(() => {});
 }
 
 export async function windowSize(sessionId) {
@@ -155,12 +255,20 @@ export async function tapDesc(sessionId, xml, pattern) {
     `content-desc="([^"]*${flex}[^"]*)"[\\s\\S]{0,500}?bounds="\\[[^\\]]+\\]\\[[^\\]]+\\]"`,
   );
   const m = re.exec(xml);
-  if (!m) return false;
-  const b = parseBounds(m[0]);
-  if (!b) return false;
-  const { x, y } = center(b);
-  await tap(sessionId, x, y);
-  return true;
+  if (m) {
+    const desc = decodeXml(m[1]);
+    if (desc && await clickUi(sessionId, `new UiSelector().description("${desc.replace(/"/g, '')}")`)) {
+      return true;
+    }
+    const b = parseBounds(m[0]);
+    if (b) {
+      const { x, y } = center(b);
+      await tap(sessionId, x, y);
+      return true;
+    }
+  }
+  const raw = decodeXml(String(pattern)).replace(/\\/g, '');
+  return clickUi(sessionId, `new UiSelector().descriptionContains("${raw.replace(/"/g, '')}")`);
 }
 
 export async function scrollGesture(sessionId, opts) {
@@ -267,13 +375,53 @@ export function mergeGames(byId, games) {
   return added;
 }
 
+const GAME_DESC_SELECTORS = [
+  'new UiSelector().descriptionContains("Scheduled game")',
+  'new UiSelector().descriptionContains("Live game")',
+  'new UiSelector().descriptionContains("In-play game")',
+  'new UiSelector().descriptionContains("In play game")',
+  'new UiSelector().descriptionContains("Final game")',
+];
+
+export async function harvestSlateGames(sessionId) {
+  const byId = new Map();
+  for (const selector of GAME_DESC_SELECTORS) {
+    for (const id of await findAllUi(sessionId, selector)) {
+      const desc = String(await elementAttr(sessionId, id, 'content-desc') || '');
+      const rid = String(await elementAttr(sessionId, id, 'resource-id') || '');
+      const fragment = `content-desc="${desc.replace(/"/g, '')}" resource-id="${rid.replace(/"/g, '')}"`;
+      mergeGames(byId, parseGames(fragment, { value: null }));
+    }
+  }
+  return [...byId.values()];
+}
+
+async function slateXml(sessionId, sessionXml = null) {
+  const xml = sessionXml || await source(sessionId);
+  if (parseGames(xml, { value: null }).length) return xml;
+  const listed = listXml(xml);
+  if (listed !== xml && parseGames(listed, { value: null }).length) return listed;
+  const harvested = await harvestSlateGames(sessionId);
+  if (!harvested.length) return xml;
+  return harvested.map((g) => {
+    const desc = [
+      g.live ? 'Live game' : g.final ? 'Final game' : 'Scheduled game',
+      g.away,
+      'versus',
+      g.home,
+      g.start ? `start at ${g.start}` : '',
+    ].filter(Boolean).join(' ');
+    return `content-desc="${desc}" resource-id="event-card-${g.eventId || ''}"`;
+  }).join('\n');
+}
+
 export async function openNcaafList(sessionId) {
   for (let attempt = 0; attempt < 8; attempt += 1) {
-    const xml = await source(sessionId);
+    const xml = await slateXml(sessionId);
     const games = parseGames(xml, { value: null });
     if (games.length) {
       await scrollToTop(sessionId);
-      return source(sessionId);
+      return slateXml(sessionId);
     }
     if (await tapDesc(sessionId, xml, 'NCAA Football Games')) {
       await sleep(1600);
@@ -301,13 +449,15 @@ export async function collectSlate(sessionId, onProgress) {
   const byId = new Map();
   const dateState = { value: null };
   mergeGames(byId, parseGames(xml, dateState));
+  if (!byId.size) mergeGames(byId, await harvestSlateGames(sessionId));
   onProgress?.(byId.size, 0);
   let stagnant = 0;
   for (let i = 0; i < 50 && stagnant < 4; i += 1) {
     await scrollGameList(sessionId, 'down');
     await sleep(450);
-    xml = await source(sessionId);
-    const added = mergeGames(byId, parseGames(xml, dateState));
+    xml = await slateXml(sessionId);
+    let added = mergeGames(byId, parseGames(xml, dateState));
+    if (!added) added = mergeGames(byId, await harvestSlateGames(sessionId));
     onProgress?.(byId.size, i + 1);
     stagnant = added === 0 ? stagnant + 1 : 0;
   }
@@ -316,35 +466,139 @@ export async function collectSlate(sessionId, onProgress) {
 }
 
 export async function ensureListOpen(sessionId) {
-  const xml = await source(sessionId);
+  let xml = await slateXml(sessionId);
   if (parseGames(xml, { value: null }).length) return xml;
-  if (await tapDesc(sessionId, xml, 'NCAA Football Games')) {
-    await sleep(1500);
-    return source(sessionId);
+  const appiumXml = await source(sessionId);
+  if (await tapDesc(sessionId, appiumXml, 'NCAA Football Games')) {
+    await sleep(1600);
+    xml = await slateXml(sessionId);
+    if (parseGames(xml, { value: null }).length) return xml;
   }
   return openNcaafList(sessionId);
 }
 
-function cardBounds(xml, eventId) {
-  const re = new RegExp(
-    `resource-id="event-card-${escapeRe(eventId)}"[^>]*bounds="\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]"`,
-  );
-  const m = re.exec(xml);
-  if (!m) return null;
-  return { x1: +m[1], y1: +m[2], x2: +m[3], y2: +m[4] };
+function cardTag(xml, eventId) {
+  const re = new RegExp(`<[^>]*resource-id="event-card-${escapeRe(eventId)}"[^>]*>`);
+  return xml.match(re)?.[0] || null;
 }
 
-export async function openGame(sessionId, eventId) {
-  await ensureListOpen(sessionId);
+function cardBounds(xml, eventId) {
+  const tag = cardTag(xml, eventId);
+  return tag ? parseBounds(tag) : null;
+}
+
+export function isGameListOpen(xml) {
+  return /content-desc="Close modal window"/.test(xml)
+    || ((xml.match(/Scheduled game/g) || []).length >= 2);
+}
+
+export function foldTeamText(s) {
+  return decodeXml(s)
+    .toLowerCase()
+    .replace(/['’`]/g, '')
+    .replace(/\./g, '')
+    .replace(/\bst\b/g, 'state')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function pageMatchesGame(xml, game) {
+  if (!game?.away || !game?.home) return false;
+  if (!/Drive\s+\d+\s*-+\s*Result/i.test(xml)) return false;
+  const blob = foldTeamText(xml);
+  const has = (name) => {
+    const n = foldTeamText(name);
+    if (!n) return false;
+    if (blob.includes(n)) return true;
+    const words = n.split(' ').filter((w) => w.length > 2);
+    return words.length && words.every((w) => blob.includes(w));
+  };
+  return has(game.away) && has(game.home);
+}
+
+export function isOnEventPage(xml) {
+  if (isGameListOpen(xml)) return false;
+  return /Drive\s+\d+\s*-+\s*Result/i.test(xml)
+    || /tab-Quick Bets|tab-Drive/i.test(xml)
+    || /content-desc="Navigate up"/.test(xml);
+}
+
+function cardIsSelected(xml, eventId) {
+  const tag = cardTag(xml, eventId);
+  return Boolean(tag && /selected="true"/.test(tag));
+}
+
+async function slateModalOpen(sessionId, xml = '') {
+  if (isGameListOpen(xml)) return true;
+  return Boolean(await findUi(sessionId, 'new UiSelector().description("Close modal window")'));
+}
+
+async function closeGameList(sessionId, xml) {
+  if (await tapDesc(sessionId, xml || '', 'Close modal window')) {
+    await sleep(1200);
+    return source(sessionId);
+  }
+  if (await clickUi(sessionId, 'new UiSelector().description("Close modal window")')) {
+    await sleep(1200);
+  }
+  return source(sessionId);
+}
+
+async function cardSelectedNow(sessionId, eventId, xml = '') {
+  if (eventId && cardIsSelected(xml, eventId)) return true;
+  if (!eventId) return false;
+  const id = await findUi(sessionId, `new UiSelector().resourceId("event-card-${eventId}")`);
+  const selected = String(await elementAttr(sessionId, id, 'selected') || '');
+  return selected === 'true';
+}
+
+async function openEventCard(sessionId, eventId) {
+  if (!eventId) return false;
+  return clickUi(sessionId, `new UiSelector().resourceId("event-card-${eventId}")`);
+}
+
+export async function openGame(sessionId, eventId, game = null) {
+  const current = await source(sessionId);
+  if (game && pageMatchesGame(current, game) && !(await slateModalOpen(sessionId, current))) {
+    return true;
+  }
+
+  let xml = await ensureListOpen(sessionId);
+
+  if (await cardSelectedNow(sessionId, eventId, xml)) {
+    xml = await closeGameList(sessionId, xml);
+    if (game ? pageMatchesGame(xml, game) : isOnEventPage(xml)) return true;
+  }
+
+  const landed = async () => {
+    const next = await source(sessionId);
+    if (await slateModalOpen(sessionId, next)) {
+      if (await cardSelectedNow(sessionId, eventId, next)) {
+        const closed = await closeGameList(sessionId, next);
+        return game ? pageMatchesGame(closed, game) : isOnEventPage(closed);
+      }
+      return false;
+    }
+    return game ? pageMatchesGame(next, game) : isOnEventPage(next);
+  };
+
   const tryFind = async () => {
     for (let i = 0; i < 28; i += 1) {
-      const xml = await source(sessionId);
+      xml = await slateXml(sessionId);
+      if (await openEventCard(sessionId, eventId)) {
+        await sleep(1600);
+        if (await landed()) return true;
+      }
       const b = cardBounds(xml, eventId);
       if (b && b.y2 > 380 && b.y1 < 2220) {
+        if (await cardSelectedNow(sessionId, eventId, xml)) {
+          xml = await closeGameList(sessionId, xml);
+          return game ? pageMatchesGame(xml, game) : isOnEventPage(xml);
+        }
         const { x, y } = center(b);
         await tap(sessionId, x, y);
         await sleep(1600);
-        return true;
+        if (await landed()) return true;
       }
       await scrollGameList(sessionId, 'down');
       await sleep(400);
@@ -495,7 +749,11 @@ function marketComplete(market) {
 }
 
 export async function scrapeDriveResults(sessionId) {
-  let xml = await revealDriveTab(sessionId);
+  let xml = await source(sessionId);
+  if (await slateModalOpen(sessionId, xml)) {
+    xml = await closeGameList(sessionId, xml);
+  }
+  xml = await revealDriveTab(sessionId);
   const seen = new Map();
   const ingest = (rows) => {
     for (const row of rows) {

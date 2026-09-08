@@ -465,7 +465,7 @@ function applyMarkets(args, state, game, markets) {
 
 async function visitGame(sessionId, args, state, game) {
   logLine(`open  ${matchup(game)}  event ${game.eventId}`);
-  const ok = await openGame(sessionId, game.eventId);
+  const ok = await openGame(sessionId, game.eventId, game);
   if (!ok) {
     logLine(`MISS  ${matchup(game)}  could not open event ${game.eventId}`);
     return { news: 0, changes: 0, markets: 0, wrote: 0 };

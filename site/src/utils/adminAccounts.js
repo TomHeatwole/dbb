@@ -14,6 +14,7 @@ export const REDRAFT_DASH_SLEEPER_USERNAMES = [
 // Email allowlist for accounts that never completed Sleeper onboarding.
 export const REDRAFT_DASH_EMAILS = [
   '0405110197a@gmail.com',
+  'crockwell97@gmail.com',
 ];
 
 function sleeperHandle(user) {

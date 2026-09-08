@@ -27,6 +27,18 @@ function signed(n) {
   return n > 0 ? `+${v}` : v;
 }
 
+function hprojHeat(pct) {
+  const t = Math.max(0, Math.min(99, Number(pct) || 0)) / 99;
+  const red = [252, 165, 165];
+  const yellow = [253, 224, 71];
+  const green = [134, 239, 172];
+  const from = t < 0.5 ? red : yellow;
+  const to = t < 0.5 ? yellow : green;
+  const u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+  const rgb = from.map((c, i) => Math.round(c + (to[i] - c) * u));
+  return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
+
 function skillPosition(raw) {
   if (raw === 'FB') return 'RB';
   if (HPROJ_SKILL_POS.includes(raw)) return raw;
@@ -156,6 +168,7 @@ function TeamSwitch({ options, current, onSelect }) {
 }
 
 function PercentileSlider({ value, onChange, ariaLabel }) {
+  const heat = hprojHeat(value);
   return (
     <div className="hproj-slider">
       <input
@@ -166,11 +179,12 @@ function PercentileSlider({ value, onChange, ariaLabel }) {
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         aria-label={ariaLabel}
+        style={{ accentColor: heat, color: heat }}
       />
       <div className="hproj-slider-ends">
-        <span>P0</span>
-        <span>P50</span>
-        <span>P99</span>
+        <span style={{ color: hprojHeat(0) }}>P0</span>
+        <span style={{ color: hprojHeat(50) }}>P50</span>
+        <span style={{ color: hprojHeat(99) }}>P99</span>
       </div>
     </div>
   );
@@ -400,8 +414,8 @@ function HprojPage() {
             <section className="hproj-col hproj-col--team">
               <h2 className="hproj-col-title">Team outcome</h2>
               <div className="hproj-hero">
-                <div className="hproj-hero-value">{fmt(outcome.total)}</div>
-                <div className="hproj-hero-label">Random P{outcome.percentile} outcome</div>
+                <div className="hproj-hero-value" style={{ color: hprojHeat(outcome.percentile) }}>{fmt(outcome.total)}</div>
+                <div className="hproj-hero-label" style={{ color: hprojHeat(outcome.percentile) }}>Random P{outcome.percentile} outcome</div>
                 <div className="hproj-hero-sub">
                   {signed(outcome.total - result.naiveTotal)} vs starter proj {fmt(result.naiveTotal)}
                 </div>
@@ -413,13 +427,25 @@ function HprojPage() {
                 ariaLabel="Team outcome percentile"
               />
 
-              <button
-                type="button"
-                className="hproj-regen"
-                onClick={() => setDrawSalt((n) => n + 1)}
-              >
-                Regenerate outcome
-              </button>
+              <div className="hproj-regen-row">
+                <button
+                  type="button"
+                  className="hproj-regen"
+                  onClick={() => setDrawSalt((n) => n + 1)}
+                >
+                  Regenerate P{percentile} outcome
+                </button>
+                <button
+                  type="button"
+                  className="hproj-regen"
+                  onClick={() => {
+                    setPercentile(Math.floor(Math.random() * 100));
+                    setDrawSalt((n) => n + 1);
+                  }}
+                >
+                  Generate Random Outcome
+                </button>
+              </div>
 
               <div className="hproj-pos-strip">
                 {HPROJ_SKILL_POS.map((pos) => (
@@ -443,7 +469,12 @@ function HprojPage() {
                         showPos={/FLEX|SUPER/i.test(p.slot) ? p.position : null}
                       />
                     </div>
-                    <span className="hproj-lineup-pts">{fmt(p.pts)}</span>
+                    <div className="hproj-lineup-nums">
+                      <span className="hproj-lineup-pts" style={p.playerPct != null ? { color: hprojHeat(p.playerPct) } : undefined}>{fmt(p.pts)}</span>
+                      {p.playerPct != null ? (
+                        <span className="hproj-lineup-rate" style={{ color: hprojHeat(p.playerPct) }}>P{p.playerPct} player outcome</span>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -499,8 +530,8 @@ function HprojPage() {
                         showPos={row.pos}
                       />
                       <div className="hproj-player-row-nums">
-                        <span className="hproj-player-row-pts">{fmt(pts)}</span>
-                        <span className="hproj-player-row-meta">
+                        <span className="hproj-player-row-pts" style={row.canSample ? { color: hprojHeat(pct) } : undefined}>{fmt(pts)}</span>
+                        <span className="hproj-player-row-meta" style={row.canSample ? { color: hprojHeat(pct) } : undefined}>
                           {row.canSample
                             ? `P${pct} · proj ${fmt(row.proj)} · ${signed((pts ?? 0) - row.proj)}`
                             : (row.proj != null ? `proj ${fmt(row.proj)}` : 'no projection')}
@@ -518,6 +549,7 @@ function HprojPage() {
                             setPlayerPcts((prev) => ({ ...prev, [row.id]: next }));
                           }}
                           aria-label={`${(getPlayerInfo(row.id, playersData, playerIdMap) || {}).name || row.id} outcome percentile`}
+                          style={{ accentColor: hprojHeat(pct) }}
                         />
                       ) : (
                         <p className="hproj-player-row-skip">No positional sample for this player.</p>
