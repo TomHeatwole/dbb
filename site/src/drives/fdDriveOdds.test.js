@@ -88,4 +88,18 @@ describe('fdDriveOdds', () => {
     expect(market.outcomes.punt).toBeUndefined();
     expect(market.outcomes.other.american).toBe(500);
   });
+
+  it('drops FanDuel ±100000 lock sentinels', () => {
+    const market = fdDriveMarketFromRow({
+      ...smuRow,
+      td_american: -100000,
+      fg_american: 100000,
+      punt_american: -20000,
+      other_american: 500,
+    });
+    expect(market.outcomes.td).toBeUndefined();
+    expect(market.outcomes.fg).toBeUndefined();
+    expect(market.outcomes.punt.american).toBe(-20000);
+    expect(market.outcomes.other.american).toBe(500);
+  });
 });

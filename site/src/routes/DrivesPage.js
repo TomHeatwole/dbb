@@ -2,7 +2,7 @@
  * DrivesPage — SOP-style NCAAF current-drive + next-drive book.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import PageMeta from '../PageMeta';
 import DrivesBookPanel from './DrivesBookPanel';
 import { applyOddsAheadFlags } from '../drives/driveModel';
@@ -48,12 +48,16 @@ function DrivesPage() {
   const [notice, setNotice] = useState(null);
   const [bookLoading, setBookLoading] = useState(true);
   const [bookRefreshing, setBookRefreshing] = useState(false);
+  const espnKickRef = useRef(new Set());
 
-  const refreshBook = useCallback(async ({ manual = false } = {}) => {
+  const refreshBook = useCallback(async ({ manual = false, espnRefresh } = {}) => {
     if (manual) setBookRefreshing(true);
 
     try {
-      const res = await fetch('/api/ncaaf-drives');
+      const params = new URLSearchParams({ t: String(Date.now()) });
+      if (manual) params.set('fresh', '1');
+      if (espnRefresh) params.set('espnRefresh', String(espnRefresh));
+      const res = await fetch(`/api/ncaaf-drives?${params}`, { cache: 'no-store' });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
@@ -90,6 +94,30 @@ function DrivesPage() {
     const id = window.setInterval(refreshBook, refreshMs);
     return () => window.clearInterval(id);
   }, [refreshBook, refreshMs]);
+
+  useEffect(() => {
+    const ahead = games.filter((game) => (
+      game?.live?.fdAheadOfEspn && game?.espnId
+    ));
+    for (const game of ahead) {
+      const fd = game.live?.fd || game.fdLive || {};
+      const key = [
+        game.eventId,
+        fd.period,
+        fd.clockSeconds,
+        fd.down,
+        fd.distance,
+        game.live?.period,
+        game.live?.clockSeconds,
+        game.live?.down,
+        game.live?.distance,
+      ].join('|');
+      if (espnKickRef.current.has(key)) continue;
+      espnKickRef.current.add(key);
+      refreshBook({ espnRefresh: game.espnId });
+      break;
+    }
+  }, [games, refreshBook]);
 
   return (
     <>

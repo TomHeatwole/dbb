@@ -8,7 +8,8 @@
  */
 
 import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
-import { fdDriveRowsForGame, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
+import { fdDriveRowsForGame, matchingFdDriveRows, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
+import { fdLiveFromRows, fdStateAheadOfEspn } from '../src/drives/fdLiveSituation.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -1109,7 +1110,14 @@ function parseEspnEvent(event) {
 }
 
 async function espnGetJson(url) {
-  const res = await fetch(url, { headers: ESPN_HEADERS });
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(`${url}${sep}_=${Date.now()}`, {
+    headers: {
+      ...ESPN_HEADERS,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`ESPN ${url} returned ${res.status}${body ? `: ${body.slice(0, 180)}` : ''}`);
@@ -1168,7 +1176,11 @@ async function fetchEspnDriveChart(espnId, teams) {
   for (const base of ESPN_SUMMARY_URLS) {
     try {
       const summary = await espnGetJson(`${base}?event=${espnId}`);
-      return await parseEspnDriveChart(summary, teams);
+      const chart = await parseEspnDriveChart(summary, teams);
+      return {
+        chart,
+        snapshot: parseEspnSummaryLive(summary),
+      };
     } catch (err) {
       lastErr = err;
     }
@@ -1177,28 +1189,160 @@ async function fetchEspnDriveChart(espnId, teams) {
   return null;
 }
 
+function parseEspnSummaryLive(summary) {
+  const header = summary?.header;
+  const comp = header?.competitions?.[0];
+  if (!comp) return null;
+  const parsed = parseEspnEvent({
+    id: header?.id || comp?.id,
+    competitions: [comp],
+    status: comp.status,
+  });
+  if (!parsed) return null;
+  if (!parsed.lastPlay) {
+    const plays = summary?.drives?.current?.plays;
+    const last = Array.isArray(plays) && plays.length ? plays[plays.length - 1] : null;
+    if (last?.text) {
+      parsed.lastPlay = last.text;
+      parsed.lastPlayType = last.type?.text ?? parsed.lastPlayType;
+    }
+  }
+  return parsed;
+}
+
+function applyEspnSummarySnapshot(game, rec) {
+  if (!rec) return game;
+  const live = { ...(game.live ?? {}) };
+  if (rec.chart) live.driveChart = rec.chart;
+  const snap = rec.snapshot;
+  if (snap) {
+    const take = (key) => {
+      const v = snap[key];
+      if (v != null && v !== '') live[key] = v;
+    };
+    take('period');
+    take('clock');
+    take('clockSeconds');
+    take('statusText');
+    take('down');
+    take('distance');
+    take('yardLine');
+    take('yardsToEndzone');
+    take('downDistance');
+    take('possessionText');
+    take('possession');
+    take('lastPlay');
+    take('lastPlayType');
+    take('lastPlaySide');
+    take('lastPlayId');
+    take('lastPlayYards');
+    take('lastPlayStartYardLine');
+    take('lastPlayEndYardLine');
+    if (snap.halfTime) {
+      live.halfTime = true;
+      live.state = 'halftime';
+    } else if (snap.state) {
+      live.halfTime = Boolean(snap.halfTime);
+      live.state = snap.state;
+    }
+    if (live.possession === 'home') live.possessionName = game.teams?.home ?? live.possessionName;
+    else if (live.possession === 'away') live.possessionName = game.teams?.away ?? live.possessionName;
+  }
+  const score = snap?.homeScore != null && snap?.awayScore != null
+    ? { home: snap.homeScore, away: snap.awayScore }
+    : game.score;
+  return {
+    ...game,
+    live,
+    score,
+    scoreDisplay: scoreDisplay(score),
+    inPlay: Boolean(game.inPlay || snap?.inPlay),
+  };
+}
+
+function espnTeamsFor(game) {
+  return {
+    home: game?.teams?.home ?? game?.espnHome,
+    away: game?.teams?.away ?? game?.espnAway,
+    homeAbbr: game?.espnHomeAbbr,
+    awayAbbr: game?.espnAwayAbbr,
+  };
+}
+
+function espnCompareSit(game) {
+  return {
+    ...(game?.live ?? {}),
+    homeScore: game?.score?.home,
+    awayScore: game?.score?.away,
+  };
+}
+
+function gameFdLive(game) {
+  return game?.fdLive || game?.live?.fd || null;
+}
+
+function fdLooksLive(fd) {
+  return Boolean(fd && (fd.down != null || fd.period != null || fd.clockSeconds != null || fd.halfTime));
+}
+
+function applyFdAheadFlag(game, { refreshed = false } = {}) {
+  const fd = gameFdLive(game);
+  const ahead = fdStateAheadOfEspn(fd, espnCompareSit(game));
+  return {
+    ...game,
+    live: {
+      ...(game.live ?? {}),
+      fd: fd || game.live?.fd,
+      fdAheadOfEspn: ahead || undefined,
+    },
+    debug: {
+      ...(game.debug ?? {}),
+      espnRefreshedForFdLag: refreshed || game.debug?.espnRefreshedForFdLag || undefined,
+    },
+  };
+}
+
+async function refreshEspnIfFdAhead(games, { espnRefresh } = {}) {
+  const wanted = new Set();
+  if (espnRefresh) wanted.add(String(espnRefresh));
+  for (const game of games) {
+    if (!game?.espnId) continue;
+    if (!game.inPlay && !fdLooksLive(gameFdLive(game))) continue;
+    if (fdStateAheadOfEspn(gameFdLive(game), espnCompareSit(game))) {
+      wanted.add(String(game.espnId));
+    }
+  }
+  if (!wanted.size) {
+    return games.map((game) => applyFdAheadFlag(game));
+  }
+  const recs = new Map();
+  await mapPool([...wanted], 4, async (espnId) => {
+    const game = games.find((row) => String(row.espnId) === String(espnId));
+    const rec = await fetchEspnDriveChart(espnId, espnTeamsFor(game));
+    if (rec?.chart || rec?.snapshot) recs.set(String(espnId), rec);
+  });
+  return games.map((game) => {
+    const rec = recs.get(String(game.espnId));
+    const next = rec ? applyEspnSummarySnapshot(game, rec) : game;
+    return applyFdAheadFlag(next, { refreshed: Boolean(rec) });
+  });
+}
+
 async function attachEspnDriveCharts(games) {
   const live = games.filter((game) => game?.inPlay && game?.espnId);
   if (!live.length) return games;
-  const charts = new Map();
+  const recs = new Map();
   await mapPool(live, 4, async (game) => {
-    const chart = await fetchEspnDriveChart(game.espnId, {
+    const rec = await fetchEspnDriveChart(game.espnId, {
       home: game.teams?.home ?? game.espnHome,
       away: game.teams?.away ?? game.espnAway,
       homeAbbr: game.espnHomeAbbr,
       awayAbbr: game.espnAwayAbbr,
     });
-    if (chart) charts.set(game.eventId, chart);
+    if (rec?.chart || rec?.snapshot) recs.set(game.eventId, rec);
   });
-  if (!charts.size) return games;
-  return games.map((game) => {
-    const chart = charts.get(game.eventId);
-    if (!chart) return game;
-    return {
-      ...game,
-      live: { ...(game.live ?? {}), driveChart: chart },
-    };
-  });
+  if (!recs.size) return games;
+  return games.map((game) => applyEspnSummarySnapshot(game, recs.get(game.eventId)));
 }
 
 function attachEspn(game, espnGames) {
@@ -1306,7 +1450,7 @@ function buildGame(ev, bundle, fdx = null) {
   };
 }
 
-async function fetchNcaafDriveBook() {
+async function fetchNcaafDriveBook(opts = {}) {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=6423`);
   const events = ncaafEvents(sportPage);
   const sportMarkets = sportPage?.attachments?.markets ?? {};
@@ -1374,7 +1518,9 @@ async function fetchNcaafDriveBook() {
   const games = fdGames
     .map((game) => {
       const dk = dkByFdId.get(game.eventId);
-      const fdFromDb = fdDriveRowsForGame(game, fdDbRows, namesMatch);
+      const fdHits = matchingFdDriveRows(game, fdDbRows, namesMatch);
+      const fdFromDb = fdDriveRowsForGame(game, fdHits, namesMatch);
+      const fdLive = fdLiveFromRows(fdHits);
       const dkMarkets = dk?.drives?.length
         ? dk.drives
         : (dk?.nextDrive ? [dk.nextDrive] : []);
@@ -1406,12 +1552,20 @@ async function fetchNcaafDriveBook() {
       delete clean.fdxLive;
       return {
         ...clean,
+        fdLive: fdLive || null,
+        live: {
+          ...(clean.live ?? {}),
+          fd: fdLive || undefined,
+        },
         driveMarkets: annotated,
         nextDrive: annotated[0] ?? null,
       };
     });
 
-  const numbered = (await attachEspnDriveCharts(games)).sort((a, b) => {
+  const numbered = (await refreshEspnIfFdAhead(
+    await attachEspnDriveCharts(games),
+    { espnRefresh: opts.espnRefresh },
+  )).sort((a, b) => {
     if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
     if (!a.openDate) return 1;
     if (!b.openDate) return -1;
@@ -1466,13 +1620,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchNcaafDriveBook();
-    res.setHeader(
-      'Cache-Control',
-      data?.stats?.live > 0
-        ? 'private, max-age=0, must-revalidate'
-        : 'public, max-age=15',
-    );
+    const espnRefresh = String(req.query?.espnRefresh || '').trim();
+    const data = await fetchNcaafDriveBook({ espnRefresh: espnRefresh || undefined });
+    res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

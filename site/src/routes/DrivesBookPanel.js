@@ -21,6 +21,7 @@ import {
   listDriveSides,
   liveClockSeconds,
   possessiveTeam,
+  puntStyleWarningForOffense,
   resolveOffenseTeam,
   situationUntrusted,
 } from '../drives/driveModel';
@@ -34,6 +35,7 @@ import {
 } from '../sop/sopModel';
 import { useSOPKellySettings } from '../sop/useSOPKellySettings';
 import { buildDrivesMonitorRows, maxDriveEdgePoints } from '../drives/gameSnapshot';
+import PuntStyleWarning from '../drives/PuntStyleWarning';
 import { gameAnchorId } from '../sop/gameSnapshot';
 import GameMonitorTable from './GameMonitorTable';
 
@@ -128,6 +130,20 @@ function lineSummary(game) {
     bits.push(`O/U ${total.handicap}`);
   }
   return bits.join(' · ');
+}
+
+function SpotLagMark({ detail }) {
+  if (!detail?.text) return null;
+  return (
+    <span className="drives-spot-lag-mark" title={detail.text}>
+      <svg className="drives-spot-lag-tri" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 2.2 L23.2 21.6 H0.8 Z" />
+        <path className="drives-spot-lag-bang" d="M11.15 8.4 h1.7 v7.1 h-1.7 Z M11.15 16.7 h1.7 v1.9 h-1.7 Z" />
+      </svg>
+      <span className="drives-spot-lag-sr">{detail.text}</span>
+      <span className="drives-spot-lag-tip" role="tooltip">{detail.text}</span>
+    </span>
+  );
 }
 
 function liveSummary(game) {
@@ -397,6 +413,10 @@ function ModelReasoning({
       kellyFraction,
     })
     : null;
+  const styleWarning = highlightRow?.styleWarning
+    || (highlightRow?.key === 'punt' && quoteAnalysis?.profitable
+      ? puntStyleWarningForOffense(teamOnSide(game, pred?.side) || pred?.offenseName)
+      : null);
   if (!rows.length && !mixRows.length && !needsQuote) return null;
   return (
     <section className="drives-reason" aria-label="Model reasoning" id={`drives-why-${game.eventId}`}>
@@ -426,6 +446,12 @@ function ModelReasoning({
           </ul>
         )}
       </div>
+      {styleWarning && (
+        <p className="drives-punt-warn-note">
+          <PuntStyleWarning warning={styleWarning} />
+          {styleWarning.label} rarely punts on 4th — hover warn
+        </p>
+      )}
       {needsQuote && highlightRow && (
         <form
           className="drives-quote"
@@ -455,6 +481,7 @@ function ModelReasoning({
                     ? `${formatEdgePoints(quoteAnalysis.edgePoints)}${quoteAnalysis.profitable ? ' edge' : ''}`
                     : '—'}
                 </span>
+                <PuntStyleWarning warning={styleWarning} />
                 <span className="drives-quote-kelly">
                   {quoteStake != null
                     ? `Kelly ${formatKellyStake(quoteStake)} · ${formatKellyFractionLabel(kellyFraction)} of $${Number(kellyBudget).toLocaleString()}`
@@ -536,9 +563,9 @@ function DriveSide({
         {startLine && (
           <p className="drives-situation">{startLine}</p>
         )}
-        {model.situationLag && (
+        {model.situationLag && model.situationLagDetail?.text && (
           <p className="drives-situation drives-situation--lag" role="status">
-            ESPN spot may lag the board — live +EV is hidden until the situation catches up.
+            {model.situationLagDetail.text}
           </p>
         )}
         {market?.marketName && (
@@ -610,9 +637,7 @@ function DriveSide({
               </div>
               <div className="drives-line-model">
                 <div className="sop-exp-goal-breakeven">
-                  {model.situationLag ? (
-                    <span className="sop-exp-goal-be-tag">spot lag</span>
-                  ) : row.fairAmerican != null ? (
+                  {row.fairAmerican != null ? (
                     <>
                       <span>{formatAmericanOdds(row.fairAmerican)}</span>
                       <span className="sop-exp-goal-be-tag">model</span>
@@ -621,13 +646,15 @@ function DriveSide({
                     '—'
                   )}
                 </div>
-                <div className="sop-exp-goal-edge">
-                  {model.situationLag ? (
-                    <span className="drives-edge-lag">hidden</span>
-                  ) : row.profitable && row.edgePoints != null ? (
+                <div className={`sop-exp-goal-edge${model.situationLag ? ' sop-exp-goal-edge--lag' : ''}`}>
+                  {row.profitable && row.edgePoints != null ? (
                     <>
-                      <span className="sop-exp-edge-plus">
-                        {formatEdgePoints(row.edgePoints)} edge
+                      <span className="drives-edge-line">
+                        <span className="sop-exp-edge-plus">
+                          {formatEdgePoints(row.edgePoints)} edge
+                        </span>
+                        {model.situationLag && <SpotLagMark detail={model.situationLagDetail} />}
+                        <PuntStyleWarning warning={row.styleWarning} />
                       </span>
                       {kellyEnabled && row.kellyStake != null && (
                         <span
@@ -639,9 +666,14 @@ function DriveSide({
                       )}
                     </>
                   ) : row.edgePoints != null ? (
-                    <span className="sop-exp-edge-minus">
-                      {formatEdgePoints(row.edgePoints)}
+                    <span className="drives-edge-line">
+                      <span className="sop-exp-edge-minus">
+                        {formatEdgePoints(row.edgePoints)}
+                      </span>
+                      {model.situationLag && <SpotLagMark detail={model.situationLagDetail} />}
                     </span>
+                  ) : model.situationLag ? (
+                    <SpotLagMark detail={model.situationLagDetail} />
                   ) : (
                     '—'
                   )}
@@ -664,7 +696,9 @@ function DriveSide({
                 ? ` Next-drive log-loss ${LGBM_HOLDOUT.nextDrive.logloss} vs raw ${LGBM_HOLDOUT.nextDrive.raw} (n=${LGBM_HOLDOUT.nextDrive.n.toLocaleString()}; start ytg MAE ${LGBM_HOLDOUT.nextDrive.ytgMae}).`
                 : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
             {model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
-            {model.situationLag ? ' Live +EV is hidden: ESPN down/distance looks behind the book.' : ''}
+            {model.situationLag && model.situationLagDetail?.text
+              ? ` ${model.situationLagDetail.text}`
+              : ''}
             {model.vigPct != null ? ` Book vig ${model.vigPct.toFixed(1)}%.` : ''}
           </p>
           <ul className="drives-work-list">
@@ -765,7 +799,6 @@ function GameCard({
           </span>
         </button>
       </header>
-
       {expanded && (
         <div className="sop-exp-game-body">
           <section className="sop-exp-no-goal">

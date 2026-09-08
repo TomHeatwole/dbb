@@ -7,7 +7,7 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { startSitWithProjections } from './projectionScoring';
-import ScoreSplit, { starterScoreSplit } from './ScoreSplit';
+import ScoreSplit, { compareLeagueScoreRows, starterScoreSplit } from './ScoreSplit';
 import useWeeklyProjectedPoints from './useWeeklyProjectedPoints';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
@@ -507,23 +507,23 @@ function ScoresView({
           ? liveTotalByRosterId[String(rid)]
           : basePointsByRoster[String(rid)] || 0;
       const hproj = hprojByRoster[String(rid)];
-      return { rosterId: rid, points: pts, place, pfTotal, breakdown: computed, hproj };
-    })
-    .sort((a, b) => {
-      if (lineupMode === 'projections' && HPROJ_ON_SCORES) {
-        const ah = Number.isFinite(a.hproj) ? a.hproj : a.points;
-        const bh = Number.isFinite(b.hproj) ? b.hproj : b.points;
-        if (bh !== ah) {
-          return bh - ah;
-        }
-      } else if (b.points !== a.points) {
-        return b.points - a.points;
-      }
-      if ((a.place || 9999) !== (b.place || 9999)) {
-        return (a.place || 9999) - (b.place || 9999);
-      }
-      return String(a.rosterId).localeCompare(String(b.rosterId));
+      return {
+        rosterId: rid,
+        points: pts,
+        place,
+        pfTotal,
+        breakdown: computed,
+        hproj,
+        actual: computed?.starterActualTotal ?? 0,
+        hasActual: Boolean(computed?.starterHasActual),
+      };
     });
+  const liveBoard = computedEntries.some((row) => row.hasActual);
+  computedEntries.sort((a, b) => compareLeagueScoreRows(a, b, {
+    lineupMode,
+    useHproj: HPROJ_ON_SCORES,
+    liveBoard,
+  }));
 
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
   const currentWeekNum = getCurrentNFLWeek();

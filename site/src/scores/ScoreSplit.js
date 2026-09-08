@@ -54,9 +54,11 @@ export default function ScoreSplit({
   if (mixed) {
     return (
       <span className={classes}>
+        <span className="score-split-projs">
+          {hprojNode}
+          <span className="score-split-proj">{projNode}</span>
+        </span>
         <span className="score-split-actual">{actualNode}</span>
-        {hprojNode}
-        <span className="score-split-proj">{projNode}</span>
       </span>
     );
   }
@@ -75,6 +77,28 @@ export default function ScoreSplit({
       {actualNode}
     </span>
   );
+}
+
+/** Rank /scores rows: Highest Projections by HProj; Highest Scores by pts, HProj on ties. */
+export function compareLeagueScoreRows(a, b, { lineupMode, useHproj, liveBoard }) {
+  if (lineupMode === 'projections' && useHproj) {
+    const ah = Number.isFinite(a.hproj) ? a.hproj : a.points;
+    const bh = Number.isFinite(b.hproj) ? b.hproj : b.points;
+    if (bh !== ah) return bh - ah;
+  } else {
+    const aScore = liveBoard ? (Number(a.actual) || 0) : a.points;
+    const bScore = liveBoard ? (Number(b.actual) || 0) : b.points;
+    if (bScore !== aScore) return bScore - aScore;
+    if (useHproj) {
+      const ah = Number.isFinite(a.hproj) ? a.hproj : null;
+      const bh = Number.isFinite(b.hproj) ? b.hproj : null;
+      if (ah != null && bh != null && bh !== ah) return bh - ah;
+    }
+  }
+  if ((a.place || 9999) !== (b.place || 9999)) {
+    return (a.place || 9999) - (b.place || 9999);
+  }
+  return String(a.rosterId).localeCompare(String(b.rosterId));
 }
 
 export function starterScoreSplit(weekBreakdown) {

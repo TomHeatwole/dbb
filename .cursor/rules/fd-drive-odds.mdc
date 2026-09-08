@@ -14,6 +14,8 @@ Do **not** re-seed fake SMU @ Florida State rows. Ended games should be deleted 
 
 One row per game + side + drive (`drive_n = 1` for opening drive). Unique `(home_team, away_team, offense_side, drive_n)`.
 
+When odds are written, also store the FanDuel event-page snapshot: `period`, `clock_seconds`, `clock_text`, `down`, `distance`, `yards_to_endzone`, `possession_text`, `home_score`, `away_score`, `situation_text`. Those columns are duplicated on every odds row for the game. Replace the snapshot as a unit when any of period / clock_seconds / down is present.
+
 ```sql
 INSERT INTO fd_drive_odds (
   event_id, home_team, away_team, kickoff_at,
@@ -30,5 +32,7 @@ ON CONFLICT (home_team, away_team, offense_side, drive_n) DO UPDATE SET
   other_american = EXCLUDED.other_american,
   fetched_at = now();
 ```
+
+If FanDuel down/distance/clock is ahead of ESPN on the current drive, `/api/ncaaf-drives` re-fetches that event's ESPN summary and the UI shows a warning (`live.fdAheadOfEspn`).
 
 Match games by `event_id` first, then team names. Merge FD + DK onto the same card (`outcomes.*.fd` / `outcomes.*.dk`). Dual-book rows put the model line under the FD/DK boxes (`.drives-line-model`).

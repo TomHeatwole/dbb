@@ -12,7 +12,7 @@ const BUCKETS = [
 
 function signedAmerican(raw) {
   const n = Number(raw);
-  if (!Number.isFinite(n) || n === 0) return null;
+  if (!Number.isFinite(n) || n === 0 || Math.abs(n) >= 100000) return null;
   return n;
 }
 
@@ -47,20 +47,22 @@ export function fdDriveMarketFromRow(row) {
   };
 }
 
-export function fdDriveRowsForGame(game, rows, namesMatch) {
+export function matchingFdDriveRows(game, rows, namesMatch) {
   const list = Array.isArray(rows) ? rows : [];
   const eventId = game?.eventId != null ? String(game.eventId) : '';
   const byId = eventId
     ? list.filter((row) => row?.event_id && String(row.event_id) === eventId)
     : [];
-  const hits = byId.length
-    ? byId
-    : list.filter((row) => (
-      typeof namesMatch === 'function'
-      && namesMatch(game?.teams?.home, row?.home_team)
-      && namesMatch(game?.teams?.away, row?.away_team)
-    ));
-  return hits.map(fdDriveMarketFromRow).filter(Boolean);
+  if (byId.length) return byId;
+  return list.filter((row) => (
+    typeof namesMatch === 'function'
+    && namesMatch(game?.teams?.home, row?.home_team)
+    && namesMatch(game?.teams?.away, row?.away_team)
+  ));
+}
+
+export function fdDriveRowsForGame(game, rows, namesMatch) {
+  return matchingFdDriveRows(game, rows, namesMatch).map(fdDriveMarketFromRow).filter(Boolean);
 }
 
 function mergeDualMarket(fd, dk) {

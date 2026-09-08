@@ -70,7 +70,7 @@
       "seenAt": "2026-09-08T02:41:05.748Z"
     },
     "35660086|SMU Drive 7 - Result": {
-      "ts": "2026-09-08T03:01:20.621Z",
+      "ts": "2026-09-08T03:16:36.878Z",
       "eventId": "35660086",
       "away": "SMU",
       "home": "Florida State",
@@ -80,12 +80,15 @@
       "offense": "SMU",
       "drive": 7,
       "outcomes": {
-        "other": 500
+        "td": -100000,
+        "fg": -100000,
+        "punt": -100000,
+        "other": -100000
       },
-      "seenAt": "2026-09-08T03:01:20.621Z"
+      "seenAt": "2026-09-08T03:16:36.878Z"
     },
     "35660086|Florida St Drive 6 - Result": {
-      "ts": "2026-09-08T03:01:20.621Z",
+      "ts": "2026-09-08T03:08:33.016Z",
       "eventId": "35660086",
       "away": "SMU",
       "home": "Florida State",
@@ -95,12 +98,47 @@
       "offense": "Florida St",
       "drive": 6,
       "outcomes": {
-        "td": 270,
-        "fg": 600,
-        "punt": 100,
-        "other": 390
+        "td": 3000,
+        "fg": 3000,
+        "punt": -20000,
+        "other": 3000
       },
-      "seenAt": "2026-09-08T03:01:20.621Z"
+      "seenAt": "2026-09-08T03:08:33.016Z"
+    },
+    "35660086|Florida St Drive 7 - Result": {
+      "ts": "2026-09-08T03:21:32.505Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "Florida St Drive 7 - Result",
+      "offense": "Florida St",
+      "drive": 7,
+      "outcomes": {
+        "td": -100000,
+        "fg": -100000,
+        "punt": -100000
+      },
+      "seenAt": "2026-09-08T03:21:32.505Z"
+    },
+    "35660086|SMU Drive 8 - Result": {
+      "ts": "2026-09-08T03:21:33.319Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "SMU Drive 8 - Result",
+      "offense": "SMU",
+      "drive": 8,
+      "outcomes": {
+        "td": 210,
+        "fg": 450,
+        "punt": 130,
+        "other": 500
+      },
+      "seenAt": "2026-09-08T03:21:33.319Z"
     }
   },
   "schedule": {
@@ -149,7 +187,7 @@
     "35660086": {
       "nextTryAt": 0,
       "missStreak": 0,
-      "lastTriedAt": "2026-09-08T03:01:20.621Z",
+      "lastTriedAt": "2026-09-08T03:21:33.319Z",
       "lastHadMarket": true,
       "kickoffAt": null
     },

@@ -147,6 +147,20 @@ const statements = [
 
   `CREATE INDEX IF NOT EXISTS idx_fd_drive_odds_fetched
      ON fd_drive_odds (fetched_at DESC)`,
+
+  // Live FanDuel clock / down-and-distance, duplicated onto each odds row
+  // for the game. Writer replaces the snapshot as a unit when any of
+  // period, clock_seconds, or down is present.
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS period INTEGER`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS clock_seconds INTEGER`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS clock_text TEXT`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS down INTEGER`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS distance INTEGER`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS yards_to_endzone INTEGER`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS possession_text TEXT`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS home_score INTEGER`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS away_score INTEGER`,
+  `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS situation_text TEXT`,
 ];
 
 for (const stmt of statements) {

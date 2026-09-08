@@ -5,6 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { bookTag, gameAnchorId } from '../sop/gameSnapshot';
 import { formatAmericanOdds } from '../sop/sopModel';
+import PuntStyleWarning from '../drives/PuntStyleWarning';
 
 const COLLAPSED_KEY = 'sop-monitor-collapsed';
 
@@ -124,7 +125,10 @@ function GameMonitorTable({
                 </button>
                 <span className="sop-monitor-quotes">
                   {showMarket && (
-                    <span className="sop-monitor-market">{row.market}</span>
+                    <span className="sop-monitor-market">
+                      {row.market}
+                      {row.styleWarning && <PuntStyleWarning warning={row.styleWarning} />}
+                    </span>
                   )}
                   <span className="sop-monitor-odds">
                     <OddsCell book={row.oddsBook} american={row.oddsAmerican} />

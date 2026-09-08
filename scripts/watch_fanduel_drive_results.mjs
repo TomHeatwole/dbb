@@ -29,6 +29,8 @@ import {
   collectSlate,
   createSession,
   deleteSession,
+  dismissEventOverlays,
+  namesOnPage,
   openGame,
   pageLooksFinal,
   pageLooksLikeGame,
@@ -41,8 +43,15 @@ import {
   deleteFdDriveOdds,
   inferOffenseSide,
   listFdDriveGameKeys,
+  realFdAmerican,
   upsertFdDriveOdds,
 } from '../site/lib/fd-drive-odds.mjs';
+import {
+  fdLiveToDbRow,
+  formatFdLiveSpot,
+  parseFdLiveSituation,
+  situationKey,
+} from '../site/src/drives/fdLiveSituation.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_LOG = path.join(ROOT, 'example_data', 'ncaaf_drive_results', 'fanduel_drive_results.jsonl');
@@ -344,8 +353,19 @@ function marketKey(eventId, market) {
   return `${eventId}|${market.marketName}`;
 }
 
+function liveOutcomes(outcomes = {}) {
+  const out = {};
+  for (const row of DRIVE_OUTCOMES) {
+    const n = realFdAmerican(outcomes[row.key]);
+    if (n != null) out[row.key] = n;
+  }
+  return out;
+}
+
 function outcomesEqual(a = {}, b = {}) {
-  return DRIVE_OUTCOMES.every((row) => a[row.key] === b[row.key]);
+  const left = liveOutcomes(a);
+  const right = liveOutcomes(b);
+  return DRIVE_OUTCOMES.every((row) => left[row.key] === right[row.key]);
 }
 
 function formatOutcomes(outcomes = {}) {
@@ -396,8 +416,9 @@ async function connect(udid) {
   return sessionId;
 }
 
-async function writeMarketsToDb(game, markets, kickoffAt) {
+async function writeMarketsToDb(game, markets, kickoffAt, situation = null) {
   let wrote = 0;
+  const sit = fdLiveToDbRow(situation);
   for (const market of markets) {
     const side = inferOffenseSide(market.offense, game.home, game.away);
     if (!side) {
@@ -414,10 +435,11 @@ async function writeMarketsToDb(game, markets, kickoffAt) {
       drive_n: market.drive || 1,
       market_name: market.marketName,
       market_status: 'OPEN',
-      td_american: market.outcomes.td ?? null,
-      fg_american: market.outcomes.fg ?? null,
-      punt_american: market.outcomes.punt ?? null,
-      other_american: market.outcomes.other ?? null,
+      td_american: realFdAmerican(market.outcomes.td),
+      fg_american: realFdAmerican(market.outcomes.fg),
+      punt_american: realFdAmerican(market.outcomes.punt),
+      other_american: realFdAmerican(market.outcomes.other),
+      ...sit,
     });
     wrote += 1;
   }
@@ -491,6 +513,8 @@ function applyMarkets(args, state, game, markets) {
   for (const market of markets) {
     const key = marketKey(game.eventId, market);
     const prev = state.markets[key];
+    const outcomes = liveOutcomes(market.outcomes);
+    if (!Object.keys(outcomes).length) continue;
     const rec = {
       ts: ts(),
       eventId: game.eventId,
@@ -501,7 +525,7 @@ function applyMarkets(args, state, game, markets) {
       marketName: market.marketName,
       offense: market.offense,
       drive: market.drive,
-      outcomes: market.outcomes,
+      outcomes,
     };
     if (!prev) {
       news += 1;
@@ -534,6 +558,7 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
   let wrote = 0;
   let polls = 0;
   let lastBeat = Date.now();
+  let lastSitKey = '';
   const until = Number(opts.until) || 0;
   const kickoffAt = kickoffOf(game, state);
 
@@ -549,22 +574,38 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
       return { opened: true, final: true, news, changes, wrote, polls };
     }
     if (!pageLooksLikeGame(xml, game)) {
-      ok = await openGame(sessionId, game.eventId, game);
-      if (!ok) {
-        logLine(`MISS  ${matchup(game)}  lost pinned page`);
-        return { opened: false, final: false, news, changes, wrote, polls };
+      if (namesOnPage(xml, game)) {
+        xml = await dismissEventOverlays(sessionId, xml);
+      }
+      if (!pageLooksLikeGame(xml, game)) {
+        ok = false;
+        for (let attempt = 0; attempt < 3 && !ok; attempt += 1) {
+          if (attempt) await sleep(800);
+          ok = await openGame(sessionId, game.eventId, game);
+        }
+        if (!ok) {
+          logLine(`MISS  ${matchup(game)}  lost pinned page`);
+          return { opened: false, final: false, news, changes, wrote, polls };
+        }
       }
     }
+    const situation = parseFdLiveSituation(xml);
+    const sitKey = situationKey(situation);
     let markets = await scrapeDriveResults(sessionId, { quick: true });
     if (markets.length) {
       const rec = applyMarkets(args, state, game, markets);
       news += rec.news;
       changes += rec.changes;
-      if ((rec.news || rec.changes) && !args.noDb) {
+      const sitChanged = Boolean(sitKey && sitKey !== lastSitKey);
+      if ((rec.news || rec.changes || sitChanged) && !args.noDb) {
         try {
-          const n = await writeMarketsToDb(game, markets, kickoffAt);
+          const n = await writeMarketsToDb(game, markets, kickoffAt, situation);
           wrote += n;
-          if (n) logLine(`db+   ${matchup(game)}  upserted ${n} row${n === 1 ? '' : 's'}`);
+          if (n) {
+            const sitLabel = formatFdLiveSpot(situation);
+            logLine(`db+   ${matchup(game)}  upserted ${n} row${n === 1 ? '' : 's'}${sitLabel ? `  ${sitLabel}` : ''}`);
+          }
+          if (sitKey) lastSitKey = sitKey;
         } catch (err) {
           logLine(`db!   ${matchup(game)}  ${err.message}`);
         }
@@ -574,9 +615,10 @@ async function pinGame(sessionId, args, state, game, opts = {}) {
     }
     if (Date.now() - lastBeat >= PIN_HEARTBEAT_MS) {
       const snap = markets.length
-        ? markets.map((m) => formatOutcomes(m.outcomes)).join(' | ')
+        ? markets.map((m) => formatOutcomes(liveOutcomes(m.outcomes))).join(' | ')
         : 'no Drive Result';
-      logLine(`pin   ${matchup(game)}  ${polls} polls  ${snap}`);
+      const sitLabel = formatFdLiveSpot(situation);
+      logLine(`pin   ${matchup(game)}  ${polls} polls  ${snap}${sitLabel ? `  ${sitLabel}` : ''}`);
       lastBeat = Date.now();
     }
   }
@@ -623,6 +665,7 @@ async function visitGame(sessionId, args, state, game) {
   const markets = await scrapeDriveResults(sessionId);
   const xml = await source(sessionId).catch(() => '');
   const ended = pageLooksFinal(xml);
+  const situation = parseFdLiveSituation(xml);
   const kickoffAt = parseKickoff(game);
   if (!markets.length) {
     logLine(`skip  ${matchup(game)}  ${ended ? 'final' : 'no Drive Result'}`);
@@ -635,8 +678,11 @@ async function visitGame(sessionId, args, state, game) {
   let wrote = 0;
   if (!args.noDb) {
     try {
-      wrote = await writeMarketsToDb(game, markets, kickoffAt);
-      if (wrote) logLine(`db+   ${matchup(game)}  upserted ${wrote} row${wrote === 1 ? '' : 's'}`);
+      wrote = await writeMarketsToDb(game, markets, kickoffAt, situation);
+      if (wrote) {
+        const sitLabel = formatFdLiveSpot(situation);
+        logLine(`db+   ${matchup(game)}  upserted ${wrote} row${wrote === 1 ? '' : 's'}${sitLabel ? `  ${sitLabel}` : ''}`);
+      }
     } catch (err) {
       logLine(`db!   ${matchup(game)}  ${err.message}`);
     }

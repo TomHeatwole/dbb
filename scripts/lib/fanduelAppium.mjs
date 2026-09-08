@@ -608,6 +608,29 @@ async function closeGameList(sessionId, xml) {
   return source(sessionId);
 }
 
+/** Bet slip / slate peek over an event page. Do not tap Navigate up. */
+export async function dismissEventOverlays(sessionId, xml = '') {
+  let page = xml || await source(sessionId);
+  if (await slateModalOpen(sessionId, page)) {
+    page = await closeGameList(sessionId, page);
+  }
+  if (/bet slip|place bet|confirm bet|Add to bet slip/i.test(page)) {
+    if (await clickUi(sessionId, 'new UiSelector().description("Close")')) {
+      await sleep(700);
+      page = await source(sessionId);
+    } else {
+      try {
+        await wd('POST', `/session/${sessionId}/back`);
+        await sleep(700);
+        page = await source(sessionId);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return page;
+}
+
 async function cardSelectedNow(sessionId, eventId, xml = '') {
   if (eventId && cardIsSelected(xml, eventId)) return true;
   if (!eventId) return false;
@@ -630,6 +653,9 @@ async function elementRect(sessionId, id) {
 async function findEventCard(sessionId, eventId, game = null) {
   const selectors = [
     eventId ? `new UiSelector().resourceId("event-card-${eventId}")` : null,
+    game?.away
+      ? `new UiSelector().descriptionContains("Live game").descriptionContains("${game.away}")`
+      : null,
     game?.away && game?.home
       ? `new UiSelector().descriptionContains("${game.away} versus ${game.home}")`
       : null,

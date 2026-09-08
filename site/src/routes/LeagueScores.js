@@ -10,7 +10,7 @@ import { fetchTeamData } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getStandings, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { startSitWithProjections } from '../scores/projectionScoring';
-import ScoreSplit, { starterScoreSplit } from '../scores/ScoreSplit';
+import ScoreSplit, { compareLeagueScoreRows, starterScoreSplit } from '../scores/ScoreSplit';
 import useWeeklyProjectedPoints from '../scores/useWeeklyProjectedPoints';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import useIsMobile from '../hooks/useIsMobile';
@@ -682,18 +682,23 @@ function LeagueScores() {
 								? liveTotalByRosterId[String(rid)]
 								: (basePointsByRoster[String(rid)] || 0);
 							const hproj = hprojByRoster[String(rid)];
-							return { rosterId: rid, points: pts, place, pfTotal, breakdown: computed, hproj };
-						}).sort((a, b) => {
-							if (lineupMode === 'projections' && HPROJ_ON_SCORES) {
-								const ah = Number.isFinite(a.hproj) ? a.hproj : a.points;
-								const bh = Number.isFinite(b.hproj) ? b.hproj : b.points;
-								if (bh !== ah) { return bh - ah; }
-							} else if (b.points !== a.points) {
-								return b.points - a.points;
-							}
-							if ((a.place || 9999) !== (b.place || 9999)) { return (a.place || 9999) - (b.place || 9999); }
-							return String(a.rosterId).localeCompare(String(b.rosterId));
+							return {
+								rosterId: rid,
+								points: pts,
+								place,
+								pfTotal,
+								breakdown: computed,
+								hproj,
+								actual: computed?.starterActualTotal ?? 0,
+								hasActual: Boolean(computed?.starterHasActual),
+							};
 						});
+						const liveBoard = computedEntries.some((row) => row.hasActual);
+						computedEntries.sort((a, b) => compareLeagueScoreRows(a, b, {
+							lineupMode,
+							useHproj: HPROJ_ON_SCORES,
+							liveBoard,
+						}));
 						return computedEntries.map(({ rosterId, points, place, pfTotal, breakdown }) => {
 							const teamName = getTeamName(rosterId);
 							const avatarUrl = getAvatar(rosterId);

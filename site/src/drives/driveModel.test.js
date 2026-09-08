@@ -16,11 +16,13 @@ import {
   espnSituationLagsLastPlay,
   applyOddsAheadFlags,
   playYardageFromText,
+  describeSpotLag,
   listDriveMarkets,
   shouldShowBothDriveSides,
   liveClockSeconds,
   nameMatchScore,
   predictDriveResult,
+  puntStyleWarningForOffense,
 } from './driveModel';
 import { parseEspnDriveBlob } from './espnDriveChart';
 import { ytgFromSpot } from './ytgFromSpot';
@@ -402,6 +404,29 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(7);
   });
 
+  it('bumps to the next drive after a completed series even if ESPN still tags that team current', () => {
+    const game = wazzuAtWashington({
+      period: 3,
+      clockSeconds: 11 * 60 + 40,
+      clock: '11:40',
+      down: 2,
+      distance: 5,
+      yardsToEndzone: 28,
+      possession: 'away',
+      possessionName: 'Washington State',
+      driveChart: {
+        homeStarted: 6,
+        awayStarted: 6,
+        currentSide: 'home',
+        currentResult: 'Punt',
+        finishedSide: 'home',
+      },
+    });
+    expect(firstUpSide(game)).toBe('away');
+    expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(7);
+    expect(driveNumberForSide(game, 'away', { role: 'current' })).toBe(7);
+  });
+
   it('does not count an End of Half kickoff stub; next is completed series + 1', () => {
     const chart = parseEspnDriveBlob({
       previous: [
@@ -721,7 +746,7 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     expect(playYardageFromText('Williams sacked for a loss of 8 yards')).toBe(-8);
   });
 
-  it('hides a fake snap +EV that the lagged 3rd-and-long spot would have shown', () => {
+  it('flags a lagged 3rd-and-long spot without hiding the model edge', () => {
     const snap = {
       clockSeconds: 7 * 60,
       clock: '7:00',
@@ -748,8 +773,13 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     expect(espnSituationLagsLastPlay(lagged)).toBe(true);
     const view = evaluateDriveGame(lagged, { market: listDriveSides(lagged)[0] });
     expect(view.situationLag).toBe(true);
-    expect(view.evCount).toBe(0);
-    expect(view.rows.every((row) => row.edgePoints == null)).toBe(true);
+    expect(view.evCount).toBeGreaterThan(0);
+    expect(view.rows.some((row) => row.edgePoints != null)).toBe(true);
+    expect(view.situationLagDetail.espnSpot).toBe('3rd & 8');
+    expect(view.situationLagDetail.impliedSpot).toBe('1st & Goal');
+    expect(view.situationLagDetail.text).toMatch(/Down\/distance: ESPN still 3rd & 8/);
+    expect(view.situationLagDetail.text).toMatch(/1st & Goal/);
+    expect(describeSpotLag(lagged).text).toMatch(/gained 42/);
   });
 
   it('shows model edges again after ESPN applies the same chunk play', () => {
@@ -830,5 +860,83 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     });
     const cleared = applyOddsAheadFlags(still, [moved]);
     expect(cleared[0].live.oddsAheadOfSpot).toBeUndefined();
+  });
+
+  it('still prices the current drive when FanDuel is ahead of ESPN', () => {
+    const game = liveFdGame({
+      clockSeconds: 7 * 60,
+      clock: '7:00',
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 50,
+      yardLine: 50,
+    }, goalLineFd);
+    game.live.fdAheadOfEspn = true;
+    game.live.fd = { period: 1, clockSeconds: 6 * 60, down: 2, distance: 6 };
+    expect(situationUntrusted(game)).toBe(true);
+    const view = evaluateDriveGame(game, { market: listDriveSides(game)[0] });
+    expect(view.situationLag).toBe(true);
+    expect(view.evCount).toBeGreaterThan(0);
+    expect(view.situationLagDetail.text).toMatch(/Down\/distance: FanDuel is on 2nd & 6; ESPN still 1st & 10/);
+  });
+});
+
+describe('FAU / Army punt style warning', () => {
+  it('matches FAU and Army names, not other teams', () => {
+    expect(puntStyleWarningForOffense('Florida Atlantic Owls')?.id).toBe('fau');
+    expect(puntStyleWarningForOffense('FAU')?.id).toBe('fau');
+    expect(puntStyleWarningForOffense('Army Black Knights')?.id).toBe('army');
+    expect(puntStyleWarningForOffense('Army')?.id).toBe('army');
+    expect(puntStyleWarningForOffense('Texas')).toBeNull();
+    expect(puntStyleWarningForOffense('Navy Midshipmen')).toBeNull();
+    expect(puntStyleWarningForOffense('Florida State')).toBeNull();
+  });
+
+  it('flags a profitable FAU punt without changing the model mix', () => {
+    const market = {
+      source: 'fd',
+      marketName: '1st Florida Atlantic Drive Result',
+      offenseName: 'Florida Atlantic',
+      offenseSide: 'away',
+      outcomes: {
+        punt: { american: 250 },
+        td: { american: 200 },
+        other: { american: 400 },
+        fg: { american: 500 },
+      },
+    };
+    const game = {
+      eventId: 'fau-test',
+      name: 'Florida Atlantic @ Memphis',
+      teams: { home: 'Memphis', away: 'Florida Atlantic' },
+      inPlay: false,
+      score: { home: 0, away: 0 },
+      scoreDisplay: '0-0',
+      lines: {
+        spread: {
+          runners: [
+            { runnerName: 'Florida Atlantic', handicap: 7.5, american: -110 },
+            { runnerName: 'Memphis', handicap: -7.5, american: -110 },
+          ],
+        },
+        total: { runners: [{ runnerName: 'Over', handicap: 54.5, american: -110 }] },
+      },
+      driveMarkets: [market],
+      nextDrive: market,
+    };
+    const view = evaluateDriveGame(game, { market });
+    const punt = view.rows.find((row) => row.key === 'punt');
+    expect(punt.profitable).toBe(true);
+    expect(punt.styleWarning?.id).toBe('fau');
+    expect(punt.p).toBeCloseTo(view.pred.p.punt, 8);
+  });
+
+  it('does not warn on a profitable Texas punt', () => {
+    const game = texasStateAtTexas();
+    const texas = game.driveMarkets[1];
+    texas.outcomes.punt = { american: 400 };
+    const view = evaluateDriveGame(game, { market: texas });
+    const punt = view.rows.find((row) => row.key === 'punt');
+    expect(punt.styleWarning).toBeNull();
   });
 });

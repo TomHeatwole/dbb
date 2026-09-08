@@ -18,9 +18,26 @@ import { DRIVE_RESULT_MODEL, scoreLgbmLayer } from './driveResultLgbm.js';
 import { isMadeScoreLabel } from './espnDriveChart.js';
 import { predictOpponentStart } from './nextDriveStart.js';
 import { ytgFromSpot } from './ytgFromSpot.js';
+import { formatDownAndDistance, formatFdLiveSpot } from './fdLiveSituation.js';
 
 /** ESPN scrape: example_data/ncaaf_drive_results/espn_ncaaf_drives.csv */
 export const RAW_DRIVE_N = 113712;
+
+/** Callers who go on 4th far more than the trees assume. UI warning only. */
+export const PUNT_STYLE_WARNINGS = [
+  {
+    id: 'fau',
+    label: 'FAU',
+    needles: ['florida atlantic', 'fau'],
+    detail: 'Zach Kittley goes for it on 4th more than almost anyone in FBS (67% go vs punt in 2025). The model still prices FAU like the league, so this punt edge is probably overstated.',
+  },
+  {
+    id: 'army',
+    label: 'Army',
+    needles: ['army black knights', 'army west point', 'army'],
+    detail: 'Army almost never punts on 4th-and-short (91% go on 4th & 1–2 outside FG range). Option identity — the model still prices them like a normal punt team, so this edge is probably overstated.',
+  },
+];
 
 export const DRIVE_BUCKETS = [
   {
@@ -134,6 +151,30 @@ export function nameMatchScore(hay, needle) {
     }
   }
   return 0;
+}
+
+export function puntStyleWarningForOffense(name) {
+  const hay = String(name ?? '').trim();
+  if (!hay) return null;
+  let best = null;
+  let bestScore = 0;
+  for (const row of PUNT_STYLE_WARNINGS) {
+    for (const needle of row.needles) {
+      let score = nameMatchScore(hay, needle);
+      if (!score) {
+        const n = normalizeName(needle);
+        const h = normalizeName(hay);
+        if (n && n.length <= 4 && (h === n || h.startsWith(`${n} `) || nameWords(h).includes(n))) {
+          score = 50 + n.length;
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = { id: row.id, label: row.label, detail: row.detail };
+      }
+    }
+  }
+  return best;
 }
 
 function pickNamedSide(named, home, away) {
@@ -448,7 +489,90 @@ export function applyOddsAheadFlags(prevGames, nextGames) {
 }
 
 export function situationUntrusted(game) {
-  return Boolean(game?.live?.oddsAheadOfSpot) || espnSituationLagsLastPlay(game);
+  return Boolean(game?.live?.oddsAheadOfSpot)
+    || Boolean(game?.live?.fdAheadOfEspn)
+    || espnSituationLagsLastPlay(game);
+}
+
+function impliedDownAndDistance(live) {
+  const type = live?.lastPlayType;
+  const text = live?.lastPlay;
+  if (lastPlayEndedSeries(type, text)) {
+    const blob = `${type || ''} ${text || ''}`;
+    const why = /punt/i.test(blob) ? 'a punt'
+      : /intercept/i.test(blob) ? 'an interception'
+        : /fumble/i.test(blob) ? 'a fumble'
+          : /missed|no good/i.test(blob) ? 'a missed FG'
+            : /field goal/i.test(blob) ? 'a field goal'
+              : (isMadeScoreLabel(type) || isMadeScoreLabel(text)) ? 'a score'
+                : 'a change of possession';
+    return { label: 'drive over', why };
+  }
+  const down = Number(live?.down);
+  const distance = Number(live?.distance);
+  const yards = Number.isFinite(Number(live?.lastPlayYards))
+    ? Number(live.lastPlayYards)
+    : playYardageFromText(text);
+  if (!Number.isFinite(down) || !Number.isFinite(distance) || !Number.isFinite(yards)) return null;
+  if (yards >= distance) {
+    const ytg = Number(live?.yardsToEndzone);
+    const nextYtg = Number.isFinite(ytg) ? ytg - yards : NaN;
+    const label = Number.isFinite(nextYtg) && nextYtg > 0 && nextYtg < 10 ? '1st & Goal' : '1st & 10';
+    return { label, why: `gained ${yards}` };
+  }
+  if (down >= 4) return { label: 'drive over', why: `gained ${yards} on 4th` };
+  return {
+    label: formatDownAndDistance(down + 1, Math.max(1, distance - yards)),
+    why: yards === 0 ? 'no gain' : yards < 0 ? `loss of ${-yards}` : `gained ${yards}`,
+  };
+}
+
+/** ESPN’s posted down/distance vs what the last play (or FanDuel) already implies. */
+export function describeSpotLag(game) {
+  if (!situationUntrusted(game)) return null;
+  const live = game?.live ?? {};
+  const espnSpot = live.downDistance || formatDownAndDistance(live.down, live.distance);
+  const implied = impliedDownAndDistance(live);
+  const fdSpot = formatDownAndDistance(live.fd?.down ?? game?.fdLive?.down, live.fd?.distance ?? game?.fdLive?.distance)
+    || live.fd?.downDistance
+    || game?.fdLive?.downDistance
+    || null;
+  if (espnSpot && implied?.label && implied.label !== espnSpot) {
+    return {
+      espnSpot,
+      impliedSpot: implied.label,
+      text: `Down/distance: ESPN still ${espnSpot}; last play says ${implied.label}${implied.why ? ` (${implied.why})` : ''}.`,
+    };
+  }
+  if (fdSpot && espnSpot && fdSpot !== espnSpot) {
+    return {
+      espnSpot,
+      impliedSpot: fdSpot,
+      text: `Down/distance: FanDuel is on ${fdSpot}; ESPN still ${espnSpot}.`,
+    };
+  }
+  if (espnSpot && implied?.label) {
+    return {
+      espnSpot,
+      impliedSpot: implied.label,
+      text: `Down/distance: ESPN still ${espnSpot}; last play says ${implied.label}.`,
+    };
+  }
+  if (espnSpot) {
+    const fdFull = formatFdLiveSpot(live.fd || game?.fdLive);
+    return {
+      espnSpot,
+      impliedSpot: fdFull || null,
+      text: fdFull
+        ? `Down/distance: FanDuel already moved (${fdFull}); ESPN still ${espnSpot}.`
+        : `Down/distance: ESPN still ${espnSpot}; it has not caught up to the last play.`,
+    };
+  }
+  return {
+    espnSpot: null,
+    impliedSpot: implied?.label || null,
+    text: 'Down/distance: ESPN looks behind the last play.',
+  };
 }
 
 /**
@@ -626,9 +750,10 @@ export function driveNumberForSide(game, side, extras = {}) {
       }
     }
     if (Number.isFinite(started) && started >= 0) {
-      // Only the in-progress series uses the started count. A completed ESPN
-      // "current" (just-scored TD, etc.) is already in started; next is +1.
-      if (chart.currentSide === side) return started || 1;
+      const up = firstUpSide(game);
+      const chartHere = chart.currentSide === side;
+      if (up && up !== side) return started + 1;
+      if (chartHere) return started || 1;
       return started + 1;
     }
   }
@@ -978,13 +1103,13 @@ export function evaluateDriveGame(game, {
     ? (nextDrive?.outcomes ?? {})
     : {};
   const lag = situationUntrusted(view);
-  const hideEdges = Boolean(view?.inPlay && lag && (
+  const situationLag = Boolean(view?.inPlay && lag && (
     pred?.layer === 'snap' || pred?.afterPriorDrive || pred?.firstUp
   ));
   const rows = DRIVE_BUCKETS.map((bucket) => {
     const modelP = pred?.p?.[bucket.key];
     const p = Number.isFinite(modelP) ? modelP : bucket.p;
-    const fairAmerican = hideEdges ? null : probToAmerican(p);
+    const fairAmerican = probToAmerican(p);
     const quote = outcomes[bucket.key] ?? null;
     const source = nextDrive?.source;
     const fdAmerican = Number.isFinite(quote?.fd?.american) && quote.fd.american !== 0
@@ -995,13 +1120,13 @@ export function evaluateDriveGame(game, {
       : (source === 'dk' && Number.isFinite(quote?.american) && quote.american !== 0 ? quote.american : null);
     const american = fdAmerican ?? dkAmerican
       ?? (Number.isFinite(quote?.american) && quote.american !== 0 ? quote.american : null);
-    const fdAnalysis = hideEdges ? null : analyzeAgainstBreakeven(fdAmerican, fairAmerican);
-    const dkAnalysis = hideEdges ? null : analyzeAgainstBreakeven(dkAmerican, fairAmerican);
+    const fdAnalysis = analyzeAgainstBreakeven(fdAmerican, fairAmerican);
+    const dkAnalysis = analyzeAgainstBreakeven(dkAmerican, fairAmerican);
     const analysis = (dkAnalysis?.edgePoints ?? -Infinity) > (fdAnalysis?.edgePoints ?? -Infinity)
       ? dkAnalysis
       : fdAnalysis;
     const offeredForKelly = (analysis === dkAnalysis ? dkAmerican : fdAmerican) ?? american;
-    const profitable = Boolean(!hideEdges && analysis?.profitable && offeredForKelly != null);
+    const profitable = Boolean(analysis?.profitable && offeredForKelly != null);
     const kellyStake = kellyEnabled && profitable
       ? computeKellyStake({
         winProb: p,
@@ -1028,10 +1153,17 @@ export function evaluateDriveGame(game, {
       fdAnalysis,
       dkAnalysis,
       profitable,
-      edgePoints: hideEdges ? null : (analysis?.edgePoints ?? null),
+      edgePoints: analysis?.edgePoints ?? null,
       kellyStake,
+      styleWarning: null,
     };
   });
+
+  const puntWarn = puntStyleWarningForOffense(offense.name);
+  if (puntWarn) {
+    const puntRow = rows.find((row) => row.key === 'punt');
+    if (puntRow?.profitable) puntRow.styleWarning = puntWarn;
+  }
 
   const implied = rows.map((row) => americanToImpliedProb(row.american));
   const vigSum = implied.every((p) => Number.isFinite(p))
@@ -1056,7 +1188,8 @@ export function evaluateDriveGame(game, {
     offenseName: offense.name,
     offenseSide: offense.side,
     driveNumber: driveNumberForSide(view, offense.side, { pred }),
-    situationLag: hideEdges,
+    situationLag,
+    situationLagDetail: situationLag ? describeSpotLag(view) : null,
   };
 }
 

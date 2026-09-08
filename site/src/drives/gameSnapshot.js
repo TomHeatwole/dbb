@@ -130,6 +130,7 @@ export function buildDrivesGameSnapshot(game, { granular = false } = {}) {
       : '—',
     edgePoints: play?.edgePoints ?? null,
     profitable: Boolean(play?.profitable),
+    styleWarning: play?.styleWarning ?? null,
   };
 }
 
