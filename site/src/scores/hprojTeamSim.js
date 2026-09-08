@@ -8,9 +8,22 @@ import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import { lookupHprojVariance, sampleHprojResidual } from './hprojVarianceBuckets';
 
 export const HPROJ_SKILL_POS = ['QB', 'RB', 'WR', 'TE'];
-export const HPROJ_ITERATIONS = 4000;
+export const HPROJ_ITERATIONS = 40000;
 export const HPROJ_LIST_ITERATIONS = 1600;
-const WINDOW_HALF = 80;
+export const HPROJ_TEAM_PCT_MAX = 99.9;
+const WINDOW_HALF_MID = 80;
+const WINDOW_HALF_TAIL = 20;
+
+export function clampTeamPercentile(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 50;
+  return Math.round(Math.max(0, Math.min(HPROJ_TEAM_PCT_MAX, n)) * 10) / 10;
+}
+
+export function formatTeamPercentile(raw) {
+  const v = clampTeamPercentile(raw);
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
 
 function skillPosition(raw) {
   if (raw === 'FB') return 'RB';
@@ -47,12 +60,23 @@ function emptyByPos() {
   return { QB: 0, RB: 0, WR: 0, TE: 0 };
 }
 
+function windowHalfFor(n, idx) {
+  const distToEdge = Math.min(idx, n - 1 - idx);
+  const taper = Math.max(1, Math.round(n * 0.01));
+  if (distToEdge >= taper) return WINDOW_HALF_MID;
+  return Math.max(
+    WINDOW_HALF_TAIL,
+    Math.round(WINDOW_HALF_TAIL + (WINDOW_HALF_MID - WINDOW_HALF_TAIL) * (distToEdge / taper)),
+  );
+}
+
 function windowSlice(sorted, percentile01) {
   const n = sorted.length;
   if (n === 0) return [];
   const idx = Math.round(percentile01 * (n - 1));
-  const lo = Math.max(0, idx - WINDOW_HALF);
-  const hi = Math.min(n, idx + WINDOW_HALF + 1);
+  const half = windowHalfFor(n, idx);
+  const lo = Math.max(0, idx - half);
+  const hi = Math.min(n, idx + half + 1);
   return sorted.slice(lo, hi);
 }
 
@@ -95,10 +119,10 @@ function rankSlotPlayers(map, denom) {
 }
 
 /**
- * Typical lineup + position totals around a team-total percentile (0–99).
+ * Typical lineup + position totals around a team-total percentile (0–99.9).
  */
 export function hprojAtPercentile(sorted, percentile) {
-  const pct = Math.max(0, Math.min(99, Math.round(Number(percentile) || 0)));
+  const pct = clampTeamPercentile(percentile);
   const slice = windowSlice(sorted || [], pct / 100);
   const denom = slice.length || 1;
   const totals = windowBreakdown(sorted || [], pct / 100);
@@ -178,10 +202,10 @@ export function hprojAtPercentile(sorted, percentile) {
  * `salt` re-rolls which draw in that band is shown.
  */
 export function hprojRandomOutcome(sorted, percentile, salt = 0) {
-  const pct = Math.max(0, Math.min(99, Math.round(Number(percentile) || 0)));
+  const pct = clampTeamPercentile(percentile);
   const slice = windowSlice(sorted || [], pct / 100);
   if (slice.length === 0) return null;
-  const rng = mulberry32(hashSeed(`hproj-draw:${pct}:${salt}`));
+  const rng = mulberry32(hashSeed(`hproj-draw:${pct.toFixed(1)}:${salt}`));
   const pick = slice[Math.floor(rng() * slice.length)];
   return {
     percentile: pct,
@@ -199,6 +223,8 @@ export function hprojRandomOutcome(sorted, percentile, salt = 0) {
       pts: round1(s.pts),
       playerPct: s.playerPct,
     })),
+    weekPts: pick.weekPts || {},
+    playerPctById: pick.playerPct || {},
     window: slice.length,
   };
 }
@@ -254,6 +280,7 @@ export function simulateTeamHproj({
     const row = { total: scored.total, byPos: scored.byPos };
     if (keepLineups) {
       row.playerPct = playerPct;
+      row.weekPts = weekPts;
       row.starters = scored.starters.map((s) => ({
         slot: s.slot,
         id: s.id,

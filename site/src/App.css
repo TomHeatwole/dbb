@@ -24382,18 +24382,41 @@ button.corners-bet:hover {
 /* ── HProj ── */
 
 .info-rel:has(.hproj-page) .info-page-header,
-.info-rel:has(.hproj-page-head) .info-page-header {
-  padding: 0;
+.info-rel:has(.hproj-page-head) .info-page-header,
+.info-rel:has(.hproj-loading) .info-page-header {
+  padding: 0 0.85rem;
 }
 
-.info-container:has(.hproj-page) {
+.info-container:has(.hproj-page),
+.info-container:has(.hproj-page-head),
+.info-container:has(.hproj-loading) {
   box-sizing: border-box;
-  padding: 0 0 1.5rem;
+  padding: 0 0.85rem 1.5rem;
 }
 
 .hproj-page {
   width: 100%;
   margin: 0;
+}
+
+.hproj-loading.loading-center {
+  min-height: 22rem;
+  padding: 3rem 0 4rem;
+}
+
+.hproj-loading .spinner {
+  border: 3px solid rgba(255, 255, 255, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.85);
+}
+
+.hproj-loading .loading-text {
+  color: #cbd5e1;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.hproj-loading .loading-logo {
+  opacity: 0.7;
 }
 
 .hproj-page-head {
@@ -24542,7 +24565,7 @@ button.corners-bet:hover {
   align-items: center;
   gap: 0.8rem;
   min-width: 0;
-  padding: 1.1rem 1.15rem 1.2rem;
+  padding: 1.2rem 1.45rem 1.35rem;
   border-radius: 0.9rem;
   background: rgba(12, 18, 34, 0.78);
   border: 1px solid rgba(148, 180, 255, 0.12);
@@ -24632,7 +24655,7 @@ button.corners-bet:hover {
   align-items: center;
   column-gap: 0.5rem;
   row-gap: 0.28rem;
-  padding: 0.48rem 0.55rem 0.42rem;
+  padding: 0.5rem 0.7rem 0.48rem;
   border-radius: 0.55rem;
   background: rgba(16, 22, 41, 0.7);
   border: 1px solid rgba(148, 180, 255, 0.1);
@@ -24891,6 +24914,23 @@ button.corners-bet:hover {
   color: #64748b;
 }
 
+.hproj-slider-tick {
+  margin: 0;
+  padding: 0.1rem 0.2rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.hproj-slider-tick:hover,
+.hproj-slider-tick.is-active {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .hproj-pos-strip {
   display: flex;
   flex-wrap: wrap;
@@ -24920,7 +24960,7 @@ button.corners-bet:hover {
   border: 1px solid #2a3350;
   border-radius: 0.75rem;
   background: radial-gradient(circle at top, #252f55 0%, #101629 55%, #0c1222 100%);
-  padding: 0.55rem 0.75rem 0.65rem;
+  padding: 0.6rem 0.95rem 0.75rem;
 }
 
 .hproj-lineup-kicker {
@@ -24944,6 +24984,47 @@ button.corners-bet:hover {
 
 .hproj-lineup-row:first-of-type {
   border-top: none;
+}
+
+.hproj-lineup-row--bench {
+  opacity: 0.82;
+}
+
+.hproj-bench-toggle {
+  display: grid;
+  grid-template-columns: 3.35rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0.15rem 0 0;
+  padding: 0.5rem 0.1rem 0.35rem;
+  border: none;
+  border-top: 1px solid rgba(53, 69, 110, 0.85);
+  background: transparent;
+  color: #cfe0ff;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.hproj-bench-toggle:hover {
+  color: #fff;
+}
+
+.hproj-bench-chevron {
+  opacity: 0.8;
+}
+
+.hproj-bench-label {
+  text-align: left;
+}
+
+.hproj-bench-total {
+  font-variant-numeric: tabular-nums;
+  color: #94a3b8;
 }
 
 .hproj-lineup-main {
@@ -24977,6 +25058,13 @@ button.corners-bet:hover {
 .hproj-player .pos-badge {
   flex: 0 0 auto;
   font-size: 0.55rem;
+}
+
+.hproj-player .injury-badge {
+  flex: 0 0 auto;
+  margin-left: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
 }
 
 .hproj-lineup-alts {

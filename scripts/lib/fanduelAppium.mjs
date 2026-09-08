@@ -516,9 +516,8 @@ export function foldTeamText(s) {
     .trim();
 }
 
-export function pageMatchesGame(xml, game) {
+export function namesOnPage(xml, game) {
   if (!game?.away || !game?.home) return false;
-  if (!/Drive\s+\d+\s*-+\s*Result/i.test(xml)) return false;
   const blob = foldTeamText(xml);
   const has = (name) => {
     const n = foldTeamText(name);
@@ -528,6 +527,19 @@ export function pageMatchesGame(xml, game) {
     return words.length && words.every((w) => blob.includes(w));
   };
   return has(game.away) && has(game.home);
+}
+
+export function pageLooksLikeGame(xml, game) {
+  if (!game?.away || !game?.home) return false;
+  if (isGameListOpen(xml)) return false;
+  if (!namesOnPage(xml, game)) return false;
+  return /content-desc="Navigate up"/.test(xml)
+    || /tab-Quick Bets|tab-Drive|tab-Same Game/i.test(xml)
+    || /Drive\s+\d+\s*-+\s*Result/i.test(xml);
+}
+
+export function pageMatchesGame(xml, game) {
+  return pageLooksLikeGame(xml, game) && /Drive\s+\d+\s*-+\s*Result/i.test(xml);
 }
 
 export function isOnEventPage(xml) {
@@ -566,14 +578,77 @@ async function cardSelectedNow(sessionId, eventId, xml = '') {
   return selected === 'true';
 }
 
-async function openEventCard(sessionId, eventId) {
-  if (!eventId) return false;
-  return clickUi(sessionId, `new UiSelector().resourceId("event-card-${eventId}")`);
+const HEADER_SAFE_Y = 520;
+
+async function elementRect(sessionId, id) {
+  if (!id) return null;
+  try {
+    return await wd('GET', `/session/${sessionId}/element/${id}/rect`);
+  } catch {
+    return null;
+  }
+}
+
+async function findEventCard(sessionId, eventId, game = null) {
+  const selectors = [
+    eventId ? `new UiSelector().resourceId("event-card-${eventId}")` : null,
+    game?.away && game?.home
+      ? `new UiSelector().descriptionContains("${game.away} versus ${game.home}")`
+      : null,
+  ].filter(Boolean);
+  for (const selector of selectors) {
+    const id = await findUi(sessionId, selector);
+    if (id) return id;
+  }
+  return null;
+}
+
+async function tapEventCard(sessionId, eventId, game = null) {
+  const id = await findEventCard(sessionId, eventId, game);
+  if (!id) return false;
+  const rect = await elementRect(sessionId, id);
+  if (rect && rect.height) {
+    const bottom = rect.y + rect.height;
+    const x = Math.round(rect.x + rect.width * 0.5);
+    let y = Math.round(rect.y + rect.height * 0.75);
+    if (y < HEADER_SAFE_Y && bottom > HEADER_SAFE_Y + 28) y = HEADER_SAFE_Y + 28;
+    if (bottom > y) {
+      await tap(sessionId, x, Math.min(y, bottom - 24));
+      return true;
+    }
+  }
+  try {
+    await wd('POST', `/session/${sessionId}/element/${id}/click`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function onRequestedGame(xml, game) {
+  if (game) return pageLooksLikeGame(xml, game);
+  return isOnEventPage(xml);
+}
+
+async function waitLanded(sessionId, eventId, game, firstXml = null) {
+  for (let i = 0; i < 5; i += 1) {
+    const page = firstXml && i === 0 ? firstXml : await source(sessionId);
+    if (await slateModalOpen(sessionId, page)) {
+      if (await cardSelectedNow(sessionId, eventId, page)) {
+        const closed = await closeGameList(sessionId, page);
+        if (onRequestedGame(closed, game)) return true;
+      }
+    } else if (onRequestedGame(page, game)) {
+      return true;
+    }
+    await sleep(400);
+  }
+  return false;
 }
 
 export async function openGame(sessionId, eventId, game = null) {
   const current = await source(sessionId);
-  if (game && pageMatchesGame(current, game) && !(await slateModalOpen(sessionId, current))) {
+  if (onRequestedGame(current, game) && !(await slateModalOpen(sessionId, current))) {
     return true;
   }
 
@@ -581,47 +656,30 @@ export async function openGame(sessionId, eventId, game = null) {
 
   if (await cardSelectedNow(sessionId, eventId, xml)) {
     xml = await closeGameList(sessionId, xml);
-    if (game ? pageMatchesGame(xml, game) : isOnEventPage(xml)) return true;
+    if (await waitLanded(sessionId, eventId, game, xml)) return true;
   }
 
-  const landed = async () => {
-    const next = await source(sessionId);
-    if (await slateModalOpen(sessionId, next)) {
-      if (await cardSelectedNow(sessionId, eventId, next)) {
-        const closed = await closeGameList(sessionId, next);
-        return game ? pageMatchesGame(closed, game) : isOnEventPage(closed);
+  const tryFind = async (direction) => {
+    for (let i = 0; i < 20; i += 1) {
+      if (await cardSelectedNow(sessionId, eventId)) {
+        xml = await closeGameList(sessionId, await source(sessionId));
+        if (await waitLanded(sessionId, eventId, game, xml)) return true;
       }
-      return false;
-    }
-    return game ? pageMatchesGame(next, game) : isOnEventPage(next);
-  };
-
-  const tryFind = async () => {
-    for (let i = 0; i < 28; i += 1) {
-      xml = await slateXml(sessionId);
-      if (await openEventCard(sessionId, eventId)) {
-        await sleep(1600);
-        if (await landed()) return true;
+      if (await tapEventCard(sessionId, eventId, game)) {
+        await sleep(1100);
+        if (await waitLanded(sessionId, eventId, game)) return true;
+        continue;
       }
-      const b = cardBounds(xml, eventId);
-      if (b && b.y2 > 380 && b.y1 < 2220) {
-        if (await cardSelectedNow(sessionId, eventId, xml)) {
-          xml = await closeGameList(sessionId, xml);
-          return game ? pageMatchesGame(xml, game) : isOnEventPage(xml);
-        }
-        const { x, y } = center(b);
-        await tap(sessionId, x, y);
-        await sleep(1600);
-        if (await landed()) return true;
-      }
-      await scrollGameList(sessionId, 'down');
-      await sleep(400);
+      await scrollGameList(sessionId, direction);
+      await sleep(350);
     }
     return false;
   };
-  if (await tryFind()) return true;
+
+  if (await tryFind('up')) return true;
+  if (await tryFind('down')) return true;
   await scrollToTop(sessionId);
-  return tryFind();
+  return tryFind('down');
 }
 
 export const DRIVE_OUTCOMES = [

@@ -1,16 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PageMeta from '../PageMeta';
+import LoadingState from '../LoadingState';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { CURRENT_YEAR, getDefaultDisplayWeek } from '../utils/DateHelper';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
+import { fetchInjuriesForWeek, getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import useWeeklyProjectedPoints from '../scores/useWeeklyProjectedPoints';
 import { computeOptimalWeekDetail } from '../scenarios/simulatorLineup';
 import { hprojQuantile } from '../scores/hprojVarianceBuckets';
 import {
   HPROJ_SKILL_POS,
+  HPROJ_TEAM_PCT_MAX,
+  formatTeamPercentile,
   hprojRandomOutcome,
   resolveHprojTeam,
   simulateTeamHproj,
@@ -27,8 +31,8 @@ function signed(n) {
   return n > 0 ? `+${v}` : v;
 }
 
-function hprojHeat(pct) {
-  const t = Math.max(0, Math.min(99, Number(pct) || 0)) / 99;
+function hprojHeat(pct, max = 99) {
+  const t = Math.max(0, Math.min(max, Number(pct) || 0)) / max;
   const red = [252, 165, 165];
   const yellow = [253, 224, 71];
   const green = [134, 239, 172];
@@ -57,7 +61,57 @@ function slotBadgeClass(slot) {
   return 'pos-badge--other';
 }
 
-function PlayerChip({ id, playersData, playerIdMap, showPos = null }) {
+function playerInjuryStatus(id, info, injuriesMap) {
+  const pid = String(id);
+  if (injuriesMap && injuriesMap[pid]) return injuriesMap[pid];
+  const espn = info && (info.espn_id || info.metadata?.espn_id);
+  if (injuriesMap && espn && injuriesMap[String(espn)]) return injuriesMap[String(espn)];
+  if (!info) return null;
+  return info.injury_status || info.injury_notes || (
+    info.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve|na/i.test(info.status)
+      ? info.status
+      : null
+  );
+}
+
+function InjuryBadge({ id, info, injuriesMap }) {
+  const status = playerInjuryStatus(id, info, injuriesMap);
+  const ab = status ? getInjuryAbbreviation(status) : null;
+  if (!ab) return null;
+  const isRetired = ab === 'NA';
+  return (
+    <span className={isRetired ? 'injury-badge injury-badge--retired' : 'injury-badge'} title={status}>
+      {isRetired ? 'Retired 😂' : ab}
+    </span>
+  );
+}
+
+function LineupRow({ p, playersData, playerIdMap, injuriesMap, showPos = null }) {
+  return (
+    <div className={`hproj-lineup-row${p.slot === 'BENCH' ? ' hproj-lineup-row--bench' : ''}`}>
+      <span className={`pos-badge ${slotBadgeClass(p.slot)}`}>{p.slot}</span>
+      <div className="hproj-lineup-main">
+        <PlayerChip
+          id={p.id}
+          playersData={playersData}
+          playerIdMap={playerIdMap}
+          injuriesMap={injuriesMap}
+          showPos={showPos}
+        />
+      </div>
+      <div className="hproj-lineup-nums">
+        <span className="hproj-lineup-pts" style={p.playerPct != null ? { color: hprojHeat(p.playerPct) } : undefined}>{fmt(p.pts)}</span>
+        {p.playerPct != null ? (
+          <span className="hproj-lineup-rate" style={{ color: hprojHeat(p.playerPct) }}>P{p.playerPct} player outcome</span>
+        ) : (
+          <span className="hproj-lineup-rate">no sample</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PlayerChip({ id, playersData, playerIdMap, injuriesMap, showPos = null }) {
   const info = getPlayerInfo(id, playersData, playerIdMap);
   const name = (info && info.name) || id;
   const photo = getPlayerLogoUrl(info && info.espn_photo_url);
@@ -69,6 +123,7 @@ function PlayerChip({ id, playersData, playerIdMap, showPos = null }) {
       {pos ? (
         <span className={`pos-badge pos-badge--${String(pos).toLowerCase()}`}>{pos}</span>
       ) : null}
+      <InjuryBadge id={id} info={info} injuriesMap={injuriesMap} />
     </span>
   );
 }
@@ -167,24 +222,44 @@ function TeamSwitch({ options, current, onSelect }) {
   );
 }
 
-function PercentileSlider({ value, onChange, ariaLabel }) {
-  const heat = hprojHeat(value);
+function PercentileSlider({
+  value,
+  onChange,
+  ariaLabel,
+  min = 0,
+  max = 99,
+  step = 1,
+}) {
+  const heat = hprojHeat(value, max);
   return (
     <div className="hproj-slider">
       <input
         type="range"
         className="hproj-slider-input"
-        min={0}
-        max={99}
+        min={min}
+        max={max}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         aria-label={ariaLabel}
         style={{ accentColor: heat, color: heat }}
       />
       <div className="hproj-slider-ends">
-        <span style={{ color: hprojHeat(0) }}>P0</span>
-        <span style={{ color: hprojHeat(50) }}>P50</span>
-        <span style={{ color: hprojHeat(99) }}>P99</span>
+        {[
+          { pct: min, label: `P${formatTeamPercentile(min)}` },
+          { pct: 50, label: 'P50' },
+          { pct: max, label: `P${formatTeamPercentile(max)}` },
+        ].map(({ pct, label }) => (
+          <button
+            key={label}
+            type="button"
+            className={`hproj-slider-tick${value === pct ? ' is-active' : ''}`}
+            style={{ color: hprojHeat(pct, max) }}
+            onClick={() => onChange(pct)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -204,23 +279,28 @@ function HprojPage() {
   const [teamMap, setTeamMap] = useState(null);
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
+  const [injuriesMap, setInjuriesMap] = useState({});
   const [loadError, setLoadError] = useState(null);
   const [percentile, setPercentile] = useState(50);
   const [drawSalt, setDrawSalt] = useState(0);
+  const [benchOpen, setBenchOpen] = useState(false);
   const [playerPcts, setPlayerPcts] = useState({});
+  const [resultState, setResultState] = useState({ key: null, data: null });
   const projectedPtsById = useWeeklyProjectedPoints(season, Number.isFinite(week) ? week : 1);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [teamData, idMap] = await Promise.all([
+        const [teamData, idMap, injuries] = await Promise.all([
           fetchTeamData(season),
           fetchPlayerIdMap(),
+          fetchInjuriesForWeek(season, week),
         ]);
         if (cancelled) return;
         setTeamMap(buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users));
         setPlayerIdMap(idMap);
+        setInjuriesMap(injuries || {});
         const players = await fetchPlayersData(teamData.rosters, { week });
         if (cancelled) return;
         setPlayersData(players);
@@ -234,6 +314,7 @@ function HprojPage() {
   useEffect(() => {
     setDrawSalt(0);
     setPlayerPcts({});
+    setBenchOpen(false);
   }, [teamParam, week]);
 
   const teamInfo = useMemo(
@@ -286,24 +367,41 @@ function HprojPage() {
     setSearchParams({ team: String(opt.query || opt.rid), week: String(week) });
   }
 
-  const result = useMemo(() => {
-    if (missing || !teamInfo || !playersData) return null;
-    if (!projectedPtsById || Object.keys(projectedPtsById).length === 0) return null;
-    const playerIds = teamInfo.roster?.players || [];
-    const playerPositions = {};
-    for (const pid of playerIds) {
-      const rec = playersData[pid] || playersData[String(pid)];
-      const raw = rec?.position || rec?.fantasy_positions?.[0] || null;
-      playerPositions[String(pid)] = skillPosition(raw);
-    }
-    return simulateTeamHproj({
-      playerIds,
-      projectedPtsById,
-      playerPositions,
-      seed: `${teamInfo.rid}-${season}-${week}`,
-      keepLineups: true,
-    });
-  }, [missing, teamInfo, playersData, projectedPtsById, season, week]);
+  const canSimulate = Boolean(
+    !missing
+    && teamInfo
+    && playersData
+    && projectedPtsById
+    && Object.keys(projectedPtsById).length > 0,
+  );
+  const simKey = canSimulate ? `${teamInfo.rid}-${season}-${week}` : null;
+  const result = resultState.key === simKey ? resultState.data : null;
+
+  useEffect(() => {
+    if (!simKey) return undefined;
+    let cancelled = false;
+    const timeoutId = setTimeout(() => {
+      const playerIds = teamInfo.roster?.players || [];
+      const playerPositions = {};
+      for (const pid of playerIds) {
+        const rec = playersData[pid] || playersData[String(pid)];
+        const raw = rec?.position || rec?.fantasy_positions?.[0] || null;
+        playerPositions[String(pid)] = skillPosition(raw);
+      }
+      const next = simulateTeamHproj({
+        playerIds,
+        projectedPtsById,
+        playerPositions,
+        seed: simKey,
+        keepLineups: true,
+      });
+      if (!cancelled) setResultState({ key: simKey, data: next });
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [simKey, teamInfo, playersData, projectedPtsById]);
 
   const outcome = useMemo(
     () => (result && result.sims ? hprojRandomOutcome(result.sims, percentile, drawSalt) : null),
@@ -333,6 +431,31 @@ function HprojPage() {
     rows.sort((a, b) => (b.proj || 0) - (a.proj || 0) || String(a.id).localeCompare(String(b.id)));
     return rows;
   }, [teamInfo, playersData, projectedPtsById]);
+
+  const benchRows = useMemo(() => {
+    if (!outcome || !rosterPlayers.length) return [];
+    const starterIds = new Set((outcome.starters || []).map((s) => String(s.id)));
+    const rows = [];
+    for (const row of rosterPlayers) {
+      if (starterIds.has(row.id)) continue;
+      const sampled = Number(outcome.weekPts?.[row.id]);
+      const pct = outcome.playerPctById?.[row.id];
+      rows.push({
+        slot: 'BENCH',
+        id: row.id,
+        position: row.pos,
+        pts: Number.isFinite(sampled) ? sampled : row.proj,
+        playerPct: Number.isFinite(pct) ? pct : null,
+      });
+    }
+    rows.sort((a, b) => (b.pts || 0) - (a.pts || 0) || String(a.id).localeCompare(String(b.id)));
+    return rows;
+  }, [outcome, rosterPlayers]);
+
+  const benchTotal = useMemo(
+    () => benchRows.reduce((sum, row) => sum + (Number(row.pts) || 0), 0),
+    [benchRows],
+  );
 
   const manual = useMemo(() => {
     const outcomes = {};
@@ -396,10 +519,14 @@ function HprojPage() {
         </div>
       )}
 
-      {!missing && teamInfo && !result && !loadError && (
-        <p className="hproj-copy">
-          {playersData ? 'Waiting for Sleeper weekly projections…' : 'Loading roster…'}
-        </p>
+      {!missing && !loadError && !result && (teamInfo || !teamMap) && (
+        <LoadingState
+          className="hproj-loading"
+          label={playersData && !canSimulate
+            ? 'Waiting for Sleeper weekly projections…'
+            : 'Loading roster…'}
+          ariaLabel="Loading HProj"
+        />
       )}
 
       {result && result.players === 0 && (
@@ -414,8 +541,8 @@ function HprojPage() {
             <section className="hproj-col hproj-col--team">
               <h2 className="hproj-col-title">Team outcome</h2>
               <div className="hproj-hero">
-                <div className="hproj-hero-value" style={{ color: hprojHeat(outcome.percentile) }}>{fmt(outcome.total)}</div>
-                <div className="hproj-hero-label" style={{ color: hprojHeat(outcome.percentile) }}>Random P{outcome.percentile} outcome</div>
+                <div className="hproj-hero-value" style={{ color: hprojHeat(outcome.percentile, HPROJ_TEAM_PCT_MAX) }}>{fmt(outcome.total)}</div>
+                <div className="hproj-hero-label" style={{ color: hprojHeat(outcome.percentile, HPROJ_TEAM_PCT_MAX) }}>Random P{formatTeamPercentile(outcome.percentile)} outcome</div>
                 <div className="hproj-hero-sub">
                   {signed(outcome.total - result.naiveTotal)} vs starter proj {fmt(result.naiveTotal)}
                 </div>
@@ -425,6 +552,9 @@ function HprojPage() {
                 value={percentile}
                 onChange={setPercentile}
                 ariaLabel="Team outcome percentile"
+                min={0}
+                max={HPROJ_TEAM_PCT_MAX}
+                step={0.1}
               />
 
               <div className="hproj-regen-row">
@@ -433,13 +563,13 @@ function HprojPage() {
                   className="hproj-regen"
                   onClick={() => setDrawSalt((n) => n + 1)}
                 >
-                  Regenerate P{percentile} outcome
+                  Regenerate P{formatTeamPercentile(percentile)} outcome
                 </button>
                 <button
                   type="button"
                   className="hproj-regen"
                   onClick={() => {
-                    setPercentile(Math.floor(Math.random() * 100));
+                    setPercentile(Math.round(Math.random() * 999) / 10);
                     setDrawSalt((n) => n + 1);
                   }}
                 >
@@ -459,28 +589,43 @@ function HprojPage() {
               <div className="hproj-lineup">
                 <div className="hproj-lineup-kicker">Starters in this draw</div>
                 {outcome.starters.map((p) => (
-                  <div key={p.slot} className="hproj-lineup-row">
-                    <span className={`pos-badge ${slotBadgeClass(p.slot)}`}>{p.slot}</span>
-                    <div className="hproj-lineup-main">
-                      <PlayerChip
-                        id={p.id}
+                  <LineupRow
+                    key={p.slot}
+                    p={p}
+                    playersData={playersData}
+                    playerIdMap={playerIdMap}
+                    injuriesMap={injuriesMap}
+                    showPos={/FLEX|SUPER/i.test(p.slot) ? p.position : null}
+                  />
+                ))}
+                {benchRows.length > 0 ? (
+                  <>
+                    <button
+                      type="button"
+                      className="hproj-bench-toggle"
+                      aria-expanded={benchOpen}
+                      onClick={() => setBenchOpen((open) => !open)}
+                    >
+                      <span className="hproj-bench-chevron" aria-hidden="true">{benchOpen ? '▾' : '▸'}</span>
+                      <span className="hproj-bench-label">{benchOpen ? 'Hide bench' : 'Show bench'}</span>
+                      <span className="hproj-bench-total">{fmt(benchTotal)}</span>
+                    </button>
+                    {benchOpen ? benchRows.map((p) => (
+                      <LineupRow
+                        key={p.id}
+                        p={p}
                         playersData={playersData}
                         playerIdMap={playerIdMap}
-                        showPos={/FLEX|SUPER/i.test(p.slot) ? p.position : null}
+                        injuriesMap={injuriesMap}
+                        showPos={p.position}
                       />
-                    </div>
-                    <div className="hproj-lineup-nums">
-                      <span className="hproj-lineup-pts" style={p.playerPct != null ? { color: hprojHeat(p.playerPct) } : undefined}>{fmt(p.pts)}</span>
-                      {p.playerPct != null ? (
-                        <span className="hproj-lineup-rate" style={{ color: hprojHeat(p.playerPct) }}>P{p.playerPct} player outcome</span>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
+                    )) : null}
+                  </>
+                ) : null}
               </div>
 
               <p className="hproj-footnote">
-                One simulated week from the P{outcome.percentile} band
+                One simulated week from the P{formatTeamPercentile(outcome.percentile)} band
                 {' '}({outcome.window.toLocaleString()} of {result.iterations.toLocaleString()} draws).
               </p>
             </section>
@@ -506,7 +651,7 @@ function HprojPage() {
 
               <p className="hproj-disclaimer">
                 Sliders use historical residuals by <strong>position and projection band</strong> (2021–2025).
-                Not player-specific, and no matchup or injury info.
+                Not player-specific. Injury tags are current status only.
               </p>
 
               <div className="hproj-player-list">
@@ -527,6 +672,7 @@ function HprojPage() {
                         id={row.id}
                         playersData={playersData}
                         playerIdMap={playerIdMap}
+                        injuriesMap={injuriesMap}
                         showPos={row.pos}
                       />
                       <div className="hproj-player-row-nums">

@@ -431,6 +431,21 @@ export function driveNumberFromName(name) {
   return null;
 }
 
+export function marketDriveNumber(market) {
+  const n = Number(market?.driveN);
+  if (Number.isFinite(n) && n >= 1) return n;
+  return driveNumberFromName(market?.marketName);
+}
+
+/** True when this book market is the drive we are actually pricing. */
+export function marketMatchesDriveNumber(game, market, side, extras = {}) {
+  const wanted = driveNumberForSide(game, side, { ...extras, market: undefined });
+  const got = marketDriveNumber(market);
+  if (!Number.isFinite(wanted)) return true;
+  if (Number.isFinite(got)) return got === wanted;
+  return wanted === 1;
+}
+
 export function formatDriveOrdinal(n) {
   const i = Math.round(Number(n));
   if (!Number.isFinite(i) || i < 1) return null;
@@ -445,27 +460,33 @@ export function formatDriveOrdinal(n) {
   return `${i}${suf}`;
 }
 
-/** FanDuel-style team drive number (ND's 6th). */
+/** ESPN chart first; book name is only a fallback when we have no chart. */
 export function driveNumberForSide(game, side, extras = {}) {
-  const fromMarket = driveNumberFromName(extras.market?.marketName);
-  if (Number.isFinite(fromMarket) && fromMarket >= 1) return fromMarket;
   const role = extras.role ?? driveCardRole(game, extras.pred);
   if (role === 'first' || !game?.inPlay || game?.live?.state === 'pre') return 1;
   const chart = game?.live?.driveChart;
-  if (!chart || (side !== 'home' && side !== 'away')) return null;
-  const startedRaw = side === 'home' ? chart.homeStarted : chart.awayStarted;
-  const completedRaw = side === 'home' ? chart.homeCompleted : chart.awayCompleted;
-  let started = Number(startedRaw);
-  if (!Number.isFinite(started)) {
-    const completed = Number(completedRaw);
-    if (!Number.isFinite(completed) || completed < 0) return null;
-    started = completed + (chart.currentSide === side ? 1 : 0);
+  if (chart && (side === 'home' || side === 'away')) {
+    const startedRaw = side === 'home' ? chart.homeStarted : chart.awayStarted;
+    const completedRaw = side === 'home' ? chart.homeCompleted : chart.awayCompleted;
+    let started = Number(startedRaw);
+    if (!Number.isFinite(started)) {
+      const completed = Number(completedRaw);
+      if (!Number.isFinite(completed) || completed < 0) {
+        started = NaN;
+      } else {
+        started = completed + (chart.currentSide === side ? 1 : 0);
+      }
+    }
+    if (Number.isFinite(started) && started >= 0) {
+      // Only the in-progress series uses the started count. A completed ESPN
+      // "current" (just-scored TD, etc.) is already in started; next is +1.
+      if (chart.currentSide === side) return started || 1;
+      return started + 1;
+    }
   }
-  if (started < 0) return null;
-  // Only the in-progress series uses the started count. A completed ESPN
-  // "current" (just-scored TD, etc.) is already in started; next is +1.
-  if (chart.currentSide === side) return started || 1;
-  return started + 1;
+  const fromMarket = marketDriveNumber(extras.market);
+  if (Number.isFinite(fromMarket) && fromMarket >= 1) return fromMarket;
+  return null;
 }
 
 function driveSideShell(game, side) {
@@ -484,24 +505,38 @@ function marketSide(market, home, away) {
     || (market?.offenseSide === 'home' || market?.offenseSide === 'away' ? market.offenseSide : null);
 }
 
+function pickMarketForSide(game, side, rows) {
+  const wanted = driveNumberForSide(game, side);
+  const numbered = rows.filter((market) => Number.isFinite(marketDriveNumber(market)));
+  if (Number.isFinite(wanted)) {
+    const match = numbered.find((market) => marketDriveNumber(market) === wanted);
+    if (match) return match;
+    if (wanted === 1) {
+      return rows.find((market) => !Number.isFinite(marketDriveNumber(market))) || null;
+    }
+    return null;
+  }
+  return rows[0] || null;
+}
+
 function pairBothDriveSides(game, books) {
   const home = game?.teams?.home;
   const away = game?.teams?.away;
-  const assigned = { away: null, home: null };
+  const bySide = { away: [], home: [] };
   const untitled = [];
   for (const market of books) {
     const side = marketSide(market, home, away);
-    if (side && !assigned[side]) assigned[side] = market;
+    if (side) bySide[side].push(market);
     else untitled.push(market);
   }
   const poss = firstUpSide(game);
   for (const market of untitled) {
-    if (poss && !assigned[poss]) assigned[poss] = market;
-    else if (!assigned.away) assigned.away = market;
-    else if (!assigned.home) assigned.home = market;
+    if (poss && !bySide[poss].length) bySide[poss].push(market);
+    else if (!bySide.away.length) bySide.away.push(market);
+    else if (!bySide.home.length) bySide.home.push(market);
   }
   const stamp = (side) => {
-    const row = assigned[side];
+    const row = pickMarketForSide(game, side, bySide[side]);
     if (!row) return driveSideShell(game, side);
     return {
       ...row,
@@ -791,7 +826,9 @@ export function evaluateDriveGame(game, {
     : game;
   const pred = predictDriveResult(view);
   const offense = resolveOffenseTeam(view, nextDrive);
-  const outcomes = nextDrive?.outcomes ?? {};
+  const outcomes = marketMatchesDriveNumber(view, nextDrive, offense.side, { pred })
+    ? (nextDrive?.outcomes ?? {})
+    : {};
   const rows = DRIVE_BUCKETS.map((bucket) => {
     const modelP = pred?.p?.[bucket.key];
     const p = Number.isFinite(modelP) ? modelP : bucket.p;
@@ -865,7 +902,7 @@ export function evaluateDriveGame(game, {
     market: nextDrive,
     offenseName: offense.name,
     offenseSide: offense.side,
-    driveNumber: driveNumberForSide(view, offense.side, { market: nextDrive, pred }),
+    driveNumber: driveNumberForSide(view, offense.side, { pred }),
   };
 }
 

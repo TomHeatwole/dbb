@@ -351,7 +351,41 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(next.driveNumber).toBe(5);
     expect(driveNumberForSide(game, 'home', {
       market: { marketName: "Washington's 8th Drive Result" },
-    })).toBe(8);
+    })).toBe(5);
+  });
+
+  it('does not render a stale Drive 1 book on a later ESPN drive', () => {
+    const stale = {
+      source: 'fd',
+      driveN: 1,
+      offenseSide: 'away',
+      offenseName: 'Washington State',
+      marketName: 'Washington St Drive 1 - Result',
+      outcomes: { td: { american: 220, fd: { american: 220 } } },
+    };
+    const live = {
+      source: 'fd',
+      driveN: 6,
+      offenseSide: 'away',
+      offenseName: 'Washington State',
+      marketName: 'Washington St Drive 6 - Result',
+      outcomes: { td: { american: 180, fd: { american: 180 } } },
+    };
+    const chart = { homeStarted: 4, awayStarted: 6, currentSide: 'away' };
+    const staleGame = wazzuAtWashington({
+      clockSeconds: 7 * 60,
+      clock: '7:00',
+      driveChart: chart,
+    });
+    staleGame.driveMarkets = [stale];
+    const staleView = evaluateDriveGame(staleGame, { market: listDriveSides(staleGame)[0] });
+    expect(staleView.driveNumber).toBe(6);
+    expect(staleView.rows.find((row) => row.key === 'td').fdAmerican).toBeNull();
+
+    const liveGame = { ...staleGame, driveMarkets: [stale, live] };
+    const liveView = evaluateDriveGame(liveGame, { market: listDriveSides(liveGame)[0] });
+    expect(liveView.driveNumber).toBe(6);
+    expect(liveView.rows.find((row) => row.key === 'td').fdAmerican).toBe(180);
   });
 
   it('uses unique ESPN starts, not completed+1, so a current drive is not counted twice', () => {
