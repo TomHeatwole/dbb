@@ -13,6 +13,7 @@ import {
   scoringSideAfterMadeKick,
   situationOffenseLabel,
   situationUntrusted,
+  spotLagKind,
   espnSituationLagsLastPlay,
   applyOddsAheadFlags,
   playYardageFromText,
@@ -773,12 +774,15 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     expect(espnSituationLagsLastPlay(lagged)).toBe(true);
     const view = evaluateDriveGame(lagged, { market: listDriveSides(lagged)[0] });
     expect(view.situationLag).toBe(true);
+    expect(view.situationLagKind).toBe('espnBehind');
     expect(view.evCount).toBeGreaterThan(0);
     expect(view.rows.some((row) => row.edgePoints != null)).toBe(true);
-    expect(view.situationLagDetail.espnSpot).toBe('3rd & 8');
+    expect(view.situationLagDetail.espnSpot).toBe('3rd and 8');
     expect(view.situationLagDetail.impliedSpot).toBe('1st & Goal');
-    expect(view.situationLagDetail.text).toMatch(/Down\/distance: ESPN still 3rd & 8/);
-    expect(view.situationLagDetail.text).toMatch(/1st & Goal/);
+    expect(view.situationLagDetail.espnLine).toMatch(/Q2 7:00/);
+    expect(view.situationLagDetail.espnLine).toMatch(/3rd and 8/);
+    expect(view.situationLagDetail.text).toMatch(/ESPN shows:/);
+    expect(view.situationLagDetail.text).toMatch(/Last play: 1st & Goal \(gained 42\)/);
     expect(describeSpotLag(lagged).text).toMatch(/gained 42/);
   });
 
@@ -864,20 +868,86 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
 
   it('still prices the current drive when FanDuel is ahead of ESPN', () => {
     const game = liveFdGame({
-      clockSeconds: 7 * 60,
-      clock: '7:00',
-      down: 1,
-      distance: 10,
-      yardsToEndzone: 50,
-      yardLine: 50,
+      period: 3,
+      clockSeconds: 2 * 60 + 8,
+      clock: '2:08',
+      down: 4,
+      distance: 2,
+      yardsToEndzone: 2,
+      yardLine: 2,
+      possessionText: 'SMU 2',
     }, goalLineFd);
     game.live.fdAheadOfEspn = true;
-    game.live.fd = { period: 1, clockSeconds: 6 * 60, down: 2, distance: 6 };
+    game.live.fd = {
+      period: 3,
+      clockSeconds: 2 * 60,
+      clock: '2:00',
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 75,
+      possessionText: 'Florida State 25',
+    };
     expect(situationUntrusted(game)).toBe(true);
     const view = evaluateDriveGame(game, { market: listDriveSides(game)[0] });
     expect(view.situationLag).toBe(true);
+    expect(view.situationLagKind).toBe('espnBehind');
+    expect(view.situationLagDetail.kind).toBe('espnBehind');
     expect(view.evCount).toBeGreaterThan(0);
-    expect(view.situationLagDetail.text).toMatch(/Down\/distance: FanDuel is on 2nd & 6; ESPN still 1st & 10/);
+    expect(view.situationLagDetail.fdLine).toBe('Q3 2:00  1st and 10  at Florida State 25');
+    expect(view.situationLagDetail.text).toBe([
+      'ESPN shows: Q3 2:08  4th and Goal  at SMU 2',
+      'FD shows: Q3 2:00  1st and 10  at Florida State 25',
+    ].join('\n'));
+  });
+
+  it('treats ESPN-ahead of FanDuel as stale odds, not a lagged-spot warning', () => {
+    const game = liveFdGame({
+      period: 3,
+      clockSeconds: 2 * 60,
+      clock: '2:00',
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 75,
+      yardLine: 25,
+      possessionText: 'Florida State 25',
+    }, goalLineFd);
+    game.live.fd = {
+      period: 3,
+      clockSeconds: 2 * 60 + 8,
+      clock: '2:08',
+      down: 4,
+      distance: 2,
+      yardsToEndzone: 2,
+      possessionText: 'SMU 2',
+    };
+    expect(situationUntrusted(game)).toBe(false);
+    expect(spotLagKind(game)).toBe('oddsStale');
+    const view = evaluateDriveGame(game, { market: listDriveSides(game)[0] });
+    expect(view.situationLag).toBe(true);
+    expect(view.situationLagKind).toBe('oddsStale');
+    expect(view.situationLagDetail.espnLine).toBe('Q3 2:00  1st and 10  at Florida State 25');
+    expect(view.situationLagDetail.fdLine).toBe('Q3 2:08  4th and Goal  at SMU 2');
+    expect(view.evCount).toBeGreaterThan(0);
+  });
+
+  it('does not flag matching ESPN and FanDuel spots when FD omits quarter and yardline', () => {
+    const game = liveFdGame({
+      period: 3,
+      clockSeconds: 45,
+      clock: '0:45',
+      down: 3,
+      distance: 10,
+      yardsToEndzone: 61,
+      possessionText: 'SMU 39',
+    }, goalLineFd);
+    game.live.fd = {
+      clock: '0:45',
+      clockSeconds: 45,
+      down: 3,
+      distance: 10,
+    };
+    expect(spotLagKind(game)).toBeNull();
+    expect(evaluateDriveGame(game, { market: listDriveSides(game)[0] }).situationLag).toBe(false);
   });
 });
 

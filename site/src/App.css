@@ -23973,6 +23973,51 @@ button.corners-bet:hover {
   font-weight: 700;
 }
 
+.drives-spot-lag-compare {
+  display: grid;
+  gap: 0.18rem;
+  margin: 0.45rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(200, 220, 210, 0.18);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.drives-spot-lag-compare-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: baseline;
+}
+
+.drives-spot-lag-compare-k {
+  color: rgba(210, 230, 215, 0.7);
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.drives-spot-lag-compare-v {
+  color: rgba(230, 240, 232, 0.92);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.drives-spot-lag-compare--behind {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(127, 29, 29, 0.28);
+}
+
+.drives-spot-lag-compare--behind .drives-spot-lag-compare-k {
+  color: #fca5a5;
+}
+
+.drives-spot-lag-compare--behind .drives-spot-lag-compare-v {
+  color: #fecaca;
+}
+
 .sop-exp-goal-edge--lag {
   color: #fecaca;
   padding: 0.12rem 0.28rem 0.12rem 0.4rem;
@@ -23987,9 +24032,7 @@ button.corners-bet:hover {
   align-items: center;
   margin-left: 0.05rem;
   color: #ef4444;
-  cursor: help;
   line-height: 1;
-  outline: none;
 }
 
 .drives-spot-lag-tri {
@@ -24002,41 +24045,6 @@ button.corners-bet:hover {
 
 .drives-spot-lag-bang {
   fill: #fff7ed;
-}
-
-.drives-spot-lag-sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-}
-
-.drives-spot-lag-tip {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 6px);
-  width: 18.5rem;
-  max-width: 70vw;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid rgba(248, 113, 113, 0.55);
-  border-radius: 0.4rem;
-  background: #1c1010;
-  color: #fecaca;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: normal;
-  text-transform: none;
-  line-height: 1.4;
-  text-align: left;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 40;
-}
-
-.drives-spot-lag-mark:hover .drives-spot-lag-tip,
-.drives-spot-lag-mark:focus-within .drives-spot-lag-tip {
-  opacity: 1;
 }
 
 .drives-edge-line {

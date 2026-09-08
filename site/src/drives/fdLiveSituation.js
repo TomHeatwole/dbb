@@ -128,6 +128,132 @@ export function formatDownAndDistance(down, distance) {
   return downDistanceLabel(down, distance);
 }
 
+function periodClockLabel(sit) {
+  if (!sit) return null;
+  if (sit.halfTime || sit.clock === 'Halftime') return 'Halftime';
+  const p = Number(sit.period);
+  const period = Number.isFinite(p) && p > 0
+    ? (p > 4 ? (p === 5 ? 'OT' : `OT${p - 4}`) : `Q${p}`)
+    : null;
+  const clock = sit.clock && sit.clock !== '0:00' && !/halftime/i.test(sit.clock)
+    ? sit.clock
+    : formatClock(sit.clockSeconds);
+  if (period && clock) return `${period} ${clock}`;
+  return period || clock || null;
+}
+
+function isGoalToGo(sit) {
+  if (!sit) return false;
+  if (/goal/i.test(String(sit.downDistance || ''))) return true;
+  const dist = Number(sit.distance);
+  const ytg = Number(sit.yardsToEndzone);
+  if (!Number.isFinite(ytg) || ytg < 1 || ytg > 10) return false;
+  if (!Number.isFinite(dist)) return ytg <= 10;
+  return dist >= ytg;
+}
+
+function downOrdinal(down) {
+  const d = Number(down);
+  if (!Number.isFinite(d) || d < 1) return null;
+  const ord = d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th';
+  return `${d}${ord}`;
+}
+
+/** Spoken down/distance for lag compare: "4th and Goal", "1st and 10". */
+export function formatDownAndDistanceSpoken(sit) {
+  if (!sit) return null;
+  const ord = downOrdinal(sit.down);
+  if (isGoalToGo(sit)) return ord ? `${ord} and Goal` : 'Goal';
+  const posted = String(sit.downDistance || '').replace(/\s+/g, ' ').trim();
+  if (posted) {
+    return posted
+      .replace(/\s*&\s*/g, ' and ')
+      .replace(/\band\s+goal\b/i, 'and Goal');
+  }
+  if (!ord) return null;
+  const dist = Number(sit.distance);
+  if (!Number.isFinite(dist)) return `${ord} down`;
+  return `${ord} and ${dist}`;
+}
+
+function formatYardline(sit) {
+  if (!sit) return null;
+  const raw = String(sit.possessionText || '').replace(/^\s*at\s+/i, '').trim();
+  if (raw) return `at ${raw}`;
+  const ytg = Number(sit.yardsToEndzone);
+  if (!Number.isFinite(ytg) || ytg < 1 || ytg > 99) return null;
+  if (ytg === 50) return 'midfield';
+  if (ytg > 50) return `at own ${100 - ytg}`;
+  return `at opp ${ytg}`;
+}
+
+/**
+ * Full live spot for ESPN vs FanDuel lag copy:
+ * "Q3 2:08  4th and Goal  at SMU 9"
+ */
+export function formatLiveSituationLine(sit) {
+  if (!sit || typeof sit !== 'object') return '';
+  const bits = [
+    periodClockLabel(sit),
+    formatDownAndDistanceSpoken(sit),
+    formatYardline(sit),
+  ].filter(Boolean);
+  return bits.join('  ');
+}
+
+function clockSecondsOf(sit) {
+  const sec = intOrNull(sit?.clockSeconds);
+  if (sec != null && sec >= 0) return sec;
+  const clock = String(sit?.clock || '').trim();
+  const m = clock.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function spotToken(sit) {
+  return String(sit?.possessionText || '').replace(/^\s*at\s+/i, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/**
+ * True only when both sources posted a field and those values conflict.
+ * Missing quarter / yardline on FanDuel is not a discrepancy.
+ */
+export function liveSpotsDisagree(a, b) {
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+
+  const aHalf = Boolean(a.halfTime || a.clock === 'Halftime');
+  const bHalf = Boolean(b.halfTime || b.clock === 'Halftime');
+  if (aHalf !== bHalf) return true;
+
+  const aPeriod = intOrNull(a.period);
+  const bPeriod = intOrNull(b.period);
+  if (aPeriod != null && bPeriod != null && aPeriod !== bPeriod) return true;
+
+  const aClock = clockSecondsOf(a);
+  const bClock = clockSecondsOf(b);
+  if (aClock != null && bClock != null && Math.abs(aClock - bClock) > 8) return true;
+
+  const aDown = intOrNull(a.down);
+  const bDown = intOrNull(b.down);
+  if (aDown != null && bDown != null && aDown !== bDown) return true;
+
+  if (!(isGoalToGo(a) && isGoalToGo(b))) {
+    const aDist = intOrNull(a.distance);
+    const bDist = intOrNull(b.distance);
+    if (aDist != null && bDist != null && aDist !== bDist) return true;
+  }
+
+  const aYtg = intOrNull(a.yardsToEndzone);
+  const bYtg = intOrNull(b.yardsToEndzone);
+  if (aYtg != null && bYtg != null && Math.abs(aYtg - bYtg) >= 5) return true;
+
+  const aSpot = spotToken(a);
+  const bSpot = spotToken(b);
+  if (aSpot && bSpot && aSpot !== bSpot) return true;
+
+  return false;
+}
+
 export function formatFdLiveSpot(sit) {
   if (!sit) return '';
   if (sit.halfTime || sit.clock === 'Halftime') return 'Halftime';

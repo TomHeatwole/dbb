@@ -123,7 +123,7 @@
       "seenAt": "2026-09-08T03:21:32.505Z"
     },
     "35660086|SMU Drive 8 - Result": {
-      "ts": "2026-09-08T03:21:33.319Z",
+      "ts": "2026-09-08T03:42:33.508Z",
       "eventId": "35660086",
       "away": "SMU",
       "home": "Florida State",
@@ -133,12 +133,27 @@
       "offense": "SMU",
       "drive": 8,
       "outcomes": {
-        "td": 210,
-        "fg": 450,
-        "punt": 130,
-        "other": 500
+        "other": 6500
       },
-      "seenAt": "2026-09-08T03:21:33.319Z"
+      "seenAt": "2026-09-08T03:42:33.508Z"
+    },
+    "35660086|Florida St Drive 9 - Result": {
+      "ts": "2026-09-08T03:43:06.839Z",
+      "eventId": "35660086",
+      "away": "SMU",
+      "home": "Florida State",
+      "start": "",
+      "date": null,
+      "marketName": "Florida St Drive 9 - Result",
+      "offense": "Florida St",
+      "drive": 9,
+      "outcomes": {
+        "td": 240,
+        "fg": 380,
+        "punt": 130,
+        "other": 460
+      },
+      "seenAt": "2026-09-08T03:43:06.839Z"
     }
   },
   "schedule": {
@@ -187,7 +202,7 @@
     "35660086": {
       "nextTryAt": 0,
       "missStreak": 0,
-      "lastTriedAt": "2026-09-08T03:21:33.319Z",
+      "lastTriedAt": "2026-09-08T03:43:06.839Z",
       "lastHadMarket": true,
       "kickoffAt": null
     },

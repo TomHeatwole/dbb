@@ -132,16 +132,32 @@ function lineSummary(game) {
   return bits.join(' · ');
 }
 
-function SpotLagMark({ detail }) {
-  if (!detail?.text) return null;
+function SpotLagCompare({ detail }) {
+  const rows = detail?.rows?.filter((row) => row?.value);
+  if (!rows || rows.length < 2) return null;
+  const behind = detail.kind === 'espnBehind';
   return (
-    <span className="drives-spot-lag-mark" title={detail.text}>
+    <div
+      className={`drives-spot-lag-compare${behind ? ' drives-spot-lag-compare--behind' : ' drives-spot-lag-compare--stale'}`}
+      role="status"
+    >
+      {rows.map((row) => (
+        <div key={row.key} className="drives-spot-lag-compare-row">
+          <span className="drives-spot-lag-compare-k">{row.label}:</span>
+          <span className="drives-spot-lag-compare-v">{row.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SpotLagMark() {
+  return (
+    <span className="drives-spot-lag-mark" aria-label="ESPN spot may lag the board">
       <svg className="drives-spot-lag-tri" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M12 2.2 L23.2 21.6 H0.8 Z" />
         <path className="drives-spot-lag-bang" d="M11.15 8.4 h1.7 v7.1 h-1.7 Z M11.15 16.7 h1.7 v1.9 h-1.7 Z" />
       </svg>
-      <span className="drives-spot-lag-sr">{detail.text}</span>
-      <span className="drives-spot-lag-tip" role="tooltip">{detail.text}</span>
     </span>
   );
 }
@@ -563,11 +579,7 @@ function DriveSide({
         {startLine && (
           <p className="drives-situation">{startLine}</p>
         )}
-        {model.situationLag && model.situationLagDetail?.text && (
-          <p className="drives-situation drives-situation--lag" role="status">
-            {model.situationLagDetail.text}
-          </p>
-        )}
+        {model.situationLag && <SpotLagCompare detail={model.situationLagDetail} />}
         {market?.marketName && (
           <p className="drives-situation">{market.marketName}</p>
         )}
@@ -646,14 +658,14 @@ function DriveSide({
                     '—'
                   )}
                 </div>
-                <div className={`sop-exp-goal-edge${model.situationLag ? ' sop-exp-goal-edge--lag' : ''}`}>
+                <div className={`sop-exp-goal-edge${row.profitable && model.situationLagKind === 'espnBehind' ? ' sop-exp-goal-edge--lag' : ''}`}>
                   {row.profitable && row.edgePoints != null ? (
                     <>
                       <span className="drives-edge-line">
                         <span className="sop-exp-edge-plus">
                           {formatEdgePoints(row.edgePoints)} edge
                         </span>
-                        {model.situationLag && <SpotLagMark detail={model.situationLagDetail} />}
+                        {model.situationLagKind === 'espnBehind' && <SpotLagMark />}
                         <PuntStyleWarning warning={row.styleWarning} />
                       </span>
                       {kellyEnabled && row.kellyStake != null && (
@@ -666,14 +678,9 @@ function DriveSide({
                       )}
                     </>
                   ) : row.edgePoints != null ? (
-                    <span className="drives-edge-line">
-                      <span className="sop-exp-edge-minus">
-                        {formatEdgePoints(row.edgePoints)}
-                      </span>
-                      {model.situationLag && <SpotLagMark detail={model.situationLagDetail} />}
+                    <span className="sop-exp-edge-minus">
+                      {formatEdgePoints(row.edgePoints)}
                     </span>
-                  ) : model.situationLag ? (
-                    <SpotLagMark detail={model.situationLagDetail} />
                   ) : (
                     '—'
                   )}
@@ -696,8 +703,8 @@ function DriveSide({
                 ? ` Next-drive log-loss ${LGBM_HOLDOUT.nextDrive.logloss} vs raw ${LGBM_HOLDOUT.nextDrive.raw} (n=${LGBM_HOLDOUT.nextDrive.n.toLocaleString()}; start ytg MAE ${LGBM_HOLDOUT.nextDrive.ytgMae}).`
                 : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
             {model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
-            {model.situationLag && model.situationLagDetail?.text
-              ? ` ${model.situationLagDetail.text}`
+            {model.situationLag && model.situationLagDetail?.rows?.length
+              ? ` ${model.situationLagDetail.rows.map((row) => `${row.label} ${row.value}`).join(' · ')}`
               : ''}
             {model.vigPct != null ? ` Book vig ${model.vigPct.toFixed(1)}%.` : ''}
           </p>
@@ -745,7 +752,7 @@ function GameCard({
     return markets.map((market) => evaluateDriveGame(game, { ...opts, market }));
   }, [game, markets, kellyEnabled, kellyBudget, kellyFraction]);
   const evCount = models.reduce((sum, model) => sum + model.evCount, 0);
-  const lagCount = models.filter((model) => model.situationLag).length;
+  const lagCount = models.filter((model) => model.situationLagKind === 'espnBehind').length;
   const situation = liveSummary(game);
   const lines = lineSummary(game);
   const nextStart = useMemo(() => opponentStartSummary(game), [game]);

@@ -2,6 +2,8 @@ import {
   fdLiveFromRows,
   fdStateAheadOfEspn,
   formatFdLiveSpot,
+  formatLiveSituationLine,
+  liveSpotsDisagree,
   parseFdLiveSituation,
   situationKey,
 } from './fdLiveSituation';
@@ -182,5 +184,65 @@ describe('fdLiveFromRows', () => {
     expect(sit.clockSeconds).toBe(492);
     expect(formatFdLiveSpot(sit)).toBe('Q1 · 8:12 · 2nd & 7');
     expect(situationKey(sit)).toBe('1|492|2|7|');
+  });
+});
+
+describe('formatLiveSituationLine', () => {
+  it('prints quarter, clock, down, and yardline the way the lag compare needs', () => {
+    expect(formatLiveSituationLine({
+      period: 3,
+      clock: '2:08',
+      down: 4,
+      distance: 2,
+      yardsToEndzone: 2,
+      possessionText: 'SMU 2',
+    })).toBe('Q3 2:08  4th and Goal  at SMU 2');
+    expect(formatLiveSituationLine({
+      period: 3,
+      clockSeconds: 120,
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 75,
+      possessionText: 'Florida State 25',
+    })).toBe('Q3 2:00  1st and 10  at Florida State 25');
+  });
+
+  it('falls back to own/opp yardline when possession text is missing', () => {
+    expect(formatLiveSituationLine({
+      period: 1,
+      clock: '8:12',
+      down: 2,
+      distance: 7,
+      yardsToEndzone: 65,
+    })).toBe('Q1 8:12  2nd and 7  at own 35');
+  });
+});
+
+describe('liveSpotsDisagree', () => {
+  it('does not treat a thinner FanDuel snapshot as a mismatch', () => {
+    const espn = {
+      period: 3,
+      clock: '0:45',
+      clockSeconds: 45,
+      down: 3,
+      distance: 10,
+      yardsToEndzone: 61,
+      possessionText: 'SMU 39',
+    };
+    const fd = {
+      clock: '0:45',
+      clockSeconds: 45,
+      down: 3,
+      distance: 10,
+    };
+    expect(liveSpotsDisagree(espn, fd)).toBe(false);
+    expect(formatLiveSituationLine(espn)).not.toBe(formatLiveSituationLine(fd));
+  });
+
+  it('flags a real down/clock change', () => {
+    expect(liveSpotsDisagree(
+      { period: 3, clock: '2:08', down: 4, distance: 2, yardsToEndzone: 2 },
+      { period: 3, clock: '2:00', down: 1, distance: 10, yardsToEndzone: 75 },
+    )).toBe(true);
   });
 });

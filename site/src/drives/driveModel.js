@@ -18,7 +18,7 @@ import { DRIVE_RESULT_MODEL, scoreLgbmLayer } from './driveResultLgbm.js';
 import { isMadeScoreLabel } from './espnDriveChart.js';
 import { predictOpponentStart } from './nextDriveStart.js';
 import { ytgFromSpot } from './ytgFromSpot.js';
-import { formatDownAndDistance, formatFdLiveSpot } from './fdLiveSituation.js';
+import { formatDownAndDistance, formatDownAndDistanceSpoken, formatLiveSituationLine, liveSpotsDisagree } from './fdLiveSituation.js';
 
 /** ESPN scrape: example_data/ncaaf_drive_results/espn_ncaaf_drives.csv */
 export const RAW_DRIVE_N = 113712;
@@ -489,9 +489,22 @@ export function applyOddsAheadFlags(prevGames, nextGames) {
 }
 
 export function situationUntrusted(game) {
-  return Boolean(game?.live?.oddsAheadOfSpot)
+  return spotLagKind(game) === 'espnBehind';
+}
+
+/**
+ * espnBehind: model is on a stale ESPN spot (FD / last play already moved).
+ * oddsStale: ESPN is ahead of FanDuel, so the posted price may be old.
+ */
+export function spotLagKind(game) {
+  if (!game?.inPlay || isHalftimeLive(game.live)) return null;
+  const behind = Boolean(game?.live?.oddsAheadOfSpot)
     || Boolean(game?.live?.fdAheadOfEspn)
     || espnSituationLagsLastPlay(game);
+  if (behind) return 'espnBehind';
+  const fd = game?.live?.fd || game?.fdLive;
+  if (liveSpotsDisagree(game?.live, fd)) return 'oddsStale';
+  return null;
 }
 
 function impliedDownAndDistance(live) {
@@ -527,51 +540,41 @@ function impliedDownAndDistance(live) {
   };
 }
 
-/** ESPN’s posted down/distance vs what the last play (or FanDuel) already implies. */
+/** ESPN’s posted situation vs FanDuel (or the last play) — full clock / down / yardline. */
 export function describeSpotLag(game) {
-  if (!situationUntrusted(game)) return null;
+  const kind = spotLagKind(game);
+  if (!kind) return null;
   const live = game?.live ?? {};
-  const espnSpot = live.downDistance || formatDownAndDistance(live.down, live.distance);
+  const fd = live.fd || game?.fdLive || null;
   const implied = impliedDownAndDistance(live);
-  const fdSpot = formatDownAndDistance(live.fd?.down ?? game?.fdLive?.down, live.fd?.distance ?? game?.fdLive?.distance)
-    || live.fd?.downDistance
-    || game?.fdLive?.downDistance
-    || null;
-  if (espnSpot && implied?.label && implied.label !== espnSpot) {
-    return {
-      espnSpot,
-      impliedSpot: implied.label,
-      text: `Down/distance: ESPN still ${espnSpot}; last play says ${implied.label}${implied.why ? ` (${implied.why})` : ''}.`,
-    };
+  const espnLine = formatLiveSituationLine(live);
+  const fdLine = formatLiveSituationLine(fd);
+  const espnSpot = formatDownAndDistanceSpoken(live) || live.downDistance
+    || formatDownAndDistance(live.down, live.distance);
+  const impliedSpot = implied?.label || null;
+  const lastPlayLine = implied?.label
+    ? `${implied.label}${implied.why ? ` (${implied.why})` : ''}`
+    : null;
+
+  const rows = [];
+  rows.push({ key: 'espn', label: 'ESPN shows', value: espnLine || '—' });
+  if (fdLine && liveSpotsDisagree(live, fd)) {
+    rows.push({ key: 'fd', label: 'FD shows', value: fdLine });
+  } else if (lastPlayLine && lastPlayLine !== espnSpot) {
+    rows.push({ key: 'play', label: 'Last play', value: lastPlayLine });
   }
-  if (fdSpot && espnSpot && fdSpot !== espnSpot) {
-    return {
-      espnSpot,
-      impliedSpot: fdSpot,
-      text: `Down/distance: FanDuel is on ${fdSpot}; ESPN still ${espnSpot}.`,
-    };
-  }
-  if (espnSpot && implied?.label) {
-    return {
-      espnSpot,
-      impliedSpot: implied.label,
-      text: `Down/distance: ESPN still ${espnSpot}; last play says ${implied.label}.`,
-    };
-  }
-  if (espnSpot) {
-    const fdFull = formatFdLiveSpot(live.fd || game?.fdLive);
-    return {
-      espnSpot,
-      impliedSpot: fdFull || null,
-      text: fdFull
-        ? `Down/distance: FanDuel already moved (${fdFull}); ESPN still ${espnSpot}.`
-        : `Down/distance: ESPN still ${espnSpot}; it has not caught up to the last play.`,
-    };
-  }
+
+  const text = rows.map((row) => `${row.label}: ${row.value}`).join('\n');
   return {
-    espnSpot: null,
-    impliedSpot: implied?.label || null,
-    text: 'Down/distance: ESPN looks behind the last play.',
+    kind,
+    espnBehind: kind === 'espnBehind',
+    espnSpot,
+    impliedSpot: fdLine || impliedSpot,
+    espnLine: espnLine || null,
+    fdLine: fdLine || null,
+    lastPlayLine: fdLine && liveSpotsDisagree(live, fd) ? null : lastPlayLine,
+    rows,
+    text,
   };
 }
 
@@ -1102,8 +1105,8 @@ export function evaluateDriveGame(game, {
   const outcomes = marketMatchesDriveNumber(view, nextDrive, offense.side, { pred })
     ? (nextDrive?.outcomes ?? {})
     : {};
-  const lag = situationUntrusted(view);
-  const situationLag = Boolean(view?.inPlay && lag && (
+  const kind = spotLagKind(view);
+  const situationLag = Boolean(view?.inPlay && kind && (
     pred?.layer === 'snap' || pred?.afterPriorDrive || pred?.firstUp
   ));
   const rows = DRIVE_BUCKETS.map((bucket) => {
@@ -1189,6 +1192,7 @@ export function evaluateDriveGame(game, {
     offenseSide: offense.side,
     driveNumber: driveNumberForSide(view, offense.side, { pred }),
     situationLag,
+    situationLagKind: situationLag ? kind : null,
     situationLagDetail: situationLag ? describeSpotLag(view) : null,
   };
 }
