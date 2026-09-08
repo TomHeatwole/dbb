@@ -602,38 +602,40 @@ function DriveSide({
                   </div>
                 )}
               </div>
-              <div className="sop-exp-goal-breakeven">
-                {row.fairAmerican != null ? (
-                  <>
-                    <span>{formatAmericanOdds(row.fairAmerican)}</span>
-                    <span className="sop-exp-goal-be-tag">model</span>
-                  </>
-                ) : (
-                  '—'
-                )}
-              </div>
-              <div className="sop-exp-goal-edge">
-                {row.profitable && row.edgePoints != null ? (
-                  <>
-                    <span className="sop-exp-edge-plus">
-                      {formatEdgePoints(row.edgePoints)} edge
-                    </span>
-                    {kellyEnabled && row.kellyStake != null && (
-                      <span
-                        className="sop-kelly-stake"
-                        title={`${formatKellyFractionLabel(kellyFraction)} stake`}
-                      >
-                        Kelly Bet Size: {formatKellyStake(row.kellyStake)}
+              <div className="drives-line-model">
+                <div className="sop-exp-goal-breakeven">
+                  {row.fairAmerican != null ? (
+                    <>
+                      <span>{formatAmericanOdds(row.fairAmerican)}</span>
+                      <span className="sop-exp-goal-be-tag">model</span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </div>
+                <div className="sop-exp-goal-edge">
+                  {row.profitable && row.edgePoints != null ? (
+                    <>
+                      <span className="sop-exp-edge-plus">
+                        {formatEdgePoints(row.edgePoints)} edge
                       </span>
-                    )}
-                  </>
-                ) : row.edgePoints != null ? (
-                  <span className="sop-exp-edge-minus">
-                    {formatEdgePoints(row.edgePoints)}
-                  </span>
-                ) : (
-                  '—'
-                )}
+                      {kellyEnabled && row.kellyStake != null && (
+                        <span
+                          className="sop-kelly-stake"
+                          title={`${formatKellyFractionLabel(kellyFraction)} stake`}
+                        >
+                          Kelly Bet Size: {formatKellyStake(row.kellyStake)}
+                        </span>
+                      )}
+                    </>
+                  ) : row.edgePoints != null ? (
+                    <span className="sop-exp-edge-minus">
+                      {formatEdgePoints(row.edgePoints)}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </div>
               </div>
               </button>
             </li>
@@ -766,8 +768,8 @@ function GameCard({
             {!hasDriveLine(game) && !paired && (
               <p className="sop-exp-status drives-missing-line">
                 {game.inPlay
-                  ? 'No FanDuel current-drive line. Drive Result is a live Quick Bet, and FanDuel is not posting it on this game right now. DraftKings 1st-drive is pregame only.'
-                  : 'No drive-result line yet. FanDuel posts current-drive after kickoff (Quick Bets). DraftKings 1st-drive is used when they hang it.'}
+                  ? 'No FanDuel current-drive line in the database, and DraftKings 1st-drive is pregame only.'
+                  : 'No drive-result line yet. FanDuel prices come from the database; DraftKings 1st-drive is used when they hang it.'}
               </p>
             )}
             {game.error && <p className="sop-exp-error">{game.error}</p>}
@@ -879,7 +881,7 @@ function DrivesBookPanel({
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">NCAAF Drive Book</h1>
         <p className="sop-exp-subtitle">
-          FanDuel current drive · next drive · DK 1st-drive · joint LightGBM
+          FanDuel drive odds from the database · DK 1st-drive · joint LightGBM
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -960,6 +962,14 @@ function DrivesBookPanel({
                   value={kellyBudgetInput}
                   onChange={(e) => setKellyBudgetInput(e.target.value)}
                   onBlur={(e) => commitKellyBudget(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      commitKellyBudget(e.currentTarget.value);
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  autoComplete="off"
                 />
               </span>
             </label>
@@ -1051,7 +1061,7 @@ function DrivesBookPanel({
 
       <footer className="sop-exp-footer">
         Auto-refreshes every {REFRESH_MS / 1000}s · model is joint LightGBM (train 2023–24, hold out 2025) ·
-        FanDuel Drive Result is a live Quick Bet, not the web Popular tab
+        FanDuel drive-result prices are read from the database
         {stats ? ` · ${stats.games} games` : ''}
       </footer>
     </div>

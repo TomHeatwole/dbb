@@ -43,8 +43,24 @@ function readStoredFraction() {
 export function useSOPKellySettings() {
   const [enabled, setEnabledState] = useState(readStoredEnabled);
   const [budget, setBudgetState] = useState(readStoredBudget);
-  const [budgetInput, setBudgetInput] = useState(() => String(readStoredBudget()));
+  const [budgetInput, setBudgetInputState] = useState(() => String(readStoredBudget()));
   const [kellyFraction, setKellyFractionState] = useState(readStoredFraction);
+
+  const applyBudget = useCallback((parsed) => {
+    setBudgetState(parsed);
+    try {
+      window.localStorage.setItem(STORAGE_KEY_BUDGET, String(parsed));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const setBudgetInput = useCallback((raw) => {
+    const value = String(raw ?? '');
+    setBudgetInputState(value);
+    const parsed = Number(value.replace(/[,$]/g, ''));
+    if (Number.isFinite(parsed) && parsed > 0) applyBudget(parsed);
+  }, [applyBudget]);
 
   const setEnabled = useCallback((next) => {
     setEnabledState(next);
@@ -58,18 +74,13 @@ export function useSOPKellySettings() {
   const commitBudget = useCallback((raw) => {
     const parsed = Number(String(raw ?? '').replace(/[,$]/g, ''));
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setBudgetInput(String(budget));
+      setBudgetInputState(String(budget));
       return;
     }
 
-    setBudgetState(parsed);
-    setBudgetInput(String(parsed));
-    try {
-      window.localStorage.setItem(STORAGE_KEY_BUDGET, String(parsed));
-    } catch {
-      // ignore
-    }
-  }, [budget]);
+    applyBudget(parsed);
+    setBudgetInputState(String(parsed));
+  }, [applyBudget, budget]);
 
   const setKellyFraction = useCallback((next) => {
     const clamped = Math.max(MIN_KELLY_FRACTION, Math.min(1, next));

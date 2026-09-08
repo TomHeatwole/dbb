@@ -1,13 +1,15 @@
 /**
- * NCAAF drive book: FanDuel live next-drive + DraftKings pregame 1st-drive.
+ * NCAAF drive book: FanDuel drive-result from Neon + DraftKings 1st-drive.
  *
- * FanDuel Next Drive Result is a live Quick Bets / play-by-play market on
- * fdx-api, not a coupon-tab market on sbapi. Prices hydrate via AppSync
- * getMarketPrices. Pregame, FDX returns 400 "Event is scheduled".
- * DraftKings posts 1st Drive Result on Nash before kickoff.
+ * FanDuel Next Drive Result is not reliably available on sbapi / fdx-api
+ * (pregame FDX returns 400 "Event is scheduled"). A scraper writes American
+ * four-way prices into fd_drive_odds; this handler trusts those rows for FD.
+ * DraftKings 1st Drive Result still comes from Nash before kickoff.
  */
 
 import { parseEspnDriveBlob } from '../src/drives/espnDriveChart.js';
+import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
+import { fdDriveRowsForGame, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -1298,7 +1300,7 @@ async function fetchNcaafDriveBook() {
   const events = ncaafEvents(sportPage);
   const sportMarkets = sportPage?.attachments?.markets ?? {};
 
-  const [fdGames, espn, dkEvents] = await Promise.all([
+  const [fdGames, espn, dkEvents, fdDbRows] = await Promise.all([
     mapPool(events, EVENT_POOL, async (ev) => {
       try {
         if (!shouldFetchEvent(ev)) {
@@ -1311,11 +1313,7 @@ async function fetchNcaafDriveBook() {
           && Date.parse(ev.openDate) < Date.now() - 30_000;
         const inPlayHint = Boolean(ev.inPlay || kickedOff);
         const bundle = await fetchEventBundle(ev.eventId, { inPlayHint });
-        const fdx = await fetchFdxDebug(ev.eventId, {
-          inPlay: Boolean(bundle.event?.inPlay ?? inPlayHint),
-          openDate: ev.openDate,
-        });
-        return buildGame(ev, bundle, fdx);
+        return buildGame(ev, bundle, null);
       } catch (err) {
         return { ...ev, teams: parseTeams(ev.name), error: err.message, nextDrive: null, driveMarkets: [], lines: null, live: null };
       }
@@ -1326,9 +1324,14 @@ async function fetchNcaafDriveBook() {
       matches: [],
     })),
     fetchDkLeagueEvents().catch(() => []),
+    readFdDriveOdds().catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error('[ncaaf-drives] fd_drive_odds', err);
+      return [];
+    }),
   ]);
 
-  const needsDk = fdGames.filter((game) => !game.nextDrive && shouldFetchDkFirstDrive(game));
+  const needsDk = fdGames.filter((game) => shouldFetchDkFirstDrive(game));
   const dkByFdId = new Map();
   if (dkEvents.length && needsDk.length) {
     await mapPool(needsDk, EVENT_POOL, async (game) => {
@@ -1360,11 +1363,16 @@ async function fetchNcaafDriveBook() {
   const games = fdGames
     .map((game) => {
       const dk = dkByFdId.get(game.eventId);
-      let driveMarkets = [];
-      if (game.driveMarkets?.length) driveMarkets = game.driveMarkets;
-      else if (game.nextDrive) driveMarkets = [game.nextDrive];
-      else if (dk?.drives?.length) driveMarkets = dk.drives;
-      else if (dk?.nextDrive) driveMarkets = [dk.nextDrive];
+      const fdFromDb = fdDriveRowsForGame(game, fdDbRows, namesMatch);
+      const dkMarkets = dk?.drives?.length
+        ? dk.drives
+        : (dk?.nextDrive ? [dk.nextDrive] : []);
+      // Trust Neon for FanDuel drive prices. Keep any leftover scrape only
+      // when the DB has no row for this game.
+      const fdMarkets = fdFromDb.length
+        ? fdFromDb
+        : (game.driveMarkets?.length ? game.driveMarkets : (game.nextDrive ? [game.nextDrive] : []));
+      const driveMarkets = mergeFdAndDkMarkets(fdMarkets, dkMarkets);
       const nextDrive = driveMarkets[0] ?? null;
       const withEspn = mergeFdxLive(attachEspn({
         ...game,
@@ -1376,7 +1384,8 @@ async function fetchNcaafDriveBook() {
           dkEventId: dk?.dkEventId ?? null,
           dkMarketNames: dk?.dkMarketNames ?? [],
           dkError: dk?.dkError ?? null,
-          nextDriveSource: nextDrive?.source || (nextDrive ? 'sbapi' : null),
+          fdDriveSource: fdFromDb.length ? 'db' : (nextDrive && nextDrive.source !== 'dk' ? (nextDrive.source || 'sbapi') : null),
+          nextDriveSource: fdFromDb.length ? 'db' : (nextDrive?.source || (nextDrive ? 'sbapi' : null)),
         },
       }, espn.matches ?? []), game.fdxLive);
       const annotated = (withEspn.driveMarkets ?? []).map((m) => (
@@ -1405,14 +1414,9 @@ async function fetchNcaafDriveBook() {
       games: numbered.length,
       live: numbered.filter((g) => g.inPlay).length,
       withDriveLine: numbered.filter((g) => g.nextDrive || g.driveMarkets?.length).length,
-      withFdDriveLine: numbered.filter((g) => (
-        (g.driveMarkets ?? []).some((m) => m.source !== 'dk')
-        || (g.nextDrive && g.nextDrive.source !== 'dk')
-      )).length,
-      withDkFirstDrive: numbered.filter((g) => (
-        (g.driveMarkets ?? []).some((m) => m.source === 'dk')
-        || g.nextDrive?.source === 'dk'
-      )).length,
+      withFdDriveLine: numbered.filter((g) => driveMarketsOf(g).some(marketHasFd)).length,
+      withDbFdDriveLine: numbered.filter((g) => g.debug?.fdDriveSource === 'db').length,
+      withDkFirstDrive: numbered.filter((g) => driveMarketsOf(g).some(marketHasDk)).length,
       espnMatched: numbered.filter((g) => g.espnId).length,
       fdxProbed: numbered.filter((g) => g.debug?.fdxStatus != null || g.debug?.fdxError).length,
       fdxQuickBets: numbered.filter((g) => g.debug?.isQuickBetsAvailable).length,
@@ -1424,6 +1428,23 @@ async function fetchNcaafDriveBook() {
       matched: numbered.filter((g) => g.espnId).length,
     },
   };
+}
+
+function driveMarketsOf(game) {
+  if (game?.driveMarkets?.length) return game.driveMarkets;
+  return game?.nextDrive ? [game.nextDrive] : [];
+}
+
+function marketHasFd(market) {
+  if (!market) return false;
+  if (market.source && market.source !== 'dk') return true;
+  return Object.values(market.outcomes ?? {}).some((q) => Number.isFinite(q?.fd?.american));
+}
+
+function marketHasDk(market) {
+  if (!market) return false;
+  if (market.source === 'dk') return true;
+  return Object.values(market.outcomes ?? {}).some((q) => Number.isFinite(q?.dk?.american));
 }
 
 export { fetchNcaafDriveBook };

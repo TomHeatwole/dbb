@@ -108,6 +108,45 @@ const statements = [
 
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_app_users_sleeper_username
      ON app_users (lower(sleeper_username))`,
+
+  // NCAAF /drives: FanDuel drive-result odds. The live FD APIs do not expose
+  // these reliably, so a scraper upserts rows here and the book trusts them.
+  // One row per game + offense side + drive number (1 = opening drive).
+  // Writer contract: UPSERT on (home_team, away_team, offense_side, drive_n)
+  // with American integers for the four-way (OTD / FGA / Punt / Other).
+  `CREATE TABLE IF NOT EXISTS fd_drive_odds (
+    id              SERIAL PRIMARY KEY,
+    event_id        TEXT,
+    home_team       TEXT NOT NULL,
+    away_team       TEXT NOT NULL,
+    kickoff_at      TIMESTAMPTZ,
+    offense_side    TEXT NOT NULL CHECK (offense_side IN ('home', 'away')),
+    offense_name    TEXT,
+    drive_n         INTEGER NOT NULL DEFAULT 1 CHECK (drive_n >= 1),
+    market_name     TEXT,
+    market_status   TEXT NOT NULL DEFAULT 'OPEN',
+    td_american     INTEGER,
+    fg_american     INTEGER,
+    punt_american   INTEGER,
+    other_american  INTEGER,
+    fetched_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (
+      td_american IS NOT NULL
+      OR fg_american IS NOT NULL
+      OR punt_american IS NOT NULL
+      OR other_american IS NOT NULL
+    ),
+    UNIQUE (home_team, away_team, offense_side, drive_n)
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_fd_drive_odds_event
+     ON fd_drive_odds (event_id)`,
+
+  `CREATE INDEX IF NOT EXISTS idx_fd_drive_odds_kickoff
+     ON fd_drive_odds (kickoff_at DESC)`,
+
+  `CREATE INDEX IF NOT EXISTS idx_fd_drive_odds_fetched
+     ON fd_drive_odds (fetched_at DESC)`,
 ];
 
 for (const stmt of statements) {

@@ -174,6 +174,35 @@ export function hprojAtPercentile(sorted, percentile) {
 }
 
 /**
+ * One simulated week from the band around a team-total percentile.
+ * `salt` re-rolls which draw in that band is shown.
+ */
+export function hprojRandomOutcome(sorted, percentile, salt = 0) {
+  const pct = Math.max(0, Math.min(99, Math.round(Number(percentile) || 0)));
+  const slice = windowSlice(sorted || [], pct / 100);
+  if (slice.length === 0) return null;
+  const rng = mulberry32(hashSeed(`hproj-draw:${pct}:${salt}`));
+  const pick = slice[Math.floor(rng() * slice.length)];
+  return {
+    percentile: pct,
+    total: round1(pick.total),
+    byPos: {
+      QB: round1(pick.byPos.QB),
+      RB: round1(pick.byPos.RB),
+      WR: round1(pick.byPos.WR),
+      TE: round1(pick.byPos.TE),
+    },
+    starters: (pick.starters || []).map((s) => ({
+      slot: s.slot,
+      id: s.id,
+      position: s.position,
+      pts: round1(s.pts),
+    })),
+    window: slice.length,
+  };
+}
+
+/**
  * @param {object} opts
  * @param {string[]} opts.playerIds
  * @param {Record<string, number>} opts.projectedPtsById

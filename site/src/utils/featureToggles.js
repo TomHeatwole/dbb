@@ -14,7 +14,7 @@ export const MAIN_FEATURES = {
 };
 
 /** Green HProj chip + P50 sort on /scores (and ScoresView). /hproj stays reachable either way. */
-export const HPROJ_ON_SCORES = false;
+export const HPROJ_ON_SCORES = true;
 
 /**
  * Check if a feature is enabled

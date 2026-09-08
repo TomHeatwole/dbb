@@ -1,0 +1,34 @@
+---
+description: /drives FanDuel odds come from Neon fd_drive_odds, not the FanDuel API
+globs: site/api/ncaaf-drives.mjs,site/lib/fd-drive-odds.mjs,site/src/drives/**,site/src/routes/Drives*.js,site/scripts/db-migrate.mjs
+alwaysApply: false
+---
+
+# NCAAF /drives FanDuel odds
+
+FanDuel drive-result prices are **not** scraped from sbapi/fdx. `scripts/watch_fanduel_drive_results.mjs` upserts Neon from the Android emulator; `/api/ncaaf-drives` trusts `fd_drive_odds` for FD and still fetches DK 1st-drive live.
+
+Do **not** re-seed fake SMU @ Florida State rows. Ended games should be deleted from `fd_drive_odds`, not left to rot.
+
+## Writer contract
+
+One row per game + side + drive (`drive_n = 1` for opening drive). Unique `(home_team, away_team, offense_side, drive_n)`.
+
+```sql
+INSERT INTO fd_drive_odds (
+  event_id, home_team, away_team, kickoff_at,
+  offense_side, offense_name, drive_n, market_name,
+  td_american, fg_american, punt_american, other_american
+) VALUES (...)
+ON CONFLICT (home_team, away_team, offense_side, drive_n) DO UPDATE SET
+  event_id = EXCLUDED.event_id,
+  offense_name = EXCLUDED.offense_name,
+  market_name = EXCLUDED.market_name,
+  td_american = EXCLUDED.td_american,
+  fg_american = EXCLUDED.fg_american,
+  punt_american = EXCLUDED.punt_american,
+  other_american = EXCLUDED.other_american,
+  fetched_at = now();
+```
+
+Match games by `event_id` first, then team names. Merge FD + DK onto the same card (`outcomes.*.fd` / `outcomes.*.dk`). Dual-book rows put the model line under the FD/DK boxes (`.drives-line-model`).
