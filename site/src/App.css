@@ -18655,6 +18655,10 @@ body.modal-open {
   color: #ffb4b4;
 }
 
+.sop-goals-menu-type--pending {
+  color: rgba(255, 224, 138, 0.55);
+}
+
 .sop-exp-game-body {
   padding: 0 1rem 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);

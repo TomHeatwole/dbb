@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { hasClassifiableCommentary } from './classify-goal-type.mjs';
 import {
   extractScoringPlays,
   parseGoalActors,
@@ -26,4 +27,35 @@ test('extractScoringPlays keeps ESPN scoring keyEvents', () => {
   assert.equal(plays.length, 1);
   assert.equal(plays[0].scorer, 'Erling Haaland');
   assert.equal(plays[0].clock, "45'");
+  assert.equal(plays[0].classifiable, true);
+});
+
+test('extractScoringPlays keeps a goal before ESPN writes commentary', () => {
+  const plays = extractScoringPlays({
+    keyEvents: [
+      {
+        id: '52125195',
+        scoringPlay: true,
+        shortText: 'Raphinha Goal',
+        clock: { displayValue: "3'" },
+        type: { type: 'goal' },
+        team: { displayName: 'Barcelona' },
+        participants: [{ athlete: { displayName: 'Raphinha' } }],
+      },
+    ],
+  });
+  assert.equal(plays.length, 1);
+  assert.equal(plays[0].scorer, 'Raphinha');
+  assert.equal(plays[0].teamName, 'Barcelona');
+  assert.equal(plays[0].classifiable, false);
+});
+
+test('hasClassifiableCommentary waits for a how-it-was-scored write-up', () => {
+  assert.equal(hasClassifiableCommentary(''), false);
+  assert.equal(hasClassifiableCommentary('Raphinha Goal'), false);
+  assert.equal(hasClassifiableCommentary('Goal! Barcelona 1, Feyenoord 0.'), false);
+  assert.equal(
+    hasClassifiableCommentary('Goal! Barcelona 1, Feyenoord 0. Raphinha (Barcelona) left footed shot from the centre of the box to the bottom left corner.'),
+    true,
+  );
 });

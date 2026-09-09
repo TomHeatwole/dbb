@@ -35,6 +35,18 @@ Definitions:
 
 Do not explain. Do not punctuate. Do not add extra words.`;
 
+const METHOD_HINT =
+  /header|headed|penalty|free kick|free-kick|own goal|left footed|right footed|shot from|converts the penalty|from a free kick/i;
+
+/** ESPN posts the scoring play first; the how-it-was-scored write-up arrives later. */
+export function hasClassifiableCommentary(description) {
+  const text = String(description ?? '').trim();
+  if (text.length < 50) return false;
+  if (/^goal!?\s*$/i.test(text)) return false;
+  if (/^[\w .'-]+ goal$/i.test(text)) return false;
+  return METHOD_HINT.test(text);
+}
+
 export function parseGoalTypeReply(raw) {
   const text = String(raw ?? '')
     .trim()
@@ -99,18 +111,23 @@ async function generateOnce(apiKey, model, description) {
   return parseGoalTypeReply(text);
 }
 
-export async function classifyGoalType(description, { espnType = null } = {}) {
+export async function classifyGoalTypeFromCommentary(description) {
+  if (!hasClassifiableCommentary(description)) return null;
   const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey && String(description ?? '').trim()) {
-    for (const model of GEMINI_MODELS) {
-      try {
-        const key = await withTimeout(generateOnce(apiKey, model, description), CLASSIFY_TIMEOUT_MS);
-        if (ALLOWED_KEYS.has(key)) return key;
-      } catch (_) {
-        /* try next model */
-      }
+  if (!apiKey) return null;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const key = await withTimeout(generateOnce(apiKey, model, description), CLASSIFY_TIMEOUT_MS);
+      if (ALLOWED_KEYS.has(key)) return key;
+    } catch (_) {
+      /* try next model */
     }
   }
+  return null;
+}
 
+export async function classifyGoalType(description, { espnType = null } = {}) {
+  const fromLlm = await classifyGoalTypeFromCommentary(description);
+  if (fromLlm) return fromLlm;
   return goalTypeFromEspnPlayType(espnType) ?? 'sop';
 }

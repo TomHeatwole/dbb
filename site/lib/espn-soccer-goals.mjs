@@ -3,7 +3,11 @@
  */
 
 import { getSql } from './db.mjs';
-import { classifyGoalType, GOAL_TYPE_LABELS } from './classify-goal-type.mjs';
+import {
+  classifyGoalTypeFromCommentary,
+  GOAL_TYPE_LABELS,
+  hasClassifiableCommentary,
+} from './classify-goal-type.mjs';
 
 const ESPN_HEADERS = {
   Accept: 'application/json',
@@ -36,26 +40,70 @@ export function parseGoalActors(text) {
   return { scorer: null, teamName: null, ownGoal: false };
 }
 
+function commentaryTextByPlayId(payload) {
+  const byId = new Map();
+  for (const item of payload?.commentary ?? []) {
+    const playId = item?.play?.id != null ? String(item.play.id) : null;
+    const text = String(item?.play?.text ?? item?.text ?? '').trim();
+    if (playId && text && !byId.has(playId)) byId.set(playId, text);
+  }
+  return byId;
+}
+
+function isScoringPlay(play) {
+  if (play?.scoringPlay) return true;
+  const token = String(play?.type?.type ?? play?.type?.text ?? '').toLowerCase();
+  if (token.includes('miss') || token.includes('saved') || token.includes('woodwork')) return false;
+  return token === 'goal'
+    || token.startsWith('goal')
+    || token.includes('own-goal')
+    || token.includes('own goal')
+    || token.includes('penalty---scored')
+    || token === 'penalty-scored';
+}
+
+function scorerFromPlay(play, actors) {
+  if (actors.scorer) return actors.scorer;
+  const athlete = play?.participants?.[0]?.athlete?.displayName;
+  if (athlete) return String(athlete).trim();
+  const short = String(play?.shortText ?? '').replace(/\s+goal$/i, '').trim();
+  return short || null;
+}
+
+function teamFromPlay(play, actors) {
+  if (actors.teamName) return actors.teamName;
+  return play?.team?.displayName ?? play?.team?.name ?? null;
+}
+
 export function extractScoringPlays(payload) {
   const events = Array.isArray(payload?.keyEvents)
     ? payload.keyEvents
     : Object.values(payload?.keyEvents ?? {});
+  const extraText = commentaryTextByPlayId(payload);
 
   return events
-    .filter((play) => play?.scoringPlay || /^(goal|own goal|penalty)/i.test(play?.type?.text ?? ''))
+    .filter(isScoringPlay)
     .map((play) => {
-      const description = String(play.text ?? play.shortText ?? '').trim();
+      const playId = String(play.id ?? '').trim();
+      const description = String(
+        play.text
+        || extraText.get(playId)
+        || play.shortText
+        || '',
+      ).trim();
       const actors = parseGoalActors(description);
+      const clock = play.clock?.displayValue || play.time?.displayValue || null;
       return {
-        playId: String(play.id ?? ''),
-        clock: play.clock?.displayValue ?? play.time?.displayValue ?? null,
+        playId: playId || [clock, play.shortText, play.type?.type].filter(Boolean).join('|'),
+        clock,
         description,
-        scorer: actors.scorer,
-        teamName: actors.teamName,
+        scorer: scorerFromPlay(play, actors),
+        teamName: teamFromPlay(play, actors),
         espnType: play.type ?? null,
+        classifiable: hasClassifiableCommentary(description),
       };
     })
-    .filter((play) => play.playId && play.description);
+    .filter((play) => play.playId);
 }
 
 function summaryUrl(espnId, leagueKey) {
@@ -143,7 +191,11 @@ async function loadCachedGoals(espnId) {
   return rows;
 }
 
-async function insertClassifiedGoal(espnId, play, goalType) {
+function isRecordedGoal(row) {
+  return Boolean(row?.goal_type) && hasClassifiableCommentary(row.description);
+}
+
+async function upsertClassifiedGoal(espnId, play, goalType) {
   const sql = trySql();
   if (!sql) return;
   await sql`
@@ -158,18 +210,26 @@ async function insertClassifiedGoal(espnId, play, goalType) {
       ${play.description},
       ${goalType}
     )
-    ON CONFLICT (espn_play_id) DO NOTHING
+    ON CONFLICT (espn_play_id) DO UPDATE SET
+      clock_text = EXCLUDED.clock_text,
+      scorer = EXCLUDED.scorer,
+      team_name = EXCLUDED.team_name,
+      description = EXCLUDED.description,
+      goal_type = EXCLUDED.goal_type
   `;
 }
 
 async function classifyUncachedPlays(espnId, plays, cached) {
-  const have = new Set(cached.map((row) => String(row.espn_play_id)));
-  const missing = plays.filter((play) => !have.has(play.playId));
-  if (!missing.length) return;
+  const recorded = new Set(
+    cached.filter(isRecordedGoal).map((row) => String(row.espn_play_id)),
+  );
+  const pending = plays.filter((play) => play.classifiable && !recorded.has(play.playId));
+  if (!pending.length) return;
 
-  await mapPool(missing, CLASSIFY_CONCURRENCY, async (play) => {
-    const goalType = await classifyGoalType(play.description, { espnType: play.espnType });
-    await insertClassifiedGoal(espnId, play, goalType);
+  await mapPool(pending, CLASSIFY_CONCURRENCY, async (play) => {
+    const goalType = await classifyGoalTypeFromCommentary(play.description);
+    if (!goalType) return;
+    await upsertClassifiedGoal(espnId, play, goalType);
   });
 }
 
@@ -222,13 +282,13 @@ export async function attachEspnGoals(games) {
       const byPlay = new Map(cached.map((row) => [String(row.espn_play_id), row]));
       const ordered = summary.plays.map((play) => {
         const row = byPlay.get(play.playId);
-        if (row) return rowToGoal(row);
+        if (row && isRecordedGoal(row)) return rowToGoal(row);
         return {
           playId: play.playId,
-          clock: play.clock,
-          scorer: play.scorer,
-          teamName: play.teamName,
-          description: play.description,
+          clock: play.clock || row?.clock_text,
+          scorer: play.scorer || row?.scorer,
+          teamName: play.teamName || row?.team_name,
+          description: play.description || row?.description,
           goalType: null,
           goalLabel: '…',
         };

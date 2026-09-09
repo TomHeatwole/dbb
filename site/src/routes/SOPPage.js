@@ -11,6 +11,7 @@ import SOPBookPanel from './SOPBookPanel';
 import SOPManualPanel from './SOPManualPanel';
 import { keepSopDisplayGames, mergeDkIntoFdGames } from '../sop/mergeDkGames';
 import { mergeKalshiIntoFdGames } from '../sop/mergeKalshiGames';
+import { liveGoalsNeedRefresh } from '../sop/gameSnapshot';
 
 /** DK is flaky (Akamai / missing event map). Bail fast and render FanDuel. */
 const DK_CLIENT_TIMEOUT_MS = 25000;
@@ -47,6 +48,7 @@ const COLLAGE_TILE_W = 200;
 const COLLAGE_TILE_H = Math.round(COLLAGE_TILE_W * (1442 / 1916));
 const LOADING_DURATION_MS = 10_000;
 const BOOK_REFRESH_MS = 60_000;
+const LIVE_GOAL_REFRESH_MS = 12_000;
 
 const LOADING_MESSAGES = [
   'Initializing pitch sensors…',
@@ -151,7 +153,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
     // so a slow DraftKings probe/Akamai block cannot hang the whole page.
     let fdGames = [];
     try {
-      const fdRes = await fetch('/api/fanduel-sop');
+      const fdRes = await fetch('/api/fanduel-sop', { cache: 'no-store' });
       if (!fdRes.ok) {
         const body = await fdRes.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${fdRes.status}`);
@@ -209,11 +211,13 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
     refreshBook();
   }, [refreshBook]);
 
+  const pollMs = liveGoalsNeedRefresh(games) ? LIVE_GOAL_REFRESH_MS : BOOK_REFRESH_MS;
+
   useEffect(() => {
     if (!shellReady) return undefined;
-    const id = window.setInterval(refreshBook, BOOK_REFRESH_MS);
+    const id = window.setInterval(refreshBook, pollMs);
     return () => window.clearInterval(id);
-  }, [shellReady, refreshBook]);
+  }, [shellReady, refreshBook, pollMs]);
 
   useEffect(() => {
     if (skipBootLoader) return undefined;

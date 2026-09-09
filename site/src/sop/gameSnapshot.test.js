@@ -1,5 +1,5 @@
 import { analyzeAgainstBreakeven, computeBreakevenOdds } from './sopModel';
-import { buildSopGameSnapshot, buildSopMonitorRows, isActiveMonitorGame, shortGameName } from './gameSnapshot';
+import { buildSopGameSnapshot, buildSopMonitorRows, isActiveMonitorGame, liveGoalsNeedRefresh, shortGameName } from './gameSnapshot';
 
 describe('SOP game snapshot', () => {
   it('shortens Premier League names', () => {
@@ -110,5 +110,20 @@ describe('SOP game snapshot', () => {
       { eventId: 'live', inPlay: true, name: 'A v B', teams: { home: 'A', away: 'B' } },
       { eventId: 'later', openDate: '2026-09-12T14:00:00.000Z', name: 'C v D', teams: { home: 'C', away: 'D' } },
     ], now).map((row) => row.eventId)).toEqual(['live']);
+  });
+
+  it('polls faster while a live goal is still unclassified', () => {
+    expect(liveGoalsNeedRefresh([
+      { inPlay: true, scoreDisplay: '1-0', goalsSoFar: [] },
+    ])).toBe(true);
+    expect(liveGoalsNeedRefresh([
+      { inPlay: true, scoreDisplay: '1-0', goalsSoFar: [{ playId: '1', goalType: null }] },
+    ])).toBe(true);
+    expect(liveGoalsNeedRefresh([
+      { inPlay: true, scoreDisplay: '1-0', goalsSoFar: [{ playId: '1', goalType: 'sop' }] },
+    ])).toBe(false);
+    expect(liveGoalsNeedRefresh([
+      { inPlay: false, scoreDisplay: '1-0', goalsSoFar: [] },
+    ])).toBe(false);
   });
 });

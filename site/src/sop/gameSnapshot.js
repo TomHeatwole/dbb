@@ -192,6 +192,25 @@ export function buildSopGameSnapshot(game) {
 
 const MONITOR_UPCOMING_MS = 18 * 60 * 60 * 1000;
 
+export function scoredGoalCount(game) {
+  const home = Number(game?.score?.home);
+  const away = Number(game?.score?.away);
+  const fromScore = (Number.isFinite(home) ? home : 0) + (Number.isFinite(away) ? away : 0);
+  const fromDisplay = String(game?.scoreDisplay ?? '').match(/^(\d+)\s*-\s*(\d+)$/);
+  if (fromDisplay) return Number(fromDisplay[1]) + Number(fromDisplay[2]);
+  return fromScore;
+}
+
+/** Keep polling ESPN while a live match has a goal we have not classified yet. */
+export function liveGoalsNeedRefresh(games) {
+  return (games ?? []).some((game) => {
+    if (!game?.inPlay) return false;
+    const goals = Array.isArray(game.goalsSoFar) ? game.goalsSoFar : [];
+    if (goals.some((goal) => !goal?.goalType)) return true;
+    return scoredGoalCount(game) > goals.length;
+  });
+}
+
 export function isActiveMonitorGame(game, now = Date.now()) {
   if (game?.inPlay) return true;
   const kick = Date.parse(game?.openDate ?? '');
