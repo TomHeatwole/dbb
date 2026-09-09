@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
-import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount, isPreSeason } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap, getStandings } from '../scores/ScoresParser';
@@ -31,7 +31,7 @@ function PreviousYearRecapCard() {
 
   // Season we're displaying: when pre-season, the completed previous year; otherwise current year
   const displaySeason =
-    getCompletedWeeksCount(CURRENT_YEAR) === 0
+    isPreSeason()
       ? String(Number(CURRENT_YEAR) - 1)
       : CURRENT_YEAR;
 
@@ -45,8 +45,7 @@ function PreviousYearRecapCard() {
       setError(null);
       try {
         // When pre-season (current season hasn't started), recap the previous year
-        const completedWeeksCurrent = getCompletedWeeksCount(CURRENT_YEAR);
-        const season = completedWeeksCurrent === 0 ? String(Number(CURRENT_YEAR) - 1) : CURRENT_YEAR;
+        const season = isPreSeason() ? String(Number(CURRENT_YEAR) - 1) : CURRENT_YEAR;
 
         const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),

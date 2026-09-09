@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
-import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount, isPreSeason as isPreSeasonYear } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData, fetchTradedPicks, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
@@ -22,9 +22,7 @@ function RookieDraftCard() {
     if (!Number.isFinite(n)) {
       return { seasonForOrder: CURRENT_YEAR, draftYear: CURRENT_YEAR };
     }
-    const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-    const isPreSeason = completedWeeks === 0;
-    if (isPreSeason) {
+    if (isPreSeasonYear()) {
       return { seasonForOrder: String(n - 1), draftYear: String(n) };
     }
     return { seasonForOrder: String(n), draftYear: String(n + 1) };

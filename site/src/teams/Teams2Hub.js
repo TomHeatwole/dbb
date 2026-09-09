@@ -5,7 +5,7 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
-import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount, isPreSeason } from '../utils/DateHelper';
 import { PREVIOUS_YEARS } from '../utils/global_constants';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
@@ -224,7 +224,7 @@ function Teams2Hub() {
                 topPlayers={t.topPlayers}
                 season={season !== CURRENT_YEAR ? season : null}
                 isMe={isMyRoster(t.rosterId, myRosterId)}
-                preseason={season === CURRENT_YEAR && getCompletedWeeksCount(season) === 0}
+                preseason={season === CURRENT_YEAR && isPreSeason()}
               />
             ))}
           </div>

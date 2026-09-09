@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { fetchScoresData } from '../lookups/ScoresLookup';
-import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, isPreSeason as isPreSeasonYear } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
 import { loadSeasonStatsFromCSV, mapCSVStatsToSleeperFormat } from './WeeklyStatsLoader';
 import useIsMobile from '../hooks/useIsMobile';
@@ -96,8 +96,7 @@ function OwnershipDisplay({ info, myRosterId, variant = 'banner', label = 'Owned
 
 function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride, initialSeason }) {
   // Default to previous year if current season hasn't started yet
-  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-  const isPreSeason = completedWeeks === 0;
+  const isPreSeason = isPreSeasonYear();
   const defaultSeason = isPreSeason ? String(Number(CURRENT_YEAR) - 1) : CURRENT_YEAR;
   const [season, setSeason] = useState(
     initialSeason ? String(initialSeason) : defaultSeason

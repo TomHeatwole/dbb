@@ -110,14 +110,35 @@ export function getCompletedWeeksCount(season = null) {
   return Math.max(0, Math.min(17, raw));
 }
 
-/** True when the active season has not started yet (completed weeks === 0). Past seasons are never "preseason". */
+/** Kickoff instant for Week 1 — Wed Sep 9, 2026 @ 8:20 PM ET (SEA vs NE). */
+export function getWeek1KickoffMs() {
+  // Hardcoded so a stale SITE_SETTINGS date (09/04) cannot override the 2026 opener.
+  const ts = Date.parse('2026-09-09T20:20:00-04:00');
+  return Number.isFinite(ts) ? ts : null;
+}
+
+/**
+ * True before Week 1 kickoff. Past seasons are never "preseason".
+ * This is NOT "zero weeks completed" — that stays true through all of Week 1.
+ */
 export function isPreSeason(season = null) {
   const target = season == null ? CURRENT_YEAR : season;
   if (String(target) !== String(CURRENT_YEAR)) return false;
-  return getCompletedWeeksCount(CURRENT_YEAR) === 0;
+
+  const override = weekOverrideForSeason(CURRENT_YEAR);
+  if (override != null) {
+    return Number(override) <= 0;
+  }
+
+  const kickoffMs = getWeek1KickoffMs();
+  if (Number.isFinite(kickoffMs)) {
+    return Date.now() < kickoffMs;
+  }
+
+  return new Date() < parseSeasonStart(CURRENT_YEAR);
 }
 
-/** True once SEASON_START_DAY (or CURRENT_WEEK_OVERRIDE) says the active season is underway. */
+/** True once Week 1 kickoff (or CURRENT_WEEK_OVERRIDE) says the active season is underway. */
 export function hasSeasonStarted(season = null) {
   return !isPreSeason(season);
 }
@@ -212,8 +233,7 @@ export function isCurrentYearRookieDraftDone(rookieDraftComplete = false) {
  */
 export function getFuturePickSeasonRange(rookieDraftComplete = false) {
   const currentYearNum = Number(CURRENT_YEAR);
-  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-  const preSeason = completedWeeks === 0;
+  const preSeason = isPreSeason(CURRENT_YEAR);
   const currentYearDraftDone = isCurrentYearRookieDraftDone(rookieDraftComplete);
   const minSeason = currentYearNum + (currentYearDraftDone ? 1 : 0);
   return {
@@ -228,13 +248,6 @@ export function getNextDraftYear(rookieDraftComplete = false) {
   const { isPreSeason: preSeason, currentYearDraftDone } = getFuturePickSeasonRange(rookieDraftComplete);
   if (preSeason && !currentYearDraftDone) return String(CURRENT_YEAR);
   return String(Number(CURRENT_YEAR) + 1);
-}
-
-/** Kickoff instant for Week 1 countdown — Wed Sep 9, 2026 @ 8:20 PM ET. */
-export function getWeek1KickoffMs() {
-  // Hardcoded so a stale SITE_SETTINGS date (09/04) cannot override the 2026 opener.
-  const ts = Date.parse('2026-09-09T20:20:00-04:00');
-  return Number.isFinite(ts) ? ts : null;
 }
 
 // Decide if we should poll current week's data based on ESPN scoreboard json

@@ -20,7 +20,11 @@ export async function selectHotTeam(options = {}) {
     }
   }
 
-  const targetWeek = Math.max(1, currentWeek - 1);
+  if (currentWeek <= 1) {
+    return { hotTeam: null, week: null };
+  }
+
+  const targetWeek = currentWeek - 1;
 
   const [weeksData, teamData] = await Promise.all([
     fetchScoresData(season),

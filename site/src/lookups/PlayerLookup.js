@@ -4,7 +4,7 @@
 import { PLAYER_ESPN_MAP_OVERRIDES } from '../utils/global_constants';
 import { updatePlayers, readCurrentWeekPlayersSnapshot, readPlayersSnapshot } from '../utils/database';
 import { fetchScoresData } from './ScoresLookup';
-import { CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, isCurrentWeekCompleted, isPreSeason } from '../utils/DateHelper';
 
 const cachedPlayersDataByKey = {};
 let cachedPlayerIdMap = null;
@@ -67,10 +67,7 @@ export async function fetchPlayersData(rostersOrSeason = null, opts = {}) {
   if (!rosters) {
     // Try to derive minimal roster list from ScoresLookup current week
     // BUT skip this in pre-season since matchup data will be empty
-    const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-    const isPreSeason = completedWeeks === 0;
-    
-    if (!isPreSeason) {
+    if (!isPreSeason()) {
       try {
         const season = CURRENT_YEAR;
         const weeksData = await fetchScoresData(season);

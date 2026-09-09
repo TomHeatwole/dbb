@@ -5,7 +5,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getDatabase, ref, set, get, remove } from 'firebase/database';
 import { FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_DATABASE_URL, FIREBASE_LOGIN_EMAIL, FIREBASE_LOGIN_PASSWORD, FIREBASE_API_KEY } from './global_constants';
-import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from './DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, isPreSeason } from './DateHelper';
 
 // Use settings-provided API key first, fallback to env
 const firebaseConfig = {
@@ -225,12 +225,11 @@ export async function updatePlayers(caredPlayerIds) {
   }
   const season = String(CURRENT_YEAR);
   const week = getCurrentNFLWeek(season);
-  const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-  const isPreSeason = completedWeeks === 0;
+  const preseason = isPreSeason();
   
   // Include preseason flag AND version in cache path to bust old cache
   // v2: includes inactive players in pre-season
-  const basePath = isPreSeason ? `players_${season}_week_${week}_preseason_v2` : `players_${season}_week_${week}`;
+  const basePath = preseason ? `players_${season}_week_${week}_preseason_v2` : `players_${season}_week_${week}`;
 
 
   // Check latest entry under the week folder with 1-hour TTL
@@ -275,7 +274,7 @@ export async function updatePlayers(caredPlayerIds) {
     
     // During the season, filter to active players only
     // In pre-season, include all players to show rookies and newly traded players
-    if (!isPreSeason) {
+    if (!preseason) {
       const isActive = (p && p.active === true) || (p && typeof p.status === 'string' && p.status.toLowerCase() === 'active');
       if (!isActive) {
         continue;
@@ -304,8 +303,7 @@ export async function updatePlayers(caredPlayerIds) {
 export async function readCurrentWeekPlayersSnapshot() {
   const season = String(CURRENT_YEAR);
   const week = getCurrentNFLWeek(season);
-  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
-  const basePath = isPreSeason
+  const basePath = isPreSeason()
     ? `players_${season}_week_${week}_preseason_v2`
     : `players_${season}_week_${week}`;
   try {

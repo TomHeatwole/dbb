@@ -12,7 +12,7 @@ import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/Pl
 import { fetchKtcData, getKtcEntryByName, formatKtcValue } from '../lookups/KtcLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
-import { CURRENT_YEAR, hasSeasonStarted } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 const SLEEPER_BOT = '/data/sleeper-bot.png';
@@ -57,7 +57,7 @@ function YourTeamHomeCard() {
       return undefined;
     }
 
-    const usePoints = hasSeasonStarted();
+    const usePoints = getCompletedWeeksCount() > 0;
     setLoading(true);
     const loads = [
       loadCurrentTeamData(),

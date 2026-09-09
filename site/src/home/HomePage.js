@@ -24,7 +24,7 @@ import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
-import { getCurrentNFLWeek, isCurrentWeekCompleted, isPreSeason } from '../utils/DateHelper';
+import { getCurrentNFLWeek, isCurrentWeekCompleted, isPreSeason, hasSeasonStarted, getWeek1KickoffMs } from '../utils/DateHelper';
 import { HOME_OFFSEASON_OVERRIDE } from '../utils/global_constants';
 import { fetchRookieDraftComplete } from '../lookups/TeamLookup';
 import './Home.css';
@@ -38,6 +38,7 @@ function HomePage() {
   // Home page specific logic: as soon as a week is completed, advance to the next week
   const [homePageCurrentWeek, setHomePageCurrentWeek] = useState(null);
   const [rookieDraftComplete, setRookieDraftComplete] = useState(false);
+  const [kickoffTick, setKickoffTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +77,15 @@ function HomePage() {
     };
   }, []);
 
+  // Flip off-season → in-season at the exact kickoff instant if this tab stays open.
+  useEffect(() => {
+    if (hasSeasonStarted()) return undefined;
+    const kickoffMs = getWeek1KickoffMs();
+    if (!Number.isFinite(kickoffMs)) return undefined;
+    const id = setTimeout(() => setKickoffTick((n) => n + 1), Math.max(0, kickoffMs - Date.now()));
+    return () => clearTimeout(id);
+  }, [kickoffTick]);
+
   // Show loading state while determining which week to display
   if (homePageCurrentWeek === null) {
     return (
@@ -88,7 +98,7 @@ function HomePage() {
   // Week comes from DateHelper (SEASON_START_DAY / CURRENT_WEEK_OVERRIDE in global_constants)
   const effectiveWeekOverride = homePageCurrentWeek;
   const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
-  // Off-season when: (1) Week 17 of current season is complete, OR (2) current season hasn't started yet
+  // Off-season when: (1) Week 17 of current season is complete, OR (2) before Week 1 kickoff
   const autoOffSeason =
     isPreSeason() ||
     (Number.isFinite(Number(effectiveWeekOverride)) &&

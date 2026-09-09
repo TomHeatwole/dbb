@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { trackPageLoad } from '../utils/UsageTracker';
-import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount, isPreSeason } from '../utils/DateHelper';
 import { PREVIOUS_YEARS } from '../utils/global_constants';
 import PlayoffRulesToolTip from '../yoffs/PlayoffRulesToolTip';
 import Yoffs2024Format from '../yoffs/Yoffs2024Format';
@@ -22,10 +22,10 @@ function YoffsPage() {
   const urlTeamA = searchParams.get('a');
   const urlTeamB = searchParams.get('b');
 
-  const isPreSeason = getCompletedWeeksCount(CURRENT_YEAR) === 0;
+  const preseason = isPreSeason();
   const prevYearsForDefault = Object.keys(PREVIOUS_YEARS).sort((a, b) => b - a);
-  const availableYears = isPreSeason ? prevYearsForDefault : [CURRENT_YEAR, ...prevYearsForDefault];
-  const defaultSeason = isPreSeason && prevYearsForDefault.length > 0 ? prevYearsForDefault[0] : CURRENT_YEAR;
+  const availableYears = preseason ? prevYearsForDefault : [CURRENT_YEAR, ...prevYearsForDefault];
+  const defaultSeason = preseason && prevYearsForDefault.length > 0 ? prevYearsForDefault[0] : CURRENT_YEAR;
   const initialSeason = urlYear && String(urlYear) !== 'null' ? urlYear : defaultSeason;
   const initialModeFromUrl =
     urlFormat === 'bracket' || urlFormat === 'cumulative' ? urlFormat : null;

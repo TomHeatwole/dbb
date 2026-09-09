@@ -49,7 +49,7 @@ import { RedraftAdjTooltip } from '../redraftValueIndex/redraftValueTooltip';
 import { redraftUsesHwangAdp } from '../rankingsViewer/rankingsSources';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
 import { fetchScoresData } from '../lookups/ScoresLookup';
-import { CURRENT_YEAR, getCompletedWeeksCount, getFuturePickSeasonRange, getNextDraftYear, isPostSeasonPreDraft } from '../utils/DateHelper';
+import { CURRENT_YEAR, getFuturePickSeasonRange, getNextDraftYear, isPostSeasonPreDraft, isPreSeason as isPreSeasonYear } from '../utils/DateHelper';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
@@ -287,8 +287,7 @@ function DynastyRosterView() {
       setLoading(true);
       setError(null);
       try {
-        const completedWeeks = getCompletedWeeksCount(CURRENT_YEAR);
-        const isPreSeason    = completedWeeks === 0;
+        const isPreSeason    = isPreSeasonYear();
         const prevYearStr    = String(Number(CURRENT_YEAR) - 1);
         // loadTruePickChart() is awaited for its cache-warming side effect; its result slot is skipped.
         const [teamData, weeksData, idMap, ktcResult, fcResult, ffbResult, redraftResult, marketMult, trueMult, compositeMult, , allTradedPicks, prevWeeksData, rookieDraftComplete] =
