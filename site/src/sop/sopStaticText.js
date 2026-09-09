@@ -38,6 +38,30 @@ function noGoalSourceDetail(sourceKey, quote) {
   return null;
 }
 
+/** Kickoff in Eastern time so the server dump is stable. */
+export function formatKickoffStamp(iso) {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    const day = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+    const time = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+    return `${day} ${time} ET`;
+  } catch {
+    return date.toISOString();
+  }
+}
+
 export function formatNoGoalProxy(sourceKey, book, quote, american) {
   const source = NO_GOAL_SOURCE_LABELS[sourceKey] ?? sourceKey ?? 'No Goal';
   const detail = noGoalSourceDetail(sourceKey, quote);
@@ -105,6 +129,8 @@ export function collectProfitableSopEdges(game) {
     score: game?.scoreDisplay ?? '0-0',
     clock: liveClockLabel(game),
     inPlay: Boolean(game?.inPlay),
+    openDate: game?.openDate ?? null,
+    kickoff: formatKickoffStamp(game?.openDate),
     competition: game?.competition ?? 'pl',
     noGoal: {
       sourceKey: longest.sourceKey,
@@ -129,6 +155,7 @@ export function formatEdgePercent(edgePoints) {
 
 function formatGameHeading(row) {
   const bits = [row.fullName || row.name];
+  if (row.kickoff) bits.push(row.kickoff);
   if (row.score) bits.push(row.score);
   if (row.inPlay) bits.push('LIVE');
   if (row.clock) bits.push(row.clock);

@@ -2,7 +2,10 @@
  * DraftKings Premier League + Champions League corner totals (full, 1H, 2H) and live team intervals.
  */
 
-import { americanToImpliedProb } from '../src/sop/sopModel.js';
+import { pickExport } from './named-export.mjs';
+import * as sopModel from '../src/sop/sopModel.js';
+
+const americanToImpliedProb = pickExport(sopModel, 'americanToImpliedProb');
 import {
   DK_SOP_LEAGUES,
   discoverDkEventsFromLeagues,

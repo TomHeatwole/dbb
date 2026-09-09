@@ -1,6 +1,7 @@
 import { analyzeAgainstBreakeven, computeBreakevenOdds, computeKellyFraction } from './sopModel';
 import {
   collectProfitableSopEdges,
+  formatKickoffStamp,
   formatNoGoalProxy,
   formatSopStaticText,
 } from './sopStaticText';
@@ -10,6 +11,7 @@ describe('SOP static text', () => {
     eventId: 'e1',
     name: 'Arsenal v Chelsea',
     teams: { home: 'Arsenal', away: 'Chelsea' },
+    openDate: '2026-09-06T14:00:00.000Z',
     inPlay: true,
     scoreDisplay: '1-0',
     espn: { status: 'in', clock: "34'" },
@@ -75,7 +77,7 @@ describe('SOP static text', () => {
     });
 
     expect(text).toContain('fetched 2026-09-08T15:00:00.000Z');
-    expect(text).toContain('Arsenal v Chelsea  1-0  LIVE  34\'');
+    expect(text).toContain(`Arsenal v Chelsea  ${formatKickoffStamp('2026-09-06T14:00:00.000Z')}  1-0  LIVE  34'`);
     expect(text).toContain('no-goal: DK Total Goals Under U 2.5 +500');
     expect(text).toContain('edge +');
     expect(text).toContain('kelly ');
@@ -85,6 +87,17 @@ describe('SOP static text', () => {
   it('says when nothing is +EV', () => {
     const text = formatSopStaticText({ games: [], fetchedAt: '2026-09-08T15:00:00.000Z' });
     expect(text).toContain('No profitable edges.');
+  });
+
+  it('prints Eastern kickoff date and time', () => {
+    expect(formatKickoffStamp('2026-09-06T14:00:00.000Z')).toBe('Sun, Sep 6 10:00 AM ET');
+    const row = collectProfitableSopEdges({
+      ...liveGame,
+      inPlay: false,
+      espn: null,
+      openDate: '2026-09-06T14:00:00.000Z',
+    });
+    expect(row.kickoff).toBe('Sun, Sep 6 10:00 AM ET');
   });
 
   it('labels a correct-score proxy', () => {

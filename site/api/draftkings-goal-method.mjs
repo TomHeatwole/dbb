@@ -8,18 +8,18 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchWorldCupSopOdds as fetchFanDuelGames } from './fanduel-sop.mjs';
-import {
-  fdNameToSlug,
-  fixtureTeamKey,
-  normalizeTeamSlug,
-  splitFixtureTeams,
-} from '../src/sop/fixtureKey.js';
-import {
-  analyzeAgainstBreakeven,
-  computeBreakevenOdds,
-  DEFAULT_NO_GOAL_SOURCE,
-  GOAL_TYPE_META,
-} from '../src/sop/sopModel.js';
+import { pickExport } from '../lib/named-export.mjs';
+import * as fixtureKey from '../src/sop/fixtureKey.js';
+import * as sopModel from '../src/sop/sopModel.js';
+
+const fdNameToSlug = pickExport(fixtureKey, 'fdNameToSlug');
+const fixtureTeamKey = pickExport(fixtureKey, 'fixtureTeamKey');
+const normalizeTeamSlug = pickExport(fixtureKey, 'normalizeTeamSlug');
+const splitFixtureTeams = pickExport(fixtureKey, 'splitFixtureTeams');
+const analyzeAgainstBreakeven = pickExport(sopModel, 'analyzeAgainstBreakeven');
+const computeBreakevenOdds = pickExport(sopModel, 'computeBreakevenOdds');
+const DEFAULT_NO_GOAL_SOURCE = pickExport(sopModel, 'DEFAULT_NO_GOAL_SOURCE');
+const GOAL_TYPE_META = pickExport(sopModel, 'GOAL_TYPE_META');
 
 const SITE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DK_COOKIE_FILE = path.join(SITE_DIR, '.dk-cookies.json');

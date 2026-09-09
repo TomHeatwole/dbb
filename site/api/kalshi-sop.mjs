@@ -5,7 +5,10 @@
  */
 
 import { fetchWorldCupSopOdds as fetchFanDuelGames } from './fanduel-sop.mjs';
-import { probToAmerican } from '../src/sop/sopModel.js';
+import { pickExport } from '../lib/named-export.mjs';
+import * as sopModel from '../src/sop/sopModel.js';
+
+const probToAmerican = pickExport(sopModel, 'probToAmerican');
 
 const KALSHI_BASE = 'https://external-api.kalshi.com/trade-api/v2';
 
