@@ -18,7 +18,25 @@ const CLOCK_STUB = /end of (half|game)/i;
 const SERIES_RESULT = /touchdown|field goal|punt|fumble|interception|downs|safety|missed|blocked/i;
 
 export function espnDriveResultName(drive) {
+  if (typeof drive?.result === 'string' && drive.result.trim()) return drive.result.trim();
   return String(drive?.result?.displayName || drive?.displayResult || '').trim();
+}
+
+const ST_TD = /interception|fumble return|punt return|kickoff return|kick return|blocked punt|blocked field goal/i;
+
+/**
+ * FanDuel settlement bucket for a completed ESPN series.
+ * Matches scripts/scrape_espn_ncaaf_drives.py classify_bucket.
+ */
+export function classifyEspnDriveBucket(drive) {
+  if (!drive || isInProgressDrive(drive) || !isCountableTeamDrive(drive)) return null;
+  const display = espnDriveResultName(drive).toLowerCase();
+  if (!display) return 'other';
+  if (/field goal|missed fg/.test(display)) return 'fg';
+  if (display === 'punt' || display === 'blocked punt') return 'punt';
+  if (/touchdown|\btd\b/.test(display)) return ST_TD.test(display) ? 'other' : 'td';
+  if (/^punt\b/.test(display)) return 'punt';
+  return 'other';
 }
 
 export function isClockStubDrive(drive) {
@@ -75,6 +93,7 @@ export function parseEspnDriveBlob(blob, sideOf) {
   const current = blob.current && typeof blob.current === 'object' ? blob.current : null;
   const seen = new Set();
   const started = { home: 0, away: 0 };
+  const soFar = { td: 0, fg: 0, punt: 0, other: 0 };
   const add = (drive) => {
     if (!drive || typeof drive !== 'object') return;
     const id = drive.id != null ? String(drive.id) : null;
@@ -85,6 +104,8 @@ export function parseEspnDriveBlob(blob, sideOf) {
     if (!isCountableTeamDrive(drive)) return;
     const side = sideOf(drive);
     if (side === 'home' || side === 'away') started[side] += 1;
+    const bucket = classifyEspnDriveBucket(drive);
+    if (bucket) soFar[bucket] += 1;
   };
   for (const drive of previous) add(drive);
   if (current) add(current);
@@ -99,6 +120,8 @@ export function parseEspnDriveBlob(blob, sideOf) {
   return {
     homeStarted: started.home,
     awayStarted: started.away,
+    startedTotal: started.home + started.away,
+    soFar,
     currentSide: liveCurrent,
     currentResult,
     finishedSide,

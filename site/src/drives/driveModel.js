@@ -917,6 +917,65 @@ function scoreDiffForOffense(game, side) {
   return NaN;
 }
 
+const EMPTY_SO_FAR = {
+  so_far_td: 0,
+  so_far_fg: 0,
+  so_far_punt: 0,
+  so_far_other: 0,
+};
+
+const MISSING_SO_FAR = {
+  so_far_td: NaN,
+  so_far_fg: NaN,
+  so_far_punt: NaN,
+  so_far_other: NaN,
+};
+
+/**
+ * Game-wide drive index + completed-result counts the drive-start trees
+ * were trained on (not FanDuel's per-team "Drive 6").
+ */
+export function driveStartPriors(game, { nextDrive = false } = {}) {
+  const inPlay = Boolean(game?.inPlay) && game?.live?.state !== 'pre';
+  if (!inPlay) {
+    return { drive_n: 1, ...EMPTY_SO_FAR };
+  }
+  const chart = game?.live?.driveChart;
+  const home = Number(chart?.homeStarted);
+  const away = Number(chart?.awayStarted);
+  const started = (Number.isFinite(home) ? home : 0) + (Number.isFinite(away) ? away : 0);
+  const hasStarted = Number.isFinite(home) || Number.isFinite(away);
+  const currentLive = chart?.currentSide === 'home' || chart?.currentSide === 'away';
+  const soFar = chart?.soFar;
+  const completedKnown = Boolean(
+    soFar
+    && Number.isFinite(soFar.td)
+    && Number.isFinite(soFar.fg)
+    && Number.isFinite(soFar.punt)
+    && Number.isFinite(soFar.other),
+  );
+
+  let driveN = NaN;
+  if (hasStarted) {
+    driveN = nextDrive || !currentLive ? started + 1 : Math.max(1, started);
+  }
+
+  let counts = MISSING_SO_FAR;
+  if (completedKnown) {
+    counts = {
+      so_far_td: soFar.td,
+      so_far_fg: soFar.fg,
+      so_far_punt: soFar.punt,
+      so_far_other: soFar.other,
+    };
+  } else if (hasStarted) {
+    const completed = currentLive ? started - 1 : started;
+    if (completed <= 0) counts = { ...EMPTY_SO_FAR };
+  }
+
+  return { drive_n: driveN, ...counts };
+}
+
 /**
  * Build the feature map the trees expect. `layer` is driveStart | snap.
  */
@@ -1007,12 +1066,8 @@ export function featuresFromGame(game) {
         over_under: ou,
         exp_off: expOff,
         exp_def: expDef,
-        drive_n: NaN,
+        ...driveStartPriors(view, { nextDrive: true }),
         is_home: side === 'away' ? 0 : side === 'home' ? 1 : NaN,
-        so_far_td: NaN,
-        so_far_fg: NaN,
-        so_far_punt: NaN,
-        so_far_other: NaN,
         fp_code: fpCode(ytg),
         half_code: halfCode(startPeriod),
       },
@@ -1043,12 +1098,8 @@ export function featuresFromGame(game) {
         over_under: ou,
         exp_off: expOff,
         exp_def: expDef,
-        drive_n: NaN,
+        ...driveStartPriors(view, { nextDrive: false }),
         is_home: side === 'away' ? 0 : side === 'home' ? 1 : NaN,
-        so_far_td: NaN,
-        so_far_fg: NaN,
-        so_far_punt: NaN,
-        so_far_other: NaN,
         fp_code: fpCode(ytg),
         half_code: halfCode(startPeriod),
       },
@@ -1129,12 +1180,8 @@ export function featuresFromGame(game) {
       over_under: ou,
       exp_off: expOff,
       exp_def: expDef,
-      drive_n: inPlay ? NaN : 1,
+      ...driveStartPriors(view, { nextDrive: Boolean(inPlay && !pricingCurrentDrive) }),
       is_home: side === 'away' ? 0 : side === 'home' ? 1 : NaN,
-      so_far_td: inPlay ? NaN : 0,
-      so_far_fg: inPlay ? NaN : 0,
-      so_far_punt: inPlay ? NaN : 0,
-      so_far_other: inPlay ? NaN : 0,
       fp_code: fpCode(ytg),
       half_code: halfCode(startPeriod),
     },

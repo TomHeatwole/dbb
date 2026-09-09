@@ -2,6 +2,7 @@ import {
   evaluateDriveGame,
   extractHomeSpread,
   featuresFromGame,
+  driveStartPriors,
   driveCardRole,
   driveNumberFromName,
   driveNumberForSide,
@@ -120,6 +121,9 @@ describe('CFB name collisions (Texas vs Texas State)', () => {
 
     expect(txstFeat.features.offense_spread).toBe(29.5);
     expect(txstFeat.features.exp_off).toBeCloseTo(15.5, 5);
+    expect(txstFeat.features.drive_n).toBe(1);
+    expect(txstFeat.features.so_far_td).toBe(0);
+    expect(txstFeat.features.so_far_punt).toBe(0);
     expect(texasFeat.features.offense_spread).toBe(-29.5);
     expect(texasFeat.features.exp_off).toBeCloseTo(45.0, 5);
   });
@@ -137,6 +141,49 @@ describe('CFB name collisions (Texas vs Texas State)', () => {
     expect(texasTd.p).toBeGreaterThan(0.40);
     expect(txstTd.p).toBeLessThan(texasTd.p - 0.15);
     expect(txstTd.fairAmerican).not.toBe(texasTd.fairAmerican);
+  });
+});
+
+describe('drive-start priors from the ESPN chart', () => {
+  it('uses game-wide drive_n and completed so_far, not the team market number', () => {
+    const game = wazzuAtWashington({
+      clockSeconds: 7 * 60,
+      clock: '7:00',
+      driveChart: {
+        homeStarted: 4,
+        awayStarted: 6,
+        currentSide: 'away',
+        soFar: { td: 2, fg: 1, punt: 4, other: 2 },
+      },
+    });
+    const sides = listDriveSides(game);
+    const current = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const next = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(current.layer).toBe('snap');
+    expect(next.layer).toBe('driveStart');
+    expect(next.features.drive_n).toBe(11);
+    expect(next.features.so_far_td).toBe(2);
+    expect(next.features.so_far_fg).toBe(1);
+    expect(next.features.so_far_punt).toBe(4);
+    expect(next.features.so_far_other).toBe(2);
+    expect(driveStartPriors(game, { nextDrive: false }).drive_n).toBe(10);
+  });
+
+  it('zeros so_far when the chart has no completed drives yet', () => {
+    const game = wazzuAtWashington({
+      period: 1,
+      clockSeconds: 14 * 60,
+      clock: '14:00',
+      down: null,
+      distance: null,
+      yardsToEndzone: 75,
+      driveChart: { homeStarted: 0, awayStarted: 1, currentSide: 'away' },
+    });
+    const feat = featuresFromGame(game);
+    expect(feat.layer).toBe('driveStart');
+    expect(feat.features.drive_n).toBe(1);
+    expect(feat.features.so_far_td).toBe(0);
+    expect(feat.features.so_far_punt).toBe(0);
   });
 });
 
@@ -540,6 +587,8 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(chart).toEqual({
       homeStarted: 7,
       awayStarted: 7,
+      startedTotal: 14,
+      soFar: { td: 3, fg: 4, punt: 4, other: 3 },
       currentSide: null,
       currentResult: 'Touchdown',
       finishedSide: 'home',
@@ -557,6 +606,13 @@ describe('live clock vs stale end-of-half snaps', () => {
     });
     expect(driveNumberForSide(game, 'away', { role: 'next' })).toBe(8);
     expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(8);
+    const next = featuresFromGame({ ...game, nextDrive: { offenseSide: 'away' } });
+    expect(next.layer).toBe('driveStart');
+    expect(next.features.drive_n).toBe(15);
+    expect(next.features.so_far_td).toBe(3);
+    expect(next.features.so_far_fg).toBe(4);
+    expect(next.features.so_far_punt).toBe(4);
+    expect(next.features.so_far_other).toBe(3);
   });
 
   it('counts an End of Half series that had offensive plays (SMU Drive 6 → next is 7)', () => {
@@ -602,6 +658,8 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(chart).toEqual({
       homeStarted: 5,
       awayStarted: 6,
+      startedTotal: 11,
+      soFar: { td: 3, fg: 3, punt: 2, other: 3 },
       currentSide: null,
       currentResult: 'End of Half',
       finishedSide: 'away',
@@ -690,6 +748,8 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(chart).toEqual({
       homeStarted: 0,
       awayStarted: 1,
+      startedTotal: 1,
+      soFar: { td: 1, fg: 0, punt: 0, other: 0 },
       currentSide: null,
       currentResult: null,
       finishedSide: null,

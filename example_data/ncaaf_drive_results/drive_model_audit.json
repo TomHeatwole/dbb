@@ -1,0 +1,60 @@
+{
+  "drive_start_nan_skew": {
+    "n": 39573,
+    "logloss_true_features": 1.15437,
+    "logloss_nan_features": 1.16518,
+    "mean_abs_prob_shift": {
+      "punt": 0.0305,
+      "td": 0.0268,
+      "fg": 0.0138,
+      "other": 0.0223
+    },
+    "p90_abs_prob_shift": {
+      "punt": 0.0779,
+      "td": 0.0675,
+      "fg": 0.0318,
+      "other": 0.0494
+    },
+    "share_rows_any_class_shift_gt_3pts": 0.5191,
+    "share_rows_any_class_shift_gt_5pts": 0.3062
+  },
+  "snap_by_down": {
+    "down_1": {
+      "n": 105827,
+      "logloss_model": 1.12154,
+      "logloss_down_freq_baseline": 1.34727,
+      "obs_punt": 0.2377,
+      "pred_punt": 0.2425
+    },
+    "down_2": {
+      "n": 76276,
+      "logloss_model": 1.1099,
+      "logloss_down_freq_baseline": 1.36033,
+      "obs_punt": 0.2823,
+      "pred_punt": 0.2833
+    },
+    "down_3": {
+      "n": 48807,
+      "logloss_model": 1.02686,
+      "logloss_down_freq_baseline": 1.34514,
+      "obs_punt": 0.3733,
+      "pred_punt": 0.3724
+    },
+    "down_4": {
+      "n": 27280,
+      "logloss_model": 0.54104,
+      "logloss_down_freq_baseline": 1.1287,
+      "obs_punt": 0.5725,
+      "pred_punt": 0.5754
+    }
+  },
+  "snap_excl_4th": {
+    "n": 230910,
+    "logloss_model": 1.09768
+  },
+  "fourth_down_2025": {
+    "n": 27280,
+    "pred_punt": 0.5754,
+    "obs_punt": 0.5725
+  }
+}

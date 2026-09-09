@@ -1,0 +1,322 @@
+{
+  "observed_rates": {
+    "2023": {
+      "all": {
+        "punt": 0.3687,
+        "td": 0.2601,
+        "fg": 0.1177,
+        "other": 0.2536,
+        "n": 36362
+      },
+      "early": {
+        "punt": 0.3758,
+        "td": 0.2637,
+        "fg": 0.1126,
+        "other": 0.2479,
+        "n": 11539
+      },
+      "mid": {
+        "punt": 0.3648,
+        "td": 0.2555,
+        "fg": 0.1236,
+        "other": 0.2561,
+        "n": 12784
+      },
+      "late": {
+        "punt": 0.3661,
+        "td": 0.2623,
+        "fg": 0.1172,
+        "other": 0.2543,
+        "n": 10930
+      },
+      "bowls": {
+        "punt": 0.3634,
+        "td": 0.2525,
+        "fg": 0.1091,
+        "other": 0.275,
+        "n": 1109
+      }
+    },
+    "2024": {
+      "all": {
+        "punt": 0.3613,
+        "td": 0.2648,
+        "fg": 0.1225,
+        "other": 0.2514,
+        "n": 37777
+      },
+      "early": {
+        "punt": 0.3797,
+        "td": 0.2592,
+        "fg": 0.1198,
+        "other": 0.2413,
+        "n": 11495
+      },
+      "mid": {
+        "punt": 0.354,
+        "td": 0.2682,
+        "fg": 0.1249,
+        "other": 0.2529,
+        "n": 12189
+      },
+      "late": {
+        "punt": 0.3557,
+        "td": 0.2661,
+        "fg": 0.1225,
+        "other": 0.2556,
+        "n": 12791
+      },
+      "bowls": {
+        "punt": 0.321,
+        "td": 0.2704,
+        "fg": 0.1244,
+        "other": 0.2842,
+        "n": 1302
+      }
+    },
+    "2025": {
+      "all": {
+        "punt": 0.359,
+        "td": 0.2635,
+        "fg": 0.121,
+        "other": 0.2565,
+        "n": 39573
+      },
+      "early": {
+        "punt": 0.372,
+        "td": 0.2646,
+        "fg": 0.1137,
+        "other": 0.2497,
+        "n": 12157
+      },
+      "mid": {
+        "punt": 0.3559,
+        "td": 0.2633,
+        "fg": 0.1233,
+        "other": 0.2576,
+        "n": 12858
+      },
+      "late": {
+        "punt": 0.3533,
+        "td": 0.2632,
+        "fg": 0.1235,
+        "other": 0.26,
+        "n": 13285
+      },
+      "bowls": {
+        "punt": 0.3268,
+        "td": 0.2592,
+        "fg": 0.1414,
+        "other": 0.2726,
+        "n": 1273
+      }
+    }
+  },
+  "phase_calibration_2025": {
+    "all": {
+      "n": 39573,
+      "logloss": 1.15437,
+      "obs": {
+        "punt": 0.359,
+        "td": 0.2635,
+        "fg": 0.121,
+        "other": 0.2565
+      },
+      "pred": {
+        "punt": 0.3603,
+        "td": 0.2645,
+        "fg": 0.1205,
+        "other": 0.2547
+      },
+      "punt_residual_pp": -0.13
+    },
+    "early": {
+      "n": 12157,
+      "logloss": 1.13412,
+      "obs": {
+        "punt": 0.372,
+        "td": 0.2646,
+        "fg": 0.1137,
+        "other": 0.2497
+      },
+      "pred": {
+        "punt": 0.3682,
+        "td": 0.2672,
+        "fg": 0.1146,
+        "other": 0.25
+      },
+      "punt_residual_pp": 0.38
+    },
+    "mid": {
+      "n": 12858,
+      "logloss": 1.17448,
+      "obs": {
+        "punt": 0.3559,
+        "td": 0.2633,
+        "fg": 0.1233,
+        "other": 0.2576
+      },
+      "pred": {
+        "punt": 0.3588,
+        "td": 0.2643,
+        "fg": 0.1223,
+        "other": 0.2545
+      },
+      "punt_residual_pp": -0.29
+    },
+    "late": {
+      "n": 13285,
+      "logloss": 1.15105,
+      "obs": {
+        "punt": 0.3533,
+        "td": 0.2632,
+        "fg": 0.1235,
+        "other": 0.26
+      },
+      "pred": {
+        "punt": 0.3551,
+        "td": 0.2628,
+        "fg": 0.1236,
+        "other": 0.2586
+      },
+      "punt_residual_pp": -0.18
+    },
+    "bowls": {
+      "n": 1273,
+      "logloss": 1.17914,
+      "obs": {
+        "punt": 0.3268,
+        "td": 0.2592,
+        "fg": 0.1414,
+        "other": 0.2726
+      },
+      "pred": {
+        "punt": 0.3538,
+        "td": 0.2576,
+        "fg": 0.1264,
+        "other": 0.2621
+      },
+      "punt_residual_pp": -2.7
+    }
+  },
+  "holdout_protocols": {
+    "random_10pct_2025_games": {
+      "n_games_hold": 168,
+      "n_games_train_2025": 1507,
+      "n_drives_hold": 4021,
+      "train_23_24_only": {
+        "n": 4021,
+        "logloss": 1.14843,
+        "obs": {
+          "punt": 0.3688,
+          "td": 0.2564,
+          "fg": 0.1171,
+          "other": 0.2576
+        },
+        "pred": {
+          "punt": 0.3593,
+          "td": 0.2605,
+          "fg": 0.1206,
+          "other": 0.2596
+        },
+        "punt_residual_pp": 0.95
+      },
+      "train_23_24_plus_90pct_2025": {
+        "n": 4021,
+        "logloss": 1.14572,
+        "obs": {
+          "punt": 0.3688,
+          "td": 0.2564,
+          "fg": 0.1171,
+          "other": 0.2576
+        },
+        "pred": {
+          "punt": 0.3582,
+          "td": 0.2604,
+          "fg": 0.121,
+          "other": 0.2603
+        },
+        "punt_residual_pp": 1.06
+      },
+      "note": "Same-season interpolation. The 10% games share 2025 coaching/tempo with the 90%, so this overstates the gain you would see in 2026."
+    },
+    "temporal_late_2025": {
+      "n_drives_hold": 14558,
+      "n_drives_added_2025": 25015,
+      "train_23_24_only": {
+        "n": 14558,
+        "logloss": 1.15336,
+        "obs": {
+          "punt": 0.351,
+          "td": 0.2628,
+          "fg": 0.1251,
+          "other": 0.2611
+        },
+        "pred": {
+          "punt": 0.3549,
+          "td": 0.2623,
+          "fg": 0.1239,
+          "other": 0.2589
+        },
+        "punt_residual_pp": -0.39
+      },
+      "train_23_24_plus_early_mid_2025": {
+        "n": 14558,
+        "logloss": 1.15195,
+        "obs": {
+          "punt": 0.351,
+          "td": 0.2628,
+          "fg": 0.1251,
+          "other": 0.2611
+        },
+        "pred": {
+          "punt": 0.3549,
+          "td": 0.2622,
+          "fg": 0.1245,
+          "other": 0.2584
+        },
+        "punt_residual_pp": -0.39
+      },
+      "note": "Honest in-season test: train through week 9 of 2025, score weeks 10+ and bowls. Closer to \u201cwill extra 2025 data help next year.\u201d"
+    },
+    "bowls_2025": {
+      "n_drives_hold": 1273,
+      "n_drives_added_2025": 38300,
+      "train_23_24_only": {
+        "n": 1273,
+        "logloss": 1.17877,
+        "obs": {
+          "punt": 0.3268,
+          "td": 0.2592,
+          "fg": 0.1414,
+          "other": 0.2726
+        },
+        "pred": {
+          "punt": 0.3538,
+          "td": 0.2577,
+          "fg": 0.1262,
+          "other": 0.2623
+        },
+        "punt_residual_pp": -2.7
+      },
+      "train_23_24_plus_regular_2025": {
+        "n": 1273,
+        "logloss": 1.17452,
+        "obs": {
+          "punt": 0.3268,
+          "td": 0.2592,
+          "fg": 0.1414,
+          "other": 0.2726
+        },
+        "pred": {
+          "punt": 0.3536,
+          "td": 0.2581,
+          "fg": 0.1268,
+          "other": 0.2615
+        },
+        "punt_residual_pp": -2.69
+      }
+    }
+  },
+  "snap_2025_note": "Phase check is on drive-start rows (the next-drive quotes). Snap trees do not use drive_n / so_far."
+}
