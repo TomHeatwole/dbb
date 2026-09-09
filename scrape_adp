@@ -1,6 +1,7 @@
 #!/bin/bash
 # Fetches current-season FantasyPros ADP for overall, half-PPR, full PPR, and best ball.
-# Writes one CSV per format to site/public/data/adp/fantasypros_adp_<type>_<year>.csv
+# Reuses cookies from fantasypros_scrape/*.sh (same session as ECR). Writes one CSV
+# per format to site/public/data/adp/fantasypros_adp_<type>_<year>.csv
 #
 # Usage (run from project root):
 #   ./scrape_adp

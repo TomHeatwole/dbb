@@ -502,18 +502,38 @@ export async function fetchPremierLeagueSopOdds({
 /** @deprecated alias — DK/Kalshi helpers still import this name */
 export const fetchWorldCupSopOdds = fetchPremierLeagueSopOdds;
 
-function wantsDrivesBook(req) {
-  const q = req.query || {};
-  if (q.book === 'drives' || q.drives === '1') return true;
+function requestUrl(req) {
   try {
-    const url = new URL(req.url || '', 'http://localhost');
-    return url.searchParams.get('book') === 'drives';
+    return new URL(req.url || '', 'http://localhost');
   } catch {
-    return false;
+    return null;
   }
 }
 
+function wantsDrivesBook(req) {
+  const q = req.query || {};
+  if (q.book === 'drives' || q.drives === '1') return true;
+  return requestUrl(req)?.searchParams.get('book') === 'drives';
+}
+
+function wantsStaticText(req) {
+  const q = req.query || {};
+  if (q.format === 'static' || q.static === '1') return true;
+  const parsed = requestUrl(req);
+  if (!parsed) return false;
+  if (parsed.searchParams.get('format') === 'static') return true;
+  return /\/sop-static\.txt$/i.test(parsed.pathname);
+}
+
 export default async function handler(req, res) {
+  if (wantsStaticText(req)) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+    const { default: staticHandler } = await import('../lib/sop-static.mjs');
+    return staticHandler(req, res);
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

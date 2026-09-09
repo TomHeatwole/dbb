@@ -137,7 +137,7 @@ async function main() {
 
   const sopStaticHandler = async (req, res) => {
     try {
-      const { default: handler } = await import('./api/sop-static.mjs');
+      const { default: handler } = await import('./lib/sop-static.mjs');
       return handler(req, res);
     } catch (e) {
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');

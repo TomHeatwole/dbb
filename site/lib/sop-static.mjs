@@ -1,11 +1,8 @@
 /**
- * Scrapeable SOP +EV dump at /sop-static.txt (and /api/sop-static).
- * Server-rendered, not cached.
+ * Scrapeable SOP +EV dump. Served at /sop-static.txt via /api/fanduel-sop?format=static
+ * so we do not add a 13th Hobby-plan serverless function.
  */
 
-import { fetchPremierLeagueSopOdds } from './fanduel-sop.mjs';
-import { fetchWorldCupGoalMethodOdds } from './draftkings-goal-method.mjs';
-import { fetchWorldCupKalshiOdds } from './kalshi-sop.mjs';
 import { keepSopDisplayGames, mergeDkIntoFdGames } from '../src/sop/mergeDkGames.js';
 import { mergeKalshiIntoFdGames } from '../src/sop/mergeKalshiGames.js';
 import { formatSopStaticText } from '../src/sop/sopStaticText.js';
@@ -25,24 +22,48 @@ function applyNoStoreHeaders(res) {
   }
 }
 
-async function settledValue(promise, fallback = null) {
+function getOrigin(req) {
+  const hostHeader = req.headers?.['x-forwarded-host'] || req.headers?.host || '';
+  const host = String(Array.isArray(hostHeader) ? hostHeader[0] : hostHeader)
+    .split(',')[0]
+    .trim();
+  const protoHeader = req.headers?.['x-forwarded-proto'] || (process.env.VERCEL ? 'https' : 'http');
+  const protocol = String(Array.isArray(protoHeader) ? protoHeader[0] : protoHeader)
+    .split(',')[0]
+    .trim();
+  if (host) return `${protocol}://${host}`.replace(/\/+$/, '');
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`.replace(/\/+$/, '');
+  return 'http://127.0.0.1:3001';
+}
+
+async function fetchJson(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 28_000);
   try {
-    return await promise;
+    const res = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
-    return fallback;
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-export async function buildSopStaticPayload() {
+export async function buildSopStaticPayload(req) {
+  const origin = getOrigin(req);
   const [fdData, dkData, kalshiData] = await Promise.all([
-    fetchPremierLeagueSopOdds({ includeEspn: true }),
-    settledValue(fetchWorldCupGoalMethodOdds()),
-    settledValue(fetchWorldCupKalshiOdds()),
+    fetchJson(`${origin}/api/fanduel-sop`),
+    fetchJson(`${origin}/api/draftkings-goal-method`),
+    fetchJson(`${origin}/api/kalshi-sop`),
   ]);
 
-  const fdGames = fdData?.games ?? [];
+  if (!fdData?.games) {
+    throw new Error(fdData?.error || 'FanDuel SOP fetch failed');
+  }
+
   const games = keepSopDisplayGames(
-    mergeKalshiIntoFdGames(mergeDkIntoFdGames(fdGames, dkData), kalshiData),
+    mergeKalshiIntoFdGames(mergeDkIntoFdGames(fdData.games ?? [], dkData), kalshiData),
   );
 
   const notices = [];
@@ -80,7 +101,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { text } = await buildSopStaticPayload();
+    const { text } = await buildSopStaticPayload(req);
     if (req.method === 'HEAD') {
       return sendText(res, 200);
     }

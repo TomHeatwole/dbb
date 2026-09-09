@@ -8,7 +8,8 @@
       "maxDuration": 30
     },
     "api/fanduel-sop.mjs": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "lib/sop-static.mjs,src/sop/**"
     },
     "api/ncaaf-drives.mjs": {
       "maxDuration": 30
@@ -23,15 +24,11 @@
     "api/kalshi-sop.mjs": {
       "maxDuration": 30,
       "includeFiles": "src/sop/sopModel.js,lib/kalshi-corners.mjs"
-    },
-    "api/sop-static.mjs": {
-      "maxDuration": 30,
-      "includeFiles": "src/sop/sopModel.js,src/sop/fixtureKey.js,src/sop/mergeDkGames.js,src/sop/mergeKalshiGames.js,src/sop/longestNoGoalPick.js,src/sop/gameSnapshot.js,src/sop/sopStaticText.js,lib/dk-corners.mjs,lib/kalshi-corners.mjs"
     }
   },
   "rewrites": [
-    { "source": "/sop-static.txt", "destination": "/api/sop-static" },
-    { "source": "/SOP-static.txt", "destination": "/api/sop-static" }
+    { "source": "/sop-static.txt", "destination": "/api/fanduel-sop?format=static" },
+    { "source": "/SOP-static.txt", "destination": "/api/fanduel-sop?format=static" }
   ],
   "headers": [
     {

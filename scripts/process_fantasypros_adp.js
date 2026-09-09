@@ -20,15 +20,19 @@
 const fs   = require('fs');
 const path = require('path');
 const https = require('https');
+const { execSync } = require('child_process');
 
 const PLAYERS_FILE       = path.join(__dirname, '../site/public/data/players.txt');
+const CURL_DIR           = path.join(__dirname, '../fantasypros_scrape');
 const RELEVANT_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE', 'K', 'DST']);
+const CURRENT_YEAR       = new Date().getFullYear();
+const TEASER_ROW_MAX     = 10;
 
 const URLS = {
-  overall:  'https://www.fantasypros.com/nfl/adp/overall.php?year={year}',
-  half:     'https://www.fantasypros.com/nfl/adp/half-point-ppr-overall.php?year={year}',
-  ppr:      'https://www.fantasypros.com/nfl/adp/ppr-overall.php?year={year}',
-  bestball: 'https://www.fantasypros.com/nfl/adp/best-ball-overall.php?year={year}',
+  overall:  'https://www.fantasypros.com/nfl/adp/overall.php',
+  half:     'https://www.fantasypros.com/nfl/adp/half-point-ppr-overall.php',
+  ppr:      'https://www.fantasypros.com/nfl/adp/ppr-overall.php',
+  bestball: 'https://www.fantasypros.com/nfl/adp/best-ball-overall.php',
 };
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36';
@@ -56,6 +60,43 @@ const outCsv = outCsvArg || path.join(
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
+function adpUrl(adpType, adpYear) {
+  const base = URLS[adpType];
+  if (adpYear === CURRENT_YEAR) return base;
+  return `${base}?year=${adpYear}`;
+}
+
+function findCookieCurlFile() {
+  if (!fs.existsSync(CURL_DIR)) return null;
+  const files = fs.readdirSync(CURL_DIR)
+    .filter((f) => f.endsWith('.sh'))
+    .map((f) => path.join(CURL_DIR, f))
+    .filter((p) => /\s-b\s/.test(fs.readFileSync(p, 'utf8')));
+  const preferred = ['rb_std.sh', 'qb.sh', 'wr_std.sh', 'te_half.sh'];
+  for (const name of preferred) {
+    const match = files.find((p) => path.basename(p) === name);
+    if (match) return match;
+  }
+  return files[0] || null;
+}
+
+function fetchViaCurlFile(curlFilePath, url) {
+  const raw = fs.readFileSync(curlFilePath, 'utf8');
+  const rewritten = raw
+    .replace(/curl\s+'https?:\/\/[^']+'/, `curl '${url}'`)
+    .replace(/curl\s+"https?:\/\/[^"]+"/, `curl '${url}'`);
+  const curlCmd = rewritten
+    .split('\n')
+    .map((line) => line.replace(/\\\s*$/, ' '))
+    .join('')
+    .replace(/^curl /, 'curl -s --max-time 30 ');
+
+  return execSync(curlCmd, {
+    maxBuffer: 25 * 1024 * 1024,
+    encoding: 'utf8',
+  });
+}
+
 function fetchUrl(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { 'User-Agent': UA }, timeout: 30000 }, (res) => {
@@ -74,6 +115,19 @@ function fetchUrl(url) {
     req.on('error', reject);
     req.on('timeout', () => { req.destroy(new Error(`Timeout fetching ${url}`)); });
   });
+}
+
+async function fetchAdpHtml(url) {
+  const curlFile = findCookieCurlFile();
+  if (curlFile) {
+    try {
+      const html = fetchViaCurlFile(curlFile, url);
+      if (html && html.length > 1000) return { html, via: path.basename(curlFile) };
+    } catch (err) {
+      console.warn(`  WARNING: cookie curl failed (${err.message.split('\n')[0]}); retrying anonymous.`);
+    }
+  }
+  return { html: await fetchUrl(url), via: 'anonymous' };
 }
 
 // ── HTML helpers ──────────────────────────────────────────────────────────────
@@ -118,10 +172,107 @@ function parsePlayerCell(cellHtml) {
   };
 }
 
-function parseAdpPage(html) {
-  if (html.includes('Sorry, this report is not available')) {
+function parseTeamBye(teamCell) {
+  const raw = (teamCell || '').trim();
+  const m = raw.match(/^([A-Z]{2,3})(?:\s*\((\d+)\))?$/);
+  if (!m) {
+    const bye = (raw.match(/\((\d+)\)/) || [])[1] || '';
+    return { team: raw.replace(/\s*\(\d+\)\s*$/, '').trim(), byeWeek: bye };
+  }
+  return { team: m[1], byeWeek: m[2] || '' };
+}
+
+function extractReportConfigJson(html) {
+  const marker = 'window.FP.reportConfig = ';
+  const start = html.indexOf(marker);
+  if (start === -1) return null;
+  let i = start + marker.length;
+  while (i < html.length && html[i] !== '{') i++;
+  if (html[i] !== '{') return null;
+
+  let depth = 0;
+  let inStr = false;
+  let escape = false;
+  for (let j = i; j < html.length; j++) {
+    const c = html[j];
+    if (inStr) {
+      if (escape) escape = false;
+      else if (c === '\\') escape = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') { inStr = true; continue; }
+    if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (depth === 0) return html.slice(i, j + 1);
+    }
+  }
+  return null;
+}
+
+function parseReportConfig(html) {
+  const raw = extractReportConfigJson(html);
+  if (!raw) return null;
+
+  let cfg;
+  try {
+    cfg = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Failed to parse window.FP.reportConfig: ${err.message}`);
+  }
+
+  const table = cfg.table || {};
+  const rows = Array.isArray(table.rows) ? table.rows : [];
+  const fields = Array.isArray(table.fields) ? table.fields : [];
+  if (rows.length === 0) {
     return { unavailable: true, sources: [], players: [] };
   }
+
+  const sourceFields = fields.filter((f) => {
+    const key = (f && f.key) || '';
+    return key.startsWith('src_') || key === 'realtime';
+  });
+  const sources = sourceFields
+    .map((f) => normalizeSourceHeader(f.label || f.key))
+    .filter(Boolean);
+
+  const players = [];
+  for (const row of rows) {
+    const rank = parseInt(row.rank, 10);
+    if (!Number.isFinite(rank)) continue;
+    const player = row.player || {};
+    const { position, posRank } = parsePosRank(String(row.pos || ''));
+    const { team, byeWeek } = parseTeamBye(player.team || '');
+    const slugMatch = String(player.url || '').match(/\/nfl\/players\/([^/]+)\.php/);
+    const sourceValues = {};
+    for (let i = 0; i < sourceFields.length; i++) {
+      const val = row[sourceFields[i].key];
+      sourceValues[sources[i]] = val == null || val === '' ? '' : String(val);
+    }
+    players.push({
+      rank,
+      name: (player.name || '').trim(),
+      fpId: player.id != null ? String(player.id) : (row.id != null ? String(row.id) : ''),
+      playerSlug: slugMatch ? slugMatch[1] : '',
+      team,
+      byeWeek,
+      position,
+      posRank,
+      avg: row.avg == null || row.avg === '' ? '' : String(row.avg),
+      sources: sourceValues,
+    });
+  }
+
+  if (players.length === 0) {
+    return { unavailable: true, sources: [], players: [] };
+  }
+  return { unavailable: false, sources, players, format: 'reportConfig' };
+}
+
+function parseAdpPage(html) {
+  const fromConfig = parseReportConfig(html);
+  if (fromConfig) return fromConfig;
 
   const theadMatch = html.match(/<thead[^>]*>([\s\S]*?)<\/thead>/i);
   if (!theadMatch) {
@@ -190,10 +341,13 @@ function parseAdpPage(html) {
   }
 
   if (players.length === 0) {
+    if (html.includes('Sorry, this report is not available')) {
+      return { unavailable: true, sources: [], players: [] };
+    }
     throw new Error('No player rows found in page HTML.');
   }
 
-  return { unavailable: false, sources, players };
+  return { unavailable: false, sources, players, format: 'htmlTable' };
 }
 
 // ── Name normalisation / Sleeper matching (same logic as rankings scraper) ───
@@ -332,15 +486,26 @@ function writeCsv(players, sources) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function run() {
-  const url = URLS[type].replace('{year}', year);
+  const url = adpUrl(type, year);
   console.log(`  Fetching ${type} ADP ${year}…`);
 
-  const html = await fetchUrl(url);
-  const { unavailable, sources, players } = parseAdpPage(html);
+  const { html, via } = await fetchAdpHtml(url);
+  console.log(`  via ${via}`);
+  const { unavailable, sources, players, format } = parseAdpPage(html);
 
   if (unavailable) {
+    if (year === CURRENT_YEAR) {
+      throw new Error(`No ${type} ADP rows for ${year}. FantasyPros cookie may be stale — refresh fantasypros_scrape/*.sh.`);
+    }
     console.log(`  Skipped: data not available for ${type} ${year}`);
     process.exit(0);
+  }
+
+  if (year === CURRENT_YEAR && players.length <= TEASER_ROW_MAX) {
+    throw new Error(
+      `Only ${players.length} ${type} ADP rows for ${year} (${format || 'unknown'}). `
+      + 'That is the logged-out teaser — refresh fantasypros_scrape/*.sh cookies.',
+    );
   }
 
   const sleeperPool = loadSleeperCandidates();
@@ -360,7 +525,7 @@ async function run() {
   writeCsv(players, sources);
 
   console.log(`  Output: ${outCsv}`);
-  console.log(`  ${players.length} players, ${sources.length} source(s): ${sources.join(', ') || 'none'}`);
+  console.log(`  ${players.length} players (${format || 'unknown'}), ${sources.length} source(s): ${sources.join(', ') || 'none'}`);
   if (sleeperPool.length > 0) {
     console.log(`  Matched ${matched} / ${players.length} to Sleeper IDs`);
   }
