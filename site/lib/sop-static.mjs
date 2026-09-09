@@ -3,9 +3,20 @@
  * so we do not add a 13th Hobby-plan serverless function.
  */
 
-import { keepSopDisplayGames, mergeDkIntoFdGames } from '../src/sop/mergeDkGames.js';
-import { mergeKalshiIntoFdGames } from '../src/sop/mergeKalshiGames.js';
-import { formatSopStaticText } from '../src/sop/sopStaticText.js';
+import * as mergeDkGames from '../src/sop/mergeDkGames.js';
+import * as mergeKalshiGames from '../src/sop/mergeKalshiGames.js';
+import * as sopStaticText from '../src/sop/sopStaticText.js';
+
+function namedExport(mod, key) {
+  if (mod && typeof mod[key] === 'function') return mod[key];
+  if (mod?.default && typeof mod.default[key] === 'function') return mod.default[key];
+  throw new Error(`${key} is not exported`);
+}
+
+const keepSopDisplayGames = namedExport(mergeDkGames, 'keepSopDisplayGames');
+const mergeDkIntoFdGames = namedExport(mergeDkGames, 'mergeDkIntoFdGames');
+const mergeKalshiIntoFdGames = namedExport(mergeKalshiGames, 'mergeKalshiIntoFdGames');
+const formatSopStaticText = namedExport(sopStaticText, 'formatSopStaticText');
 
 const NO_STORE_HEADERS = {
   'Content-Type': 'text/plain; charset=utf-8',
