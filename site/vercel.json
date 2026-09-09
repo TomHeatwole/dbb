@@ -8,8 +8,7 @@
       "maxDuration": 30
     },
     "api/fanduel-sop.mjs": {
-      "maxDuration": 30,
-      "includeFiles": "lib/**/*.mjs,src/sop/**"
+      "maxDuration": 30
     },
     "api/ncaaf-drives.mjs": {
       "maxDuration": 30

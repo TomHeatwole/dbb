@@ -5,6 +5,7 @@
 
 import { attachEspnClock, compactEspnError, fetchEspnSoccerScoreboards } from '../lib/espn-pl-scoreboard.mjs';
 import { attachEspnGoals } from '../lib/espn-soccer-goals.mjs';
+import sopStaticHandler from '../lib/sop-static.mjs';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -534,8 +535,7 @@ export default async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       return res.status(405).json({ error: 'Method not allowed' });
     }
-    const { default: staticHandler } = await import('../lib/sop-static.mjs');
-    return staticHandler(req, res);
+    return sopStaticHandler(req, res);
   }
 
   if (req.method !== 'GET') {
