@@ -1,6 +1,6 @@
 /** Match FanDuel + DraftKings game rows by canonical fixture. */
 
-import { fixtureTeamKey, gameMergeKey } from './fixtureKey';
+import { fixtureTeamKey, gameMergeKey } from './fixtureKey.js';
 
 function dkHasNoGoalData(dkGame) {
   if (!dkGame?.noGoalMarkets) return false;

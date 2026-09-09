@@ -31,9 +31,15 @@ PROFILE_URL = "https://keeptradecut.com/dynasty-rankings/players/{slug}"
 
 
 def load_players_array(html: str) -> list[dict]:
-    match = re.search(r"var playersArray\s*=\s*(\[.*?\]);", html, re.DOTALL)
+    match = re.search(
+        r'<script[^>]*id=["\']ktc-players["\'][^>]*>(.*?)</script>',
+        html,
+        re.DOTALL | re.I,
+    )
     if not match:
-        sys.exit("ERROR: could not find playersArray in KTC rankings HTML")
+        match = re.search(r"var playersArray\s*=\s*(\[.*?\]);", html, re.DOTALL)
+    if not match:
+        sys.exit("ERROR: could not find ktc-players JSON in KTC rankings HTML")
     return json.loads(match.group(1))
 
 

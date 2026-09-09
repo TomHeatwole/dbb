@@ -45,9 +45,11 @@ html_path, out_path = sys.argv[1], sys.argv[2]
 with open(html_path, encoding="utf-8") as f:
     html = f.read()
 
-m = re.search(r'var playersArray\s*=\s*(\[.*?\]);', html, re.DOTALL)
+m = re.search(r'<script[^>]*id=["\']ktc-players["\'][^>]*>(.*?)</script>', html, re.DOTALL | re.I)
 if not m:
-    sys.exit("ERROR: Could not find playersArray in KTC page. The page structure may have changed.")
+    m = re.search(r'var playersArray\s*=\s*(\[.*?\]);', html, re.DOTALL)
+if not m:
+    sys.exit("ERROR: Could not find ktc-players JSON in KTC page. The page structure may have changed.")
 
 players = json.loads(m.group(1))
 today = datetime.date.today().isoformat()

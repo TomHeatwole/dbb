@@ -10,7 +10,7 @@
  * The comparison is always optimal vs optimal — this isolates the
  * roster change itself from manager lineup decisions.
  *
- * Standings logic mirrors the actual standings page:
+ * Standings logic mirrors the actual standings page (2024 cumulative):
  *   - Top 4 seeds determined by 14-week regular season totals
  *   - Top 4 final ranking by playoff totals (weeks 15-17)
  *   - Bottom 6 ranked by 14-week totals
@@ -19,6 +19,9 @@
 import { StartSitSort } from '../players/StartSitDecider';
 import { getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { buildSleeperBasePoints } from './sleeperScoring';
+import { buildFinalStandings } from './playoffStandings';
+
+export { buildFinalStandings } from './playoffStandings';
 
 const NUM_WEEKS       = 17;
 const REG_SEASON_END  = 14; // last regular season week (inclusive, 1-indexed → slice 0..14)
@@ -117,37 +120,6 @@ export function computePlayoffTotals(weeklyScores) {
     ) / 10;
   }
   return totals;
-}
-
-/**
- * Build final standings matching the real standings page logic:
- * @public Exported for reuse in computeFutureScenarioEval.
- *   - Seed top 4 by 14-week total
- *   - Rank top 4 by playoff total (weeks 15-17)
- *   - Rank bottom 6 by 14-week total
- *
- * @returns {Array<{ rosterId, place, isPlayoff, regSeasonTotal, playoffTotal }>}
- */
-export function buildFinalStandings(regSeasonTotals, playoffTotals) {
-  const all = Object.keys(regSeasonTotals).map((rid) => ({
-    rosterId:      Number(rid),
-    regSeasonTotal: regSeasonTotals[rid] || 0,
-    playoffTotal:   playoffTotals[rid]   || 0,
-  }));
-
-  // Seed order: best 14-week total wins a playoff spot
-  const byRegSeason = all.slice().sort((a, b) => b.regSeasonTotal - a.regSeasonTotal);
-
-  // Top 4: ranked by playoff total
-  const top4 = byRegSeason.slice(0, 4)
-    .sort((a, b) => b.playoffTotal - a.playoffTotal)
-    .map((row, i) => ({ ...row, place: i + 1, isPlayoff: true }));
-
-  // Bottom 6: ranked by reg season total (already sorted)
-  const bottom6 = byRegSeason.slice(4)
-    .map((row, i) => ({ ...row, place: 5 + i, isPlayoff: false }));
-
-  return [...top4, ...bottom6];
 }
 
 /**

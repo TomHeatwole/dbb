@@ -1,4 +1,4 @@
-import { DEFAULT_NO_GOAL_SOURCE, NO_GOAL_SOURCE_KEYS } from './sopModel';
+import { DEFAULT_NO_GOAL_SOURCE, NO_GOAL_SOURCE_KEYS } from './sopModel.js';
 
 const NO_GOAL_SOURCE_ORDER = [
   NO_GOAL_SOURCE_KEYS.totalGoalsUnder,

@@ -23,6 +23,32 @@
     "api/kalshi-sop.mjs": {
       "maxDuration": 30,
       "includeFiles": "src/sop/sopModel.js,lib/kalshi-corners.mjs"
+    },
+    "api/sop-static.mjs": {
+      "maxDuration": 30,
+      "includeFiles": "src/sop/sopModel.js,src/sop/fixtureKey.js,src/sop/mergeDkGames.js,src/sop/mergeKalshiGames.js,src/sop/longestNoGoalPick.js,src/sop/gameSnapshot.js,src/sop/sopStaticText.js,lib/dk-corners.mjs,lib/kalshi-corners.mjs"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/sop-static.txt", "destination": "/api/sop-static" },
+    { "source": "/SOP-static.txt", "destination": "/api/sop-static" }
+  ],
+  "headers": [
+    {
+      "source": "/sop-static.txt",
+      "headers": [
+        { "key": "Cache-Control", "value": "private, no-store, no-cache, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/SOP-static.txt",
+      "headers": [
+        { "key": "Cache-Control", "value": "private, no-store, no-cache, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
+    }
+  ]
 }

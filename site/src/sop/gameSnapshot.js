@@ -8,8 +8,8 @@ import {
   formatAmericanOdds,
   GOAL_TYPE_META,
   NO_GOAL_SOURCE_KEYS,
-} from './sopModel';
-import { findLongestNoGoalPick, quoteForNoGoalBook } from './longestNoGoalPick';
+} from './sopModel.js';
+import { findLongestNoGoalPick, quoteForNoGoalBook } from './longestNoGoalPick.js';
 
 const TEAM_SHORT = {
   'manchester united': 'Man Utd',

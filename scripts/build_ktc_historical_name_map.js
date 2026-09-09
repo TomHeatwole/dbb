@@ -187,12 +187,14 @@ function loadKtcPlayersArray(ktcHtmlPath) {
     process.exit(1);
   }
   const html = fs.readFileSync(ktcHtmlPath, 'utf8');
-  const m = html.match(/var playersArray\s*=\s*(\[.*?\]);/s);
-  if (!m) {
-    console.error('ERROR: could not find playersArray in KTC rankings HTML');
+  const script = html.match(/<script[^>]*id=["']ktc-players["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (script) return JSON.parse(script[1]);
+  const inline = html.match(/var playersArray\s*=\s*(\[[\s\S]*?\]);/);
+  if (!inline) {
+    console.error('ERROR: could not find ktc-players JSON in KTC rankings HTML');
     process.exit(1);
   }
-  return JSON.parse(m[1]);
+  return JSON.parse(inline[1]);
 }
 
 function loadSleeperCandidates() {

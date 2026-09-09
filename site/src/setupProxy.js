@@ -23,4 +23,20 @@ module.exports = function setupProxy(app) {
       },
     })
   );
+
+  app.use(
+    ['/sop-static.txt', '/SOP-static.txt'],
+    createProxyMiddleware({
+      target: API_TARGET,
+      changeOrigin: true,
+      onError(err, req, res) {
+        if (res.headersSent) return;
+        res.writeHead(502, {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'private, no-store, no-cache, must-revalidate',
+        });
+        res.end(`Local API is not running. Start it with npm run api --prefix site\n${err.message}\n`);
+      },
+    })
+  );
 };

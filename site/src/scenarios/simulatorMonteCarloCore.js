@@ -4,7 +4,7 @@
  * Hot-loop Monte Carlo engine — runs on main thread or inside a Web Worker.
  */
 
-import { buildFinalStandings } from './computeScenarioEval';
+import { buildFinalStandings, normalizePlayoffFormat } from './playoffStandings';
 import {
   buildOutcomePool,
   buildPoolCumulativeWeights,
@@ -347,13 +347,16 @@ function recordTeamFinishSample(buckets, rosterId, simIndex, rolls, playoffRolls
 
 function scoreRostersFromWeekly(ctx, rosters, lightweight) {
   const { weekBuffers, seasonTotals, playerPositions, rolls, hwangAdpRankMap, pools } = ctx;
-  const { regTotals, ploffTotals, slotReg, slotPloff } = scoreAllRostersFast(
+  const { regTotals, ploffTotals, playoffWeekTotals, slotReg, slotPloff } = scoreAllRostersFast(
     rosters,
     weekBuffers,
     playerPositions,
     seasonTotals,
   );
-  const standings = buildFinalStandings(regTotals, ploffTotals);
+  const standings = buildFinalStandings(regTotals, ploffTotals, {
+    format: ctx.playoffFormat,
+    playoffWeekTotals,
+  });
   const champion = standings.find((r) => r.place === 1) || null;
 
   if (lightweight) {
@@ -443,6 +446,7 @@ export function prepareSimulatorContext({
   playersData,
   variance,
   monotone,
+  playoffFormat,
 }) {
   const allPlayerIds = new Set();
   for (const rid in scenarioRosters) {
@@ -479,6 +483,7 @@ export function prepareSimulatorContext({
     playoffIndex,
     playerPositions,
     rosterIds,
+    playoffFormat: normalizePlayoffFormat(playoffFormat),
     ...runtime,
   };
 }

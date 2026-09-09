@@ -135,6 +135,19 @@ async function main() {
     }
   });
 
+  const sopStaticHandler = async (req, res) => {
+    try {
+      const { default: handler } = await import('./api/sop-static.mjs');
+      return handler(req, res);
+    } catch (e) {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+      return res.status(500).send(String(e.message || 'SOP static failed'));
+    }
+  };
+  app.get('/api/sop-static', sopStaticHandler);
+  app.get(['/sop-static.txt', '/SOP-static.txt'], sopStaticHandler);
+
   app.get('/api/db-hello', async (req, res) => {
     try {
       const { default: handler } = await import('./api/db-hello.mjs');

@@ -1,6 +1,6 @@
 /** Match FanDuel game rows with Kalshi no-goal proxy quotes. */
 
-import { gameMergeKey } from './mergeDkGames';
+import { gameMergeKey } from './mergeDkGames.js';
 
 function klshHasNoGoalData(klshGame) {
   if (!klshGame?.noGoalMarkets) return false;

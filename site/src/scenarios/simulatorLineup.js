@@ -225,6 +225,7 @@ export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositi
 export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seasonTotals) {
   const regTotals = {};
   const ploffTotals = {};
+  const playoffWeekTotals = {};
   const slotReg = {};
   const slotPloff = {};
   const numSlots = (STARTER_POSITION_NAMES || []).length;
@@ -233,6 +234,7 @@ export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seaso
     const playerList = rosters[rid] || [];
     let reg = 0;
     let ploff = 0;
+    const playoffWeeks = [0, 0, 0];
     const regSlots = new Float32Array(numSlots);
     const ploffSlots = new Float32Array(numSlots);
 
@@ -249,17 +251,22 @@ export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seaso
         if (wi < REG_SEASON_WEEKS) regSlots[si] += slotPts[si];
         else ploffSlots[si] += slotPts[si];
       }
-      if (wi < REG_SEASON_WEEKS) reg += weekTotal;
-      else ploff += weekTotal;
+      if (wi < REG_SEASON_WEEKS) {
+        reg += weekTotal;
+      } else {
+        ploff += weekTotal;
+        playoffWeeks[wi - REG_SEASON_WEEKS] = Math.round(weekTotal * 10) / 10;
+      }
     }
 
     regTotals[rid] = Math.round(reg * 10) / 10;
     ploffTotals[rid] = Math.round(ploff * 10) / 10;
+    playoffWeekTotals[rid] = playoffWeeks;
     slotReg[rid] = Array.from(regSlots, (v) => Math.round(v * 10) / 10);
     slotPloff[rid] = Array.from(ploffSlots, (v) => Math.round(v * 10) / 10);
   }
 
-  return { regTotals, ploffTotals, slotReg, slotPloff };
+  return { regTotals, ploffTotals, playoffWeekTotals, slotReg, slotPloff };
 }
 
 /**

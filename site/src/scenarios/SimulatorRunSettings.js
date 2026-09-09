@@ -13,6 +13,12 @@ import {
   RANK_SOURCE_DASH,
   DEFAULT_RANK_SOURCE,
 } from './simulatorRankSource';
+import {
+  PLAYOFF_FORMATS,
+  PLAYOFF_FORMAT_CUMULATIVE,
+  PLAYOFF_FORMAT_BRACKET,
+  DEFAULT_PLAYOFF_FORMAT,
+} from './playoffStandings';
 
 const PRESETS = [1000, 5000, 10000, 50000, 100000, 1_000_000];
 const POPOVER_WIDTH_PX = 300;
@@ -52,6 +58,8 @@ function SimulatorRunSettings({
   onChangeMonotone,
   rankSource = DEFAULT_RANK_SOURCE,
   onChangeRankSource,
+  playoffFormat = DEFAULT_PLAYOFF_FORMAT,
+  onChangePlayoffFormat,
   allowRedraftDash = false,
 }) {
   const [open, setOpen] = useState(false);
@@ -202,6 +210,32 @@ function SimulatorRunSettings({
           </div>
           <p className="simulator-run-settings-hint">
             {MONOTONE_MODES[monotone]?.description}
+          </p>
+        </>
+      )}
+      {onChangePlayoffFormat && (
+        <>
+          <div className="simulator-run-settings-label simulator-run-settings-variance-label">
+            Playoff format
+          </div>
+          <div className="simulator-run-settings-presets">
+            {[PLAYOFF_FORMAT_CUMULATIVE, PLAYOFF_FORMAT_BRACKET].map((key) => (
+              <button
+                key={key}
+                type="button"
+                title={PLAYOFF_FORMATS[key].description}
+                className={
+                  'simulator-run-settings-preset' +
+                  (playoffFormat === key ? ' simulator-run-settings-preset--active' : '')
+                }
+                onClick={() => onChangePlayoffFormat(key)}
+              >
+                {PLAYOFF_FORMATS[key].label}
+              </button>
+            ))}
+          </div>
+          <p className="simulator-run-settings-hint">
+            {PLAYOFF_FORMATS[playoffFormat]?.description}
           </p>
         </>
       )}

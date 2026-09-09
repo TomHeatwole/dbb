@@ -17,6 +17,11 @@ import { normalizeOutcomeScenarioYear, DEFAULT_OUTCOME_SCENARIO_YEAR } from './o
 import { clampSimulatorIterations, DEFAULT_ITERATIONS } from './simulatorMonteCarlo';
 import { normalizeVariance, DEFAULT_VARIANCE, normalizeMonotone, DEFAULT_MONOTONE } from './outcomeDistribution';
 import { normalizeRankSource, DEFAULT_RANK_SOURCE, RANK_SOURCE_DASH } from './simulatorRankSource';
+import {
+  normalizePlayoffFormat,
+  DEFAULT_PLAYOFF_FORMAT,
+  PLAYOFF_FORMAT_BRACKET,
+} from './playoffStandings';
 
 export { sanitizeRoster, sanitizeRosters, isValidPlayerId };
 
@@ -174,6 +179,7 @@ export function decodeFutureScenario2(encoded) {
       v: obj.y === 'simulator' ? normalizeVariance(obj.v) : undefined,
       m: obj.y === 'simulator' ? normalizeMonotone(obj.m) : undefined,
       rs: obj.y === 'simulator' ? normalizeRankSource(obj.rs, obj.sy) : undefined,
+      pf: obj.y === 'simulator' ? normalizePlayoffFormat(obj.pf) : undefined,
     };
   } catch {
     return null;
@@ -189,6 +195,7 @@ export function encodeSimulatorScenario(
     variance = DEFAULT_VARIANCE,
     monotone = DEFAULT_MONOTONE,
     rankSource = DEFAULT_RANK_SOURCE,
+    playoffFormat = DEFAULT_PLAYOFF_FORMAT,
   } = {},
 ) {
   const changes = [];
@@ -217,6 +224,9 @@ export function encodeSimulatorScenario(
   };
   if (normalizeRankSource(rankSource, sy) === RANK_SOURCE_DASH) {
     payload.rs = RANK_SOURCE_DASH;
+  }
+  if (normalizePlayoffFormat(playoffFormat) === PLAYOFF_FORMAT_BRACKET) {
+    payload.pf = PLAYOFF_FORMAT_BRACKET;
   }
   return btoa(JSON.stringify(payload));
 }

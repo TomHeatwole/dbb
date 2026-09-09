@@ -35,12 +35,16 @@ function normalise(name) {
     .trim();
 }
 
+function extractPlayersArray(html) {
+  const script = html.match(/<script[^>]*id=["']ktc-players["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (script) return JSON.parse(script[1]);
+  const inline = html.match(/var playersArray\s*=\s*(\[[\s\S]*?\]);/);
+  return inline ? JSON.parse(inline[1]) : [];
+}
+
 function loadPlayersArray(htmlPath) {
   if (!fs.existsSync(htmlPath)) return [];
-  const html = fs.readFileSync(htmlPath, 'utf8');
-  const m = html.match(/var playersArray\s*=\s*(\[.*?\]);/s);
-  if (!m) return [];
-  return JSON.parse(m[1]);
+  return extractPlayersArray(fs.readFileSync(htmlPath, 'utf8'));
 }
 
 function setDraftYear(maps, name, sleeperId, year) {

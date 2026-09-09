@@ -9,39 +9,38 @@ A.J. Brown,NE,WR,19,13,-6,5859
 Saquon Barkley,PHI,RB,16,14,-2,4866
 Drake London,ATL,WR,21,15,-6,8112
 Brock Bowers,LV,TE,25,17,-8,11604
-Kenneth Walker III,KC,RB,13,18,5,8151
+Kenneth Walker III,KC,RB,13,19,6,8151
 Omarion Hampton,LAC,RB,11,20,9,12507
 Derrick Henry,BAL,RB,12,21,9,3198
 George Pickens,DAL,WR,20,22,2,8137
 Chris Olave,NO,WR,29,23,-6,8144
 Ashton Jeanty,LV,RB,17,24,7,12527
 Trey McBride,ARI,TE,33,25,-8,8130
-DeVonta Smith,PHI,WR,30,26,-4,7525
-Malik Nabers,NYG,WR,22,27,5,11632
+Malik Nabers,NYG,WR,22,26,4,11632
+DeVonta Smith,PHI,WR,30,27,-3,7525
 Josh Allen,BUF,QB,46,28,-18,4984
-Rashee Rice,KC,WR,34,29,-5,10229
-Zay Flowers,BAL,WR,26,30,4,9997
+Zay Flowers,BAL,WR,26,29,3,9997
+Rashee Rice,KC,WR,34,30,-4,10229
 Kyren Williams,LAR,RB,43,31,-12,8150
 Javonte Williams,DAL,RB,36,32,-4,7588
-Breece Hall,NYJ,RB,52,33,-19,8155
-Tee Higgins,CIN,WR,32,34,2,6801
-Lamar Jackson,BAL,QB,73,36,-37,4881
-Ladd McConkey,LAC,WR,31,37,6,11635
-Garrett Wilson,NYJ,WR,48,38,-10,8146
+Breece Hall,NYJ,RB,52,34,-18,8155
+Lamar Jackson,BAL,QB,73,35,-38,4881
+Garrett Wilson,NYJ,WR,48,37,-11,8146
+Ladd McConkey,LAC,WR,31,38,7,11635
 Jeremiyah Love,ARI,RB,24,39,15,13287
-Tetairoa McMillan,CAR,WR,38,40,2,12526
-Colston Loveland,CHI,TE,27,41,14,12517
+Colston Loveland,CHI,TE,27,40,13,12517
+Tetairoa McMillan,CAR,WR,38,41,3,12526
 Emeka Egbuka,TB,WR,39,42,3,12514
-Drake Maye,NE,QB,72,43,-29,11564
-Travis Etienne Jr.,NO,RB,41,44,3,7543
+Travis Etienne Jr.,NO,RB,41,43,2,7543
+Drake Maye,NE,QB,72,44,-28,11564
 D'Andre Swift,CHI,RB,37,45,8,6790
 Luther Burden III,CHI,WR,28,47,19,12519
-Terry McLaurin,WAS,WR,63,48,-15,5927
-Joe Burrow,CIN,QB,84,49,-35,6770
+Joe Burrow,CIN,QB,84,48,-36,6770
+Terry McLaurin,WAS,WR,63,49,-14,5927
 Bucky Irving,TB,RB,42,50,8,11584
 DJ Moore,BUF,WR,57,52,-5,4983
-David Montgomery,HOU,RB,58,54,-4,5892
-Tyler Warren,IND,TE,60,55,-5,12518
+Tyler Warren,IND,TE,60,54,-6,12518
+David Montgomery,HOU,RB,58,55,-3,5892
 Quinshon Judkins,CLE,RB,53,56,3,12512
 Christian Watson,GB,WR,40,57,17,8167
 Rome Odunze,CHI,WR,49,58,9,11620
@@ -50,21 +49,22 @@ Bhayshul Tuten,JAC,RB,47,61,14,12490
 Parker Washington,JAC,WR,56,62,6,9487
 Mike Evans,SF,WR,44,63,19,2216
 Jayden Daniels,WAS,QB,80,64,-16,11566
+Rhamondre Stevenson,NE,RB,51,65,14,7611
 Caleb Williams,CHI,QB,81,66,-15,11560
-Rhamondre Stevenson,NE,RB,51,67,16,7611
-Tucker Kraft,GB,TE,61,68,7,9484
-Jaylen Warren,PIT,RB,62,69,7,8228
+TreVeyon Henderson,NE,RB,64,67,3,12529
+Jaylen Warren,PIT,RB,62,68,6,8228
+Tucker Kraft,GB,TE,61,69,8,9484
 Marvin Harrison Jr.,ARI,WR,75,70,-5,11628
 Justin Herbert,LAC,QB,82,71,-11,6797
 Carnell Tate,TEN,WR,98,72,-26,13279
 Trevor Lawrence,JAC,QB,94,73,-21,7523
 Tony Pollard,TEN,RB,91,74,-17,5967
-DK Metcalf,PIT,WR,105,75,-30,5846
-Dak Prescott,DAL,QB,139,76,-63,3294
+Dak Prescott,DAL,QB,139,75,-64,3294
+DK Metcalf,PIT,WR,105,76,-29,5846
 Rico Dowdle,PIT,RB,88,77,-11,7021
 Brian Thomas Jr.,JAC,WR,90,78,-12,11631
-Harold Fannin Jr.,CLE,TE,69,79,10,12506
-Chris Godwin Jr.,TB,WR,66,80,14,4037
+Chris Godwin Jr.,TB,WR,66,79,13,4037
+Harold Fannin Jr.,CLE,TE,69,80,11,12506
 Sam LaPorta,DET,TE,55,81,26,10859
 Kyle Pitts Sr.,ATL,TE,86,82,-4,7553
 Jonathon Brooks,CAR,RB,65,83,18,11583
@@ -72,195 +72,197 @@ Courtland Sutton,DEN,WR,122,84,-38,5045
 Quentin Johnston,LAC,WR,70,85,15,9754
 J.K. Dobbins,DEN,RB,116,86,-30,6806
 Michael Pittman Jr.,PIT,WR,74,87,13,6819
-Michael Wilson,ARI,WR,78,88,10,10232
-George Kittle,SF,TE,117,89,-28,4217
-Alec Pierce,IND,WR,79,91,12,8142
-Chuba Hubbard,CAR,RB,135,92,-43,7594
-Stefon Diggs,WAS,WR,77,93,16,2449
-MarShawn Lloyd,GB,RB,76,94,18,11581
-Josh Downs,IND,WR,68,95,27,9500
-Brock Purdy,SF,QB,103,96,-7,8183
-Bo Nix,DEN,QB,138,97,-41,11563
-Jaxson Dart,NYG,QB,113,98,-15,12508
-Jordan Mason,MIN,RB,71,99,28,8408
+Michael Wilson,ARI,WR,78,89,11,10232
+George Kittle,SF,TE,117,90,-27,4217
+Chuba Hubbard,CAR,RB,135,91,-44,7594
+Alec Pierce,IND,WR,79,92,13,8142
+MarShawn Lloyd,GB,RB,76,93,17,11581
+Stefon Diggs,WAS,WR,77,94,17,2449
+Brock Purdy,SF,QB,103,95,-8,8183
+Josh Downs,IND,WR,68,96,28,9500
+Jordan Mason,MIN,RB,71,97,26,8408
+Bo Nix,DEN,QB,138,98,-40,11563
+Jaxson Dart,NYG,QB,113,99,-14,12508
 RJ Harvey,DEN,RB,109,100,-9,12489
-Wan'Dale Robinson,TEN,WR,93,101,8,8126
-Jacory Croskey-Merritt,WAS,RB,118,102,-16,12533
-Jayden Reed,GB,WR,67,103,36,10222
+Jacory Croskey-Merritt,WAS,RB,118,101,-17,12533
+Jayden Reed,GB,WR,67,102,35,10222
+Wan'Dale Robinson,TEN,WR,93,103,10,8126
 Patrick Mahomes II,KC,QB,160,104,-56,4046
 Travis Kelce,KC,TE,175,105,-70,1466
 Kenny Gainwell,TB,RB,100,106,6,7567
 Jordan Addison,MIN,WR,85,107,22,9756
 Jared Goff,DET,QB,161,108,-53,3163
-Matthew Stafford,LAR,QB,162,109,-53,421
-Dalton Kincaid,BUF,TE,107,110,3,10236
+Dalton Kincaid,BUF,TE,107,109,2,10236
+Matthew Stafford,LAR,QB,162,110,-52,421
 Kyle Monangai,CHI,RB,108,111,3,12534
 Rachaad White,WAS,RB,87,112,25,8136
 Makai Lemon,PHI,WR,99,113,14,13294
 KC Concepcion,CLE,WR,96,114,18,13298
-Jakobi Meyers,JAC,WR,92,115,23,5947
-De'Zhaun Stribling,SF,WR,97,117,20,13417
-Dallas Goedert,PHI,TE,104,118,14,5022
-Kyler Murray,MIN,QB,112,119,7,5849
+Kyler Murray,MIN,QB,112,115,3,5849
+Jakobi Meyers,JAC,WR,92,116,24,5947
+Isaiah Likely,NYG,TE,115,117,2,8131
+De'Zhaun Stribling,SF,WR,97,118,21,13417
+Dallas Goedert,PHI,TE,104,119,15,5022
 Aaron Jones Sr.,MIN,RB,101,120,19,4199
-Jordan Love,GB,QB,172,121,-51,6804
-Matthew Golden,GB,WR,106,122,16,12501
+Matthew Golden,GB,WR,106,121,15,12501
+Jordan Love,GB,QB,172,122,-50,6804
 Chris Rodriguez Jr.,JAC,RB,111,123,12,10219
 Baker Mayfield,TB,QB,140,124,-16,4892
-Mark Andrews,BAL,TE,214,125,-89,5012
-Jake Ferguson,DAL,TE,131,126,-5,8110
-Romeo Doubs,NE,WR,95,127,32,8121
-Xavier Worthy,KC,WR,126,128,2,11624
-Juwan Johnson,NO,TE,114,129,15,7002
-Jalen Coker,CAR,WR,121,130,9,11646
-Tyler Allgeier,ARI,RB,145,131,-14,8132
-Woody Marks,HOU,RB,141,132,-9,12474
-Tyler Shough,NO,QB,171,133,-38,12545
+Romeo Doubs,NE,WR,95,125,30,8121
+Jake Ferguson,DAL,TE,131,127,-4,8110
+Juwan Johnson,NO,TE,114,128,14,7002
+Jalen Coker,CAR,WR,121,129,8,11646
+Tyler Allgeier,ARI,RB,145,130,-15,8132
+Woody Marks,HOU,RB,141,131,-10,12474
+Tyler Shough,NO,QB,171,132,-39,12545
+Mark Andrews,BAL,TE,214,133,-81,5012
 Khalil Shakir,BUF,WR,158,134,-24,8134
 Malik Willis,MIA,QB,124,135,11,8161
-Tyjae Spears,TEN,RB,134,136,2,9508
-Deebo Samuel Sr.,SF,WR,123,137,14,5872
+Deebo Samuel Sr.,SF,WR,123,136,13,5872
+Tyjae Spears,TEN,RB,134,137,3,9508
 Jonah Coleman,DEN,RB,102,138,36,13345
 Mike Washington Jr.,LV,RB,120,139,19,13305
 Rashid Shaheed,SEA,WR,164,140,-24,8676
 Sam Darnold,SEA,QB,211,141,-70,4943
-C.J. Stroud,HOU,QB,173,142,-31,9758
-Tank Bigsby,PHI,RB,136,143,7,9225
-Daniel Jones,IND,QB,178,145,-33,5870
-Hunter Henry,NE,TE,174,146,-28,3214
-Zach Charbonnet,SEA,RB,110,147,37,9753
-Jordyn Tyson,NO,WR,125,148,23,13281
-Dylan Sampson,CLE,RB,181,149,-32,12469
-Chig Okonkwo,WAS,TE,218,150,-68,8210
-Denzel Boston,CLE,WR,194,151,-43,13346
-Tre Tucker,LV,WR,159,152,-7,10213
-Dalton Schultz,HOU,TE,148,153,5,5001
-Brenton Strange,JAC,TE,132,154,22,9480
-Cam Ward,TEN,QB,190,156,-34,12522
-Adonai Mitchell,NYJ,WR,193,157,-36,11625
-Kayshon Boutte,HOU,WR,165,158,-7,9504
-Emmett Johnson,KC,RB,119,159,40,13337
-Jalen McMillan,TB,WR,169,160,-9,11618
-Dontayvion Wicks,PHI,WR,168,161,-7,9486
+Tank Bigsby,PHI,RB,136,142,6,9225
+C.J. Stroud,HOU,QB,173,143,-30,9758
+Hunter Henry,NE,TE,174,145,-29,3214
+Jordyn Tyson,NO,WR,125,146,21,13281
+Denzel Boston,CLE,WR,194,147,-47,13346
+Daniel Jones,IND,QB,178,148,-30,5870
+Tre Tucker,LV,WR,159,149,-10,10213
+Zach Charbonnet,SEA,RB,110,150,40,9753
+Chig Okonkwo,WAS,TE,218,151,-67,8210
+Dylan Sampson,CLE,RB,181,152,-29,12469
+Brenton Strange,JAC,TE,132,153,21,9480
+Josh Jacobs,GB,RB,156,154,-2,5850
+Dalton Schultz,HOU,TE,148,155,7,5001
+Adonai Mitchell,NYJ,WR,193,156,-37,11625
+Cam Ward,TEN,QB,190,157,-33,12522
+Emmett Johnson,KC,RB,119,158,39,13337
+Kayshon Boutte,HOU,WR,165,159,-6,9504
+Dontayvion Wicks,PHI,WR,168,160,-8,9486
+Jalen McMillan,TB,WR,169,161,-8,11618
 Alvin Kamara,NO,RB,249,162,-87,4035
-Tyrone Tracy Jr.,NYG,RB,180,163,-17,11655
+Braelon Allen,NYJ,RB,241,163,-78,11576
 Brian Robinson Jr.,ATL,RB,183,164,-19,8154
-Braelon Allen,NYJ,RB,241,165,-76,11576
-Jalen Nailor,LV,WR,253,166,-87,8180
+Jalen Nailor,LV,WR,253,165,-88,8180
+Tyrone Tracy Jr.,NYG,RB,180,166,-14,11655
 Jerry Jeudy,CLE,WR,233,167,-66,6783
-Bryce Young,CAR,QB,213,168,-45,9228
+Tre' Harris,LAC,WR,130,168,38,12509
 Ray Davis,BUF,RB,144,169,25,11575
-Tre' Harris,LAC,WR,130,170,40,12509
+Terrance Ferguson,LAR,TE,133,170,37,12487
 T.J. Hockenson,MIN,TE,223,171,-52,5844
-Jauan Jennings,MIN,WR,163,172,9,7049
-AJ Barner,SEA,TE,225,173,-52,11603
-Terrance Ferguson,LAR,TE,133,174,41,12487
-Keenan Allen,IND,WR,204,175,-29,1479
-Omar Cooper Jr.,NYJ,WR,166,176,10,13276
-Ryan Flournoy,DAL,WR,127,177,50,11783
-Pat Bryant,DEN,WR,151,178,27,12492
-Malik Washington,MIA,WR,184,179,-5,11610
+AJ Barner,SEA,TE,225,172,-53,11603
+Keenan Allen,IND,WR,204,173,-31,1479
+Jauan Jennings,MIN,WR,163,174,11,7049
+Bryce Young,CAR,QB,213,175,-38,9228
+Ryan Flournoy,DAL,WR,127,176,49,11783
+Pat Bryant,DEN,WR,151,177,26,12492
+Malik Washington,MIA,WR,184,178,-6,11610
+Omar Cooper Jr.,NYJ,WR,166,179,13,13276
 Kenyon Sadiq,NYJ,TE,191,180,-11,13330
 Jacoby Brissett,ARI,QB,212,181,-31,3257
-Calvin Ridley,TEN,WR,236,183,-53,4981
-Kimani Vidal,LAC,RB,137,184,47,11647
-Jaylin Noel,HOU,WR,152,186,34,12536
-Aaron Rodgers,PIT,QB,245,189,-56,96
-Gunnar Helm,TEN,TE,177,190,13,12502
+Kimani Vidal,LAC,RB,137,183,46,11647
+Calvin Ridley,TEN,WR,236,184,-52,4981
+Aaron Rodgers,PIT,QB,245,188,-57,96
+Gunnar Helm,TEN,TE,177,189,12,12502
+Jaylin Noel,HOU,WR,152,190,38,12536
 Malik Davis,DAL,RB,157,191,34,8800
-Oronde Gadsden II,LAC,TE,154,192,38,12493
-Isiah Pacheco,DET,RB,252,194,-58,8205
+Sean Tucker,TB,RB,205,193,-12,9506
+Oronde Gadsden II,LAC,TE,154,194,40,12493
 Rashod Bateman,BAL,WR,167,195,28,7571
-Sean Tucker,TB,RB,205,196,-9,9506
+Kaelon Black,SF,RB,142,196,54,13414
 Pat Freiermuth,PIT,TE,246,197,-49,7600
 Ja'Kobi Lane,BAL,WR,150,198,48,13293
 Cade Otton,TB,TE,176,199,23,8111
-Geno Smith,NYJ,QB,255,200,-55,1373
-Kaelon Black,SF,RB,142,201,59,13414
-Nicholas Singleton,TEN,RB,231,208,-23,13288
-Travis Hunter,JAC,WR,226,210,-16,
-Jaylen Wright,MIA,RB,232,211,-21,11643
-Chris Bell,MIA,WR,129,212,83,13311
+Kaytron Allen,WAS,RB,201,203,2,13405
+Malachi Fields,NYG,WR,186,206,20,13285
+Chris Bell,MIA,WR,129,207,78,13311
+Geno Smith,NYJ,QB,255,209,-46,1373
+Nicholas Singleton,TEN,RB,231,210,-21,13288
 Najee Harris,NYG,RB,257,213,-44,7528
-Malachi Fields,NYG,WR,186,214,28,13285
-Isaac TeSlaa,DET,WR,224,217,-7,12535
-Cooper Kupp,SEA,WR,256,219,-37,4039
-Kansas City Chiefs,KC,DST,229,220,-9,
-George Holani,SEA,RB,269,222,-47,12048
-Zachariah Branch,ATL,WR,170,224,54,13320
-Darnell Mooney,NYG,WR,208,225,17,7090
-Justice Hill,BAL,RB,266,226,-40,5995
+Jaylen Wright,MIA,RB,232,214,-18,11643
+Isaac TeSlaa,DET,WR,224,216,-8,12535
+Zachariah Branch,ATL,WR,170,217,47,13320
+Travis Hunter,JAC,WR,226,218,-8,
+Kansas City Chiefs,KC,DST,229,219,-10,
+Cooper Kupp,SEA,WR,256,220,-36,4039
+Isiah Pacheco,DET,RB,252,222,-30,8205
+George Holani,SEA,RB,269,224,-45,12048
+Justice Hill,BAL,RB,266,225,-41,5995
+Darnell Mooney,NYG,WR,208,226,18,7090
 Jake Bates,DET,K,234,227,-7,
-Kaleb Johnson,GB,RB,261,228,-33,12504
-Samaje Perine,CIN,RB,238,231,-7,4147
+Samaje Perine,CIN,RB,238,230,-8,4147
+Kaleb Johnson,GB,RB,261,232,-29,12504
 Devaughn Vele,NO,WR,179,233,54,11834
-Demond Claiborne,MIN,RB,149,234,85,13347
-Fernando Mendoza,LV,QB,215,236,21,13269
-Germie Bernard,PIT,WR,153,237,84,13274
-James Conner,ARI,RB,217,239,22,4137
-Emanuel Wilson,SEA,RB,221,240,19,11435
-Chris Brooks,GB,RB,235,241,6,11370
-Ted Hurst III,TB,WR,189,244,55,13317
-Greg Dulcich,MIA,TE,200,245,45,8172
-Jack Bech,LV,WR,188,250,62,12483
-Caleb Douglas,MIA,WR,155,252,97,13296
+Fernando Mendoza,LV,QB,215,234,19,13269
+Germie Bernard,PIT,WR,153,236,83,13274
+Demond Claiborne,MIN,RB,149,237,88,13347
+James Conner,ARI,RB,217,238,21,4137
+Chris Brooks,GB,RB,235,240,5,11370
+Emanuel Wilson,SEA,RB,221,243,22,11435
+Ted Hurst III,TB,WR,189,247,58,13317
+Greg Dulcich,MIA,TE,200,250,50,8172
+Ollie Gordon II,MIA,RB,206,253,47,12495
 Antonio Williams,WAS,WR,147,254,107,13301
-Tank Dell,HOU,WR,219,257,38,9502
-Ollie Gordon II,MIA,RB,206,258,52,12495
+Jack Bech,LV,WR,188,256,68,12483
+Tua Tagovailoa,ATL,QB,274,257,-17,6768
+Colby Parkinson,LAR,TE,220,258,38,6865
 Harrison Butker,KC,K,228,259,31,
-Colby Parkinson,LAR,TE,220,260,40,6865
-Tua Tagovailoa,ATL,QB,274,261,-13,6768
+Caleb Douglas,MIA,WR,155,260,105,13296
+Jordan James,SF,RB,146,261,115,12467
 Tory Horton,SEA,WR,209,262,53,12497
-Jordan James,SF,RB,146,263,117,12467
+Chris Boswell,PIT,K,242,264,22,
 Kirk Cousins,LV,QB,280,265,-15,1166
 Isaiah Davis,NYJ,RB,272,266,-6,11571
-Chris Boswell,PIT,K,242,267,25,
-Elic Ayomanor,TEN,WR,250,268,18,12499
-LeQuint Allen Jr.,JAC,RB,277,269,-8,12544
+Tyquan Thornton,KC,WR,207,267,60,8188
+LeQuint Allen Jr.,JAC,RB,277,268,-9,12544
+Seth McGowan,IND,RB,285,269,-16,13424
 Ty Johnson,BUF,RB,275,270,-5,6039
-Wil Lutz,DEN,K,260,271,11,
-Tyquan Thornton,KC,WR,207,272,65,8188
-Kendre Miller,NO,RB,262,273,11,9757
-Seth McGowan,IND,RB,285,274,-11,13424
-Xavier Legette,CAR,WR,267,278,11,11626
-DJ Giddens,IND,RB,203,279,76,12471
-Deshaun Watson,CLE,QB,282,280,-2,4017
+Elic Ayomanor,TEN,WR,250,271,21,12499
+Kendre Miller,NO,RB,262,272,10,9757
+Tank Dell,HOU,WR,219,273,54,9502
+Wil Lutz,DEN,K,260,274,14,
+Xavier Legette,CAR,WR,267,275,8,11626
+Deshaun Watson,CLE,QB,282,276,-6,4017
+Will Reichard,MIN,K,240,279,39,
+DJ Giddens,IND,RB,203,280,77,12471
 Cyrus Allen,KC,WR,128,281,153,13413
 Brashard Smith,KC,RB,216,282,66,12455
-Will Reichard,MIN,K,240,284,44,
+San Francisco 49ers,SF,DST,258,285,27,
+Kyle Williams,NE,WR,182,286,104,12547
 Elijah Sarratt,BAL,WR,237,287,50,13268
-Kyle Williams,NE,WR,182,288,106,12547
-San Francisco 49ers,SF,DST,258,289,31,
+Atlanta Falcons,ATL,DST,239,289,50,
 Devin Singletary,NYG,RB,278,290,12,6130
-Adam Randall,BAL,RB,202,291,89,13302
-Atlanta Falcons,ATL,DST,239,292,53,
+Adam Randall,BAL,RB,202,294,92,13302
 Emari Demercado,DAL,RB,268,295,27,11199
 Eli Stowers,PHI,TE,247,296,49,13349
-Hollywood Brown,PHI,WR,264,298,34,5848
-Tahj Brooks,CIN,RB,251,301,50,12543
-Indianapolis Colts,IND,DST,259,302,43,
-Skyler Bell,BUF,WR,196,303,107,13402
-Jaydon Blue,PHI,RB,222,304,82,12457
-Devin Neal,FA,RB,254,305,51,12476
-Trevor Etienne,CAR,RB,227,307,80,12531
-DeMario Douglas,NE,WR,270,309,39,9501
-Jerome Ford,WAS,RB,276,313,37,8143
-Audric Estime,NO,RB,281,314,33,11579
-Jaleel McLaughlin,CLE,RB,279,317,38,11439
-Jarquez Hunter,FA,RB,248,321,73,11569
-Michael Mayer,LV,TE,199,322,123,9482
-Jahan Dotson,ATL,WR,271,323,52,8119
-Kareem Hunt,FA,RB,283,324,41,4098
-Bryce Lance,NO,WR,197,326,129,13420
-Oscar Delp,NO,TE,230,330,100,13319
-Eli Raridon,NE,TE,192,334,142,13421
-Erick All Jr.,CIN,TE,198,336,138,11592
+Hollywood Brown,PHI,WR,264,297,33,5848
+Indianapolis Colts,IND,DST,259,298,39,
+Skyler Bell,BUF,WR,196,302,106,13402
+Tahj Brooks,CIN,RB,251,303,52,12543
+Trevor Etienne,CAR,RB,227,305,78,12531
+Jaydon Blue,PHI,RB,222,306,84,12457
+DeMario Douglas,NE,WR,270,307,37,9501
+Audric Estime,NO,RB,281,308,27,11579
+Devin Neal,FA,RB,254,310,56,12476
+Jaleel McLaughlin,CLE,RB,279,315,36,11439
+Jahan Dotson,ATL,WR,271,317,46,8119
+Michael Mayer,LV,TE,199,320,121,9482
+Jerome Ford,WAS,RB,276,321,45,8143
+Jarquez Hunter,FA,RB,248,322,74,11569
+Kareem Hunt,FA,RB,283,325,42,4098
+Bryce Lance,NO,WR,197,327,130,13420
+Oscar Delp,NO,TE,230,329,99,13319
+Erick All Jr.,CIN,TE,198,335,137,11592
+Eli Raridon,NE,TE,192,336,144,13421
 Tez Johnson,TB,WR,185,340,155,12485
-Brenen Thompson,LAC,WR,273,350,77,13380
-Zavion Thomas,CHI,WR,195,351,156,13411
-Jalen Royals,KC,WR,210,356,146,12505
-Joe Mixon,FA,RB,265,362,97,4018
-Barion Brown,NO,WR,187,391,204,13533
-Austin Ekeler,FA,RB,284,409,125,4663
-Matt Hibner,BAL,TE,244,432,188,13324
-Robert Henry Jr.,WAS,RB,286,485,199,13418
+Zavion Thomas,CHI,WR,195,350,155,13411
+Brenen Thompson,LAC,WR,273,351,78,13380
+Jalen Royals,KC,WR,210,359,149,12505
+Joe Mixon,FA,RB,265,368,103,4018
+Barion Brown,NO,WR,187,388,201,13533
+Matt Hibner,BAL,TE,244,424,180,13324
+Austin Ekeler,FA,RB,284,429,145,4663
+Robert Henry Jr.,WAS,RB,286,534,248,13418
