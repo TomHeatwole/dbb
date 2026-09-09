@@ -75,11 +75,36 @@ function teamFromPlay(play, actors) {
   return play?.team?.displayName ?? play?.team?.name ?? null;
 }
 
-export function extractScoringPlays(payload) {
-  const events = Array.isArray(payload?.keyEvents)
-    ? payload.keyEvents
-    : Object.values(payload?.keyEvents ?? {});
+function arrayish(value) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') return Object.values(value);
+  return [];
+}
+
+function collectCandidatePlays(payload) {
   const extraText = commentaryTextByPlayId(payload);
+  const merged = new Map();
+  const push = (play) => {
+    if (!play || typeof play !== 'object') return;
+    const playId = String(play.id ?? '').trim();
+    const key = playId || `anon-${merged.size}`;
+    const existing = merged.get(key);
+    if (!existing) {
+      merged.set(key, play);
+      return;
+    }
+    if (!existing.text && (play.text || extraText.get(playId))) {
+      merged.set(key, { ...existing, ...play });
+    }
+  };
+  for (const play of arrayish(payload?.keyEvents)) push(play);
+  for (const play of arrayish(payload?.plays?.items ?? payload?.plays)) push(play);
+  for (const item of payload?.commentary ?? []) push(item?.play);
+  return { plays: [...merged.values()], extraText };
+}
+
+export function extractScoringPlays(payload) {
+  const { plays: events, extraText } = collectCandidatePlays(payload);
 
   return events
     .filter(isScoringPlay)
@@ -106,31 +131,50 @@ export function extractScoringPlays(payload) {
     .filter((play) => play.playId);
 }
 
-function summaryUrl(espnId, leagueKey) {
-  const slug = LEAGUE_SLUG[leagueKey] ?? LEAGUE_SLUG.ucl;
-  return `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/summary?event=${espnId}`;
+const ESPN_SUMMARY_HOSTS = [
+  'https://site.web.api.espn.com/apis/site/v2/sports/soccer',
+  'https://site.api.espn.com/apis/site/v2/sports/soccer',
+];
+
+function summaryUrls(espnId, leagueKey) {
+  const slugs = [
+    LEAGUE_SLUG[leagueKey] ?? LEAGUE_SLUG.ucl,
+    leagueKey === 'pl' ? LEAGUE_SLUG.ucl : LEAGUE_SLUG.pl,
+  ];
+  const urls = [];
+  for (const host of ESPN_SUMMARY_HOSTS) {
+    for (const slug of slugs) {
+      urls.push(`${host}/${slug}/summary?event=${espnId}`);
+      urls.push(`${host}/${slug}/playbyplay?event=${espnId}`);
+    }
+  }
+  return urls;
 }
 
 async function espnGetJson(url, referer) {
-  const res = await fetch(url, {
-    headers: { ...ESPN_HEADERS, Referer: referer ?? 'https://www.espn.com/soccer/' },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`ESPN ${url} returned ${res.status}${body ? `: ${body.slice(0, 160)}` : ''}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 7000);
+  try {
+    const res = await fetch(url, {
+      headers: { ...ESPN_HEADERS, Referer: referer ?? 'https://www.espn.com/soccer/' },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`ESPN ${url} returned ${res.status}${body ? `: ${body.slice(0, 160)}` : ''}`);
+    }
+    return res.json();
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
 export async function fetchEspnMatchSummary(espnId, leagueKey = 'ucl') {
-  const tried = [leagueKey, leagueKey === 'pl' ? 'ucl' : 'pl'];
+  const referer = `https://www.espn.com/soccer/match/_/gameId/${espnId}`;
   let lastErr = null;
-  for (const key of tried) {
+  for (const url of summaryUrls(espnId, leagueKey)) {
     try {
-      const payload = await espnGetJson(
-        summaryUrl(espnId, key),
-        `https://www.espn.com/soccer/match/_/gameId/${espnId}`,
-      );
+      const payload = await espnGetJson(url, referer);
       const links = payload?.header?.links ?? [];
       const summary = links.find((link) => (link.rel ?? []).includes('summary')) ?? links[0];
       return {
@@ -265,11 +309,13 @@ export async function attachEspnGoals(games) {
 
   const goalsById = new Map();
   const urlById = new Map();
+  const errors = [];
 
   await Promise.all(live.map(async (game) => {
+    const id = String(game.espnId);
     try {
       const summary = await fetchEspnMatchSummary(game.espnId, game.espnLeague ?? game.competition ?? 'ucl');
-      if (summary.espnUrl) urlById.set(String(game.espnId), summary.espnUrl);
+      if (summary.espnUrl) urlById.set(id, summary.espnUrl);
       let cached = [];
       try {
         cached = await loadCachedGoals(game.espnId);
@@ -277,6 +323,7 @@ export async function attachEspnGoals(games) {
         cached = await loadCachedGoals(game.espnId);
       } catch (err) {
         console.error('[espn-sop-goals] cache', game.espnId, err.message);
+        errors.push(`${id}: cache ${err.message}`);
         cached = [];
       }
       const byPlay = new Map(cached.map((row) => [String(row.espn_play_id), row]));
@@ -293,13 +340,20 @@ export async function attachEspnGoals(games) {
           goalLabel: '…',
         };
       });
-      goalsById.set(String(game.espnId), ordered);
+      goalsById.set(id, ordered);
     } catch (err) {
       console.error('[espn-sop-goals] summary', game.espnId, err.message);
+      errors.push(`${id}: ${err.message}`);
+      try {
+        const cached = (await loadCachedGoals(game.espnId)).filter(isRecordedGoal);
+        if (cached.length) goalsById.set(id, cached.map(rowToGoal));
+      } catch (_) {
+        /* keep empty */
+      }
     }
   }));
 
-  return (games ?? []).map((game) => {
+  const nextGames = (games ?? []).map((game) => {
     const id = game.espnId != null ? String(game.espnId) : null;
     return {
       ...game,
@@ -307,4 +361,13 @@ export async function attachEspnGoals(games) {
       goalsSoFar: (id && goalsById.get(id)) || game.goalsSoFar || [],
     };
   });
+
+  return {
+    games: nextGames,
+    goalStats: {
+      live: live.length,
+      withGoals: [...goalsById.values()].filter((rows) => rows.length).length,
+      errors,
+    },
+  };
 }

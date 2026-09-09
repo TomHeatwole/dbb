@@ -473,8 +473,11 @@ export async function fetchPremierLeagueSopOdds({
     ? results.map((game) => attachEspnClock(game, espn.matches))
     : results;
 
+  let goalStats = null;
   if (includeEspn) {
-    games = await attachEspnGoals(games);
+    const attached = await attachEspnGoals(games);
+    games = attached.games;
+    goalStats = attached.goalStats;
   }
 
   games.sort((a, b) => {
@@ -494,6 +497,7 @@ export async function fetchPremierLeagueSopOdds({
         livePremierLeague: espn.livePremierLeague ?? 0,
         liveMatches: espn.liveMatches ?? espn.livePremierLeague ?? 0,
         matched: games.filter((g) => g.espn).length,
+        goals: goalStats,
       }
       : undefined,
   };
@@ -545,7 +549,15 @@ export default async function handler(req, res) {
 
   try {
     const data = await fetchPremierLeagueSopOdds({ includeEspn: true });
-    res.setHeader('Cache-Control', 'public, max-age=15');
+    const live = (data.games ?? []).some((game) => game.inPlay);
+    res.setHeader(
+      'Cache-Control',
+      live ? 'private, no-store, no-cache, must-revalidate' : 'public, max-age=15',
+    );
+    if (live) {
+      res.setHeader('CDN-Cache-Control', 'no-store');
+      res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+    }
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

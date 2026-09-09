@@ -9,7 +9,7 @@
     },
     "api/fanduel-sop.mjs": {
       "maxDuration": 30,
-      "includeFiles": "lib/named-export.mjs,lib/sop-static.mjs,src/sop/sopModel.js,src/sop/fixtureKey.js,src/sop/mergeDkGames.js,src/sop/mergeKalshiGames.js,src/sop/longestNoGoalPick.js,src/sop/gameSnapshot.js,src/sop/sopStaticText.js"
+      "includeFiles": "lib/named-export.mjs,lib/sop-static.mjs,lib/espn-soccer-goals.mjs,lib/classify-goal-type.mjs,lib/espn-pl-scoreboard.mjs,lib/db.mjs,src/sop/sopModel.js,src/sop/fixtureKey.js,src/sop/mergeDkGames.js,src/sop/mergeKalshiGames.js,src/sop/longestNoGoalPick.js,src/sop/gameSnapshot.js,src/sop/sopStaticText.js"
     },
     "api/ncaaf-drives.mjs": {
       "maxDuration": 30

@@ -50,6 +50,25 @@ test('extractScoringPlays keeps a goal before ESPN writes commentary', () => {
   assert.equal(plays[0].classifiable, false);
 });
 
+test('extractScoringPlays reads goals from commentary when keyEvents is empty', () => {
+  const plays = extractScoringPlays({
+    commentary: [
+      {
+        play: {
+          id: '9',
+          scoringPlay: true,
+          text: 'Goal! Barcelona 2, Feyenoord 0. Ferran Torres (Barcelona) right footed shot from the centre of the box.',
+          clock: { displayValue: "27'" },
+          type: { type: 'goal' },
+        },
+      },
+    ],
+  });
+  assert.equal(plays.length, 1);
+  assert.equal(plays[0].scorer, 'Ferran Torres');
+  assert.equal(plays[0].classifiable, true);
+});
+
 test('hasClassifiableCommentary waits for a how-it-was-scored write-up', () => {
   assert.equal(hasClassifiableCommentary(''), false);
   assert.equal(hasClassifiableCommentary('Raphinha Goal'), false);
