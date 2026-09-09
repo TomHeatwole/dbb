@@ -129,8 +129,8 @@ export function collectProfitableSopEdges(game) {
     score: game?.scoreDisplay ?? '0-0',
     clock: liveClockLabel(game),
     inPlay: Boolean(game?.inPlay),
-    openDate: game?.openDate ?? null,
-    kickoff: formatKickoffStamp(game?.openDate),
+    openDate: game?.openDate ?? game?.dk?.openDate ?? null,
+    kickoff: formatKickoffStamp(game?.openDate ?? game?.dk?.openDate),
     competition: game?.competition ?? 'pl',
     noGoal: {
       sourceKey: longest.sourceKey,
@@ -205,6 +205,7 @@ export function formatSopStaticText({
 
   for (const row of rows) {
     lines.push(formatGameHeading(row));
+    lines.push(`  kickoff: ${row.kickoff || row.openDate || 'unknown'}`);
     lines.push(`  no-goal: ${row.noGoal.label}`);
     for (const edge of row.edges) {
       lines.push(`  ${formatEdgeLine(edge)}`);

@@ -78,6 +78,7 @@ describe('SOP static text', () => {
 
     expect(text).toContain('fetched 2026-09-08T15:00:00.000Z');
     expect(text).toContain(`Arsenal v Chelsea  ${formatKickoffStamp('2026-09-06T14:00:00.000Z')}  1-0  LIVE  34'`);
+    expect(text).toContain('kickoff: Sun, Sep 6 10:00 AM ET');
     expect(text).toContain('no-goal: DK Total Goals Under U 2.5 +500');
     expect(text).toContain('edge +');
     expect(text).toContain('kelly ');
@@ -98,6 +99,8 @@ describe('SOP static text', () => {
       openDate: '2026-09-06T14:00:00.000Z',
     });
     expect(row.kickoff).toBe('Sun, Sep 6 10:00 AM ET');
+    const text = formatSopStaticText({ games: [liveGame], fetchedAt: '2026-09-08T15:00:00.000Z' });
+    expect(text).toMatch(/kickoff: Sun, Sep 6 10:00 AM ET/);
   });
 
   it('labels a correct-score proxy', () => {
