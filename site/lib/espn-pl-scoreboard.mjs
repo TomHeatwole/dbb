@@ -255,13 +255,14 @@ async function espnGetScoreboard(leagueKey, dates) {
   throw lastErr ?? new Error('ESPN scoreboard fetch failed');
 }
 
-function summarizeEspnEvent(event) {
+function summarizeEspnEvent(event, leagueKey = 'pl') {
   const teams = competitorsFromEspnEvent(event);
   return {
     id: event?.id ?? event?.competitions?.[0]?.id ?? null,
     teams: { home: teams.home, away: teams.away },
     startTime: event?.date ?? event?.competitions?.[0]?.date ?? null,
     clock: extractEspnClock(event),
+    leagueKey,
   };
 }
 
@@ -312,7 +313,13 @@ export async function fetchEspnSoccerScoreboards(openDates = [], leagueKeys = ['
       return { ok: false, error: err, matches: [] };
     }
 
-    const matches = [...eventsById.values()].map(summarizeEspnEvent);
+    const matches = [];
+    for (let i = 0; i < leagueResults.length; i++) {
+      const leagueKey = leagueKeys[i] ?? 'pl';
+      for (const event of leagueResults[i].eventsById.values()) {
+        matches.push(summarizeEspnEvent(event, leagueKey));
+      }
+    }
     const liveCount = matches.filter(
       (m) => m.clock?.status === 'in' || m.clock?.halfTime,
     ).length;
@@ -361,6 +368,7 @@ export function attachEspnClock(game, matches) {
     ...game,
     espn: clock,
     espnId: hit.id,
+    espnLeague: hit.leagueKey ?? game.espnLeague ?? game.competition ?? null,
     score: clock.homeScore != null
       ? { home: clock.homeScore, away: clock.awayScore ?? 0 }
       : game.score,

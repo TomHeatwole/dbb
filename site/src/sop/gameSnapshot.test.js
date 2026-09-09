@@ -42,6 +42,65 @@ describe('SOP game snapshot', () => {
     expect(snap.profitable).toBe(expectedEdge > 0);
   });
 
+  it('surfaces a live Header +EV when SOP is not profitable', () => {
+    const game = {
+      eventId: 'e1',
+      name: 'Arsenal v Chelsea',
+      teams: { home: 'Arsenal', away: 'Chelsea' },
+      inPlay: true,
+      scoreDisplay: '1-0',
+      espn: { status: 'in', clock: "34'" },
+      noGoalMarkets: {
+        totalGoalsUnder: { american: 250, line: 2.5, selection: 'Under 2.5' },
+      },
+      dk: {
+        noGoalMarkets: {
+          totalGoalsUnder: { american: 500, line: 2.5 },
+        },
+      },
+      goalTypes: {
+        sop: { american: -200 },
+        header: { american: 900 },
+      },
+    };
+
+    const snap = buildSopGameSnapshot(game);
+    const headerBe = computeBreakevenOdds(500).header.american;
+    const expectedEdge = analyzeAgainstBreakeven(900, headerBe).edgePoints;
+
+    expect(snap.market).toBe('HEADER');
+    expect(snap.oddsBook).toBe('fd');
+    expect(snap.oddsAmerican).toBe(900);
+    expect(snap.profitable).toBe(true);
+    expect(snap.edgePoints).toBeCloseTo(expectedEdge, 5);
+  });
+
+  it('keeps SOP as the headline when no goal type is +EV', () => {
+    const game = {
+      eventId: 'e1',
+      name: 'Arsenal v Chelsea',
+      teams: { home: 'Arsenal', away: 'Chelsea' },
+      inPlay: true,
+      noGoalMarkets: {
+        totalGoalsUnder: { american: 250, line: 2.5 },
+      },
+      dk: {
+        noGoalMarkets: {
+          totalGoalsUnder: { american: 500, line: 2.5 },
+        },
+      },
+      goalTypes: {
+        sop: { american: -200 },
+        header: { american: 400 },
+      },
+    };
+
+    const snap = buildSopGameSnapshot(game);
+    expect(snap.market).toBe('SOP');
+    expect(snap.oddsAmerican).toBe(-200);
+    expect(snap.profitable).toBe(false);
+  });
+
   it('keeps live and soon kickoffs in the monitor', () => {
     const now = Date.parse('2026-09-05T14:30:00.000Z');
     expect(isActiveMonitorGame({ inPlay: true }, now)).toBe(true);

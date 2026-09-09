@@ -162,6 +162,22 @@ const statements = [
   `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS away_score INTEGER`,
   `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS situation_text TEXT`,
   `ALTER TABLE fd_drive_odds ADD COLUMN IF NOT EXISTS possession_side TEXT`,
+
+  // SOP live goals: ESPN play classified once by Gemini, then cached.
+  // Rows are deleted when the match is no longer live.
+  `CREATE TABLE IF NOT EXISTS espn_sop_goals (
+    espn_play_id   TEXT PRIMARY KEY,
+    espn_game_id   TEXT NOT NULL,
+    clock_text     TEXT,
+    scorer         TEXT,
+    team_name      TEXT,
+    description    TEXT NOT NULL,
+    goal_type      TEXT NOT NULL CHECK (goal_type IN ('sop', 'header', 'pk', 'fk', 'og')),
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_espn_sop_goals_game
+     ON espn_sop_goals (espn_game_id)`,
 ];
 
 for (const stmt of statements) {

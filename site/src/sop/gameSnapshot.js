@@ -1,11 +1,12 @@
 /**
- * Compact per-game SOP snapshot: offered SOP vs the longest no-goal line.
+ * Compact per-game SOP snapshot: best +EV goal type vs the longest no-goal line.
  */
 
 import {
   analyzeAgainstBreakeven,
   computeBreakevenOdds,
   formatAmericanOdds,
+  GOAL_TYPE_META,
   NO_GOAL_SOURCE_KEYS,
 } from './sopModel';
 import { findLongestNoGoalPick, quoteForNoGoalBook } from './longestNoGoalPick';
@@ -119,17 +120,46 @@ function longestLinePickLabel(sourceKey, quote) {
   return quote?.selection ?? 'NG';
 }
 
-function bestSopOffer(game) {
-  const fdAmerican = game?.goalTypes?.sop?.american ?? null;
-  const dkAmerican = !game?.inPlay && Number.isFinite(game?.dk?.goalTypes?.sop?.american)
-    ? game.dk.goalTypes.sop.american
-    : null;
+function collectGoalTypeOffers(game) {
+  const allowDk = !game?.inPlay;
+  const offers = [];
+  for (const { key, label } of GOAL_TYPE_META) {
+    const fdAmerican = game?.goalTypes?.[key]?.american ?? null;
+    if (Number.isFinite(fdAmerican)) {
+      offers.push({ key, label, book: 'fd', american: fdAmerican });
+    }
+    const dkAmerican = allowDk ? game?.dk?.goalTypes?.[key]?.american ?? null : null;
+    if (Number.isFinite(dkAmerican)) {
+      offers.push({ key, label, book: 'dk', american: dkAmerican });
+    }
+  }
+  return offers;
+}
 
-  const candidates = [];
-  if (Number.isFinite(fdAmerican)) candidates.push({ book: 'fd', american: fdAmerican });
-  if (Number.isFinite(dkAmerican)) candidates.push({ book: 'dk', american: dkAmerican });
-  if (!candidates.length) return null;
-  return candidates.reduce((best, cur) => (cur.american > best.american ? cur : best));
+function scoreGoalTypeOffer(offer, model) {
+  const breakeven = model?.[offer.key]?.american ?? null;
+  const analysis = Number.isFinite(breakeven)
+    ? analyzeAgainstBreakeven(offer.american, breakeven)
+    : null;
+  return {
+    ...offer,
+    analysis,
+    edgePoints: analysis?.edgePoints ?? null,
+    profitable: Boolean(analysis?.profitable),
+  };
+}
+
+/** Best +EV goal-type quote; SOP when nothing is profitable. */
+export function pickHeadlineSopPlay(game, model) {
+  const scored = collectGoalTypeOffers(game).map((offer) => scoreGoalTypeOffer(offer, model));
+  if (!scored.length) return null;
+
+  const profitable = scored.filter((offer) => offer.profitable && Number.isFinite(offer.edgePoints));
+  if (profitable.length) {
+    return profitable.reduce((best, cur) => (cur.edgePoints > best.edgePoints ? cur : best));
+  }
+
+  return scored.find((offer) => offer.key === 'sop') ?? scored[0];
 }
 
 export function buildSopGameSnapshot(game) {
@@ -139,11 +169,7 @@ export function buildSopGameSnapshot(game) {
     ? longestQuote.american
     : (Number.isFinite(longest.american) ? longest.american : null);
   const model = Number.isFinite(longestAmerican) ? computeBreakevenOdds(longestAmerican) : null;
-  const sopBe = model?.sop?.american ?? null;
-  const offered = bestSopOffer(game);
-  const analysis = offered && Number.isFinite(sopBe)
-    ? analyzeAgainstBreakeven(offered.american, sopBe)
-    : null;
+  const play = pickHeadlineSopPlay(game, model);
 
   return {
     eventId: game?.eventId,
@@ -153,14 +179,14 @@ export function buildSopGameSnapshot(game) {
     clock: liveClockLabel(game),
     inPlay: Boolean(game?.inPlay),
     competition: game?.competition ?? 'pl',
-    market: 'SOP',
-    oddsBook: offered?.book ?? null,
-    oddsAmerican: offered?.american ?? null,
+    market: play?.label ?? 'SOP',
+    oddsBook: play?.book ?? null,
+    oddsAmerican: play?.american ?? null,
     lineLabel: Number.isFinite(longestAmerican)
       ? `${bookTag(longest.book)} ${longestLinePickLabel(longest.sourceKey, longestQuote)} ${formatAmericanOdds(longestAmerican)}`
       : '—',
-    edgePoints: analysis?.edgePoints ?? null,
-    profitable: Boolean(analysis?.profitable),
+    edgePoints: play?.edgePoints ?? null,
+    profitable: Boolean(play?.profitable),
   };
 }
 

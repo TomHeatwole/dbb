@@ -4,6 +4,7 @@
  */
 
 import { attachEspnClock, compactEspnError, fetchEspnSoccerScoreboards } from '../lib/espn-pl-scoreboard.mjs';
+import { attachEspnGoals } from '../lib/espn-soccer-goals.mjs';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -468,9 +469,13 @@ export async function fetchPremierLeagueSopOdds({
     espnPromise,
   ]);
 
-  const games = espn
+  let games = espn
     ? results.map((game) => attachEspnClock(game, espn.matches))
     : results;
+
+  if (includeEspn) {
+    games = await attachEspnGoals(games);
+  }
 
   games.sort((a, b) => {
     if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;

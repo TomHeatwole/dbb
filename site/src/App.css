@@ -18506,6 +18506,10 @@ body.modal-open {
 }
 
 .sop-exp-game-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem;
   margin-bottom: 0;
 }
 
@@ -18513,8 +18517,9 @@ body.modal-open {
   display: flex;
   align-items: flex-start;
   gap: 0.55rem;
-  width: 100%;
-  padding: 0.85rem 1rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 0.4rem 0.85rem 1rem;
   border: none;
   background: transparent;
   color: inherit;
@@ -18537,6 +18542,117 @@ body.modal-open {
 .sop-exp-game-toggle-main {
   flex: 1;
   min-width: 0;
+}
+
+.sop-exp-game-aside {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  padding: 0.7rem 0.85rem 0.7rem 0;
+}
+
+.sop-exp-espn-link {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffe08a;
+  text-decoration: none;
+}
+
+.sop-exp-espn-link:hover {
+  text-decoration: underline;
+}
+
+.sop-goals-menu {
+  position: relative;
+}
+
+.sop-goals-menu-toggle {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 224, 138, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffe08a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sop-goals-menu-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.sop-goals-menu-list {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 4;
+  min-width: 16.5rem;
+  margin: 0;
+  padding: 0.4rem 0;
+  list-style: none;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #141814;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.sop-goals-menu-empty,
+.sop-goals-menu-row {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: baseline;
+  padding: 0.32rem 0.7rem;
+  font-size: 0.72rem;
+}
+
+.sop-goals-menu-empty {
+  display: block;
+  color: rgba(210, 240, 220, 0.65);
+}
+
+.sop-goals-menu-clock {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 224, 138, 0.85);
+}
+
+.sop-goals-menu-scorer {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(235, 245, 238, 0.92);
+}
+
+.sop-goals-menu-type {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #ffe08a;
+  white-space: nowrap;
+}
+
+.sop-goals-menu-type--header {
+  color: #9bdbff;
+}
+
+.sop-goals-menu-type--pk {
+  color: #c6f6c6;
+}
+
+.sop-goals-menu-type--fk {
+  color: #f6d6a8;
+}
+
+.sop-goals-menu-type--og {
+  color: #ffb4b4;
 }
 
 .sop-exp-game-body {

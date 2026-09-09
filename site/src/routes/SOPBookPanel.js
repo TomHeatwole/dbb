@@ -251,6 +251,37 @@ function SOPKellyControls({
   );
 }
 
+function GoalsSoFarMenu({ goals }) {
+  const rows = Array.isArray(goals) ? goals : [];
+  return (
+    <details className="sop-goals-menu">
+      <summary className="sop-goals-menu-toggle">Goals so far</summary>
+      <ul className="sop-goals-menu-list">
+        {rows.length === 0 ? (
+          <li className="sop-goals-menu-empty">None yet</li>
+        ) : (
+          rows.map((goal) => (
+            <li
+              key={goal.playId}
+              className="sop-goals-menu-row"
+              title={goal.description || undefined}
+            >
+              <span className="sop-goals-menu-clock">{goal.clock || '—'}</span>
+              <span className="sop-goals-menu-scorer">
+                {goal.scorer || 'Goal'}
+                {goal.teamName ? ` (${goal.teamName})` : ''}
+              </span>
+              <span className={`sop-goals-menu-type sop-goals-menu-type--${goal.goalType || 'pending'}`}>
+                {goal.goalLabel || '…'}
+              </span>
+            </li>
+          ))
+        )}
+      </ul>
+    </details>
+  );
+}
+
 function GameCard({
   game,
   selectedNoGoalPick,
@@ -353,6 +384,8 @@ function GameCard({
   }, [game.goalTypes, game.dk?.goalTypes, kellyBudget, kellyEnabled, kellyFraction, model, showDkGoals]);
 
   const evCount = goalAnalyses.filter((row) => row.highlightFd || row.highlightDk).length;
+  const goalsSoFar = Array.isArray(game.goalsSoFar) ? game.goalsSoFar : [];
+  const showGoalsMenu = Boolean(game.inPlay || goalsSoFar.length || game.espnUrl);
 
   return (
     <article
@@ -393,6 +426,23 @@ function GameCard({
             </span>
           </span>
         </button>
+        {showGoalsMenu && (
+          <aside className="sop-exp-game-aside">
+            {game.espnUrl && (
+              <a
+                className="sop-exp-espn-link"
+                href={game.espnUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                ESPN
+              </a>
+            )}
+            {(game.inPlay || goalsSoFar.length > 0) && (
+              <GoalsSoFarMenu goals={goalsSoFar} />
+            )}
+          </aside>
+        )}
       </header>
 
       {expanded && (
@@ -713,8 +763,9 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       {!error && games.length > 0 && (
         <GameMonitorTable
           rows={buildSopMonitorRows(filteredGames)}
-          marketHeader="SOP"
-          caption="SOP vs longest no-goal"
+          marketHeader="Play"
+          caption="Best +EV vs longest no-goal"
+          showMarket
         />
       )}
 
