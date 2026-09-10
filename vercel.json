@@ -3,7 +3,7 @@
   "outputDirectory": "build",
   "functions": {
     "api/render.js": {
-      "includeFiles": "build/index.html|routeMeta.json"
+      "includeFiles": "api/_spa-template.html|routeMeta.json"
     },
     "api/chat.js": {
       "includeFiles": "public/data/players.txt|public/data/ktc_values.csv|public/data/fantasycalc.csv|public/data/ffb.csv|public/data/score_format.json|public/data/chinese_characters_prompt.txt"
@@ -20,8 +20,6 @@
     { "source": "/notes", "destination": "/api/render" },
     { "source": "/admincontrols", "destination": "/api/render" },
     { "source": "/hwangai", "destination": "/api/render" },
-    { "source": "/FredDuel", "destination": "/api/render" },
-    { "source": "/fredduel", "destination": "/api/render" },
     { "source": "/team/:id", "destination": "/api/render" }
   ]
 }
