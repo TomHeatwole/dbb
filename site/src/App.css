@@ -680,26 +680,123 @@
   margin-left: 0.1rem;
 }
 
-.lineup-mode-info-tooltip p,
-.lineup-mode-tooltip-modal p {
-  margin: 0 0 0.55rem;
+button.lineup-mode-info {
+  border: none;
+  background: none;
+  padding: 0.15rem;
+  color: inherit;
+  font-size: 0.9em;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.lineup-mode-info-tooltip p:last-child,
-.lineup-mode-tooltip-modal p:last-child {
-  margin-bottom: 0;
+.lineup-mode-info-tooltip {
+  left: auto !important;
+  right: 0;
+  width: 22.5rem !important;
+  max-width: min(22.5rem, calc(100vw - 1.5rem)) !important;
+  padding: 0.85rem 0.95rem 0.95rem !important;
 }
 
-.lineup-mode-tooltip-modal {
-  padding: 1.1rem 1.15rem 1.2rem;
-  text-align: left;
-  color: #cdd3f0;
-}
-
-.lineup-mode-tooltip-modal h3 {
-  margin: 0 0 0.7rem;
+.lineup-mode-tip-title {
+  display: block;
+  margin: 0 0 0.65rem;
   color: #f8fafc;
-  font-size: 1.05rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.lineup-mode-tip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  text-align: left;
+}
+
+.lineup-mode-tip-section h4 {
+  margin: 0 0 0.2rem;
+  color: #f5d26a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lineup-mode-tip-section p {
+  margin: 0;
+  color: #cdd3f0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.lineup-mode-tip-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: grid;
+  place-items: center;
+  padding: 1.15rem;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.lineup-mode-tip-card {
+  position: relative;
+  width: 100%;
+  max-width: 22.5rem;
+  max-height: min(80vh, 34rem);
+  overflow: auto;
+  padding: 1.2rem 1.15rem 1.25rem;
+  box-sizing: border-box;
+  justify-self: center;
+  background: #12182c;
+  color: #cdd3f0;
+  border: 1px solid #3a4466;
+  border-radius: 0.75rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  text-align: left;
+}
+
+.lineup-mode-tip-card h3 {
+  margin: 0 1.75rem 0.85rem 0;
+  color: #f8fafc;
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.lineup-mode-tip-card .lineup-mode-tip-section h4 {
+  font-size: 0.76rem;
+}
+
+.lineup-mode-tip-card .lineup-mode-tip-section p {
+  font-size: 0.88rem;
+}
+
+.lineup-mode-tip-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 9999px;
+  background: #1e2433;
+  color: #e7efff;
+  border: 1px solid #2c3750;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lineup-mode-tip-close:hover,
+.lineup-mode-tip-close:focus-visible {
+  background: #2a3348;
 }
 
 @media (max-width: 50em) {

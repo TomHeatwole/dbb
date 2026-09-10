@@ -1,49 +1,75 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useIsMobile from '../hooks/useIsMobile';
 
 const TOOLTIP_TITLE = 'Highest Scores vs Highest Projections';
 
-const TOOLTIP_BODY = (
-  <>
-    <p>
-      <strong>Highest Scores</strong> keeps anyone whose game has already started in the lineup, even if a bench player still has a bigger projection.
-    </p>
-    <p>
-      <strong>Highest Projections</strong> fills each slot with the best remaining outlook. Live and unplayed players use the higher of current score and week projection. Finished games stay locked at their final score.
-    </p>
-    <p>
-      The <strong>Proj</strong> total is always finished scores plus the highest remaining projections — even if that mix is not the lineup on screen.
-    </p>
-  </>
-);
+function TipBody() {
+  return (
+    <div className="lineup-mode-tip-body">
+      <section className="lineup-mode-tip-section">
+        <h4>Highest Scores</h4>
+        <p>
+          Keeps anyone whose game has already started in the lineup, even if a bench
+          player still has a bigger projection.
+        </p>
+      </section>
+      <section className="lineup-mode-tip-section">
+        <h4>Highest Projections</h4>
+        <p>
+          Fills each slot with the best remaining outlook. Live and unplayed players
+          use the higher of current score and week projection. Finished games stay
+          locked at their final score.
+        </p>
+      </section>
+      <section className="lineup-mode-tip-section">
+        <h4>Proj total</h4>
+        <p>
+          Always finished scores plus the highest remaining projections — even if
+          that mix is not the lineup on screen.
+        </p>
+      </section>
+    </div>
+  );
+}
 
 function InfoTip() {
   const isMobile = useIsMobile();
   const [modalOpen, setModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (!isMobile) {
+      return undefined;
+    }
+    if (modalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [modalOpen, isMobile]);
+
   if (isMobile) {
     const modal = modalOpen
       ? createPortal(
-          <div className="player-modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="lineup-mode-tip-overlay" onClick={() => setModalOpen(false)}>
             <div
-              className="player-modal"
+              className="lineup-mode-tip-card"
               role="dialog"
               aria-modal="true"
+              aria-labelledby="lineup-mode-tip-title"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
-                className="player-card-close"
+                className="lineup-mode-tip-close"
                 aria-label="Close"
                 onClick={() => setModalOpen(false)}
               >
                 ×
               </button>
-              <div className="lineup-mode-tooltip-modal">
-                <h3>{TOOLTIP_TITLE}</h3>
-                {TOOLTIP_BODY}
-              </div>
+              <h3 id="lineup-mode-tip-title">{TOOLTIP_TITLE}</h3>
+              <TipBody />
             </div>
           </div>,
           document.body
@@ -68,8 +94,9 @@ function InfoTip() {
   return (
     <span className="info-icon lineup-mode-info" aria-label={TOOLTIP_TITLE}>
       ℹ️
-      <span className="info-icon-tooltip lineup-mode-info-tooltip">
-        {TOOLTIP_BODY}
+      <span className="info-icon-tooltip lineup-mode-info-tooltip" role="tooltip">
+        <strong className="lineup-mode-tip-title">{TOOLTIP_TITLE}</strong>
+        <TipBody />
       </span>
     </span>
   );

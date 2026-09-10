@@ -1,5 +1,56 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const RENDER_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+function readIfExists(filePath) {
+  try {
+    return fs.readFileSync(filePath, "utf8");
+  } catch (_) {
+    return null;
+  }
+}
+
+function readLocalTemplate() {
+  const candidates = [
+    // Copied next to this function by postbuild (Vercel bundle)
+    path.join(RENDER_DIR, "_spa-template.html"),
+    // Local `npm run serve` after a CRA build
+    path.join(process.cwd(), "build", "index.html"),
+    path.join(process.cwd(), "index.html"),
+  ];
+  for (const filePath of candidates) {
+    const html = readIfExists(filePath);
+    if (html) {
+      return html;
+    }
+  }
+  return null;
+}
+
+async function loadHtmlTemplate(req) {
+  const local = readLocalTemplate();
+  if (local) {
+    return local;
+  }
+
+  // Last resort on Vercel: the built SPA is also a static file at /index.html
+  const vercelHost = process.env.VERCEL_URL;
+  const origin = vercelHost ? `https://${vercelHost}` : getOrigin(req);
+  if (!origin) {
+    return null;
+  }
+  try {
+    const resp = await fetch(`${origin}/index.html`);
+    if (resp.ok) {
+      return await resp.text();
+    }
+  } catch (_) {
+    // fall through
+  }
+  return null;
+}
 
 // Cache route metadata so we don't hit the filesystem on every request
 let routeMetaCache = null;
@@ -7,13 +58,22 @@ function loadRouteMeta() {
   if (routeMetaCache) {
     return routeMetaCache;
   }
-  const metaPath = path.join(process.cwd(), "routeMeta.json");
-  try {
-    const raw = fs.readFileSync(metaPath, "utf8");
-    routeMetaCache = JSON.parse(raw);
-  } catch (_) {
-    routeMetaCache = {};
+  const candidates = [
+    path.join(process.cwd(), "routeMeta.json"),
+    path.join(RENDER_DIR, "..", "routeMeta.json"),
+  ];
+  for (const metaPath of candidates) {
+    const raw = readIfExists(metaPath);
+    if (raw) {
+      try {
+        routeMetaCache = JSON.parse(raw);
+        return routeMetaCache;
+      } catch (_) {
+        // try the next path
+      }
+    }
   }
+  routeMetaCache = {};
   return routeMetaCache;
 }
 
@@ -78,12 +138,8 @@ function getOrigin(req) {
 }
 
 export default async function handler(req, res) {
-  const filePath = path.join(process.cwd(), "build", "index.html");
-
-  let html;
-  try {
-    html = fs.readFileSync(filePath, "utf8");
-  } catch (_) {
+  let html = await loadHtmlTemplate(req);
+  if (!html) {
     return res.status(500).send("Template not found");
   }
 
