@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
-import { CURRENT_YEAR, getCompletedWeeksCount, isPreSeason } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap, getStandings } from '../scores/ScoresParser';
@@ -29,11 +29,11 @@ function PreviousYearRecapCard() {
   const [resultsRows, setResultsRows] = useState(null); // [{ key, label, rosterId, teamName, avatarUrl }]
   const loadIdRef = React.useRef(0);
 
-  // Season we're displaying: when pre-season, the completed previous year; otherwise current year
+  // Recap the last season whose playoffs are done — previous year until Week 17 wraps.
   const displaySeason =
-    isPreSeason()
-      ? String(Number(CURRENT_YEAR) - 1)
-      : CURRENT_YEAR;
+    getCompletedWeeksCount(CURRENT_YEAR) >= PLAYOFF_END_WEEK
+      ? CURRENT_YEAR
+      : String(Number(CURRENT_YEAR) - 1);
 
   useEffect(() => {
     loadIdRef.current += 1;
@@ -44,8 +44,10 @@ function PreviousYearRecapCard() {
       setLoading(true);
       setError(null);
       try {
-        // When pre-season (current season hasn't started), recap the previous year
-        const season = isPreSeason() ? String(Number(CURRENT_YEAR) - 1) : CURRENT_YEAR;
+        const season =
+          getCompletedWeeksCount(CURRENT_YEAR) >= PLAYOFF_END_WEEK
+            ? CURRENT_YEAR
+            : String(Number(CURRENT_YEAR) - 1);
 
         const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),

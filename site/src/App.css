@@ -1679,6 +1679,10 @@ button.lineup-mode-info {
   align-items: start;
 }
 
+.scores-lineup-nums--single {
+  grid-template-columns: 3.1rem;
+}
+
 .scores-lineup-pts-actual,
 .scores-lineup-pts-proj {
   min-height: 1.85rem;
@@ -1797,6 +1801,9 @@ button.lineup-mode-info {
   .scores-lineup-nums {
     grid-template-columns: 2.6rem 2.6rem;
     column-gap: 0.3rem;
+  }
+  .scores-lineup-nums--single {
+    grid-template-columns: 2.6rem;
   }
   .scores-lineup-head .hproj-hint--lg {
     font-size: 1.1rem;
@@ -25647,6 +25654,209 @@ button.corners-bet:hover {
   }
   .hproj-pos-blocks {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 50em) {
+  .mobile-info-container:has(.hproj-page),
+  .mobile-info-container:has(.hproj-page-head),
+  .mobile-info-container:has(.hproj-loading) {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .mobile-info-container:has(.hproj-page) .info-page-header,
+  .mobile-info-container:has(.hproj-page-head) .info-page-header {
+    padding: 0 0.35rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .mobile-info-container:has(.hproj-page) h1.info-title,
+  .mobile-info-container:has(.hproj-page-head) h1.info-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .mobile-info-container:has(.hproj-page) .info-subtitle,
+  .mobile-info-container:has(.hproj-page-head) .info-subtitle {
+    font-size: 0.72rem;
+  }
+
+  .hproj-page-head {
+    margin-bottom: 0.7rem;
+  }
+
+  .hproj-team-switch-btn {
+    gap: 0.45rem;
+    padding: 0.4rem 0.55rem 0.4rem 0.45rem;
+  }
+
+  .hproj-identity {
+    gap: 0.45rem;
+  }
+
+  .hproj-team-avatar {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .hproj-identity-team {
+    font-size: 0.86rem;
+  }
+
+  .hproj-identity-owner {
+    font-size: 0.68rem;
+  }
+
+  .hproj-owner-avatar {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .hproj-team-switch-option {
+    padding: 0.35rem 0.4rem;
+  }
+
+  .hproj-team-switch-option .hproj-team-avatar {
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+
+  .hproj-col {
+    gap: 0.55rem;
+    padding: 0.75rem 0.65rem 0.85rem;
+  }
+
+  .hproj-col-title {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  .hproj-copy {
+    font-size: 0.78rem;
+  }
+
+  .hproj-hero-value {
+    font-size: 1.85rem;
+  }
+
+  .hproj-hero-label {
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+  }
+
+  .hproj-hero-sub {
+    font-size: 0.68rem;
+  }
+
+  .hproj-disclaimer,
+  .hproj-note,
+  .hproj-footnote {
+    font-size: 0.64rem;
+    line-height: 1.35;
+  }
+
+  .hproj-regen {
+    font-size: 0.54rem;
+    padding: 0.36rem 0.3rem;
+  }
+
+  .hproj-pos-chip {
+    gap: 0.28rem;
+    padding: 0.22rem 0.38rem;
+    font-size: 0.72rem;
+  }
+
+  .hproj-pos-chip-pts {
+    font-size: 0.78rem;
+  }
+
+  .hproj-lineup {
+    padding: 0.4rem 0.5rem 0.5rem;
+  }
+
+  .hproj-lineup-kicker {
+    font-size: 0.6rem;
+    padding-bottom: 0.3rem;
+  }
+
+  .hproj-lineup-row,
+  .hproj-bench-toggle {
+    grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+    gap: 0.32rem;
+    padding: 0.28rem 0;
+  }
+
+  .hproj-lineup-row .pos-badge,
+  .hproj-player-row-slot {
+    min-width: 2.15rem;
+    font-size: 0.52rem;
+    padding: 0.06rem 0.16rem;
+  }
+
+  .hproj-player {
+    gap: 0.3rem;
+  }
+
+  .hproj-player-avatar {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .hproj-player-name {
+    font-size: 0.74rem;
+  }
+
+  .hproj-player .pos-badge {
+    font-size: 0.48rem;
+  }
+
+  .hproj-player .injury-badge {
+    font-size: 0.55rem;
+  }
+
+  .hproj-lineup-pts {
+    font-size: 0.86rem;
+  }
+
+  .hproj-lineup-rate {
+    font-size: 0.56rem;
+  }
+
+  .hproj-lineup-rate-words {
+    display: none;
+  }
+
+  .hproj-bench-toggle {
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+  }
+
+  .hproj-player-list {
+    gap: 0.28rem;
+  }
+
+  .hproj-player-row {
+    grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+    column-gap: 0.32rem;
+    row-gap: 0.18rem;
+    padding: 0.36rem 0.42rem 0.32rem;
+  }
+
+  .hproj-player-row-pts {
+    font-size: 0.82rem;
+  }
+
+  .hproj-player-row-meta {
+    font-size: 0.54rem;
+  }
+
+  .hproj-player-row-skip {
+    font-size: 0.58rem;
+  }
+
+  .hproj-slider-ends {
+    font-size: 0.58rem;
   }
 }
 

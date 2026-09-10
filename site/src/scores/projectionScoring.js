@@ -430,7 +430,8 @@ function sortLineup(annotated, playersData, playerIdMap, playerGameLabels, injur
  * Lineup for Scores.
  * lineupMode 'scores' (default): games that have started stay in the lineup.
  * lineupMode 'projections': rank by ceiling max(score, proj), finished games locked at actual.
- * Header Proj is always the projections-optimal total, independent of the displayed starters.
+ * Header Score always comes from the scores lineup; Proj is always the
+ * projections-optimal total — both stay put when the toggle changes who is shown.
  */
 export function startSitWithProjections(
   teamScore,
@@ -445,37 +446,34 @@ export function startSitWithProjections(
   const mode = lineupMode === 'projections' ? 'projections' : 'scores';
   const hybrid = applyHybridProjectedPoints(teamScore, projectedPtsById, playerGameLabels);
   const annotated = annotateProjectionSources(hybrid, playerGameLabels, projectedPtsById);
-  const projSorted = sortLineup(
+  const sortArgs = [
     annotated,
     playersData,
     playerIdMap,
     playerGameLabels,
     injuriesMap,
     playerSeasonTotalsMap,
-    'projections'
-  );
+  ];
+  const projSorted = sortLineup(...sortArgs, 'projections');
+  const scoresSorted = sortLineup(...sortArgs, 'scores');
   const projFinalized = annotateProjectionSources(projSorted, playerGameLabels, projectedPtsById);
+  const scoresFinalized = annotateProjectionSources(scoresSorted, playerGameLabels, projectedPtsById);
   const optimalProjTotal = roundTenth(
     (projFinalized.starters || []).reduce((sum, player) => sum + projectionSlotValue(player), 0)
   );
-  const displaySorted = mode === 'projections'
-    ? projSorted
-    : sortLineup(
-      annotated,
-      playersData,
-      playerIdMap,
-      playerGameLabels,
-      injuriesMap,
-      playerSeasonTotalsMap,
-      'scores'
-    );
-  const finalized = mode === 'projections'
-    ? projFinalized
-    : annotateProjectionSources(displaySorted, playerGameLabels, projectedPtsById);
+  const displaySorted = mode === 'projections' ? projSorted : scoresSorted;
+  const finalized = mode === 'projections' ? projFinalized : scoresFinalized;
   const withHints = attachBenchHints(finalized, playersData, playerIdMap, mode, projFinalized.starters);
   return {
     ...withHints,
     lineupMode: mode,
     optimalProjTotal,
+    starterActualTotal: scoresFinalized.starterActualTotal,
+    starterHasActual: scoresFinalized.starterHasActual,
+    starterTotal: scoresFinalized.starterTotal,
+    starterProjRemaining: scoresFinalized.starterProjRemaining,
+    includesProjection: Boolean(
+      scoresFinalized.includesProjection || projFinalized.includesProjection
+    ),
   };
 }

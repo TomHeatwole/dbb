@@ -77,7 +77,8 @@ function HomePage() {
     };
   }, []);
 
-  // Flip off-season → in-season at the exact kickoff instant if this tab stays open.
+  // Drop the countdown at kickoff if this tab stays open. Week 1 still uses
+  // the off-season card set until that week is completed.
   useEffect(() => {
     if (hasSeasonStarted()) return undefined;
     const kickoffMs = getWeek1KickoffMs();
@@ -98,16 +99,22 @@ function HomePage() {
   // Week comes from DateHelper (SEASON_START_DAY / CURRENT_WEEK_OVERRIDE in global_constants)
   const effectiveWeekOverride = homePageCurrentWeek;
   const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
-  // Off-season when: (1) Week 17 of current season is complete, OR (2) before Week 1 kickoff
+  const weekNum = Number(effectiveWeekOverride);
+  const week1InProgress =
+    hasSeasonStarted() &&
+    Number.isFinite(weekNum) &&
+    weekNum <= 1;
+  // Off-season cards: before kickoff, through Week 1 (no standings data yet),
+  // or after Week 17 completes.
   const autoOffSeason =
     isPreSeason() ||
-    (Number.isFinite(Number(effectiveWeekOverride)) &&
-    Number(effectiveWeekOverride) > 17);
+    week1InProgress ||
+    (Number.isFinite(weekNum) && weekNum > 17);
   const isOffSeasonHome =
     HOME_OFFSEASON_OVERRIDE == null
       ? autoOffSeason
       : !!HOME_OFFSEASON_OVERRIDE;
-  const showWeek1CountdownCard = isOffSeasonHome;
+  const showWeek1CountdownCard = isOffSeasonHome && !week1InProgress;
 
   // Off-season layout: separate "home cards set" once Week 17 is completed.
   if (isOffSeasonHome) {
@@ -116,7 +123,7 @@ function HomePage() {
         <main className="home-main home-dashboard">
           <div className="home-cards-grid home-cards-grid--single">
             {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
-            <Week1CountdownCard />
+            {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
             <AuthHomeCard />
             <PreviousYearRecapCard />
             <RecentTradesCard />
@@ -137,7 +144,7 @@ function HomePage() {
     return (
       <main className="home-main home-dashboard">
         <div className="home-cards-grid">
-          <Week1CountdownCard />
+          {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
           <div className="home-cards-grid--split">
             <div className="home-cards-column home-cards-column--left">
               <AuthHomeCard />

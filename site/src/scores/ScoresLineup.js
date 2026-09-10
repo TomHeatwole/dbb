@@ -141,6 +141,11 @@ export default function ScoresLineup({
 
   const starterSplit = starterScoreSplit(weekBreakdown);
   const benchSplit = benchScoreSplit(weekBreakdown);
+  const lineupMode = weekBreakdown.lineupMode === 'projections' ? 'projections' : 'scores';
+  const showScoreCol = !isMobileView || lineupMode === 'scores';
+  const showProjCol = !isMobileView || lineupMode === 'projections';
+  const showHprojCol = Boolean(hprojHref) && showProjCol;
+  const numsClass = `scores-lineup-nums${showScoreCol && showProjCol ? '' : ' scores-lineup-nums--single'}`;
   const hasPf = Number(pfTotal) > 0;
   const hasMeta = Boolean(ownerName || hasPf);
 
@@ -176,9 +181,9 @@ export default function ScoresLineup({
             </div>
           </div>
           <div className="scores-lineup-game-col" />
-          <div className="scores-lineup-nums">
-            <span className="scores-lineup-pts-actual">—</span>
-            <span className="scores-lineup-pts-proj">—</span>
+          <div className={numsClass}>
+            {showScoreCol ? <span className="scores-lineup-pts-actual">—</span> : null}
+            {showProjCol ? <span className="scores-lineup-pts-proj">—</span> : null}
           </div>
         </div>
       );
@@ -222,9 +227,9 @@ export default function ScoresLineup({
         <div className="scores-lineup-game-col">
           <GameLabel gameObj={gameObj} isActiveWeek={isActiveWeek} />
         </div>
-        <div className="scores-lineup-nums">
-          <span className={`scores-lineup-pts-actual${highlightClass}`}>{scoreDisplay(p)}</span>
-          <span className={`scores-lineup-pts-proj${highlightClass}`}>{projDisplay(p)}</span>
+        <div className={numsClass}>
+          {showScoreCol ? <span className={`scores-lineup-pts-actual${highlightClass}`}>{scoreDisplay(p)}</span> : null}
+          {showProjCol ? <span className={`scores-lineup-pts-proj${highlightClass}`}>{projDisplay(p)}</span> : null}
         </div>
         {hint ? (
           <div
@@ -251,9 +256,8 @@ export default function ScoresLineup({
     const isDeprioritized = ab === 'O' || ab === 'P' || ab === 'PUP' || ab === 'IR';
     return { p, isDeprioritized };
   }).sort((a, b) => {
-    const mode = weekBreakdown.lineupMode === 'projections' ? 'projections' : 'scores';
-    const aExp = rankPtsForMode(a.p, mode);
-    const bExp = rankPtsForMode(b.p, mode);
+    const aExp = rankPtsForMode(a.p, lineupMode);
+    const bExp = rankPtsForMode(b.p, lineupMode);
     if (bExp !== aExp) {
       return bExp - aExp;
     }
@@ -302,27 +306,31 @@ export default function ScoresLineup({
       <div className="scores-lineup-head">
         <span className="scores-lineup-kicker">Starters</span>
         <div className="scores-lineup-head-stats">
-          <div className="scores-lineup-head-col">
-            <span className="scores-lineup-col-label">Score</span>
-            <span className="scores-lineup-pts-actual">
-              {starterSplit.hasActual ? starterSplit.actual.toFixed(1) : '—'}
-            </span>
-          </div>
-          {hprojHref ? (
+          {showScoreCol ? (
+            <div className="scores-lineup-head-col">
+              <span className="scores-lineup-col-label">Score</span>
+              <span className="scores-lineup-pts-actual">
+                {starterSplit.actual.toFixed(1)}
+              </span>
+            </div>
+          ) : null}
+          {showHprojCol ? (
             <div className="scores-lineup-head-col">
               <span className="scores-lineup-col-label scores-lineup-col-label--hproj">HProj</span>
               <HprojHint href={hprojHref} value={hprojValue} size="lg" showTag={false} />
             </div>
           ) : null}
-          <div
-            className="scores-lineup-head-col"
-            title="Finished scores plus the highest remaining projections, even if that mix is not the lineup below"
-          >
-            <span className="scores-lineup-col-label">Proj</span>
-            <span className="scores-lineup-pts-proj">
-              {starterSplit.hasProj ? starterSplit.proj.toFixed(1) : '—'}
-            </span>
-          </div>
+          {showProjCol ? (
+            <div
+              className="scores-lineup-head-col"
+              title="Finished scores plus the highest remaining projections, even if that mix is not the lineup below"
+            >
+              <span className="scores-lineup-col-label">Proj</span>
+              <span className="scores-lineup-pts-proj">
+                {starterSplit.hasProj ? starterSplit.proj.toFixed(1) : '—'}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -334,13 +342,17 @@ export default function ScoresLineup({
         <span className="scores-lineup-bench-chevron" aria-hidden="true">{benchOpen ? '▾' : '▸'}</span>
         <span className="scores-lineup-bench-label">{benchOpen ? 'Hide bench' : 'Show bench'}</span>
         <span className="scores-lineup-game-col" aria-hidden="true" />
-        <div className="scores-lineup-nums">
-          <span className="scores-lineup-pts-actual">
-            {benchSplit.hasActual ? benchSplit.actual.toFixed(1) : '—'}
-          </span>
-          <span className="scores-lineup-pts-proj">
-            {benchSplit.hasProj ? benchSplit.proj.toFixed(1) : '—'}
-          </span>
+        <div className={numsClass}>
+          {showScoreCol ? (
+            <span className="scores-lineup-pts-actual">
+              {benchSplit.hasActual ? benchSplit.actual.toFixed(1) : '—'}
+            </span>
+          ) : null}
+          {showProjCol ? (
+            <span className="scores-lineup-pts-proj">
+              {benchSplit.hasProj ? benchSplit.proj.toFixed(1) : '—'}
+            </span>
+          ) : null}
         </div>
       </button>
 

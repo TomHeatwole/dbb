@@ -33,7 +33,7 @@ export const SEASON_START_DAY = "09/09";
  *   Same idea, but only when browsing a previous season year.
  *
  * HOME_OFFSEASON_OVERRIDE:
- *   null = derive (preseason OR week > 17). true/false = force home off-/in-season layout.
+ *   null = derive (preseason OR week 1 in progress OR week > 17). true/false = force home off-/in-season layout.
  *
  * SIMULATE_MIDWEEK:
  *   Local only. When true, the current season's scoreboard is rewritten so

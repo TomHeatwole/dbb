@@ -581,7 +581,7 @@ function ScoresView({
           }
 
           const mine = isMyRoster(rosterId, myRosterId);
-          const weekSplit = starterScoreSplit(weekBreakdown);
+          const weekSplit = starterScoreSplit(weekBreakdown, { forceScore: liveBoard });
           const showHproj = HPROJ_ON_SCORES && String(season) === String(CURRENT_YEAR) && weekSplit.hasProj;
           const hprojHref = showHproj
             ? hprojPageHref(week, { rosterId, ownerName: getOwnerName(rosterId) }, hprojFirstNameCounts)
@@ -659,9 +659,10 @@ function ScoresView({
                   {...weekSplit}
                   layout="stack"
                   compact={isMobile}
+                  lineupMode={lineupMode}
                   hprojHref={hprojHref}
                   hprojValue={hprojValue}
-                  className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) ? ' standings-total--proj' : ''}`}
+                  className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${(!isMobile && !weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref))) || (isMobile && lineupMode === 'projections') ? ' standings-total--proj' : ''}`}
                 />
               </button>
               {isExpanded && (() => {

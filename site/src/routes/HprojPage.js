@@ -102,7 +102,10 @@ function LineupRow({ p, playersData, playerIdMap, injuriesMap, showPos = null })
       <div className="hproj-lineup-nums">
         <span className="hproj-lineup-pts" style={p.playerPct != null ? { color: hprojHeat(p.playerPct) } : undefined}>{fmt(p.pts)}</span>
         {p.playerPct != null ? (
-          <span className="hproj-lineup-rate" style={{ color: hprojHeat(p.playerPct) }}>P{p.playerPct} player outcome</span>
+          <span className="hproj-lineup-rate" style={{ color: hprojHeat(p.playerPct) }}>
+            P{p.playerPct}
+            <span className="hproj-lineup-rate-words"> player outcome</span>
+          </span>
         ) : (
           <span className="hproj-lineup-rate">no sample</span>
         )}

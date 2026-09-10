@@ -20,33 +20,31 @@ export default function ScoreSplit({
   hprojHref = null,
   hprojValue = null,
   compact = false,
+  lineupMode = 'scores',
 }) {
   if (compact) {
     const compactClass = [className, 'score-split--compact'].filter(Boolean).join(' ');
-    if (hasActual) {
-      return (
-        <span className={compactClass}>
-          {prefix}
-          {formatPts(actual)} pts
-        </span>
-      );
-    }
-    if (hprojHref) {
-      return (
-        <span className={`${compactClass} score-split--proj-only`}>
-          {prefix}
-          <HprojHint href={hprojHref} value={hprojValue} size="lg" />
-        </span>
-      );
-    }
-    if (hasProj) {
-      return (
-        <span className={`${compactClass} score-split--proj-only`}>
-          {prefix}
-          {formatPts(proj)}
-          <span className="proj-tag"> proj</span>
-        </span>
-      );
+    if (lineupMode === 'projections') {
+      if (hprojHref) {
+        const hprojShown = Number.isFinite(hprojValue)
+          ? hprojValue
+          : (hasProj ? Number(proj) : null);
+        return (
+          <span className={`${compactClass} score-split--proj-only`}>
+            {prefix}
+            <HprojHint href={hprojHref} value={hprojShown} size="lg" />
+          </span>
+        );
+      }
+      if (hasProj) {
+        return (
+          <span className={`${compactClass} score-split--proj-only`}>
+            {prefix}
+            {formatPts(proj)}
+            <span className="proj-tag"> proj</span>
+          </span>
+        );
+      }
     }
     return (
       <span className={compactClass}>
@@ -137,14 +135,14 @@ export function compareLeagueScoreRows(a, b, { lineupMode, useHproj, liveBoard }
   return String(a.rosterId).localeCompare(String(b.rosterId));
 }
 
-export function starterScoreSplit(weekBreakdown) {
+export function starterScoreSplit(weekBreakdown, { forceScore = false } = {}) {
   if (!weekBreakdown) {
-    return { actual: 0, proj: 0, hasActual: false, hasProj: false };
+    return { actual: 0, proj: 0, hasActual: forceScore, hasProj: false };
   }
   return {
     actual: weekBreakdown.starterActualTotal ?? 0,
     proj: weekBreakdown.optimalProjTotal ?? weekBreakdown.starterProjTotal ?? weekBreakdown.starterProjRemaining ?? 0,
-    hasActual: Boolean(weekBreakdown.starterHasActual),
+    hasActual: forceScore || Boolean(weekBreakdown.starterHasActual),
     hasProj: Boolean(weekBreakdown.includesProjection),
   };
 }

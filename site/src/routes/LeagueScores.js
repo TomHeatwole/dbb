@@ -754,7 +754,7 @@ function LeagueScores() {
 							const teamHighlight = teamHighlightMap && teamHighlightMap[String(rosterId)];
 							const rowClass = teamHighlight === 'row' ? ' standings-row--pulse' : (teamHighlight === 'up' ? ' standings-row--up' : (teamHighlight === 'down' ? ' standings-row--down' : ''));
 							const mine = isMyRoster(rosterId, myRosterId);
-							const weekSplit = starterScoreSplit(weekBreakdown);
+							const weekSplit = starterScoreSplit(weekBreakdown, { forceScore: liveBoard });
 							const showHproj = HPROJ_ON_SCORES && String(season) === String(CURRENT_YEAR) && weekSplit.hasProj;
 							const hprojHref = showHproj
 								? hprojPageHref(week, { rosterId, ownerName: getOwnerName(rosterId) }, hprojFirstNameCounts)
@@ -783,9 +783,10 @@ function LeagueScores() {
 											{...weekSplit}
 											layout="stack"
 											compact={isMobile}
+											lineupMode={lineupMode}
 											hprojHref={hprojHref}
 											hprojValue={hprojValue}
-											className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
+											className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${(!isMobile && !weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref))) || (isMobile && lineupMode === 'projections') ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
 										/>
 									</button>
 									{isExpanded && (() => {
