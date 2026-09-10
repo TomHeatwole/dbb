@@ -461,7 +461,6 @@ export function startSitWithProjections(
   const optimalProjTotal = roundTenth(
     (projFinalized.starters || []).reduce((sum, player) => sum + projectionSlotValue(player), 0)
   );
-  const displaySorted = mode === 'projections' ? projSorted : scoresSorted;
   const finalized = mode === 'projections' ? projFinalized : scoresFinalized;
   const withHints = attachBenchHints(finalized, playersData, playerIdMap, mode, projFinalized.starters);
   return {
