@@ -73,6 +73,7 @@ function MobileTopNav() {
   const moreActive = navIsAnyActive(pathname, [
     ...NAV_MATCH.history,
     ...NAV_MATCH.hwangai,
+    ...NAV_MATCH.fredduel,
     ...NAV_MATCH.h2h,
   ]);
   const [moreOpen, setMoreOpen] = useState(moreActive);
@@ -112,6 +113,7 @@ function MobileTopNav() {
             <MobileNavLink to="/league-history" match={NAV_MATCH.history}>History</MobileNavLink>
             <MobileNavLink to="/hwangai" match={NAV_MATCH.hwangai}>HwangAI</MobileNavLink>
             <MobileNavLink to="/h2h" match={NAV_MATCH.h2h}>Head&nbsp;to&nbsp;Head</MobileNavLink>
+            <MobileNavLink to="/FredDuel" match={NAV_MATCH.fredduel}>FredDuel</MobileNavLink>
             <SignOutControl className="mobile-top-home-card-link mobile-top-home-card-signout" />
           </div>
         )}

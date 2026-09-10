@@ -120,6 +120,59 @@ export function describeMarket(market) {
   return '';
 }
 
+function asMarket(market) {
+  if (!market) return null;
+  if (typeof market === 'string') {
+    try { return JSON.parse(market); } catch { return null; }
+  }
+  return market;
+}
+
+/** Roster ids this market is about (subject team + opponent). Custom → []. */
+export function involvedRosterIds(market) {
+  const m = asMarket(market);
+  if (!m) return [];
+  const ids = [];
+  const push = (v) => {
+    if (v == null || v === '') return;
+    const n = Number(v);
+    if (Number.isInteger(n) && !ids.includes(n)) ids.push(n);
+  };
+  push(m.teamRosterId);
+  push(m.opponentRosterId);
+  return ids;
+}
+
+/** Subject team name used for sorting / grouping. Empty for custom markets. */
+export function primaryTeamName(market, teams = []) {
+  const m = asMarket(market);
+  if (!m) return '';
+  if (m.teamName) return String(m.teamName);
+  if (m.teamRosterId == null) return '';
+  const team = teams.find((t) => Number(t.rosterId) === Number(m.teamRosterId));
+  return team?.teamName || '';
+}
+
+/**
+ * True if this market (or freeform title/description) involves `rosterId`.
+ * Structured markets match subject + opponent ids; custom text matches the
+ * team's name or owner name.
+ */
+export function involvesRosterId(market, text, rosterId, teams = []) {
+  const rid = Number(rosterId);
+  if (!Number.isInteger(rid)) return false;
+  if (involvedRosterIds(market).includes(rid)) return true;
+  const team = teams.find((t) => Number(t.rosterId) === rid);
+  if (!team) return false;
+  const m = asMarket(market);
+  const hay = [
+    text, m?.teamName, m?.opponentName, m?.title,
+  ].filter(Boolean).join(' ').toLowerCase();
+  return [team.teamName, team.ownerName]
+    .filter(Boolean)
+    .some((name) => hay.includes(String(name).toLowerCase()));
+}
+
 /**
  * Validate a structured market spec. Returns an error string or null.
  */

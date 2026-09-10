@@ -29,6 +29,7 @@ export const NAV_MATCH = {
   playoffs: ['/yoffs'],
   history: ['/league-history'],
   hwangai: ['/hwangai'],
+  fredduel: ['/fredduel'],
   teamsHub: [{ to: '/teams', exact: true }],
   teamsAny: ['/teams', '/team'],
 };

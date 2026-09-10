@@ -379,7 +379,7 @@
   display: none;
 }
 
-.scroll-body nav > ul > li:last-child {
+.scroll-body nav > ul > li.sidebar-teams-item {
   display: contents;
 }
 
@@ -23052,6 +23052,133 @@ button.corners-bet:hover {
   align-items: center;
   gap: 0.4rem;
 }
+
+/* --- Team filter / sort --- */
+.fd-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1.15rem;
+  margin: 0 0 0.85rem;
+}
+
+.fd-controls-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.fd-controls-field > label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.fd-controls-teams { position: relative; }
+
+.fd-controls-sort select,
+.fd-filter-trigger {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: inherit;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.55rem;
+  font-family: inherit;
+  min-width: 8.5rem;
+}
+
+.fd-controls-sort select option { background: #1f2430; }
+
+.fd-filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  min-width: 11.5rem;
+  max-width: 16rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fd-filter-trigger:hover { background: rgba(255, 255, 255, 0.1); }
+
+.fd-filter-trigger-on {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.fd-filter-trigger-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fd-filter-caret {
+  flex: 0 0 auto;
+  opacity: 0.65;
+  font-size: 0.75rem;
+}
+
+.fd-filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 16.5rem;
+  max-width: 22rem;
+  max-height: min(24rem, 70vh);
+  overflow-y: auto;
+  background: #1b2130;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.3rem 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.fd-filter-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.38rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: inherit;
+}
+
+.fd-filter-option:hover { background: rgba(255, 255, 255, 0.06); }
+
+.fd-filter-option input {
+  margin: 0.15rem 0 0;
+  flex: 0 0 auto;
+  accent-color: #60a5fa;
+}
+
+.fd-filter-option-all {
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.15rem;
+  padding-bottom: 0.5rem;
+}
+
+.fd-filter-option-name { line-height: 1.3; }
+
+.fd-team-group {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 0.15rem 0.15rem 0;
+  margin-top: 0.45rem;
+}
+
+.fd-team-group:first-child { margin-top: 0; }
 
 /* --- Buttons --- */
 .fd-btn {

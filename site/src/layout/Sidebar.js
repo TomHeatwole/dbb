@@ -138,12 +138,17 @@ function Sidebar() {
                   HwangAI
                 </SidebarLink>
               </li>
+              <li>
+                <SidebarLink to="/FredDuel" active={navIsAnyActive(location.pathname, NAV_MATCH.fredduel)}>
+                  FredDuel
+                </SidebarLink>
+              </li>
               {authUser ? (
                 <li>
                   <SignOutControl className="sidebar-signout-btn" />
                 </li>
               ) : null}
-              <li>
+              <li className="sidebar-teams-item">
                 <div
                   className={inkNavClass(teamsHubActive, 'dropdown-toggle')}
                   onClick={() => setTeamsOpen(open => !open)}
