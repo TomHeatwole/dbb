@@ -13,6 +13,7 @@ const PLAYOFF_START_WEEK = 15;
 const PLAYOFF_END_WEEK = 17;
 const OG_TITLE = 'Playoffs – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
+const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/og_playoffs.png`;
 
 function YoffsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -271,7 +272,7 @@ function YoffsPage() {
 
   return (
     <>
-      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} image={OG_IMAGE} />
     <InfoPageWrapper
       title="Playoffs"
       subtitle={null}

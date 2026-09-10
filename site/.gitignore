@@ -10,6 +10,7 @@
 
 # production
 /build
+/api/_spa-template.html
 
 # local source copies used to regenerate aged scroll caps
 /src/assets/*.orig.png

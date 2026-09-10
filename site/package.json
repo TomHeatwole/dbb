@@ -30,6 +30,7 @@
     "dk:discover-events": "node scripts/dk-discover-events.mjs",
     "b365:probe": "node scripts/bet365-probe.mjs",
     "build": "react-scripts build",
+    "postbuild": "node scripts/inject-route-og.mjs",
     "serve": "node server.js",
     "start:prod": "npm run build && npm run serve",
     "test": "react-scripts test",

@@ -17,6 +17,7 @@ import LoadingState from '../LoadingState';
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 const OG_TITLE = 'Head to Head';
 const OG_DESCRIPTION = '';
+const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/og_head_to_head.png`;
 
 function getAvailableYearsAndDefault() {
   return { availableYears: allYears, defaultSeason: CURRENT_YEAR };
@@ -359,7 +360,7 @@ function H2hPage() {
 
   return (
     <>
-      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} image={OG_IMAGE} />
       <InfoPageWrapper title="Head to Head" subtitle={null} leftHeader={leftHeader}>
       <div className="yoffs-mode-row">
         <div className="yoffs-mode-dropdown-wrapper">
