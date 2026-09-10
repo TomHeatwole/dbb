@@ -62,7 +62,12 @@
   "/FredDuel": {
     "ogTitle": "FredDuel",
     "ogDescription": "The Hwang Dynasty exchange",
-    "ogImage": "/logo.png"
+    "ogImage": "/og_fredduel.jpg"
+  },
+  "/fredduel": {
+    "ogTitle": "FredDuel",
+    "ogDescription": "The Hwang Dynasty exchange",
+    "ogImage": "/og_fredduel.jpg"
   },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",

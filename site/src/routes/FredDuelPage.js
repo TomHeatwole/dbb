@@ -9,6 +9,11 @@ import {
   TEST_ACTOR_KEY,
 } from '../fredduel/exchangeClient';
 import { FALLBACK_TEAMS, testActorForRosterId } from '../fredduel/testSeed';
+import PageMeta from '../PageMeta';
+
+const OG_TITLE = 'FredDuel';
+const OG_DESCRIPTION = 'The Hwang Dynasty exchange';
+const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/og_fredduel.jpg`;
 
 // FredDuel — the Hwang Dynasty betting exchange.
 // Auth flow: Google sign-in → unverified accounts finish at /account/setup,
@@ -161,6 +166,7 @@ function FredDuelPage() {
   if (testMode && isAdmin) {
     return (
       <InfoPageWrapper title="FredDuel" subtitle="The Hwang Dynasty exchange">
+        <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} image={OG_IMAGE} />
         <div className="fd-page">
           <div className="fd-test-banner">
             <span className="fd-test-flag">TEST DATA</span>
@@ -224,6 +230,7 @@ function FredDuelPage() {
 
   return (
     <InfoPageWrapper title="FredDuel" subtitle="The Hwang Dynasty exchange">
+      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} image={OG_IMAGE} />
       {content}
     </InfoPageWrapper>
   );

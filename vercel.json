@@ -20,6 +20,8 @@
     { "source": "/notes", "destination": "/api/render" },
     { "source": "/admincontrols", "destination": "/api/render" },
     { "source": "/hwangai", "destination": "/api/render" },
+    { "source": "/FredDuel", "destination": "/api/render" },
+    { "source": "/fredduel", "destination": "/api/render" },
     { "source": "/team/:id", "destination": "/api/render" }
   ]
 }

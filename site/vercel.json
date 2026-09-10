@@ -23,11 +23,16 @@
     "api/kalshi-sop.mjs": {
       "maxDuration": 30,
       "includeFiles": "lib/named-export.mjs,src/sop/sopModel.js,lib/kalshi-corners.mjs"
+    },
+    "api/render.js": {
+      "includeFiles": "build/index.html|routeMeta.json"
     }
   },
   "rewrites": [
     { "source": "/sop-static.txt", "destination": "/api/fanduel-sop?format=static" },
-    { "source": "/SOP-static.txt", "destination": "/api/fanduel-sop?format=static" }
+    { "source": "/SOP-static.txt", "destination": "/api/fanduel-sop?format=static" },
+    { "source": "/FredDuel", "destination": "/api/render" },
+    { "source": "/fredduel", "destination": "/api/render" }
   ],
   "headers": [
     {

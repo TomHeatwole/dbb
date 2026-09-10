@@ -645,7 +645,7 @@ function ScoresView({
                     </span>
                   </span>
                 ) : null}
-                {isActiveWeek && isMobile ? (
+                {isActiveWeek && isMobile && isExpanded ? (
                   <div className="standings-activity standings-activity-mobile">
                     <span className="standings-activity-item">
                       YTP {yetToPlayCount}
@@ -658,9 +658,10 @@ function ScoresView({
                 <ScoreSplit
                   {...weekSplit}
                   layout="stack"
+                  compact={isMobile}
                   hprojHref={hprojHref}
                   hprojValue={hprojValue}
-                  className={`standings-total${weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${weekSplit.hasProj && !weekSplit.hasActual ? ' standings-total--proj' : ''}`}
+                  className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) ? ' standings-total--proj' : ''}`}
                 />
               </button>
               {isExpanded && (() => {

@@ -7182,12 +7182,29 @@ html {
   min-width: 0;
 }
 
+.standings-total.score-split--compact,
+.standings-total.score-split--compact.score-split--proj-only,
+.standings-total.score-split--compact.score-split--has-hproj {
+  display: inline-flex !important;
+  flex-direction: row;
+  align-items: center;
+  white-space: nowrap !important;
+  min-width: 0;
+  line-height: 1.15;
+}
+
 @media (max-width: 50em) {
   /* Truncate team name a bit earlier so the score always fits */
   .standings-title {
     flex: 1 1 auto;
     min-width: 0;
     max-width: 60%;
+  }
+  .standings-list--scores .standings-row-header {
+    padding-right: 5.75rem !important;
+  }
+  .standings-list--scores .standings-title {
+    max-width: 70% !important;
   }
 } 
 
@@ -7317,9 +7334,9 @@ html {
     flex-wrap: nowrap !important;
     align-items: center !important;
   }
-  /* Give team name a bit less width to make room for activity */
-  .standings-title {
-    max-width: 55% !important;
+  /* Give team name a bit less width when YTP/Live is showing (expanded only) */
+  .standings-list--scores .standings-row-header:has(.standings-activity-mobile) .standings-title {
+    max-width: 48% !important;
   }
 }
 

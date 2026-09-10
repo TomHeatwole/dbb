@@ -19,7 +19,43 @@ export default function ScoreSplit({
   className = '',
   hprojHref = null,
   hprojValue = null,
+  compact = false,
 }) {
+  if (compact) {
+    const compactClass = [className, 'score-split--compact'].filter(Boolean).join(' ');
+    if (hasActual) {
+      return (
+        <span className={compactClass}>
+          {prefix}
+          {formatPts(actual)} pts
+        </span>
+      );
+    }
+    if (hprojHref) {
+      return (
+        <span className={`${compactClass} score-split--proj-only`}>
+          {prefix}
+          <HprojHint href={hprojHref} value={hprojValue} size="lg" />
+        </span>
+      );
+    }
+    if (hasProj) {
+      return (
+        <span className={`${compactClass} score-split--proj-only`}>
+          {prefix}
+          {formatPts(proj)}
+          <span className="proj-tag"> proj</span>
+        </span>
+      );
+    }
+    return (
+      <span className={compactClass}>
+        {prefix}
+        {formatPts(actual)} pts
+      </span>
+    );
+  }
+
   const hprojNode = hasProj && hprojHref
     ? <HprojHint href={hprojHref} value={hprojValue} size="lg" />
     : null;
