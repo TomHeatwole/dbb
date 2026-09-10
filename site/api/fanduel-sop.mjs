@@ -474,12 +474,11 @@ export async function fetchPremierLeagueSopOdds({
     ? results.map((game) => attachEspnClock(game, espn.matches))
     : results;
 
-  let goalStats = null;
   if (includeEspn) {
     const attached = await attachEspnGoals(games);
-    games = attached.games;
-    goalStats = attached.goalStats;
+    games = Array.isArray(attached) ? attached : attached?.games;
   }
+  if (!Array.isArray(games)) games = [];
 
   games.sort((a, b) => {
     if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
@@ -498,7 +497,11 @@ export async function fetchPremierLeagueSopOdds({
         livePremierLeague: espn.livePremierLeague ?? 0,
         liveMatches: espn.liveMatches ?? espn.livePremierLeague ?? 0,
         matched: games.filter((g) => g.espn).length,
-        goals: goalStats,
+        goals: {
+          live: games.filter((g) => g.inPlay && g.espnId).length,
+          withGoals: games.filter((g) => (g.goalsSoFar ?? []).length).length,
+          errors: games.map((g) => g.espnGoalsError).filter(Boolean),
+        },
       }
       : undefined,
   };

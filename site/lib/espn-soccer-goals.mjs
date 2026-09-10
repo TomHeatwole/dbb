@@ -353,21 +353,13 @@ export async function attachEspnGoals(games) {
     }
   }));
 
-  const nextGames = (games ?? []).map((game) => {
+  return (games ?? []).map((game) => {
     const id = game.espnId != null ? String(game.espnId) : null;
     return {
       ...game,
       espnUrl: (id && urlById.get(id)) || game.espnUrl || espnMatchUrl(game.espnId),
       goalsSoFar: (id && goalsById.get(id)) || game.goalsSoFar || [],
+      espnGoalsError: errors.find((line) => line.startsWith(`${id}:`)) || null,
     };
   });
-
-  return {
-    games: nextGames,
-    goalStats: {
-      live: live.length,
-      withGoals: [...goalsById.values()].filter((rows) => rows.length).length,
-      errors,
-    },
-  };
 }
