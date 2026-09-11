@@ -217,6 +217,7 @@ function OfferCard({
   const minStake = minStakeForOffer(offer);
   const usedByMe = actor && !isMine ? exposureUsedByTaker(linkedBets, offer.id, actor.id) : 0;
   const maxStakeBoard = maxStakeForOffer(offer);
+  const totalAction = maxStakeForExposure(Number(offer.maxExposure), Number(offer.line));
   const maxStake = isMine ? maxStakeBoard : maxStakeForTaker(offer, usedByMe);
   const perPersonLeft = !isMine ? remainingPerPersonExposure(offer, usedByMe) : null;
   const atPerPersonCap = isOpen && !isMine && hasPerPersonCap(offer) && maxStake < minStake;
@@ -271,8 +272,17 @@ function OfferCard({
         <div className="fd-exposure-block">
           <div className="fd-exposure-labels">
             <span>
-              <strong>{formatMoney(offer.remainingExposure)}</strong>
-              <span className="fd-muted"> of {formatMoney(offer.maxExposure)} exposure left</span>
+              {isMine ? (
+                <>
+                  <strong>{formatMoney(offer.remainingExposure)}</strong>
+                  <span className="fd-muted"> of {formatMoney(offer.maxExposure)} exposure left</span>
+                </>
+              ) : (
+                <>
+                  <strong>{formatMoney(maxStakeBoard)}</strong>
+                  <span className="fd-muted"> of {formatMoney(totalAction)} action left</span>
+                </>
+              )}
             </span>
             {linkedBets.length > 0 && (
               <span className="fd-action-wrap">
@@ -302,7 +312,7 @@ function OfferCard({
             <div className="fd-muted fd-small">
               {atPerPersonCap ? (
                 <>
-                  {formatMoney(offer.remainingExposure)} still on the board for other accounts
+                  {formatMoney(maxStakeBoard)} still on the board for other accounts
                 </>
               ) : (
                 <>

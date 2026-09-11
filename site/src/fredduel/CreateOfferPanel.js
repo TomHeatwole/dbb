@@ -10,6 +10,7 @@ import {
 } from './oddsMath';
 import { toDatetimeLocalValue } from './timeFmt';
 import { validateOfferInput } from './exchangeClient';
+import FredDuelHwangAIBulk from './FredDuelHwangAIBulk';
 
 const EXPIRY_CHIPS = [
   { id: '1h', label: '1 hour', ms: 60 * 60 * 1000 },
@@ -34,9 +35,37 @@ function Chip({ active, onClick, children }) {
 /**
  * Interactive editor for a new offer.
  * props: teams [{rosterId, teamName, ownerName}], currentWeek (the upcoming
- * week — weekly bets are locked to it), onCreate(input), onClose
+ * week — weekly bets are locked to it), actor, onCreate(input),
+ * onCreateMany(inputs), onClose
  */
-function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
+function identityFromActor(actor, teams) {
+  if (!actor) return null;
+  if (actor.rosterId != null) {
+    const team = teams.find((t) => Number(t.rosterId) === Number(actor.rosterId));
+    return {
+      rosterId: Number(actor.rosterId),
+      teamName: team?.teamName || '',
+      ownerName: team?.ownerName || actor.name || '',
+    };
+  }
+  const name = String(actor.name || '').trim().toLowerCase();
+  if (!name) return null;
+  const team = teams.find((t) => {
+    const teamName = String(t.teamName || '').toLowerCase();
+    const owner = String(t.ownerName || '').toLowerCase();
+    return teamName === name || owner === name || owner.startsWith(name);
+  });
+  if (!team) return null;
+  return {
+    rosterId: Number(team.rosterId),
+    teamName: team.teamName,
+    ownerName: team.ownerName || actor.name || '',
+  };
+}
+
+function CreateOfferPanel({
+  teams, currentWeek = 1, actor, onCreate, onCreateMany, onClose,
+}) {
   const [kind, setKind] = useState(MARKET_KINDS.SEASON);
   const [teamRosterId, setTeamRosterId] = useState(teams[0]?.rosterId ?? 1);
   const [opponentRosterId, setOpponentRosterId] = useState(teams[1]?.rosterId ?? 2);
@@ -59,6 +88,9 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
   const [customExpiry, setCustomExpiry] = useState(toDatetimeLocalValue(Date.now() + 24 * 60 * 60 * 1000));
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+
+  const identity = useMemo(() => identityFromActor(actor, teams), [actor, teams]);
 
   const isCustom = kind === MARKET_KINDS.CUSTOM;
   const outcomeId = kind === MARKET_KINDS.SEASON ? seasonOutcome : weeklyOutcome;
@@ -196,12 +228,48 @@ function CreateOfferPanel({ teams, currentWeek = 1, onCreate, onClose }) {
 
   const placeOptions = outcomeDef?.needs === 'place' ? PLACE_LINES : [];
 
+  if (bulkMode) {
+    return (
+      <div className="fd-create-panel fd-create-panel-bulk">
+        <div className="fd-create-header">
+          <h3>New offer</h3>
+          <button className="fd-btn fd-btn-ghost" onClick={onClose}>✕ Close</button>
+        </div>
+        <FredDuelHwangAIBulk
+          teams={teams}
+          currentWeek={currentWeek}
+          identity={identity}
+          onPostDrafts={async (drafts) => {
+            if (onCreateMany) await onCreateMany(drafts);
+            else {
+              for (const draft of drafts) await onCreate(draft);
+            }
+            onClose();
+          }}
+          onClose={() => setBulkMode(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="fd-create-panel">
       <div className="fd-create-header">
         <h3>New offer</h3>
         <button className="fd-btn fd-btn-ghost" onClick={onClose}>✕ Close</button>
       </div>
+
+      <button
+        type="button"
+        className="fd-bulk-entry"
+        onClick={() => setBulkMode(true)}
+      >
+        <img src="/data/hwangai.png" alt="" />
+        <span className="fd-bulk-entry-copy">
+          <span className="fd-bulk-entry-title">Use HwangAI to create offers in bulk</span>
+          <span className="fd-bulk-entry-sub">Describe the lines you want to lay, or upload a file</span>
+        </span>
+      </button>
 
       {/* Bet type */}
       <div className="fd-field">

@@ -79,6 +79,7 @@ function SimulatorResultsPanel({
   const hasDeltas = (resultDeltas || []).some((d) => (
     d.resultsRankDelta
     || Math.abs(d.winPctDelta || 0) >= 0.05
+    || Math.abs(d.bracketWinPctDelta || 0) >= 0.05
     || Math.abs(d.playoffPctDelta || 0) >= 0.05
     || Math.abs(d.avgFinishDelta || 0) >= 0.005
     || Math.abs(d.avgRegSeasonRankDelta || 0) >= 0.005
@@ -112,7 +113,18 @@ function SimulatorResultsPanel({
                 />
               )}
               <th className="simulator-results-th simulator-results-th--team">Team</th>
-              <th className="simulator-results-th simulator-results-th--num" title="Championship rate">Win %</th>
+              <th
+                className="simulator-results-th simulator-results-th--num simulator-results-th--num-wrap"
+                title="Championship rate under 2024 cumulative weeks 15–17 scoring"
+              >
+                Win % (Cumulative)
+              </th>
+              <th
+                className="simulator-results-th simulator-results-th--num simulator-results-th--num-wrap"
+                title="Championship rate under 2025 /yoffs bracket rules"
+              >
+                Win % (2025 Bracket)
+              </th>
               <th className="simulator-results-th simulator-results-th--num" title="Top-4 seed rate">Playoff %</th>
               <th className="simulator-results-th simulator-results-th--num" title="Average final standing (1–10)">Avg Finish</th>
               <th className="simulator-results-th simulator-results-th--num" title="Average regular-season seed by points">Avg Reg Seed</th>
@@ -166,6 +178,13 @@ function SimulatorResultsPanel({
                       <MetricDelta delta={delta.winPctDelta} format={fmtPctDelta} />
                     </span>
                     <span className="simulator-results-sub">{row.wins}/{iterations}</span>
+                  </td>
+                  <td className="simulator-results-td simulator-results-td--num">
+                    <span className="simulator-results-metric">
+                      <span>{fmtPct(row.bracketWinPct)}</span>
+                      <MetricDelta delta={delta.bracketWinPctDelta} format={fmtPctDelta} />
+                    </span>
+                    <span className="simulator-results-sub">{row.bracketWins}/{iterations}</span>
                   </td>
                   <td className="simulator-results-td simulator-results-td--num">
                     <span className="simulator-results-metric">

@@ -1,0 +1,42 @@
+{
+  "year": 2026,
+  "kind": "final_closing_hwang_adp",
+  "frozen_at": "2026-09-11",
+  "frozen_at_utc": "2026-09-11T22:00:07+00:00",
+  "description": "Final closing Hwang Adjusted Positional ADP for the 2026 season. Historical 2026 sims and outcome catalogs should keep using these numbers. Live FantasyPros scrapes may continue updating site/public/data/adp/fantasypros_adp_*_2026.csv; those files are not the historical source once this snapshot exists.",
+  "method": {
+    "script": "scripts/compute_hwang_scoring_adp.py",
+    "script_copy": "compute_hwang_scoring_adp.py",
+    "script_sha256": "80497b23e8982c0d6aaeb48db879680fab414efab8517d4874eaa7688b8b5ed8",
+    "git_commit": "2e878da5d3d6b184a3957ca712eb62b70b4f415d",
+    "summary": "Shift best-ball ADP for RB/WR by (std_stack_rank - half_stack_rank); QB/TE pass through raw best-ball avg ADP."
+  },
+  "sources": {
+    "bestball": {
+      "file": "fantasypros_adp_bestball.csv",
+      "sha256": "283342004de9e46ad21168663e763bf3e334c8c781c4641ae6d2aed23062d7ed",
+      "rows": 536
+    },
+    "half": {
+      "file": "fantasypros_adp_half.csv",
+      "sha256": "c19ecd7730a1cdaa709e39d73627f418b7236551197e9523fbbbe33bf05f88e4",
+      "rows": 364
+    },
+    "overall": {
+      "file": "fantasypros_adp_overall.csv",
+      "sha256": "9b9d370ef1911e1716564ba41cf9dcf9ba43d7e529da8312fa1b44e842c8f25f",
+      "rows": 336
+    },
+    "ppr": {
+      "file": "fantasypros_adp_ppr.csv",
+      "sha256": "51bc669a616190208bdcd38e72d6c817d0d6440653b39035f4be0e054db857dc",
+      "rows": 711
+    }
+  },
+  "output": {
+    "file": "hwang_adjusted_positional_adp.csv",
+    "sha256": "4a366f330f5b819d3d2e2eafb640da28bc944e8ab844d08b4f00235e408f4f18",
+    "rows": 504
+  },
+  "reconstruct": "To rebuild with a later Hwang ADP method, keep these FantasyPros CSVs and run: python3 scripts/compute_hwang_scoring_adp.py 2026 --recompute-closed. That refreshes the combined site CSV only; this folder stays as the original closing snapshot unless you freeze again with --force."
+}

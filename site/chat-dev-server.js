@@ -81,9 +81,23 @@ const server = http.createServer(async (req, res) => {
     };
 
     if (req.method === 'POST') {
+      const MAX_BODY = 4 * 1024 * 1024;
       let body = '';
-      req.on('data', chunk => { body += chunk; });
+      let size = 0;
+      let tooLarge = false;
+      req.on('data', (chunk) => {
+        size += chunk.length;
+        if (size > MAX_BODY) {
+          if (!tooLarge) {
+            tooLarge = true;
+            res.status(413).json({ error: 'Request too large.' });
+          }
+          return;
+        }
+        body += chunk;
+      });
       req.on('end', async () => {
+        if (tooLarge) return;
         try {
           await runHandler(JSON.parse(body));
         } catch {

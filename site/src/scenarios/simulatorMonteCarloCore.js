@@ -4,7 +4,11 @@
  * Hot-loop Monte Carlo engine — runs on main thread or inside a Web Worker.
  */
 
-import { buildFinalStandings, normalizePlayoffFormat } from './playoffStandings';
+import {
+  buildFinalStandings,
+  PLAYOFF_FORMAT_BRACKET,
+  PLAYOFF_FORMAT_CUMULATIVE,
+} from './playoffStandings';
 import {
   buildOutcomePool,
   buildPoolCumulativeWeights,
@@ -158,6 +162,7 @@ function emptyStats(rosterIds) {
     stats[rid] = {
       rosterId: rid,
       wins: 0,
+      bracketWins: 0,
       playoffCount: 0,
       placeSum: 0,
       regSeasonRankSum: 0,
@@ -177,9 +182,21 @@ function buildRegSeasonRankByRid(regTotals) {
   return regSeasonRankByRid;
 }
 
-function accumulateIterationStats(stats, champion, standings, regTotals, ploffTotals, regSeasonRankByRid, rosterIds) {
+function accumulateIterationStats(
+  stats,
+  champion,
+  bracketChampion,
+  standings,
+  regTotals,
+  ploffTotals,
+  regSeasonRankByRid,
+  rosterIds,
+) {
   if (champion) {
     stats[champion.rosterId].wins += 1;
+  }
+  if (bracketChampion) {
+    stats[bracketChampion.rosterId].bracketWins += 1;
   }
 
   for (const row of standings) {
@@ -354,13 +371,25 @@ function scoreRostersFromWeekly(ctx, rosters, lightweight) {
     seasonTotals,
   );
   const standings = buildFinalStandings(regTotals, ploffTotals, {
-    format: ctx.playoffFormat,
+    format: PLAYOFF_FORMAT_CUMULATIVE,
+  });
+  const bracketStandings = buildFinalStandings(regTotals, ploffTotals, {
+    format: PLAYOFF_FORMAT_BRACKET,
     playoffWeekTotals,
   });
   const champion = standings.find((r) => r.place === 1) || null;
+  const bracketChampion = bracketStandings.find((r) => r.place === 1) || null;
 
   if (lightweight) {
-    return { champion, standings, regTotals, ploffTotals, slotReg, slotPloff };
+    return {
+      champion,
+      bracketChampion,
+      standings,
+      regTotals,
+      ploffTotals,
+      slotReg,
+      slotPloff,
+    };
   }
 
   const teamResults = {};
@@ -383,7 +412,16 @@ function scoreRostersFromWeekly(ctx, rosters, lightweight) {
     };
   }
 
-  return { champion, standings, regTotals, ploffTotals, slotReg, slotPloff, teamResults };
+  return {
+    champion,
+    bracketChampion,
+    standings,
+    regTotals,
+    ploffTotals,
+    slotReg,
+    slotPloff,
+    teamResults,
+  };
 }
 
 function buildResultsFromStats(stats, iterations, rosterIds) {
@@ -395,6 +433,8 @@ function buildResultsFromStats(stats, iterations, rosterIds) {
       rosterId: rid,
       wins: row.wins,
       winPct: (row.wins / iterations) * 100,
+      bracketWins: row.bracketWins,
+      bracketWinPct: (row.bracketWins / iterations) * 100,
       playoffPct: (row.playoffCount / iterations) * 100,
       avgFinish: row.placeSum / iterations,
       avgRegSeasonRank: row.regSeasonRankSum / iterations,
@@ -422,6 +462,7 @@ export function computeSimulatorResultDeltas(baselineResults, scenarioResults) {
       rosterId: row.rosterId,
       resultsRankDelta: base.resultsRank - (idx + 1),
       winPctDelta: row.winPct - base.winPct,
+      bracketWinPctDelta: row.bracketWinPct - base.bracketWinPct,
       playoffPctDelta: row.playoffPct - base.playoffPct,
       avgFinishDelta: base.avgFinish - row.avgFinish,
       avgRegSeasonRankDelta: base.avgRegSeasonRank - row.avgRegSeasonRank,
@@ -446,7 +487,6 @@ export function prepareSimulatorContext({
   playersData,
   variance,
   monotone,
-  playoffFormat,
 }) {
   const allPlayerIds = new Set();
   for (const rid in scenarioRosters) {
@@ -483,7 +523,6 @@ export function prepareSimulatorContext({
     playoffIndex,
     playerPositions,
     rosterIds,
-    playoffFormat: normalizePlayoffFormat(playoffFormat),
     ...runtime,
   };
 }
@@ -573,6 +612,7 @@ export function runSimulationIterations(ctx, state, {
     accumulateIterationStats(
       stats,
       scenarioOutcome.champion,
+      scenarioOutcome.bracketChampion,
       scenarioOutcome.standings,
       scenarioOutcome.regTotals,
       scenarioOutcome.ploffTotals,
@@ -585,6 +625,7 @@ export function runSimulationIterations(ctx, state, {
       accumulateIterationStats(
         baselineStats,
         baselineOutcome.champion,
+        baselineOutcome.bracketChampion,
         baselineOutcome.standings,
         baselineOutcome.regTotals,
         baselineOutcome.ploffTotals,

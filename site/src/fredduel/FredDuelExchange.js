@@ -28,8 +28,39 @@ const TABS = [
 ];
 
 const SORT_NEWEST = 'newest';
+const SORT_OLDEST = 'oldest';
+const SORT_LONGEST = 'longest';
 const SORT_TEAM_AZ = 'team-az';
 const SORT_TEAM_ZA = 'team-za';
+
+const SORT_OPTIONS = [
+  { id: SORT_NEWEST, label: 'Newest' },
+  { id: SORT_OLDEST, label: 'Oldest' },
+  { id: SORT_LONGEST, label: 'Longest' },
+  { id: SORT_TEAM_AZ, label: 'Team A–Z' },
+  { id: SORT_TEAM_ZA, label: 'Team Z–A' },
+];
+
+function FilterCaret({ open }) {
+  return (
+    <svg
+      className={`fd-filter-caret${open ? ' fd-filter-caret-open' : ''}`}
+      viewBox="0 0 12 8"
+      width="11"
+      height="7"
+      aria-hidden="true"
+    >
+      <path
+        d="M1.5 1.75 L6 6.25 L10.5 1.75"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function offerSearchText(offer) {
   if (!offer) return '';
@@ -49,6 +80,24 @@ function compareNewest(a, b) {
   return new Date(b.createdAt) - new Date(a.createdAt);
 }
 
+function compareOldest(a, b) {
+  return new Date(a.createdAt) - new Date(b.createdAt);
+}
+
+function expiryMs(item) {
+  if (!item?.expiresAt) return Number.NEGATIVE_INFINITY;
+  const t = new Date(item.expiresAt).getTime();
+  return Number.isFinite(t) ? t : Number.NEGATIVE_INFINITY;
+}
+
+/** Most time left first. Items without an expiry (live tickets) fall back to oldest. */
+function compareLongest(a, b) {
+  const ae = expiryMs(a);
+  const be = expiryMs(b);
+  if (ae !== be) return be - ae;
+  return compareOldest(a, b);
+}
+
 function compareByTeam(aMarket, bMarket, teams, dir, a, b) {
   const aName = primaryTeamName(aMarket, teams);
   const bName = primaryTeamName(bMarket, teams);
@@ -60,22 +109,109 @@ function compareByTeam(aMarket, bMarket, teams, dir, a, b) {
   return compareNewest(a, b);
 }
 
-function emptyForFilter(noun, filterIds, teams) {
-  const names = teams
+function emptyForFilters(noun, { filterIds, teams, layerIds, layers }) {
+  const teamNames = teams
     .filter((t) => filterIds.includes(Number(t.rosterId)))
     .map((t) => t.teamName);
-  if (names.length === 1) return `No ${noun} involving ${names[0]}.`;
-  if (names.length === 2) return `No ${noun} involving ${names[0]} or ${names[1]}.`;
-  return `No ${noun} involving the selected teams.`;
+  const layerNames = layers
+    .filter((l) => layerIds.includes(l.id))
+    .map((l) => l.name);
+  const bits = [];
+  if (teamNames.length === 1) bits.push(`involving ${teamNames[0]}`);
+  else if (teamNames.length === 2) bits.push(`involving ${teamNames[0]} or ${teamNames[1]}`);
+  else if (teamNames.length > 2) bits.push('involving the selected teams');
+  if (layerNames.length === 1) bits.push(`laid by ${layerNames[0]}`);
+  else if (layerNames.length === 2) bits.push(`laid by ${layerNames[0]} or ${layerNames[1]}`);
+  else if (layerNames.length > 2) bits.push('laid by the selected layers');
+  if (!bits.length) return `No ${noun}.`;
+  return `No ${noun} ${bits.join(' ')}.`;
 }
 
-function filterTriggerLabel(filterIds, teams) {
-  if (!filterIds.length) return 'All teams';
-  if (filterIds.length === 1) {
-    const team = teams.find((t) => Number(t.rosterId) === filterIds[0]);
-    return team?.teamName || '1 team';
+function filterTriggerLabel(selectedIds, items, { idKey, nameKey, allLabel, oneFallback, manyNoun }) {
+  if (!selectedIds.length) return allLabel;
+  if (selectedIds.length === 1) {
+    const item = items.find((t) => String(t[idKey]) === String(selectedIds[0]));
+    return item?.[nameKey] || oneFallback;
   }
-  return `${filterIds.length} teams`;
+  return `${selectedIds.length} ${manyNoun}`;
+}
+
+function CheckboxFilter({
+  labelId, label, allLabel, triggerLabel, active, open, onToggleOpen,
+  onSelectAll, options, selected, onToggle, getId, getName, getTitle,
+}) {
+  return (
+    <div className="fd-controls-field fd-controls-filter">
+      <label id={labelId}>{label}</label>
+      <button
+        type="button"
+        className={`fd-filter-trigger${active ? ' fd-filter-trigger-on' : ''}`}
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={onToggleOpen}
+      >
+        <span className="fd-filter-trigger-text">{triggerLabel}</span>
+        <FilterCaret open={open} />
+      </button>
+      {open && (
+        <div className="fd-filter-menu" role="group" aria-labelledby={labelId}>
+          <label className="fd-filter-option fd-filter-option-all">
+            <input type="checkbox" checked={!active} onChange={onSelectAll} />
+            {allLabel}
+          </label>
+          {options.map((item) => {
+            const id = getId(item);
+            return (
+              <label key={id} className="fd-filter-option" title={getTitle ? getTitle(item) : undefined}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(id)}
+                  onChange={() => onToggle(id)}
+                />
+                <span className="fd-filter-option-name">{getName(item)}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SortSelect({ value, open, onToggleOpen, onChange }) {
+  const selected = SORT_OPTIONS.find((o) => o.id === value);
+  return (
+    <div className="fd-controls-field fd-controls-sort">
+      <label id="fd-sort-by-label">Sort</label>
+      <button
+        type="button"
+        className="fd-filter-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-labelledby="fd-sort-by-label"
+        onClick={onToggleOpen}
+      >
+        <span className="fd-filter-trigger-text">{selected?.label || 'Newest'}</span>
+        <FilterCaret open={open} />
+      </button>
+      {open && (
+        <div className="fd-filter-menu fd-sort-menu" role="listbox" aria-labelledby="fd-sort-by-label">
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              role="option"
+              aria-selected={opt.id === value}
+              className={`fd-filter-option fd-sort-option${opt.id === value ? ' fd-sort-option-active' : ''}`}
+              onClick={() => onChange(opt.id)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -95,14 +231,28 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
   const [showCreate, setShowCreate] = useState(false);
   const [highlightBetId, setHighlightBetId] = useState(null);
   const [filterIds, setFilterIds] = useState([]);
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [layerIds, setLayerIds] = useState([]);
+  const [openMenu, setOpenMenu] = useState(null);
   const [sortBy, setSortBy] = useState(SORT_NEWEST);
-  const filterRef = useRef(null);
+  const filtersRef = useRef(null);
 
   const teamsByName = useMemo(
     () => [...teams].sort((a, b) => a.teamName.localeCompare(b.teamName, undefined, { sensitivity: 'base' })),
     [teams],
   );
+
+  const layers = useMemo(() => {
+    const map = new Map();
+    const add = (id, name) => {
+      if (id == null || id === '') return;
+      if (!map.has(id)) map.set(id, name || String(id));
+    };
+    for (const o of data.offers) add(o.creatorId, o.creatorName);
+    for (const b of data.bets) add(b.creatorId, b.creatorName);
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [data.offers, data.bets]);
 
   const toggleFilterTeam = (rosterId) => {
     const rid = Number(rosterId);
@@ -111,13 +261,19 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     ));
   };
 
+  const toggleLayer = (id) => {
+    setLayerIds((prev) => (
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    ));
+  };
+
   useEffect(() => {
-    if (!filterOpen) return undefined;
+    if (!openMenu) return undefined;
     const onDoc = (e) => {
-      if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false);
+      if (filtersRef.current && !filtersRef.current.contains(e.target)) setOpenMenu(null);
     };
     const onKey = (e) => {
-      if (e.key === 'Escape') setFilterOpen(false);
+      if (e.key === 'Escape') setOpenMenu(null);
     };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
@@ -125,7 +281,7 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
       document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
-  }, [filterOpen]);
+  }, [openMenu]);
 
   // "🔥 N takers" on an offer card → jump to the live-bets tab, scroll to the
   // ticket, and flash it.
@@ -176,12 +332,21 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
   const sortOffers = useCallback((list) => {
     const copy = [...list];
     if (sortBy === SORT_NEWEST) return copy.sort(compareNewest);
+    if (sortBy === SORT_OLDEST) return copy.sort(compareOldest);
+    if (sortBy === SORT_LONGEST) return copy.sort(compareLongest);
     return copy.sort((a, b) => compareByTeam(a.market, b.market, teams, sortBy, a, b));
   }, [sortBy, teams]);
 
   const sortBets = useCallback((list) => {
     const copy = [...list];
     if (sortBy === SORT_NEWEST) return copy.sort(compareNewest);
+    if (sortBy === SORT_OLDEST) return copy.sort(compareOldest);
+    if (sortBy === SORT_LONGEST) {
+      return copy.sort((a, b) => compareLongest(
+        offersById[a.offerId] || a,
+        offersById[b.offerId] || b,
+      ) || compareOldest(a, b));
+    }
     return copy.sort((a, b) => compareByTeam(
       offersById[a.offerId]?.market,
       offersById[b.offerId]?.market,
@@ -192,20 +357,26 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     ));
   }, [sortBy, teams, offersById]);
 
+  const matchesLayer = useCallback((creatorId) => (
+    !layerIds.length || layerIds.includes(creatorId)
+  ), [layerIds]);
+
   const filterOffer = useCallback((offer) => (
-    itemInvolvesAnyTeam(offer.market, offerSearchText(offer), filterIds, teams)
-  ), [filterIds, teams]);
+    matchesLayer(offer.creatorId)
+    && itemInvolvesAnyTeam(offer.market, offerSearchText(offer), filterIds, teams)
+  ), [filterIds, teams, matchesLayer]);
 
   const filterBet = useCallback((bet) => {
     if (bet.id === highlightBetId) return true;
     const offer = offersById[bet.offerId];
-    return itemInvolvesAnyTeam(
-      offer?.market,
-      betSearchText(bet, offer),
-      filterIds,
-      teams,
-    );
-  }, [filterIds, teams, offersById, highlightBetId]);
+    return matchesLayer(bet.creatorId)
+      && itemInvolvesAnyTeam(
+        offer?.market,
+        betSearchText(bet, offer),
+        filterIds,
+        teams,
+      );
+  }, [filterIds, teams, offersById, highlightBetId, matchesLayer]);
 
   const openOffersAll = useMemo(
     () => data.offers.filter((o) => o.status === 'open' && new Date(o.expiresAt).getTime() > now),
@@ -245,8 +416,11 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     liveBets: liveBets.length,
   };
 
-  const filtering = filterIds.length > 0;
+  const filteringTeams = filterIds.length > 0;
+  const filteringLayers = layerIds.length > 0;
+  const hasListFilters = filteringTeams || filteringLayers;
   const sortingByTeam = sortBy === SORT_TEAM_AZ || sortBy === SORT_TEAM_ZA;
+  const emptyFilterArgs = { filterIds, teams, layerIds, layers };
 
   const takeOffer = (offerId) => async (stake) => {
     await client.takeOffer(offerId, stake);
@@ -264,6 +438,25 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     await client.createOffer(input);
     setTab('market');
     await refresh();
+  };
+  const createOffers = async (inputs) => {
+    const errors = [];
+    for (const input of inputs || []) {
+      try {
+        await client.createOffer(input);
+      } catch (e) {
+        errors.push(`${input.title || 'offer'}: ${e.message}`);
+      }
+    }
+    setTab('market');
+    await refresh();
+    if (errors.length) {
+      throw new Error(
+        errors.length === (inputs || []).length
+          ? errors.join(' ')
+          : `Posted ${inputs.length - errors.length} of ${inputs.length}. ${errors.join(' ')}`,
+      );
+    }
   };
 
   const renderOfferCards = (offers) => {
@@ -312,8 +505,8 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
 
   const renderOffers = (offers, emptyText, unfilteredCount, noun) => {
     if (offers.length === 0) {
-      const msg = filtering && unfilteredCount > 0
-        ? emptyForFilter(noun, filterIds, teams)
+      const msg = hasListFilters && unfilteredCount > 0
+        ? emptyForFilters(noun, emptyFilterArgs)
         : emptyText;
       return <div className="fd-empty">{msg}</div>;
     }
@@ -322,8 +515,8 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
 
   const renderBets = (bets, emptyText, unfilteredCount, noun) => {
     if (bets.length === 0) {
-      const msg = filtering && unfilteredCount > 0
-        ? emptyForFilter(noun, filterIds, teams)
+      const msg = hasListFilters && unfilteredCount > 0
+        ? emptyForFilters(noun, emptyFilterArgs)
         : emptyText;
       return <div className="fd-empty">{msg}</div>;
     }
@@ -379,69 +572,64 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
 
       {loadError && <div className="fd-error">Couldn't load the exchange: {loadError}</div>}
 
-      <div className="fd-controls">
-        <div className="fd-controls-field fd-controls-teams" ref={filterRef}>
-          <label id="fd-team-filter-label">Teams in the bet</label>
-          <button
-            type="button"
-            className={`fd-filter-trigger${filtering ? ' fd-filter-trigger-on' : ''}`}
-            aria-haspopup="true"
-            aria-expanded={filterOpen}
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            <span className="fd-filter-trigger-text">{filterTriggerLabel(filterIds, teams)}</span>
-            <span className="fd-filter-caret" aria-hidden="true">{filterOpen ? '▴' : '▾'}</span>
-          </button>
-          {filterOpen && (
-            <div className="fd-filter-menu" role="group" aria-labelledby="fd-team-filter-label">
-              <label className="fd-filter-option fd-filter-option-all">
-                <input
-                  type="checkbox"
-                  checked={!filtering}
-                  onChange={() => setFilterIds([])}
-                />
-                All teams
-              </label>
-              {teamsByName.map((t) => {
-                const rid = Number(t.rosterId);
-                const checked = filterIds.includes(rid);
-                return (
-                  <label
-                    key={t.rosterId}
-                    className="fd-filter-option"
-                    title={t.ownerName ? `${t.teamName} (${t.ownerName})` : t.teamName}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleFilterTeam(rid)}
-                    />
-                    <span className="fd-filter-option-name">{t.teamName}</span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
+      <div className="fd-controls" ref={filtersRef}>
+        <div className="fd-controls-filters">
+          <CheckboxFilter
+            labelId="fd-team-filter-label"
+            label={<>Teams<span className="fd-filter-label-extra"> in the bet</span></>}
+            allLabel="All teams"
+            triggerLabel={filterTriggerLabel(filterIds, teamsByName, {
+              idKey: 'rosterId', nameKey: 'teamName', allLabel: 'All teams',
+              oneFallback: '1 team', manyNoun: 'teams',
+            })}
+            active={filteringTeams}
+            open={openMenu === 'teams'}
+            onToggleOpen={() => setOpenMenu((v) => (v === 'teams' ? null : 'teams'))}
+            onSelectAll={() => setFilterIds([])}
+            options={teamsByName}
+            selected={filterIds}
+            onToggle={toggleFilterTeam}
+            getId={(t) => Number(t.rosterId)}
+            getName={(t) => t.teamName}
+            getTitle={(t) => (t.ownerName ? `${t.teamName} (${t.ownerName})` : t.teamName)}
+          />
+          <CheckboxFilter
+            labelId="fd-layer-filter-label"
+            label="Layer"
+            allLabel="All layers"
+            triggerLabel={filterTriggerLabel(layerIds, layers, {
+              idKey: 'id', nameKey: 'name', allLabel: 'All layers',
+              oneFallback: '1 layer', manyNoun: 'layers',
+            })}
+            active={filteringLayers}
+            open={openMenu === 'layers'}
+            onToggleOpen={() => setOpenMenu((v) => (v === 'layers' ? null : 'layers'))}
+            onSelectAll={() => setLayerIds([])}
+            options={layers}
+            selected={layerIds}
+            onToggle={toggleLayer}
+            getId={(l) => l.id}
+            getName={(l) => l.name}
+          />
         </div>
-        <div className="fd-controls-field fd-controls-sort">
-          <label htmlFor="fd-sort-by">Sort</label>
-          <select
-            id="fd-sort-by"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value={SORT_NEWEST}>Newest</option>
-            <option value={SORT_TEAM_AZ}>Team A–Z</option>
-            <option value={SORT_TEAM_ZA}>Team Z–A</option>
-          </select>
-        </div>
+        <SortSelect
+          value={sortBy}
+          open={openMenu === 'sort'}
+          onToggleOpen={() => setOpenMenu((v) => (v === 'sort' ? null : 'sort'))}
+          onChange={(next) => {
+            setSortBy(next);
+            setOpenMenu(null);
+          }}
+        />
       </div>
 
       {showCreate && (
         <CreateOfferPanel
           teams={teams}
           currentWeek={getUpcomingWeek()}
+          actor={actor}
           onCreate={createOffer}
+          onCreateMany={createOffers}
           onClose={() => setShowCreate(false)}
         />
       )}

@@ -16,6 +16,12 @@ import {
   applyOwnerAliases,
   formatScenarioContext,
 } from '../lib/mcp/scenarioEditor.mjs';
+import {
+  proposeFredDuelOffers,
+  buildFredDuelSnapshot,
+  formatFredDuelContext,
+  attachFredDuelFilesToContents,
+} from '../lib/mcp/fredDuelBulk.mjs';
 
 // Primary model first; fallbacks have SEPARATE free-tier quotas, so a 429 on
 // flash (rate limit or exhausted daily quota) doesn't take HwangAI down.
@@ -477,6 +483,62 @@ const SCENARIO_EDITOR_TOOLS = [
   },
 ];
 
+const FREDDUEL_BULK_TOOLS = [
+  {
+    name: 'propose_fredduel_offers',
+    description:
+      'Validate a batch of FredDuel offers the user wants to lay. Call this when you have the bets plus odds and max exposure (defaults can fill shared numbers). The page shows a preview; the user must still confirm. If anything required is missing, the tool says so — ask, then call again. Never claim the offers are live.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        defaults: {
+          type: 'OBJECT',
+          description: 'Shared numbers applied to every offer that omits them.',
+          properties: {
+            line: { type: 'STRING', description: 'American line, percent, or even (e.g. +150, -110, 40%)' },
+            maxExposure: { type: 'NUMBER', description: 'Dollars the user is willing to lose on each offer' },
+            minTake: { type: 'NUMBER', description: 'Minimum taker stake. Default 1.' },
+            maxExposurePerPerson: { type: 'NUMBER', description: 'Optional per-account exposure cap' },
+            expiresIn: { type: 'STRING', description: '1h, 6h, 24h, 3d, 1w, or an ISO datetime. Default 24h.' },
+          },
+        },
+        offers: {
+          type: 'ARRAY',
+          description: 'One object per offer to lay, in the order the user listed them.',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              marketKind: {
+                type: 'STRING',
+                enum: ['season', 'weekly', 'custom'],
+                description: 'season / weekly structured markets, or custom freeform',
+              },
+              team: { type: 'STRING', description: 'Team, owner, or nickname from FREDDUEL BOARD. "my team" is ok.' },
+              opponent: { type: 'STRING', description: 'Other team when the outcome is head-to-head' },
+              outcome: {
+                type: 'STRING',
+                description: 'Structured outcome id, e.g. win_league, make_playoffs, weekly_outscore',
+              },
+              place: { type: 'NUMBER', description: 'Half-point place line 1.5–9.5' },
+              points: { type: 'NUMBER', description: 'Points total for over/under outcomes' },
+              week: { type: 'NUMBER', description: 'Weekly only; omit to use the upcoming week' },
+              title: { type: 'STRING', description: 'Required for custom markets' },
+              description: { type: 'STRING', description: 'Optional custom settlement notes' },
+              line: { type: 'STRING', description: 'Per-offer odds if they differ from defaults' },
+              maxExposure: { type: 'NUMBER', description: 'Per-offer exposure if it differs from defaults' },
+              minTake: { type: 'NUMBER' },
+              maxExposurePerPerson: { type: 'NUMBER' },
+              expiresIn: { type: 'STRING' },
+            },
+            required: ['marketKind'],
+          },
+        },
+      },
+      required: ['offers'],
+    },
+  },
+];
+
 // ── Tool executor ─────────────────────────────────────────────────────────────
 
 async function executeTool(name, args) {
@@ -637,14 +699,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
 
-  const { messages, systemPrompt, continuation, mode, scenario } = body || {};
+  const { messages, systemPrompt, continuation, mode, scenario, fredduel, files } = body || {};
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Invalid messages' });
   }
   const continuationDepth = Number(continuation?.depth) || 0;
   const plain = mode === 'plain';
   const scenarioEditor = mode === 'scenario_editor';
+  const fredduelBulk = mode === 'fredduel_bulk';
+  if (Array.isArray(files) && files.length && !fredduelBulk) {
+    return res.status(400).json({ error: 'File uploads are only supported for bulk offers.' });
+  }
   let scenarioSnapshot = scenario;
+  const fredduelSnapshot = fredduelBulk
+    ? buildFredDuelSnapshot(fredduel, loadOwnerAliasesByRoster())
+    : null;
   if (scenarioEditor && scenario) {
     let trades = [];
     try {
@@ -676,7 +745,7 @@ export default async function handler(req, res) {
   }
 
   // Decide whether to fire the side query this turn
-  const doSideQuery = !plain && !scenarioEditor && Math.random() < SIDE_QUERY_PROBABILITY;
+  const doSideQuery = !plain && !scenarioEditor && !fredduelBulk && Math.random() < SIDE_QUERY_PROBABILITY;
   const sideQueryPromise = doSideQuery
     ? fetchChineseCharacters(apiKey)
     : Promise.resolve(null);
@@ -684,12 +753,18 @@ export default async function handler(req, res) {
   // Execute the tools requested in a model turn's functionCall parts and
   // return the functionResponse turn to append to the conversation.
   let lastScenarioResult = null;
+  let lastBulkResult = null;
   async function runToolCalls(functionCallParts) {
     const toolResults = await Promise.all(
       functionCallParts.map(async ({ functionCall: { name, args } }) => {
         if (name === 'apply_scenario_edits') {
           const result = applyScenarioEditorOperations(args?.operations, scenarioSnapshot, loadPlayersData());
           if (result.ok) lastScenarioResult = result;
+          return { name, result: result.toolMessage };
+        }
+        if (name === 'propose_fredduel_offers') {
+          const result = proposeFredDuelOffers(args, fredduelSnapshot);
+          if (result.ok) lastBulkResult = result;
           return { name, result: result.toolMessage };
         }
         return {
@@ -729,22 +804,37 @@ export default async function handler(req, res) {
     for (const m of messages) {
       const role = m.role === 'assistant' ? 'model' : 'user';
       const text = m.content || '';
-      if (!text) continue;
+      const keepEmptyUser = fredduelBulk && files?.length && role === 'user';
+      if (!text && !keepEmptyUser) continue;
       const prev = contents[contents.length - 1];
       if (prev && prev.role === role) {
-        prev.parts.push({ text });
+        if (text) prev.parts.push({ text });
       } else {
-        contents.push({ role, parts: [{ text }] });
+        contents.push({ role, parts: text ? [{ text }] : [] });
+      }
+    }
+    if (fredduelBulk && files?.length) {
+      const attached = attachFredDuelFilesToContents(contents, files);
+      if (attached.error) {
+        return res.status(400).json({ error: attached.error });
       }
     }
   }
 
   const effectiveSystemPrompt = scenarioEditor
     ? [systemPrompt, formatScenarioContext(scenarioSnapshot, loadPlayersData())].filter(Boolean).join('\n\n')
-    : systemPrompt;
+    : fredduelBulk
+      ? [systemPrompt, formatFredDuelContext(fredduelSnapshot)].filter(Boolean).join('\n\n')
+      : systemPrompt;
   const requestBase = {
     ...(plain ? {} : {
-      tools: [{ functionDeclarations: scenarioEditor ? SCENARIO_EDITOR_TOOLS : TOOL_DECLARATIONS }],
+      tools: [{
+        functionDeclarations: scenarioEditor
+          ? SCENARIO_EDITOR_TOOLS
+          : fredduelBulk
+            ? FREDDUEL_BULK_TOOLS
+            : TOOL_DECLARATIONS,
+      }],
     }),
     ...(effectiveSystemPrompt ? { systemInstruction: { parts: [{ text: effectiveSystemPrompt }] } } : {}),
   };
@@ -776,13 +866,13 @@ export default async function handler(req, res) {
       // No tool calls — extract the text response (skip Gemini 3.x thought-
       // summary parts, join multiple text parts) and stitch side query
       let text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n');
-      const needsSearch = !plain && !scenarioEditor && (
+      const needsSearch = !plain && !scenarioEditor && !fredduelBulk && (
         text.includes('<!--search-->') ||
         RESPONSE_SEARCH_PHRASES.some(re => re.test(text)) ||
         questionNeedsSearch(messages)
       );
       text = text.replace(/<!--search-->/g, '').trim();
-      if (!plain && !scenarioEditor) {
+      if (!plain && !scenarioEditor && !fredduelBulk) {
         text = await sanitizeInternalLeaks(text, apiKey, geminiState);
       }
 
@@ -823,6 +913,22 @@ export default async function handler(req, res) {
           needsSearch: false,
           scenarioEdits: lastScenarioResult.edits,
           reset: Boolean(lastScenarioResult.reset),
+        });
+      }
+      continue;
+    }
+
+    if (fredduelBulk) {
+      lastBulkResult = null;
+      contents.push(await runToolCalls(functionCalls));
+      if (lastBulkResult?.ok) {
+        const modelText = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n').trim();
+        const message = modelText || lastBulkResult.summary;
+        logConversation(messages, message);
+        return res.status(200).json({
+          message,
+          needsSearch: false,
+          offerDrafts: lastBulkResult.drafts,
         });
       }
       continue;

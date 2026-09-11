@@ -41,10 +41,6 @@ import {
 } from '../scenarios/outcomeScenarioConfig';
 import { DEFAULT_ITERATIONS } from '../scenarios/simulatorMonteCarlo';
 import { DEFAULT_VARIANCE, normalizeVariance, DEFAULT_MONOTONE, normalizeMonotone } from '../scenarios/outcomeDistribution';
-import {
-  DEFAULT_PLAYOFF_FORMAT,
-  normalizePlayoffFormat,
-} from '../scenarios/playoffStandings';
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 
 const OG_TITLE = 'Season Simulator';
@@ -73,8 +69,8 @@ function SimulatorTooltip({ season, iterations, rankSource }) {
             <p style={{ margin: 0 }}>
               Edit rosters directly or tell HwangAI the move in plain English, then run
               {' '}<strong>{iterations.toLocaleString()} simulations</strong> to
-              see each team&apos;s championship win rate. Playoff placement can use
-              2024 cumulative scoring or the 2025 /yoffs bracket.
+              see each team&apos;s championship win rate. Every run reports both
+              2024 cumulative and 2025 /yoffs bracket titles.
             </p>
           </div>
         </div>
@@ -125,10 +121,6 @@ function SimulatorBuilderPage() {
     const pre = pendingScenarioRef.current;
     return normalizeRankSource(pre?.rs ?? DEFAULT_RANK_SOURCE, pre?.sy);
   });
-  const [playoffFormat, setPlayoffFormat] = useState(() => {
-    const pre = pendingScenarioRef.current;
-    return normalizePlayoffFormat(pre?.pf ?? DEFAULT_PLAYOFF_FORMAT);
-  });
   const [hwangRankRows, setHwangRankRows] = useState([]);
   const [dashRankRows, setDashRankRows] = useState([]);
 
@@ -174,7 +166,6 @@ function SimulatorBuilderPage() {
           if (pending.v != null) setVariance(normalizeVariance(pending.v));
           if (pending.m != null) setMonotone(normalizeMonotone(pending.m));
           if (pending.rs != null) setRankSource(normalizeRankSource(pending.rs, season));
-          if (pending.pf != null) setPlayoffFormat(normalizePlayoffFormat(pending.pf));
           if (Array.isArray(pending.c) && pending.c.length > 0) {
             setScenarioRosters(sanitizeRosters(applyScenarioChanges(initial, pending.c)));
             setSearchParams((prev) => {
@@ -288,7 +279,6 @@ function SimulatorBuilderPage() {
       variance,
       monotone,
       rankSource,
-      playoffFormat,
     });
     navigate(`?state=run&scenario=${encodeURIComponent(encoded)}`);
   };
@@ -414,8 +404,6 @@ function SimulatorBuilderPage() {
                     onChangeMonotone={setMonotone}
                     rankSource={rankSource}
                     onChangeRankSource={setRankSource}
-                    playoffFormat={playoffFormat}
-                    onChangePlayoffFormat={setPlayoffFormat}
                     allowRedraftDash={dashRanksAvailable}
                   />
                 </div>

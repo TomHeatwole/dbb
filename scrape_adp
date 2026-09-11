@@ -3,6 +3,9 @@
 # Reuses cookies from fantasypros_scrape/*.sh (same session as ECR). Writes one CSV
 # per format to site/public/data/adp/fantasypros_adp_<type>_<year>.csv
 #
+# These live year files are not the historical Hwang ADP source once a season is
+# closed. Final closing boards live in site/public/data/adp/final_closing/{year}/.
+#
 # Usage (run from project root):
 #   ./scrape_adp
 

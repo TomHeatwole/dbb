@@ -62,6 +62,7 @@ add_task fantasypros       "bash scripts/download_fantasypros.sh"
 add_task ktc_values        "bash scripts/fetch_ktc_values.sh"
 add_task ktc_sf_historical "bash scripts/fetch_sf_non_tep_ktc_historical.sh"
 add_task adp               "./scrape_adp"
+# Closed seasons (2026+) stay pinned in site/public/data/adp/final_closing/.
 add_task hwang_adp         "python3 scripts/compute_hwang_scoring_adp.py"
 add_task player_ids        "bash scripts/update_player_ids.sh"
 add_task players           "bash scripts/update_players.sh"

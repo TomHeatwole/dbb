@@ -30,11 +30,6 @@ import SimulatorTeamDetail from '../scenarios/SimulatorTeamDetail';
 import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
 import { normalizeOutcomeScenarioYear } from '../scenarios/outcomeScenarioConfig';
 import { DEFAULT_VARIANCE, VARIANCE_LEVELS, normalizeVariance, DEFAULT_MONOTONE, MONOTONE_MODES, normalizeMonotone } from '../scenarios/outcomeDistribution';
-import {
-  DEFAULT_PLAYOFF_FORMAT,
-  PLAYOFF_FORMATS,
-  normalizePlayoffFormat,
-} from '../scenarios/playoffStandings';
 
 import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
 import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
@@ -68,7 +63,6 @@ function SimulatorRunPage() {
   const [variance, setVariance] = useState(DEFAULT_VARIANCE);
   const [monotone, setMonotone] = useState(DEFAULT_MONOTONE);
   const [rankSource, setRankSource] = useState(DEFAULT_RANK_SOURCE);
-  const [playoffFormat, setPlayoffFormat] = useState(DEFAULT_PLAYOFF_FORMAT);
 
   useEffect(() => {
     const decoded = decodeFutureScenario2(scenarioParam);
@@ -83,13 +77,11 @@ function SimulatorRunPage() {
     const runVariance = normalizeVariance(decoded.v);
     const runMonotone = normalizeMonotone(decoded.m);
     const runRankSource = normalizeRankSource(decoded.rs ?? DEFAULT_RANK_SOURCE, seasonYear);
-    const runPlayoffFormat = normalizePlayoffFormat(decoded.pf);
     setScenarioSeason(seasonYear);
     setIterations(runCount);
     setVariance(runVariance);
     setMonotone(runMonotone);
     setRankSource(runRankSource);
-    setPlayoffFormat(runPlayoffFormat);
 
     let cancelled = false;
 
@@ -146,7 +138,6 @@ function SimulatorRunPage() {
           playersData: players,
           variance: runVariance,
           monotone: runMonotone,
-          playoffFormat: runPlayoffFormat,
         });
 
         setLoadingProgress(1);
@@ -223,7 +214,7 @@ function SimulatorRunPage() {
       <InfoPageWrapper
         title="Season Simulator"
         subtitle={scenarioSeason
-          ? `${scenarioSeason} ${rankSourceShortLabel(rankSource, scenarioSeason)} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone} · ${PLAYOFF_FORMATS[playoffFormat]?.label ?? playoffFormat}`
+          ? `${scenarioSeason} ${rankSourceShortLabel(rankSource, scenarioSeason)} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
           : null}
         leftHeader={backLink}
       >
