@@ -679,7 +679,6 @@ function FredDuelHwangAIBulk({
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                   <path
-                    fill="currentColor"
                     d="M16.5 6.5v10.2a4.5 4.5 0 0 1-9 0V6.75a3.25 3.25 0 0 1 6.5 0v9.45a2 2 0 0 1-4 0V8.5"
                     stroke="currentColor"
                     strokeWidth="1.7"
