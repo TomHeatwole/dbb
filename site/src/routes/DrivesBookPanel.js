@@ -45,6 +45,7 @@ const TEAM_SEARCH_LIST_ID = 'drives-book-team-search';
 const SHOW_WORK_KEY = 'drives-show-work';
 const SORT_EDGE_KEY = 'drives-sort-edge';
 const DK_GRANULAR_KEY = 'drives-dk-granular';
+const NEXT_DRIVE_ONLY_KEY = 'drives-snapshot-next-only';
 
 function readFlag(key, fallback) {
   try {
@@ -907,6 +908,7 @@ function DrivesBookPanel({
   const [showWork, setShowWork] = useState(() => readFlag(SHOW_WORK_KEY, false));
   const [sortByEdge, setSortByEdge] = useState(() => readFlag(SORT_EDGE_KEY, false));
   const [dkGranular, setDkGranular] = useState(() => readFlag(DK_GRANULAR_KEY, false));
+  const [nextDriveOnly, setNextDriveOnly] = useState(() => readFlag(NEXT_DRIVE_ONLY_KEY, false));
   const {
     enabled: kellyEnabled,
     setEnabled: setKellyEnabled,
@@ -977,10 +979,32 @@ function DrivesBookPanel({
 
       {!error && games.length > 0 && (
         <GameMonitorTable
-          rows={buildDrivesMonitorRows(filteredGames, Date.now(), { granular: dkGranular })}
+          rows={buildDrivesMonitorRows(filteredGames, Date.now(), {
+            granular: dkGranular,
+            nextDriveOnly,
+          })}
           marketHeader="Play"
-          caption="Best drive result vs model"
+          caption={nextDriveOnly ? 'Best next-drive result vs model' : 'Best drive result vs model'}
           showMarket
+          toolbar={(
+            <div className="sop-monitor-toolbar">
+              <button
+                type="button"
+                className={`sop-exp-filter-chip${nextDriveOnly ? ' sop-exp-filter-chip--on' : ''}`}
+                aria-pressed={nextDriveOnly}
+                title="Skip current-drive lines in the snapshot — they often lag and look too good"
+                onClick={() => {
+                  setNextDriveOnly((v) => {
+                    const next = !v;
+                    writeFlag(NEXT_DRIVE_ONLY_KEY, next);
+                    return next;
+                  });
+                }}
+              >
+                Next drive only
+              </button>
+            </div>
+          )}
         />
       )}
 

@@ -69,9 +69,10 @@ function GameMonitorTable({
   caption = 'vs longest line',
   showMarket = false,
   showLeagueBadges = false,
+  toolbar = null,
 }) {
   const [collapsed, setCollapsed] = useState(readCollapsed);
-  const evCount = rows.filter((row) => row.profitable).length;
+  const evCount = (rows ?? []).filter((row) => row.profitable).length;
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {
@@ -81,7 +82,7 @@ function GameMonitorTable({
     });
   }, []);
 
-  if (!rows?.length) return null;
+  if (!rows?.length && !toolbar) return null;
 
   return (
     <section
@@ -106,6 +107,7 @@ function GameMonitorTable({
           {collapsed ? 'Show' : 'Hide'}
         </span>
       </button>
+      {toolbar}
       {!collapsed && (
         <div className="sop-monitor-body">
           <div className="sop-monitor-cols" aria-hidden="true">
@@ -118,7 +120,7 @@ function GameMonitorTable({
             <span>Edge</span>
           </div>
           <ul className="sop-monitor-list">
-            {rows.map((row) => (
+            {(rows ?? []).map((row) => (
               <li
                 key={row.eventId}
                 className={`sop-monitor-row${row.profitable ? ' sop-monitor-row--ev' : ''}`}

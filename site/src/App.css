@@ -18688,6 +18688,23 @@ body.modal-open {
   color: rgba(255, 224, 138, 0.7);
 }
 
+.sop-monitor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.4rem;
+}
+
+.sop-monitor--collapsed .sop-monitor-toolbar {
+  margin-bottom: 0.1rem;
+}
+
+.sop-monitor-toolbar .sop-exp-filter-chip {
+  padding: 0.18rem 0.55rem;
+  font-size: 0.6rem;
+}
+
 .sop-monitor-body {
   min-width: 0;
 }

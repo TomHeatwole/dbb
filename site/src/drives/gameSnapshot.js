@@ -66,14 +66,19 @@ export function pickHeadlineDrivePlay(model) {
   ));
 }
 
-export function maxDriveEdgePoints(game, { granular = false } = {}) {
+function collectDriveViews(game, { granular = false, nextDriveOnly = false } = {}) {
   const markets = listDriveSides(game, { granular });
   const views = markets.length
-    ? markets.map((market) => evaluateDriveGame(game, { market }))
-    : [evaluateDriveGame(game)];
+    ? markets.map((market) => ({ market, model: evaluateDriveGame(game, { market }) }))
+    : [{ market: game?.nextDrive ?? null, model: evaluateDriveGame(game) }];
+  if (!nextDriveOnly) return views;
+  return views.filter((view) => driveCardRole(game, view.model?.pred) !== 'current');
+}
+
+export function maxDriveEdgePoints(game, opts = {}) {
   let best = null;
-  for (const model of views) {
-    const play = pickHeadlineDrivePlay(model);
+  for (const view of collectDriveViews(game, opts)) {
+    const play = pickHeadlineDrivePlay(view.model);
     if (play && Number.isFinite(play.edgePoints) && (best == null || play.edgePoints > best)) {
       best = play.edgePoints;
     }
@@ -81,16 +86,20 @@ export function maxDriveEdgePoints(game, { granular = false } = {}) {
   return best;
 }
 
+export function compareDriveSnapshotRows(a, b) {
+  const ae = Number.isFinite(a?.edgePoints) ? a.edgePoints : -Infinity;
+  const be = Number.isFinite(b?.edgePoints) ? b.edgePoints : -Infinity;
+  if (be !== ae) return be - ae;
+  return String(a?.name ?? '').localeCompare(String(b?.name ?? ''));
+}
+
 function playLabel(row) {
   if (!row) return '—';
   return row.label ?? '—';
 }
 
-export function buildDrivesGameSnapshot(game, { granular = false } = {}) {
-  const markets = listDriveSides(game, { granular });
-  const views = markets.length
-    ? markets.map((market) => ({ market, model: evaluateDriveGame(game, { market }) }))
-    : [{ market: game?.nextDrive ?? null, model: evaluateDriveGame(game) }];
+export function buildDrivesGameSnapshot(game, { granular = false, nextDriveOnly = false } = {}) {
+  const views = collectDriveViews(game, { granular, nextDriveOnly });
 
   let play = null;
   let market = views[0]?.market ?? null;
@@ -128,14 +137,18 @@ export function buildDrivesGameSnapshot(game, { granular = false } = {}) {
     lineLabel: play && Number.isFinite(play.fairAmerican)
       ? `model ${formatAmericanOdds(play.fairAmerican)}`
       : '—',
+    role,
     edgePoints: play?.edgePoints ?? null,
     profitable: Boolean(play?.profitable),
     styleWarning: play?.styleWarning ?? null,
   };
 }
 
-export function buildDrivesMonitorRows(games, now = Date.now(), { granular = false } = {}) {
+export function buildDrivesMonitorRows(games, now = Date.now(), opts = {}) {
+  const { nextDriveOnly = false } = opts;
   return (games ?? [])
     .filter((game) => isActiveDriveMonitorGame(game, now))
-    .map((game) => buildDrivesGameSnapshot(game, { granular }));
+    .map((game) => buildDrivesGameSnapshot(game, opts))
+    .filter((row) => !nextDriveOnly || Number.isFinite(row.oddsAmerican))
+    .sort(compareDriveSnapshotRows);
 }
