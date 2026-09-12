@@ -115,7 +115,7 @@ function SimulatorResultsPanel({
               <th className="simulator-results-th simulator-results-th--team">Team</th>
               <th
                 className="simulator-results-th simulator-results-th--num simulator-results-th--num-wrap"
-                title="Championship rate under 2024 cumulative weeks 15–17 scoring"
+                title="Championship rate under Cumulative weeks 15–17 scoring"
               >
                 Win % (Cumulative)
               </th>

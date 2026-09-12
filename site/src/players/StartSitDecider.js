@@ -79,6 +79,28 @@ function isStartedGame(label) {
   return Boolean(label && (label.live || label.completed));
 }
 
+function actualOrKeep(player) {
+  if (typeof player.keepPts === 'number' && Number.isFinite(player.keepPts)) {
+    return player.keepPts;
+  }
+  return typeof player.pts === 'number' ? player.pts : 0;
+}
+
+/** Live healthy guys lock in. Completed 0.0 / PUP-OUT-IR who already played do not. */
+function locksStartedLineupSpot(player, label, playersData, playerIdMap, injuriesMap) {
+  if (!isStartedGame(label)) {
+    return false;
+  }
+  const injured = getInjuryCategory(player.id, playersData, playerIdMap, injuriesMap) === 'injured';
+  if (injured) {
+    return false;
+  }
+  if (label.completed) {
+    return actualOrKeep(player) > 0;
+  }
+  return true;
+}
+
 function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap, options) {
   const preferStarted = Boolean(options && options.preferStarted);
   return function sortByGameAware(players) {
@@ -86,10 +108,10 @@ function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, pl
       if (preferStarted) {
         const aLab = playerGameLabels && (playerGameLabels[a.id] || playerGameLabels[String(a.id)]);
         const bLab = playerGameLabels && (playerGameLabels[b.id] || playerGameLabels[String(b.id)]);
-        const aStarted = isStartedGame(aLab);
-        const bStarted = isStartedGame(bLab);
-        if (aStarted !== bStarted) {
-          return aStarted ? -1 : 1;
+        const aLock = locksStartedLineupSpot(a, aLab, playersData, playerIdMap, injuriesMap);
+        const bLock = locksStartedLineupSpot(b, bLab, playersData, playerIdMap, injuriesMap);
+        if (aLock !== bLock) {
+          return aLock ? -1 : 1;
         }
       }
 

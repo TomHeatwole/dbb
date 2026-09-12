@@ -499,7 +499,7 @@ const FREDDUEL_BULK_TOOLS = [
             maxExposure: { type: 'NUMBER', description: 'Dollars the user is willing to lose on each offer' },
             minTake: { type: 'NUMBER', description: 'Minimum taker stake. Default 1.' },
             maxExposurePerPerson: { type: 'NUMBER', description: 'Optional per-account exposure cap' },
-            expiresIn: { type: 'STRING', description: '1h, 6h, 24h, 3d, 1w, or an ISO datetime. Default 24h.' },
+            expiresIn: { type: 'STRING', description: '1h, 6h, 24h, 3d, 1w, or an ISO datetime. Default 3d.' },
           },
         },
         offers: {

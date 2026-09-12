@@ -17,6 +17,12 @@ export const MAIN_FEATURES = {
 export const HPROJ_ON_SCORES = true;
 
 /**
+ * Live Proj chrome trial: yellow type (same as live-game yellow) with the
+ * red record dot unchanged. Flip false to restore the original red theme.
+ */
+export const LIVE_PROJ_YELLOW_THEME = true;
+
+/**
  * Check if a feature is enabled
  * @param {string} featureName - Name of the feature to check
  * @param {Object} config - Feature config object (SANDBOX_FEATURES or MAIN_FEATURES)

@@ -49,7 +49,7 @@ import AuthCallbackPage from './routes/AuthCallbackPage';
 import { AuthUserProvider } from './hooks/useAuthUser';
 import RequireAdmin from './layout/RequireAdmin';
 import { canAccessRedraftDash } from './utils/adminAccounts';
-import { MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
+import { LIVE_PROJ_YELLOW_THEME, MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 import { inkNavClass, navIsAnyActive, NAV_MATCH } from './layout/navActive';
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
@@ -240,6 +240,12 @@ function AppInner() {
 }
 
 function App() {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('live-proj-yellow-theme', LIVE_PROJ_YELLOW_THEME);
+    return () => root.classList.remove('live-proj-yellow-theme');
+  }, []);
+
   return (
     <Router>
       <AuthUserProvider>

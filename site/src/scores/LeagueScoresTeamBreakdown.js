@@ -20,6 +20,9 @@ export default function LeagueScoresTeamBreakdown({
   pfTotal,
   hprojHref = null,
   hprojValue = null,
+  liveProjValue = null,
+  gamesStarted = false,
+  weekComplete = false,
 }) {
   return (
     <ScoresLineup
@@ -41,6 +44,9 @@ export default function LeagueScoresTeamBreakdown({
       pfTotal={pfTotal}
       hprojHref={hprojHref}
       hprojValue={hprojValue}
+      liveProjValue={liveProjValue}
+      gamesStarted={gamesStarted}
+      weekComplete={weekComplete}
     />
   );
 }

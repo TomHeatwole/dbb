@@ -6,7 +6,7 @@ function formatPts(n) {
 }
 
 /**
- * Mid-week: accumulated actual and remaining projection as two numbers.
+ * Mid-week: accumulated actual plus HProj (or raw proj when HProj is off).
  * Pre-week (proj only) or finished (actual only) stay a single figure.
  */
 export default function ScoreSplit({
@@ -19,57 +19,36 @@ export default function ScoreSplit({
   className = '',
   hprojHref = null,
   hprojValue = null,
+  liveProjValue = null,
+  gamesStarted = false,
   compact = false,
-  lineupMode = 'scores',
 }) {
-  if (compact) {
-    const compactClass = [className, 'score-split--compact'].filter(Boolean).join(' ');
-    if (lineupMode === 'projections') {
-      if (hprojHref) {
-        const hprojShown = Number.isFinite(hprojValue)
-          ? hprojValue
-          : (hasProj ? Number(proj) : null);
-        return (
-          <span className={`${compactClass} score-split--proj-only`}>
-            {prefix}
-            <HprojHint href={hprojHref} value={hprojShown} size="lg" />
-          </span>
-        );
-      }
-      if (hasProj) {
-        return (
-          <span className={`${compactClass} score-split--proj-only`}>
-            {prefix}
-            {formatPts(proj)}
-            <span className="proj-tag"> proj</span>
-          </span>
-        );
-      }
-    }
-    return (
-      <span className={compactClass}>
-        {prefix}
-        {formatPts(actual)} pts
-      </span>
-    );
-  }
-
+  const liveShown = Number.isFinite(liveProjValue) ? liveProjValue : null;
+  const hprojShown = Number.isFinite(hprojValue)
+    ? hprojValue
+    : (hasProj ? Number(proj) : null);
+  const useLive = Boolean(gamesStarted && hprojHref && (liveShown != null || hprojShown != null));
+  const chipValue = useLive ? (liveShown != null ? liveShown : hprojShown) : hprojShown;
   const hprojNode = hasProj && hprojHref
-    ? <HprojHint href={hprojHref} value={hprojValue} size="lg" />
+    ? <HprojHint href={hprojHref} value={chipValue} size="lg" variant={useLive ? 'live' : 'hproj'} />
     : null;
-  const projNode = (
-    <>
-      {formatPts(proj)}
-      <span className="proj-tag"> proj</span>
-    </>
-  );
+  const projNode = hprojNode
+    ? null
+    : (
+      <>
+        {formatPts(proj)}
+        <span className="proj-tag"> proj</span>
+      </>
+    );
+  const projOrHproj = hprojNode || <span className="score-split-proj">{projNode}</span>;
   const actualNode = <>{formatPts(actual)} pts</>;
   const mixed = hasActual && hasProj;
   const classes = [
     className,
+    compact ? 'score-split--compact' : null,
     mixed ? 'score-split score-split--mixed' : null,
-    layout === 'stack' && (mixed || hprojNode) ? 'score-split--stack' : null,
-    mixed && layout === 'inline' ? 'score-split--inline' : null,
+    (layout === 'stack' || compact) && (mixed || hprojNode) ? 'score-split--stack' : null,
+    mixed && layout === 'inline' && !compact ? 'score-split--inline' : null,
     hasProj && !hasActual ? 'score-split--proj-only' : null,
     hprojNode ? 'score-split--has-hproj' : null,
   ].filter(Boolean).join(' ');
@@ -80,18 +59,14 @@ export default function ScoreSplit({
         {prefix}
         <span className="score-split-actual">{actualNode}</span>
         <span className="score-split-plus"> + </span>
-        {hprojNode}
-        <span className="score-split-proj">{projNode}</span>
+        {projOrHproj}
       </span>
     );
   }
   if (mixed) {
     return (
       <span className={classes}>
-        <span className="score-split-projs">
-          {hprojNode}
-          <span className="score-split-proj">{projNode}</span>
-        </span>
+        {projOrHproj}
         <span className="score-split-actual">{actualNode}</span>
       </span>
     );
@@ -100,8 +75,7 @@ export default function ScoreSplit({
     return (
       <span className={classes}>
         {prefix}
-        {hprojNode}
-        <span className="score-split-proj">{projNode}</span>
+        {projOrHproj}
       </span>
     );
   }
@@ -113,19 +87,27 @@ export default function ScoreSplit({
   );
 }
 
-/** Rank /scores rows: Highest Projections by HProj; Highest Scores by pts, HProj on ties. */
+function rankProjValue(row) {
+  if (Number.isFinite(row.liveProj)) return row.liveProj;
+  if (Number.isFinite(row.hproj)) return row.hproj;
+  return null;
+}
+
+/** Rank /scores rows: Highest Projections by live/HProj; Highest Scores by pts, proj on ties. */
 export function compareLeagueScoreRows(a, b, { lineupMode, useHproj, liveBoard }) {
   if (lineupMode === 'projections' && useHproj) {
-    const ah = Number.isFinite(a.hproj) ? a.hproj : a.points;
-    const bh = Number.isFinite(b.hproj) ? b.hproj : b.points;
-    if (bh !== ah) return bh - ah;
+    const ah = rankProjValue(a);
+    const bh = rankProjValue(b);
+    const aRank = ah != null ? ah : a.points;
+    const bRank = bh != null ? bh : b.points;
+    if (bRank !== aRank) return bRank - aRank;
   } else {
     const aScore = liveBoard ? (Number(a.actual) || 0) : a.points;
     const bScore = liveBoard ? (Number(b.actual) || 0) : b.points;
     if (bScore !== aScore) return bScore - aScore;
     if (useHproj) {
-      const ah = Number.isFinite(a.hproj) ? a.hproj : null;
-      const bh = Number.isFinite(b.hproj) ? b.hproj : null;
+      const ah = rankProjValue(a);
+      const bh = rankProjValue(b);
       if (ah != null && bh != null && bh !== ah) return bh - ah;
     }
   }
@@ -135,15 +117,15 @@ export function compareLeagueScoreRows(a, b, { lineupMode, useHproj, liveBoard }
   return String(a.rosterId).localeCompare(String(b.rosterId));
 }
 
-export function starterScoreSplit(weekBreakdown, { forceScore = false } = {}) {
+export function starterScoreSplit(weekBreakdown, { forceScore = false, weekComplete = false } = {}) {
   if (!weekBreakdown) {
-    return { actual: 0, proj: 0, hasActual: forceScore, hasProj: false };
+    return { actual: 0, proj: 0, hasActual: forceScore || weekComplete, hasProj: false };
   }
   return {
     actual: weekBreakdown.starterActualTotal ?? 0,
     proj: weekBreakdown.optimalProjTotal ?? weekBreakdown.starterProjTotal ?? weekBreakdown.starterProjRemaining ?? 0,
-    hasActual: forceScore || Boolean(weekBreakdown.starterHasActual),
-    hasProj: Boolean(weekBreakdown.includesProjection),
+    hasActual: weekComplete || forceScore || Boolean(weekBreakdown.starterHasActual),
+    hasProj: weekComplete ? false : Boolean(weekBreakdown.includesProjection),
   };
 }
 

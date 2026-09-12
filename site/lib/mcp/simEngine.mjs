@@ -1215,6 +1215,20 @@ function scoreRosters(ctx, rosters, playoffFormat = DEFAULT_PLAYOFF_FORMAT) {
   return { standings, regTotals, ploffTotals, playoffWeekTotals };
 }
 
+function scoreRostersBoth(ctx, rosters, playoffFormat = DEFAULT_PLAYOFF_FORMAT) {
+  const scored = scoreRosters(ctx, rosters, playoffFormat);
+  const bracketStandings = playoffFormat === PLAYOFF_FORMAT_BRACKET
+    ? scored.standings
+    : buildFinalStandings(scored.regTotals, scored.ploffTotals, {
+      format: PLAYOFF_FORMAT_BRACKET,
+      playoffWeekTotals: scored.playoffWeekTotals,
+    });
+  return {
+    ...scored,
+    bracketChampionId: placeId(bracketStandings, 1),
+  };
+}
+
 function placeId(standings, place) {
   const row = standings.find((r) => r.place === place);
   return row ? Number(row.rosterId) : null;
@@ -1293,7 +1307,7 @@ function emptyStats(rosterIds) {
   const stats = {};
   for (const rid of rosterIds) {
     stats[rid] = {
-      rosterId: rid, wins: 0, playoffCount: 0,
+      rosterId: rid, wins: 0, bracketWins: 0, playoffCount: 0,
       placeSum: 0, regSeasonRankSum: 0, regSeasonSum: 0, playoffSum: 0,
       finishCounts: new Uint32Array(11),
       reg2000: 0, total2000: 0,
@@ -1322,6 +1336,9 @@ function accumulate(stats, outcome, rosterIds) {
     s.regSeasonRankSum += regSeasonRankByRid[row.rosterId] || row.place;
     if (row.place >= 1 && row.place <= 10) s.finishCounts[row.place] += 1;
   }
+  if (outcome.bracketChampionId != null && stats[outcome.bracketChampionId]) {
+    stats[outcome.bracketChampionId].bracketWins += 1;
+  }
   for (const rid of rosterIds) {
     const reg = outcome.regTotals[rid] || 0;
     const ploff = outcome.ploffTotals[rid] || 0;
@@ -1342,6 +1359,8 @@ function buildResults(stats, iterations, rosterIds) {
       wins: row.wins,
       playoffCount: row.playoffCount,
       winPct: (row.wins / iterations) * 100,
+      bracketWins: row.bracketWins || 0,
+      bracketWinPct: ((row.bracketWins || 0) / iterations) * 100,
       playoffPct: (row.playoffCount / iterations) * 100,
       avgFinish: row.placeSum / iterations,
       avgRegSeasonRank: row.regSeasonRankSum / iterations,
@@ -1385,9 +1404,9 @@ export function runSeasonSim(ctx, iterations = DEFAULT_ITERATIONS, opts = {}) {
     fillWeeklyFromRolls(ctx);
 
     const playoffFormat = opts.playoffFormat || ctx.playoffFormat || DEFAULT_PLAYOFF_FORMAT;
-    accumulate(stats, scoreRosters(ctx, ctx.scenarioRosters, playoffFormat), ctx.rosterIds);
+    accumulate(stats, scoreRostersBoth(ctx, ctx.scenarioRosters, playoffFormat), ctx.rosterIds);
     if (baselineStats) {
-      accumulate(baselineStats, scoreRosters(ctx, ctx.baselineRosters, playoffFormat), ctx.rosterIds);
+      accumulate(baselineStats, scoreRostersBoth(ctx, ctx.baselineRosters, playoffFormat), ctx.rosterIds);
     }
     if (progressEvery && ((i + 1) % progressEvery === 0 || i + 1 === n)) {
       opts.onProgress((i + 1) / n);
@@ -1399,4 +1418,58 @@ export function runSeasonSim(ctx, iterations = DEFAULT_ITERATIONS, opts = {}) {
     results: buildResults(stats, n, ctx.rosterIds),
     baselineResults: baselineStats ? buildResults(baselineStats, n, ctx.rosterIds) : null,
   };
+}
+
+function lookupScore(map, rid) {
+  if (!map) return 0;
+  const direct = map[rid];
+  if (direct != null) return Number(direct) || 0;
+  return Number(map[String(rid)]) || 0;
+}
+
+/**
+ * Same weekly draws: how often roster A outscores roster B
+ * over 14 weeks and over the full 17-week season.
+ */
+export function runPairOutscore(ctx, rosterIdA, rosterIdB, iterations = DEFAULT_ITERATIONS, opts = {}) {
+  const cap = opts.uncapped ? 1_000_000 : MAX_ITERATIONS;
+  const n = Math.max(1, Math.min(cap, Math.round(Number(iterations) || DEFAULT_ITERATIONS)));
+  if (!ctx.playoffRolls) ctx.playoffRolls = {};
+
+  const idA = Number(rosterIdA);
+  const idB = Number(rosterIdB);
+  const tallies = {
+    reg: { a: 0, b: 0, tie: 0 },
+    total: { a: 0, b: 0, tie: 0 },
+  };
+  const progressEvery = opts.onProgress
+    ? Math.max(1, Math.floor(n / 100))
+    : 0;
+
+  for (let i = 0; i < n; i++) {
+    for (const pid of ctx.allPlayerIds) {
+      ctx.rolls[pid] = randomPercentile();
+      ctx.playoffRolls[pid] = randomPercentile();
+    }
+    fillWeeklyFromRolls(ctx);
+    const scored = scoreRosters(ctx, ctx.scenarioRosters, PLAYOFF_FORMAT_CUMULATIVE);
+    const aReg = lookupScore(scored.regTotals, idA);
+    const bReg = lookupScore(scored.regTotals, idB);
+    const aTot = aReg + lookupScore(scored.ploffTotals, idA);
+    const bTot = bReg + lookupScore(scored.ploffTotals, idB);
+
+    if (aReg > bReg) tallies.reg.a += 1;
+    else if (bReg > aReg) tallies.reg.b += 1;
+    else tallies.reg.tie += 1;
+
+    if (aTot > bTot) tallies.total.a += 1;
+    else if (bTot > aTot) tallies.total.b += 1;
+    else tallies.total.tie += 1;
+
+    if (progressEvery && ((i + 1) % progressEvery === 0 || i + 1 === n)) {
+      opts.onProgress((i + 1) / n);
+    }
+  }
+
+  return { iterations: n, rosterIdA: idA, rosterIdB: idB, ...tallies };
 }

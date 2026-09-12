@@ -10,7 +10,7 @@
  * The comparison is always optimal vs optimal — this isolates the
  * roster change itself from manager lineup decisions.
  *
- * Standings logic mirrors the actual standings page (2024 cumulative):
+ * Standings logic mirrors the actual standings page (Cumulative):
  *   - Top 4 seeds determined by 14-week regular season totals
  *   - Top 4 final ranking by playoff totals (weeks 15-17)
  *   - Bottom 6 ranked by 14-week totals

@@ -12,8 +12,8 @@ import { StartSitSort } from '../players/StartSitDecider';
  * @param {string} season - The season year
  * @param {Array} weeksData - Array of weekly scores data
  * @param {Object} teamData - Team data with rosters array
- * @param {Object} playersData - Players data (needed for 2025+ seasons)
- * @param {Object} playerIdMap - Player ID map (needed for 2025+ seasons)
+ * @param {Object} playersData - Players data (needed for 2025 bracket seasons)
+ * @param {Object} playerIdMap - Player ID map (needed for 2025 bracket seasons)
  * @returns {Object} Map of { 1: rosterId, 2: rosterId, ..., 10: rosterId }
  */
 export function calculateDraftOrder(season, weeksData, teamData, playersData = null, playerIdMap = null) {
@@ -28,8 +28,9 @@ export function calculateDraftOrder(season, weeksData, teamData, playersData = n
   let placeToRosterId = {};
   const playerSeasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
 
-  // For 2024, use simple total season points
-  if (String(season) === '2024') {
+  // Cumulative (default, including 2024 and 2026+): total season points.
+  // 2025 used the one-year /yoffs bracket.
+  if (String(season) !== '2025') {
     const standingsAll = getStandings(weeksData) || [];
     const ordered = standingsAll
       .slice()
@@ -49,7 +50,7 @@ export function calculateDraftOrder(season, weeksData, teamData, playersData = n
     return placeToRosterId;
   }
 
-  // For 2025+, use playoff bracket logic
+  // 2025 Bracket: 1v4 / 2v3 semis, week 17 final + semis buffer
   // Seeds are top 4 after regular season (Weeks 1-14)
   const weeks14 = (weeksData || []).slice(0, 14).filter(Boolean);
   const standings14 = getStandings(weeks14) || [];

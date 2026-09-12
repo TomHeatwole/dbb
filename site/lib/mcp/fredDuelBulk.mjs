@@ -2,7 +2,7 @@
  * HwangAI bulk-offer clerk for FredDuel.
  *
  * The model extracts a batch of proposed lines; this module resolves team
- * names, fills safe defaults (min take $1, 24h expiry), and either returns
+ * names, fills safe defaults (min take $1, 3-day expiry), and either returns
  * post-ready drafts or a missing-info list the model must ask about.
  * Nothing here posts to the exchange.
  */
@@ -50,7 +50,7 @@ const EXPIRY_MS = {
   '1w': 7 * 24 * 60 * 60 * 1000,
 };
 
-const DEFAULT_EXPIRY = '24h';
+const DEFAULT_EXPIRY = '3d';
 const DEFAULT_MIN_TAKE = 1;
 
 function asArray(value) {

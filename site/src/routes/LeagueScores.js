@@ -68,6 +68,9 @@ function LeagueScores() {
 	const isMobile = useIsMobile();
 	const myRosterId = useMyRosterId(rosters, users);
 	const [playerGameLabels, setPlayerGameLabels] = useState({});
+	const [gameLabelsReady, setGameLabelsReady] = useState(false);
+	const [playersTeamMapReady, setPlayersTeamMapReady] = useState(false);
+	const [liveScoresReady, setLiveScoresReady] = useState(false);
 	const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
 	const [injuriesMap, setInjuriesMap] = useState({});
 	const [apiDelayMinutes, setApiDelayMinutes] = useState(null); // null -> hide banner, number -> minutes delayed
@@ -82,12 +85,20 @@ function LeagueScores() {
 		return getPlayerSeasonTotalsMap(weeksParsedData);
 	}, [weeksParsedData]);
 	const projectedPtsById = useWeeklyProjectedPoints(season, week);
-	const hprojByRoster = useLeagueHproj({
+	const weekScoresByRoster = useMemo(
+		() => (weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week) : null),
+		[weeksParsedData, week],
+	);
+	const { hprojByRoster, liveProjByRoster, gamesStarted: hprojGamesStarted } = useLeagueHproj({
 		season,
 		week,
 		rosters,
 		playersData,
 		projectedPtsById,
+		playerGameLabels,
+		weekScoresByRoster,
+		injuriesMap,
+		playerIdMap,
 		enabled: HPROJ_ON_SCORES,
 	});
 	const hprojFirstNameCounts = useMemo(
@@ -242,6 +253,14 @@ function LeagueScores() {
 		// eslint-disable-next-line
 	}, [urlWeek]);
 
+	useEffect(() => {
+		const isLiveWeek = String(season) === String(CURRENT_YEAR)
+			&& Number(week) === getCurrentNFLWeek();
+		setGameLabelsReady(false);
+		setPlayersTeamMapReady(false);
+		setLiveScoresReady(!isLiveWeek);
+	}, [season, week]);
+
 	// Load league scores/teams for season
 	useEffect(() => {
 		trackPageLoad();
@@ -324,9 +343,14 @@ function LeagueScores() {
 			setIsWeekCompleteByGames(false);
 			return;
 		}
+		if (String(season) === String(CURRENT_YEAR) && !playersTeamMapReady) {
+			return;
+		}
 		const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[week - 1] : null;
 		if (!Array.isArray(weekArr)) {
 			setIsWeekCompleteByGames(false);
+			setPlayerGameLabels({});
+			setGameLabelsReady(true);
 			return;
 		}
 		const playerIdSet = new Set();
@@ -349,6 +373,7 @@ function LeagueScores() {
 		if (playerIds.length === 0) {
 			setPlayerGameLabels({});
 			setIsWeekCompleteByGames(false);
+			setGameLabelsReady(true);
 			return;
 		}
 
@@ -372,16 +397,20 @@ function LeagueScores() {
 					const eventId = ev && ev.id ? String(ev.id) : null;
 					labels[pid] = { ...d, team: teamForWeek || null, eventId };
 				}
-				if (!cancelled) { setPlayerGameLabels(labels); }
+				if (!cancelled) {
+					setPlayerGameLabels(labels);
+					setGameLabelsReady(true);
+				}
 			})
 			.catch(() => {
 				if (!cancelled) {
 					setPlayerGameLabels({});
 					setIsWeekCompleteByGames(false);
+					setGameLabelsReady(true);
 				}
 			});
 		return () => { cancelled = true; };
-	}, [season, week, playersData, playerIdMap, weeksParsedData, rosters, playersTeamMap]);
+	}, [season, week, playersData, playerIdMap, weeksParsedData, rosters, playersTeamMap, playersTeamMapReady]);
 
 	// Align prevData baseline with first-loaded playerGameLabels for this season/week
 	useEffect(() => {
@@ -407,18 +436,34 @@ function LeagueScores() {
 		(async () => {
 			try {
 				const isCurrentSeason = String(season) === String(CURRENT_YEAR);
-				if (!isCurrentSeason || !week || Number(week) < 1) { if (!cancelled) setPlayersTeamMap({}); return; }
+				if (!isCurrentSeason || !week || Number(week) < 1) {
+					if (!cancelled) {
+						setPlayersTeamMap({});
+						setPlayersTeamMapReady(true);
+					}
+					return;
+				}
 				const snap = await readPlayersSnapshot(String(season), Number(week));
 				const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
 				if (cancelled) { return; }
-				if (!data) { setPlayersTeamMap({}); return; }
+				if (!data) {
+					setPlayersTeamMap({});
+					setPlayersTeamMapReady(true);
+					return;
+				}
 				const next = {};
 				for (const [pid, pinfo] of Object.entries(data)) {
 					const abbr = pinfo && (pinfo.team || pinfo.team_abbr || pinfo.team_abbreviation);
 					if (abbr) { next[String(pid)] = String(abbr); }
 				}
 				setPlayersTeamMap(next);
-			} catch (_) { if (!cancelled) setPlayersTeamMap({}); }
+				setPlayersTeamMapReady(true);
+			} catch (_) {
+				if (!cancelled) {
+					setPlayersTeamMap({});
+					setPlayersTeamMapReady(true);
+				}
+			}
 		})();
 		return () => { cancelled = true; };
 	}, [season, week]);
@@ -441,6 +486,7 @@ function LeagueScores() {
 				if (cancelled || !Array.isArray(newWeeks)) {
 					return;
 				}
+				setLiveScoresReady(true);
 				const seasonTotals = getPlayerSeasonTotalsMap(newWeeks);
 				const nextExpanded = buildExpandedData(
 					newWeeks,
@@ -527,6 +573,16 @@ function LeagueScores() {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [season, week, playerGameLabels, buildExpandedData, prevData]);
 
+	useEffect(() => {
+		const isLiveWeek = String(season) === String(CURRENT_YEAR)
+			&& Number(week) === getCurrentNFLWeek();
+		if (!isLiveWeek) {
+			return undefined;
+		}
+		const timeoutId = setTimeout(() => setLiveScoresReady(true), 8000);
+		return () => clearTimeout(timeoutId);
+	}, [season, week]);
+
 
 	function getTeamName(rosterId) {
 		if (!rosters || !users) return `Team ${rosterId}`;
@@ -603,8 +659,8 @@ function LeagueScores() {
 			</div>
 			{week >= 15 ? <YoffsLink /> : null}
 			<MidweekSimBanner season={season} />
-			{loading ? (
-				<LoadingState label="Loading scores…" />
+			{(!error && (loading || !gameLabelsReady || !liveScoresReady)) ? (
+				<LoadingState className="scores-loading" label="Loading scores…" ariaLabel="Loading scores" />
 			) : error || !weeksParsedData || !rosters || !users ? (
 				<div>Error loading scores.</div>
 			) : (
@@ -682,6 +738,7 @@ function LeagueScores() {
 								? liveTotalByRosterId[String(rid)]
 								: (basePointsByRoster[String(rid)] || 0);
 							const hproj = hprojByRoster[String(rid)];
+							const liveProj = liveProjByRoster[String(rid)];
 							return {
 								rosterId: rid,
 								points: pts,
@@ -689,6 +746,7 @@ function LeagueScores() {
 								pfTotal,
 								breakdown: computed,
 								hproj,
+								liveProj,
 								actual: computed?.starterActualTotal ?? 0,
 								hasActual: Boolean(computed?.starterHasActual),
 							};
@@ -754,12 +812,16 @@ function LeagueScores() {
 							const teamHighlight = teamHighlightMap && teamHighlightMap[String(rosterId)];
 							const rowClass = teamHighlight === 'row' ? ' standings-row--pulse' : (teamHighlight === 'up' ? ' standings-row--up' : (teamHighlight === 'down' ? ' standings-row--down' : ''));
 							const mine = isMyRoster(rosterId, myRosterId);
-							const weekSplit = starterScoreSplit(weekBreakdown, { forceScore: liveBoard });
+							const weekSplit = starterScoreSplit(weekBreakdown, {
+								forceScore: liveBoard && !isWeekCompleteByGames,
+								weekComplete: isWeekCompleteByGames,
+							});
 							const showHproj = HPROJ_ON_SCORES && String(season) === String(CURRENT_YEAR) && weekSplit.hasProj;
 							const hprojHref = showHproj
 								? hprojPageHref(week, { rosterId, ownerName: getOwnerName(rosterId) }, hprojFirstNameCounts)
 								: null;
 							const hprojValue = hprojByRoster[String(rosterId)] ?? null;
+							const liveProjValue = liveProjByRoster[String(rosterId)] ?? null;
 							return (
 								<div key={rosterId} className={`standings-row${rowClass}${mine ? ' standings-row--me' : ''}`}>
 									<button className="standings-row-header" type="button" onClick={() => toggleExpand(rosterId)}>
@@ -783,10 +845,11 @@ function LeagueScores() {
 											{...weekSplit}
 											layout="stack"
 											compact={isMobile}
-											lineupMode={lineupMode}
 											hprojHref={hprojHref}
 											hprojValue={hprojValue}
-											className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${(!isMobile && !weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref))) || (isMobile && lineupMode === 'projections') ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
+											liveProjValue={liveProjValue}
+											gamesStarted={hprojGamesStarted}
+											className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
 										/>
 									</button>
 									{isExpanded && (() => {
@@ -818,6 +881,9 @@ function LeagueScores() {
 												pfTotal={pfTotal}
 												hprojHref={hprojHref}
 												hprojValue={hprojValue}
+												liveProjValue={liveProjValue}
+												gamesStarted={hprojGamesStarted}
+												weekComplete={isWeekCompleteByGames}
 											/>
 										</div>
 										);

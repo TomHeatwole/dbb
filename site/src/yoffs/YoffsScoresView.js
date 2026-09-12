@@ -164,7 +164,7 @@ function YoffsScoresView({ season, rows, startWeek, endWeek }) {
 
   if (effectiveRows === null) {
     return (
-      <LoadingState label="Loading scores…" />
+      <LoadingState className="scores-loading" label="Loading scores…" ariaLabel="Loading scores" />
     );
   }
 

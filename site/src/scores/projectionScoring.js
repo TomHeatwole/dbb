@@ -1,6 +1,13 @@
 import { StartSitSort, isEligibleForSlot } from '../players/StartSitDecider';
 import { getPlayerInfo } from '../lookups/PlayerLookup';
-import { SIMULATE_MIDWEEK, STARTER_POSITION_NAMES } from '../utils/global_constants';
+import { STARTER_POSITION_NAMES } from '../utils/global_constants';
+import {
+  displayActualPts,
+  espnLiveProjection,
+  espnRemainingProj,
+  liveTimeFrac,
+  playerIsRuledOut,
+} from './liveOutlook';
 
 /**
  * Apply league scoring_settings to a Sleeper projected stats object.
@@ -69,19 +76,6 @@ function sourceForLocked(label) {
   return 'actual';
 }
 
-function simulatedLockedPts(label, proj) {
-  if (!SIMULATE_MIDWEEK || typeof proj !== 'number' || !Number.isFinite(proj)) {
-    return null;
-  }
-  if (label && label.completed) {
-    return proj;
-  }
-  if (label && label.live) {
-    return Math.round(proj * 0.48 * 10) / 10;
-  }
-  return null;
-}
-
 function hybridPlayerRow(player, projectedPtsById, playerGameLabels) {
   if (!player || player.id == null || String(player.id) === '0') {
     return player;
@@ -89,8 +83,7 @@ function hybridPlayerRow(player, projectedPtsById, playerGameLabels) {
   const pid = String(player.id);
   const label = labelForPlayer(playerGameLabels, player.id);
   const proj = projectedPtsById ? projectedPtsById[pid] : undefined;
-  const simulated = simulatedLockedPts(label, proj);
-  const actual = simulated != null ? simulated : (typeof player.pts === 'number' ? player.pts : 0);
+  const actual = displayActualPts(player, label, proj);
   if (label && (label.live || label.completed)) {
     return { ...player, pts: actual, ptsSource: sourceForLocked(label) };
   }
@@ -122,37 +115,44 @@ export function applyHybridProjectedPoints(teamScore, projectedPtsById, playerGa
   };
 }
 
-function remainingProj(actual, fullProj) {
-  if (typeof fullProj !== 'number' || !Number.isFinite(fullProj)) {
-    return 0;
-  }
-  return Math.max(0, roundTenth(fullProj - (Number(actual) || 0)));
-}
-
-function annotatePlayer(player, projectedPtsById, playerGameLabels) {
+function annotatePlayer(player, projectedPtsById, playerGameLabels, injuriesCtx) {
   if (!player || player.id == null || String(player.id) === '0') {
     return player;
   }
   const pid = String(player.id);
   const label = labelForPlayer(playerGameLabels, player.id);
-  const rawPts = typeof player.pts === 'number' ? player.pts : 0;
   const fullProj = projectedPtsById && typeof projectedPtsById[pid] === 'number'
     ? projectedPtsById[pid]
     : null;
-  const started = Boolean(label && (label.live || label.completed));
+  const ruledOut = Boolean(
+    injuriesCtx && playerIsRuledOut(
+      player.id,
+      injuriesCtx.injuriesMap,
+      injuriesCtx.playersData,
+      injuriesCtx.playerIdMap,
+    ),
+  );
+  const finished = Boolean((label && label.completed) || ruledOut);
+  const live = Boolean(label && label.live && !ruledOut);
+  const started = finished || live;
+  const rawPts = displayActualPts(player, label, fullProj);
   const actualPts = started ? rawPts : null;
   let leftover = 0;
-  if (started && label.live) {
-    leftover = remainingProj(rawPts, fullProj);
+  if (live) {
+    leftover = espnRemainingProj(fullProj, liveTimeFrac(label));
   } else if (!started && fullProj != null && !(label && label.text === 'BYE')) {
     leftover = fullProj;
   }
-  const currentExpected = started
-    ? (label.completed ? rawPts : roundTenth(rawPts + leftover))
-    : (fullProj != null ? fullProj : 0);
-  const source = started
-    ? sourceForLocked(label)
-    : (label && label.text === 'BYE' ? 'bye' : (fullProj != null ? 'unplayed' : 'none'));
+  const currentExpected = finished
+    ? rawPts
+    : (live
+      ? espnLiveProjection(rawPts, fullProj, liveTimeFrac(label))
+      : (fullProj != null ? fullProj : 0));
+  const source = finished
+    ? (ruledOut && !(label && label.completed) ? 'actual' : sourceForLocked(label))
+    : (live
+      ? 'live'
+      : (label && label.text === 'BYE' ? 'bye' : (fullProj != null ? 'unplayed' : 'none')));
   return {
     ...player,
     pts: started ? rawPts : 0,
@@ -203,12 +203,12 @@ export function splitPtsBySource(players) {
 /**
  * Re-attach ptsSource after StartSitSort (it only keeps id/pts).
  */
-export function annotateProjectionSources(computed, playerGameLabels, projectedPtsById) {
+export function annotateProjectionSources(computed, playerGameLabels, projectedPtsById, injuriesCtx = null) {
   if (!computed) {
     return computed;
   }
-  const starters = (computed.starters || []).map((p) => annotatePlayer(p, projectedPtsById, playerGameLabels));
-  const bench = (computed.bench || []).map((p) => annotatePlayer(p, projectedPtsById, playerGameLabels));
+  const starters = (computed.starters || []).map((p) => annotatePlayer(p, projectedPtsById, playerGameLabels, injuriesCtx));
+  const bench = (computed.bench || []).map((p) => annotatePlayer(p, projectedPtsById, playerGameLabels, injuriesCtx));
   const starterSplit = splitPtsBySource(starters);
   const benchSplit = splitPtsBySource(bench);
   return {
@@ -245,14 +245,27 @@ export function projectionSlotValue(player) {
   if (gameIsFinished(player)) {
     return typeof player.actualPts === 'number' ? player.actualPts : (Number(player.pts) || 0);
   }
+  if (typeof player.currentExpected === 'number' && Number.isFinite(player.currentExpected)) {
+    return player.currentExpected;
+  }
   const score = typeof player.actualPts === 'number' ? player.actualPts : 0;
   const proj = typeof player.projPts === 'number' ? player.projPts : 0;
   return Math.max(score, proj);
 }
 
+function remainingOutlook(player) {
+  if (typeof player.projRemaining === 'number' && Number.isFinite(player.projRemaining)) {
+    return player.projRemaining;
+  }
+  return 0;
+}
+
 export function rankPtsForMode(player, mode) {
   if (mode === 'projections') {
     return projectionSlotValue(player);
+  }
+  if (mode === 'remaining') {
+    return remainingOutlook(player);
   }
   return typeof player.currentExpected === 'number' ? player.currentExpected : (player.pts || 0);
 }
@@ -330,60 +343,58 @@ function attachScoreSoFarHints(starters, bench, playersData, playerIdMap) {
   });
 }
 
+function weekProj(player) {
+  if (typeof player.projPts === 'number' && Number.isFinite(player.projPts)) {
+    return player.projPts;
+  }
+  return remainingOutlook(player);
+}
+
 /**
- * Higher-projection hints follow the projection-optimal (best-ball) 11:
- * a bench player is named on at most one starter, and only on someone
- * who would sit in that optimal lineup.
+ * Overlay leftover week-projections onto the scores seating.
+ * Walk slots in order and consume the best unused bench proj that still
+ * beats that seat. If the starter has already outscored it, the proj
+ * slides to a later eligible slot (Lamar past Maye → Stafford SUPER).
  */
-function attachBestballProjHints(displayStarters, optimalStarters, playersData, playerIdMap, withPos) {
-  const optimalIds = new Set((optimalStarters || []).filter(isRealPlayer).map(playerKey));
-  const displayIds = new Set((displayStarters || []).filter(isRealPlayer).map(playerKey));
-  const incoming = (optimalStarters || [])
-    .filter((player) => isRealPlayer(player) && !displayIds.has(playerKey(player)))
-    .map(withPos);
-  const usedIncoming = new Set();
-  return displayStarters.map((starter, index) => {
+function attachBestballProjHints(displayStarters, benchPlayers, playersData, playerIdMap) {
+  const used = new Set();
+
+  function floor(starter) {
+    // Finished games have no leftover projection — only the actual can block a slide.
+    if (gameIsFinished(starter)) {
+      return actualScore(starter);
+    }
+    return Math.max(actualScore(starter), weekProj(starter), projectionSlotValue(starter));
+  }
+
+  return (displayStarters || []).map((starter, index) => {
     if (!isRealPlayer(starter)) {
       return starter;
     }
-    if (optimalIds.has(playerKey(starter))) {
-      return starter;
-    }
     const slot = STARTER_POSITION_NAMES[index];
-    const slotOpt = optimalStarters && optimalStarters[index];
     let pick = null;
-    let pickVal = 0;
-    const slotOptKey = playerKey(slotOpt);
-    if (
-      isRealPlayer(slotOpt)
-      && !displayIds.has(slotOptKey)
-      && !usedIncoming.has(slotOptKey)
-      && isEligibleForSlot(slot, withPos(slotOpt).position)
-    ) {
-      pick = slotOpt;
-      pickVal = projectionSlotValue(slotOpt);
-    }
-    if (!pick) {
-      for (const cand of incoming) {
-        const candKey = playerKey(cand);
-        if (usedIncoming.has(candKey) || !isEligibleForSlot(slot, cand.position)) {
-          continue;
-        }
-        const val = projectionSlotValue(cand);
-        if (!pick || val > pickVal) {
-          pick = cand;
-          pickVal = val;
-        }
+    let pickVal = -Infinity;
+    for (const cand of benchPlayers) {
+      const candKey = playerKey(cand);
+      if (!candKey || used.has(candKey) || !isEligibleForSlot(slot, cand.position)) {
+        continue;
+      }
+      if (gameIsFinished(cand)) {
+        continue;
+      }
+      const val = weekProj(cand);
+      if (val <= floor(starter) + 0.049) {
+        continue;
+      }
+      if (val > pickVal) {
+        pick = cand;
+        pickVal = val;
       }
     }
     if (!pick) {
       return starter;
     }
-    const starterVal = projectionSlotValue(starter);
-    if (pickVal <= starterVal + 0.049) {
-      return starter;
-    }
-    usedIncoming.add(playerKey(pick));
+    used.add(playerKey(pick));
     return {
       ...starter,
       higherBenchProj: {
@@ -395,7 +406,7 @@ function attachBestballProjHints(displayStarters, optimalStarters, playersData, 
   });
 }
 
-function attachBenchHints(computed, playersData, playerIdMap, lineupMode, optimalStarters) {
+function attachBenchHints(computed, playersData, playerIdMap, lineupMode) {
   if (!computed) {
     return computed;
   }
@@ -410,7 +421,7 @@ function attachBenchHints(computed, playersData, playerIdMap, lineupMode, optima
   const startersIn = (computed.starters || []).map(withPos);
   const starters = lineupMode === 'projections'
     ? attachScoreSoFarHints(startersIn, bench, playersData, playerIdMap)
-    : attachBestballProjHints(startersIn, optimalStarters, playersData, playerIdMap, withPos);
+    : attachBestballProjHints(startersIn, bench, playersData, playerIdMap);
   return { ...computed, starters, bench };
 }
 
@@ -422,7 +433,7 @@ function sortLineup(annotated, playersData, playerIdMap, playerGameLabels, injur
     playerGameLabels,
     injuriesMap,
     playerSeasonTotalsMap,
-    { preferStarted: mode !== 'projections' }
+    { preferStarted: mode === 'scores' }
   );
 }
 
@@ -444,8 +455,9 @@ export function startSitWithProjections(
   lineupMode = 'scores'
 ) {
   const mode = lineupMode === 'projections' ? 'projections' : 'scores';
+  const injuriesCtx = { injuriesMap, playersData, playerIdMap };
   const hybrid = applyHybridProjectedPoints(teamScore, projectedPtsById, playerGameLabels);
-  const annotated = annotateProjectionSources(hybrid, playerGameLabels, projectedPtsById);
+  const annotated = annotateProjectionSources(hybrid, playerGameLabels, projectedPtsById, injuriesCtx);
   const sortArgs = [
     annotated,
     playersData,
@@ -456,13 +468,13 @@ export function startSitWithProjections(
   ];
   const projSorted = sortLineup(...sortArgs, 'projections');
   const scoresSorted = sortLineup(...sortArgs, 'scores');
-  const projFinalized = annotateProjectionSources(projSorted, playerGameLabels, projectedPtsById);
-  const scoresFinalized = annotateProjectionSources(scoresSorted, playerGameLabels, projectedPtsById);
+  const projFinalized = annotateProjectionSources(projSorted, playerGameLabels, projectedPtsById, injuriesCtx);
+  const scoresFinalized = annotateProjectionSources(scoresSorted, playerGameLabels, projectedPtsById, injuriesCtx);
   const optimalProjTotal = roundTenth(
     (projFinalized.starters || []).reduce((sum, player) => sum + projectionSlotValue(player), 0)
   );
   const finalized = mode === 'projections' ? projFinalized : scoresFinalized;
-  const withHints = attachBenchHints(finalized, playersData, playerIdMap, mode, projFinalized.starters);
+  const withHints = attachBenchHints(finalized, playersData, playerIdMap, mode);
   return {
     ...withHints,
     lineupMode: mode,

@@ -6,6 +6,7 @@ import {
   CURRENT_WEEK_OVERRIDE,
   PREVIOUS_CURRENT_WEEK_OVERRIDE,
   PREVIOUS_YEARS,
+  SIMULATE_WEEK1_DONE,
 } from './global_constants';
 import { readAdminBlob } from './database';
 
@@ -48,10 +49,18 @@ function clampWeek(n, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
+function isCurrentSeasonQuery(season) {
+  return season == null || String(season) === String(getCurrentYear());
+}
+
+/** Week 1 complete / Week 2 not started — current-season debug pin only. */
+function afterWeek1Sim(season) {
+  return Boolean(SIMULATE_WEEK1_DONE) && isCurrentSeasonQuery(season);
+}
+
 /** Debug override for the season being queried, if any. */
 function weekOverrideForSeason(season) {
-  const isCurrent =
-    season == null || String(season) === String(getCurrentYear());
+  const isCurrent = isCurrentSeasonQuery(season);
   if (isCurrent && CURRENT_WEEK_OVERRIDE != null) {
     return clampWeek(CURRENT_WEEK_OVERRIDE, 1, 17);
   }
@@ -63,6 +72,7 @@ function weekOverrideForSeason(season) {
 }
 
 export function getCurrentNFLWeek(season = null) {
+  if (afterWeek1Sim(season)) return 2;
   const override = weekOverrideForSeason(season);
   if (override != null) return override;
 
@@ -84,6 +94,7 @@ export function getCurrentNFLWeek(season = null) {
 
 // Number of weeks for which Tuesday has passed relative to each week start (Thu)
 export function getCompletedWeeksCount(season = null) {
+  if (afterWeek1Sim(season)) return 1;
   const override = weekOverrideForSeason(season);
   if (override != null) {
     // Debug pin: treat override as both current week and completed-weeks snapshot
@@ -125,6 +136,7 @@ export function isPreSeason(season = null) {
   const target = season == null ? CURRENT_YEAR : season;
   if (String(target) !== String(CURRENT_YEAR)) return false;
 
+  if (afterWeek1Sim(CURRENT_YEAR)) return false;
   const override = weekOverrideForSeason(CURRENT_YEAR);
   if (override != null) {
     return Number(override) <= 0;
@@ -145,6 +157,7 @@ export function hasSeasonStarted(season = null) {
 
 // Whether the current week (per getCurrentNFLWeek) has completed (i.e., Tuesday has passed)
 export function isCurrentWeekCompletedByDate(season = null) {
+  if (afterWeek1Sim(season)) return false;
   const override = weekOverrideForSeason(season);
   if (override != null) {
     // Debug pin: treat as a static completed snapshot for previous seasons;
@@ -171,6 +184,7 @@ export function isCurrentWeekCompletedByDate(season = null) {
 
 // Default DB-aware version: checks admin overrides first, then falls back to date-based logic
 export async function isCurrentWeekCompleted(season = null) {
+  if (afterWeek1Sim(season)) return false;
   try {
     const yearStr = String(season || getCurrentYear());
     const weekNum = getCurrentNFLWeek(season);

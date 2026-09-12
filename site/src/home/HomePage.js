@@ -8,7 +8,9 @@ import TankRaceCard from './TankRaceCard';
 import TopPFRaceCard from './TopPFRaceCard';
 import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
+import HomeCardsSplit from './HomeCardsSplit';
 import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
+import ThisWeeksProjectionsCard from './ThisWeeksProjectionsCard';
 import Week1CountdownCard from './Week1CountdownCard';
 import AuthHomeCard from './AuthHomeCard';
 import PreviousYearRecapCard from './PreviousYearRecapCard';
@@ -115,6 +117,10 @@ function HomePage() {
       ? autoOffSeason
       : !!HOME_OFFSEASON_OVERRIDE;
   const showWeek1CountdownCard = isOffSeasonHome && !week1InProgress;
+  const showThisWeekCard = Number.isFinite(weekNum) && weekNum >= 1 && weekNum <= 17;
+  const thisWeekCard = showThisWeekCard
+    ? <ThisWeeksProjectionsCard currentWeekOverride={safeWeekForCards} />
+    : null;
 
   // Off-season layout: separate "home cards set" once Week 17 is completed.
   if (isOffSeasonHome) {
@@ -125,6 +131,7 @@ function HomePage() {
             {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
             {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
             <AuthHomeCard />
+            {thisWeekCard}
             <PreviousYearRecapCard />
             <RecentTradesCard />
             <RecentWaiversCard />
@@ -140,27 +147,27 @@ function HomePage() {
     }
 
     // Desktop: keep the split-column layout. Put the countdown full-width on top,
-    // then render the remaining cards side-by-side.
+    // then render the remaining cards side-by-side. Podcast / commissioner note
+    // stay pinned at the bottom; taller tails rebalance one card above them.
     return (
       <main className="home-main home-dashboard">
         <div className="home-cards-grid">
           {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
-          <div className="home-cards-grid--split">
-            <div className="home-cards-column home-cards-column--left">
-              <AuthHomeCard />
-              <RecentTradesCard />
-              <RecentWaiversCard />
-              <TrendingFreeAgentsCard />
-              <PodcastCard />
-            </div>
-            <div className="home-cards-column home-cards-column--right">
-              <PreviousYearRecapCard />
-              {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
-              <LeagueHistoryCard />
-              <HwangAICard />
-              <CommissionerNoteCard />
-            </div>
-          </div>
+          <HomeCardsSplit
+            left={[
+              { id: 'auth', node: <AuthHomeCard /> },
+              ...(thisWeekCard ? [{ id: 'this-week', node: thisWeekCard }] : []),
+              { id: 'trades', node: <RecentTradesCard /> },
+              { id: 'waivers', node: <RecentWaiversCard /> },
+              { id: 'trending', node: <TrendingFreeAgentsCard /> },
+            ]}
+            right={[
+              { id: 'recap', node: <PreviousYearRecapCard /> },
+              { id: 'rookie-draft', node: rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard /> },
+              { id: 'league-history', node: <LeagueHistoryCard /> },
+              { id: 'hwang-ai', node: <HwangAICard /> },
+            ]}
+          />
         </div>
       </main>
     );
@@ -211,6 +218,7 @@ function HomePage() {
           {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
           {playoffCard}
           <HotTeamCard currentWeekOverride={safeWeekForCards} />
+          {thisWeekCard}
           {bubbleCard}
           <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
@@ -224,42 +232,30 @@ function HomePage() {
     );
   }
 
-  // Web ordering:
-  //
-  // Left column:
-  //  - Playoffs (picture, matchups, or championship)
-  //  - Race for the PF
-  //  - Race for the 1.01
-  //  - Podcast
-  //
-  // Right column:
-  //  - Hot Team Alert
-  //  - On the Bubble (if before week 14)
-  //  - Week 14 Top Scores
-  //  - HwangAI
-  //  - Commissioner Note
+  // Web ordering starts with this preferred split. Podcast and the
+  // commissioner note stay pinned at the bottom; if one tail hangs by more
+  // than a full card, cards move from the bottom (just above those pins).
 
   return (
     <main className="home-main home-dashboard">
       <div className="home-cards-grid">
         {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
-        <div className="home-cards-grid--split">
-          <div className="home-cards-column home-cards-column--left">
-            <AuthHomeCard />
-            {playoffCard}
-            <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
-            <TankRaceCard currentWeekOverride={safeWeekForCards} />
-            <PodcastCard />
-          </div>
-          <div className="home-cards-column home-cards-column--right">
-            <HotTeamCard currentWeekOverride={safeWeekForCards} />
-            {bubbleCard}
-            <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
-            <LeagueHistoryCard />
-            <HwangAICard />
-            <CommissionerNoteCard />
-          </div>
-        </div>
+        <HomeCardsSplit
+          left={[
+            { id: 'auth', node: <AuthHomeCard /> },
+            { id: 'playoffs', node: playoffCard },
+            { id: 'top-pf', node: <TopPFRaceCard currentWeekOverride={safeWeekForCards} /> },
+            { id: 'tank', node: <TankRaceCard currentWeekOverride={safeWeekForCards} /> },
+          ]}
+          right={[
+            { id: 'hot-team', node: <HotTeamCard currentWeekOverride={safeWeekForCards} /> },
+            ...(thisWeekCard ? [{ id: 'this-week', node: thisWeekCard }] : []),
+            ...(bubbleCard ? [{ id: 'bubble', node: bubbleCard }] : []),
+            { id: 'last-week', node: <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} /> },
+            { id: 'league-history', node: <LeagueHistoryCard /> },
+            { id: 'hwang-ai', node: <HwangAICard /> },
+          ]}
+        />
       </div>
     </main>
   );

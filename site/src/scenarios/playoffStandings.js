@@ -1,8 +1,8 @@
 /**
  * Playoff placement for scenario eval and the season simulator.
  *
- * cumulative (2024): top 4 by regular-season total, then ranked by weeks 15–17.
- * bracket (2025): 1v4 and 2v3 over weeks 15–16; championship is week 17 plus
+ * cumulative (default): top 4 by regular-season total, then ranked by weeks 15–17.
+ * bracket (2025 only): 1v4 and 2v3 over weeks 15–16; championship is week 17 plus
  * half the semis scoring gap. #1 is the final winner, #2 the other finalist.
  * 3rd/4th use cumulative playoff score among the two semifinal losers.
  */
@@ -14,7 +14,7 @@ export const DEFAULT_PLAYOFF_FORMAT = PLAYOFF_FORMAT_CUMULATIVE;
 export const PLAYOFF_FORMATS = {
   [PLAYOFF_FORMAT_CUMULATIVE]: {
     label: 'Cumulative',
-    description: '2024 rules: playoff teams ranked by total points in weeks 15–17.',
+    description: 'Playoff teams ranked by total points in weeks 15–17.',
   },
   [PLAYOFF_FORMAT_BRACKET]: {
     label: '2025 Bracket',
@@ -28,6 +28,15 @@ export function normalizePlayoffFormat(value) {
     return PLAYOFF_FORMAT_BRACKET;
   }
   return PLAYOFF_FORMAT_CUMULATIVE;
+}
+
+/** Official format for a season. 2025 used the bracket; everything else is cumulative. */
+export function playoffFormatForSeason(season) {
+  return Number(season) === 2025 ? PLAYOFF_FORMAT_BRACKET : PLAYOFF_FORMAT_CUMULATIVE;
+}
+
+export function defaultYoffsTabForFormat(format) {
+  return normalizePlayoffFormat(format) === PLAYOFF_FORMAT_BRACKET ? 'Bracket' : 'Overview';
 }
 
 function roundTenth(value) {

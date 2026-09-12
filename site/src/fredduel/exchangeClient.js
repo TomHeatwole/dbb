@@ -15,12 +15,15 @@
 //   updateOfferExposure(offerId, newRemaining) -> offer
 //   cancelOffer(offerId) -> offer
 //   resetTestData()      -> void (test client only)
+//   applyAutoSettlements(snapshot) -> { bets, changes } (test client only;
+//                                     settlement is not launched on live yet)
 
 import {
   isValidLine, roundCents, takerWinAmount, validateTake, isEffectivelyFilled,
   maxStakeForExposure, exposureUsedByTaker,
 } from './oddsMath';
 import { buildTestSeed } from './testSeed';
+import { applyAutoSettlementsToDb } from './settlement';
 
 export const TEST_MODE_KEY = 'fredduel_test_mode';
 export const TEST_ACTOR_KEY = 'fredduel_test_actor';
@@ -228,6 +231,10 @@ export function createTestClient(getActor) {
         takerStake: check.stake,
         creatorRisk,
         status: 'live',
+        result: null,
+        settledAt: null,
+        settledBy: null,
+        settlementNote: '',
         createdAt: new Date().toISOString(),
       };
       db.bets.unshift(bet);
@@ -266,6 +273,14 @@ export function createTestClient(getActor) {
 
     async resetTestData() {
       saveTestDb(buildTestSeed());
+    },
+
+    async applyAutoSettlements(snapshot) {
+      const db = loadTestDb();
+      const { bets, changes } = applyAutoSettlementsToDb(db.offers, db.bets, snapshot);
+      db.bets = bets;
+      saveTestDb(db);
+      return { bets, changes };
     },
   };
 }

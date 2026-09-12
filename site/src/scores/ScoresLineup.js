@@ -11,6 +11,8 @@ import PositionBadge from '../PositionBadge';
 import { starterScoreSplit, benchScoreSplit } from './ScoreSplit';
 import HprojHint from './HprojHint';
 import { rankPtsForMode } from './projectionScoring';
+import { hprojPercentile } from './hprojVarianceBuckets';
+import { HPROJ_SKILL_POS } from './hprojTeamSim';
 
 function formatPlayerNameForDisplay(nameOrId, compact) {
   const raw = nameOrId;
@@ -56,7 +58,7 @@ function GameLabel({ gameObj, isActiveWeek }) {
   return (
     <div className={classes.join(' ')}>
       {isActiveWeek && gameObj.live ? (
-        <span className="scores-lineup-live-dot" aria-hidden="true" />
+        <span className="hproj-hint-live-dot" aria-hidden="true" />
       ) : null}
       {gameObj.eventId ? (
         <a
@@ -105,10 +107,27 @@ function scoreDisplay(player) {
 }
 
 function projDisplay(player) {
+  if (player && typeof player.currentExpected === 'number' && Number.isFinite(player.currentExpected)) {
+    return player.currentExpected.toFixed(1);
+  }
   if (player && typeof player.projPts === 'number') {
     return player.projPts.toFixed(1);
   }
   return '—';
+}
+
+function skillPos(info) {
+  const raw = info && (info.position || (info.fantasy_positions && info.fantasy_positions[0]));
+  if (raw === 'FB') return 'RB';
+  if (HPROJ_SKILL_POS.includes(raw)) return raw;
+  return null;
+}
+
+function sleeperProj(player) {
+  if (player && typeof player.projPts === 'number' && Number.isFinite(player.projPts)) {
+    return player.projPts;
+  }
+  return null;
 }
 
 export default function ScoresLineup({
@@ -129,6 +148,9 @@ export default function ScoresLineup({
   pfTotal,
   hprojHref = null,
   hprojValue = null,
+  liveProjValue = null,
+  gamesStarted = false,
+  weekComplete = false,
 }) {
   const isMobileView = useIsMobile();
   const [searchParams] = useSearchParams();
@@ -139,12 +161,12 @@ export default function ScoresLineup({
     return <div>No data for this week/team.</div>;
   }
 
-  const starterSplit = starterScoreSplit(weekBreakdown);
+  const starterSplit = starterScoreSplit(weekBreakdown, { weekComplete });
   const benchSplit = benchScoreSplit(weekBreakdown);
   const lineupMode = weekBreakdown.lineupMode === 'projections' ? 'projections' : 'scores';
-  const showScoreCol = !isMobileView || lineupMode === 'scores';
-  const showProjCol = !isMobileView || lineupMode === 'projections';
-  const showHprojCol = Boolean(hprojHref) && showProjCol;
+  const showScoreCol = true;
+  const showProjCol = true;
+  const showHprojCol = Boolean(hprojHref);
   const numsClass = `scores-lineup-nums${showScoreCol && showProjCol ? '' : ' scores-lineup-nums--single'}`;
   const hasPf = Number(pfTotal) > 0;
   const hasMeta = Boolean(ownerName || hasPf);
@@ -195,10 +217,28 @@ export default function ScoresLineup({
     const rawName = info && info.name ? info.name : String(p.id);
     const highlight = playerHighlightMap && playerHighlightMap[String(p.id)];
     const slot = bench ? 'BN' : (STARTER_POSITION_NAMES[i] || `S${i + 1}`);
-    const isLive = Boolean(isActiveWeek && gameObj.live);
+    const isLive = Boolean(isActiveWeek && gameObj.live && p.ptsSource !== 'actual' && p.ptsSource !== 'bye');
+    const isFinal = Boolean(
+      (gameObj.completed || p.ptsSource === 'actual')
+      && p.ptsSource !== 'bye'
+      && gameObj.text !== 'BYE'
+    );
+    const liveHproj = isLive && typeof p.currentExpected === 'number' && Number.isFinite(p.currentExpected)
+      ? p.currentExpected
+      : null;
+    const sleeper = sleeperProj(p);
+    const outcomePct = isFinal && !isLive
+      ? hprojPercentile(skillPos(info), sleeper, p.actualPts)
+      : null;
     const highlightClass = highlight === 'up' ? ' text-up text-bold' : (highlight === 'down' ? ' text-down text-bold' : '');
     const scoreHint = !bench && p.bestBenchScore ? p.bestBenchScore : null;
-    const projHint = !bench && p.higherBenchProj ? p.higherBenchProj : null;
+    const projHintRaw = !bench && p.higherBenchProj ? p.higherBenchProj : null;
+    const projHintLabel = projHintRaw
+      ? (playerGameLabels[projHintRaw.id] || playerGameLabels[String(projHintRaw.id)] || null)
+      : null;
+    const projHint = projHintRaw && !(projHintLabel && (projHintLabel.completed || projHintLabel.text === 'BYE'))
+      ? projHintRaw
+      : null;
     const hint = scoreHint || projHint;
     return (
       <div
@@ -229,7 +269,40 @@ export default function ScoresLineup({
         </div>
         <div className={numsClass}>
           {showScoreCol ? <span className={`scores-lineup-pts-actual${highlightClass}`}>{scoreDisplay(p)}</span> : null}
-          {showProjCol ? <span className={`scores-lineup-pts-proj${highlightClass}`}>{projDisplay(p)}</span> : null}
+          {showProjCol ? (
+            liveHproj != null && hprojHref ? (
+              <HprojHint
+                href={hprojHref}
+                value={liveHproj}
+                variant="live"
+                showTag={false}
+                showDot={false}
+                className={`scores-lineup-pts-proj scores-lineup-pts-proj--live scores-lineup-live-hproj${highlightClass}`}
+              />
+            ) : isFinal && sleeper != null ? (
+              <HprojHint
+                href={hprojHref}
+                value={sleeper}
+                variant="final"
+                showTag={false}
+                actual={p.actualPts}
+                sleeper={sleeper}
+                outcomePct={outcomePct}
+                className={`scores-lineup-pts-proj scores-lineup-final-hproj${highlightClass}`}
+              />
+            ) : sleeper != null ? (
+              <HprojHint
+                value={sleeper}
+                variant="sleeper"
+                showTag={false}
+                className={`scores-lineup-pts-proj scores-lineup-sleeper-hproj${highlightClass}`}
+              />
+            ) : (
+              <span className={`scores-lineup-pts-proj${highlightClass}`}>
+                {projDisplay(p)}
+              </span>
+            )
+          ) : null}
         </div>
         {hint ? (
           <div
@@ -314,13 +387,24 @@ export default function ScoresLineup({
               </span>
             </div>
           ) : null}
-          {showHprojCol ? (
+          {!weekComplete && showHprojCol && gamesStarted ? (
+            <div className="scores-lineup-head-col">
+              <span className="scores-lineup-col-label scores-lineup-col-label--live">Live Proj</span>
+              <HprojHint
+                href={hprojHref}
+                value={Number.isFinite(liveProjValue) ? liveProjValue : hprojValue}
+                size="lg"
+                showTag={false}
+                variant="live"
+              />
+            </div>
+          ) : null}
+          {!weekComplete && showHprojCol ? (
             <div className="scores-lineup-head-col">
               <span className="scores-lineup-col-label scores-lineup-col-label--hproj">HProj</span>
               <HprojHint href={hprojHref} value={hprojValue} size="lg" showTag={false} />
             </div>
-          ) : null}
-          {showProjCol ? (
+          ) : !weekComplete && showProjCol ? (
             <div
               className="scores-lineup-head-col"
               title="Finished scores plus the highest remaining projections, even if that mix is not the lineup below"

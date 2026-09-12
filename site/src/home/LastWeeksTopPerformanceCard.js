@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
-import PlayerCard from '../players/PlayerCard';
+import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
@@ -20,6 +20,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
   const [starsByPos, setStarsByPos] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [playersDataForModal, setPlayersDataForModal] = useState(null);
+  const [teamDataForModal, setTeamDataForModal] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +136,7 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
 
         setStarsByPos(bestByPos);
         setPlayersDataForModal(playersData);
+        setTeamDataForModal(teamData);
         setLoading(false);
       } catch (e) {
         if (!cancelled) {
@@ -292,7 +294,13 @@ function LastWeeksTopPerformanceCard({ currentWeekOverride = null }) {
           e.stopPropagation();
         }}
       >
-        <PlayerCard player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+        <PlayerWeeklyScores
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          rosters={(teamDataForModal && teamDataForModal.rosters) || []}
+          users={(teamDataForModal && teamDataForModal.users) || []}
+          initialSeason={CURRENT_YEAR}
+        />
       </div>
     </div>
   ) : null;

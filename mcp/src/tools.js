@@ -1202,10 +1202,10 @@ export async function getHistoricalResults(season) {
   const finalPlacement = {};
   const playoffLines = [];
 
-  const is2024Format = seasonStr === '2024';
+  const isBracketFormat = seasonStr === '2025';
 
-  if (is2024Format) {
-    // 2024: cumulative weeks 15–17 determines placement
+  if (!isBracketFormat) {
+    // Cumulative: weeks 15–17 determine placement
     const playoffTotals = {};
     for (const rid of top4) playoffTotals[rid] = sumWeeks(rid, 15, 17);
 
@@ -1213,7 +1213,7 @@ export async function getHistoricalResults(season) {
     playoffSorted.forEach((rid, i) => { finalPlacement[rid] = i + 1; });
     others.forEach((rid, i) => { finalPlacement[rid] = i + 5; });
 
-    playoffLines.push('\n**Playoff Results (2024 — Cumulative Weeks 15–17)**\n');
+    playoffLines.push('\n**Playoff Results (Cumulative Weeks 15–17)**\n');
     for (const rid of playoffSorted) {
       const info  = teamMap[rid] || {};
       const place = finalPlacement[rid];
@@ -1221,7 +1221,7 @@ export async function getHistoricalResults(season) {
       playoffLines.push(`${medal}${place}. ${info.teamName} (${info.ownerName}) — ${playoffTotals[rid]} playoff pts`);
     }
   } else {
-    // 2025+ bracket format: semis weeks 15–16, finals week 17 + buffer
+    // 2025 Bracket: semis weeks 15–16, finals week 17 + buffer
     const [rid1, rid2, rid3, rid4] = top4;
 
     const semiTotals = {};
@@ -1261,7 +1261,7 @@ export async function getHistoricalResults(season) {
 
     const tName = (rid) => (teamMap[rid] || {}).teamName || `Team ${rid}`;
 
-    playoffLines.push('\n**Playoff Results (Bracket Format)**\n');
+    playoffLines.push('\n**Playoff Results (2025 Bracket)**\n');
     playoffLines.push('*Semifinals (Weeks 15–16 cumulative):*');
     playoffLines.push(
       `  Seed 1 vs 4: ${tName(rid1)} (${semiTotals[rid1]}) vs ${tName(rid4)} (${semiTotals[rid4]}) → ${tName(topWinner)} advances`

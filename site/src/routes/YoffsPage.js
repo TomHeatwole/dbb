@@ -8,6 +8,12 @@ import Yoffs2024Format from '../yoffs/Yoffs2024Format';
 import Yoffs2025Format from '../yoffs/Yoffs2025Format';
 import { useSearchParams } from 'react-router-dom';
 import PageMeta from '../PageMeta';
+import {
+  PLAYOFF_FORMAT_BRACKET,
+  PLAYOFF_FORMAT_CUMULATIVE,
+  PLAYOFF_FORMATS,
+  playoffFormatForSeason,
+} from '../scenarios/playoffStandings';
 
 const PLAYOFF_START_WEEK = 15;
 const PLAYOFF_END_WEEK = 17;
@@ -30,7 +36,7 @@ function YoffsPage() {
   const initialSeason = urlYear && String(urlYear) !== 'null' ? urlYear : defaultSeason;
   const initialModeFromUrl =
     urlFormat === 'bracket' || urlFormat === 'cumulative' ? urlFormat : null;
-  const initialMode = initialModeFromUrl || (initialSeason === '2024' ? 'cumulative' : 'bracket');
+  const initialMode = initialModeFromUrl || playoffFormatForSeason(initialSeason);
 
   function getTabOptionsForMode(modeValue) {
     if (modeValue === 'bracket') {
@@ -208,12 +214,7 @@ function YoffsPage() {
                 onClick={() => {
                   // User explicitly changed season via dropdown: update state and query params.
                   const nextSeason = opt;
-                  let nextMode = mode;
-                  if (String(nextSeason) === '2024') {
-                    nextMode = 'cumulative';
-                  } else {
-                    nextMode = 'bracket';
-                  }
+                  const nextMode = playoffFormatForSeason(nextSeason);
                   const tabOptionsForNext = getTabOptionsForMode(nextMode);
                   const nextTab = tabOptionsForNext[0];
 
@@ -287,7 +288,9 @@ function YoffsPage() {
             onClick={() => setModeDropdownOpen(open => !open)}
           >
             <span>
-              {mode === 'cumulative' ? 'Cumulative Score (2024 rules)' : 'Bracket Format (2025 Rules)'}
+              {PLAYOFF_FORMATS[mode === PLAYOFF_FORMAT_BRACKET
+                ? PLAYOFF_FORMAT_BRACKET
+                : PLAYOFF_FORMAT_CUMULATIVE].label}
             </span>
             <span className="team-season-dropdown-arrow">{modeDropdownOpen ? '▲' : '▼'}</span>
             {modeDropdownOpen && (
@@ -295,11 +298,10 @@ function YoffsPage() {
                 <div
                   className={
                     'team-season-dropdown-option' +
-                    (mode === 'bracket' ? ' team-season-dropdown-option-active' : '')
+                    (mode === PLAYOFF_FORMAT_CUMULATIVE ? ' team-season-dropdown-option-active' : '')
                   }
                   onClick={() => {
-                    // User explicitly chose bracket format; update mode, tab, and query params.
-                    const nextMode = 'bracket';
+                    const nextMode = PLAYOFF_FORMAT_CUMULATIVE;
                     const tabOptionsForNext = getTabOptionsForMode(nextMode);
                     const nextTab = tabOptionsForNext[0];
                     setMode(nextMode);
@@ -309,16 +311,15 @@ function YoffsPage() {
                     setH2hSelectedIds([null, null]);
                   }}
                 >
-                  Bracket Format (2025 rules)
+                  {PLAYOFF_FORMATS[PLAYOFF_FORMAT_CUMULATIVE].label}
                 </div>
                 <div
                   className={
                     'team-season-dropdown-option' +
-                    (mode === 'cumulative' ? ' team-season-dropdown-option-active' : '')
+                    (mode === PLAYOFF_FORMAT_BRACKET ? ' team-season-dropdown-option-active' : '')
                   }
                   onClick={() => {
-                    // User explicitly chose cumulative format; update mode, tab, and query params.
-                    const nextMode = 'cumulative';
+                    const nextMode = PLAYOFF_FORMAT_BRACKET;
                     const tabOptionsForNext = getTabOptionsForMode(nextMode);
                     const nextTab = tabOptionsForNext[0];
                     setMode(nextMode);
@@ -328,7 +329,7 @@ function YoffsPage() {
                     setH2hSelectedIds([null, null]);
                   }}
                 >
-                  Cumulative Score (2024 rules)
+                  {PLAYOFF_FORMATS[PLAYOFF_FORMAT_BRACKET].label}
                 </div>
               </div>
             )}

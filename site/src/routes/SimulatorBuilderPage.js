@@ -70,7 +70,7 @@ function SimulatorTooltip({ season, iterations, rankSource }) {
               Edit rosters directly or tell HwangAI the move in plain English, then run
               {' '}<strong>{iterations.toLocaleString()} simulations</strong> to
               see each team&apos;s championship win rate. Every run reports both
-              2024 cumulative and 2025 /yoffs bracket titles.
+              Cumulative and 2025 Bracket titles.
             </p>
           </div>
         </div>

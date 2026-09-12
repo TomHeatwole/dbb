@@ -9,6 +9,10 @@ import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap, getStandings } from '.
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
+import {
+  defaultYoffsTabForFormat,
+  playoffFormatForSeason,
+} from '../scenarios/playoffStandings';
 
 const PLAYOFF_START_WEEK = 15;
 const PLAYOFF_END_WEEK = 17;
@@ -313,12 +317,18 @@ function PreviousYearRecapCard() {
     );
   }
 
+  const recapFormat = playoffFormatForSeason(displaySeason);
+  const recapTab = defaultYoffsTabForFormat(recapFormat);
+
   return (
     <HomeCard className="previous-year-recap-card">
       <div className="home-card-inner">
         <div className="home-card-title-row">
           <h2 className="home-card-title">{title}</h2>
-          <Link className="active-playoffs-link" to={`/yoffs?year=${displaySeason}&format=bracket&tab=Bracket`}>
+          <Link
+            className="active-playoffs-link"
+            to={`/yoffs?year=${displaySeason}&format=${recapFormat}&tab=${recapTab}`}
+          >
             View Playoffs →
           </Link>
         </div>

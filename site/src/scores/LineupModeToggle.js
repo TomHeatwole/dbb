@@ -17,16 +17,9 @@ function TipBody() {
       <section className="lineup-mode-tip-section">
         <h4>Highest Projections</h4>
         <p>
-          Fills each slot with the best remaining outlook. Live and unplayed players
-          use the higher of current score and week projection. Finished games stay
-          locked at their final score.
-        </p>
-      </section>
-      <section className="lineup-mode-tip-section">
-        <h4>Proj total</h4>
-        <p>
-          Always finished scores plus the highest remaining projections — even if
-          that mix is not the lineup on screen.
+          Fills each slot with the best remaining outlook. Live players use current
+          score plus the leftover share of their pregame projection. Out and finished
+          players lock at their actual score.
         </p>
       </section>
     </div>

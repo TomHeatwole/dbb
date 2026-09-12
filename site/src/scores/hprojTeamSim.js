@@ -5,7 +5,8 @@
 
 import { computeOptimalWeekDetail } from '../scenarios/simulatorLineup';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
-import { lookupHprojVariance, sampleHprojResidual } from './hprojVarianceBuckets';
+import { hprojPercentile, lookupHprojVariance, sampleHprojResidual } from './hprojVarianceBuckets';
+import { displayActualPts, espnLiveProjection, liveTimeFrac, scaledLiveOutcome } from './liveOutlook';
 
 export const HPROJ_SKILL_POS = ['QB', 'RB', 'WR', 'TE'];
 export const HPROJ_ITERATIONS = 40000;
@@ -222,6 +223,8 @@ export function hprojRandomOutcome(sorted, percentile, salt = 0) {
       position: s.position,
       pts: round1(s.pts),
       playerPct: s.playerPct,
+      locked: Boolean(s.locked),
+      live: Boolean(s.live),
     })),
     weekPts: pick.weekPts || {},
     playerPctById: pick.playerPct || {},
@@ -229,11 +232,80 @@ export function hprojRandomOutcome(sorted, percentile, salt = 0) {
   };
 }
 
+function labelForPlayer(playerGameLabels, playerId) {
+  if (!playerGameLabels || playerId == null) return null;
+  return playerGameLabels[playerId] || playerGameLabels[String(playerId)] || null;
+}
+
+/** True once any NFL game this week is Final. */
+export function weekHasCompletedGames(playerGameLabels) {
+  if (!playerGameLabels || typeof playerGameLabels !== 'object') return false;
+  return Object.values(playerGameLabels).some((label) => label && label.completed);
+}
+
+/** True once any game is Final or in progress (Live Proj should take over). */
+export function weekHasStartedGames(playerGameLabels) {
+  if (!playerGameLabels || typeof playerGameLabels !== 'object') return false;
+  return Object.values(playerGameLabels).some((label) => label && (label.completed || label.live));
+}
+
+function scoreRows(teamScore) {
+  return [...((teamScore && teamScore.starters) || []), ...((teamScore && teamScore.bench) || [])];
+}
+
+/**
+ * Actual points for players whose game is Final, or who are Out.
+ * Live games stay unlocked so their remaining band can still roll.
+ */
+export function lockedPtsFromCompletedGames(teamScore, playerGameLabels, opts = {}) {
+  const out = {};
+  if (!teamScore) return out;
+  const projectedPtsById = opts.projectedPtsById || null;
+  const outPlayerIds = opts.outPlayerIds || null;
+  for (const player of scoreRows(teamScore)) {
+    if (!player || player.id == null || String(player.id) === '0') continue;
+    const id = String(player.id);
+    const label = labelForPlayer(playerGameLabels, player.id);
+    const ruledOut = outPlayerIds ? outPlayerIds.has(id) : false;
+    if (!(label && label.completed) && !ruledOut) continue;
+    const proj = projectedPtsById
+      ? Number(projectedPtsById[id] ?? projectedPtsById[player.id])
+      : null;
+    out[id] = displayActualPts(player, label, proj);
+  }
+  return out;
+}
+
+/**
+ * In-progress (not Out) players: current score + remaining-time scale for draws.
+ */
+export function liveScaleFromInProgressGames(teamScore, playerGameLabels, opts = {}) {
+  const out = {};
+  if (!teamScore) return out;
+  const projectedPtsById = opts.projectedPtsById || null;
+  const outPlayerIds = opts.outPlayerIds || null;
+  for (const player of scoreRows(teamScore)) {
+    if (!player || player.id == null || String(player.id) === '0') continue;
+    const id = String(player.id);
+    if (outPlayerIds && outPlayerIds.has(id)) continue;
+    const label = labelForPlayer(playerGameLabels, player.id);
+    if (!label || !label.live) continue;
+    const proj = projectedPtsById
+      ? Number(projectedPtsById[id] ?? projectedPtsById[player.id])
+      : null;
+    const actual = displayActualPts(player, label, proj);
+    out[id] = { actual, timeFrac: liveTimeFrac(label) };
+  }
+  return out;
+}
+
 /**
  * @param {object} opts
  * @param {string[]} opts.playerIds
  * @param {Record<string, number>} opts.projectedPtsById
  * @param {Record<string, string|null>} opts.playerPositions
+ * @param {Record<string, number>} [opts.lockedPtsById] completed / Out actuals
+ * @param {Record<string, { actual: number, timeFrac: number }>} [opts.liveScaleById]
  * @param {number} [opts.iterations]
  * @param {string|number} [opts.seed]
  */
@@ -241,6 +313,8 @@ export function simulateTeamHproj({
   playerIds,
   projectedPtsById,
   playerPositions,
+  lockedPtsById = null,
+  liveScaleById = null,
   iterations = HPROJ_ITERATIONS,
   seed = 1,
   keepLineups = false,
@@ -251,11 +325,28 @@ export function simulateTeamHproj({
     if (!id || id === '0') continue;
     const pos = skillPosition(playerPositions[id] || playerPositions[rawId]);
     if (!pos) continue;
+    const lockedRaw = lockedPtsById ? lockedPtsById[id] ?? lockedPtsById[rawId] : undefined;
+    const lockedPts = Number.isFinite(Number(lockedRaw)) ? Number(lockedRaw) : null;
+    const live = liveScaleById ? liveScaleById[id] || liveScaleById[rawId] : null;
     const proj = Number(projectedPtsById[id] ?? projectedPtsById[rawId]);
+    if (lockedPts != null) {
+      players.push({
+        id,
+        pos,
+        proj: Number.isFinite(proj) && proj > 0 ? proj : 0,
+        resid: null,
+        lockedPts,
+        liveScale: null,
+      });
+      continue;
+    }
     if (!Number.isFinite(proj) || proj <= 0) continue;
     const band = lookupHprojVariance(pos, proj);
     if (!band?.resid) continue;
-    players.push({ id, pos, proj, resid: band.resid });
+    const liveScale = live && Number.isFinite(Number(live.timeFrac))
+      ? { actual: Number(live.actual) || 0, timeFrac: Math.max(0, Math.min(1, Number(live.timeFrac))) }
+      : null;
+    players.push({ id, pos, proj, resid: band.resid, lockedPts: null, liveScale });
   }
 
   const ids = players.map((p) => p.id);
@@ -263,7 +354,11 @@ export function simulateTeamHproj({
   for (const p of players) positions[p.id] = p.pos;
 
   const naivePts = {};
-  for (const p of players) naivePts[p.id] = p.proj;
+  for (const p of players) {
+    if (p.lockedPts != null) naivePts[p.id] = p.lockedPts;
+    else if (p.liveScale) naivePts[p.id] = espnLiveProjection(p.liveScale.actual, p.proj, p.liveScale.timeFrac);
+    else naivePts[p.id] = p.proj;
+  }
   const naive = computeOptimalWeekDetail(ids, naivePts, positions, null);
 
   const rng = mulberry32(hashSeed(seed));
@@ -272,8 +367,17 @@ export function simulateTeamHproj({
     const weekPts = {};
     const playerPct = {};
     for (const p of players) {
+      if (p.lockedPts != null) {
+        weekPts[p.id] = Math.max(0, p.lockedPts);
+        const finishedPct = hprojPercentile(p.pos, p.proj, p.lockedPts);
+        if (finishedPct != null) playerPct[p.id] = finishedPct;
+        continue;
+      }
       const u = rng();
-      weekPts[p.id] = Math.max(0, p.proj + (sampleHprojResidual(p.resid, u, p.pos, p.proj) || 0));
+      const rolled = Math.max(0, p.proj + (sampleHprojResidual(p.resid, u, p.pos, p.proj) || 0));
+      weekPts[p.id] = p.liveScale
+        ? scaledLiveOutcome(p.liveScale.actual, rolled, p.liveScale.timeFrac)
+        : rolled;
       playerPct[p.id] = Math.max(0, Math.min(99, Math.round(u * 100)));
     }
     const scored = computeOptimalWeekDetail(ids, weekPts, positions, null);
@@ -287,11 +391,16 @@ export function simulateTeamHproj({
         position: s.position,
         pts: s.pts,
         playerPct: playerPct[s.id],
+        locked: lockedPtsById != null
+          && Number.isFinite(Number(lockedPtsById[s.id] ?? lockedPtsById[String(s.id)])),
+        live: liveScaleById != null
+          && liveScaleById[s.id] != null,
       }));
     }
     sims.push(row);
   }
   sims.sort((a, b) => a.total - b.total);
+  const totals = sims.map((row) => row.total);
 
   const p25 = windowBreakdown(sims, 0.25);
   const p50 = windowBreakdown(sims, 0.50);
@@ -300,6 +409,7 @@ export function simulateTeamHproj({
   return {
     players: players.length,
     iterations,
+    totals,
     naiveTotal: round1(naive.total),
     naiveByPos: {
       QB: round1(naive.byPos.QB),
@@ -316,6 +426,7 @@ export function simulateTeamHproj({
     p25,
     p50,
     p75,
+    lockedPlayerIds: players.filter((p) => p.lockedPts != null).map((p) => p.id),
     sims: keepLineups ? sims : null,
   };
 }
@@ -349,6 +460,56 @@ export function hprojPageHref(week, { rosterId, ownerName } = {}, firstNameCount
   const unique = first && firstNameCounts[first.toLowerCase()] === 1;
   const team = unique ? first : String(rosterId);
   return `/hproj?team=${encodeURIComponent(team)}&week=${Number(week)}`;
+}
+
+/**
+ * P(left outscores right) from two independent sorted HPROJ totals.
+ * Ties split 50/50. Display percents are integers that sum to 100.
+ */
+export function hprojMatchupWinProb(leftTotals, rightTotals) {
+  const left = Array.isArray(leftTotals) ? leftTotals.slice().sort((a, b) => a - b) : [];
+  const right = Array.isArray(rightTotals) ? rightTotals.slice().sort((a, b) => a - b) : [];
+  if (!left.length || !right.length) return null;
+
+  let wins = 0;
+  let ties = 0;
+  let j = 0;
+  let k = 0;
+  for (let i = 0; i < left.length; i += 1) {
+    const a = left[i];
+    while (j < right.length && right[j] < a) j += 1;
+    while (k < right.length && right[k] <= a) k += 1;
+    wins += j;
+    ties += k - j;
+  }
+  const n = left.length * right.length;
+  const losses = n - wins - ties;
+  const leftShare = (wins + ties * 0.5) / n;
+  const rightShare = (losses + ties * 0.5) / n;
+  return formatMatchupWinPcts(leftShare, rightShare);
+}
+
+export function formatMatchupWinPcts(leftShare, rightShare) {
+  const pL = Number(leftShare);
+  const pR = Number(rightShare);
+  if (!Number.isFinite(pL) || !Number.isFinite(pR)) return null;
+  const denom = pL + pR;
+  if (!(denom > 0)) return { leftPct: 50, rightPct: 50, leftShare: 0.5, rightShare: 0.5 };
+
+  const shareL = pL / denom;
+  const shareR = pR / denom;
+  if (shareL <= 0) return { leftPct: 0, rightPct: 100, leftShare: shareL, rightShare: shareR };
+  if (shareR <= 0) return { leftPct: 100, rightPct: 0, leftShare: shareL, rightShare: shareR };
+
+  let leftPct = Math.round(shareL * 100);
+  if (leftPct < 1) leftPct = 1;
+  if (leftPct > 99) leftPct = 99;
+  return {
+    leftPct,
+    rightPct: 100 - leftPct,
+    leftShare: shareL,
+    rightShare: shareR,
+  };
 }
 
 export function resolveHprojTeam(teamMap, query) {

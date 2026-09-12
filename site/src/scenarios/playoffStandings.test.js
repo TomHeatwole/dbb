@@ -1,6 +1,8 @@
 import {
   buildFinalStandings,
+  defaultYoffsTabForFormat,
   normalizePlayoffFormat,
+  playoffFormatForSeason,
   PLAYOFF_FORMAT_BRACKET,
   PLAYOFF_FORMAT_CUMULATIVE,
 } from './playoffStandings';
@@ -18,6 +20,18 @@ describe('normalizePlayoffFormat', () => {
     expect(normalizePlayoffFormat('2025')).toBe(PLAYOFF_FORMAT_BRACKET);
     expect(normalizePlayoffFormat('cumulative')).toBe(PLAYOFF_FORMAT_CUMULATIVE);
     expect(normalizePlayoffFormat(undefined)).toBe(PLAYOFF_FORMAT_CUMULATIVE);
+  });
+});
+
+describe('playoffFormatForSeason', () => {
+  it('uses 2025 Bracket only for 2025 and Cumulative otherwise', () => {
+    expect(playoffFormatForSeason(2025)).toBe(PLAYOFF_FORMAT_BRACKET);
+    expect(playoffFormatForSeason('2025')).toBe(PLAYOFF_FORMAT_BRACKET);
+    expect(playoffFormatForSeason(2024)).toBe(PLAYOFF_FORMAT_CUMULATIVE);
+    expect(playoffFormatForSeason(2026)).toBe(PLAYOFF_FORMAT_CUMULATIVE);
+    expect(playoffFormatForSeason(undefined)).toBe(PLAYOFF_FORMAT_CUMULATIVE);
+    expect(defaultYoffsTabForFormat(PLAYOFF_FORMAT_BRACKET)).toBe('Bracket');
+    expect(defaultYoffsTabForFormat(PLAYOFF_FORMAT_CUMULATIVE)).toBe('Overview');
   });
 });
 

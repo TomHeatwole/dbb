@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getCompletedWeeksCount } from '../utils/DateHelper';
 import { involvesRosterId, primaryTeamName } from './markets';
+import { compareLongestLine, compareShortestLine } from './oddsMath';
 import OfferCard from './OfferCard';
 import BetCard from './BetCard';
 import CreateOfferPanel from './CreateOfferPanel';
@@ -30,6 +31,7 @@ const TABS = [
 const SORT_NEWEST = 'newest';
 const SORT_OLDEST = 'oldest';
 const SORT_LONGEST = 'longest';
+const SORT_SHORTEST = 'shortest';
 const SORT_TEAM_AZ = 'team-az';
 const SORT_TEAM_ZA = 'team-za';
 
@@ -37,6 +39,7 @@ const SORT_OPTIONS = [
   { id: SORT_NEWEST, label: 'Newest' },
   { id: SORT_OLDEST, label: 'Oldest' },
   { id: SORT_LONGEST, label: 'Longest' },
+  { id: SORT_SHORTEST, label: 'Shortest' },
   { id: SORT_TEAM_AZ, label: 'Team A–Z' },
   { id: SORT_TEAM_ZA, label: 'Team Z–A' },
 ];
@@ -84,18 +87,12 @@ function compareOldest(a, b) {
   return new Date(a.createdAt) - new Date(b.createdAt);
 }
 
-function expiryMs(item) {
-  if (!item?.expiresAt) return Number.NEGATIVE_INFINITY;
-  const t = new Date(item.expiresAt).getTime();
-  return Number.isFinite(t) ? t : Number.NEGATIVE_INFINITY;
-}
-
-/** Most time left first. Items without an expiry (live tickets) fall back to oldest. */
-function compareLongest(a, b) {
-  const ae = expiryMs(a);
-  const be = expiryMs(b);
-  if (ae !== be) return be - ae;
-  return compareOldest(a, b);
+function compareByLine(a, b, dir) {
+  const cmp = dir === SORT_SHORTEST
+    ? compareShortestLine(a.line, b.line)
+    : compareLongestLine(a.line, b.line);
+  if (cmp !== 0) return cmp;
+  return compareNewest(a, b);
 }
 
 function compareByTeam(aMarket, bMarket, teams, dir, a, b) {
@@ -333,7 +330,9 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     const copy = [...list];
     if (sortBy === SORT_NEWEST) return copy.sort(compareNewest);
     if (sortBy === SORT_OLDEST) return copy.sort(compareOldest);
-    if (sortBy === SORT_LONGEST) return copy.sort(compareLongest);
+    if (sortBy === SORT_LONGEST || sortBy === SORT_SHORTEST) {
+      return copy.sort((a, b) => compareByLine(a, b, sortBy));
+    }
     return copy.sort((a, b) => compareByTeam(a.market, b.market, teams, sortBy, a, b));
   }, [sortBy, teams]);
 
@@ -341,11 +340,8 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     const copy = [...list];
     if (sortBy === SORT_NEWEST) return copy.sort(compareNewest);
     if (sortBy === SORT_OLDEST) return copy.sort(compareOldest);
-    if (sortBy === SORT_LONGEST) {
-      return copy.sort((a, b) => compareLongest(
-        offersById[a.offerId] || a,
-        offersById[b.offerId] || b,
-      ) || compareOldest(a, b));
+    if (sortBy === SORT_LONGEST || sortBy === SORT_SHORTEST) {
+      return copy.sort((a, b) => compareByLine(a, b, sortBy));
     }
     return copy.sort((a, b) => compareByTeam(
       offersById[a.offerId]?.market,

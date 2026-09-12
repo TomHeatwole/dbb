@@ -9,6 +9,10 @@ import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { getStandings } from '../scores/ScoresParser';
 import { calculateDraftOrder } from '../utils/DraftOrderHelper';
 import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
+import {
+  defaultYoffsTabForFormat,
+  playoffFormatForSeason,
+} from '../scenarios/playoffStandings';
 import { PREVIOUS_YEARS } from '../utils/global_constants';
 import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
 
@@ -43,10 +47,6 @@ function getTeamLabel(teamInfo, rosterId) {
       ? String(teamInfo.roster.owner_id)
       : null;
   return { name: displayName, teamName, avatarUrl, ownerId, ownerName };
-}
-
-function playoffFormatForYear(year) {
-  return String(year) === '2024' ? 'cumulative' : 'bracket';
 }
 
 function formatAvgFinish(avg) {
@@ -392,14 +392,15 @@ function LeagueHistoryPage() {
               <h2 className="league-history-section-title">Past Champions</h2>
               <div className="league-history-year-grid">
                 {yearResults.map((season) => {
-                  const format = playoffFormatForYear(season.year);
+                  const format = playoffFormatForSeason(season.year);
+                  const tab = defaultYoffsTabForFormat(format);
                   return (
                     <div key={season.year} className="league-history-year-card">
                       <div className="league-history-year-card-header">
                         <h3 className="league-history-year-heading">🏁 {season.year} Results</h3>
                         <Link
                           className="league-history-yoffs-link"
-                          to={`/yoffs?year=${season.year}&format=${format}&tab=Bracket`}
+                          to={`/yoffs?year=${season.year}&format=${format}&tab=${tab}`}
                         >
                           View Playoffs →
                         </Link>

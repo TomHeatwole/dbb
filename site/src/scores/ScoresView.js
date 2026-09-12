@@ -65,6 +65,8 @@ function ScoresView({
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [playerGameLabels, setPlayerGameLabels] = useState({});
+  const [gameLabelsReady, setGameLabelsReady] = useState(false);
+  const [playersTeamMapReady, setPlayersTeamMapReady] = useState(false);
   const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
   const [injuriesMap, setInjuriesMap] = useState({});
   const [playersTeamMap, setPlayersTeamMap] = useState({});
@@ -83,6 +85,11 @@ function ScoresView({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [season, safeMinWeek, safeMaxWeek]);
+
+  useEffect(() => {
+    setGameLabelsReady(false);
+    setPlayersTeamMapReady(false);
+  }, [season, week]);
 
   // Load league scores/teams and player metadata for season
   useEffect(() => {
@@ -202,12 +209,20 @@ function ScoresView({
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
   const projectedPtsById = useWeeklyProjectedPoints(season, week);
-  const hprojByRoster = useLeagueHproj({
+  const weekScoresByRoster = useMemo(
+    () => (weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, week) : null),
+    [weeksParsedData, week],
+  );
+  const { hprojByRoster, liveProjByRoster, gamesStarted: hprojGamesStarted } = useLeagueHproj({
     season,
     week,
     rosters,
     playersData,
     projectedPtsById,
+    playerGameLabels,
+    weekScoresByRoster,
+    injuriesMap,
+    playerIdMap,
     enabled: HPROJ_ON_SCORES,
   });
   const hprojFirstNameCounts = useMemo(
@@ -221,9 +236,14 @@ function ScoresView({
       setIsWeekCompleteByGames(false);
       return;
     }
+    if (String(season) === String(CURRENT_YEAR) && !playersTeamMapReady) {
+      return;
+    }
     const weekArr = Array.isArray(weeksParsedData) ? weeksParsedData[week - 1] : null;
     if (!Array.isArray(weekArr)) {
       setIsWeekCompleteByGames(false);
+      setPlayerGameLabels({});
+      setGameLabelsReady(true);
       return;
     }
     const playerIdSet = new Set();
@@ -248,6 +268,7 @@ function ScoresView({
     if (playerIds.length === 0) {
       setPlayerGameLabels({});
       setIsWeekCompleteByGames(false);
+      setGameLabelsReady(true);
       return;
     }
 
@@ -280,19 +301,21 @@ function ScoresView({
         }
         if (!cancelled) {
           setPlayerGameLabels(labels);
+          setGameLabelsReady(true);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setPlayerGameLabels({});
           setIsWeekCompleteByGames(false);
+          setGameLabelsReady(true);
         }
       });
     return () => {
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [season, week, playersData, playerIdMap, weeksParsedData, playersTeamMap]);
+  }, [season, week, playersData, playerIdMap, weeksParsedData, playersTeamMap, playersTeamMapReady]);
 
   // Load per-player team mapping from weekly players snapshot (current season only)
   useEffect(() => {
@@ -303,6 +326,7 @@ function ScoresView({
         if (!isCurrentSeason || !week || Number(week) < 1) {
           if (!cancelled) {
             setPlayersTeamMap({});
+            setPlayersTeamMapReady(true);
           }
           return;
         }
@@ -313,6 +337,7 @@ function ScoresView({
         }
         if (!data) {
           setPlayersTeamMap({});
+          setPlayersTeamMapReady(true);
           return;
         }
         const next = {};
@@ -323,9 +348,11 @@ function ScoresView({
           }
         }
         setPlayersTeamMap(next);
+        setPlayersTeamMapReady(true);
       } catch (_) {
         if (!cancelled) {
           setPlayersTeamMap({});
+          setPlayersTeamMapReady(true);
         }
       }
     })();
@@ -387,9 +414,9 @@ function ScoresView({
     setBenchOpen((prev) => ({ ...prev, [rosterId]: !prev[rosterId] }));
   }
 
-  if (loading) {
+  if ((!error && (loading || !gameLabelsReady))) {
     return (
-      <LoadingState label="Loading scores…" />
+      <LoadingState className="scores-loading" label="Loading scores…" ariaLabel="Loading scores" />
     );
   }
 
@@ -507,6 +534,7 @@ function ScoresView({
           ? liveTotalByRosterId[String(rid)]
           : basePointsByRoster[String(rid)] || 0;
       const hproj = hprojByRoster[String(rid)];
+      const liveProj = liveProjByRoster[String(rid)];
       return {
         rosterId: rid,
         points: pts,
@@ -514,6 +542,7 @@ function ScoresView({
         pfTotal,
         breakdown: computed,
         hproj,
+        liveProj,
         actual: computed?.starterActualTotal ?? 0,
         hasActual: Boolean(computed?.starterHasActual),
       };
@@ -581,12 +610,16 @@ function ScoresView({
           }
 
           const mine = isMyRoster(rosterId, myRosterId);
-          const weekSplit = starterScoreSplit(weekBreakdown, { forceScore: liveBoard });
+          const weekSplit = starterScoreSplit(weekBreakdown, {
+            forceScore: liveBoard && !isWeekCompleteByGames,
+            weekComplete: isWeekCompleteByGames,
+          });
           const showHproj = HPROJ_ON_SCORES && String(season) === String(CURRENT_YEAR) && weekSplit.hasProj;
           const hprojHref = showHproj
             ? hprojPageHref(week, { rosterId, ownerName: getOwnerName(rosterId) }, hprojFirstNameCounts)
             : null;
           const hprojValue = hprojByRoster[String(rosterId)] ?? null;
+          const liveProjValue = liveProjByRoster[String(rosterId)] ?? null;
           const baseRowClass = (usePlayoffTheme ? ' standings-row--playoff' : '') + (mine ? ' standings-row--me' : '');
 
           const seed =
@@ -659,10 +692,11 @@ function ScoresView({
                   {...weekSplit}
                   layout="stack"
                   compact={isMobile}
-                  lineupMode={lineupMode}
                   hprojHref={hprojHref}
                   hprojValue={hprojValue}
-                  className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${(!isMobile && !weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref))) || (isMobile && lineupMode === 'projections') ? ' standings-total--proj' : ''}`}
+                  liveProjValue={liveProjValue}
+                  gamesStarted={hprojGamesStarted}
+                  className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) ? ' standings-total--proj' : ''}`}
                 />
               </button>
               {isExpanded && (() => {
@@ -695,6 +729,9 @@ function ScoresView({
                     pfTotal={displayPfTotal}
                     hprojHref={hprojHref}
                     hprojValue={hprojValue}
+                    liveProjValue={liveProjValue}
+                    gamesStarted={hprojGamesStarted}
+                    weekComplete={isWeekCompleteByGames}
                   />
                 </div>
                 );

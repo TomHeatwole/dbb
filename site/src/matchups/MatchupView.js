@@ -19,6 +19,13 @@ import LoadingState from '../LoadingState';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
 import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
+import useWeeklyProjectedPoints from '../scores/useWeeklyProjectedPoints';
+import useLeagueHproj from '../scores/useLeagueHproj';
+import useHprojMatchupWinProb from '../scores/useHprojMatchupWinProb';
+import HprojHint from '../scores/HprojHint';
+import MatchupWinProbLine from './MatchupWinProbLine';
+import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
+import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -53,6 +60,13 @@ function resolveTeamMeta(teamData, rosterId) {
     null;
 
   return { teamName, avatarUrl, isPlaceholder: false };
+}
+
+function ownerDisplayName(teamData, rosterId) {
+  if (!teamData || rosterId == null) return '';
+  const roster = (teamData.rosters || []).find((r) => String(r.roster_id) === String(rosterId));
+  const user = roster && (teamData.users || []).find((u) => String(u.user_id) === String(roster.owner_id));
+  return (user && user.display_name) || '';
 }
 
 /**
@@ -94,7 +108,12 @@ function MatchupView({
   headerLeftOverride = null,
   headerRightOverride = null,
   highlightMode = 'default', // 'default' | 'weekly' | 'seasonFinalOnly'
-  highlightThreshold = null
+  highlightThreshold = null,
+  bufferPlacement = 'before',
+  winProbLeftOffset = 0,
+  winProbRightOffset = 0,
+  winProbScope = 'week',
+  onWinProbScopeChange = null,
 }) {
   const myRosterId = useMyCurrentRosterId();
   const [teamData, setTeamData] = useState(preloadedTeamData || null);
@@ -133,6 +152,49 @@ function MatchupView({
   const playerSeasonTotalsMap = useMemo(() => {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
+  const currentWeekScores = useMemo(
+    () => (weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, currentWeekNum, teamData?.rosters) : null),
+    [weeksParsedData, currentWeekNum, teamData],
+  );
+  const currentWeekLabels = (playerGameLabelsByWeek && playerGameLabelsByWeek[currentWeekNum]) || {};
+  const projectedPtsById = useWeeklyProjectedPoints(season, currentWeekNum);
+  const currentWeekInjuries = (injuriesByWeek && injuriesByWeek[currentWeekNum]) || {};
+  const hprojEnabled = HPROJ_ON_SCORES && isCurrentSeason;
+  const matchupIncludesCurrentWeek = effectiveWeeks.some(
+    (w) => Number(w) === Number(currentWeekNum),
+  );
+  const { hprojByRoster, liveProjByRoster, gamesStarted: hprojGamesStarted } = useLeagueHproj({
+    season,
+    week: currentWeekNum,
+    rosters: teamData?.rosters,
+    playersData,
+    projectedPtsById,
+    playerGameLabels: currentWeekLabels,
+    weekScoresByRoster: currentWeekScores,
+    injuriesMap: currentWeekInjuries,
+    playerIdMap,
+    enabled: hprojEnabled,
+  });
+  const { winProb: matchupWinProb, gamesStarted: matchupWinLive } = useHprojMatchupWinProb({
+    season,
+    week: currentWeekNum,
+    team1Id,
+    team2Id,
+    rosters: teamData?.rosters,
+    playersData,
+    projectedPtsById,
+    playerGameLabels: currentWeekLabels,
+    weekScoresByRoster: currentWeekScores,
+    injuriesMap: currentWeekInjuries,
+    playerIdMap,
+    enabled: hprojEnabled && matchupIncludesCurrentWeek && team1Id != null && team2Id != null,
+    leftOffset: winProbScope === 'season' ? winProbLeftOffset : 0,
+    rightOffset: winProbScope === 'season' ? winProbRightOffset : 0,
+  });
+  const hprojFirstNameCounts = useMemo(
+    () => ownerFirstNameCounts(teamData?.rosters, teamData?.users),
+    [teamData],
+  );
 
   useEffect(() => {
     if (!hasAnyWeeks) {
@@ -943,6 +1005,33 @@ function MatchupView({
     };
   });
 
+  const makeWeekProjChip = (rosterId, { dotAfter = false } = {}) => {
+    if (!HPROJ_ON_SCORES || !isCurrentSeason || rosterId == null) return null;
+    const href = hprojPageHref(
+      currentWeekNum,
+      { rosterId, ownerName: ownerDisplayName(teamData, rosterId) },
+      hprojFirstNameCounts,
+    );
+    const live = liveProjByRoster[String(rosterId)];
+    const hproj = hprojByRoster[String(rosterId)];
+    const value = hprojGamesStarted
+      ? (Number.isFinite(live) ? live : hproj)
+      : hproj;
+    if (!href || !Number.isFinite(value)) return null;
+    return (
+      <HprojHint
+        href={href}
+        value={value}
+        size="sm"
+        variant={hprojGamesStarted ? 'live' : 'hproj'}
+        className="yoffs-matchup-week-proj"
+        dotAfter={dotAfter}
+      />
+    );
+  };
+  const leftWeekProjChip = makeWeekProjChip(team1Id);
+  const rightWeekProjChip = makeWeekProjChip(team2Id, { dotAfter: true });
+
   const leftMeta = resolveTeamMeta(teamData, team1Id);
   const rightMeta = resolveTeamMeta(teamData, team2Id);
   const leftIsPlaceholder = !!leftMeta.isPlaceholder;
@@ -1135,6 +1224,7 @@ function MatchupView({
                   {leftMeta.teamName}
                   {isMyRoster(team1Id, myRosterId) ? <span className="me-chip">YOU</span> : null}
                 </span>
+                {leftWeekProjChip}
               </div>
             </div>
           )}
@@ -1160,20 +1250,30 @@ function MatchupView({
                   {headerRightTotal}
                 </span>
               </div>
-              <div className="yoffs-matchup-team-bottom">
-                {displaySeeds && seed2 != null && (
-                  <span className="yoffs-bracket-seed">#{seed2}</span>
-                )}
+              <div className="yoffs-matchup-team-bottom yoffs-matchup-team-bottom--right">
+                {rightWeekProjChip}
                 <span className="yoffs-bracket-name">
                   {rightMeta.teamName}
                   {isMyRoster(team2Id, myRosterId) ? <span className="me-chip">YOU</span> : null}
                 </span>
+                {displaySeeds && seed2 != null && (
+                  <span className="yoffs-bracket-seed">#{seed2}</span>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
-      {hasBuffer && (
+      {matchupWinProb && !leftIsPlaceholder && !rightIsPlaceholder ? (
+        <MatchupWinProbLine
+          leftPct={matchupWinProb.leftPct}
+          rightPct={matchupWinProb.rightPct}
+          live={matchupWinLive}
+          scope={winProbScope}
+          onScopeChange={onWinProbScopeChange}
+        />
+      ) : null}
+      {hasBuffer && bufferPlacement !== 'after' && (
         <MatchupWeekView
           key="playoff-buffer"
           positions={[]}
@@ -1248,6 +1348,37 @@ function MatchupView({
           }
         />
       ))}
+      {hasBuffer && bufferPlacement === 'after' && (
+        <MatchupWeekView
+          key="playoff-buffer-after"
+          positions={[]}
+          starters1={[]}
+          starters2={[]}
+          bench1={[]}
+          bench2={[]}
+          renderPlayerSide={() => null}
+          expanded={false}
+          onToggleExpanded={null}
+          week={null}
+          leftTotalText={
+            bufferLeftText != null
+              ? bufferLeftText
+              : (playoffBufferSide === 'left'
+                ? `+${playoffBufferAmount.toFixed(1)}`
+                : '-')
+          }
+          rightTotalText={
+            bufferRightText != null
+              ? bufferRightText
+              : (playoffBufferSide === 'right'
+                ? `+${playoffBufferAmount.toFixed(1)}`
+                : '-')
+          }
+          labelOverride={bufferLabel != null ? bufferLabel : 'Semis Buffer'}
+          isBufferRow
+          bufferSide={playoffBufferSide}
+        />
+      )}
       {selectedPlayer && createPortal(
         <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
           <div className="player-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>

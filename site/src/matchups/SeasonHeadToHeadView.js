@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
 import MatchupView from './MatchupView';
 import { getWeekScoreBreakdown } from '../scores/ScoresParser';
@@ -83,6 +84,7 @@ function SeasonHeadToHeadView({
   controls = null,
   enableMobileSelectorCollapse = false
 }) {
+  const [compareScope, setCompareScope] = useState('season');
   const myRosterId = useMyRosterId(preloadedTeamData?.rosters, preloadedTeamData?.users);
   const safeSelected = normalizeSelectedIds(selectedIds);
   const [team1Id, team2Id] = useMemo(() => {
@@ -162,12 +164,21 @@ function SeasonHeadToHeadView({
   const matchupWeeks =
     mode === 'season'
       ? [weekN]
-      : effectiveWeeks;
+      : [...effectiveWeeks].reverse();
 
   const expandedWeeksOverride =
     mode === 'season'
       ? [weekN]
-      : null;
+      : [];
+
+  const nflWeek = String(season) === String(CURRENT_YEAR) ? getCurrentNFLWeek() : lastAvailableWeek;
+  const focusWeek = mode === 'season'
+    ? weekN
+    : (effectiveWeeks.some((w) => Number(w) === Number(nflWeek)) ? Number(nflWeek) : lastAvailableWeek);
+  const priorEnd = focusWeek - 1;
+  const priorLeft = priorEnd >= 1 ? sumRange(weekTotals1, 1, priorEnd) : 0;
+  const priorRight = priorEnd >= 1 ? sumRange(weekTotals2, 1, priorEnd) : 0;
+  const showCompareToggle = priorEnd >= 1;
 
   const seasonTotal1 = sumRange(weekTotals1, 1, weekN);
   const seasonTotal2 = sumRange(weekTotals2, 1, weekN);
@@ -231,6 +242,11 @@ function SeasonHeadToHeadView({
                 headerRightOverride={headerRightOverride}
                 highlightMode="seasonFinalOnly"
                 highlightThreshold={highlightThreshold}
+                bufferPlacement="after"
+                winProbLeftOffset={priorLeft}
+                winProbRightOffset={priorRight}
+                winProbScope={showCompareToggle ? compareScope : 'week'}
+                onWinProbScopeChange={showCompareToggle ? setCompareScope : null}
               />
             </div>
           </div>

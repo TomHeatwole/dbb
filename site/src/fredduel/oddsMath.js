@@ -40,6 +40,20 @@ export function impliedProbability(line) {
 }
 
 /**
+ * Gambling length: +800 is longer than +150, which is longer than -110,
+ * which is longer than -400. Lower implied probability = longer price.
+ * Negative → a is longer; positive → b is longer.
+ */
+export function compareLongestLine(lineA, lineB) {
+  return impliedProbability(Number(lineA)) - impliedProbability(Number(lineB));
+}
+
+/** Reverse of compareLongestLine: shortest (biggest favorite) first. */
+export function compareShortestLine(lineA, lineB) {
+  return compareLongestLine(lineB, lineA);
+}
+
+/**
  * Smallest taker stake an offer accepts: $1 universal floor, or the offer's
  * own higher minimum.
  */

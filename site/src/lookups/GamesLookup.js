@@ -1,4 +1,4 @@
-import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH, PAUSE_SCRAPES } from '../utils/global_constants';
+import { USE_FAKE_EXAMPLE_DATA, FAKE_SCOREBOARD_PATH, PAUSE_SCRAPES, SIMULATE_WEEK1_DONE } from '../utils/global_constants';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { writeApiCacheWithKey, readApiCacheLatestByKey, recordRateLimitHit } from '../utils/database';
 import { applyMidweekSimulation } from '../scores/GamesParser';
@@ -139,9 +139,9 @@ export async function fetchNflScoreboard(season, week) {
         if (ageMs > 60 * 60 * 1000) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
-            return applyMidweekSimulation(validateSeasonYear(refreshed), season);
+            return applyMidweekSimulation(validateSeasonYear(refreshed), season, week);
           } catch (_) {
-            return applyMidweekSimulation(validateSeasonYear(cached.data), season);
+            return applyMidweekSimulation(validateSeasonYear(cached.data), season, week);
           }
         }
       }
@@ -151,18 +151,20 @@ export async function fetchNflScoreboard(season, week) {
         if (ageMs > 60 * 1000) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
-            return applyMidweekSimulation(validateSeasonYear(refreshed), season);
+            return applyMidweekSimulation(validateSeasonYear(refreshed), season, week);
           } catch (_) {
-            return applyMidweekSimulation(validateSeasonYear(cached.data), season);
+            return applyMidweekSimulation(validateSeasonYear(cached.data), season, week);
           }
         }
       }
-      return applyMidweekSimulation(validateSeasonYear(cached.data), season);
+      return applyMidweekSimulation(validateSeasonYear(cached.data), season, week);
     }
   } catch (_) {}
-  // Only fetch if missing and this is the active week OR a past season (seed once)
-  if (!isActiveWeek && !isPastSeason && !isFutureWeek) { return null; }
+  // Only fetch if missing and this is the active week OR a past season (seed once).
+  // Week-1-done sim still needs the real Week 1 board so we can mark it Final.
+  const isSimCompletedWeek1 = Boolean(SIMULATE_WEEK1_DONE) && isCurrentSeason && Number(week) === 1;
+  if (!isActiveWeek && !isPastSeason && !isFutureWeek && !isSimCompletedWeek1) { return null; }
   if (PAUSE_SCRAPES) { return null; }
   const result = await fetchJson(url, cacheKey);
-  return applyMidweekSimulation(validateSeasonYear(result), season);
+  return applyMidweekSimulation(validateSeasonYear(result), season, week);
 } 

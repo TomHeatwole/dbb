@@ -11,7 +11,7 @@ What every offer needs:
 
 Safe defaults — do NOT ask about these unless they contradict the user:
 - Min take: $1
-- Expiry: 24 hours
+- Expiry: 3 days
 - Per-person cap: off
 - Weekly week: the upcoming week listed in FREDDUEL BOARD
 

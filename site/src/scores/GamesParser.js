@@ -1,7 +1,8 @@
 import { getPlayerInfo } from '../lookups/PlayerLookup';
 import { fetchHistoriesByEspnIds, getTeamAtDate } from '../players/PlayerGameHistory';
-import { SIMULATE_MIDWEEK } from '../utils/global_constants';
+import { SIMULATE_MIDWEEK, SIMULATE_WEEK1_DONE } from '../utils/global_constants';
 import { CURRENT_YEAR } from '../utils/DateHelper';
+import { nflTimeRemainingFrac } from './liveOutlook';
 
 const TEAM_ABBR_ALIASES = {
   WAS: 'WSH',
@@ -44,6 +45,7 @@ function writeEventStatus(event, phase, index) {
   if (!event || typeof event !== 'object') {
     return;
   }
+  event._dbbSimulated = true;
   if (!Array.isArray(event.competitions) || !event.competitions.length) {
     event.competitions = [{}];
   }
@@ -81,31 +83,79 @@ function writeEventStatus(event, phase, index) {
   comp.status = { type };
 }
 
+function cloneScoreboard(scoreboardJson) {
+  try {
+    return JSON.parse(JSON.stringify(scoreboardJson));
+  } catch (_) {
+    return null;
+  }
+}
+
+function orderedEvents(events) {
+  return events
+    .map((event, i) => ({ event, i, t: eventStartMs(event) }))
+    .sort((a, b) => (a.t - b.t) || String(a.event && a.event.id).localeCompare(String(b.event && b.event.id)));
+}
+
+function eventLooksFinal(event) {
+  const comps = event && Array.isArray(event.competitions) ? event.competitions : [];
+  const comp = comps.length ? comps[0] : null;
+  const stType = (comp && comp.status && comp.status.type) || (event && event.status && event.status.type) || {};
+  let state = stType && stType.state ? stType.state : null;
+  if (!state && stType && stType.completed === true) state = 'post';
+  if (!state && typeof stType.name === 'string' && /FINAL|STATUS_FINAL|END|FULL/i.test(stType.name)) {
+    state = 'post';
+  }
+  const s = String(state || '').toLowerCase();
+  return s === 'final' || s === 'post' || s === 'postgame' || s === 'status_final'
+    || s === 'complete' || s === 'end' || s === 'canceled' || s === 'cancelled';
+}
+
 /**
- * Local testing: rewrite the current-season scoreboard so a handful of games
- * are final, a handful are live, and the rest have not started — enough for
- * a typical roster to show ~3 finished and ~3 in-play.
+ * Local testing: rewrite the current-season scoreboard.
+ * SIMULATE_WEEK1_DONE: Week 1 all Final (keep real finals); Week 2+ all pregame.
+ * SIMULATE_MIDWEEK: a couple Final, a couple live (Q2 8:21), rest upcoming.
  */
-export function applyMidweekSimulation(scoreboardJson, season) {
-  if (!SIMULATE_MIDWEEK || !scoreboardJson) {
+export function applyMidweekSimulation(scoreboardJson, season, week) {
+  if (!scoreboardJson) {
     return scoreboardJson;
   }
   if (season != null && String(season) !== String(CURRENT_YEAR)) {
     return scoreboardJson;
   }
-  let copy;
-  try {
-    copy = JSON.parse(JSON.stringify(scoreboardJson));
-  } catch (_) {
+
+  if (SIMULATE_WEEK1_DONE) {
+    const copy = cloneScoreboard(scoreboardJson);
+    if (!copy) return scoreboardJson;
+    const events = extractEvents(copy);
+    const weekFromBoard = copy.week && copy.week.number;
+    const weekNum = Number(week != null ? week : weekFromBoard);
+    if (weekNum === 1) {
+      events.forEach((event, idx) => {
+        if (!eventLooksFinal(event)) {
+          writeEventStatus(event, 'post', idx);
+        }
+      });
+      copy._dbbSimulateWeek1Done = true;
+    } else if (Number.isFinite(weekNum) && weekNum >= 2) {
+      events.forEach((event, idx) => {
+        writeEventStatus(event, 'pre', idx);
+      });
+      copy._dbbSimulateWeek1Done = true;
+    }
+    return copy;
+  }
+
+  if (!SIMULATE_MIDWEEK) {
     return scoreboardJson;
   }
+  const copy = cloneScoreboard(scoreboardJson);
+  if (!copy) return scoreboardJson;
   const events = extractEvents(copy);
   if (!events.length) {
     return copy;
   }
-  const ordered = events
-    .map((event, i) => ({ event, i, t: eventStartMs(event) }))
-    .sort((a, b) => (a.t - b.t) || String(a.event && a.event.id).localeCompare(String(b.event && b.event.id)));
+  const ordered = orderedEvents(events);
   const n = ordered.length;
   const finalCount = Math.min(2, n);
   const liveCount = Math.min(2, Math.max(0, n - finalCount));
@@ -273,18 +323,37 @@ export function getGameDisplayForTeam(event, teamAbbr) {
     const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
     const finalLabel = 'Final';
     // New format: "@ BUF 40-41, Final" (perspective first, score, Final)
-    return { text: `${finalLabel} ${scoreStr} ${perspective}  `.trim(), live: false, completed: true };
+    return {
+      text: `${finalLabel} ${scoreStr} ${perspective}  `.trim(),
+      live: false,
+      completed: true,
+      timeRemainingFrac: 0,
+      simulated: Boolean(event._dbbSimulated),
+    };
   }
   if (state === 'in') {
     const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
     const clock = (comp.status && (comp.status.displayClock || comp.status.clock)) || (event.status && (event.status.displayClock || event.status.clock)) || '';
     const period = (comp.status && comp.status.period) || (event.status && event.status.period);
     const q = period > 4 ? 'OT' : `Q${period || ''}`;
-    return { text: `${q} ${clock} ${perspective} ${scoreStr}`.trim(), live: true, completed: false };
+    return {
+      text: `${q} ${clock} ${perspective} ${scoreStr}`.trim(),
+      live: true,
+      completed: false,
+      period,
+      displayClock: clock,
+      timeRemainingFrac: nflTimeRemainingFrac(period, clock),
+      simulated: Boolean(event._dbbSimulated),
+    };
   }
   // Future (pre)
   const when = formatLocalDateTime(event.date || comp.date);
-  return { text: `${when} ${perspective}`.trim(), live: false, completed: false };
+  return {
+    text: `${when} ${perspective}`.trim(),
+    live: false,
+    completed: false,
+    timeRemainingFrac: 1,
+  };
 }
 
 export function buildTeamToEventMap(scoreboardJson) {

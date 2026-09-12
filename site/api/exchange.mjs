@@ -70,6 +70,10 @@ function mapBet(row) {
     takerStake: Number(row.taker_stake),
     creatorRisk: Number(row.creator_risk),
     status: row.status,
+    result: row.result || null,
+    settledAt: row.settled_at ? new Date(row.settled_at).toISOString() : null,
+    settledBy: row.settled_by || null,
+    settlementNote: row.settlement_note || '',
     createdAt: new Date(row.created_at).toISOString(),
   };
 }

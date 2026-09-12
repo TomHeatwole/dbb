@@ -130,7 +130,8 @@ export function residualQuantile(resid, percentile) {
   if (!resid) return null;
   const raw = Number(percentile);
   if (!Number.isFinite(raw)) return null;
-  const p = raw > 0 && raw <= 1 ? raw * 100 : raw;
+  // Fractions are (0, 1). Integer 1 is P1, not 100% — sliders use 0–99.
+  const p = raw > 0 && raw < 1 ? raw * 100 : raw;
   if (p <= RESID_KEYS[0][0]) return resid[RESID_KEYS[0][1]];
   const last = RESID_KEYS[RESID_KEYS.length - 1];
   if (p >= last[0]) return resid[last[1]];
@@ -150,8 +151,34 @@ function round1(n) {
 }
 
 /**
+ * Percentile (0–99) of an actual score vs the projection residual band.
+ * Used to label completed games as FINAL - Pxx on /hproj.
+ */
+export function hprojPercentile(position, projection, actual) {
+  const x = Number(projection);
+  const y = Number(actual);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  const loPts = hprojQuantile(position, x, 0);
+  const hiPts = hprojQuantile(position, x, 99);
+  if (loPts == null || hiPts == null) return null;
+  if (y <= loPts) return 0;
+  if (y >= hiPts) return 99;
+  let lo = 0;
+  let hi = 99;
+  for (let i = 0; i < 24; i += 1) {
+    const mid = (lo + hi) / 2;
+    const q = hprojQuantile(position, x, mid);
+    if (q == null) return null;
+    if (q < y) lo = mid;
+    else hi = mid;
+  }
+  return Math.max(0, Math.min(99, Math.round((lo + hi) / 2)));
+}
+
+/**
  * Outcome at a percentile for a projected player-week.
- * `percentile` is 0–1 or 0–100 (0.8 and 80 both mean P80).
+ * `percentile` is 0–100, or a fraction in (0, 1). 0.8 and 80 both mean P80;
+ * 1 means P1 (slider tick), not 100%. Use 99/100 or 0.99 for the ceiling.
  *
  * @param {string} position
  * @param {number} projection
@@ -164,7 +191,7 @@ export function hprojQuantile(position, projection, percentile) {
   if (!band?.resid || !Number.isFinite(x)) return null;
   const raw = Number(percentile);
   if (!Number.isFinite(raw)) return null;
-  const t = raw > 0 && raw <= 1 ? raw : raw / 100;
+  const t = raw > 0 && raw < 1 ? raw : raw / 100;
   const knots = residualKnots(band.resid, position, x);
   const offset = interpolateKnots(knots, t);
   if (offset == null) return null;

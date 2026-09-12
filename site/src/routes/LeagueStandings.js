@@ -197,12 +197,11 @@ function LeagueStandings() {
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
 
-  // Bracket-aware top-4 placement (matches /yoffs bracket behavior, including Semis Buffer).
+  // 2025 Bracket top-4 placement (matches /yoffs bracket behavior, including Semis Buffer).
   // Must be defined as a hook before any early returns.
   const bracketTop4PlaceMap = useMemo(() => {
     try {
-      const isSeason2024 = String(season) === '2024';
-      if (isSeason2024) {
+      if (String(season) !== '2025') {
         return null;
       }
       const playoffsFinished =

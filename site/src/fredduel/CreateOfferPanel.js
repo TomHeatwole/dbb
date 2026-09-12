@@ -84,7 +84,7 @@ function CreateOfferPanel({
   const [minTakeText, setMinTakeText] = useState('1');
   const [perPersonOn, setPerPersonOn] = useState(false);
   const [perPersonText, setPerPersonText] = useState('50');
-  const [expiryChoice, setExpiryChoice] = useState('24h');
+  const [expiryChoice, setExpiryChoice] = useState('3d');
   const [customExpiry, setCustomExpiry] = useState(toDatetimeLocalValue(Date.now() + 24 * 60 * 60 * 1000));
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);

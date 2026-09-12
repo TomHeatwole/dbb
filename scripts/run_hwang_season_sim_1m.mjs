@@ -52,6 +52,7 @@ function emptyAcc(rosterId) {
   return {
     rosterId,
     wins: 0,
+    bracketWins: 0,
     playoffCount: 0,
     placeSum: 0,
     regSeasonRankSum: 0,
@@ -71,6 +72,7 @@ function mergeResults(batches) {
     for (const row of batch.results) {
       const acc = byId[row.rosterId] || emptyAcc(row.rosterId);
       acc.wins += row.wins || 0;
+      acc.bracketWins += row.bracketWins || 0;
       acc.playoffCount += row.playoffCount || 0;
       acc.placeSum += (row.avgFinish || 0) * batch.iterations;
       acc.regSeasonRankSum += (row.avgRegSeasonRank || 0) * batch.iterations;
@@ -91,8 +93,10 @@ function mergeResults(batches) {
     return {
       rosterId: acc.rosterId,
       wins: acc.wins,
+      bracketWins: acc.bracketWins,
       playoffCount: acc.playoffCount,
       winPct: (acc.wins / iterations) * 100,
+      bracketWinPct: (acc.bracketWins / iterations) * 100,
       playoffPct: (acc.playoffCount / iterations) * 100,
       avgFinish: acc.placeSum / iterations,
       avgRegSeasonRank: acc.regSeasonRankSum / iterations,
@@ -119,13 +123,15 @@ function formatTable(results, teamMap, iterations) {
       team: info.teamName || `Team ${row.rosterId}`,
       owner: info.ownerName || '?',
       winPct: row.winPct,
+      bracketWinPct: row.bracketWinPct,
       playoffPct: row.playoffPct,
+      wins: row.wins,
+      bracketWins: row.bracketWins,
       avgFinish: row.avgFinish,
       avgRegSeasonRank: row.avgRegSeasonRank,
       avgRegSeason: row.avgRegSeason,
       avgPlayoff: row.avgPlayoff,
       avgTotalScore: row.avgTotalScore,
-      wins: row.wins,
       playoffCount: row.playoffCount,
       finishCounts: row.finishCounts,
       reg2000Pct: row.reg2000Pct,
@@ -136,7 +142,8 @@ function formatTable(results, teamMap, iterations) {
   const header = [
     '#',
     'Team',
-    'Win %',
+    'Win % (Cumulative)',
+    'Win % (2025 Bracket)',
     'Playoff %',
     'Avg Finish',
     'Avg Reg Seed',
@@ -148,6 +155,7 @@ function formatTable(results, teamMap, iterations) {
     `${r.rank}.`,
     r.team,
     `${r.winPct.toFixed(1)}%`,
+    `${(r.bracketWinPct ?? 0).toFixed(1)}%`,
     `${r.playoffPct.toFixed(1)}%`,
     r.avgFinish.toFixed(2),
     r.avgRegSeasonRank.toFixed(2),
@@ -158,12 +166,17 @@ function formatTable(results, teamMap, iterations) {
   const widths = header.map((h, col) => Math.max(h.length, ...body.map((row) => String(row[col]).length)));
   const fmt = (cells) => cells.map((c, i) => String(c)[i <= 1 ? 'padEnd' : 'padStart'](widths[i])).join('  ');
   const lines = [
-    `Simulation Results — ${iterations.toLocaleString()} runs · sorted by win %`,
+    `Simulation Results — ${iterations.toLocaleString()} runs · sorted by cumulative win %`,
     fmt(header),
     widths.map((w) => '-'.repeat(w)).join('  '),
     ...body.map(fmt),
   ];
-  return { rows, text: lines.join('\n') };
+  const csvEscape = (value) => {
+    const s = String(value ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = [header, ...body].map((cells) => cells.map(csvEscape).join(',')).join('\n');
+  return { rows, text: lines.join('\n'), csv };
 }
 
 function runWorker(payload, onProgress) {
@@ -275,7 +288,7 @@ const batches = await Promise.all(chunks.map((n, workerIndex) => runWorker(
 process.stdout.write('\n');
 const merged = mergeResults(batches);
 const elapsedMs = Date.now() - startedRun;
-const { rows, text } = formatTable(merged, teamMap, iterations);
+const { rows, text, csv } = formatTable(merged, teamMap, iterations);
 console.log(text);
 console.log('\nShare of runs scoring 2000+');
 console.log('Team                        14-wk ≥2000   Season ≥2000');
@@ -294,7 +307,7 @@ const payload = {
     variance: 'openTail',
     monotone: 'quantiles',
     rankSource: 'adp',
-    playoffFormat: 'cumulative',
+    playoffFormat: 'cumulative + 2025 bracket win %',
     elapsedMs,
     savedAt: new Date().toISOString(),
   },
@@ -302,4 +315,5 @@ const payload = {
 };
 writeFileSync(join(OUT_DIR, 'results.json'), JSON.stringify(payload, null, 2));
 writeFileSync(join(OUT_DIR, 'results.txt'), `${text}\n`);
-console.log(`\nSaved UI aggregates to ${OUT_DIR} (${(elapsedMs / 1000).toFixed(1)}s)`);
+writeFileSync(join(OUT_DIR, 'results.csv'), `${csv}\n`);
+console.log(`\nSaved table to ${join(OUT_DIR, 'results.csv')} (${(elapsedMs / 1000).toFixed(1)}s)`);

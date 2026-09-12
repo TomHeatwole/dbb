@@ -92,6 +92,21 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS idx_fd_bets_offer_taker
      ON fd_bets (offer_id, taker_user_id)`,
 
+  // Settlement columns. The resolver lives in src/fredduel/settlement.js;
+  // nothing writes these yet except a future auto/manual settle action.
+  `ALTER TABLE fd_bets
+     ADD COLUMN IF NOT EXISTS result TEXT
+       CHECK (result IS NULL OR result IN ('taker', 'creator'))`,
+  `ALTER TABLE fd_bets
+     ADD COLUMN IF NOT EXISTS settled_at TIMESTAMPTZ`,
+  `ALTER TABLE fd_bets
+     ADD COLUMN IF NOT EXISTS settled_by TEXT
+       CHECK (settled_by IS NULL OR settled_by IN ('auto', 'manual'))`,
+  `ALTER TABLE fd_bets
+     ADD COLUMN IF NOT EXISTS settlement_note TEXT NOT NULL DEFAULT ''`,
+  `CREATE INDEX IF NOT EXISTS idx_fd_bets_status
+     ON fd_bets (status, settled_at DESC)`,
+
   // App-level profile for authenticated users (auth accounts live in
   // neon_auth.user, managed by Neon). A row here means the user completed
   // onboarding with a Sleeper username verified against the Sleeper API.

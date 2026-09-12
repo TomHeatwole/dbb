@@ -44,9 +44,9 @@ function PlayoffRulesToolTip() {
     return () => document.body.classList.remove('modal-open');
   }, [modalOpen, isMobile]);
 
-  const bracketBody = bracketText || 'TODO: Add detailed description of the 2025 bracket format here.';
+  const bracketBody = bracketText || 'TODO: Add detailed description of the 2025 Bracket format here.';
   const cumulativeBody =
-    cumulativeText || 'TODO: Add detailed description of the 2024 cumulative scoring rules here.';
+    cumulativeText || 'TODO: Add detailed description of the Cumulative scoring rules here.';
 
   const bracketHtml = { __html: bracketBody };
   const cumulativeHtml = { __html: cumulativeBody };
@@ -55,17 +55,17 @@ function PlayoffRulesToolTip() {
     <div className="playoff-rules-modal-content">
       <div className="playoff-rules-tooltip-inner">
         <section className="playoff-rules-section">
-          <h3 className="playoff-rules-section-title">Bracket Format (2025 Rules)</h3>
-          <div
-            className="playoff-rules-section-body"
-            dangerouslySetInnerHTML={bracketHtml}
-          />
-        </section>
-        <section className="playoff-rules-section">
-          <h3 className="playoff-rules-section-title">Cumulative Score (2024 Rules)</h3>
+          <h3 className="playoff-rules-section-title">Cumulative</h3>
           <div
             className="playoff-rules-section-body"
             dangerouslySetInnerHTML={cumulativeHtml}
+          />
+        </section>
+        <section className="playoff-rules-section">
+          <h3 className="playoff-rules-section-title">2025 Bracket</h3>
+          <div
+            className="playoff-rules-section-body"
+            dangerouslySetInnerHTML={bracketHtml}
           />
         </section>
       </div>
