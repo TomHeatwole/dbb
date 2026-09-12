@@ -4,6 +4,7 @@ import {
   keepSopDisplayGames,
   mergeDkIntoFdGames,
 } from './mergeDkGames';
+import { gameHasNextGoalMethod } from './soccerLeagues';
 
 describe('SOP fixture matching', () => {
   it('matches FanDuel and DraftKings Champions League names', () => {
@@ -82,5 +83,31 @@ describe('SOP book merge', () => {
     expect(gameHasFdOrDkLines(uclBare)).toBe(false);
     expect(keepSopDisplayGames([pl, uclBare, uclFd, uclDk]).map((g) => g.eventId))
       .toEqual(['pl', 'ucl-fd', 'ucl-dk']);
+  });
+
+  it('SOP2 keeps only games with Next Goal Method on either book', () => {
+    const plBare = { eventId: 'pl-bare', name: 'A v B', competition: 'pl' };
+    const lalFd = {
+      eventId: 'lal-fd',
+      name: 'C v D',
+      competition: 'lal',
+      noGoalMarkets: { nextGoalMethod: { american: 380 } },
+    };
+    const bunDk = {
+      eventId: 'bun-dk',
+      name: 'E v F',
+      competition: 'bun',
+      dk: { goalTypes: { sop: { american: 160 } } },
+    };
+    const bunTotals = {
+      eventId: 'bun-ou',
+      name: 'G v H',
+      competition: 'bun',
+      noGoalMarkets: { totalGoalsUnder: { american: 140 } },
+    };
+
+    expect(gameHasNextGoalMethod(plBare)).toBe(false);
+    expect(keepSopDisplayGames([plBare, lalFd, bunDk, bunTotals], { requireNextGoalMethod: true })
+      .map((g) => g.eventId)).toEqual(['lal-fd', 'bun-dk']);
   });
 });

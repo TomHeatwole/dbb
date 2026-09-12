@@ -1,6 +1,7 @@
 /** Match FanDuel + DraftKings game rows by canonical fixture. */
 
 import { fixtureTeamKey, gameMergeKey } from './fixtureKey.js';
+import { gameHasNextGoalMethod } from './soccerLeagues.js';
 
 function dkHasNoGoalData(dkGame) {
   if (!dkGame?.noGoalMarkets) return false;
@@ -98,9 +99,13 @@ export function mergeDkIntoFdGames(fdGames, dkPayload) {
   return merged;
 }
 
-/** Premier League stays on the board; UCL only if FD or DK posted SOP/no-goal lines. */
-export function keepSopDisplayGames(games) {
+/**
+ * Classic SOP: Premier League stays on the board; UCL only if FD or DK posted lines.
+ * SOP2: only games with Next Goal Method on FanDuel or DraftKings.
+ */
+export function keepSopDisplayGames(games, { requireNextGoalMethod = false } = {}) {
   return (games ?? []).filter((game) => {
+    if (requireNextGoalMethod) return gameHasNextGoalMethod(game);
     if (game?.competition === 'ucl') return gameHasFdOrDkLines(game);
     return true;
   });

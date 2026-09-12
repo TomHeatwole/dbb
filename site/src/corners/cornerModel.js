@@ -4,7 +4,8 @@
  * Scale is the 2023–26 ESPN mean (10.35 / match). Shape is the 5-minute
  * histogram from espn_pl_corner_histogram.md. The FanDuel O/U + odds invert
  * to a market-implied expected total; remaining time (including stoppage)
- * allocates that expectation into the next 5/10-minute window.
+ * is the match leftover. Next 5/10-minute clock windows settle on regular
+ * elapsed time only — 45+ / 90+ added time does not pay those bets.
  */
 
 import {
@@ -981,18 +982,15 @@ function windowRegularRange(windowMarket) {
 }
 
 /**
- * Remaining histogram share that still falls inside a FanDuel 5/10-min window.
- * End-of-half windows (…–45:00 / …–90:00) include remaining stoppage.
+ * Remaining histogram share that still falls inside a FanDuel/DK 5/10-min
+ * clock window. Settlement is regular elapsed time only: a window ending
+ * at 45:00 / 90:00 (or 44:59 / 89:59) does not pay 45+ / 90+ added time.
+ * Full-game leftover still uses remainingBreakdown, which keeps stoppage.
  */
 export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed') {
   const range = windowRegularRange(windowMarket);
   if (!range) return null;
   const { startMin, endMin } = range;
-  const includeHt = endMin >= 44.9 && endMin <= 45.1 && clock.period !== 2 && clock.phase !== 'ht';
-  const includeFt = endMin >= 89.9 && endMin <= 90.1;
-  const inThisHalfStoppage = clock.inStoppage && (
-    (clock.period === 1 && includeHt) || (clock.period === 2 && includeFt)
-  );
 
   let share = 0;
   let uniformShare = 0;
@@ -1000,48 +998,7 @@ export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed
   const bits = [];
 
   for (const bin of CORNER_BINS) {
-    if (bin.kind === 'ht+') {
-      if (includeHt || (inThisHalfStoppage && clock.period === 1)) {
-        const mins = plan.htRemaining;
-        const s = binShareForMinutes(bin, mins, mode);
-        const u = binShareForMinutes(bin, mins, 'uniform');
-        share += s;
-        uniformShare += u;
-        minutes += mins;
-        if (mins > 0) {
-          bits.push({
-            id: bin.id,
-            minutes: mins,
-            share: s,
-            histShare: bin.share,
-            expected: MEAN_CORNERS_PER_MATCH * s,
-            extra: true,
-          });
-        }
-      }
-      continue;
-    }
-    if (bin.kind === 'ft+') {
-      if (includeFt || (inThisHalfStoppage && clock.period === 2)) {
-        const mins = plan.ftRemaining;
-        const s = binShareForMinutes(bin, mins, mode);
-        const u = binShareForMinutes(bin, mins, 'uniform');
-        share += s;
-        uniformShare += u;
-        minutes += mins;
-        if (mins > 0) {
-          bits.push({
-            id: bin.id,
-            minutes: mins,
-            share: s,
-            histShare: bin.share,
-            expected: MEAN_CORNERS_PER_MATCH * s,
-            extra: true,
-          });
-        }
-      }
-      continue;
-    }
+    if (bin.kind !== 'regular') continue;
     const overlapStart = Math.max(bin.start, startMin);
     const overlapEnd = Math.min(bin.end, endMin);
     if (overlapEnd <= overlapStart) continue;
@@ -1064,24 +1021,13 @@ export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed
     });
   }
 
-  let histWindowShare = CORNER_BINS
+  const histWindowShare = CORNER_BINS
     .filter((b) => b.kind === 'regular' && b.end > startMin && b.start < endMin)
     .reduce((s, b) => {
       const overlap = Math.min(b.end, endMin) - Math.max(b.start, startMin);
       return s + b.share * (overlap / (b.end - b.start));
     }, 0);
-  let extraTypical = 0;
-  if (includeHt) {
-    const ht = CORNER_BINS.find((b) => b.kind === 'ht+');
-    histWindowShare += ht?.share ?? 0;
-    extraTypical += TYPICAL_HT_STOPPAGE_MIN;
-  }
-  if (includeFt) {
-    const ft = CORNER_BINS.find((b) => b.kind === 'ft+');
-    histWindowShare += ft?.share ?? 0;
-    extraTypical += TYPICAL_FT_STOPPAGE_MIN;
-  }
-  const uniformWindowShare = (endMin - startMin + extraTypical) / TYPICAL_MATCH_MINUTES;
+  const uniformWindowShare = (endMin - startMin) / TYPICAL_MATCH_MINUTES;
 
   return {
     startMin,
@@ -1092,8 +1038,8 @@ export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed
     histWindowShare,
     uniformWindowShare,
     bits,
-    includeHt,
-    includeFt,
+    includeHt: false,
+    includeFt: false,
   };
 }
 

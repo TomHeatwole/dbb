@@ -159,7 +159,9 @@ function formatGameHeading(row) {
   if (row.score) bits.push(row.score);
   if (row.inPlay) bits.push('LIVE');
   if (row.clock) bits.push(row.clock);
-  if (row.competition === 'ucl') bits.push('UCL');
+  if (row.competition && row.competition !== 'pl') {
+    bits.push(String(row.competition).toUpperCase());
+  }
   return bits.join('  ');
 }
 

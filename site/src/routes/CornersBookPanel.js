@@ -626,6 +626,12 @@ function bucketLabel(id, kind) {
   return id;
 }
 
+function windowEndsAtHalfWhistle(win) {
+  const end = Number(win?.endMin);
+  if (!Number.isFinite(end)) return false;
+  return (end >= 44.9 && end <= 45.1) || (end >= 89.9 && end <= 90.1);
+}
+
 function WindowSection({ title, packed, selectedId, onSelect, bucketed, kellyEnabled, kellyBudget, kellyFraction }) {
   const windowMarket = packed?.windowMarket;
   const win = packed?.win;
@@ -657,6 +663,12 @@ function WindowSection({ title, packed, selectedId, onSelect, bucketed, kellyEna
           This window is usually <strong>{histPct}</strong> of corners
           {' '}vs <strong>{uniPct}</strong> uniform
           {bucketed ? ' · using bucketed rates' : ' · using uniform per minute'}
+          {windowEndsAtHalfWhistle(win) && (
+            <>
+              {' · '}settles at {win.endMin <= 45.1 ? '45:00' : '90:00'}
+              {' — added time does not count'}
+            </>
+          )}
         </p>
       )}
       {!hasLines && (

@@ -3,11 +3,13 @@
  */
 
 import { getSql } from './db.mjs';
+import { pickExport } from './named-export.mjs';
 import {
   classifyGoalTypeFromCommentary,
   GOAL_TYPE_LABELS,
   hasClassifiableCommentary,
 } from './classify-goal-type.mjs';
+import * as soccerLeagues from '../src/sop/soccerLeagues.js';
 
 const ESPN_HEADERS = {
   Accept: 'application/json',
@@ -18,6 +20,7 @@ const ESPN_HEADERS = {
 const LEAGUE_SLUG = {
   pl: 'eng.1',
   ucl: 'uefa.champions',
+  ...pickExport(soccerLeagues, 'espnLeagueSlugMap')(),
 };
 
 const CLASSIFY_CONCURRENCY = 4;

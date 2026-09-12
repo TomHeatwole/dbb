@@ -1,11 +1,19 @@
 /**
- * FanDuel Premier League + Champions League SOP scraper — no-goal proxies + goal-type odds.
+ * FanDuel soccer SOP scraper — no-goal proxies + goal-type odds.
+ * SOP defaults to Premier League + Champions League.
+ * SOP2 (`soccer=all`) pulls every soccer match and keeps Next Goal Method games.
  * Proxies FanDuel's undocumented sbapi — structure can change without notice.
  */
 
 import { attachEspnClock, compactEspnError, fetchEspnSoccerScoreboards } from '../lib/espn-pl-scoreboard.mjs';
 import { attachEspnGoals } from '../lib/espn-soccer-goals.mjs';
 import sopStaticHandler from '../lib/sop-static.mjs';
+import { pickExport } from '../lib/named-export.mjs';
+import * as soccerLeagues from '../src/sop/soccerLeagues.js';
+
+const competitionMetaForFd = pickExport(soccerLeagues, 'competitionMetaForFd');
+const espnLeagueKeys = pickExport(soccerLeagues, 'espnLeagueKeys');
+const leagueByKey = pickExport(soccerLeagues, 'leagueByKey');
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -103,33 +111,64 @@ async function fdFetch(path) {
   return res.json();
 }
 
-function competitionMeta(competitionId) {
-  if (Number(competitionId) === CL_COMPETITION_ID) {
-    return {
-      competitionId: CL_COMPETITION_ID,
-      competition: 'ucl',
-      competitionName: 'Champions League',
-    };
-  }
-  return {
-    competitionId: PL_COMPETITION_ID,
-    competition: 'pl',
-    competitionName: 'Premier League',
-  };
+function competitionMeta(competitionId, competitions) {
+  return competitionMetaForFd(competitionId, competitions);
 }
 
-function sopMatchEvents(payload, competitionIds) {
-  const allowed = new Set([...competitionIds].map(Number));
+function isSoccerMatchEvent(ev) {
+  return String(ev?.name ?? '').includes(' v ');
+}
+
+function sopMatchEvents(payload, { competitionIds = null, competitions = null } = {}) {
+  const comps = competitions ?? payload?.attachments?.competitions ?? {};
+  const allowed = competitionIds == null ? null : new Set([...competitionIds].map(Number));
   const events = payload?.attachments?.events ?? {};
   return Object.entries(events)
-    .filter(([, ev]) => allowed.has(Number(ev.competitionId)) && String(ev.name ?? '').includes(' v '))
+    .filter(([, ev]) => {
+      if (!isSoccerMatchEvent(ev)) return false;
+      if (allowed && !allowed.has(Number(ev.competitionId))) return false;
+      return true;
+    })
     .map(([id, ev]) => ({
       eventId: Number(id),
       name: ev.name,
       openDate: ev.openDate ?? null,
       inPlay: Boolean(ev.inPlay),
-      ...competitionMeta(ev.competitionId),
+      ...competitionMeta(ev.competitionId, comps),
     }));
+}
+
+function marketsHaveNextGoalMethod(markets) {
+  return Boolean(findMarketByPrefix(markets ?? {}, GOAL_METHOD_MARKET_PREFIX));
+}
+
+async function eventHasNextGoalMethod(eventId, inPlay) {
+  const tabs = inPlay ? ['quick-bets', 'live'] : ['quick-bets'];
+  for (const tab of tabs) {
+    try {
+      const payload = await fdFetch(`/event-page?${FD_QUERY}&eventId=${eventId}&tab=${tab}`);
+      if (marketsHaveNextGoalMethod(payload?.attachments?.markets)) return true;
+    } catch {
+      // try the next tab
+    }
+  }
+  return false;
+}
+
+function shouldProbeForNextGoalMethod(ev, now = Date.now()) {
+  if (ev.inPlay) return true;
+  if (leagueByKey(ev.competition)) return true;
+  if (!ev.openDate) return true;
+  const kick = Date.parse(ev.openDate);
+  return Number.isFinite(kick) && kick <= now + 36 * 60 * 60 * 1000;
+}
+
+async function keepEventsWithNextGoalMethod(events) {
+  const probe = events.filter((ev) => shouldProbeForNextGoalMethod(ev));
+  const flags = await mapPool(probe, FD_EVENT_CONCURRENCY, (ev) => (
+    eventHasNextGoalMethod(ev.eventId, ev.inPlay)
+  ));
+  return probe.filter((_, index) => flags[index]);
 }
 
 async function mapPool(items, concurrency, fn) {
@@ -439,12 +478,19 @@ async function fetchEventBundle(eventId) {
 export async function fetchPremierLeagueSopOdds({
   includeEspn = false,
   includeChampionsLeague = true,
+  soccerScope = 'core',
 } = {}) {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
-  const competitionIds = [PL_COMPETITION_ID];
-  if (includeChampionsLeague) competitionIds.push(CL_COMPETITION_ID);
-  const events = sopMatchEvents(sportPage, competitionIds);
-  const espnLeagues = includeChampionsLeague ? ['pl', 'ucl'] : ['pl'];
+  const competitions = sportPage?.attachments?.competitions ?? {};
+  const expanded = soccerScope === 'all';
+  const competitionIds = expanded
+    ? null
+    : [PL_COMPETITION_ID, ...(includeChampionsLeague ? [CL_COMPETITION_ID] : [])];
+  let events = sopMatchEvents(sportPage, { competitionIds, competitions });
+  if (expanded) {
+    events = await keepEventsWithNextGoalMethod(events);
+  }
+  const espnLeagues = espnLeagueKeys(expanded ? 'all' : 'core', events);
 
   const espnPromise = includeEspn
     ? fetchEspnSoccerScoreboards(events.map((ev) => ev.openDate), espnLeagues)
@@ -533,6 +579,12 @@ function wantsStaticText(req) {
   return /\/sop-static\.txt$/i.test(parsed.pathname);
 }
 
+function wantsExpandedSoccer(req) {
+  const q = req.query || {};
+  if (q.soccer === 'all' || q.leagues === 'all') return true;
+  return requestUrl(req)?.searchParams.get('soccer') === 'all';
+}
+
 export default async function handler(req, res) {
   if (wantsStaticText(req)) {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -551,7 +603,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchPremierLeagueSopOdds({ includeEspn: true });
+    const data = await fetchPremierLeagueSopOdds({
+      includeEspn: true,
+      soccerScope: wantsExpandedSoccer(req) ? 'all' : 'core',
+    });
     const live = (data.games ?? []).some((game) => game.inPlay);
     res.setHeader(
       'Cache-Control',

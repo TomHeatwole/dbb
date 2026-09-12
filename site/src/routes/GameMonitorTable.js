@@ -4,6 +4,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { bookTag, gameAnchorId } from '../sop/gameSnapshot';
+import { competitionBadge } from '../sop/soccerLeagues';
 import { formatAmericanOdds } from '../sop/sopModel';
 import PuntStyleWarning from '../drives/PuntStyleWarning';
 
@@ -51,11 +52,23 @@ function OddsCell({ book, american }) {
   );
 }
 
+function MonitorCompetitionBadge({ row, always = false }) {
+  if (!row?.competition) return null;
+  if (!always && row.competition === 'pl') return null;
+  const badge = competitionBadge(row);
+  return (
+    <span className={`sop-exp-comp sop-exp-comp--${badge.tone}`} title={badge.name}>
+      {badge.short}
+    </span>
+  );
+}
+
 function GameMonitorTable({
   rows,
   marketHeader = 'SOP',
   caption = 'vs longest line',
   showMarket = false,
+  showLeagueBadges = false,
 }) {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const evCount = rows.filter((row) => row.profitable).length;
@@ -117,9 +130,7 @@ function GameMonitorTable({
                   title={row.fullName}
                 >
                   <span className="sop-monitor-game-name">
-                    {row.competition === 'ucl' && (
-                      <span className="sop-exp-comp sop-exp-comp--ucl">UCL</span>
-                    )}
+                    <MonitorCompetitionBadge row={row} always={showLeagueBadges} />
                     {row.name}
                   </span>
                   <span className="sop-monitor-game-meta">

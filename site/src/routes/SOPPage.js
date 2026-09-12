@@ -35,8 +35,11 @@ async function fetchKalshiOddsForSop() {
   return fetchJsonWithTimeout('/api/kalshi-sop', KALSHI_CLIENT_TIMEOUT_MS);
 }
 
-async function fetchDkOddsForSop() {
-  return fetchJsonWithTimeout('/api/draftkings-goal-method', DK_CLIENT_TIMEOUT_MS);
+async function fetchDkOddsForSop(soccerScope = 'core') {
+  const url = soccerScope === 'all'
+    ? '/api/draftkings-goal-method?soccer=all'
+    : '/api/draftkings-goal-method';
+  return fetchJsonWithTimeout(url, DK_CLIENT_TIMEOUT_MS);
 }
 
 const OG_TITLE = 'SHOT OPEN PLAY';
@@ -128,7 +131,7 @@ function SOPBootLoader({ phase, loadingProgress, msgIndex, bookLoaded }) {
   );
 }
 
-export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
+export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false, soccerScope = 'core' }) {
   const location = useLocation();
   const manualSuffix = `${basePath}/manual`;
   const isManual = location.pathname.toLowerCase() === manualSuffix.toLowerCase()
@@ -153,7 +156,8 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
     // so a slow DraftKings probe/Akamai block cannot hang the whole page.
     let fdGames = [];
     try {
-      const fdRes = await fetch('/api/fanduel-sop', { cache: 'no-store' });
+      const fdUrl = soccerScope === 'all' ? '/api/fanduel-sop?soccer=all' : '/api/fanduel-sop';
+      const fdRes = await fetch(fdUrl, { cache: 'no-store' });
       if (!fdRes.ok) {
         const body = await fdRes.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${fdRes.status}`);
@@ -161,7 +165,10 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
 
       const fdData = await fdRes.json();
       fdGames = fdData.games ?? [];
-      setGames(keepSopDisplayGames(fdGames.map((game) => ({ ...game, dk: null, klsh: null }))));
+      setGames(keepSopDisplayGames(
+        fdGames.map((game) => ({ ...game, dk: null, klsh: null })),
+        { requireNextGoalMethod: soccerScope === 'all' },
+      ));
       setFetchedAt(fdData.fetchedAt ?? null);
       setEspnNotice(espnClockNotice(fdData.espn));
       setBookError(null);
@@ -180,12 +187,13 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
       setGames(
         keepSopDisplayGames(
           mergeKalshiIntoFdGames(mergeDkIntoFdGames(fdGames, dkData), kalshiData),
+          { requireNextGoalMethod: soccerScope === 'all' },
         ),
       );
     };
 
     await Promise.all([
-      fetchDkOddsForSop().then((data) => {
+      fetchDkOddsForSop(soccerScope).then((data) => {
         dkData = data;
         applyMerges();
         const hasMergedDk = (data?.games ?? []).some(
@@ -205,7 +213,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
     ]);
 
     if (manual) setBookRefreshing(false);
-  }, []);
+  }, [soccerScope]);
 
   useEffect(() => {
     refreshBook();
@@ -297,6 +305,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false }) {
                     refreshing={bookRefreshing}
                     loading={skipBootLoader && !bookLoaded}
                     onRefresh={() => refreshBook({ manual: true })}
+                    showGameFilters={soccerScope === 'all'}
                   />
                 }
               />
@@ -315,7 +324,7 @@ function SOPPage() {
 }
 
 export function SOP2Page() {
-  return <SOPPageShell basePath="/SOP2" skipBootLoader />;
+  return <SOPPageShell basePath="/SOP2" skipBootLoader soccerScope="all" />;
 }
 
 function espnClockNotice(espn) {

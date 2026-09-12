@@ -1,5 +1,5 @@
 /**
- * SOP Book tab — live FanDuel Premier League + Champions League +EV scanner.
+ * SOP Book tab — live FanDuel + DraftKings + Kalshi +EV scanner.
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -19,6 +19,13 @@ import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from 
 import { useSOPLongestNoGoal } from '../sop/useSOPLongestNoGoal';
 import { findLongestNoGoalPick } from '../sop/longestNoGoalPick';
 import { buildSopMonitorRows, gameAnchorId, liveClockLabel } from '../sop/gameSnapshot';
+import {
+  collectLeagueOptions,
+  competitionBadge,
+  filterSopBookGames,
+  SOP_TIMING_FILTERS,
+} from '../sop/soccerLeagues';
+import { useSOPBookFilters } from '../sop/useSOPBookFilters';
 import GameMonitorTable from './GameMonitorTable';
 
 const REFRESH_MS = 60_000;
@@ -84,20 +91,15 @@ function noGoalLabel(sourceKey, quote) {
   return quote.selection ?? 'No Goal';
 }
 
-function gameMatchesQuery(game, query) {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-
-  const parts = [
-    game.name,
-    game.teams?.home,
-    game.teams?.away,
-    ...(String(game.name ?? '').split(/\s+v\s+/i)),
-  ]
-    .filter(Boolean)
-    .map((s) => String(s).toLowerCase());
-
-  return parts.some((part) => part.includes(q));
+function SopCompetitionBadge({ competition, competitionName, always = false }) {
+  if (!competition) return null;
+  if (!always && competition === 'pl') return null;
+  const badge = competitionBadge({ competition, competitionName });
+  return (
+    <span className={`sop-exp-comp sop-exp-comp--${badge.tone}`} title={badge.name}>
+      {badge.short}
+    </span>
+  );
 }
 
 function collectTeamNames(games) {
@@ -290,6 +292,7 @@ function GameCard({
   kellyEnabled,
   kellyBudget,
   kellyFraction,
+  showLeagueBadges = false,
 }) {
   const [expanded, setExpanded] = useState(true);
   const clockLabel = liveClockLabel(game);
@@ -404,9 +407,11 @@ function GameCard({
           </span>
           <span className="sop-exp-game-toggle-main">
             <span className="sop-exp-game-title">
-              {game.competition === 'ucl' && (
-                <span className="sop-exp-comp sop-exp-comp--ucl">UCL</span>
-              )}
+              <SopCompetitionBadge
+                competition={game.competition}
+                competitionName={game.competitionName}
+                always={showLeagueBadges}
+              />
               {game.name}
             </span>
             <span className="sop-exp-game-meta">
@@ -664,9 +669,25 @@ function GameCard({
   );
 }
 
-function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading = false, onRefresh }) {
+function SOPBookPanel({
+  games,
+  fetchedAt,
+  error,
+  dkNotice,
+  refreshing,
+  loading = false,
+  onRefresh,
+  showGameFilters = false,
+}) {
   const [noGoalPickByEvent, setNoGoalPickByEvent] = useState({});
   const [teamQuery, setTeamQuery] = useState('');
+  const {
+    timing,
+    setTiming,
+    disabledLeagues,
+    toggleLeague,
+    enableAllLeagues,
+  } = useSOPBookFilters();
   const {
     enabled: kellyEnabled,
     setEnabled: setKellyEnabled,
@@ -680,11 +701,20 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
   const { enabled: longestNoGoalEnabled, setEnabled: setLongestNoGoalEnabled } = useSOPLongestNoGoal();
 
   const teamNames = useMemo(() => collectTeamNames(games), [games]);
+  const leagueOptions = useMemo(() => collectLeagueOptions(games), [games]);
 
   const filteredGames = useMemo(() => {
-    if (!teamQuery.trim()) return games;
-    return games.filter((g) => gameMatchesQuery(g, teamQuery));
-  }, [games, teamQuery]);
+    if (!showGameFilters) {
+      const q = teamQuery.trim().toLowerCase();
+      if (!q) return games;
+      return filterSopBookGames(games, { teamQuery });
+    }
+    return filterSopBookGames(games, {
+      timing,
+      disabledLeagues,
+      teamQuery,
+    });
+  }, [disabledLeagues, games, showGameFilters, teamQuery, timing]);
 
   const handleSelectNoGoalPick = useCallback((eventId, sourceKey, book) => {
     setNoGoalPickByEvent((prev) => ({ ...prev, [eventId]: { sourceKey, book } }));
@@ -744,7 +774,9 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">SOP +EV Scanner</h1>
         <p className="sop-exp-subtitle">
-          Premier League + Champions League · FanDuel + DraftKings + Kalshi
+          {showGameFilters
+            ? 'Next Goal Method · soccer · FanDuel + DraftKings + Kalshi'
+            : 'Premier League + Champions League · FanDuel + DraftKings + Kalshi'}
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -760,12 +792,65 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
         </p>
       )}
 
+      {showGameFilters && (
+        <div className="sop-exp-filters" aria-label="Game filters">
+          <div className="sop-exp-filter-row">
+            <span className="sop-exp-filter-label">When</span>
+            <div className="sop-exp-filter-chips" role="group" aria-label="Live or future">
+              {SOP_TIMING_FILTERS.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  className={`sop-exp-filter-chip${timing === option.key ? ' sop-exp-filter-chip--on' : ''}`}
+                  aria-pressed={timing === option.key}
+                  onClick={() => setTiming(option.key)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {leagueOptions.length > 0 && (
+            <div className="sop-exp-filter-row">
+              <span className="sop-exp-filter-label">Leagues</span>
+              <div className="sop-exp-filter-chips" role="group" aria-label="Leagues">
+                {leagueOptions.map((league) => {
+                  const on = !disabledLeagues.has(league.key);
+                  return (
+                    <button
+                      key={league.key}
+                      type="button"
+                      className={`sop-exp-filter-chip sop-exp-filter-chip--${league.tone}${on ? ' sop-exp-filter-chip--on' : ''}`}
+                      aria-pressed={on}
+                      title={league.name}
+                      onClick={() => toggleLeague(league.key)}
+                    >
+                      {league.short}
+                    </button>
+                  );
+                })}
+                {disabledLeagues.size > 0 && (
+                  <button
+                    type="button"
+                    className="sop-exp-filter-chip sop-exp-filter-chip--reset"
+                    onClick={enableAllLeagues}
+                  >
+                    All leagues
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {!error && games.length > 0 && (
         <GameMonitorTable
           rows={buildSopMonitorRows(filteredGames)}
           marketHeader="Play"
           caption="Best +EV vs longest no-goal"
           showMarket
+          showLeagueBadges={showGameFilters}
         />
       )}
 
@@ -829,6 +914,7 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
               kellyEnabled={kellyEnabled}
               kellyBudget={kellyBudget}
               kellyFraction={kellyFraction}
+              showLeagueBadges={showGameFilters}
             />
           ))}
         </div>
@@ -838,8 +924,20 @@ function SOPBookPanel({ games, fetchedAt, error, dkNotice, refreshing, loading =
         <p className="sop-exp-status">No games match “{teamQuery.trim()}”.</p>
       )}
 
+      {!error && games.length > 0 && !teamQuery.trim() && filteredGames.length === 0 && (
+        <p className="sop-exp-status">
+          {showGameFilters
+            ? 'No Next Goal Method games match these filters.'
+            : 'No games match the current filters.'}
+        </p>
+      )}
+
       {!error && games.length === 0 && (
-        <p className="sop-exp-status">No Premier League or Champions League games found.</p>
+        <p className="sop-exp-status">
+          {showGameFilters
+            ? 'No soccer games with Next Goal Method on FanDuel or DraftKings.'
+            : 'No Premier League or Champions League games found.'}
+        </p>
       )}
 
       <footer className="sop-exp-footer">

@@ -1,24 +1,20 @@
 /**
- * ESPN Premier League scoreboard — clock, period, and live score (no API key).
+ * ESPN soccer scoreboard — clock, period, and live score (no API key).
  * Scoreboard only; play-by-play / stoppage estimates stay in pl-corners.
  */
 
-const ESPN_LEAGUES = {
-  pl: {
-    urls: [
-      'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
-      'https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
-    ],
-    referer: 'https://www.espn.com/soccer/scoreboard/_/league/eng.1',
-  },
-  ucl: {
-    urls: [
-      'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
-      'https://site.web.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
-    ],
-    referer: 'https://www.espn.com/soccer/scoreboard/_/league/uefa.champions',
-  },
-};
+import { pickExport } from './named-export.mjs';
+import * as soccerLeagues from '../src/sop/soccerLeagues.js';
+
+const espnScoreboardConfig = pickExport(soccerLeagues, 'espnScoreboardConfig');
+const SOP_SOCCER_LEAGUES = pickExport(soccerLeagues, 'SOP_SOCCER_LEAGUES');
+
+const ESPN_LEAGUES = Object.fromEntries(
+  (SOP_SOCCER_LEAGUES ?? [])
+    .filter((league) => league.espnSlug)
+    .map((league) => [league.key, espnScoreboardConfig(league.key)])
+    .filter(([, config]) => config),
+);
 
 const ESPN_HEADERS = {
   Accept: 'application/json',
@@ -71,6 +67,16 @@ const TEAM_CANON = [
   ['lask linz', 'lask'],
   ['slovan bratislava', 'slovan'],
   ['sabah', 'fc sabah', 'sabah fk'],
+  ['borussia monchengladbach', 'mgladbach', "m'gladbach", 'gladbach', 'monchengladbach'],
+  ['1 fc koln', 'fc koln', 'koln', 'cologne'],
+  ['union berlin', '1 fc union berlin', '1. fc union berlin'],
+  ['athletic club', 'athletic bilbao'],
+  ['rayo vallecano', 'rayo'],
+  ['hamburger sv', 'hamburg', 'hsv'],
+  ['sv elversberg', 'elversberg'],
+  ['real sociedad'],
+  ['celta vigo', 'celta'],
+  ['levante ud', 'levante'],
 ];
 
 function canonTeam(name) {

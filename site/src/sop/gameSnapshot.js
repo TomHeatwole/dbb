@@ -179,6 +179,7 @@ export function buildSopGameSnapshot(game) {
     clock: liveClockLabel(game),
     inPlay: Boolean(game?.inPlay),
     competition: game?.competition ?? 'pl',
+    competitionName: game?.competitionName ?? null,
     market: play?.label ?? 'SOP',
     oddsBook: play?.book ?? null,
     oddsAmerican: play?.american ?? null,

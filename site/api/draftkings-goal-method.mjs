@@ -1,7 +1,7 @@
 /**
- * DraftKings Premier League + Champions League SOP + no-goal scraper (Nash / controldata API).
- * Discovers events from the PL (40253) and UCL (40685) league feeds, then pulls
- * goal-method, correct score, totals, first/next goal, and goalscorer markets.
+ * DraftKings soccer SOP + no-goal scraper (Nash / controldata API).
+ * Discovers events from league feeds, then pulls goal-method, correct score,
+ * totals, first/next goal, and goalscorer markets.
  */
 
 import fs from 'fs';
@@ -11,6 +11,10 @@ import { fetchWorldCupSopOdds as fetchFanDuelGames } from './fanduel-sop.mjs';
 import { pickExport } from '../lib/named-export.mjs';
 import * as fixtureKey from '../src/sop/fixtureKey.js';
 import * as sopModel from '../src/sop/sopModel.js';
+import * as soccerLeagues from '../src/sop/soccerLeagues.js';
+
+const dkLeagueEntries = pickExport(soccerLeagues, 'dkLeagueEntries');
+const gameHasNextGoalMethod = pickExport(soccerLeagues, 'gameHasNextGoalMethod');
 
 const fdNameToSlug = pickExport(fixtureKey, 'fdNameToSlug');
 const fixtureTeamKey = pickExport(fixtureKey, 'fixtureTeamKey');
@@ -28,11 +32,9 @@ const PL_LEAGUE_ID = '40253';
 const PL_LEAGUE_SEO = 'england---premier-league';
 const CL_LEAGUE_ID = '40685';
 const CL_LEAGUE_SEO = 'uefa-champions-league';
-export const DK_SOP_LEAGUES = [
-  { id: PL_LEAGUE_ID, seo: PL_LEAGUE_SEO, competition: 'pl', competitionName: 'Premier League' },
-  { id: CL_LEAGUE_ID, seo: CL_LEAGUE_SEO, competition: 'ucl', competitionName: 'Champions League' },
-];
-const DK_SOP_LEAGUE_IDS = new Set(DK_SOP_LEAGUES.map((league) => league.id));
+export const DK_SOP_LEAGUES = dkLeagueEntries('core');
+export const DK_SOP2_LEAGUES = dkLeagueEntries('all');
+const DK_SOP2_LEAGUE_IDS = new Set(DK_SOP2_LEAGUES.map((league) => league.id));
 const GOAL_METHOD_SUBCATEGORY_ID = '6541';
 const FIRST_GOAL_SUBCATEGORY_ID = '19742';
 const TOTAL_GOALS_SUBCATEGORY_ID = '13171';
@@ -624,7 +626,7 @@ async function fetchDkEventMetaQuiet(eventId, attempt = 0) {
   }
   if (!res.ok) return null;
   const event = (await res.json()).events?.[0];
-  if (!event || !DK_SOP_LEAGUE_IDS.has(String(event.leagueId))) return null;
+  if (!event || !DK_SOP2_LEAGUE_IDS.has(String(event.leagueId))) return null;
   return {
     eventId: String(event.id),
     name: event.name,
@@ -715,7 +717,7 @@ export async function listDkLeagueEvents(leagueId, seo) {
         name: String(event.name).replace(/\s+vs\.?\s+/i, ' v '),
         seoSlug: event.seoIdentifier ?? fdNameToSlug(event.name),
         openDate: event.startEventDate ?? null,
-        inPlay: /start|live|in.?play/i.test(String(event.status ?? '')),
+        inPlay: String(event.status ?? '').toUpperCase() === 'STARTED',
         leagueId: String(event.leagueId ?? leagueId),
       }));
   } catch {
@@ -909,16 +911,29 @@ async function fetchOneDkStandaloneEvent(event, league) {
   };
 }
 
-async function fetchUnmatchedDkLeagueGames(scheduleGames, fetchedResults, remaining) {
+async function eventHasDkNextGoalMethod(eventId, seoSlug) {
+  const method = await fetchSubcategoryQuiet(eventId, GOAL_METHOD_SUBCATEGORY_ID, seoSlug);
+  return (method.markets ?? []).some((market) => /goal method/i.test(market?.name ?? ''))
+    || (method.markets ?? []).length > 0;
+}
+
+async function fetchUnmatchedDkLeagueGames(scheduleGames, fetchedResults, remaining, {
+  leagues = DK_SOP_LEAGUES,
+  requireNextGoalMethod = false,
+} = {}) {
   const knownKeys = new Set();
   for (const game of [...scheduleGames, ...fetchedResults]) {
     const key = fixtureTeamKey(game?.name);
     if (key) knownKeys.add(key);
   }
 
+  const extraLeagues = requireNextGoalMethod
+    ? leagues
+    : leagues.filter((league) => league.competition === 'ucl');
+
   const extraEvents = [];
   await Promise.all(
-    DK_SOP_LEAGUES.filter((league) => league.competition === 'ucl').map(async (league) => {
+    extraLeagues.map(async (league) => {
       const listed = await listDkLeagueEvents(league.id, league.seo);
       for (const event of listed) {
         const key = fixtureTeamKey(event.name);
@@ -949,7 +964,13 @@ async function fetchUnmatchedDkLeagueGames(scheduleGames, fetchedResults, remain
       };
     }
     try {
+      if (requireNextGoalMethod) {
+        const seoSlug = event.seoSlug ?? fdNameToSlug(event.name);
+        const hasMethod = await eventHasDkNextGoalMethod(event.eventId, seoSlug);
+        if (!hasMethod) return null;
+      }
       const row = await fetchOneDkStandaloneEvent(event, league);
+      if (requireNextGoalMethod) return gameHasNextGoalMethod(row) ? row : null;
       return dkGameHasOdds(row) ? row : null;
     } catch (err) {
       return {
@@ -970,17 +991,20 @@ async function fetchUnmatchedDkLeagueGames(scheduleGames, fetchedResults, remain
 export async function fetchWorldCupGoalMethodOdds({
   upcomingOnly = true,
   timeoutMs = DK_HANDLER_TIMEOUT_MS,
+  soccerScope = 'core',
 } = {}) {
   const deadline = Date.now() + timeoutMs;
   const remaining = () => Math.max(0, deadline - Date.now());
+  const expanded = soccerScope === 'all';
+  const leagues = expanded ? DK_SOP2_LEAGUES : DK_SOP_LEAGUES;
 
-  const fdPayload = await fetchFanDuelGames();
+  const fdPayload = await fetchFanDuelGames({ soccerScope });
   if (remaining() <= 0) return emptyDkPayload({ timedOut: true });
 
   const scheduleGames = upcomingOnly
     ? fdPayload.games.filter(isUpcomingGame)
     : fdPayload.games;
-  let slugToId = await discoverDkEventsFromLeagues();
+  let slugToId = await discoverDkEventsFromLeagues(leagues);
   if (remaining() <= 0) return emptyDkPayload({ timedOut: true });
 
   // Probe is optional and slow — only run when explicitly enabled and we have budget.
@@ -1017,8 +1041,13 @@ export async function fetchWorldCupGoalMethodOdds({
   });
 
   if (remaining() > 400) {
-    const extras = await fetchUnmatchedDkLeagueGames(scheduleGames, results, remaining);
-    results.push(...extras.filter(dkGameHasOdds));
+    const extras = await fetchUnmatchedDkLeagueGames(scheduleGames, results, remaining, {
+      leagues,
+      requireNextGoalMethod: expanded,
+    });
+    results.push(...extras.filter((row) => (
+      expanded ? gameHasNextGoalMethod(row) : dkGameHasOdds(row)
+    )));
   }
 
   return buildDkPayload(results, { timedOut: remaining() <= 0 });
@@ -1062,8 +1091,11 @@ export default async function handler(req, res) {
 
   try {
     const upcomingOnly = req.query?.all !== '1' && req.query?.all !== 'true';
+    const soccerScope = req.query?.soccer === 'all' || req.query?.leagues === 'all'
+      ? 'all'
+      : 'core';
     const data = await Promise.race([
-      fetchWorldCupGoalMethodOdds({ upcomingOnly }),
+      fetchWorldCupGoalMethodOdds({ upcomingOnly, soccerScope }),
       sleep(DK_HANDLER_TIMEOUT_MS + 250).then(() =>
         emptyDkPayload({ timedOut: true, error: 'DraftKings timed out' }),
       ),
