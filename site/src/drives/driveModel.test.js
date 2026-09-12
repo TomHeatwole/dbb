@@ -403,6 +403,8 @@ describe('live clock vs stale end-of-half snaps', () => {
   it('reads FanDuel-style drive numbers and ESPN drive-chart counts', () => {
     expect(driveNumberFromName("ND's 6th Drive Result")).toBe(6);
     expect(driveNumberFromName('Wisconsin Drive 5 - Result')).toBe(5);
+    expect(driveNumberFromName('6th Penn State Drive Result')).toBe(6);
+    expect(driveNumberFromName('7th Temple Drive Result Granular')).toBe(7);
     expect(formatDriveOrdinal(1)).toBe('1st');
     expect(formatDriveOrdinal(2)).toBe('2nd');
     expect(formatDriveOrdinal(3)).toBe('3rd');

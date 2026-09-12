@@ -1,6 +1,7 @@
 /**
  * Map Neon fd_drive_odds rows onto the drive-book market shape, and merge
- * them with DraftKings 1st-drive quotes so the UI can show dual books.
+ * them with DraftKings 1st-drive / live next-drive quotes so the UI can
+ * show dual books.
  */
 
 const BUCKETS = [
@@ -92,6 +93,9 @@ function mergeDualMarket(fd, dk) {
 }
 
 function sameDriveSide(a, b) {
+  const aN = Number(a?.driveN);
+  const bN = Number(b?.driveN);
+  if (Number.isFinite(aN) && Number.isFinite(bN) && aN !== bN) return false;
   if (a?.offenseSide && b?.offenseSide) return a.offenseSide === b.offenseSide;
   if (a?.offenseName && b?.offenseName) {
     return String(a.offenseName).toLowerCase() === String(b.offenseName).toLowerCase();
@@ -99,7 +103,7 @@ function sameDriveSide(a, b) {
   return false;
 }
 
-/** Prefer FanDuel rows; fold DK 1st-drive onto the matching side. */
+/** Prefer FanDuel rows; fold DK 1st / live next-drive onto the matching side. */
 export function mergeFdAndDkMarkets(fdMarkets, dkMarkets) {
   const fd = (fdMarkets || []).filter(Boolean);
   const dk = (dkMarkets || []).filter(Boolean);

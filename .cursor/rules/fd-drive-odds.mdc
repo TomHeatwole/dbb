@@ -6,7 +6,7 @@ alwaysApply: false
 
 # NCAAF /drives FanDuel odds
 
-FanDuel drive-result prices are **not** scraped from sbapi/fdx. `scripts/watch_fanduel_drive_results.mjs` upserts Neon from the Android emulator; `/api/ncaaf-drives` trusts `fd_drive_odds` for FD and still fetches DK 1st-drive live.
+FanDuel drive-result prices are **not** scraped from sbapi/fdx. `scripts/watch_fanduel_drive_results.mjs` upserts Neon from the Android emulator; `/api/ncaaf-drives` trusts `fd_drive_odds` for FD, fetches DK 1st-drive (sub 13561) pregame, and on each `/drives` load also pulls live next/current-drive Result from NCAAF Live Drive Props (category 998 / sub 9479).
 
 Do **not** re-seed fake SMU @ Florida State rows. Ended games should be deleted from `fd_drive_odds`, not left to rot.
 

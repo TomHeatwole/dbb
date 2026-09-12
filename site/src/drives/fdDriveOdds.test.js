@@ -58,6 +58,43 @@ describe('fdDriveOdds', () => {
     expect(fdDriveRowsForGame(game, rows, namesMatch)).toHaveLength(2);
   });
 
+  it('does not fold a live DK drive onto a different FD drive number', () => {
+    const fd = [{
+      ...fdDriveMarketFromRow(smuRow),
+      driveN: 1,
+    }];
+    const dk = [{
+      source: 'dk',
+      offenseSide: 'away',
+      offenseName: 'SMU',
+      driveN: 6,
+      marketName: '6th SMU Drive Result',
+      outcomes: { td: { american: 250 }, punt: { american: -140 } },
+    }];
+    const merged = mergeFdAndDkMarkets(fd, dk);
+    expect(merged).toHaveLength(2);
+    expect(merged.find((m) => m.driveN === 1).outcomes.td.dk).toBeUndefined();
+    expect(merged.find((m) => m.driveN === 6).outcomes.td.american).toBe(250);
+  });
+
+  it('merges live DK onto the FanDuel row with the same drive number', () => {
+    const fd = [{
+      ...fdDriveMarketFromRow({ ...smuRow, drive_n: 6, market_name: '6th SMU Drive Result' }),
+    }];
+    const dk = [{
+      source: 'dk',
+      offenseSide: 'away',
+      offenseName: 'SMU',
+      driveN: 6,
+      marketName: '6th SMU Drive Result',
+      outcomes: { td: { american: 250 }, punt: { american: -140 } },
+    }];
+    const merged = mergeFdAndDkMarkets(fd, dk);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].outcomes.td.fd.american).toBe(310);
+    expect(merged[0].outcomes.td.dk.american).toBe(250);
+  });
+
   it('merges DK 1st-drive onto the matching FD side', () => {
     const fd = [fdDriveMarketFromRow(smuRow), fdDriveMarketFromRow(fsuRow)];
     const dk = [{

@@ -845,8 +845,8 @@ function GameCard({
             {!hasDriveLine(game) && !paired && (
               <p className="sop-exp-status drives-missing-line">
                 {game.inPlay
-                  ? 'No FanDuel current-drive line in the database, and DraftKings 1st-drive is pregame only.'
-                  : 'No drive-result line yet. FanDuel prices come from the database; DraftKings 1st-drive is used when they hang it.'}
+                  ? 'No FanDuel current-drive line in the database, and DraftKings has no live next-drive or 1st-drive line.'
+                  : 'No drive-result line yet. FanDuel prices come from the database; DraftKings 1st-drive and live next-drive are used when they hang them.'}
               </p>
             )}
             {game.error && <p className="sop-exp-error">{game.error}</p>}
@@ -959,7 +959,7 @@ function DrivesBookPanel({
       <header className="sop-exp-header">
         <h1 className="sop-exp-title">NCAAF Drive Book</h1>
         <p className="sop-exp-subtitle">
-          FanDuel drive odds from the database · DK 1st-drive · joint LightGBM
+          FanDuel drive odds from the database · DK 1st / next-drive · joint LightGBM
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}

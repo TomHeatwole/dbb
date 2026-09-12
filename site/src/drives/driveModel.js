@@ -731,6 +731,9 @@ export function driveNumberFromName(name) {
   if (ordinal) return Number(ordinal[1]);
   const numbered = n.match(/\bdrive\s+(\d+)\b/i);
   if (numbered) return Number(numbered[1]);
+  // DraftKings live: "6th Penn State Drive Result"
+  const leading = n.match(/^(\d+)(?:st|nd|rd|th)\b/i);
+  if (leading && /drive/i.test(n)) return Number(leading[1]);
   return null;
 }
 

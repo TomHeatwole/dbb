@@ -70,7 +70,7 @@ function DrivesPage() {
       if (data.espn?.ok === false) bits.push(`ESPN live state: ${data.espn.error || 'unavailable'}`);
       if (data.stats) {
         bits.push(
-          `${data.stats.live ?? 0} live · ${data.stats.withDriveLine ?? 0} with drive line (${data.stats.withDbFdDriveLine ?? data.stats.withFdDriveLine ?? 0} FD · ${data.stats.withDkFirstDrive ?? 0} DK 1st) · ${data.stats.espnMatched ?? 0} ESPN matched`,
+          `${data.stats.live ?? 0} live · ${data.stats.withDriveLine ?? 0} with drive line (${data.stats.withDbFdDriveLine ?? data.stats.withFdDriveLine ?? 0} FD · ${data.stats.withDkFirstDrive ?? 0} DK) · ${data.stats.espnMatched ?? 0} ESPN matched`,
         );
       }
       setNotice(bits.length ? bits.join(' · ') : null);

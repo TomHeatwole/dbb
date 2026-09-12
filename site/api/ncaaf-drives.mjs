@@ -1,10 +1,12 @@
 /**
- * NCAAF drive book: FanDuel drive-result from Neon + DraftKings 1st-drive.
+ * NCAAF drive book: FanDuel drive-result from Neon + DraftKings drive lines.
  *
  * FanDuel Next Drive Result is not reliably available on sbapi / fdx-api
  * (pregame FDX returns 400 "Event is scheduled"). A scraper writes American
  * four-way prices into fd_drive_odds; this handler trusts those rows for FD.
- * DraftKings 1st Drive Result still comes from Nash before kickoff.
+ * DraftKings 1st Drive Result comes from Nash before kickoff. Live next /
+ * current-drive Result hangs under Live Drive Props and is pulled once per
+ * /drives load from the NCAAF league subcategory.
  */
 
 import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
@@ -63,6 +65,8 @@ const DK_PE_LOC = 'US-NJ';
 const DK_NASH_BASE = `https://sportsbook-nash.draftkings.com/sites/${DK_PE_LOC}-SB/api`;
 const DK_NCAAF_LEAGUE_ID = '87637';
 const DK_FIRST_DRIVE_RESULT_SUB = '13561';
+const DK_LIVE_DRIVE_CATEGORY = '998';
+const DK_LIVE_DRIVE_RESULT_SUB = '9479';
 const DK_HEADERS = {
   Accept: 'application/json, text/plain, */*',
   'Accept-Language': 'en-US,en;q=0.9',
@@ -694,9 +698,8 @@ async function dkFetch(path, { page = 'event' } = {}) {
   return res.json();
 }
 
-async function fetchDkLeagueEvents() {
-  const payload = await dkFetch(`/sportscontent/dkusny/v1/leagues/${DK_NCAAF_LEAGUE_ID}`, { page: 'league' });
-  return (payload.events ?? [])
+function mapDkLeagueEvents(payload) {
+  return (payload?.events ?? [])
     .filter((event) => event?.id && event?.name)
     .map((event) => ({
       eventId: String(event.id),
@@ -705,6 +708,57 @@ async function fetchDkLeagueEvents() {
       openDate: event.startEventDate ?? null,
       inPlay: String(event.status ?? '').toUpperCase() === 'STARTED',
     }));
+}
+
+async function fetchDkLeagueEvents() {
+  const payload = await dkFetch(`/sportscontent/dkusny/v1/leagues/${DK_NCAAF_LEAGUE_ID}`, { page: 'league' });
+  return mapDkLeagueEvents(payload);
+}
+
+async function fetchDkLiveDriveLeague() {
+  const qs = new URLSearchParams({
+    categoryId: DK_LIVE_DRIVE_CATEGORY,
+    subcategoryId: DK_LIVE_DRIVE_RESULT_SUB,
+  });
+  const payload = await dkFetch(
+    `/sportscontent/dkusny/v1/leagues/${DK_NCAAF_LEAGUE_ID}?${qs}`,
+    { page: 'league' },
+  );
+  return {
+    events: mapDkLeagueEvents(payload),
+    markets: payload.markets ?? [],
+    selections: payload.selections ?? [],
+  };
+}
+
+function groupDkMarketsByEvent(markets, selections) {
+  const eventOfMarket = new Map();
+  const byEvent = new Map();
+  for (const market of markets ?? []) {
+    const eid = market.eventId != null ? String(market.eventId) : '';
+    if (!eid || market.id == null) continue;
+    eventOfMarket.set(String(market.id), eid);
+    if (!byEvent.has(eid)) byEvent.set(eid, { markets: [], selections: [] });
+    byEvent.get(eid).markets.push(market);
+  }
+  for (const sel of selections ?? []) {
+    const eid = eventOfMarket.get(String(sel.marketId ?? ''));
+    if (!eid) continue;
+    byEvent.get(eid).selections.push(sel);
+  }
+  return byEvent;
+}
+
+function mergeDkLeagueEvents(...lists) {
+  const byId = new Map();
+  for (const list of lists) {
+    for (const row of list ?? []) {
+      if (!row?.eventId) continue;
+      const prev = byId.get(row.eventId);
+      byId.set(row.eventId, prev ? { ...prev, ...row, inPlay: Boolean(prev.inPlay || row.inPlay) } : row);
+    }
+  }
+  return [...byId.values()];
 }
 
 function matchDkEvent(fdGame, dkEvents) {
@@ -743,8 +797,18 @@ function dkMarketToNextDrive(market, selections) {
   };
 }
 
+function driveNFromDkName(name) {
+  const raw = String(name ?? '');
+  const leading = raw.match(/^(\d+)(?:st|nd|rd|th)\b/i);
+  if (leading) return Number(leading[1]);
+  const numbered = raw.match(/\bdrive\s+(\d+)\b/i);
+  return numbered ? Number(numbered[1]) : null;
+}
+
 function teamFromDkDriveName(name) {
   return String(name ?? '')
+    .replace(/^\d+(?:st|nd|rd|th)\s+/i, '')
+    .replace(/^next\s+/i, '')
     .replace(/^1st\s+/i, '')
     .replace(/\s+drive result(?:\s+(?:grouped|granular))?$/i, '')
     .trim();
@@ -783,7 +847,11 @@ function annotateDriveMarket(market, teams, live = null) {
     : side === 'home'
       ? (teams?.home ?? fromName ?? live?.possessionName ?? null)
       : (fromName && !/^drive\b/i.test(fromName) ? fromName : (live?.possessionName ?? null));
-  return { ...market, offenseSide: side, offenseName };
+  const fromNameN = driveNFromDkName(market.marketName);
+  const driveN = Number.isFinite(market.driveN) && market.driveN >= 1
+    ? market.driveN
+    : (Number.isFinite(fromNameN) && fromNameN >= 1 ? fromNameN : null);
+  return { ...market, offenseSide: side, offenseName, driveN };
 }
 
 function isGranularDriveName(name) {
@@ -1419,7 +1487,7 @@ async function fetchNcaafDriveBook(opts = {}) {
   const events = ncaafEvents(sportPage);
   const sportMarkets = sportPage?.attachments?.markets ?? {};
 
-  const [fdGames, espn, dkEvents, fdDbRows] = await Promise.all([
+  const [fdGames, espn, dkEventsRaw, fdDbRows, dkLiveLeague] = await Promise.all([
     mapPool(events, EVENT_POOL, async (ev) => {
       try {
         if (!shouldFetchEvent(ev)) {
@@ -1448,10 +1516,25 @@ async function fetchNcaafDriveBook(opts = {}) {
       console.error('[ncaaf-drives] fd_drive_odds', err);
       return [];
     }),
+    fetchDkLiveDriveLeague().catch(() => ({ events: [], markets: [], selections: [] })),
   ]);
 
+  const dkEvents = mergeDkLeagueEvents(dkEventsRaw, dkLiveLeague.events);
+  const dkLiveByEvent = groupDkMarketsByEvent(dkLiveLeague.markets, dkLiveLeague.selections);
   const needsDk = fdGames.filter((game) => shouldFetchDkFirstDrive(game));
   const dkByFdId = new Map();
+
+  function applyDkPayload(game, match, markets, selections, extra = {}) {
+    const picked = pickDkFirstDrive(markets, selections, game.teams);
+    dkByFdId.set(game.eventId, {
+      dkMatched: true,
+      dkEventId: match.eventId,
+      dkMarketNames: picked.names,
+      nextDrive: picked.nextDrive,
+      drives: picked.drives,
+      ...extra,
+    });
+  }
   if (dkEvents.length && needsDk.length) {
     await mapPool(needsDk, EVENT_POOL, async (game) => {
       const match = matchDkEvent(game, dkEvents);
@@ -1459,17 +1542,27 @@ async function fetchNcaafDriveBook(opts = {}) {
         dkByFdId.set(game.eventId, { dkMatched: false });
         return;
       }
+      const livePayload = dkLiveByEvent.get(match.eventId);
+      const liveMarkets = livePayload?.markets ?? [];
+      const liveSelections = livePayload?.selections ?? [];
+      const haveLiveDrive = liveMarkets.some((market) => !isGranularDriveName(market?.name)
+        && !/grouped/i.test(String(market?.name ?? '')));
       try {
-        const payload = await fetchDkFirstDrive(match.eventId);
-        const picked = pickDkFirstDrive(payload.markets, payload.selections, game.teams);
-        dkByFdId.set(game.eventId, {
-          dkMatched: true,
-          dkEventId: match.eventId,
-          dkMarketNames: picked.names,
-          nextDrive: picked.nextDrive,
-          drives: picked.drives,
-        });
+        let markets = liveMarkets;
+        let selections = liveSelections;
+        if (!haveLiveDrive || !game.inPlay) {
+          const first = await fetchDkFirstDrive(match.eventId);
+          markets = markets.concat(first.markets ?? []);
+          selections = selections.concat(first.selections ?? []);
+        }
+        applyDkPayload(game, match, markets, selections);
       } catch (err) {
+        if (liveMarkets.length) {
+          applyDkPayload(game, match, liveMarkets, liveSelections, {
+            dkError: compactProviderError(err.message || err),
+          });
+          return;
+        }
         dkByFdId.set(game.eventId, {
           dkMatched: true,
           dkEventId: match.eventId,
@@ -1477,6 +1570,14 @@ async function fetchNcaafDriveBook(opts = {}) {
         });
       }
     });
+  }
+
+  for (const game of fdGames) {
+    if (dkByFdId.has(game.eventId)) continue;
+    const match = matchDkEvent(game, dkEvents);
+    const livePayload = match && dkLiveByEvent.get(match.eventId);
+    if (!livePayload?.markets?.length) continue;
+    applyDkPayload(game, match, livePayload.markets, livePayload.selections);
   }
 
   const games = fdGames
