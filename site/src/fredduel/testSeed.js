@@ -103,15 +103,22 @@ export function buildTestSeed(now = Date.now()) {
     createdAt: iso(now - 5 * HOUR),
   });
 
-  // 2b. Weekly head-to-head offer.
+  // 2b. Weekly head-to-head offer — already taken so auto-settle has a ticket.
   const m2b = weeklyMarket(3, 'weekly_outscore', 1, {
     opponentRosterId: 4, opponentName: team(4).teamName,
   });
-  addOffer({
+  const weeklyOfferId = addOffer({
     creatorId: actor(3).id, creatorName: actor(3).name,
     marketKind: m2b.kind, market: m2b, title: describeMarket(m2b),
-    line: -110, maxExposure: 55, remainingExposure: 55,
+    line: -110, maxExposure: 55, remainingExposure: 27.5,
     createdAt: iso(now - 90 * MIN), expiresAt: iso(now + 18 * HOUR),
+  });
+  addBet({
+    offerId: weeklyOfferId, offerTitle: describeMarket(m2b), line: -110,
+    creatorId: actor(3).id, creatorName: actor(3).name,
+    takerId: actor(1).id, takerName: actor(1).name,
+    takerStake: 25, creatorRisk: 27.5,
+    createdAt: iso(now - 80 * MIN),
   });
 
   // 3. Weekly offer expiring soon (countdown demo).
@@ -123,14 +130,22 @@ export function buildTestSeed(now = Date.now()) {
     createdAt: iso(now - 40 * MIN), expiresAt: iso(now + 12 * MIN),
   });
 
-  // 4. Custom freeform offer.
-  addOffer({
+  // 4. Custom freeform offer — taken, so manual settle has a ticket.
+  const customOfferId = addOffer({
     creatorId: actor(8).id, creatorName: actor(8).name,
     marketKind: MARKET_KINDS.CUSTOM, market: null,
     title: 'Mike and Mac to both miss the playoffs',
     description: 'Settles yes only if BOTH teams miss the playoffs. Commissioner is the judge.',
-    line: 300, maxExposure: 30, remainingExposure: 30,
+    line: 300, maxExposure: 30, remainingExposure: 0, status: 'filled',
     createdAt: iso(now - DAY), expiresAt: iso(now + 5 * DAY),
+  });
+  addBet({
+    offerId: customOfferId, offerTitle: 'Mike and Mac to both miss the playoffs',
+    line: 300,
+    creatorId: actor(8).id, creatorName: actor(8).name,
+    takerId: actor(5).id, takerName: actor(5).name,
+    takerStake: 10, creatorRisk: 30,
+    createdAt: iso(now - 20 * HOUR),
   });
 
   // 5. Season points total with a higher minimum.

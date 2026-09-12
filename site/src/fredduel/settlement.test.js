@@ -8,6 +8,7 @@ import {
   settlementPayout,
   applyResolvedOfferToBet,
   applyAutoSettlementsToDb,
+  applyManualSettlementToBet,
 } from './settlement';
 import { buildSettlementSnapshot, playoffFormatForSeason } from './settlementSnapshot';
 import { PLAYOFF_FORMAT_BRACKET, PLAYOFF_FORMAT_CUMULATIVE } from '../scenarios/playoffStandings';
@@ -192,6 +193,17 @@ describe('applyResolvedOfferToBet', () => {
   it('does not grade pending or manual', () => {
     expect(applyResolvedOfferToBet(bet, { status: MARKET_RESULT.PENDING })).toBe(bet);
     expect(applyResolvedOfferToBet(bet, { status: MARKET_RESULT.MANUAL })).toBe(bet);
+  });
+});
+
+describe('applyManualSettlementToBet', () => {
+  const bet = { id: 'b1', status: 'live', takerStake: 10, creatorRisk: 30 };
+
+  it('grades taker, layer, and void by hand', () => {
+    expect(applyManualSettlementToBet(bet, 'taker').result).toBe('taker');
+    expect(applyManualSettlementToBet(bet, 'creator').status).toBe('settled');
+    expect(applyManualSettlementToBet(bet, 'push').status).toBe('void');
+    expect(applyManualSettlementToBet(bet, 'push').settledBy).toBe('manual');
   });
 });
 

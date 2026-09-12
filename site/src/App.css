@@ -905,7 +905,8 @@ button.lineup-mode-info {
   margin-left: 0.625rem; /* 10px -> 0.625rem */
   font-size: 0.8em;
 }
-.team-season-dropdown-list {
+.team-season-dropdown-list,
+.team-scores-week-dropdown-list {
   position: absolute;
   top: 110%;
   left: 0;
@@ -917,6 +918,25 @@ button.lineup-mode-info {
   max-height: 15.625rem; /* 250px -> 15.625rem */
   overflow-y: auto;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 140, 180, 0.45) transparent;
+}
+.team-season-dropdown-list::-webkit-scrollbar,
+.team-scores-week-dropdown-list::-webkit-scrollbar {
+  width: 6px;
+}
+.team-season-dropdown-list::-webkit-scrollbar-track,
+.team-scores-week-dropdown-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.team-season-dropdown-list::-webkit-scrollbar-thumb,
+.team-scores-week-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(120, 140, 180, 0.4);
+  border-radius: 9999px;
+}
+.team-season-dropdown-list::-webkit-scrollbar-thumb:hover,
+.team-scores-week-dropdown-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 170, 220, 0.65);
 }
 .team-season-dropdown-option {
   padding: 0.4em 1em;
@@ -23324,7 +23344,9 @@ button.corners-bet:hover {
 .fd-toolbar-actions {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.4rem;
 }
 
@@ -23562,6 +23584,18 @@ button.corners-bet:hover {
   color: #fca5a5;
 }
 
+.fd-chip-settled {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.5);
+  color: #4ade80;
+}
+
+.fd-chip-void {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.45);
+  color: #cbd5e1;
+}
+
 .fd-chip-cap {
   background: rgba(250, 204, 21, 0.1);
   border-color: rgba(250, 204, 21, 0.4);
@@ -23733,6 +23767,35 @@ button.corners-bet:hover {
 .fd-bet-who { font-weight: 700; margin: 0.15rem 0; }
 
 .fd-bet-vs { align-self: center; font-size: 0.8rem; opacity: 0.5; }
+
+.fd-settle-result {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.fd-settle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.45rem 0 0.5rem;
+}
+
+.fd-settle-week {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.fd-settle-week select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: inherit;
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+}
 
 /* --- Create panel --- */
 .fd-create-panel {
@@ -25708,6 +25771,31 @@ button.corners-bet:hover {
   opacity: 0.7;
 }
 
+.hproj-team-dropdown {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4em 0.85em;
+  justify-content: space-between;
+  gap: 0.65rem;
+  font-size: 1rem;
+  font-weight: 400;
+}
+.hproj-team-dropdown .hproj-identity {
+  flex: 1;
+  min-width: 0;
+}
+.hproj-team-dropdown .team-season-dropdown-option {
+  display: flex;
+  align-items: center;
+}
+.hproj-team-dropdown .hproj-team-avatar {
+  width: 2.15rem;
+  height: 2.15rem;
+}
+.hproj-team-dropdown .team-season-dropdown-list {
+  max-height: 22rem;
+}
+
 .hproj-page-head {
   position: relative;
   z-index: 40;
@@ -25787,38 +25875,6 @@ button.corners-bet:hover {
   text-transform: uppercase;
 }
 
-.hproj-team-switch {
-  position: relative;
-  width: 100%;
-}
-
-.hproj-team-switch-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.55rem 0.75rem 0.55rem 0.6rem;
-  border-radius: 0.85rem;
-  border: 1px solid rgba(148, 180, 255, 0.16);
-  background: linear-gradient(135deg, rgba(26, 54, 93, 0.55) 0%, rgba(20, 30, 60, 0.75) 100%);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.hproj-team-switch-btn:hover,
-.hproj-team-switch-btn[aria-expanded="true"] {
-  border-color: rgba(147, 197, 253, 0.4);
-}
-
-.hproj-team-switch-caret {
-  flex: 0 0 auto;
-  color: #93c5fd;
-  font-size: 0.85rem;
-}
-
 .hproj-identity {
   display: flex;
   align-items: center;
@@ -25869,46 +25925,6 @@ button.corners-bet:hover {
   object-fit: cover;
   background: #222;
   flex: 0 0 auto;
-}
-
-.hproj-team-switch-list {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 0.35rem);
-  left: 0;
-  right: 0;
-  margin: 0;
-  padding: 0.3rem;
-  list-style: none;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(148, 180, 255, 0.16);
-  background: #101629;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-  max-height: 22rem;
-  overflow: auto;
-}
-
-.hproj-team-switch-option {
-  display: flex;
-  width: 100%;
-  padding: 0.45rem 0.5rem;
-  border: none;
-  border-radius: 0.55rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.hproj-team-switch-option:hover,
-.hproj-team-switch-option.is-active {
-  background: rgba(147, 197, 253, 0.12);
-}
-
-.hproj-team-switch-option .hproj-team-avatar {
-  width: 2.15rem;
-  height: 2.15rem;
 }
 
 .hproj-split {
@@ -26580,9 +26596,8 @@ button.corners-bet:hover {
     margin-bottom: 0.7rem;
   }
 
-  .hproj-team-switch-btn {
-    gap: 0.45rem;
-    padding: 0.4rem 0.55rem 0.4rem 0.45rem;
+  .hproj-team-dropdown {
+    padding: 0.35em 0.7em;
   }
 
   .hproj-identity {
@@ -26607,11 +26622,7 @@ button.corners-bet:hover {
     height: 0.95rem;
   }
 
-  .hproj-team-switch-option {
-    padding: 0.35rem 0.4rem;
-  }
-
-  .hproj-team-switch-option .hproj-team-avatar {
+  .hproj-team-dropdown .hproj-team-avatar {
     width: 1.7rem;
     height: 1.7rem;
   }

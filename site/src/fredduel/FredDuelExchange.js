@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
 import { involvesRosterId, primaryTeamName } from './markets';
 import { compareLongestLine, compareShortestLine } from './oddsMath';
+import { resolveOffer } from './settlement';
+import { buildSettlementSnapshot } from './settlementSnapshot';
+import { fetchScoresData } from '../lookups/ScoresLookup';
 import OfferCard from './OfferCard';
 import BetCard from './BetCard';
 import CreateOfferPanel from './CreateOfferPanel';
@@ -25,7 +28,7 @@ const TABS = [
   { id: 'market', label: 'Market' },
   { id: 'myOffers', label: 'My offers' },
   { id: 'myBets', label: 'My bets' },
-  { id: 'liveBets', label: 'All live bets' },
+  { id: 'liveBets', label: 'All bets' },
 ];
 
 const SORT_NEWEST = 'newest';
@@ -231,7 +234,13 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
   const [layerIds, setLayerIds] = useState([]);
   const [openMenu, setOpenMenu] = useState(null);
   const [sortBy, setSortBy] = useState(SORT_NEWEST);
+  const [gradeThroughWeek, setGradeThroughWeek] = useState(null);
+  const [weeksParsed, setWeeksParsed] = useState(null);
   const filtersRef = useRef(null);
+  const settlingRef = useRef(false);
+  const lastSettleKeyRef = useRef('');
+  const officialCompleted = getCompletedWeeksCount();
+  const completedWeeks = gradeThroughWeek == null ? officialCompleted : gradeThroughWeek;
 
   const teamsByName = useMemo(
     () => [...teams].sort((a, b) => a.teamName.localeCompare(b.teamName, undefined, { sensitivity: 'base' })),
@@ -312,6 +321,37 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     return () => clearInterval(t);
   }, [refresh]);
 
+  useEffect(() => {
+    if (!client.isTest) return undefined;
+    let cancelled = false;
+    fetchScoresData(CURRENT_YEAR)
+      .then((weeks) => { if (!cancelled) setWeeksParsed(weeks); })
+      .catch(() => { if (!cancelled) setWeeksParsed([]); });
+    return () => { cancelled = true; };
+  }, [client]);
+
+  const settlementSnapshot = useMemo(() => {
+    if (!client.isTest || !Array.isArray(weeksParsed)) return null;
+    return buildSettlementSnapshot(weeksParsed, {
+      completedWeeks,
+      season: CURRENT_YEAR,
+    });
+  }, [client, weeksParsed, completedWeeks]);
+
+  useEffect(() => {
+    if (!client.isTest || !settlementSnapshot || !client.applyAutoSettlements) return;
+    const liveIds = data.bets.filter((b) => b.status === 'live').map((b) => b.id).join(',');
+    const key = `${completedWeeks}:${liveIds}`;
+    if (!liveIds || key === lastSettleKeyRef.current || settlingRef.current) return;
+    settlingRef.current = true;
+    client.applyAutoSettlements(settlementSnapshot)
+      .then(({ changes }) => {
+        lastSettleKeyRef.current = key;
+        if (changes.length) return refresh();
+      })
+      .finally(() => { settlingRef.current = false; });
+  }, [client, settlementSnapshot, completedWeeks, data.bets, refresh]);
+
   const betsByOfferId = useMemo(() => {
     const map = {};
     for (const bet of data.bets) {
@@ -386,7 +426,7 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     () => data.bets.filter((b) => actor && (b.takerId === actor.id || b.creatorId === actor.id)),
     [data.bets, actor],
   );
-  const liveBetsAll = useMemo(() => data.bets.filter((b) => b.status === 'live'), [data.bets]);
+  const liveBetsAll = useMemo(() => data.bets, [data.bets]);
 
   const openOffers = useMemo(
     () => sortOffers(openOffersAll.filter(filterOffer)),
@@ -435,6 +475,12 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     setTab('market');
     await refresh();
   };
+  const settleBet = (betId) => async (result) => {
+    if (!client.settleBet) return;
+    await client.settleBet(betId, { result });
+    await refresh();
+  };
+
   const createOffers = async (inputs) => {
     const errors = [];
     for (const input of inputs || []) {
@@ -493,7 +539,18 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
         lastGroup = group;
       }
       nodes.push(
-        <BetCard key={bet.id} bet={bet} actor={actor} highlight={bet.id === highlightBetId} />,
+        <BetCard
+          key={bet.id}
+          bet={bet}
+          actor={actor}
+          highlight={bet.id === highlightBetId}
+          preview={
+            settlementSnapshot
+              ? resolveOffer(offersById[bet.offerId] || { marketKind: 'custom' }, settlementSnapshot)
+              : null
+          }
+          onSettle={client.isTest ? settleBet(bet.id) : null}
+        />,
       );
     }
     return nodes;
@@ -527,9 +584,9 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
   } else if (tab === 'myOffers') {
     body = renderOffers(myOffers, "You haven't posted any offers yet.", myOffersAll.length, 'offers');
   } else if (tab === 'myBets') {
-    body = renderBets(myBets, 'No live bets yet — take an offer or get one taken.', myBetsAll.length, 'bets');
+    body = renderBets(myBets, 'No bets yet — take an offer or get one taken.', myBetsAll.length, 'bets');
   } else {
-    body = renderBets(liveBets, 'No live bets on the exchange yet.', liveBetsAll.length, 'live bets');
+    body = renderBets(liveBets, 'No bets on the exchange yet.', liveBetsAll.length, 'bets');
   }
 
   return (
@@ -549,10 +606,32 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
         </div>
         <div className="fd-toolbar-actions">
           <button className="fd-btn fd-btn-ghost" onClick={refresh} title="Refresh">↻</button>
+          {client.isTest && (
+            <label className="fd-settle-week">
+              Grade through week
+              <select
+                value={gradeThroughWeek == null ? 'live' : String(gradeThroughWeek)}
+                onChange={(e) => {
+                  lastSettleKeyRef.current = '';
+                  const v = e.target.value;
+                  setGradeThroughWeek(v === 'live' ? null : Number(v));
+                }}
+              >
+                <option value="live">Official ({officialCompleted} done)</option>
+                {Array.from({ length: 18 }, (_, week) => (
+                  <option key={week} value={week}>{week === 0 ? 'None' : `Week ${week}`}</option>
+                ))}
+              </select>
+            </label>
+          )}
           {client.isTest && onResetTestData && (
             <button
               className="fd-btn fd-btn-ghost"
-              onClick={async () => { await onResetTestData(); await refresh(); }}
+              onClick={async () => {
+                lastSettleKeyRef.current = '';
+                await onResetTestData();
+                await refresh();
+              }}
             >
               Reset test data
             </button>

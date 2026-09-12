@@ -262,48 +262,49 @@ function TeamSwitch({ options, current, onSelect }) {
   }, [open]);
 
   return (
-    <div className="hproj-team-switch" ref={wrapRef}>
-      <button
-        type="button"
-        className="hproj-team-switch-btn"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        {current ? (
-          <TeamIdentity
-            teamName={current.team}
-            ownerName={current.owner}
-            teamAvatar={current.teamAvatar}
-            ownerAvatar={current.ownerAvatar}
-          />
-        ) : (
-          <span className="hproj-identity-team">Select a team</span>
-        )}
-        <span className="hproj-team-switch-caret" aria-hidden="true">▾</span>
-      </button>
+    <div
+      className="team-season-dropdown hproj-team-dropdown"
+      ref={wrapRef}
+      onClick={() => setOpen((v) => !v)}
+      aria-haspopup="listbox"
+      aria-expanded={open}
+    >
+      {current ? (
+        <TeamIdentity
+          teamName={current.team}
+          ownerName={current.owner}
+          teamAvatar={current.teamAvatar}
+          ownerAvatar={current.ownerAvatar}
+        />
+      ) : (
+        <span className="hproj-identity-team">Select a team</span>
+      )}
+      <span className="team-season-dropdown-arrow">{open ? '▲' : '▼'}</span>
       {open ? (
-        <ul className="hproj-team-switch-list" role="listbox">
+        <div className="team-season-dropdown-list" role="listbox" onClick={(e) => e.stopPropagation()}>
           {options.map((opt) => (
-            <li key={opt.rid}>
-              <button
-                type="button"
-                className={`hproj-team-switch-option${current && String(current.rid) === String(opt.rid) ? ' is-active' : ''}`}
-                onClick={() => {
-                  setOpen(false);
-                  onSelect(opt);
-                }}
-              >
-                <TeamIdentity
-                  teamName={opt.team}
-                  ownerName={opt.owner}
-                  teamAvatar={opt.teamAvatar}
-                  ownerAvatar={opt.ownerAvatar}
-                />
-              </button>
-            </li>
+            <div
+              key={opt.rid}
+              role="option"
+              aria-selected={current && String(current.rid) === String(opt.rid)}
+              className={
+                'team-season-dropdown-option'
+                + (current && String(current.rid) === String(opt.rid) ? ' team-season-dropdown-option-active' : '')
+              }
+              onClick={() => {
+                setOpen(false);
+                onSelect(opt);
+              }}
+            >
+              <TeamIdentity
+                teamName={opt.team}
+                ownerName={opt.owner}
+                teamAvatar={opt.teamAvatar}
+                ownerAvatar={opt.ownerAvatar}
+              />
+            </div>
           ))}
-        </ul>
+        </div>
       ) : null}
     </div>
   );

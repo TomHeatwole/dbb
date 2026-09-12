@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import PodcastCard from './PodcastCard';
@@ -88,7 +88,7 @@ function HomeCardsSplit({ left, right }) {
     slotsRef.current.clear();
   }, []);
 
-  function applyBalance(nextLeftIds, nextRightIds) {
+  const applyBalance = useCallback((nextLeftIds, nextRightIds) => {
     if (
       movableIdsEqual(nextLeftIds, assignmentRef.current.leftIds)
       && movableIdsEqual(nextRightIds, assignmentRef.current.rightIds)
@@ -97,9 +97,9 @@ function HomeCardsSplit({ left, right }) {
     }
     setLeftIds(nextLeftIds);
     setRightIds(nextRightIds);
-  }
+  }, []);
 
-  function placeAndBalance() {
+  const placeAndBalance = useCallback(() => {
     const leftCol = leftColRef.current;
     const rightCol = rightColRef.current;
     if (!leftCol || !rightCol) return;
@@ -112,7 +112,7 @@ function HomeCardsSplit({ left, right }) {
 
     const next = balanceHomeColumns(measureColumn(leftCol), measureColumn(rightCol));
     applyBalance(stripPinnedIds(next.leftIds), stripPinnedIds(next.rightIds));
-  }
+  }, [applyBalance]);
 
   useLayoutEffect(() => {
     placeAndBalance();
@@ -136,7 +136,7 @@ function HomeCardsSplit({ left, right }) {
       cancelAnimationFrame(frame);
       ro.disconnect();
     };
-  }, [preferredKey]);
+  }, [preferredKey, placeAndBalance]);
 
   return (
     <div className="home-cards-grid--split">

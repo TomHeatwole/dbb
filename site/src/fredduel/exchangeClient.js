@@ -23,7 +23,7 @@ import {
   maxStakeForExposure, exposureUsedByTaker,
 } from './oddsMath';
 import { buildTestSeed } from './testSeed';
-import { applyAutoSettlementsToDb } from './settlement';
+import { applyAutoSettlementsToDb, applyManualSettlementToBet } from './settlement';
 
 export const TEST_MODE_KEY = 'fredduel_test_mode';
 export const TEST_ACTOR_KEY = 'fredduel_test_actor';
@@ -281,6 +281,18 @@ export function createTestClient(getActor) {
       db.bets = bets;
       saveTestDb(db);
       return { bets, changes };
+    },
+
+    async settleBet(betId, { result, note } = {}) {
+      const db = loadTestDb();
+      const bet = db.bets.find((b) => b.id === betId);
+      if (!bet) throw new Error('Bet not found.');
+      if (bet.status !== 'live') throw new Error(`Bet is already ${bet.status}.`);
+      const graded = applyManualSettlementToBet(bet, result, { note });
+      if (graded === bet) throw new Error('Pick backer, layer, or void.');
+      Object.assign(bet, graded);
+      saveTestDb(db);
+      return bet;
     },
   };
 }

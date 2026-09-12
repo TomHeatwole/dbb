@@ -368,6 +368,31 @@ export function applyResolvedOfferToBet(bet, resolved, { now = new Date(), settl
   };
 }
 
+export function applyManualSettlementToBet(bet, result, { now = new Date(), note } = {}) {
+  if (result === 'push') {
+    return applyResolvedOfferToBet(
+      bet,
+      { status: MARKET_RESULT.PUSH, detail: note || 'Voided by hand.' },
+      { now, settledBy: SETTLED_BY.MANUAL },
+    );
+  }
+  if (result === BET_WINNER.TAKER) {
+    return applyResolvedOfferToBet(
+      bet,
+      { status: MARKET_RESULT.YES, detail: note || 'Graded by hand: backer.' },
+      { now, settledBy: SETTLED_BY.MANUAL },
+    );
+  }
+  if (result === BET_WINNER.CREATOR) {
+    return applyResolvedOfferToBet(
+      bet,
+      { status: MARKET_RESULT.NO, detail: note || 'Graded by hand: layer.' },
+      { now, settledBy: SETTLED_BY.MANUAL },
+    );
+  }
+  return bet;
+}
+
 export function applyAutoSettlementsToDb(offers, bets, snapshot, now = new Date()) {
   const byOffer = new Map((offers || []).map((o) => [o.id, o]));
   const changes = [];

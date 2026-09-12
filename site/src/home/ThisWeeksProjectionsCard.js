@@ -190,7 +190,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
         }
       });
     return () => { cancelled = true; };
-  }, [season, week, playersData, playerIdMap, weekEntries, rosters]);
+  }, [season, week, playersData, playerIdMap, weekEntries, rosters, weeksParsedData]);
 
   const rows = useMemo(() => {
     if (!weekScoresByRoster || !weekEntries.length) return [];
