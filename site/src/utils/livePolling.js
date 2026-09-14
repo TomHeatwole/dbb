@@ -3,21 +3,21 @@ import { CURRENT_YEAR, getCurrentNFLWeek, shouldPollCurrentWeek } from './DateHe
 import { readApiCacheLatestByKey, readPollingIntervalMs } from './database';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
+import { applyLiveEspnOverlay } from '../lookups/EspnBoxScoreLookup';
+import { eventIdsForBoxScores } from '../scores/espnBoxScore';
+
+const SLEEPER_LIVE_TTL_MS = 60 * 1000;
+const ESPN_SCOREBOARD_TTL_MS = 20 * 1000;
 
 /**
- * Shared live polling helper for Sleeper league matchups.
+ * Shared live polling helper for Sleeper league matchups + ESPN box scores.
  *
- * It:
- * - Reads a configurable polling interval from the DB
- * - Gates polling based on ESPN's scoreboard + shouldPollCurrentWeek
- * - Uses a short TTL for the active week when games are live, longer TTL otherwise
- * - Refreshes Sleeper matchups via fetchScoresData(season, { activeWeekTtlMs })
- * - Exposes results via callbacks so callers can update UI / derive diffs
- *
- * Callers are responsible for:
- * - Deciding when to construct/destroy a poller (e.g. only when viewing current week)
- * - Applying newWeeks into component state
- * - Optional diff/highlight logic based on the newWeeks snapshot
+ * During a live window:
+ * - Refreshes ESPN's scoreboard every ~20s (used for the live gate and box scores)
+ * - Awaits Sleeper only for the viewed week, and only when that cache is >60s
+ *   or the tick is a start/focus force. Other weeks stay cache-only.
+ * - Overlays ESPN box-score points / stat lines onto the in-memory week.
+ *   ESPN-overlaid rows are never written back to the Sleeper cache key.
  */
 export function createLiveScoresPoller({
   season,
@@ -25,13 +25,9 @@ export function createLiveScoresPoller({
   onData,
   onDelayMinutesChange,
   onLiveWindowChange,
-  // When true, the first tick on mount and any tick triggered when the page
-  // becomes visible/focused will force a fresh Sleeper fetch (bypassing the
-  // cached snapshot) while regular interval ticks continue to use TTL-based
-  // behavior.
   forceOnStartAndFocus = false,
-  // Array of week numbers to force-fetch even if they're not the active week
   forceWeeks = null,
+  getOverlayContext = null,
 }) {
   let polling = false;
   let pollingIntervalMs = 15000;
@@ -96,25 +92,29 @@ export function createLiveScoresPoller({
       const isActiveWeek = isCurrentSeason && Number(week) === currentWk;
       let activeWeekTtlMs = null;
       let isLivePollingWindow = false;
+      let scoreboard = null;
 
       if (isActiveWeek) {
-        const espnCacheKey = `espn_site_v2_sports_football_nfl_scoreboard_week_${week}_year_${season}_seasontype_2`;
-        let scoreboard = null;
         try {
-          const latestE = await readApiCacheLatestByKey(espnCacheKey);
-          scoreboard = latestE && latestE.data ? latestE.data : null;
+          scoreboard = await fetchNflScoreboard(Number(season), Number(week), {
+            forceUpdate,
+            maxAgeMs: ESPN_SCOREBOARD_TTL_MS,
+          });
         } catch (_) {
-          // ignore
+          scoreboard = null;
         }
         if (!scoreboard) {
           try {
-            scoreboard = await fetchNflScoreboard(Number(season), Number(week));
+            const espnCacheKey = `espn_site_v2_sports_football_nfl_scoreboard_week_${week}_year_${season}_seasontype_2`;
+            const latestE = await readApiCacheLatestByKey(espnCacheKey);
+            scoreboard = latestE && latestE.data ? latestE.data : null;
           } catch (_) {
             // ignore
           }
         }
         const shouldPoll = shouldPollCurrentWeek(scoreboard);
-        isLivePollingWindow = !!shouldPoll;
+        const hasRecentBoxes = eventIdsForBoxScores(scoreboard).length > 0;
+        isLivePollingWindow = !!shouldPoll || hasRecentBoxes;
         if (typeof onLiveWindowChange === 'function') {
           try {
             onLiveWindowChange(isLivePollingWindow);
@@ -122,7 +122,7 @@ export function createLiveScoresPoller({
             // ignore caller errors
           }
         }
-        activeWeekTtlMs = shouldPoll ? 60 * 1000 : 60 * 60 * 1000;
+        activeWeekTtlMs = shouldPoll ? SLEEPER_LIVE_TTL_MS : 60 * 60 * 1000;
       } else if (typeof onLiveWindowChange === 'function') {
         try {
           onLiveWindowChange(false);
@@ -143,14 +143,28 @@ export function createLiveScoresPoller({
         // ignore cache read errors
       }
 
+      const networkWeeks = [Number(week)];
+      if (Array.isArray(forceWeeks)) {
+        for (const w of forceWeeks) {
+          const n = Number(w);
+          if (Number.isFinite(n) && !networkWeeks.includes(n)) networkWeeks.push(n);
+        }
+      }
+
+      const sleeperAgeMs = prevDbTs != null ? Date.now() - prevDbTs : Infinity;
+      const sleeperStale = isLivePollingWindow && sleeperAgeMs > SLEEPER_LIVE_TTL_MS;
+      const forceSleeper = !!forceUpdate || sleeperStale;
+
       let newWeeks = null;
       let fetchFailed = false;
       try {
-        const options = { activeWeekTtlMs, forceUpdate };
-        if (forceWeeks && Array.isArray(forceWeeks)) {
-          options.forceWeeks = forceWeeks;
-        }
-        newWeeks = await fetchScoresData(season, options);
+        newWeeks = await fetchScoresData(season, {
+          activeWeekTtlMs,
+          forceUpdate: forceSleeper,
+          staleWhileRevalidate: false,
+          networkWeeks,
+          forceWeeks: Array.isArray(forceWeeks) ? forceWeeks : undefined,
+        });
       } catch (_) {
         fetchFailed = true;
       }
@@ -169,7 +183,7 @@ export function createLiveScoresPoller({
             const now = Date.now();
             const prevAgeMs = prevDbTs != null ? now - prevDbTs : null;
             const afterAgeMs = dbEntryTs != null ? now - dbEntryTs : null;
-            const wasStaleBefore = prevAgeMs != null && prevAgeMs > 60 * 1000;
+            const wasStaleBefore = prevAgeMs != null && prevAgeMs > SLEEPER_LIVE_TTL_MS;
             if (wasStaleBefore && (fetchFailed || dbEntryTs === prevDbTs)) {
               const ageMs = afterAgeMs != null ? afterAgeMs : prevAgeMs;
               if (ageMs != null && ageMs >= 120000) {
@@ -192,6 +206,26 @@ export function createLiveScoresPoller({
         return;
       }
 
+      let espnStatLines = {};
+      if (isLivePollingWindow && scoreboard) {
+        try {
+          const ctx = typeof getOverlayContext === 'function' ? (getOverlayContext() || {}) : {};
+          const overlaid = await applyLiveEspnOverlay({
+            weeks: newWeeks,
+            week,
+            scoreboard,
+            playerIdMap: ctx.playerIdMap || null,
+            playersData: ctx.playersData || null,
+          });
+          if (overlaid && Array.isArray(overlaid.weeks)) {
+            newWeeks = overlaid.weeks;
+            espnStatLines = overlaid.statLines || {};
+          }
+        } catch (_) {
+          // keep official Sleeper week if ESPN overlay fails
+        }
+      }
+
       if (typeof onData === 'function') {
         try {
           await onData({
@@ -200,6 +234,8 @@ export function createLiveScoresPoller({
             prevDbTs,
             isLivePollingWindow,
             activeWeekTtlMs,
+            espnStatLines,
+            scoreboard,
           });
         } catch (_) {
           // ignore caller errors
@@ -286,5 +322,3 @@ export function createLiveScoresPoller({
     stop,
   };
 }
-
-

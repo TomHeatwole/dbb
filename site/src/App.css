@@ -1656,7 +1656,7 @@ html.live-proj-yellow-theme {
   grid-template-columns: 2.55rem minmax(0, 1fr) auto;
   grid-template-areas:
     "slot player nums"
-    "slot game nums"
+    "slot meta nums"
     "hint hint hint";
   column-gap: 0.45rem;
   row-gap: 0.12rem;
@@ -1736,13 +1736,60 @@ html.live-proj-yellow-theme {
   white-space: nowrap;
 }
 
+.scores-lineup-meta-row {
+  grid-area: meta;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.scores-lineup-statline {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.05rem;
+  min-width: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #8b95b3;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.scores-lineup-statline-part {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-scores-pts-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.08rem;
+}
+
+.team-scores-pts-stack .scores-lineup-statline,
+.yoffs-matchup-player-pts .scores-lineup-statline {
+  display: block;
+  flex: none;
+  max-width: 7.2rem;
+}
+
 .scores-lineup-empty {
   color: #65729e;
   font-style: italic;
 }
 
 .scores-lineup-game-col {
-  grid-area: game;
+  flex: 0 0 auto;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -1753,12 +1800,13 @@ html.live-proj-yellow-theme {
   align-items: center;
   gap: 0.3rem;
   min-width: 0;
-  flex: 1 1 auto;
-  margin-left: 2.1rem;
+  flex: 0 0 auto;
+  margin-left: 0.55rem;
   font-size: 0.72rem;
   font-weight: 600;
   color: #9fb4de;
   line-height: 1.3;
+  white-space: nowrap;
 }
 
 .scores-lineup-game .hproj-hint-live-dot {
@@ -1936,6 +1984,25 @@ a.scores-lineup-final-hproj,
   }
   .scores-lineup-row {
     grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      "slot player nums"
+      "meta meta nums"
+      "hint hint hint";
+  }
+  .scores-lineup-meta-row {
+    width: 100%;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .scores-lineup-game-col {
+    flex: 0 0 auto;
+  }
+  .scores-lineup-game {
+    margin-left: 0;
+  }
+  .scores-lineup-statline {
+    flex: 1 1 0;
+    font-size: 0.58rem;
   }
   .scores-lineup-nums {
     grid-template-columns: 2.6rem 2.6rem;
@@ -1972,7 +2039,7 @@ a.scores-lineup-final-hproj,
     height: 1.4rem;
   }
   .scores-lineup-game {
-    margin-left: 1.8rem;
+    margin-left: 0;
     font-size: 0.64rem;
   }
   .scores-lineup-pts-actual {
@@ -1998,21 +2065,27 @@ a.scores-lineup-final-hproj,
 
 @media (min-width: 50.0625em) {
   .scores-lineup-row {
-    grid-template-columns: 2.55rem minmax(0, 1.3fr) minmax(8.75rem, 1fr) auto;
+    grid-template-columns: 2.55rem minmax(0, 0.95fr) minmax(13.5rem, 1.35fr) auto;
     grid-template-areas:
-      "slot player game nums"
+      "slot player meta nums"
       "hint hint hint hint";
     align-items: center;
-    column-gap: 0.65rem;
+    column-gap: 0.5rem;
   }
   .scores-lineup-head {
     padding: 0.15rem 0 0.4rem;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     grid-template-areas: none;
   }
+  .scores-lineup-meta-row {
+    gap: 0.85rem;
+  }
   .scores-lineup-game {
     margin-left: 0;
     font-size: 0.78rem;
+  }
+  .scores-lineup-statline {
+    min-width: 6.75rem;
   }
   .scores-lineup-bench-hint {
     padding-left: 0;
@@ -2020,9 +2093,9 @@ a.scores-lineup-final-hproj,
     white-space: nowrap;
   }
   .scores-lineup-bench-toggle {
-    grid-template-columns: 2.55rem minmax(0, 1.3fr) minmax(8.75rem, 1fr) auto;
+    grid-template-columns: 2.55rem minmax(0, 0.95fr) minmax(13.5rem, 1.35fr) auto;
     grid-template-areas: "chevron label game nums";
-    column-gap: 0.65rem;
+    column-gap: 0.5rem;
   }
   .scores-lineup-bench-toggle .scores-lineup-game-col {
     display: block;
@@ -6678,10 +6751,16 @@ h1.info-title {
   margin-left: auto;
   font-weight: 800;
   color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.08rem;
+  line-height: 1.15;
 }
 .yoffs-matchup-player--right .yoffs-matchup-player-pts {
   margin-left: 0;
   margin-right: auto;
+  align-items: flex-start;
 }
 .yoffs-matchup-player-empty {
   color: #65729e;

@@ -68,6 +68,7 @@ function LeagueScores() {
 	const isMobile = useIsMobile();
 	const myRosterId = useMyRosterId(rosters, users);
 	const [playerGameLabels, setPlayerGameLabels] = useState({});
+	const [espnStatLines, setEspnStatLines] = useState({});
 	const [gameLabelsReady, setGameLabelsReady] = useState(false);
 	const [playersTeamMapReady, setPlayersTeamMapReady] = useState(false);
 	const [liveScoresReady, setLiveScoresReady] = useState(false);
@@ -75,11 +76,23 @@ function LeagueScores() {
 	const [injuriesMap, setInjuriesMap] = useState({});
 	const [apiDelayMinutes, setApiDelayMinutes] = useState(null); // null -> hide banner, number -> minutes delayed
 	const lastDbEntryTsRef = useRef(null);
+	const overlayCtxRef = useRef({});
+	const prevDataRef = useRef(null);
 	const [prevData, setPrevData] = useState(null);
 	const [teamHighlightMap, setTeamHighlightMap] = useState({}); // rosterId -> 'up'|'down'|'row'
 	const [playerHighlightMap, setPlayerHighlightMap] = useState({}); // rosterId -> { playerId -> 'up'|'down' }
 	const labelBaselineKeyRef = useRef(null);
 	const [playersTeamMap, setPlayersTeamMap] = useState({}); // playerId -> team abbr (from weekly snapshot)
+
+	const labelsWithEspn = useMemo(() => {
+		const out = { ...(playerGameLabels || {}) };
+		for (const [pid, meta] of Object.entries(espnStatLines || {})) {
+			if (!meta) continue;
+			const prev = out[pid] || {};
+			out[pid] = { ...prev, statLine: meta.statLine || prev.statLine, ptsFrom: meta.ptsFrom || prev.ptsFrom };
+		}
+		return out;
+	}, [playerGameLabels, espnStatLines]);
 
 	const playerSeasonTotalsMap = useMemo(() => {
 		return getPlayerSeasonTotalsMap(weeksParsedData);
@@ -95,7 +108,7 @@ function LeagueScores() {
 		rosters,
 		playersData,
 		projectedPtsById,
-		playerGameLabels,
+		playerGameLabels: labelsWithEspn,
 		weekScoresByRoster,
 		injuriesMap,
 		playerIdMap,
@@ -121,7 +134,7 @@ function LeagueScores() {
 		const rows = weekEntries.map((e) => {
 			const rid = e.roster_id;
 			const raw = breakdownByRoster[rid];
-			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || playerGameLabels, injuriesMap, seasonTotalsMap, projectedPtsById, lineupMode) : null;
+			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || labelsWithEspn, injuriesMap, seasonTotalsMap, projectedPtsById, lineupMode) : null;
 			const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 			const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
 			const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
@@ -139,7 +152,7 @@ function LeagueScores() {
 		const teams = {};
 		rows.forEach(r => { teams[r.rosterId] = { total: r.total, starters: r.starters, bench: r.bench }; });
 		return { order, teams };
-	}, [playersData, playerIdMap, playerGameLabels, injuriesMap, projectedPtsById, lineupMode]);
+	}, [playersData, playerIdMap, labelsWithEspn, injuriesMap, projectedPtsById, lineupMode]);
 
 	function compareExpanded(prev, next) {
 		if (!prev || !next) { return []; }
@@ -420,12 +433,12 @@ function LeagueScores() {
 		const key = `${season}-${week}`;
 		if (labelBaselineKeyRef.current !== key) {
 		try {
-			const baseline = buildExpandedData(weeksParsedData, week, playerGameLabels, playerSeasonTotalsMap);
+			const baseline = buildExpandedData(weeksParsedData, week, labelsWithEspn, playerSeasonTotalsMap);
 			setPrevData(baseline);
 		} catch (_) {}
 			labelBaselineKeyRef.current = key;
 		}
-	}, [playerGameLabels, weeksParsedData, season, week, buildExpandedData, playerSeasonTotalsMap]);
+	}, [labelsWithEspn, weeksParsedData, season, week, buildExpandedData, playerSeasonTotalsMap]);
 
 	// Load per-player team mapping from weekly players snapshot (current season only)
 	// Live polling effect has intentionally curated dependencies; suppress
@@ -473,36 +486,47 @@ function LeagueScores() {
 		labelBaselineKeyRef.current = null;
 	}, [season, week]);
 
+	prevDataRef.current = prevData;
+	overlayCtxRef.current = {
+		playerIdMap,
+		playersData,
+		labels: labelsWithEspn,
+		buildExpandedData,
+	};
+
 	// Poll for score updates using shared live polling helper; only active while
-	// this route is mounted and the tab is visible.
+	// this route is mounted and the tab is visible. Overlay context is read from
+	// a ref so ESPN/Sleeper ticks do not remount the poller.
 	useEffect(() => {
 		let cancelled = false;
+		setEspnStatLines({});
 
 		const poller = createLiveScoresPoller({
 			season,
 			week,
 			forceOnStartAndFocus: true,
-			onData: ({ newWeeks, dbEntryTs }) => {
+			getOverlayContext: () => overlayCtxRef.current,
+			onData: ({ newWeeks, dbEntryTs, espnStatLines: nextLines }) => {
 				if (cancelled || !Array.isArray(newWeeks)) {
 					return;
 				}
 				setLiveScoresReady(true);
+				setEspnStatLines(nextLines || {});
+				const ctx = overlayCtxRef.current || {};
 				const seasonTotals = getPlayerSeasonTotalsMap(newWeeks);
-				const nextExpanded = buildExpandedData(
-					newWeeks,
-					week,
-					playerGameLabels,
-					seasonTotals
-				);
+				const nextExpanded = ctx.buildExpandedData
+					? ctx.buildExpandedData(newWeeks, week, ctx.labels, seasonTotals)
+					: null;
+				const prev = prevDataRef.current;
 				let changes = [];
-				if (prevData) {
-					changes = compareExpanded(prevData, nextExpanded);
+				if (prev && nextExpanded) {
+					changes = compareExpanded(prev, nextExpanded);
 				}
 				const prevTs = lastDbEntryTsRef.current;
-				if ((dbEntryTs != null && prevTs !== dbEntryTs) || changes.length > 0) {
+				if (!prev || (dbEntryTs != null && prevTs !== dbEntryTs) || changes.length > 0) {
 					setWeeksParsedData(newWeeks);
 					lastDbEntryTsRef.current = dbEntryTs != null ? dbEntryTs : prevTs;
-					setPrevData(nextExpanded);
+					if (nextExpanded) setPrevData(nextExpanded);
 					const nextTeamMap = {};
 					const nextPlayerMap = {};
 					for (const ch of changes) {
@@ -570,8 +594,7 @@ function LeagueScores() {
 			cancelled = true;
 			poller.stop();
 		};
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [season, week, playerGameLabels, buildExpandedData, prevData]);
+	}, [season, week]);
 
 	useEffect(() => {
 		const isLiveWeek = String(season) === String(CURRENT_YEAR)
@@ -731,7 +754,7 @@ function LeagueScores() {
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
-							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode) : null;
+							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)
@@ -775,7 +798,7 @@ function LeagueScores() {
 									.map((p) => p && p.id)
 									.filter((pid) => pid && pid !== '0');
 								for (const pid of rosterPlayerIds) {
-									const label = (playerGameLabels && playerGameLabels[pid]) ? playerGameLabels[pid] : null;
+									const label = (labelsWithEspn && labelsWithEspn[pid]) ? labelsWithEspn[pid] : null;
 									if (!label) { continue; }
 									const isLive = !!label.live;
 									const isCompleted = !!label.completed;
@@ -868,7 +891,7 @@ function LeagueScores() {
 												onToggleBench={() => toggleBench(rosterId)}
 												playersData={playersData}
 												playerIdMap={playerIdMap}
-												playerGameLabels={playerGameLabels}
+												playerGameLabels={labelsWithEspn}
 												isActiveWeek={isActiveWeek}
 												injuriesMap={injuriesMap}
 												showCurrentInjury={showCurrentInjury}

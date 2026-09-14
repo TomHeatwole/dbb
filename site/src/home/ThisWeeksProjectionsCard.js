@@ -250,7 +250,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     liveProjByRoster,
   ]);
 
-  const top3 = useMemo(() => {
+  const ranked = useMemo(() => {
     const copy = rows.slice();
     copy.sort((a, b) => {
       let av;
@@ -270,7 +270,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
       if (bv !== av) return bv - av;
       return String(a.rosterId).localeCompare(String(b.rosterId));
     });
-    return copy.slice(0, 3);
+    return copy.slice(0, 10);
   }, [rows, liveMode, rankMode]);
 
   const title = liveMode || isWeekCompleteByGames
@@ -289,7 +289,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     );
   } else if (error) {
     body = <div className="week-stars-status week-stars-status--error">{error}</div>;
-  } else if (!top3.length) {
+  } else if (!ranked.length) {
     body = (
       <div className="week-stars-status">
         Not enough data yet for Week {week}.
@@ -299,27 +299,30 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     body = (
       <div className="this-week-proj-body">
         {liveMode ? (
-          <div className="this-week-proj-toggle" role="group" aria-label="Rank by">
-            <button
-              type="button"
-              className={`this-week-proj-toggle-btn${rankMode === 'scores' ? ' is-active' : ''}`}
-              aria-pressed={rankMode === 'scores'}
-              onClick={() => setRankMode('scores')}
-            >
-              Score
-            </button>
-            <button
-              type="button"
-              className={`this-week-proj-toggle-btn${rankMode === 'projections' ? ' is-active' : ''}`}
-              aria-pressed={rankMode === 'projections'}
-              onClick={() => setRankMode('projections')}
-            >
-              Live Proj
-            </button>
+          <div className="this-week-proj-sort">
+            <span className="this-week-proj-sort-label">Sort by:</span>
+            <div className="this-week-proj-toggle" role="group" aria-label="Sort by">
+              <button
+                type="button"
+                className={`this-week-proj-toggle-btn${rankMode === 'scores' ? ' is-active' : ''}`}
+                aria-pressed={rankMode === 'scores'}
+                onClick={() => setRankMode('scores')}
+              >
+                Score
+              </button>
+              <button
+                type="button"
+                className={`this-week-proj-toggle-btn${rankMode === 'projections' ? ' is-active' : ''}`}
+                aria-pressed={rankMode === 'projections'}
+                onClick={() => setRankMode('projections')}
+              >
+                Live Proj
+              </button>
+            </div>
           </div>
         ) : null}
         <div className="this-week-proj-rows">
-          {top3.map((row, idx) => {
+          {ranked.map((row, idx) => {
             const mine = isMyRoster(row.rosterId, myRosterId);
             const chipHref = row.hprojHref;
             const chipValue = liveMode
@@ -354,14 +357,16 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
                       <span className="this-week-proj-units"> proj</span>
                     </span>
                   )}
-                  {HPROJ_ON_SCORES && Number.isFinite(chipValue) ? (
-                    <HprojHint
-                      href={chipHref}
-                      value={chipValue}
-                      size="sm"
-                      variant={liveMode ? 'live' : 'hproj'}
-                    />
-                  ) : null}
+                  <span className="this-week-proj-proj">
+                    {HPROJ_ON_SCORES && Number.isFinite(chipValue) ? (
+                      <HprojHint
+                        href={chipHref}
+                        value={chipValue}
+                        size="sm"
+                        variant={liveMode ? 'live' : 'hproj'}
+                      />
+                    ) : null}
+                  </span>
                 </span>
               </div>
             );

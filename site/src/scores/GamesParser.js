@@ -18,13 +18,13 @@ const TEAM_ABBR_ALIASES = {
   LA: 'LAR',
 };
 
-function normalizeTeamAbbr(raw) {
+export function normalizeTeamAbbr(raw) {
   if (!raw) { return null; }
   const upper = String(raw).replace(/[^A-Za-z]/g, '').toUpperCase();
   return TEAM_ABBR_ALIASES[upper] || upper;
 }
 
-function extractEvents(scoreboardJson) {
+export function extractEvents(scoreboardJson) {
   if (!scoreboardJson || typeof scoreboardJson !== 'object') { return []; }
   if (Array.isArray(scoreboardJson.events)) { return scoreboardJson.events; }
   if (Array.isArray(scoreboardJson.leagues) && scoreboardJson.leagues.length && Array.isArray(scoreboardJson.leagues[0].events)) {

@@ -61,6 +61,8 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   const showCurrentInjury = String(season) === String(CURRENT_YEAR) && week >= currentWeek;
   const [injuriesMap, setInjuriesMap] = useState({});
   const [playerGameLabels, setPlayerGameLabels] = useState({});
+  const [espnStatLines, setEspnStatLines] = useState({});
+  const overlayCtxRef = useRef({});
   const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
   const [playersTeamMap, setPlayersTeamMap] = useState({});
   const [liveWeeksParsedData, setLiveWeeksParsedData] = useState(null);
@@ -304,6 +306,18 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     };
   }, [season, week, rosterId, playersDataForWeek, playerIdMap, effectiveWeeksParsedData, playersTeamMap]);
 
+  const labelsWithEspn = useMemo(() => {
+    const out = { ...(playerGameLabels || {}) };
+    for (const [pid, meta] of Object.entries(espnStatLines || {})) {
+      if (!meta) continue;
+      const prev = out[pid] || {};
+      out[pid] = { ...prev, statLine: meta.statLine || prev.statLine, ptsFrom: meta.ptsFrom || prev.ptsFrom };
+    }
+    return out;
+  }, [playerGameLabels, espnStatLines]);
+
+  overlayCtxRef.current = { playerIdMap, playersData: playersDataForWeek };
+
   // Live polling: when viewing current week of current season, auto-refresh scores
   useEffect(() => {
     const isCurrentSeason = String(season) === String(CURRENT_YEAR);
@@ -313,16 +327,19 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     }
 
     let cancelled = false;
+    setEspnStatLines({});
 
     const poller = createLiveScoresPoller({
       season,
       week,
       forceOnStartAndFocus: true,
-      onData: ({ newWeeks }) => {
+      getOverlayContext: () => overlayCtxRef.current,
+      onData: ({ newWeeks, espnStatLines: nextLines }) => {
         if (cancelled || !Array.isArray(newWeeks)) {
           return;
         }
         setLiveWeeksParsedData(newWeeks);
+        setEspnStatLines(nextLines || {});
       },
     });
 
@@ -342,7 +359,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   // Get week breakdown for this roster
   const rawWeekBreakdown = effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week)[rosterId] : null;
   const weekBreakdown = rawWeekBreakdown
-    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode)
+    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode)
     : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
@@ -374,13 +391,13 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   let activeCount = 0;
   let yetToPlayCount = 0;
 
-  if (isActiveWeek && weekBreakdown && playerGameLabels) {
+  if (isActiveWeek && weekBreakdown && labelsWithEspn) {
     const rosterPlayerIds = [...(weekBreakdown.starters || []), ...(weekBreakdown.bench || [])]
       .map(p => p && p.id)
       .filter(pid => pid && pid !== '0');
     
     for (const pid of rosterPlayerIds) {
-      const label = playerGameLabels[pid];
+      const label = labelsWithEspn[pid];
       if (!label) {
         continue;
       }
@@ -423,7 +440,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
                   onToggleBench={() => setBenchOpen(open => !open)}
                   playersData={playersDataForWeek}
                   playerIdMap={playerIdMap}
-                  playerGameLabels={playerGameLabels}
+                  playerGameLabels={labelsWithEspn}
                   isActiveWeek={isActiveWeek}
                   injuriesMap={injuriesMap}
                   showCurrentInjury={showCurrentInjury}

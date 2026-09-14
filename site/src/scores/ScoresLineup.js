@@ -45,6 +45,25 @@ function formatPlayerNameForDisplay(nameOrId, compact) {
   return `${firstInitial} ${lastShort || ''}`.trim();
 }
 
+function StatLine({ text, fromEspn = false }) {
+  const line = String(text || '').trim();
+  if (!line) return null;
+  const parts = line.split(' · ').map((part) => part.trim()).filter(Boolean);
+  const rows = parts.length <= 2
+    ? parts
+    : [parts[0], parts.slice(1).join(' · ')];
+  return (
+    <div
+      className="scores-lineup-statline"
+      title={fromEspn ? `Live ESPN · ${line}` : line}
+    >
+      {rows.map((row) => (
+        <span key={row} className="scores-lineup-statline-part">{row}</span>
+      ))}
+    </div>
+  );
+}
+
 function GameLabel({ gameObj, isActiveWeek }) {
   const classes = ['scores-lineup-game'];
   if (isActiveWeek && gameObj.live) {
@@ -202,7 +221,9 @@ export default function ScoresLineup({
               <span className="scores-lineup-empty">—</span>
             </div>
           </div>
-          <div className="scores-lineup-game-col" />
+          <div className="scores-lineup-meta-row">
+            <div className="scores-lineup-game-col" />
+          </div>
           <div className={numsClass}>
             {showScoreCol ? <span className="scores-lineup-pts-actual">—</span> : null}
             {showProjCol ? <span className="scores-lineup-pts-proj">—</span> : null}
@@ -264,8 +285,11 @@ export default function ScoresLineup({
             <InjuryBadge playerId={p.id} info={info} />
           </div>
         </div>
-        <div className="scores-lineup-game-col">
-          <GameLabel gameObj={gameObj} isActiveWeek={isActiveWeek} />
+        <div className="scores-lineup-meta-row">
+          <div className="scores-lineup-game-col">
+            <GameLabel gameObj={gameObj} isActiveWeek={isActiveWeek} />
+          </div>
+          <StatLine text={gameObj.statLine} fromEspn={gameObj.ptsFrom === 'espn'} />
         </div>
         <div className={numsClass}>
           {showScoreCol ? <span className={`scores-lineup-pts-actual${highlightClass}`}>{scoreDisplay(p)}</span> : null}

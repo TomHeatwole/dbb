@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
@@ -121,6 +121,8 @@ function MatchupView({
   const [playersData, setPlayersData] = useState(preloadedPlayersData || null);
   const [playerIdMap, setPlayerIdMap] = useState(preloadedPlayerIdMap || null);
   const [playerGameLabelsByWeek, setPlayerGameLabelsByWeek] = useState({});
+  const [espnStatLines, setEspnStatLines] = useState({});
+  const overlayCtxRef = useRef({});
   const [weekCompleteByGames, setWeekCompleteByGames] = useState({});
   const [injuriesByWeek, setInjuriesByWeek] = useState({});
   const [loadingTeams, setLoadingTeams] = useState(true);
@@ -156,7 +158,19 @@ function MatchupView({
     () => (weeksParsedData ? getWeekScoreBreakdown(weeksParsedData, currentWeekNum, teamData?.rosters) : null),
     [weeksParsedData, currentWeekNum, teamData],
   );
-  const currentWeekLabels = (playerGameLabelsByWeek && playerGameLabelsByWeek[currentWeekNum]) || {};
+  const labelsByWeek = useMemo(() => {
+    const base = playerGameLabelsByWeek || {};
+    if (!espnStatLines || !Object.keys(espnStatLines).length) return base;
+    const next = { ...base };
+    const prev = { ...(next[currentWeekNum] || {}) };
+    for (const [pid, meta] of Object.entries(espnStatLines)) {
+      if (!meta) continue;
+      prev[pid] = { ...(prev[pid] || {}), statLine: meta.statLine, ptsFrom: meta.ptsFrom };
+    }
+    next[currentWeekNum] = prev;
+    return next;
+  }, [playerGameLabelsByWeek, espnStatLines, currentWeekNum]);
+  const currentWeekLabels = (labelsByWeek && labelsByWeek[currentWeekNum]) || {};
   const projectedPtsById = useWeeklyProjectedPoints(season, currentWeekNum);
   const currentWeekInjuries = (injuriesByWeek && injuriesByWeek[currentWeekNum]) || {};
   const hprojEnabled = HPROJ_ON_SCORES && isCurrentSeason;
@@ -191,6 +205,8 @@ function MatchupView({
     leftOffset: winProbScope === 'season' ? winProbLeftOffset : 0,
     rightOffset: winProbScope === 'season' ? winProbRightOffset : 0,
   });
+  overlayCtxRef.current = { playerIdMap, playersData };
+
   const hprojFirstNameCounts = useMemo(
     () => ownerFirstNameCounts(teamData?.rosters, teamData?.users),
     [teamData],
@@ -613,17 +629,20 @@ function MatchupView({
     }
 
     let cancelled = false;
+    setEspnStatLines({});
 
     const poller = createLiveScoresPoller({
       season,
       week: liveWeek,
       forceOnStartAndFocus: true,
       forceWeeks: effectiveWeeks, // Pass all weeks we're displaying so they stay loaded
-      onData: ({ newWeeks }) => {
+      getOverlayContext: () => overlayCtxRef.current,
+      onData: ({ newWeeks, espnStatLines: nextLines }) => {
         if (cancelled || !Array.isArray(newWeeks)) {
           return;
         }
         setWeeksParsedData(newWeeks);
+        setEspnStatLines(nextLines || {});
       },
     });
 
@@ -669,7 +688,7 @@ function MatchupView({
 
   function makeRenderPlayerSideForWeek(weekNumber) {
     const labelsForWeek =
-      (playerGameLabelsByWeek && playerGameLabelsByWeek[weekNumber]) || {};
+      (labelsByWeek && labelsByWeek[weekNumber]) || {};
     const isActiveWeekForDisplay =
       isCurrentSeason &&
       Number(weekNumber) === Number(currentWeekNum) &&
@@ -791,7 +810,17 @@ function MatchupView({
       );
 
       const ptsNode = (
-        <span className="yoffs-matchup-player-pts">{ptsText}</span>
+        <span className="yoffs-matchup-player-pts">
+          <span>{ptsText}</span>
+          {gameObj.statLine ? (
+            <span
+              className="scores-lineup-statline"
+              title={gameObj.ptsFrom === 'espn' ? `Live ESPN · ${gameObj.statLine}` : gameObj.statLine}
+            >
+              {gameObj.statLine}
+            </span>
+          ) : null}
+        </span>
       );
 
       const isRight = align === 'right';
@@ -866,7 +895,7 @@ function MatchupView({
     const raw2 = breakdownByRoster[team2Id] || null;
 
     const labelsForWeek =
-      (playerGameLabelsByWeek && playerGameLabelsByWeek[w]) || {};
+      (labelsByWeek && labelsByWeek[w]) || {};
     
     const injuriesForWeek =
       (injuriesByWeek && injuriesByWeek[w]) || {};
@@ -918,11 +947,11 @@ function MatchupView({
     if (
       isCurrentSeason &&
       Number(w) === Number(currentWeekNum) &&
-      playerGameLabelsByWeek &&
+      labelsByWeek &&
       !(weekCompleteByGames && weekCompleteByGames[w])
     ) {
       const labelsForActivity =
-        playerGameLabelsByWeek[w] || {};
+        labelsByWeek[w] || {};
       let leftActiveCount = 0;
       let leftYetToPlayCount = 0;
       let rightActiveCount = 0;

@@ -28,10 +28,12 @@ async function fetchJson(url, cacheKeyOverride = null) {
 
 // fetchWeekByDates removed (no longer needed)
 
-export async function fetchNflScoreboard(season, week) {
+export async function fetchNflScoreboard(season, week, options = {}) {
   if (!season || !week) {
     throw new Error('fetchNflScoreboard requires season and week');
   }
+  const forceUpdate = !!options.forceUpdate;
+  const maxAgeMs = Number.isFinite(Number(options.maxAgeMs)) ? Number(options.maxAgeMs) : null;
 
   if (USE_FAKE_EXAMPLE_DATA) {
     const res = await fetch(FAKE_SCOREBOARD_PATH);
@@ -132,7 +134,7 @@ export async function fetchNflScoreboard(season, week) {
   // DB first
   try {
     const cached = await readApiCacheLatestByKey(cacheKey);
-    if (cached && cached.data !== undefined) {
+    if (cached && cached.data !== undefined && !forceUpdate) {
       // For future weeks, enforce a 1-hour TTL (temporary)
       if (!PAUSE_SCRAPES && isFutureWeek) {
         const ageMs = Date.now() - (cached.ts || 0);
@@ -145,10 +147,11 @@ export async function fetchNflScoreboard(season, week) {
           }
         }
       }
-      // For active current week, enforce 60s TTL
+      // For active current week, enforce 60s TTL (or caller maxAgeMs)
       if (!PAUSE_SCRAPES && isActiveWeek) {
         const ageMs = Date.now() - (cached.ts || 0);
-        if (ageMs > 60 * 1000) {
+        const ttlMs = maxAgeMs != null ? maxAgeMs : 60 * 1000;
+        if (ageMs > ttlMs) {
           try {
             const refreshed = await fetchJson(url, cacheKey);
             return applyMidweekSimulation(validateSeasonYear(refreshed), season, week);

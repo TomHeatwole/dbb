@@ -2,9 +2,31 @@ import { LEAGUE_ID, PREVIOUS_YEARS, PAUSE_SCRAPES } from '../utils/global_consta
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { writeApiCacheWithKey, readApiCacheLatestByKey, recordRateLimitHit } from '../utils/database';
 
+function asWeekList(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((w) => Number(w))
+    .filter((w) => Number.isFinite(w) && w >= 1 && w <= 17);
+}
+
+async function fetchAndCacheWeek(apiUrl, cacheKey) {
+  if (PAUSE_SCRAPES) return null;
+  const resp = await fetch(apiUrl);
+  if (resp.status === 429) {
+    try { await recordRateLimitHit('sleeper'); } catch (_) {}
+  }
+  if (!resp.ok) return null;
+  const weekArr = await resp.json();
+  try { await writeApiCacheWithKey(cacheKey, apiUrl, weekArr); } catch (_) {}
+  return weekArr;
+}
+
+function stripMatchupId(weekArr) {
+  if (!Array.isArray(weekArr)) return weekArr;
+  return weekArr.map(({ matchup_id, ...rest }) => rest);
+}
+
 export async function fetchScoresData(season, options = {}) {
-  // Determine leagueId based on season. Prefer PREVIOUS_YEARS when that season exists
-  // (handles pre-season when LEAGUE_ID is already the new year but we want last year's data).
   const currentYear = String(CURRENT_YEAR);
   const normalizedSeason = season === undefined || season === null || season === '' ? currentYear : String(season);
   const leagueId = PREVIOUS_YEARS[normalizedSeason] ?? (normalizedSeason === currentYear ? LEAGUE_ID : null);
@@ -12,102 +34,82 @@ export async function fetchScoresData(season, options = {}) {
     return Array(17).fill(null);
   }
 
-  let weeksParsedData = null;
+  const forceWeeksArray = asWeekList(options.forceWeeks);
+  const networkWeeks = asWeekList(options.networkWeeks);
+  const networkWeekSet = networkWeeks.length ? new Set(networkWeeks) : null;
+  const forceUpdate = !!options.forceUpdate;
+  const staleWhileRevalidate = options.staleWhileRevalidate !== false;
+  const currentWk = getCurrentNFLWeek();
 
-  const forceWeeksArray = Array.isArray(options.forceWeeks)
-    ? options.forceWeeks
-        .map((w) => Number(w))
-        .filter((w) => Number.isFinite(w) && w >= 1 && w <= 17)
-    : [];
-
-  const fetchWeekData = async (season, weekNum) => {
+  const fetchWeekData = async (seasonVal, weekNum) => {
     const apiUrl = `https://api.sleeper.app/v1/league/${leagueId}/matchups/${weekNum}`;
     const cacheKey = `sleeper_v1_league_${leagueId}_matchups_${weekNum}`;
-    const forceUpdate = !!options.forceUpdate;
-
     const isActiveWeek =
-      String(season) === String(CURRENT_YEAR) &&
-      Number(weekNum) === getCurrentNFLWeek();
-    const isPastSeason = String(season) !== String(CURRENT_YEAR);
+      String(seasonVal) === String(CURRENT_YEAR) &&
+      Number(weekNum) === currentWk;
+    const isPastSeason = String(seasonVal) !== String(CURRENT_YEAR);
     const isForcedWeek = forceWeeksArray.includes(Number(weekNum));
-    const isCurrentSeasonWeek = !isPastSeason; // Any week in the current season
+    const inNetworkWeeks = networkWeekSet ? networkWeekSet.has(Number(weekNum)) : false;
+    const canSeedMissing =
+      isPastSeason
+      || isActiveWeek
+      || isForcedWeek
+      || (!isPastSeason && Number(weekNum) <= currentWk);
 
-    // When not forcing, read from DB cache first and optionally trigger a
-    // background refresh based on TTL for the active week.
-    if (!forceUpdate) {
-      try {
-        const cached = await readApiCacheLatestByKey(cacheKey);
-        if (cached && Array.isArray(cached.data)) {
-          const cachedArr = cached.data;
-          const isEmptyCachedWeek = !cachedArr || cachedArr.length === 0;
-          const ageMs = Date.now() - (cached.ts || 0);
-          
-          // For forced weeks with empty cache, check TTL before deciding to use cache
-          if (isForcedWeek && isEmptyCachedWeek) {
-            // For empty forced weeks, refetch if cache is older than 5 minutes
-            // (matchups might have been created since last check)
-            const emptyForcedWeekTtlMs = 300_000; // 5 minutes
-            if (ageMs > emptyForcedWeekTtlMs) {
-              // Cache is stale, skip cache and fall through to network fetch below
-            } else {
-              // Cache is recent and empty, use it to avoid excessive API calls
-              return cachedArr.map(({ matchup_id, ...rest }) => rest);
-            }
-          } else {
+    const mayForceNetwork = !!forceUpdate && (
+      networkWeekSet
+        ? (inNetworkWeeks || isForcedWeek || isActiveWeek)
+        : (isActiveWeek || isForcedWeek)
+    );
 
-            // Use cached data
-            const activeWeekTtlMs = isActiveWeek
-              ? Number(options.activeWeekTtlMs) || 60_000
-              : null;
-            if (!PAUSE_SCRAPES && isActiveWeek && activeWeekTtlMs != null && ageMs > activeWeekTtlMs) {
-              (async () => {
-                try {
-                  const r2 = await fetch(apiUrl);
-                  if (!r2.ok) {
-                    if (r2.status === 429) {
-                      try { await recordRateLimitHit('sleeper'); } catch (_) {}
-                    }
-                    return;
-                  }
-                  const j2 = await r2.json();
-                  await writeApiCacheWithKey(cacheKey, apiUrl, j2);
-                } catch (_) {
-                  /* ignore */
-                }
-              })();
-            }
-            const weekArr = cachedArr;
-            return weekArr.map(({ matchup_id, ...rest }) => rest);
-          }
+    let cached = null;
+    try {
+      cached = await readApiCacheLatestByKey(cacheKey);
+    } catch (_) {
+      cached = null;
+    }
+    const hasCache = cached && Array.isArray(cached.data);
+    const ageMs = hasCache ? Date.now() - (cached.ts || 0) : Infinity;
+    const activeWeekTtlMs = isActiveWeek
+      ? (options.activeWeekTtlMs != null ? Number(options.activeWeekTtlMs) : 60_000)
+      : null;
+    const isStaleActive = isActiveWeek && activeWeekTtlMs != null && Number.isFinite(activeWeekTtlMs)
+      && ageMs > activeWeekTtlMs;
+
+    if (hasCache && !mayForceNetwork) {
+      const emptyForced = isForcedWeek && (!cached.data || cached.data.length === 0);
+      if (emptyForced && ageMs > 300_000) {
+        // fall through to network
+      } else {
+        if (!PAUSE_SCRAPES && isStaleActive && staleWhileRevalidate) {
+          (async () => {
+            try { await fetchAndCacheWeek(apiUrl, cacheKey); } catch (_) {}
+          })();
         }
-      } catch (_) {
-        // fall through to network fetch
+        if (!PAUSE_SCRAPES && isStaleActive && !staleWhileRevalidate) {
+          try {
+            const fresh = await fetchAndCacheWeek(apiUrl, cacheKey);
+            if (Array.isArray(fresh)) return stripMatchupId(fresh);
+          } catch (_) {}
+        }
+        return stripMatchupId(cached.data);
       }
     }
 
-    // No cache (or forceUpdate or forced week with empty cache): 
-    // fetch once if it's the active week, a past season, an explicitly forced week, or any week in current season
-    if (!isActiveWeek && !isPastSeason && !isForcedWeek && !isCurrentSeasonWeek) { return null; }
+    const shouldNetwork = mayForceNetwork
+      || !hasCache && canSeedMissing
+      || (isStaleActive && !staleWhileRevalidate);
+    if (!shouldNetwork) {
+      return hasCache ? stripMatchupId(cached.data) : null;
+    }
     try {
-      if (PAUSE_SCRAPES) { return null; }
-      const resp = await fetch(apiUrl);
-      if (resp.status === 429) {
-        try { await recordRateLimitHit('sleeper'); } catch (_) {}
-      }
-      if (resp.ok) {
-        const weekArr = await resp.json();
-        try { await writeApiCacheWithKey(cacheKey, apiUrl, weekArr); } catch (_) {}
-        return weekArr.map(({ matchup_id, ...rest }) => rest);
-      }
+      const fresh = await fetchAndCacheWeek(apiUrl, cacheKey);
+      if (Array.isArray(fresh)) return stripMatchupId(fresh);
     } catch (_) {}
-    return null;
+    return hasCache ? stripMatchupId(cached.data) : null;
   };
 
-  // For all seasons, read from DB first; only fetch if cache missing AND
-  // (active week, past season, explicitly forced week, or any week in current season).
-  weeksParsedData = await Promise.all(
+  return Promise.all(
     Array.from({ length: 17 }, (_, i) => fetchWeekData(season || currentYear, i + 1))
   );
-
-  return weeksParsedData;
 }

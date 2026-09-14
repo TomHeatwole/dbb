@@ -51,8 +51,20 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
     const showDash = !isProj && isUnplayed && Number(p.pts) === 0;
     return (
       <td className={`team-scores-pts-cell${isProj ? ' team-scores-pts-cell--proj' : ''}${highlightClass}`}>
-        {showDash ? '-' : Number(p.pts || 0).toFixed(1)}
-        {isProj ? <span className="proj-tag"> proj</span> : null}
+        <span className="team-scores-pts-stack">
+          <span>
+            {showDash ? '-' : Number(p.pts || 0).toFixed(1)}
+            {isProj ? <span className="proj-tag"> proj</span> : null}
+          </span>
+          {gameObj.statLine ? (
+            <span
+              className="scores-lineup-statline"
+              title={gameObj.ptsFrom === 'espn' ? `Live ESPN · ${gameObj.statLine}` : gameObj.statLine}
+            >
+              {gameObj.statLine}
+            </span>
+          ) : null}
+        </span>
       </td>
     );
   }
