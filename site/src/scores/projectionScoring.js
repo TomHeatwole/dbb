@@ -267,7 +267,10 @@ export function rankPtsForMode(player, mode) {
   if (mode === 'remaining') {
     return remainingOutlook(player);
   }
-  return typeof player.currentExpected === 'number' ? player.currentExpected : (player.pts || 0);
+  if (typeof player.actualPts === 'number') {
+    return player.actualPts;
+  }
+  return typeof player.projPts === 'number' ? player.projPts : (player.pts || 0);
 }
 
 function attachSortKeys(teamScore, mode) {
@@ -382,7 +385,9 @@ function attachBestballProjHints(displayStarters, benchPlayers, playersData, pla
       if (gameIsFinished(cand)) {
         continue;
       }
-      const val = weekProj(cand);
+      const val = typeof cand.currentExpected === 'number' && Number.isFinite(cand.currentExpected)
+        ? cand.currentExpected
+        : weekProj(cand);
       if (val <= floor(starter) + 0.049) {
         continue;
       }

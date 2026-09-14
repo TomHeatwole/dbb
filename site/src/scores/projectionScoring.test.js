@@ -528,6 +528,82 @@ describe('higher-projection bench hints', () => {
     expect(hinted).toBe(false);
   });
 
+  it('starts a finished QB over a live QB with fewer points but a higher live outlook', () => {
+    const result = startSitWithProjections(
+      {
+        starters: [
+          { id: 'allen', pts: 35.7 },
+          { id: 'rb1', pts: 10 },
+          { id: 'rb2', pts: 9 },
+          { id: 'rb3', pts: 8 },
+          { id: 'wr1', pts: 10 },
+          { id: 'wr2', pts: 9 },
+          { id: 'wr3', pts: 8 },
+          { id: 'te1', pts: 8 },
+          { id: 'flex1', pts: 7 },
+          { id: 'flex2', pts: 6 },
+          { id: 'dart', pts: 19.2 },
+        ],
+        bench: [
+          { id: 'shough', pts: 23.2 },
+        ],
+      },
+      {
+        ...player('allen', 'QB', 'Josh Allen'),
+        ...player('dart', 'QB', 'Jaxson Dart'),
+        ...player('shough', 'QB', 'Tyler Shough'),
+        ...player('rb1', 'RB', 'RB One'),
+        ...player('rb2', 'RB', 'RB Two'),
+        ...player('rb3', 'RB', 'RB Three'),
+        ...player('wr1', 'WR', 'WR One'),
+        ...player('wr2', 'WR', 'WR Two'),
+        ...player('wr3', 'WR', 'WR Three'),
+        ...player('te1', 'TE', 'TE One'),
+        ...player('flex1', 'TE', 'TE Two'),
+        ...player('flex2', 'WR', 'WR Four'),
+      },
+      {},
+      {
+        allen: { completed: true, live: false, text: 'Final' },
+        shough: { completed: true, live: false, text: 'Final' },
+        dart: { live: true, completed: false, timeRemainingFrac: 0.25, text: 'Q3' },
+        rb1: { completed: true, live: false, text: 'Final' },
+        rb2: { completed: true, live: false, text: 'Final' },
+        rb3: { completed: true, live: false, text: 'Final' },
+        wr1: { completed: true, live: false, text: 'Final' },
+        wr2: { completed: true, live: false, text: 'Final' },
+        wr3: { completed: true, live: false, text: 'Final' },
+        te1: { completed: true, live: false, text: 'Final' },
+        flex1: { completed: true, live: false, text: 'Final' },
+        flex2: { completed: true, live: false, text: 'Final' },
+      },
+      {},
+      {},
+      {
+        allen: 18.6,
+        dart: 18,
+        shough: 17.6,
+        rb1: 10,
+        rb2: 9,
+        rb3: 8,
+        wr1: 10,
+        wr2: 9,
+        wr3: 8,
+        te1: 8,
+        flex1: 7,
+        flex2: 6,
+      },
+      'scores'
+    );
+    expect(slotOf(result, 'shough')).toBe('SUPER');
+    expect(inStarters(result, 'dart')).toBe(false);
+    expect(starterById(result, 'shough').higherBenchProj).toEqual(expect.objectContaining({
+      id: 'dart',
+      name: 'Jaxson Dart',
+    }));
+    expect(result.starterActualTotal).toBe(23.2 + 35.7 + 10 + 9 + 8 + 10 + 9 + 8 + 8 + 7 + 6);
+  });
+
   it('slides Lamar to SUPER when the QB has already outscored him', () => {
     const result = runDrakeHiggins(26);
     expect(starterById(result, 'maye').higherBenchProj).toBeUndefined();
