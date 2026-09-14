@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Pi FanDuel drive watcher — copy your filled-in version to the Pi and run it.
+#
+#   cp scripts/watch-fanduel-pi.local.sh.example scripts/watch-fanduel-pi.local.sh
+#   # edit scripts/watch-fanduel-pi.local.sh (device + DATABASE_URL)
+#   scp scripts/watch-fanduel-pi.local.sh tom@YOUR_PI.local:dbb/scripts/run-fd-watch.sh
+#   ssh tom@YOUR_PI.local 'chmod +x ~/dbb/scripts/run-fd-watch.sh && ~/dbb/scripts/run-fd-watch.sh'
+#
+# Still copy the code bundle once (or git pull on the Pi):
+#   scripts/watch_fanduel_drive_results.mjs
+#   scripts/lib/fanduelAppium.mjs
+#   scripts/start-appium.sh
+#   site/lib/{fd-drive-odds,db}.mjs
+#   site/src/drives/{fdLiveSituation,ytgFromSpot,espnDriveChart}.js
+#
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# --- edit these ---
+export FD_DEVICE="YOUR_ADB_SERIAL"          # adb devices
+export DATABASE_URL="YOUR_NEON_DATABASE_URL"
+# --- end edit ---
+
+export ANDROID_SERIAL="$FD_DEVICE"
+export ANDROID_HOME="/usr/lib/android-sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export ADB_PATH="/usr/bin/adb"
+export APPIUM_URL="http://127.0.0.1:4723"
+export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk-$(dpkg --print-architecture 2>/dev/null || uname -m)}"
+export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:/usr/bin:$PATH"
+
+if ! curl -sf "$APPIUM_URL/status" >/dev/null; then
+  echo "Starting Appium on ${APPIUM_URL}…"
+  nohup "$ROOT/scripts/start-appium.sh" >>/tmp/appium-watch.log 2>&1 &
+  disown || true
+  for _ in $(seq 1 50); do
+    curl -sf "$APPIUM_URL/status" >/dev/null && break
+    sleep 0.4
+  done
+  curl -sf "$APPIUM_URL/status" >/dev/null || {
+    echo "Appium failed to start. See /tmp/appium-watch.log" >&2
+    exit 1
+  }
+fi
+
+exec node "$ROOT/scripts/watch_fanduel_drive_results.mjs" --device "$FD_DEVICE" "$@"

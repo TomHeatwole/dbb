@@ -11,6 +11,7 @@ import {
   liveScaleFromInProgressGames,
   lockedPtsFromCompletedGames,
   simulateTeamHproj,
+  simulateTeamHprojAsync,
   weekHasCompletedGames,
   weekHasStartedGames,
 } from './hprojTeamSim';
@@ -52,6 +53,27 @@ describe('live HProj locks', () => {
     expect(weekHasStartedGames({
       javonte: { completed: false, live: true },
     })).toBe(true);
+  });
+
+  it('async sim matches the sync run and can publish a preview', async () => {
+    const opts = {
+      playerIds: ['star', 'backup'],
+      projectedPtsById: { star: 20, backup: 14 },
+      playerPositions: { star: 'QB', backup: 'QB' },
+      iterations: 40,
+      seed: 'async-match',
+      keepLineups: true,
+    };
+    const sync = simulateTeamHproj(opts);
+    const partials = [];
+    const asyncResult = await simulateTeamHprojAsync(opts, {
+      chunkSize: 15,
+      onPartial: (data) => partials.push(data.iterations),
+    });
+    expect(partials[0]).toBe(15);
+    expect(asyncResult.naiveTotal).toBe(sync.naiveTotal);
+    expect(asyncResult.totals).toEqual(sync.totals);
+    expect(asyncResult.sims.map((row) => row.total)).toEqual(sync.sims.map((row) => row.total));
   });
 
   it('locks Out players at their current score', () => {

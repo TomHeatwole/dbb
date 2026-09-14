@@ -48,8 +48,10 @@ describe('ESPN live outlook', () => {
 });
 
 describe('playerIsRuledOut', () => {
-  it('treats an O injury tag as out', () => {
+  it('treats an O or IR injury tag as done for remaining projection', () => {
     expect(playerIsRuledOut('x', { x: 'Out' }, {}, null)).toBe(true);
+    expect(playerIsRuledOut('x', { x: 'IR' }, {}, null)).toBe(true);
+    expect(playerIsRuledOut('x', { x: 'Injured Reserve' }, {}, null)).toBe(true);
     expect(playerIsRuledOut('x', { x: 'Questionable' }, {}, null)).toBe(false);
   });
 });

@@ -79,7 +79,8 @@ export function playerIsRuledOut(playerId, injuriesMap, playersData, playerIdMap
     || (info && (info.injury_status || info.injury_notes
       || (info.status && /out|pup|ir|injured reserve/i.test(info.status) ? info.status : null)))
     || null;
-  return getInjuryAbbreviation(status) === 'O';
+  const abbr = getInjuryAbbreviation(status);
+  return abbr === 'O' || abbr === 'IR';
 }
 
 export function collectOutPlayerIds(playerIds, injuriesMap, playersData, playerIdMap) {

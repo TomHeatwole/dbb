@@ -299,17 +299,9 @@ export function liveScaleFromInProgressGames(teamScore, playerGameLabels, opts =
   return out;
 }
 
-/**
- * @param {object} opts
- * @param {string[]} opts.playerIds
- * @param {Record<string, number>} opts.projectedPtsById
- * @param {Record<string, string|null>} opts.playerPositions
- * @param {Record<string, number>} [opts.lockedPtsById] completed / Out actuals
- * @param {Record<string, { actual: number, timeFrac: number }>} [opts.liveScaleById]
- * @param {number} [opts.iterations]
- * @param {string|number} [opts.seed]
- */
-export function simulateTeamHproj({
+const HPROJ_YIELD_CHUNK = 2000;
+
+function prepareTeamHproj({
   playerIds,
   projectedPtsById,
   playerPositions,
@@ -359,11 +351,22 @@ export function simulateTeamHproj({
     else if (p.liveScale) naivePts[p.id] = espnLiveProjection(p.liveScale.actual, p.proj, p.liveScale.timeFrac);
     else naivePts[p.id] = p.proj;
   }
-  const naive = computeOptimalWeekDetail(ids, naivePts, positions, null);
+  return {
+    players,
+    ids,
+    positions,
+    naive: computeOptimalWeekDetail(ids, naivePts, positions, null),
+    rng: mulberry32(hashSeed(seed)),
+    iterations,
+    keepLineups,
+    lockedPtsById,
+    liveScaleById,
+  };
+}
 
-  const rng = mulberry32(hashSeed(seed));
-  const sims = [];
-  for (let i = 0; i < iterations; i += 1) {
+function appendHprojSims(ctx, count, sims) {
+  const { players, ids, positions, rng, keepLineups, lockedPtsById, liveScaleById } = ctx;
+  for (let i = 0; i < count; i += 1) {
     const weekPts = {};
     const playerPct = {};
     for (const p of players) {
@@ -399,36 +402,80 @@ export function simulateTeamHproj({
     }
     sims.push(row);
   }
-  sims.sort((a, b) => a.total - b.total);
-  const totals = sims.map((row) => row.total);
+}
 
-  const p25 = windowBreakdown(sims, 0.25);
-  const p50 = windowBreakdown(sims, 0.50);
-  const p75 = windowBreakdown(sims, 0.75);
-
+function finalizeTeamHproj(ctx, sims) {
+  const sorted = sims.slice().sort((a, b) => a.total - b.total);
+  const totals = sorted.map((row) => row.total);
   return {
-    players: players.length,
-    iterations,
+    players: ctx.players.length,
+    iterations: sorted.length,
     totals,
-    naiveTotal: round1(naive.total),
+    naiveTotal: round1(ctx.naive.total),
     naiveByPos: {
-      QB: round1(naive.byPos.QB),
-      RB: round1(naive.byPos.RB),
-      WR: round1(naive.byPos.WR),
-      TE: round1(naive.byPos.TE),
+      QB: round1(ctx.naive.byPos.QB),
+      RB: round1(ctx.naive.byPos.RB),
+      WR: round1(ctx.naive.byPos.WR),
+      TE: round1(ctx.naive.byPos.TE),
     },
-    naiveStarters: (naive.starters || []).map((s) => ({
+    naiveStarters: (ctx.naive.starters || []).map((s) => ({
       slot: s.slot,
       id: s.id,
       position: s.position,
       pts: round1(s.pts),
     })),
-    p25,
-    p50,
-    p75,
-    lockedPlayerIds: players.filter((p) => p.lockedPts != null).map((p) => p.id),
-    sims: keepLineups ? sims : null,
+    p25: windowBreakdown(sorted, 0.25),
+    p50: windowBreakdown(sorted, 0.50),
+    p75: windowBreakdown(sorted, 0.75),
+    lockedPlayerIds: ctx.players.filter((p) => p.lockedPts != null).map((p) => p.id),
+    sims: ctx.keepLineups ? sorted : null,
   };
+}
+
+/**
+ * @param {object} opts
+ * @param {string[]} opts.playerIds
+ * @param {Record<string, number>} opts.projectedPtsById
+ * @param {Record<string, string|null>} opts.playerPositions
+ * @param {Record<string, number>} [opts.lockedPtsById] completed / Out actuals
+ * @param {Record<string, { actual: number, timeFrac: number }>} [opts.liveScaleById]
+ * @param {number} [opts.iterations]
+ * @param {string|number} [opts.seed]
+ */
+export function simulateTeamHproj(opts) {
+  const ctx = prepareTeamHproj(opts);
+  const sims = [];
+  appendHprojSims(ctx, ctx.iterations, sims);
+  return finalizeTeamHproj(ctx, sims);
+}
+
+function yieldToPaint() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
+/**
+ * Same draws as simulateTeamHproj, but yields so sliders stay interactive.
+ * `onPartial` gets the first chunk so the page can render before the full run.
+ */
+export async function simulateTeamHprojAsync(opts, { cancelled, chunkSize = HPROJ_YIELD_CHUNK, onPartial } = {}) {
+  const ctx = prepareTeamHproj(opts);
+  const sims = [];
+  let publishedPreview = false;
+  while (sims.length < ctx.iterations) {
+    if (cancelled?.()) return null;
+    appendHprojSims(ctx, Math.min(chunkSize, ctx.iterations - sims.length), sims);
+    if (onPartial && !publishedPreview) {
+      publishedPreview = true;
+      onPartial(finalizeTeamHproj(ctx, sims));
+    }
+    if (sims.length < ctx.iterations) {
+      await yieldToPaint();
+    }
+  }
+  if (cancelled?.()) return null;
+  return finalizeTeamHproj(ctx, sims);
 }
 
 export function hprojPlayerPositions(playerIds, playersData) {

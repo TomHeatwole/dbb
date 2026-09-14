@@ -26239,6 +26239,14 @@ button.corners-bet:hover {
   color: #fca5a5;
 }
 
+.hproj-copy--refresh {
+  margin: 0 0 0.45rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
 .hproj-copy code {
   font-size: 0.86em;
 }

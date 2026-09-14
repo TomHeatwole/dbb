@@ -2,15 +2,52 @@
 
 import { execFileSync } from 'node:child_process';
 
-export const APPIUM = process.env.APPIUM_URL || 'http://127.0.0.1:4723';
+let appiumUrl = (process.env.APPIUM_URL || 'http://127.0.0.1:4723').replace(/\/$/, '');
 export const PACKAGE = 'com.fanduel.sportsbook';
 export const ACTIVITY = 'com.fanduel.sportsbook.Launcher';
 
-let lastUdid = process.env.ANDROID_SERIAL || 'emulator-5554';
+let lastUdid = process.env.ANDROID_SERIAL || process.env.FD_DEVICE || 'emulator-5554';
+
+export function getAppiumUrl() {
+  return appiumUrl;
+}
+
+export function setAppiumUrl(url) {
+  if (url) appiumUrl = String(url).replace(/\/$/, '');
+}
+
+function defaultAndroidHome() {
+  if (process.env.ANDROID_HOME) return process.env.ANDROID_HOME;
+  const home = process.env.HOME || '';
+  if (process.platform === 'darwin') return `${home}/Library/Android/sdk`;
+  return `${home}/Android/Sdk`;
+}
 
 function adbBin() {
-  const home = process.env.ANDROID_HOME || `${process.env.HOME}/Library/Android/sdk`;
-  return `${home}/platform-tools/adb`;
+  if (process.env.ADB_PATH) return process.env.ADB_PATH;
+  return `${defaultAndroidHome()}/platform-tools/adb`;
+}
+
+export function adbConnect(hostPort) {
+  const target = String(hostPort || '').trim();
+  if (!target) return false;
+  try {
+    const out = execFileSync(adbBin(), ['connect', target], {
+      encoding: 'utf8',
+      timeout: 15_000,
+    });
+    return /connected to|already connected/i.test(out);
+  } catch {
+    return false;
+  }
+}
+
+export function adbDevices() {
+  try {
+    return execFileSync(adbBin(), ['devices'], { encoding: 'utf8', timeout: 8000 });
+  } catch {
+    return '';
+  }
 }
 
 export function setDeviceUdid(udid) {
@@ -110,7 +147,7 @@ export function escapeRe(s) {
 }
 
 export async function wd(method, urlPath, body) {
-  const res = await fetch(`${APPIUM}${urlPath}`, {
+  const res = await fetch(`${appiumUrl}${urlPath}`, {
     method,
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -128,7 +165,7 @@ export async function wd(method, urlPath, body) {
 
 export async function appiumUp() {
   try {
-    const res = await fetch(`${APPIUM}/status`);
+    const res = await fetch(`${appiumUrl}/status`);
     return res.ok;
   } catch {
     return false;

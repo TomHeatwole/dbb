@@ -16,6 +16,10 @@
  *   node scripts/watch_fanduel_drive_results.mjs --no-db
  *   node scripts/watch_fanduel_drive_results.mjs --backfill
  *   node scripts/watch_fanduel_drive_results.mjs --single-game 35660086
+ *   node scripts/watch_fanduel_drive_results.mjs --device 192.168.1.50:5555 --appium-url http://127.0.0.1:4723
+ *   node scripts/watch_fanduel_drive_results.mjs 'device=192.168.1.50:5555&appium=http://127.0.0.1:4723'
+ *
+ * Env: ANDROID_SERIAL / FD_DEVICE, APPIUM_URL, DATABASE_URL, ANDROID_HOME, ADB_PATH
  */
 
 import fs from 'node:fs';
@@ -23,17 +27,21 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
-  APPIUM,
+  adbConnect,
+  adbDevices,
   DRIVE_OUTCOMES,
   appiumUp,
   collectSlate,
   createSession,
   deleteSession,
   dismissEventOverlays,
+  getAppiumUrl,
   namesOnPage,
   openGame,
   pageLooksFinal,
   pageLooksLikeGame,
+  setAppiumUrl,
+  setDeviceUdid,
   slateMarksGameFinal,
   parseDriveMarkets,
   scrapeDriveResults,
@@ -106,9 +114,76 @@ function loadSiteEnv() {
   }
 }
 
+function parseQueryParams(raw) {
+  const text = String(raw || '').trim();
+  if (!text || !text.includes('=')) return null;
+  const query = text.startsWith('?') ? text.slice(1) : text;
+  try {
+    return Object.fromEntries(new URLSearchParams(query));
+  } catch {
+    return null;
+  }
+}
+
+function applyParam(args, key, value) {
+  const v = String(value ?? '').trim();
+  if (!v) return;
+  switch (key) {
+    case 'device':
+    case 'udid':
+    case 'serial':
+      args.udid = v;
+      break;
+    case 'appium':
+    case 'appium-url':
+    case 'appium_url':
+      args.appiumUrl = v;
+      break;
+    case 'adb-connect':
+    case 'adb_connect':
+    case 'adb':
+      args.adbConnect = v;
+      break;
+    case 'log':
+      args.log = path.resolve(v);
+      break;
+    case 'state':
+      args.state = path.resolve(v);
+      break;
+    case 'single-game':
+    case 'single_game':
+    case 'event':
+    case 'event-id':
+      args.singleGame = v;
+      break;
+    case 'max-games':
+    case 'max_games':
+      args.maxGames = Number(v);
+      break;
+    case 'pause-ms':
+    case 'pause_ms':
+      args.pauseMs = Number(v);
+      break;
+    case 'once':
+      args.once = /^(1|true|yes)$/i.test(v);
+      break;
+    case 'no-db':
+    case 'no_db':
+      args.noDb = /^(1|true|yes)$/i.test(v);
+      break;
+    case 'backfill':
+      args.backfill = /^(1|true|yes)$/i.test(v);
+      break;
+    default:
+      break;
+  }
+}
+
 function parseArgs(argv) {
   const args = {
-    udid: process.env.ANDROID_SERIAL || 'emulator-5554',
+    udid: process.env.ANDROID_SERIAL || process.env.FD_DEVICE || 'emulator-5554',
+    appiumUrl: process.env.APPIUM_URL || 'http://127.0.0.1:4723',
+    adbConnect: process.env.ADB_CONNECT || null,
     log: DEFAULT_LOG,
     state: DEFAULT_STATE,
     once: false,
@@ -119,18 +194,47 @@ function parseArgs(argv) {
     pauseMs: 800,
   };
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--udid') args.udid = argv[++i];
-    else if (argv[i] === '--log') args.log = path.resolve(argv[++i]);
-    else if (argv[i] === '--state') args.state = path.resolve(argv[++i]);
-    else if (argv[i] === '--once') args.once = true;
-    else if (argv[i] === '--no-db') args.noDb = true;
-    else if (argv[i] === '--backfill') args.backfill = true;
-    else if (argv[i] === '--single-game') args.singleGame = String(argv[++i] || '').trim();
-    else if (argv[i].startsWith('--single-game=')) args.singleGame = argv[i].slice('--single-game='.length).trim();
-    else if (argv[i] === '--max-games') args.maxGames = Number(argv[++i]);
-    else if (argv[i] === '--pause-ms') args.pauseMs = Number(argv[++i]);
+    const token = argv[i];
+    const query = parseQueryParams(token);
+    if (query) {
+      for (const [key, value] of Object.entries(query)) applyParam(args, key, value);
+      continue;
+    }
+    if (token === '--device' || token === '--udid' || token === '--serial') args.udid = argv[++i];
+    else if (token.startsWith('--device=')) args.udid = token.slice('--device='.length);
+    else if (token.startsWith('--udid=')) args.udid = token.slice('--udid='.length);
+    else if (token === '--appium-url' || token === '--appium') args.appiumUrl = argv[++i];
+    else if (token.startsWith('--appium-url=')) args.appiumUrl = token.slice('--appium-url='.length);
+    else if (token.startsWith('--appium=')) args.appiumUrl = token.slice('--appium='.length);
+    else if (token === '--adb-connect' || token === '--adb') args.adbConnect = argv[++i];
+    else if (token.startsWith('--adb-connect=')) args.adbConnect = token.slice('--adb-connect='.length);
+    else if (token.startsWith('--adb=')) args.adbConnect = token.slice('--adb='.length);
+    else if (token === '--log') args.log = path.resolve(argv[++i]);
+    else if (token === '--state') args.state = path.resolve(argv[++i]);
+    else if (token === '--once') args.once = true;
+    else if (token === '--no-db') args.noDb = true;
+    else if (token === '--backfill') args.backfill = true;
+    else if (token === '--single-game') args.singleGame = String(argv[++i] || '').trim();
+    else if (token.startsWith('--single-game=')) args.singleGame = token.slice('--single-game='.length).trim();
+    else if (token === '--max-games') args.maxGames = Number(argv[++i]);
+    else if (token === '--pause-ms') args.pauseMs = Number(argv[++i]);
   }
   return args;
+}
+
+function applyRuntimeConfig(args) {
+  setAppiumUrl(args.appiumUrl);
+  setDeviceUdid(args.udid);
+  if (args.adbConnect) {
+    const ok = adbConnect(args.adbConnect);
+    logLine(`adb connect ${args.adbConnect}  ${ok ? 'ok' : 'failed'}`);
+    if (!ok) throw new Error(`adb connect ${args.adbConnect} failed`);
+  }
+  const listed = adbDevices();
+  if (/List of devices attached/i.test(listed) && !listed.includes(args.udid)) {
+    logLine(`adb devices:\n${listed.trim()}`);
+    throw new Error(`device ${args.udid} not listed in adb devices`);
+  }
 }
 
 function ts() {
@@ -397,7 +501,7 @@ function matchup(game) {
 
 async function ensureAppium() {
   if (await appiumUp()) return;
-  logLine(`starting Appium at ${APPIUM}…`);
+  logLine(`starting Appium at ${getAppiumUrl()}…`);
   const child = spawn(path.join(ROOT, 'scripts', 'start-appium.sh'), [], {
     detached: true,
     stdio: 'ignore',
@@ -407,12 +511,12 @@ async function ensureAppium() {
     await sleep(400);
     if (await appiumUp()) return;
   }
-  throw new Error(`Appium is not reachable at ${APPIUM}. See /tmp/appium-watch.log`);
+  throw new Error(`Appium is not reachable at ${getAppiumUrl()}. See /tmp/appium-watch.log`);
 }
 
 async function connect(udid) {
   await ensureAppium();
-  logLine(`connecting ${APPIUM}  udid=${udid}`);
+  logLine(`connecting ${getAppiumUrl()}  device=${udid}`);
   const sessionId = await createSession(udid);
   logLine(`session ${sessionId}`);
   await sleep(1500);
@@ -864,6 +968,7 @@ async function runCycle(sessionId, args, state, cycle, cache) {
 async function main() {
   loadSiteEnv();
   const args = parseArgs(process.argv.slice(2));
+  applyRuntimeConfig(args);
   if (!args.noDb && !process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL missing (site/.env.local). Pass --no-db to log only.');
   }
@@ -872,7 +977,7 @@ async function main() {
     ? `single-game ${args.singleGame}`
     : (args.backfill ? 'backfill (all games)' : 'live pin until next kickoff');
   process.stdout.write(
-    `FanDuel Drive Result watcher\n  log    ${args.log}\n  state  ${args.state}\n  db     ${args.noDb ? 'off' : 'neon fd_drive_odds'}\n  mode   ${mode}\n\n`,
+    `FanDuel Drive Result watcher\n  device ${args.udid}\n  appium ${getAppiumUrl()}\n  log    ${args.log}\n  state  ${args.state}\n  db     ${args.noDb ? 'off' : 'neon fd_drive_odds'}\n  mode   ${mode}\n\n`,
   );
 
   let sessionId = null;

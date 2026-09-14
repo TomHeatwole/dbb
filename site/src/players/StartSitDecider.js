@@ -86,16 +86,14 @@ function actualOrKeep(player) {
   return typeof player.pts === 'number' ? player.pts : 0;
 }
 
-/** Live healthy guys lock in. Completed 0.0 / PUP-OUT-IR who already played do not. */
+/** Live healthy guys lock in. Completed 0.0 / PUP-OUT-IR zeros do not.
+ *  A player who scored and then went Out/IR still locks — those points count. */
 function locksStartedLineupSpot(player, label, playersData, playerIdMap, injuriesMap) {
   if (!isStartedGame(label)) {
     return false;
   }
   const injured = getInjuryCategory(player.id, playersData, playerIdMap, injuriesMap) === 'injured';
-  if (injured) {
-    return false;
-  }
-  if (label.completed) {
+  if (label.completed || injured) {
     return actualOrKeep(player) > 0;
   }
   return true;

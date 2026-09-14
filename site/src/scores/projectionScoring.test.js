@@ -183,15 +183,15 @@ describe('higher-projection bench hints', () => {
     expect(inStarters(result, 'puka')).toBe(true);
   });
 
-  it('drops a finished PUP/OUT/IR even if they have a small score', () => {
-    const result = startSitWithProjections(
+  function runFlowersLeftEarly({ flowersPts, mode, injuriesMap, wrBenchProj = 6.1 }) {
+    return startSitWithProjections(
       {
         starters: [
           { id: 'qb-start', pts: 0 },
           { id: 'rb1', pts: 0 },
           { id: 'rb2', pts: 0 },
           { id: 'rb3', pts: 0 },
-          { id: 'puka', pts: 4.0 },
+          { id: 'flowers', pts: flowersPts },
           { id: 'waddle', pts: 0 },
           { id: 'burden', pts: 0 },
           { id: 'ferguson', pts: 0 },
@@ -212,7 +212,7 @@ describe('higher-projection bench hints', () => {
         ...player('rb1', 'RB', 'RB One'),
         ...player('rb2', 'RB', 'RB Two'),
         ...player('rb3', 'RB', 'RB Three'),
-        puka: { full_name: 'P. Nacua', position: 'WR', injury_status: 'PUP' },
+        ...player('flowers', 'WR', 'Zay Flowers'),
         ...player('waddle', 'WR', 'J. Waddle'),
         ...player('burden', 'WR', 'L. Burden'),
         ...player('washington', 'WR', 'M. Washington'),
@@ -222,8 +222,8 @@ describe('higher-projection bench hints', () => {
         ...player('flexrb', 'RB', 'Bench RB'),
       },
       {},
-      { puka: { completed: true, live: false, text: 'Final' } },
-      {},
+      { flowers: { live: true, completed: false, timeRemainingFrac: 0.55, text: 'Q3' } },
+      injuriesMap,
       {},
       {
         'qb-start': 18,
@@ -232,18 +232,62 @@ describe('higher-projection bench hints', () => {
         rb1: 10,
         rb2: 9,
         rb3: 8,
-        puka: 13.4,
+        flowers: 14.2,
         waddle: 9.2,
         burden: 8.4,
-        washington: 6.1,
+        washington: wrBenchProj,
         ferguson: 3.6,
         loveland: 11.2,
         laporta: 11.1,
         flexrb: 5.0,
       },
-      'scores'
+      mode
     );
-    expect(inStarters(result, 'puka')).toBe(false);
+  }
+
+  it('keeps a scorer who left with Out/IR in the scores lineup', () => {
+    const result = runFlowersLeftEarly({
+      flowersPts: 12.4,
+      mode: 'scores',
+      injuriesMap: { flowers: 'Out' },
+    });
+    expect(inStarters(result, 'flowers')).toBe(true);
+    expect(starterById(result, 'flowers').actualPts).toBe(12.4);
+    expect(starterById(result, 'flowers').projRemaining).toBe(0);
+    expect(result.starterActualTotal).toBe(12.4);
+  });
+
+  it('includes Out/IR points already scored in the projections total', () => {
+    const result = runFlowersLeftEarly({
+      flowersPts: 12.4,
+      mode: 'projections',
+      injuriesMap: { flowers: 'IR' },
+    });
+    expect(inStarters(result, 'flowers')).toBe(true);
+    expect(starterById(result, 'flowers').actualPts).toBe(12.4);
+    expect(starterById(result, 'flowers').projRemaining).toBe(0);
+    expect(starterById(result, 'flowers').currentExpected).toBe(12.4);
+    expect(result.optimalProjTotal).toBeGreaterThanOrEqual(12.4);
+  });
+
+  it('still sits an Out/IR zero so an unplayed bench player can take the spot', () => {
+    const result = runFlowersLeftEarly({
+      flowersPts: 0,
+      mode: 'scores',
+      injuriesMap: { flowers: 'Out' },
+    });
+    expect(inStarters(result, 'flowers')).toBe(false);
+    expect(inStarters(result, 'washington')).toBe(true);
+  });
+
+  it('sits an Out/IR scorer in projections when a bench player has a higher outlook', () => {
+    const result = runFlowersLeftEarly({
+      flowersPts: 4.0,
+      mode: 'projections',
+      injuriesMap: { flowers: 'Out' },
+      wrBenchProj: 16.5,
+    });
+    expect(inStarters(result, 'flowers')).toBe(false);
     expect(inStarters(result, 'washington')).toBe(true);
   });
 

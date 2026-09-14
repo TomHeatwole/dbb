@@ -20,11 +20,12 @@ import {
   HPROJ_SKILL_POS,
   HPROJ_TEAM_PCT_MAX,
   formatTeamPercentile,
+  hprojPlayerPositions,
   hprojRandomOutcome,
   liveScaleFromInProgressGames,
   lockedPtsFromCompletedGames,
   resolveHprojTeam,
-  simulateTeamHproj,
+  simulateTeamHprojAsync,
   weekHasStartedGames,
 } from '../scores/hprojTeamSim';
 import { fetchScoresData } from '../lookups/ScoresLookup';
@@ -577,28 +578,37 @@ function HprojPage() {
     ? `${simKey}-live-${lockedSig}`
     : null;
   const pregameResult = resultState.key === simKey ? resultState.data : null;
-  const liveResult = liveResultState.key === liveSimKey ? liveResultState.data : null;
+  const liveResult = liveResultState.data
+    && liveResultState.key
+    && simKey
+    && String(liveResultState.key).startsWith(`${simKey}-live-`)
+    ? liveResultState.data
+    : null;
   const result = projMode === 'live' && liveResult ? liveResult : pregameResult;
+  const refreshingLive = Boolean(
+    projMode === 'live' && liveSimKey && liveResultState.key !== liveSimKey && (liveResult || pregameResult),
+  );
 
   useEffect(() => {
     if (!simKey) return undefined;
     let cancelled = false;
+    const playerIds = teamInfo.roster?.players || [];
+    const playerPositions = hprojPlayerPositions(playerIds, playersData);
     const timeoutId = setTimeout(() => {
-      const playerIds = teamInfo.roster?.players || [];
-      const playerPositions = {};
-      for (const pid of playerIds) {
-        const rec = playersData[pid] || playersData[String(pid)];
-        const raw = rec?.position || rec?.fantasy_positions?.[0] || null;
-        playerPositions[String(pid)] = skillPosition(raw);
-      }
-      const next = simulateTeamHproj({
+      simulateTeamHprojAsync({
         playerIds,
         projectedPtsById,
         playerPositions,
         seed: simKey,
         keepLineups: true,
+      }, {
+        cancelled: () => cancelled,
+        onPartial: (data) => {
+          if (!cancelled) setResultState({ key: simKey, data });
+        },
+      }).then((data) => {
+        if (!cancelled && data) setResultState({ key: simKey, data });
       });
-      if (!cancelled) setResultState({ key: simKey, data: next });
     }, 0);
     return () => {
       cancelled = true;
@@ -607,20 +617,12 @@ function HprojPage() {
   }, [simKey, teamInfo, playersData, projectedPtsById]);
 
   useEffect(() => {
-    if (!liveSimKey) {
-      setLiveResultState({ key: null, data: null });
-      return undefined;
-    }
+    if (!liveSimKey) return undefined;
     let cancelled = false;
+    const playerIds = teamInfo.roster?.players || [];
+    const playerPositions = hprojPlayerPositions(playerIds, playersData);
     const timeoutId = setTimeout(() => {
-      const playerIds = teamInfo.roster?.players || [];
-      const playerPositions = {};
-      for (const pid of playerIds) {
-        const rec = playersData[pid] || playersData[String(pid)];
-        const raw = rec?.position || rec?.fantasy_positions?.[0] || null;
-        playerPositions[String(pid)] = skillPosition(raw);
-      }
-      const next = simulateTeamHproj({
+      simulateTeamHprojAsync({
         playerIds,
         projectedPtsById,
         playerPositions,
@@ -628,9 +630,15 @@ function HprojPage() {
         liveScaleById,
         seed: liveSimKey,
         keepLineups: true,
+      }, {
+        cancelled: () => cancelled,
+        onPartial: (data) => {
+          if (!cancelled) setLiveResultState({ key: liveSimKey, data });
+        },
+      }).then((data) => {
+        if (!cancelled && data) setLiveResultState({ key: liveSimKey, data });
       });
-      if (!cancelled) setLiveResultState({ key: liveSimKey, data: next });
-    }, 0);
+    }, 180);
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
@@ -731,7 +739,7 @@ function HprojPage() {
     return { total: scored.total, byPos: scored.byPos, slotById, outcomes };
   }, [rosterPlayers, playerPcts]);
 
-  const waitingLive = projMode === 'live' && liveSimKey && !liveResult;
+  const waitingFirstSim = !result;
   const title = teamInfo
     ? `${teamInfo.teamName} · Week ${week} ${projMode === 'live' ? 'Live Proj' : 'HProj'}`
     : 'HProj';
@@ -781,14 +789,12 @@ function HprojPage() {
         </div>
       )}
 
-      {!missing && !loadError && (!result || waitingLive) && (teamInfo || !teamMap) && (
+      {!missing && !loadError && waitingFirstSim && (teamInfo || !teamMap) && (
         <LoadingState
           className="hproj-loading"
-          label={waitingLive
-            ? 'Rolling live outcomes…'
-            : (playersData && !canSimulate
-              ? 'Waiting for Sleeper weekly projections…'
-              : 'Loading roster…')}
+          label={playersData && !canSimulate
+            ? 'Waiting for Sleeper weekly projections…'
+            : 'Loading roster…'}
           ariaLabel="Loading HProj"
         />
       )}
@@ -799,11 +805,14 @@ function HprojPage() {
         </p>
       )}
 
-      {result && result.players > 0 && outcome && !waitingLive && (
+      {result && result.players > 0 && outcome && (
         <div className={`hproj-page${projMode === 'live' ? ' hproj-page--live' : ''}`}>
           <div className="hproj-split">
             <section className="hproj-col hproj-col--team">
               <h2 className="hproj-col-title">Team outcome</h2>
+              {refreshingLive ? (
+                <p className="hproj-copy hproj-copy--refresh" aria-live="polite">Updating live outcomes…</p>
+              ) : null}
               <div className="hproj-hero">
                 <div className="hproj-hero-value" style={{ color: hprojHeat(outcome.percentile, HPROJ_TEAM_PCT_MAX) }}>{fmt(outcome.total)}</div>
                 <div className="hproj-hero-label" style={{ color: hprojHeat(outcome.percentile, HPROJ_TEAM_PCT_MAX) }}>Random P{formatTeamPercentile(outcome.percentile)} outcome</div>
