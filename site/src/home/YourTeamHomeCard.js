@@ -181,67 +181,75 @@ function YourTeamHomeCard() {
     const emptyLabel = assetsMode === 'points' ? 'No points yet.' : 'No KTC values yet.';
     body = (
       <>
-        <div className="your-team-home-body">
-          <div className="your-team-home-left">
-            <Link to={`/team/${team.rosterId}`} className="your-team-home-identity">
-              {team.teamAvatarUrl ? (
-                <img
-                  className="your-team-home-avatar me-avatar"
-                  src={team.teamAvatarUrl}
-                  alt={`${team.teamName} avatar`}
-                />
-              ) : null}
-              <div className="your-team-home-names">
-                <span className="your-team-home-team-name">
-                  {team.teamName}
-                  <span className="me-chip">YOU</span>
-                </span>
-                {team.ownerName ? (
-                  <span className="your-team-home-owner">
-                    {showOwnerPic ? (
-                      <img
-                        className="your-team-home-owner-avatar me-avatar"
-                        src={team.ownerAvatarUrl}
-                        alt=""
-                      />
-                    ) : null}
-                    {team.ownerName}
-                  </span>
+        <Link to={`/team/${team.rosterId}`} className="your-team-home-hero">
+          <div className="your-team-home-hero-glow" aria-hidden="true" />
+          {team.teamAvatarUrl ? (
+            <img
+              className="your-team-home-avatar me-avatar"
+              src={team.teamAvatarUrl}
+              alt=""
+            />
+          ) : (
+            <span className="your-team-home-avatar your-team-home-avatar--empty me-avatar" aria-hidden="true" />
+          )}
+          <div className="your-team-home-names">
+            <span className="your-team-home-team-name">
+              {team.teamName}
+              <span className="me-chip">YOU</span>
+            </span>
+            {team.ownerName ? (
+              <span className="your-team-home-owner">
+                {showOwnerPic ? (
+                  <img
+                    className="your-team-home-owner-avatar me-avatar"
+                    src={team.ownerAvatarUrl}
+                    alt=""
+                  />
                 ) : null}
-              </div>
-            </Link>
+                {team.ownerName}
+              </span>
+            ) : null}
           </div>
-          <div className="your-team-home-assets">
-            <div className="your-team-home-assets-title">{assetsTitle}</div>
-            {topAssets.length === 0 ? (
-              <div className="your-team-home-assets-empty">{emptyLabel}</div>
-            ) : (
-              <ul className="your-team-home-assets-list">
-                {topAssets.map((asset) => (
-                  <li key={asset.playerId}>
-                    <button
-                      type="button"
-                      className="your-team-home-asset"
-                      title={asset.name}
-                      onClick={() => setSelectedPlayer(asset.fullInfo)}
-                    >
-                      <img
-                        className="your-team-home-asset-photo"
-                        src={getPlayerLogoUrl(asset.photo)}
-                        alt={asset.name}
-                      />
+        </Link>
+
+        <div className="your-team-home-assets">
+          <div className="your-team-home-assets-header">
+            <span className="your-team-home-assets-title">{assetsTitle}</span>
+          </div>
+          {topAssets.length === 0 ? (
+            <div className="your-team-home-assets-empty">{emptyLabel}</div>
+          ) : (
+            <ul className="your-team-home-assets-grid">
+              {topAssets.map((asset, idx) => (
+                <li key={asset.playerId}>
+                  <button
+                    type="button"
+                    className="your-team-home-asset-tile"
+                    title={asset.name}
+                    onClick={() => setSelectedPlayer(asset.fullInfo)}
+                  >
+                    <span className="your-team-home-asset-rank" aria-hidden="true">
+                      {idx + 1}
+                    </span>
+                    <img
+                      className="your-team-home-asset-photo"
+                      src={getPlayerLogoUrl(asset.photo)}
+                      alt=""
+                    />
+                    <span className="your-team-home-asset-name">{asset.name}</span>
+                    <span className="your-team-home-asset-meta">
                       <PositionBadge position={asset.position} />
                       <span className="your-team-home-asset-value">
                         {assetsMode === 'points'
-                          ? formatSeasonPoints(asset.value)
+                          ? `${formatSeasonPoints(asset.value)} pts`
                           : formatKtcValue(asset.value)}
                       </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </>
     );

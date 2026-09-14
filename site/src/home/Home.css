@@ -241,12 +241,274 @@
   transform: translateY(-1px);
 }
 
+/* ── Your Team card ──────────────────────────────────────────────────────── */
+
+.home-dashboard .your-team-home-card {
+  --yt-hero-bg: linear-gradient(
+    135deg,
+    rgba(21, 128, 61, 0.22) 0%,
+    rgba(26, 54, 93, 0.95) 55%,
+    rgba(15, 23, 42, 0.98) 100%
+  );
+  --yt-tile-bg: rgba(255, 255, 255, 0.05);
+  --yt-tile-border: rgba(148, 180, 255, 0.18);
+}
+
+.home-dashboard .your-team-home-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0.1rem 0 0.85rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.7rem;
+  background: var(--yt-hero-bg);
+  border: 1px solid rgba(74, 222, 128, 0.28);
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.home-dashboard .your-team-home-hero:hover {
+  border-color: rgba(74, 222, 128, 0.55);
+  text-decoration: none;
+}
+
+.home-dashboard .your-team-home-hero-glow {
+  position: absolute;
+  inset: -40% auto auto -20%;
+  width: 55%;
+  height: 140%;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.16) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+.home-dashboard .your-team-home-avatar {
+  position: relative;
+  z-index: 1;
+  width: 3.65rem;
+  height: 3.65rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1a202c;
+  flex: 0 0 auto;
+  box-shadow:
+    0 0 0 2px rgba(74, 222, 128, 0.45),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.home-dashboard .your-team-home-avatar--empty {
+  display: block;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.home-dashboard .your-team-home-names {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.home-dashboard .your-team-home-team-name {
+  font-weight: 800;
+  font-size: 1.12rem;
+  color: #ecfdf3;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-dashboard .your-team-home-hero:hover .your-team-home-team-name {
+  color: #fff;
+}
+
+.home-dashboard .your-team-home-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  color: rgba(226, 232, 240, 0.72);
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-dashboard .your-team-home-owner-avatar {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+  flex: 0 0 auto;
+}
+
+.home-dashboard .your-team-home-assets-header {
+  margin-bottom: 0.45rem;
+}
+
 .home-dashboard .your-team-home-assets-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.5);
+}
+
+.home-dashboard .your-team-home-assets-empty {
+  font-size: 0.82rem;
   color: rgba(226, 232, 240, 0.55);
+  padding: 0.35rem 0;
+}
+
+.home-dashboard .your-team-home-assets-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.home-dashboard .your-team-home-asset-tile {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.65rem 0.4rem 0.55rem;
+  border: 1px solid var(--yt-tile-border);
+  border-radius: 0.65rem;
+  background: var(--yt-tile-bg);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
+}
+
+.home-dashboard .your-team-home-asset-tile:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(148, 180, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.home-dashboard .your-team-home-asset-rank {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.38rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: rgba(226, 232, 240, 0.75);
+  line-height: 1;
+}
+
+.home-dashboard .your-team-home-assets-grid > li:nth-child(1) .your-team-home-asset-rank {
+  color: #f6e05e;
+  border-color: rgba(246, 224, 94, 0.35);
+  background: rgba(246, 224, 94, 0.12);
+}
+
+.home-dashboard .your-team-home-asset-photo {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(148, 180, 255, 0.25);
+}
+
+.home-dashboard .your-team-home-asset-name {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #edf2f7;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-dashboard .your-team-home-asset-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.home-dashboard .your-team-home-asset-meta .pos-badge {
+  flex: 0 0 auto;
+  transform: scale(0.88);
+  transform-origin: center;
 }
 
 .home-dashboard .your-team-home-asset-value {
+  font-size: 0.72rem;
+  font-weight: 800;
   color: #4ade80;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 40em) {
+  .home-dashboard .your-team-home-hero {
+    gap: 0.65rem;
+    padding: 0.7rem 0.75rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .home-dashboard .your-team-home-avatar {
+    width: 2.85rem;
+    height: 2.85rem;
+  }
+
+  .home-dashboard .your-team-home-team-name {
+    font-size: 0.95rem;
+  }
+
+  .home-dashboard .your-team-home-owner {
+    font-size: 0.74rem;
+  }
+
+  .home-dashboard .your-team-home-assets-grid {
+    gap: 0.35rem;
+  }
+
+  .home-dashboard .your-team-home-asset-tile {
+    padding: 0.55rem 0.28rem 0.48rem;
+  }
+
+  .home-dashboard .your-team-home-asset-photo {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .home-dashboard .your-team-home-asset-name {
+    font-size: 0.64rem;
+  }
+
+  .home-dashboard .your-team-home-asset-value {
+    font-size: 0.64rem;
+  }
 }
 
 /* ── Week 1 countdown ────────────────────────────────────────────────────── */
