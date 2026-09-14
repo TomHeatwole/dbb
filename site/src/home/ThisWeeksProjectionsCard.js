@@ -19,6 +19,8 @@ import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { rosterWeekActivity } from '../scores/rosterWeekActivity';
 
+const SCOREBOARD_ICON = '/data/scoreboard.svg';
+
 function fmt(n) {
   return Number(n || 0).toFixed(1);
 }
@@ -277,9 +279,10 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     return copy.slice(0, 10);
   }, [rows, liveMode, rankMode]);
 
-  const title = liveMode || isWeekCompleteByGames
-    ? "This Week's Scores"
-    : "This Week's Projections";
+  const scoresMode = liveMode || isWeekCompleteByGames;
+  const title = scoresMode
+    ? `Week ${week} Scores`
+    : `Week ${week} Projections`;
   const scoresHref = `/Scores/Week?week=${week}`;
 
   let body = null;
@@ -287,8 +290,8 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     body = (
       <LoadingState
         className="this-week-proj-loading"
-        label="Loading this week…"
-        ariaLabel="Loading this week's projections"
+        label={`Loading Week ${week}…`}
+        ariaLabel={`Loading Week ${week} projections`}
       />
     );
   } else if (error) {
@@ -325,7 +328,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
             </div>
           </div>
         ) : null}
-        <div className="this-week-proj-rows">
+        <div className={`this-week-proj-rows${scoresMode ? '' : ' this-week-proj-rows--proj-only'}`}>
           {ranked.map((row, idx) => {
             const mine = isMyRoster(row.rosterId, myRosterId);
             const chipHref = row.hprojHref;
@@ -337,7 +340,11 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
                 <span className="this-week-proj-rank">#{idx + 1}</span>
                 <Link to={`/team/${row.rosterId}`} className="this-week-proj-team">
                   {row.avatarUrl ? (
-                    <img className="this-week-proj-avatar" src={row.avatarUrl} alt="" />
+                    <img
+                      className="this-week-proj-avatar"
+                      src={row.avatarUrl}
+                      alt=""
+                    />
                   ) : (
                     <span className="this-week-proj-avatar this-week-proj-avatar--empty" />
                   )}
@@ -346,14 +353,35 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
                     {mine ? <span className="me-chip">YOU</span> : null}
                   </span>
                 </Link>
-                <span className="this-week-proj-nums">
-                  {liveMode || isWeekCompleteByGames ? (
+                {scoresMode ? (
+                  <span className="this-week-proj-nums">
                     <span className={`this-week-proj-score${row.allGamesFinished ? ' this-week-proj-score--final' : ''}`}>
                       {fmt(row.actual)}
                       <span className="this-week-proj-units"> pts</span>
                     </span>
-                  ) : (
-                    <span className="this-week-proj-score">
+                    <span className="this-week-proj-proj">
+                      {row.allGamesFinished ? (
+                        <span className="this-week-proj-all-done">All games finished</span>
+                      ) : HPROJ_ON_SCORES && Number.isFinite(chipValue) ? (
+                        <HprojHint
+                          href={chipHref}
+                          value={chipValue}
+                          size="sm"
+                          variant={liveMode ? 'live' : 'hproj'}
+                        />
+                      ) : null}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="this-week-proj-proj-only">
+                    {HPROJ_ON_SCORES && Number.isFinite(chipValue) ? (
+                      <HprojHint
+                        href={chipHref}
+                        value={chipValue}
+                        size="sm"
+                        variant="hproj"
+                      />
+                    ) : (
                       <HprojHint
                         value={row.sleeperProj}
                         variant="sleeper"
@@ -361,22 +389,10 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
                         showTag={false}
                         className="this-week-proj-sleeper-hint"
                       />
-                      <span className="this-week-proj-units"> proj</span>
-                    </span>
-                  )}
-                  <span className="this-week-proj-proj">
-                    {row.allGamesFinished ? (
-                      <span className="this-week-proj-all-done">All games finished</span>
-                    ) : HPROJ_ON_SCORES && Number.isFinite(chipValue) ? (
-                      <HprojHint
-                        href={chipHref}
-                        value={chipValue}
-                        size="sm"
-                        variant={liveMode ? 'live' : 'hproj'}
-                      />
-                    ) : null}
+                    )}
+                    <span className="this-week-proj-units"> proj</span>
                   </span>
-                </span>
+                )}
               </div>
             );
           })}
@@ -389,7 +405,19 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     <HomeCard className="this-week-proj-card">
       <div className="home-card-inner">
         <div className="home-card-title-row">
-          <h2 className="home-card-title">{liveMode ? '🏈 ' : '🔮 '}{title}</h2>
+          <h2 className="home-card-title login-home-card-title">
+            {scoresMode ? (
+              <img
+                src={SCOREBOARD_ICON}
+                alt=""
+                className="login-home-card-title-logo"
+                aria-hidden="true"
+              />
+            ) : (
+              <span aria-hidden="true">🔮 </span>
+            )}
+            {title}
+          </h2>
           <Link className="active-playoffs-link" to={scoresHref}>
             Scores →
           </Link>

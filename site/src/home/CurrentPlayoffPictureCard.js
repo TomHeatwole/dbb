@@ -306,85 +306,61 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
     return '—';
   };
 
-  const renderRow = (left, right, label) => {
-    if (!left || !right) {
+  const renderTeam = (team) => {
+    if (!team) {
       return (
-        <div className="active-playoffs-row">
-          <div className="active-playoffs-side active-playoffs-side--left">
-            <div className="active-playoffs-team-content">
-              <div className="active-playoffs-team-header">
-                <span className="active-playoffs-team-seed active-playoffs-team-seed--pending">#1</span>
-              </div>
-              <span className="active-playoffs-team-name">TBD</span>
-            </div>
-          </div>
-          <div className="active-playoffs-score active-playoffs-score--left">—</div>
-          <div className="active-playoffs-vs">
-            <span className="active-playoffs-vs-dot">vs.</span>
-          </div>
-          <div className="active-playoffs-score active-playoffs-score--right">—</div>
-          <div className="active-playoffs-side active-playoffs-side--right">
-            <div className="active-playoffs-team-content">
-              <div className="active-playoffs-team-header active-playoffs-team-header--right">
-                <span className="active-playoffs-team-seed active-playoffs-team-seed--pending">#4</span>
-              </div>
-              <span className="active-playoffs-team-name">TBD</span>
-            </div>
+        <div className="playoff-picture-team playoff-picture-team--empty">
+          <span className="playoff-picture-seed">—</span>
+          <div className="playoff-picture-team-info">
+            <span className="playoff-picture-name">TBD</span>
+            <span className="playoff-picture-pts">—</span>
           </div>
         </div>
       );
     }
 
+    const mine = isMyRoster(team.rosterId, myRosterId);
     return (
-      <div className="active-playoffs-row">
-        <div className={`active-playoffs-side active-playoffs-side--left${isMyRoster(left.rosterId, myRosterId) ? ' active-playoffs-side--me' : ''}`}>
-          <div className="active-playoffs-team-content">
-            <div className="active-playoffs-team-header">
-              <span className="active-playoffs-team-seed active-playoffs-team-seed--pending">#{left.seed}</span>
-              {left.avatarUrl && (
-                <img
-                  className="active-playoffs-avatar"
-                  src={left.avatarUrl}
-                  alt={`${left.teamName} avatar`}
-                />
-              )}
-            </div>
-            <span className="active-playoffs-team-name">
-              {left.teamName}
-              {isMyRoster(left.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
-            </span>
-          </div>
+      <Link
+        to={`/team/${team.rosterId}`}
+        className={`playoff-picture-team${mine ? ' playoff-picture-team--me' : ''}`}
+      >
+        <span className="playoff-picture-seed">#{team.seed}</span>
+        {team.avatarUrl ? (
+          <img
+            className={`playoff-picture-avatar${mine ? ' me-avatar' : ''}`}
+            src={team.avatarUrl}
+            alt=""
+          />
+        ) : (
+          <span className="playoff-picture-avatar playoff-picture-avatar--empty" aria-hidden="true" />
+        )}
+        <div className="playoff-picture-team-info">
+          <span className="playoff-picture-name">
+            {team.teamName}
+            {mine ? <span className="me-chip">YOU</span> : null}
+          </span>
+          <span className="playoff-picture-pts">
+            {formatScore(team.totalPoints)}
+            <span className="playoff-picture-pts-units"> pts</span>
+          </span>
         </div>
-        <div className="active-playoffs-score active-playoffs-score--left">
-          {formatScore(left.totalPoints)}
-        </div>
-        <div className="active-playoffs-vs">
-          <span className="active-playoffs-vs-dot">vs.</span>
-        </div>
-        <div className="active-playoffs-score active-playoffs-score--right">
-          {formatScore(right.totalPoints)}
-        </div>
-        <div className={`active-playoffs-side active-playoffs-side--right${isMyRoster(right.rosterId, myRosterId) ? ' active-playoffs-side--me' : ''}`}>
-          <div className="active-playoffs-team-content">
-            <div className="active-playoffs-team-header active-playoffs-team-header--right">
-              {right.avatarUrl && (
-                <img
-                  className="active-playoffs-avatar"
-                  src={right.avatarUrl}
-                  alt={`${right.teamName} avatar`}
-                />
-              )}
-              <span className="active-playoffs-team-seed active-playoffs-team-seed--pending">#{right.seed}</span>
-            </div>
-            <span className="active-playoffs-team-name">
-              {right.teamName}
-              {isMyRoster(right.rosterId, myRosterId) ? <span className="me-chip">YOU</span> : null}
-            </span>
-          </div>
-        </div>
-      </div>
+      </Link>
     );
   };
+
+  const renderMatchup = (top, bottom, label) => (
+    <div className="playoff-picture-matchup">
+      <div className="playoff-picture-matchup-label">{label}</div>
+      <div className="playoff-picture-matchup-box">
+        {renderTeam(top)}
+        <div className="playoff-picture-divider" aria-hidden="true">
+          <span>vs</span>
+        </div>
+        {renderTeam(bottom)}
+      </div>
+    </div>
+  );
 
   let body = null;
 
@@ -409,16 +385,22 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
       </div>
     );
   } else {
+    const weeksLabel = picture.weeksCount === 1 ? '1 week' : `${picture.weeksCount} weeks`;
     body = (
-      <div className="active-playoffs-body">
-        {renderRow(picture.seed1, picture.seed4, '')}
-        {renderRow(picture.seed2, picture.seed3, '')}
+      <div className="playoff-picture-body">
+        <p className="playoff-picture-caption">
+          Top 4 by season points · through {weeksLabel}
+        </p>
+        <div className="playoff-picture-matchups">
+          {renderMatchup(picture.seed1, picture.seed4, 'Semifinal 1')}
+          {renderMatchup(picture.seed2, picture.seed3, 'Semifinal 2')}
+        </div>
       </div>
     );
   }
 
   return (
-    <HomeCard>
+    <HomeCard className="playoff-picture-card">
       <div className="home-card-inner">
         <div className="home-card-title-row">
           <h2 className="home-card-title">🖼️ Current Playoff Picture</h2>

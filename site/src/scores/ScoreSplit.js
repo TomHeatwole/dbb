@@ -107,7 +107,8 @@ function rankProjValue(row) {
 
 /** Rank /scores rows: Highest Projections by live/HProj; Highest Scores by pts, proj on ties. */
 export function compareLeagueScoreRows(a, b, { lineupMode, useHproj, liveBoard }) {
-  if (lineupMode === 'projections' && useHproj) {
+  const sortByProj = useHproj && (lineupMode === 'projections' || !liveBoard);
+  if (sortByProj) {
     const ah = rankProjValue(a);
     const bh = rankProjValue(b);
     const aRank = ah != null ? ah : a.points;

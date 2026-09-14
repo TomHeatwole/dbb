@@ -26,7 +26,7 @@ import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
-import { CURRENT_YEAR, getCurrentNFLWeek, isPreSeason, hasSeasonStarted, getWeek1KickoffMs } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount, isPreSeason, hasSeasonStarted, getWeek1KickoffMs } from '../utils/DateHelper';
 import { HOME_OFFSEASON_OVERRIDE } from '../utils/global_constants';
 import { fetchRookieDraftComplete } from '../lookups/TeamLookup';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
@@ -124,6 +124,7 @@ function HomePage() {
   const thisWeekCard = showThisWeekCard
     ? <ThisWeeksProjectionsCard currentWeekOverride={safeWeekForCards} />
     : null;
+  const showTrendCards = getCompletedWeeksCount() >= 2;
 
   // Off-season layout: separate "home cards set" once Week 17 is completed.
   if (isOffSeasonHome) {
@@ -199,9 +200,15 @@ function HomePage() {
     <CurrentPlayoffPictureCard currentWeekOverride={safeWeekForCards} />
   );
 
-  const bubbleCard = !showPlayoffMatchupsCard && !showChampionshipCard ? (
+  const bubbleCard = showTrendCards && !showPlayoffMatchupsCard && !showChampionshipCard ? (
     <BubbleCard currentWeekOverride={safeWeekForCards} />
   ) : null;
+  const topPfCard = showTrendCards
+    ? <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
+    : null;
+  const tankRaceCard = showTrendCards
+    ? <TankRaceCard currentWeekOverride={safeWeekForCards} />
+    : null;
 
   if (isMobile) {
     // Mobile ordering:
@@ -223,9 +230,9 @@ function HomePage() {
           <HotTeamCard currentWeekOverride={safeWeekForCards} />
           {thisWeekCard}
           {bubbleCard}
-          <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
+          {topPfCard}
           <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
-          <TankRaceCard currentWeekOverride={safeWeekForCards} />
+          {tankRaceCard}
           <LeagueHistoryCard />
           <HwangAICard />
           <CommissionerNoteCard />
@@ -247,8 +254,8 @@ function HomePage() {
           left={[
             { id: 'auth', node: <AuthHomeCard /> },
             { id: 'playoffs', node: playoffCard },
-            { id: 'top-pf', node: <TopPFRaceCard currentWeekOverride={safeWeekForCards} /> },
-            { id: 'tank', node: <TankRaceCard currentWeekOverride={safeWeekForCards} /> },
+            ...(topPfCard ? [{ id: 'top-pf', node: topPfCard }] : []),
+            ...(tankRaceCard ? [{ id: 'tank', node: tankRaceCard }] : []),
           ]}
           right={[
             { id: 'hot-team', node: <HotTeamCard currentWeekOverride={safeWeekForCards} /> },
