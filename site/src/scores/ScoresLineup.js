@@ -9,8 +9,10 @@ import useIsMobile from '../hooks/useIsMobile';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
 import { starterScoreSplit, benchScoreSplit } from './ScoreSplit';
+import { rosterWeekActivity } from './rosterWeekActivity';
 import HprojHint from './HprojHint';
 import { rankPtsForMode } from './projectionScoring';
+import { abbreviateStatTokens, compactStatLineForDisplay } from './espnBoxScore';
 import { hprojPercentile } from './hprojVarianceBuckets';
 import { HPROJ_SKILL_POS } from './hprojTeamSim';
 
@@ -45,17 +47,21 @@ function formatPlayerNameForDisplay(nameOrId, compact) {
   return `${firstInitial} ${lastShort || ''}`.trim();
 }
 
-function StatLine({ text, fromEspn = false }) {
-  const line = String(text || '').trim();
+function StatLine({ text, fromEspn = false, compact = false }) {
+  const raw = String(text || '').trim();
+  if (!raw) return null;
+  const line = compact ? compactStatLineForDisplay(raw) : abbreviateStatTokens(raw);
   if (!line) return null;
-  const parts = line.split(' · ').map((part) => part.trim()).filter(Boolean);
-  const rows = parts.length <= 2
+  const parts = compact
+    ? [line]
+    : line.split(' · ').map((part) => part.trim()).filter(Boolean);
+  const rows = compact || parts.length <= 2
     ? parts
     : [parts[0], parts.slice(1).join(' · ')];
   return (
     <div
-      className="scores-lineup-statline"
-      title={fromEspn ? `Live ESPN · ${line}` : line}
+      className={`scores-lineup-statline${compact ? ' scores-lineup-statline--inline' : ''}`}
+      title={fromEspn ? `Live ESPN · ${raw}` : raw}
     >
       {rows.map((row) => (
         <span key={row} className="scores-lineup-statline-part">{row}</span>
@@ -186,6 +192,9 @@ export default function ScoresLineup({
   const showScoreCol = true;
   const showProjCol = true;
   const showHprojCol = Boolean(hprojHref);
+  const allGamesFinished = Boolean(
+    isActiveWeek && !weekComplete && rosterWeekActivity(weekBreakdown, playerGameLabels).allGamesFinished
+  );
   const numsClass = `scores-lineup-nums${showScoreCol && showProjCol ? '' : ' scores-lineup-nums--single'}`;
   const hasPf = Number(pfTotal) > 0;
   const hasMeta = Boolean(ownerName || hasPf);
@@ -289,7 +298,7 @@ export default function ScoresLineup({
           <div className="scores-lineup-game-col">
             <GameLabel gameObj={gameObj} isActiveWeek={isActiveWeek} />
           </div>
-          <StatLine text={gameObj.statLine} fromEspn={gameObj.ptsFrom === 'espn'} />
+          <StatLine text={gameObj.statLine} fromEspn={gameObj.ptsFrom === 'espn'} compact={isMobileView} />
         </div>
         <div className={numsClass}>
           {showScoreCol ? <span className={`scores-lineup-pts-actual${highlightClass}`}>{scoreDisplay(p)}</span> : null}
@@ -401,17 +410,20 @@ export default function ScoresLineup({
       ) : null}
 
       <div className="scores-lineup-head">
-        <span className="scores-lineup-kicker">Starters</span>
         <div className="scores-lineup-head-stats">
           {showScoreCol ? (
             <div className="scores-lineup-head-col">
               <span className="scores-lineup-col-label">Score</span>
-              <span className="scores-lineup-pts-actual">
+              <span className={`scores-lineup-pts-actual${allGamesFinished ? ' scores-lineup-pts-actual--final' : ''}`}>
                 {starterSplit.actual.toFixed(1)}
               </span>
             </div>
           ) : null}
-          {!weekComplete && showHprojCol && gamesStarted ? (
+          {allGamesFinished ? (
+            <div className="scores-lineup-head-col scores-lineup-head-col--done">
+              <span className="scores-lineup-all-done">All games finished</span>
+            </div>
+          ) : !weekComplete && showHprojCol && gamesStarted ? (
             <div className="scores-lineup-head-col">
               <span className="scores-lineup-col-label scores-lineup-col-label--live">Live Proj</span>
               <HprojHint

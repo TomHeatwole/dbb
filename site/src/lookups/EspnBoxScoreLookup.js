@@ -1,10 +1,21 @@
 import { PAUSE_SCRAPES } from '../utils/global_constants';
+import { writeApiCacheWithKey, readApiCacheLatestByKey } from '../utils/database';
 import { getDefaultScoringConfig } from '../data_parse/loadScoringConfig';
 import {
   buildEspnLiveBySleeper,
-  eventIdsForBoxScores,
+  eventIdsToFetchForBoxScores,
+  summaryIsFinal,
   teamStatesFromScoreboard,
 } from '../scores/espnBoxScore';
+import {
+  emptyWeekBox,
+  espnBySleeperFromPersisted,
+  mergePersistedWeekBox,
+  persistChanged,
+  slimSummaryForCache,
+  summaryCacheKey,
+  weekBoxCacheKey,
+} from '../scores/espnBoxPersist';
 import { overlayEspnOnWeeks, statLinesFromEspn } from '../scores/overlayEspnLiveScores';
 
 const LIVE_TTL_MS = 12_000;
@@ -17,6 +28,32 @@ function summaryUrl(eventId) {
   return `https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${encodeURIComponent(eventId)}`;
 }
 
+function attachEventId(data, eventId) {
+  if (!data || typeof data !== 'object') return data;
+  if (data._eventId) return data;
+  data._eventId = String(eventId);
+  return data;
+}
+
+async function readStoredSummary(eventId) {
+  try {
+    const cached = await readApiCacheLatestByKey(summaryCacheKey(eventId));
+    return cached && cached.data ? cached.data : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function writeStoredSummary(eventId, data) {
+  const slim = slimSummaryForCache(data, eventId);
+  if (!slim) return;
+  try {
+    await writeApiCacheWithKey(summaryCacheKey(eventId), summaryUrl(eventId), slim);
+  } catch (_) {
+    // display store is best-effort
+  }
+}
+
 export async function fetchEspnGameSummary(eventId) {
   const id = String(eventId || '');
   if (!id) return null;
@@ -24,24 +61,35 @@ export async function fetchEspnGameSummary(eventId) {
   const now = Date.now();
   if (cached && cached.data) {
     const ttl = cached.final ? FINAL_TTL_MS : LIVE_TTL_MS;
-    if (now - cached.ts <= ttl) return cached.data;
+    if (now - cached.ts <= ttl) return attachEventId(cached.data, id);
+    if (cached.final) return attachEventId(cached.data, id);
   }
-  if (PAUSE_SCRAPES) return cached && cached.data ? cached.data : null;
+
+  const stored = await readStoredSummary(id);
+  if (stored && (summaryIsFinal(stored) || (cached && cached.final))) {
+    const data = attachEventId(stored, id);
+    summaryCache.set(id, { ts: now, data, final: true });
+    return data;
+  }
+  if (PAUSE_SCRAPES) {
+    const fallback = (cached && cached.data) || stored;
+    return fallback ? attachEventId(fallback, id) : null;
+  }
+
   try {
     const resp = await fetch(summaryUrl(id));
-    if (!resp.ok) return cached && cached.data ? cached.data : null;
-    const data = await resp.json();
-    const header = data && data.header;
-    const comps = header && Array.isArray(header.competitions) ? header.competitions : [];
-    const type = (comps[0] && comps[0].status && comps[0].status.type)
-      || (header && header.status && header.status.type)
-      || {};
-    const state = String(type.state || '').toLowerCase();
-    const final = state === 'post' || type.completed === true;
+    if (!resp.ok) {
+      const fallback = (cached && cached.data) || stored;
+      return fallback ? attachEventId(fallback, id) : null;
+    }
+    const data = attachEventId(await resp.json(), id);
+    const final = summaryIsFinal(data);
     summaryCache.set(id, { ts: now, data, final });
+    if (final) await writeStoredSummary(id, data);
     return data;
   } catch (_) {
-    return cached && cached.data ? cached.data : null;
+    const fallback = (cached && cached.data) || stored;
+    return fallback ? attachEventId(fallback, id) : null;
   }
 }
 
@@ -59,42 +107,111 @@ async function loadScoringConfig() {
   return scoringConfigPromise;
 }
 
+export async function readPersistedWeekBox(season, week) {
+  try {
+    const cached = await readApiCacheLatestByKey(weekBoxCacheKey(season, week));
+    return cached && cached.data ? cached.data : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function writePersistedWeekBox(season, week, payload) {
+  try {
+    await writeApiCacheWithKey(
+      weekBoxCacheKey(season, week),
+      `espn-box-week://${season}/${week}`,
+      payload,
+    );
+  } catch (_) {
+    // best-effort
+  }
+}
+
+function mergeEspnMaps(persisted, fresh) {
+  return {
+    ...espnBySleeperFromPersisted(persisted),
+    ...(fresh || {}),
+  };
+}
+
 /**
- * Fetch ESPN box scores for live / recently-final games and overlay league
- * points onto the in-memory Sleeper week. Does not write the Sleeper cache.
+ * Load stored week box scores, fetch any missing / live / recently-final
+ * games, and persist completed rows for the rest of the season.
  */
-export async function applyLiveEspnOverlay({
-  weeks,
+export async function ensureEspnWeekBox({
+  season,
   week,
   scoreboard,
   playerIdMap,
   playersData,
 }) {
-  if (!Array.isArray(weeks) || !scoreboard) {
-    return { weeks, statLines: {} };
+  const persisted = (await readPersistedWeekBox(season, week)) || emptyWeekBox(season, week);
+  if (!scoreboard) {
+    const espnBySleeper = espnBySleeperFromPersisted(persisted);
+    return {
+      espnBySleeper,
+      statLines: statLinesFromEspn(espnBySleeper),
+      persisted,
+    };
   }
-  const eventIds = eventIdsForBoxScores(scoreboard);
-  if (!eventIds.length) {
-    return { weeks, statLines: {} };
-  }
+
+  const eventIds = eventIdsToFetchForBoxScores(scoreboard, persisted.eventIds);
   const [summaries, scoringConfig] = await Promise.all([
-    fetchEspnBoxScoresForEvents(eventIds),
+    eventIds.length ? fetchEspnBoxScoresForEvents(eventIds) : Promise.resolve([]),
     loadScoringConfig(),
   ]);
-  if (!summaries.length || !scoringConfig) {
+  const teamStates = teamStatesFromScoreboard(scoreboard);
+  const fresh = (summaries.length && scoringConfig)
+    ? buildEspnLiveBySleeper({
+      summaries,
+      playerIdMap,
+      playersData,
+      scoringConfig,
+      teamStates,
+    })
+    : {};
+  const nextPersist = mergePersistedWeekBox(persisted, fresh, season, week);
+  if (persistChanged(persisted, nextPersist)) {
+    await writePersistedWeekBox(season, week, nextPersist);
+  }
+  const espnBySleeper = mergeEspnMaps(nextPersist, fresh);
+  return {
+    espnBySleeper,
+    statLines: statLinesFromEspn(espnBySleeper),
+    persisted: nextPersist,
+  };
+}
+
+/**
+ * Fetch ESPN box scores for live / missing-final games, overlay league
+ * points onto the in-memory Sleeper week, and persist completed rows.
+ * Does not write the Sleeper cache.
+ */
+export async function applyLiveEspnOverlay({
+  weeks,
+  week,
+  season,
+  scoreboard,
+  playerIdMap,
+  playersData,
+}) {
+  if (!Array.isArray(weeks)) {
     return { weeks, statLines: {} };
   }
-  const teamStates = teamStatesFromScoreboard(scoreboard);
-  const espnBySleeper = buildEspnLiveBySleeper({
-    summaries,
+  const box = await ensureEspnWeekBox({
+    season,
+    week,
+    scoreboard,
     playerIdMap,
     playersData,
-    scoringConfig,
-    teamStates,
   });
+  if (!box || !box.espnBySleeper || !Object.keys(box.espnBySleeper).length) {
+    return { weeks, statLines: (box && box.statLines) || {} };
+  }
   return {
-    weeks: overlayEspnOnWeeks(weeks, week, espnBySleeper),
-    statLines: statLinesFromEspn(espnBySleeper),
+    weeks: overlayEspnOnWeeks(weeks, week, box.espnBySleeper),
+    statLines: box.statLines,
   };
 }
 

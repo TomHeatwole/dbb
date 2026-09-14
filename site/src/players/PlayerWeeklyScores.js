@@ -117,6 +117,8 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
   const [seasonUsers, setSeasonUsers] = useState(null);
   const dropdownRef = useRef(null);
   const isMobile = useIsMobile();
+  const useCompactPopup = isMobile;
+  const [showFullStats, setShowFullStats] = useState(!isMobile);
 
   const playerId = player && player.player_id ? player.player_id : null;
   const rookieYear = player && player.metadata && player.metadata.rookie_year ? player.metadata.rookie_year : null;
@@ -131,10 +133,15 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
   useEffect(() => {
     const next = initialSeason ? String(initialSeason) : defaultSeason;
     setSeason(next);
+    setShowFullStats(!isMobile);
     // Only re-seed when the player or calling page's year changes, not when
     // the user picks a year inside this card.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, initialSeason]);
+
+  useEffect(() => {
+    if (!isMobile) setShowFullStats(true);
+  }, [isMobile]);
 
   // Current Hwang Dynasty ownership (top bar) — prefer caller props, else fetch.
   useEffect(() => {
@@ -514,6 +521,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
   };
 
   const statsColumns = getStatsColumns();
+  const visibleStatsColumns = useCompactPopup && !showFullStats ? [] : statsColumns;
 
   const currentOwnership = ownershipOverride
     ? { resolved: true, info: ownershipOverride }
@@ -559,49 +567,97 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
     return <td className="player-weekly-game">{text}</td>;
   }
 
+  const photo = (
+    <img src={getPlayerLogoUrl(player && player.espn_photo_url)} alt={name} className="player-card-photo" />
+  );
+  const nameAndTeam = (
+    <div className="player-card-text">
+      <div className="player-card-name">{name}</div>
+      <div className="player-card-position-row">
+        {nflTeamLogo && <img src={nflTeamLogo} alt={team} className="player-nfl-team-logo" />}
+        <PositionBadge position={position} />
+        {team && <span className="player-nfl-team-abbr">{team}</span>}
+      </div>
+    </div>
+  );
+  const ownershipBanner = currentOwnership.resolved ? (
+    <OwnershipDisplay
+      info={currentOwnership.info}
+      myRosterId={myRosterId}
+      variant="banner"
+      label="Owned by"
+    />
+  ) : null;
+  const bioItems = (
+    <>
+      {age && <span className="player-detail-inline">Age {age}</span>}
+      {birthday && <span className="player-detail-inline">{birthday}</span>}
+      {yearsExp ? (
+        <span className="player-detail-inline">
+          {yearsExp} yr{yearsExp !== 1 ? 's' : ''} exp
+        </span>
+      ) : null}
+      {rookieYear && <span className="player-detail-inline">Rookie {rookieYear}</span>}
+      {college && <span className="player-detail-inline">{college}</span>}
+      {highSchool && <span className="player-detail-inline">{highSchool}</span>}
+      {injury && <span className="player-detail-inline player-injury-status">{injury}</span>}
+    </>
+  );
+
   return (
-    <div className="player-card player-weekly-card">
+    <div className={'player-card player-weekly-card' + (useCompactPopup ? ' player-weekly-card--mobile' : ' player-weekly-card--desktop')}>
       {typeof onClose === 'function' && (
         <button className="player-card-close" type="button" aria-label="Close" onClick={onClose}>×</button>
       )}
-      
-      <div className="player-card-content player-card-content-expanded">
-        <img src={getPlayerLogoUrl(player && player.espn_photo_url)} alt={name} className="player-card-photo" />
-        <div className="player-card-info-wrapper">
-          <div className="player-card-text">
-            <div className="player-card-name">{name}</div>
-            <div className="player-card-position-row">
-              {nflTeamLogo && <img src={nflTeamLogo} alt={team} className="player-nfl-team-logo" />}
-              <PositionBadge position={position} />
-              {team && <span className="player-nfl-team-abbr">{team}</span>}
-            </div>
-          </div>
-          
-          <div className="player-card-details-inline">
-            {age && <span className="player-detail-inline">Age {age}</span>}
-            {birthday && <span className="player-detail-inline">{birthday}</span>}
-            {yearsExp && <span className="player-detail-inline">{yearsExp} yr{yearsExp !== 1 ? 's' : ''} exp</span>}
-            {rookieYear && <span className="player-detail-inline">Rookie {rookieYear}</span>}
-            {college && <span className="player-detail-inline">{college}</span>}
-            {highSchool && <span className="player-detail-inline">{highSchool}</span>}
-            {injury && <span className="player-detail-inline player-injury-status">{injury}</span>}
-          </div>
-        </div>
 
-        {currentOwnership.resolved ? (
-          <OwnershipDisplay
-            info={currentOwnership.info}
-            myRosterId={myRosterId}
-            variant="banner"
-            label="Owned by"
-          />
-        ) : null}
-      </div>
+      {useCompactPopup ? (
+        <div className="player-card-content player-card-content-expanded">
+          <div className="player-card-identity">
+            {photo}
+            {nameAndTeam}
+            {ownershipBanner}
+          </div>
+          {(age || birthday || yearsExp || rookieYear || college || highSchool || injury) ? (
+            <div className="player-card-details-inline">
+              {(age || birthday || yearsExp || rookieYear) ? (
+                <span className="player-detail-line">
+                  {age && <span className="player-detail-inline">Age {age}</span>}
+                  {birthday && <span className="player-detail-inline">{birthday}</span>}
+                  {yearsExp ? (
+                    <span className="player-detail-inline">
+                      {yearsExp} yr{yearsExp !== 1 ? 's' : ''} exp
+                    </span>
+                  ) : null}
+                  {rookieYear && <span className="player-detail-inline">Rookie {rookieYear}</span>}
+                </span>
+              ) : null}
+              {(college || highSchool || injury) ? (
+                <span className="player-detail-line">
+                  {college && <span className="player-detail-inline">{college}</span>}
+                  {highSchool && <span className="player-detail-inline">{highSchool}</span>}
+                  {injury && <span className="player-detail-inline player-injury-status">{injury}</span>}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="player-card-content player-card-content-expanded">
+          {photo}
+          <div className="player-card-info-wrapper">
+            {nameAndTeam}
+            {(age || birthday || yearsExp || rookieYear || college || highSchool || injury) ? (
+              <div className="player-card-details-inline">{bioItems}</div>
+            ) : null}
+          </div>
+          {ownershipBanner}
+        </div>
+      )}
 
       {!isUpcomingRookie && (
         <div className="player-weekly-header">
           <div ref={dropdownRef} className="player-season-dropdown" onClick={() => setDropdownOpen(open => !open)}>
-            {season} Season
+            {isMobile ? season : `${season} Season`}
             <span className="player-season-dropdown-arrow">{dropdownOpen ? '▲' : '▼'}</span>
             {dropdownOpen && (
               <div className="player-season-dropdown-list" onClick={(e) => e.stopPropagation()}>
@@ -694,13 +750,37 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
             </div>
           </div>
 
-          <div className="player-weekly-table-container">
+          {useCompactPopup && statsColumns.length > 0 ? (
+            <div className="player-weekly-table-toolbar">
+              <label className={'player-weekly-stats-toggle' + (showFullStats ? ' is-on' : '')}>
+                <span className="player-weekly-stats-toggle-label">Full stats</span>
+                <span className="player-weekly-stats-toggle-switch">
+                  <input
+                    type="checkbox"
+                    className="player-weekly-stats-toggle-input"
+                    checked={showFullStats}
+                    onChange={() => setShowFullStats((v) => !v)}
+                  />
+                  <span className="player-weekly-stats-toggle-track" aria-hidden="true">
+                    <span className="player-weekly-stats-toggle-thumb" />
+                  </span>
+                </span>
+              </label>
+            </div>
+          ) : null}
+
+          <div
+            className={
+              'player-weekly-table-container' +
+              (showFullStats ? ' player-weekly-table-container--full' : '')
+            }
+          >
             <table className="player-weekly-table">
               <thead>
                 <tr>
                   <th>Week</th>
                   {showGameColumn ? <th>Game</th> : null}
-                  {statsColumns.map(col => (
+                  {visibleStatsColumns.map(col => (
                     <th key={col.key}>{col.label}</th>
                   ))}
                   <th>Points</th>
@@ -711,7 +791,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
                   <tr key={week} className={points > 0 ? '' : 'player-weekly-zero'}>
                     <td>{isMobile ? week : `Week ${week}`}</td>
                     {renderGameCell(week)}
-                    {statsColumns.map(col => (
+                    {visibleStatsColumns.map(col => (
                       <td key={col.key} className="player-weekly-stat">
                         {stats ? col.format(stats[col.key]) : '-'}
                       </td>
@@ -726,7 +806,7 @@ function PlayerWeeklyScores({ player, onClose, rosters, users, ownershipOverride
                 <tr className="player-weekly-totals-row">
                   <td className="player-weekly-totals-label">Total</td>
                   {showGameColumn ? <td className="player-weekly-game" /> : null}
-                  {statsColumns.map(col => {
+                  {visibleStatsColumns.map(col => {
                     const total = weeklyScores.reduce((sum, { stats }) => {
                       return sum + (stats ? (stats[col.key] || 0) : 0);
                     }, 0);

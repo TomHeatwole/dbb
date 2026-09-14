@@ -9,6 +9,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import PositionBadge from '../PositionBadge';
 import ScoreSplit, { starterScoreSplit, benchScoreSplit } from './ScoreSplit';
+import { compactStatLineForDisplay } from './espnBoxScore';
 
 export default function TeamScoresTables({ weekBreakdown, playersData, playerIdMap, renderOnly = null, totalsPlacement = 'bottom', playerGameLabels = {}, isActiveWeek = false, injuriesMap = {}, showCurrentInjury = false, playerHighlightMap = {}, playersTeamMap = {} }) {
   const isMobileView = useIsMobile();
@@ -61,7 +62,7 @@ export default function TeamScoresTables({ weekBreakdown, playersData, playerIdM
               className="scores-lineup-statline"
               title={gameObj.ptsFrom === 'espn' ? `Live ESPN · ${gameObj.statLine}` : gameObj.statLine}
             >
-              {gameObj.statLine}
+              {isMobileView ? compactStatLineForDisplay(gameObj.statLine) : gameObj.statLine}
             </span>
           ) : null}
         </span>

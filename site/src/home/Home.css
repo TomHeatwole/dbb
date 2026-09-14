@@ -605,6 +605,23 @@
   text-align: right;
 }
 
+.home-dashboard .this-week-proj-score--final {
+  color: #c8ccd4;
+}
+
+.home-dashboard .this-week-proj-all-done {
+  display: block;
+  max-width: 5.4rem;
+  font-size: 0.5rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8b95b3;
+  line-height: 1.2;
+  text-align: right;
+  white-space: normal;
+}
+
 .home-dashboard .this-week-proj-proj {
   display: flex;
   justify-content: flex-end;

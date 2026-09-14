@@ -26,9 +26,11 @@ import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
-import { getCurrentNFLWeek, isCurrentWeekCompleted, isPreSeason, hasSeasonStarted, getWeek1KickoffMs } from '../utils/DateHelper';
+import { CURRENT_YEAR, getCurrentNFLWeek, isPreSeason, hasSeasonStarted, getWeek1KickoffMs } from '../utils/DateHelper';
 import { HOME_OFFSEASON_OVERRIDE } from '../utils/global_constants';
 import { fetchRookieDraftComplete } from '../lookups/TeamLookup';
+import { fetchNflScoreboard } from '../lookups/GamesLookup';
+import { isScoreboardWeekComplete } from '../scores/GamesParser';
 import './Home.css';
 
 function HomePage() {
@@ -47,12 +49,13 @@ function HomePage() {
 
     async function computeHomeWeek() {
       try {
-        const [weekCompleted, draftComplete] = await Promise.all([
-          isCurrentWeekCompleted(),
+        const baseWeek = getCurrentNFLWeek();
+        const [scoreboard, draftComplete] = await Promise.all([
+          fetchNflScoreboard(CURRENT_YEAR, baseWeek).catch(() => null),
           fetchRookieDraftComplete(),
         ]);
-
-        const baseWeek = getCurrentNFLWeek();
+        // Flip to next week only after the last NFL game on this week's board is final.
+        const weekCompleted = Boolean(scoreboard && isScoreboardWeekComplete(scoreboard));
         
         // If the current week is completed, advance to the next week for home page display
         // NOTE: We intentionally allow "18" here after Week 17 completes so that

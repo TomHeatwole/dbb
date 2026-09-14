@@ -16,6 +16,7 @@ import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/Pl
 import useIsMobile from '../hooks/useIsMobile';
 import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
+import { ensureEspnWeekBox } from '../lookups/EspnBoxScoreLookup';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { readPlayersSnapshot } from '../utils/database';
@@ -29,6 +30,7 @@ import LineupModeToggle from '../scores/LineupModeToggle';
 import useLeagueHproj from '../scores/useLeagueHproj';
 import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
+import { rosterWeekActivity } from '../scores/rosterWeekActivity';
 
 const OG_TITLE = 'Scores – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
@@ -400,6 +402,13 @@ function LeagueScores() {
 				} catch (_) {
 					setIsWeekCompleteByGames(false);
 				}
+				const boxPromise = ensureEspnWeekBox({
+					season,
+					week,
+					scoreboard: json,
+					playerIdMap,
+					playersData,
+				}).catch(() => null);
 						let mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json, (String(season) === String(CURRENT_YEAR) ? playersTeamMap : null));
 				const labels = {};
 				for (const pid of playerIds) {
@@ -413,6 +422,10 @@ function LeagueScores() {
 				if (!cancelled) {
 					setPlayerGameLabels(labels);
 					setGameLabelsReady(true);
+				}
+				const box = await boxPromise;
+				if (!cancelled && box && box.statLines) {
+					setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
 				}
 			})
 			.catch(() => {
@@ -438,7 +451,7 @@ function LeagueScores() {
 		} catch (_) {}
 			labelBaselineKeyRef.current = key;
 		}
-	}, [labelsWithEspn, weeksParsedData, season, week, buildExpandedData, playerSeasonTotalsMap]);
+	}, [playerGameLabels, labelsWithEspn, weeksParsedData, season, week, buildExpandedData, playerSeasonTotalsMap]);
 
 	// Load per-player team mapping from weekly players snapshot (current season only)
 	// Live polling effect has intentionally curated dependencies; suppress
@@ -481,6 +494,29 @@ function LeagueScores() {
 		return () => { cancelled = true; };
 	}, [season, week]);
 
+	useEffect(() => {
+		if (!playerIdMap || !playersData || !week) return undefined;
+		let cancelled = false;
+		(async () => {
+			try {
+				const scoreboard = await fetchNflScoreboard(Number(season), week);
+				const box = await ensureEspnWeekBox({
+					season,
+					week,
+					scoreboard,
+					playerIdMap,
+					playersData,
+				});
+				if (!cancelled && box && box.statLines) {
+					setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+				}
+			} catch (_) {
+				// keep scores without stored box lines
+			}
+		})();
+		return () => { cancelled = true; };
+	}, [season, week, playerIdMap, playersData]);
+
 	// Reset label baseline key on season/week change
 	useEffect(() => {
 		labelBaselineKeyRef.current = null;
@@ -499,7 +535,6 @@ function LeagueScores() {
 	// a ref so ESPN/Sleeper ticks do not remount the poller.
 	useEffect(() => {
 		let cancelled = false;
-		setEspnStatLines({});
 
 		const poller = createLiveScoresPoller({
 			season,
@@ -511,7 +546,9 @@ function LeagueScores() {
 					return;
 				}
 				setLiveScoresReady(true);
-				setEspnStatLines(nextLines || {});
+				if (nextLines && Object.keys(nextLines).length) {
+					setEspnStatLines(nextLines);
+				}
 				const ctx = overlayCtxRef.current || {};
 				const seasonTotals = getPlayerSeasonTotalsMap(newWeeks);
 				const nextExpanded = ctx.buildExpandedData
@@ -791,25 +828,12 @@ function LeagueScores() {
 								!isWeekCompleteByGames;
 							const showCurrentInjury = (String(season) === String(CURRENT_YEAR)) && (week >= getCurrentNFLWeek());
 
-							let activeCount = 0;
-							let yetToPlayCount = 0;
-							if (isActiveWeek && weekBreakdown) {
-								const rosterPlayerIds = [...weekBreakdown.starters, ...weekBreakdown.bench]
-									.map((p) => p && p.id)
-									.filter((pid) => pid && pid !== '0');
-								for (const pid of rosterPlayerIds) {
-									const label = (labelsWithEspn && labelsWithEspn[pid]) ? labelsWithEspn[pid] : null;
-									if (!label) { continue; }
-									const isLive = !!label.live;
-									const isCompleted = !!label.completed;
-									const isBye = label && label.text === 'BYE';
-									if (isLive) {
-										activeCount += 1;
-									} else if (!isCompleted && !isBye) {
-										yetToPlayCount += 1;
-									}
-								}
-							}
+							const activity = isActiveWeek && weekBreakdown
+								? rosterWeekActivity(weekBreakdown, labelsWithEspn)
+								: { live: 0, yetToPlay: 0, allGamesFinished: false };
+							const activeCount = activity.live;
+							const yetToPlayCount = activity.yetToPlay;
+							const allGamesFinished = Boolean(isActiveWeek && activity.allGamesFinished);
 
 							// Debug: log players missing ESPN mapping (image source) for this team row
 							try {
@@ -872,7 +896,8 @@ function LeagueScores() {
 											hprojValue={hprojValue}
 											liveProjValue={liveProjValue}
 											gamesStarted={hprojGamesStarted}
-											className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
+											allGamesFinished={allGamesFinished}
+											className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj && !allGamesFinished ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) && !allGamesFinished ? ' standings-total--proj' : ''}${teamHighlight === 'up' ? ' text-up' : (teamHighlight === 'down' ? ' text-down' : '')}`}
 										/>
 									</button>
 									{isExpanded && (() => {

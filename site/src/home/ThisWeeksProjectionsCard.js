@@ -17,6 +17,7 @@ import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
+import { rosterWeekActivity } from '../scores/rosterWeekActivity';
 
 function fmt(n) {
   return Number(n || 0).toFixed(1);
@@ -230,6 +231,9 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
           hproj: hprojByRoster[String(rid)] ?? null,
           liveProj: liveProjByRoster[String(rid)] ?? null,
           hprojHref: href,
+          allGamesFinished: Boolean(
+            liveMode && rosterWeekActivity(computed, playerGameLabels).allGamesFinished
+          ),
         };
       });
   }, [
@@ -344,7 +348,10 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
                 </Link>
                 <span className="this-week-proj-nums">
                   {liveMode || isWeekCompleteByGames ? (
-                    <span className="this-week-proj-score">{fmt(row.actual)}<span className="this-week-proj-units"> pts</span></span>
+                    <span className={`this-week-proj-score${row.allGamesFinished ? ' this-week-proj-score--final' : ''}`}>
+                      {fmt(row.actual)}
+                      <span className="this-week-proj-units"> pts</span>
+                    </span>
                   ) : (
                     <span className="this-week-proj-score">
                       <HprojHint
@@ -358,7 +365,9 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
                     </span>
                   )}
                   <span className="this-week-proj-proj">
-                    {HPROJ_ON_SCORES && Number.isFinite(chipValue) ? (
+                    {row.allGamesFinished ? (
+                      <span className="this-week-proj-all-done">All games finished</span>
+                    ) : HPROJ_ON_SCORES && Number.isFinite(chipValue) ? (
                       <HprojHint
                         href={chipHref}
                         value={chipValue}

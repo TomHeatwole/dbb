@@ -3,6 +3,8 @@ import {
   collectAthletesFromBoxscore,
   dstStatsFromSummary,
   eventIdsForBoxScores,
+  eventIdsToFetchForBoxScores,
+  compactStatLineForDisplay,
   formatPlayerStatLine,
   kickerDistanceBonuses,
   mapEspnBagsToScoringStats,
@@ -12,6 +14,7 @@ import {
   sleeperDefIdFromEspnAbbr,
   teamStatesFromScoreboard,
 } from './espnBoxScore';
+import { mergePersistedWeekBox, persistChanged } from './espnBoxPersist';
 import { overlayEspnOnWeek } from './overlayEspnLiveScores';
 
 const SCORING = {
@@ -137,6 +140,24 @@ describe('espn box score parsing', () => {
     expect(formatPlayerStatLine(dak.bags)).toContain('116 yd');
   });
 
+  it('keeps the important box-score bits and shortens fumbles', () => {
+    expect(formatPlayerStatLine({
+      passing: {
+        'completions/passingAttempts': '17/25',
+        passingYards: '324',
+        passingTouchdowns: '1',
+      },
+      rushing: { rushingAttempts: '7', rushingYards: '40', rushingTouchdowns: '1' },
+      fumbles: { fumblesLost: '1' },
+    })).toBe('17/25, 324 yd, 1 TD · 7 car, 40 yd, 1 TD · FUM');
+    expect(compactStatLineForDisplay(
+      '16 car, 63 yd, 1 TD · 1 rec, -7 yd · 1 fum lost'
+    )).toBe('16 car, 63 yd, 1 TD · FUM');
+    expect(compactStatLineForDisplay(
+      '17/25, 324 yd, 1 TD · 7 car, 40 yd, 1 TD · 1 fum lost'
+    )).toBe('17/25, 324 yd, 1 TD · 7 car, 40 yd, 1 TD · FUM');
+  });
+
   it('adds 50+ FG bonuses from scoring plays', () => {
     const extras = kickerDistanceBonuses(summaryFixture(), 'DAL', 'Aubrey');
     expect(extras.fg50).toBe(1);
@@ -166,6 +187,8 @@ describe('espn box score parsing', () => {
     expect(eventIdsForBoxScores(board, now)).toEqual(['live1', 'final1']);
     expect(eventIdsForBoxScores(board, now)).not.toContain('old1');
     expect(eventIdsForBoxScores(board, now)).not.toContain('pre1');
+    expect(eventIdsToFetchForBoxScores(board, [], now)).toEqual(['live1', 'final1', 'old1']);
+    expect(eventIdsToFetchForBoxScores(board, ['old1'], now)).toEqual(['live1', 'final1']);
     const states = teamStatesFromScoreboard({
       events: [{
         id: 'live1',
@@ -229,5 +252,22 @@ describe('ESPN overlay vs Sleeper', () => {
     expect(shouldPreferEspn({ live: false, completed: true, pts: 12 }, 0)).toBe(true);
     expect(shouldPreferEspn({ live: false, completed: true, pts: 12 }, 11.8)).toBe(false);
     expect(shouldPreferEspn({ live: false, completed: true, pts: 12 }, 12)).toBe(false);
+  });
+
+  it('persists completed box rows and skips live ones', () => {
+    const merged = mergePersistedWeekBox(
+      { eventIds: [], bySleeperId: {} },
+      {
+        dak: { pts: 18.4, statLine: '20/30, 210 yd', completed: true, live: false, eventId: '401872656' },
+        liveqb: { pts: 4, statLine: '5/8, 40 yd', completed: false, live: true, eventId: 'live1' },
+      },
+      2026,
+      1,
+    );
+    expect(merged.eventIds).toEqual(['401872656']);
+    expect(merged.bySleeperId.dak.statLine).toMatch(/210 yd/);
+    expect(merged.bySleeperId.liveqb).toBeUndefined();
+    expect(persistChanged({ eventIds: [], bySleeperId: {} }, merged)).toBe(true);
+    expect(persistChanged(merged, merged)).toBe(false);
   });
 });

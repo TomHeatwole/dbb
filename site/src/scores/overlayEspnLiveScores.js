@@ -80,7 +80,7 @@ export function statLinesFromEspn(espnBySleeperId) {
     if (!row || !row.statLine) continue;
     out[String(pid)] = {
       statLine: row.statLine,
-      ptsFrom: row.live || (row.completed && shouldPreferEspn(row, 0)) ? 'espn' : 'espn',
+      ptsFrom: row.live ? 'espn' : 'box',
     };
   }
   return out;

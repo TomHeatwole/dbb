@@ -97,7 +97,7 @@ export async function fetchScoresData(season, options = {}) {
     }
 
     const shouldNetwork = mayForceNetwork
-      || !hasCache && canSeedMissing
+      || (!hasCache && canSeedMissing)
       || (isStaleActive && !staleWhileRevalidate);
     if (!shouldNetwork) {
       return hasCache ? stripMatchupId(cached.data) : null;

@@ -6,7 +6,9 @@ import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/Pl
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
+import { ensureEspnWeekBox } from '../lookups/EspnBoxScoreLookup';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
+import { compactStatLineForDisplay } from '../scores/espnBoxScore';
 import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
 import { STARTER_POSITION_NAMES } from '../utils/global_constants';
 import useIsMobile from '../hooks/useIsMobile';
@@ -417,6 +419,13 @@ function MatchupView({
           } catch (_) {
             nextWeekCompleteByGames[w] = false;
           }
+          const boxPromise = ensureEspnWeekBox({
+            season,
+            week: w,
+            scoreboard: json,
+            playerIdMap,
+            playersData,
+          }).catch(() => null);
           // eslint-disable-next-line no-await-in-loop
           const mapping = await mapPlayersToGames(
             playerIds,
@@ -435,6 +444,15 @@ function MatchupView({
               ? getGameDisplayForTeam(ev, teamForWeek)
               : { text: 'BYE', live: false, completed: false, eventId: null };
             labels[pid] = { ...d, team: teamForWeek || null };
+          }
+          const box = await boxPromise;
+          for (const [pid, meta] of Object.entries((box && box.statLines) || {})) {
+            if (!meta) continue;
+            const prev = labels[pid] || {};
+            labels[pid] = { ...prev, statLine: meta.statLine || prev.statLine, ptsFrom: meta.ptsFrom || prev.ptsFrom };
+          }
+          if (Number(w) === Number(currentWeekNum) && box && box.statLines) {
+            setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
           }
           nextLabelsByWeek[w] = labels;
         } catch (e) {
@@ -464,7 +482,8 @@ function MatchupView({
     playersTeamMapByWeek,
     team1Id,
     team2Id,
-    teamData
+    teamData,
+    currentWeekNum,
   ]);
 
   // Load per-player team mapping from weekly players snapshot for each
@@ -629,7 +648,6 @@ function MatchupView({
     }
 
     let cancelled = false;
-    setEspnStatLines({});
 
     const poller = createLiveScoresPoller({
       season,
@@ -642,7 +660,9 @@ function MatchupView({
           return;
         }
         setWeeksParsedData(newWeeks);
-        setEspnStatLines(nextLines || {});
+        if (nextLines && Object.keys(nextLines).length) {
+          setEspnStatLines(nextLines);
+        }
       },
     });
 
@@ -817,7 +837,7 @@ function MatchupView({
               className="scores-lineup-statline"
               title={gameObj.ptsFrom === 'espn' ? `Live ESPN · ${gameObj.statLine}` : gameObj.statLine}
             >
-              {gameObj.statLine}
+              {isMobileView ? compactStatLineForDisplay(gameObj.statLine) : gameObj.statLine}
             </span>
           ) : null}
         </span>

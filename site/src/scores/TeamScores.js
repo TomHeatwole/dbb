@@ -9,6 +9,7 @@ import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from '../utils
 import WeekSelector from './WeekSelector';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
+import { ensureEspnWeekBox } from '../lookups/EspnBoxScoreLookup';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam, isScoreboardWeekComplete } from './GamesParser';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import useIsMobile from '../hooks/useIsMobile';
@@ -267,6 +268,13 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
         } catch (_) {
           setIsWeekCompleteByGames(false);
         }
+        const boxPromise = ensureEspnWeekBox({
+          season,
+          week,
+          scoreboard: json,
+          playerIdMap,
+          playersData: playersDataForWeek,
+        }).catch(() => null);
         const mapping = await mapPlayersToGames(
           playerIds,
           playersDataForWeek,
@@ -294,6 +302,10 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
         if (!cancelled) {
           setPlayerGameLabels(labels);
         }
+        const box = await boxPromise;
+        if (!cancelled && box && box.statLines) {
+          setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -318,6 +330,29 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
 
   overlayCtxRef.current = { playerIdMap, playersData: playersDataForWeek };
 
+  useEffect(() => {
+    if (!playerIdMap || !playersDataForWeek || !week) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const scoreboard = await fetchNflScoreboard(Number(season), week);
+        const box = await ensureEspnWeekBox({
+          season,
+          week,
+          scoreboard,
+          playerIdMap,
+          playersData: playersDataForWeek,
+        });
+        if (!cancelled && box && box.statLines) {
+          setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+        }
+      } catch (_) {
+        // keep scores without stored box lines
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [season, week, playerIdMap, playersDataForWeek]);
+
   // Live polling: when viewing current week of current season, auto-refresh scores
   useEffect(() => {
     const isCurrentSeason = String(season) === String(CURRENT_YEAR);
@@ -327,7 +362,6 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     }
 
     let cancelled = false;
-    setEspnStatLines({});
 
     const poller = createLiveScoresPoller({
       season,
@@ -339,7 +373,9 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
           return;
         }
         setLiveWeeksParsedData(newWeeks);
-        setEspnStatLines(nextLines || {});
+        if (nextLines && Object.keys(nextLines).length) {
+          setEspnStatLines(nextLines);
+        }
       },
     });
 

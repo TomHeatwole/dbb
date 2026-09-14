@@ -22,6 +22,7 @@ import LineupModeToggle from './LineupModeToggle';
 import useLeagueHproj from './useLeagueHproj';
 import { hprojPageHref, ownerFirstNameCounts } from './hprojTeamSim';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
+import { rosterWeekActivity } from './rosterWeekActivity';
 
 /**
  * Reusable league scores view (per-week scoreboard).
@@ -587,27 +588,12 @@ function ScoresView({
             String(season) === String(CURRENT_YEAR) &&
             Number(week) >= Number(getCurrentNFLWeek());
 
-          let activeCount = 0;
-          let yetToPlayCount = 0;
-          if (isActiveWeek && weekBreakdown) {
-            const rosterPlayerIds = [...(weekBreakdown.starters || []), ...(weekBreakdown.bench || [])]
-              .map((p) => p && p.id)
-              .filter((pid) => pid && pid !== '0');
-            for (const pid of rosterPlayerIds) {
-              const label = playerGameLabels && playerGameLabels[pid];
-              if (!label) {
-                continue;
-              }
-              const isLive = !!label.live;
-              const isCompleted = !!label.completed;
-              const isBye = label && label.text === 'BYE';
-              if (isLive) {
-                activeCount += 1;
-              } else if (!isCompleted && !isBye) {
-                yetToPlayCount += 1;
-              }
-            }
-          }
+          const activity = isActiveWeek && weekBreakdown
+            ? rosterWeekActivity(weekBreakdown, playerGameLabels)
+            : { live: 0, yetToPlay: 0, allGamesFinished: false };
+          const activeCount = activity.live;
+          const yetToPlayCount = activity.yetToPlay;
+          const allGamesFinished = Boolean(isActiveWeek && activity.allGamesFinished);
 
           const mine = isMyRoster(rosterId, myRosterId);
           const weekSplit = starterScoreSplit(weekBreakdown, {
@@ -696,7 +682,8 @@ function ScoresView({
                   hprojValue={hprojValue}
                   liveProjValue={liveProjValue}
                   gamesStarted={hprojGamesStarted}
-                  className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) ? ' standings-total--proj' : ''}`}
+                  allGamesFinished={allGamesFinished}
+                  className={`standings-total${!isMobile && weekSplit.hasActual && weekSplit.hasProj && !allGamesFinished ? ' standings-total--split' : ''}${!weekSplit.hasActual && (weekSplit.hasProj || Boolean(hprojHref)) && !allGamesFinished ? ' standings-total--proj' : ''}`}
                 />
               </button>
               {isExpanded && (() => {

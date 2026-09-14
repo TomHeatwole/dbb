@@ -207,12 +207,13 @@ export function createLiveScoresPoller({
       }
 
       let espnStatLines = {};
-      if (isLivePollingWindow && scoreboard) {
+      if (scoreboard && (isLivePollingWindow || isActiveWeek)) {
         try {
           const ctx = typeof getOverlayContext === 'function' ? (getOverlayContext() || {}) : {};
           const overlaid = await applyLiveEspnOverlay({
             weeks: newWeeks,
             week,
+            season,
             scoreboard,
             playerIdMap: ctx.playerIdMap || null,
             playersData: ctx.playersData || null,

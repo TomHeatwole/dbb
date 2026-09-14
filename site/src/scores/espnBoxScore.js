@@ -205,11 +205,54 @@ export function formatPlayerStatLine(bags, extras = {}) {
     parts.push(bit.join(', '));
   }
   const fum = parseNum(fumbles.fumblesLost);
-  if (fum) parts.push(`${fum} fum lost`);
+  if (fum) parts.push(fum === 1 ? 'FUM' : `${fum} FUM`);
   const st = parseNum((bags.kickReturns || {}).kickReturnTouchdowns)
     + parseNum((bags.puntReturns || {}).puntReturnTouchdowns);
   if (st) parts.push(`${st} ST TD`);
   return parts.join(' · ');
+}
+
+export function abbreviateStatTokens(text) {
+  return String(text || '')
+    .replace(/\b(\d+)\s*fum(?:bles?)?\s*lost\b/gi, (_, n) => (Number(n) === 1 ? 'FUM' : `${n} FUM`))
+    .replace(/\bfum(?:bles?)?\s*lost\b/gi, 'FUM');
+}
+
+function statPartWeight(part) {
+  const p = String(part || '');
+  let weight = 0;
+  if (/\bTD\b/i.test(p)) weight += 80;
+  if (/\bINT\b/i.test(p)) weight += 70;
+  if (/\bFUM\b/i.test(p) || /fum/i.test(p)) weight += 65;
+  if (/\d+\s*\/\s*\d+/.test(p)) weight += 50;
+  if (/\bFG\b|\bXP\b/.test(p)) weight += 45;
+  if (/\bsack\b|\bFR\b|\bsafety\b/i.test(p)) weight += 40;
+  const yds = Number((p.match(/(-?\d+)\s*yd/) || [])[1] || 0);
+  const rec = Number((p.match(/(\d+)\s*rec/) || [])[1] || 0);
+  const car = Number((p.match(/(\d+)\s*car/) || [])[1] || 0);
+  weight += Math.min(30, Math.abs(yds) / 8);
+  if (rec >= 3) weight += 12;
+  if (car >= 8) weight += 10;
+  const highlight = /\bTD\b|\bINT\b|\bFUM\b|\d+\s*\/\s*\d+|\bFG\b|\bXP\b|\bsack\b|\bFR\b/i.test(p);
+  const trivial = !highlight && Math.abs(yds) < 15 && rec <= 2 && car <= 3;
+  return trivial ? -1 : weight;
+}
+
+/** Keep TDs / turnovers / primary volume; drop leftover scraps instead of ellipsizing. */
+export function compactStatLineForDisplay(text) {
+  const abbreviated = abbreviateStatTokens(text);
+  const parts = abbreviated.split(' · ').map((part) => part.trim()).filter(Boolean);
+  if (parts.length <= 1) return abbreviated;
+  const scored = parts.map((part, index) => ({ part, index, weight: statPartWeight(part) }));
+  const keep = new Set(
+    scored
+      .filter((row) => row.weight > 0)
+      .sort((a, b) => b.weight - a.weight || a.index - b.index)
+      .slice(0, 3)
+      .map((row) => row.index)
+  );
+  const kept = parts.filter((_, index) => keep.has(index));
+  return (kept.length ? kept : parts.slice(0, 1)).join(' · ');
 }
 
 function scoringPlays(summary) {
@@ -353,6 +396,53 @@ export function eventIdsForBoxScores(scoreboard, nowMs = Date.now()) {
   return ids;
 }
 
+/**
+ * Live games always. Completed games if they are still in the 36h refresh
+ * window, or if we have not stored that event yet (Wed/Thu leftovers, etc.).
+ */
+export function eventIdsToFetchForBoxScores(scoreboard, storedEventIds = [], nowMs = Date.now()) {
+  const stored = new Set((storedEventIds || []).map(String));
+  const ids = [];
+  const seen = new Set();
+  for (const ev of extractEvents(scoreboard)) {
+    const id = ev && ev.id != null ? String(ev.id) : '';
+    if (!id || seen.has(id)) continue;
+    const state = eventState(ev);
+    if (state === 'in') {
+      seen.add(id);
+      ids.push(id);
+      continue;
+    }
+    if (state === 'post') {
+      const kick = ev && ev.date ? Date.parse(ev.date) : NaN;
+      const recent = !Number.isFinite(kick) || (nowMs - kick) <= RECENT_FINAL_MS;
+      if (recent || !stored.has(id)) {
+        seen.add(id);
+        ids.push(id);
+      }
+    }
+  }
+  return ids;
+}
+
+export function summaryEventId(summary) {
+  if (!summary) return null;
+  if (summary._eventId != null) return String(summary._eventId);
+  const header = summary.header;
+  if (header && header.id != null) return String(header.id);
+  return null;
+}
+
+export function summaryIsFinal(summary) {
+  const header = summary && summary.header;
+  const comps = header && Array.isArray(header.competitions) ? header.competitions : [];
+  const type = (comps[0] && comps[0].status && comps[0].status.type)
+    || (header && header.status && header.status.type)
+    || {};
+  const state = String(type.state || '').toLowerCase();
+  return state === 'post' || type.completed === true;
+}
+
 export function invertEspnIdMap(playerIdMap, playersData) {
   const out = {};
   for (const [sid, eid] of Object.entries(playerIdMap || {})) {
@@ -397,6 +487,7 @@ export function buildEspnLiveBySleeper({
 
   for (const summary of summaries || []) {
     if (!summary) continue;
+    const eventId = summaryEventId(summary);
     const athletes = collectAthletesFromBoxscore(summary);
     for (const row of Object.values(athletes)) {
       const sid = espnToSleeper[row.espnId];
@@ -412,7 +503,8 @@ export function buildEspnLiveBySleeper({
         statLine: formatPlayerStatLine(row.bags, extras),
         stats,
         live: Boolean(st && st.live),
-        completed: Boolean(st && st.completed),
+        completed: Boolean(st && st.completed) || (!st && summaryIsFinal(summary)),
+        eventId: (st && st.eventId) || eventId,
         source: 'espn',
       };
     }
@@ -430,7 +522,8 @@ export function buildEspnLiveBySleeper({
         statLine: row.statLine,
         stats: row.stats,
         live: Boolean(state && state.live),
-        completed: Boolean(state && state.completed),
+        completed: Boolean(state && state.completed) || (!state && summaryIsFinal(summary)),
+        eventId: (state && state.eventId) || eventId,
         source: 'espn',
       };
     }

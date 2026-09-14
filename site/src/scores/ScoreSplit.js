@@ -22,14 +22,16 @@ export default function ScoreSplit({
   liveProjValue = null,
   gamesStarted = false,
   compact = false,
+  allGamesFinished = false,
 }) {
   const liveShown = Number.isFinite(liveProjValue) ? liveProjValue : null;
   const hprojShown = Number.isFinite(hprojValue)
     ? hprojValue
     : (hasProj ? Number(proj) : null);
-  const useLive = Boolean(gamesStarted && hprojHref && (liveShown != null || hprojShown != null));
+  const hideLive = Boolean(allGamesFinished);
+  const useLive = Boolean(!hideLive && gamesStarted && hprojHref && (liveShown != null || hprojShown != null));
   const chipValue = useLive ? (liveShown != null ? liveShown : hprojShown) : hprojShown;
-  const hprojNode = hasProj && hprojHref
+  const hprojNode = !hideLive && hasProj && hprojHref
     ? <HprojHint href={hprojHref} value={chipValue} size="lg" variant={useLive ? 'live' : 'hproj'} />
     : null;
   const projNode = hprojNode
@@ -42,16 +44,26 @@ export default function ScoreSplit({
     );
   const projOrHproj = hprojNode || <span className="score-split-proj">{projNode}</span>;
   const actualNode = <>{formatPts(actual)} pts</>;
-  const mixed = hasActual && hasProj;
+  const mixed = !hideLive && hasActual && hasProj;
   const classes = [
     className,
     compact ? 'score-split--compact' : null,
     mixed ? 'score-split score-split--mixed' : null,
+    hideLive && hasActual ? 'score-split score-split--final score-split--stack' : null,
     (layout === 'stack' || compact) && (mixed || hprojNode) ? 'score-split--stack' : null,
     mixed && layout === 'inline' && !compact ? 'score-split--inline' : null,
-    hasProj && !hasActual ? 'score-split--proj-only' : null,
+    hasProj && !hasActual && !hideLive ? 'score-split--proj-only' : null,
     hprojNode ? 'score-split--has-hproj' : null,
   ].filter(Boolean).join(' ');
+
+  if (hideLive && hasActual) {
+    return (
+      <span className={classes}>
+        <span className="score-split-all-done">All games finished</span>
+        <span className="score-split-actual">{actualNode}</span>
+      </span>
+    );
+  }
 
   if (mixed && layout === 'inline') {
     return (
