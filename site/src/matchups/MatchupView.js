@@ -7,6 +7,7 @@ import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/Score
 import { StartSitSort } from '../players/StartSitDecider';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { ensureEspnWeekBox } from '../lookups/EspnBoxScoreLookup';
+import { mergeEspnStatLinesIntoLabels } from '../scores/overlayEspnLiveScores';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import { compactStatLineForDisplay } from '../scores/espnBoxScore';
 import { CURRENT_YEAR, getCurrentNFLWeek, getCompletedWeeksCount } from '../utils/DateHelper';
@@ -138,6 +139,11 @@ function MatchupView({
   const isMobileView = useIsMobile();
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
   const currentWeekNum = getCurrentNFLWeek();
+
+  useEffect(() => {
+    setEspnStatLines({});
+  }, [currentWeekNum]);
+
   const effectiveWeeks = useMemo(() => {
     if (Array.isArray(weeks) && weeks.length > 0) {
       return weeks;
@@ -164,12 +170,10 @@ function MatchupView({
     const base = playerGameLabelsByWeek || {};
     if (!espnStatLines || !Object.keys(espnStatLines).length) return base;
     const next = { ...base };
-    const prev = { ...(next[currentWeekNum] || {}) };
-    for (const [pid, meta] of Object.entries(espnStatLines)) {
-      if (!meta) continue;
-      prev[pid] = { ...(prev[pid] || {}), statLine: meta.statLine, ptsFrom: meta.ptsFrom };
-    }
-    next[currentWeekNum] = prev;
+    next[currentWeekNum] = mergeEspnStatLinesIntoLabels(
+      next[currentWeekNum] || {},
+      espnStatLines,
+    );
     return next;
   }, [playerGameLabelsByWeek, espnStatLines, currentWeekNum]);
   const currentWeekLabels = (labelsByWeek && labelsByWeek[currentWeekNum]) || {};
@@ -446,13 +450,9 @@ function MatchupView({
             labels[pid] = { ...d, team: teamForWeek || null };
           }
           const box = await boxPromise;
-          for (const [pid, meta] of Object.entries((box && box.statLines) || {})) {
-            if (!meta) continue;
-            const prev = labels[pid] || {};
-            labels[pid] = { ...prev, statLine: meta.statLine || prev.statLine, ptsFrom: meta.ptsFrom || prev.ptsFrom };
-          }
+          Object.assign(labels, mergeEspnStatLinesIntoLabels(labels, (box && box.statLines) || {}));
           if (Number(w) === Number(currentWeekNum) && box && box.statLines) {
-            setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+            setEspnStatLines(box.statLines);
           }
           nextLabelsByWeek[w] = labels;
         } catch (e) {

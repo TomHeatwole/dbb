@@ -6,17 +6,19 @@ import {
   eventIdsToFetchForBoxScores,
   summaryIsFinal,
   teamStatesFromScoreboard,
+  scoreboardEventIdSet,
 } from '../scores/espnBoxScore';
 import {
   emptyWeekBox,
   espnBySleeperFromPersisted,
   mergePersistedWeekBox,
   persistChanged,
+  pruneWeekBoxToEvents,
   slimSummaryForCache,
   summaryCacheKey,
   weekBoxCacheKey,
 } from '../scores/espnBoxPersist';
-import { overlayEspnOnWeeks, statLinesFromEspn } from '../scores/overlayEspnLiveScores';
+import { overlayEspnOnWeeks, statLinesFromEspn, filterEspnRowsToEvents } from '../scores/overlayEspnLiveScores';
 
 const LIVE_TTL_MS = 12_000;
 const FINAL_TTL_MS = 30 * 60 * 1000;
@@ -146,15 +148,16 @@ export async function ensureEspnWeekBox({
   playerIdMap,
   playersData,
 }) {
-  const persisted = (await readPersistedWeekBox(season, week)) || emptyWeekBox(season, week);
-  if (!scoreboard) {
-    const espnBySleeper = espnBySleeperFromPersisted(persisted);
+  const persistedRaw = (await readPersistedWeekBox(season, week)) || emptyWeekBox(season, week);
+  const boardEventIds = scoreboardEventIdSet(scoreboard);
+  if (!scoreboard || !boardEventIds.size) {
     return {
-      espnBySleeper,
-      statLines: statLinesFromEspn(espnBySleeper),
-      persisted,
+      espnBySleeper: {},
+      statLines: {},
+      persisted: persistedRaw,
     };
   }
+  const persisted = pruneWeekBoxToEvents(persistedRaw, boardEventIds);
 
   const eventIds = eventIdsToFetchForBoxScores(scoreboard, persisted.eventIds);
   const [summaries, scoringConfig] = await Promise.all([
@@ -162,20 +165,23 @@ export async function ensureEspnWeekBox({
     loadScoringConfig(),
   ]);
   const teamStates = teamStatesFromScoreboard(scoreboard);
-  const fresh = (summaries.length && scoringConfig)
-    ? buildEspnLiveBySleeper({
-      summaries,
-      playerIdMap,
-      playersData,
-      scoringConfig,
-      teamStates,
-    })
-    : {};
+  const fresh = filterEspnRowsToEvents(
+    (summaries.length && scoringConfig)
+      ? buildEspnLiveBySleeper({
+        summaries,
+        playerIdMap,
+        playersData,
+        scoringConfig,
+        teamStates,
+      })
+      : {},
+    boardEventIds,
+  );
   const nextPersist = mergePersistedWeekBox(persisted, fresh, season, week);
-  if (persistChanged(persisted, nextPersist)) {
+  if (persistChanged(persistedRaw, nextPersist)) {
     await writePersistedWeekBox(season, week, nextPersist);
   }
-  const espnBySleeper = mergeEspnMaps(nextPersist, fresh);
+  const espnBySleeper = filterEspnRowsToEvents(mergeEspnMaps(nextPersist, fresh), boardEventIds);
   return {
     espnBySleeper,
     statLines: statLinesFromEspn(espnBySleeper),

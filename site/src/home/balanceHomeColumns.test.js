@@ -81,7 +81,7 @@ describe('balanceHomeColumns', () => {
     )).toBeLessThanOrEqual(120);
   });
 
-  it('moves a left-bottom card onto the right, above the commissioner note', () => {
+  it('moves the best-fitting card from the left onto the right, above the commissioner note', () => {
     const next = balanceHomeColumns(
       [
         { id: 'playoffs', height: 260 },
@@ -91,9 +91,9 @@ describe('balanceHomeColumns', () => {
       [note]
     );
 
-    expect(stripPinnedIds(next.leftIds)).toEqual(['playoffs']);
-    expect(stripPinnedIds(next.rightIds)).toEqual(['tank']);
-    expect(next.rightIds).toEqual(['tank', HOME_PINNED_RIGHT_ID]);
+    expect(stripPinnedIds(next.leftIds)).toEqual(['tank']);
+    expect(stripPinnedIds(next.rightIds)).toEqual(['playoffs']);
+    expect(next.rightIds).toEqual(['playoffs', HOME_PINNED_RIGHT_ID]);
   });
 
   it('never moves pinned cards and skips zero-height placeholders', () => {
@@ -115,6 +115,32 @@ describe('balanceHomeColumns', () => {
     expect(next.leftIds).toContain('auth');
     expect(next.rightIds).toContain('ghost');
     expect(next.rightIds).not.toContain('hwang-ai');
+  });
+
+  it('prefers league-history over hwang-ai when it closes the gap more', () => {
+    const next = balanceHomeColumns(
+      [
+        { id: 'auth', height: 180 },
+        { id: 'playoffs', height: 280 },
+        podcast,
+      ],
+      [
+        { id: 'hot-team', height: 220 },
+        { id: 'this-week', height: 250 },
+        { id: 'last-week', height: 230 },
+        { id: 'league-history', height: 300 },
+        { id: 'hwang-ai', height: 150 },
+        note,
+      ]
+    );
+
+    expect(stripPinnedIds(next.leftIds)).toEqual(['auth', 'playoffs', 'league-history']);
+    expect(stripPinnedIds(next.rightIds)).toEqual([
+      'hot-team',
+      'this-week',
+      'last-week',
+      'hwang-ai',
+    ]);
   });
 
   it('does not ping-pong when the leftover gap equals the moved card', () => {

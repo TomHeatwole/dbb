@@ -1,8 +1,45 @@
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
+import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
+import { StartSitSort } from '../players/StartSitDecider';
+import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
 
 export const HOT_TEAM_OVERRIDE_ROSTER_ID = null;
+
+function computeHwangWeekScores(
+  weeksData,
+  weekNum,
+  playersData,
+  playerIdMap,
+  playerSeasonTotalsMap,
+  rosters,
+) {
+  const breakdown = getWeekScoreBreakdown(weeksData, weekNum, rosters) || {};
+  const weekEntries = Array.isArray(weeksData[weekNum - 1]) ? weeksData[weekNum - 1] : [];
+  const scores = new Map();
+
+  weekEntries.forEach((entry) => {
+    if (!entry || entry.roster_id == null) return;
+    const rid = Number(entry.roster_id);
+    if (!Number.isFinite(rid)) return;
+
+    const raw = breakdown[rid];
+    let pts = 0;
+    if (raw) {
+      const computed = StartSitSort(raw, playersData, playerIdMap, null, null, playerSeasonTotalsMap);
+      if (computed && typeof computed.starterTotal === 'number') {
+        pts = Math.round(computed.starterTotal * 10) / 10;
+      }
+    } else if (typeof entry.points === 'number' && Number.isFinite(entry.points)) {
+      pts = Math.round(entry.points * 10) / 10;
+    }
+
+    scores.set(rid, pts);
+  });
+
+  return scores;
+}
 
 export async function selectHotTeam(options = {}) {
   const season = CURRENT_YEAR;
@@ -26,9 +63,10 @@ export async function selectHotTeam(options = {}) {
 
   const targetWeek = currentWeek - 1;
 
-  const [weeksData, teamData] = await Promise.all([
+  const [weeksData, teamData, playerIdMap] = await Promise.all([
     fetchScoresData(season),
     fetchTeamData(season),
+    fetchPlayerIdMap(),
   ]);
 
   if (!weeksData || !Array.isArray(weeksData)) {
@@ -38,15 +76,20 @@ export async function selectHotTeam(options = {}) {
     throw new Error('No team data');
   }
 
-  const weekArrRaw =
-    Array.isArray(weeksData[targetWeek - 1]) && weeksData[targetWeek - 1]
-      ? weeksData[targetWeek - 1]
-      : [];
-  const weekArr = weekArrRaw.filter(
-    (entry) => entry && entry.roster_id != null && typeof entry.points === 'number',
+  const playersData = await fetchPlayersData(teamData.rosters);
+  const playerSeasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
+  const rosters = teamData.rosters;
+
+  const targetWeekScores = computeHwangWeekScores(
+    weeksData,
+    targetWeek,
+    playersData,
+    playerIdMap,
+    playerSeasonTotalsMap,
+    rosters,
   );
 
-  if (!weekArr.length) {
+  if (!targetWeekScores.size) {
     return {
       hotTeam: null,
       week: targetWeek,
@@ -58,15 +101,9 @@ export async function selectHotTeam(options = {}) {
 
   if (HOT_TEAM_OVERRIDE_ROSTER_ID != null) {
     const overrideIdNum = Number(HOT_TEAM_OVERRIDE_ROSTER_ID);
-    const overrideEntry = weekArr.find(
-      (entry) => Number(entry.roster_id) === overrideIdNum,
-    );
+    const overridePoints = targetWeekScores.get(overrideIdNum);
 
-    if (
-      !overrideEntry ||
-      typeof overrideEntry.points !== 'number' ||
-      !Number.isFinite(overrideEntry.points)
-    ) {
+    if (typeof overridePoints !== 'number' || !Number.isFinite(overridePoints)) {
       return {
         hotTeam: null,
         week: targetWeek,
@@ -74,14 +111,13 @@ export async function selectHotTeam(options = {}) {
     }
 
     rosterIdForHotTeam = overrideIdNum;
-    pointsForWeek = overrideEntry.points;
+    pointsForWeek = overridePoints;
   } else {
     let best = null;
 
-    weekArr.forEach((entry) => {
-      const pts = Number.isFinite(entry.points) ? entry.points : 0;
-      if (!best || pts > best.points) {
-        best = { rosterId: Number(entry.roster_id), points: pts };
+    targetWeekScores.forEach((points, rosterId) => {
+      if (!best || points > best.points) {
+        best = { rosterId, points };
       }
     });
 
@@ -125,19 +161,17 @@ export async function selectHotTeam(options = {}) {
     const startWeek = Math.max(1, targetWeek - 2);
     const temp = [];
     for (let wk = startWeek; wk <= targetWeek; wk += 1) {
-      const wkArrRawInner =
-        Array.isArray(weeksData[wk - 1]) && weeksData[wk - 1]
-          ? weeksData[wk - 1]
-          : [];
-      const wkArrInner = wkArrRawInner.filter(
-        (entry) => entry && Number(entry.roster_id) === Number(rosterIdForHotTeam),
+      const weekScores = computeHwangWeekScores(
+        weeksData,
+        wk,
+        playersData,
+        playerIdMap,
+        playerSeasonTotalsMap,
+        rosters,
       );
-      if (wkArrInner.length === 0) {
-        continue;
-      }
-      const entry = wkArrInner[0];
-      if (typeof entry.points === 'number' && Number.isFinite(entry.points)) {
-        temp.push({ week: wk, points: entry.points });
+      const pts = weekScores.get(Number(rosterIdForHotTeam));
+      if (typeof pts === 'number' && Number.isFinite(pts)) {
+        temp.push({ week: wk, points: pts });
       }
     }
     if (temp.length >= 2) {
@@ -157,5 +191,3 @@ export async function selectHotTeam(options = {}) {
     week: targetWeek,
   };
 }
-
-

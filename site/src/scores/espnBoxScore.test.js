@@ -15,7 +15,7 @@ import {
   teamStatesFromScoreboard,
 } from './espnBoxScore';
 import { mergePersistedWeekBox, persistChanged } from './espnBoxPersist';
-import { overlayEspnOnWeek } from './overlayEspnLiveScores';
+import { mergeEspnStatLinesIntoLabels, overlayEspnOnWeek, filterEspnRowsToEvents } from './overlayEspnLiveScores';
 
 const SCORING = {
   scoring: {
@@ -252,6 +252,40 @@ describe('ESPN overlay vs Sleeper', () => {
     expect(shouldPreferEspn({ live: false, completed: true, pts: 12 }, 0)).toBe(true);
     expect(shouldPreferEspn({ live: false, completed: true, pts: 12 }, 11.8)).toBe(false);
     expect(shouldPreferEspn({ live: false, completed: true, pts: 12 }, 12)).toBe(false);
+  });
+
+  it('only attaches ESPN stat lines for live or completed games', () => {
+    const labels = {
+      qb1: { text: 'Sun 1:00', live: false, completed: false, eventId: 'w2' },
+      qb2: { text: 'FINAL', live: false, completed: true, eventId: 'w1' },
+    };
+    const statLines = {
+      qb1: { statLine: '20/30, 210 yd', ptsFrom: 'box', eventId: 'w1' },
+      qb2: { statLine: '18/22, 180 yd', ptsFrom: 'box', eventId: 'w1' },
+    };
+    const merged = mergeEspnStatLinesIntoLabels(labels, statLines);
+    expect(merged.qb1.statLine).toBeUndefined();
+    expect(merged.qb2.statLine).toMatch(/180 yd/);
+  });
+
+  it('does not attach last week\'s box to this week\'s game', () => {
+    const labels = {
+      qb1: { text: 'FINAL', live: false, completed: true, eventId: 'week2-game' },
+    };
+    const statLines = {
+      qb1: { statLine: '20/30, 210 yd', ptsFrom: 'box', eventId: 'week1-game' },
+    };
+    const merged = mergeEspnStatLinesIntoLabels(labels, statLines);
+    expect(merged.qb1.statLine).toBeUndefined();
+  });
+
+  it('drops box rows that are not on this week\'s scoreboard', () => {
+    const filtered = filterEspnRowsToEvents({
+      dak: { eventId: 'w1', statLine: '210 yd', pts: 18 },
+      purdy: { eventId: 'w2', statLine: '180 yd', pts: 16 },
+    }, ['w2']);
+    expect(filtered.dak).toBeUndefined();
+    expect(filtered.purdy.pts).toBe(16);
   });
 
   it('persists completed box rows and skips live ones', () => {

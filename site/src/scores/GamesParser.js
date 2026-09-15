@@ -33,6 +33,20 @@ export function extractEvents(scoreboardJson) {
   return [];
 }
 
+export function filterScoreboardToWeek(scoreboardJson, week) {
+  const want = Number(week);
+  if (!scoreboardJson || !Number.isFinite(want)) return scoreboardJson;
+  const events = extractEvents(scoreboardJson);
+  if (!events.length) return scoreboardJson;
+  const kept = events.filter((ev) => {
+    const n = ev && ev.week && Number(ev.week.number);
+    if (!Number.isFinite(n)) return true;
+    return n === want;
+  });
+  if (kept.length === events.length) return scoreboardJson;
+  return { ...scoreboardJson, events: kept };
+}
+
 function eventStartMs(event) {
   const comps = event && Array.isArray(event.competitions) ? event.competitions : [];
   const comp = comps.length ? comps[0] : null;
@@ -117,16 +131,17 @@ function eventLooksFinal(event) {
  * SIMULATE_MIDWEEK: a couple Final, a couple live (Q2 8:21), rest upcoming.
  */
 export function applyMidweekSimulation(scoreboardJson, season, week) {
-  if (!scoreboardJson) {
-    return scoreboardJson;
+  const weekBoard = filterScoreboardToWeek(scoreboardJson, week);
+  if (!weekBoard) {
+    return weekBoard;
   }
   if (season != null && String(season) !== String(CURRENT_YEAR)) {
-    return scoreboardJson;
+    return weekBoard;
   }
 
   if (SIMULATE_WEEK1_DONE) {
-    const copy = cloneScoreboard(scoreboardJson);
-    if (!copy) return scoreboardJson;
+    const copy = cloneScoreboard(weekBoard);
+    if (!copy) return weekBoard;
     const events = extractEvents(copy);
     const weekFromBoard = copy.week && copy.week.number;
     const weekNum = Number(week != null ? week : weekFromBoard);
@@ -147,10 +162,10 @@ export function applyMidweekSimulation(scoreboardJson, season, week) {
   }
 
   if (!SIMULATE_MIDWEEK) {
-    return scoreboardJson;
+    return weekBoard;
   }
-  const copy = cloneScoreboard(scoreboardJson);
-  if (!copy) return scoreboardJson;
+  const copy = cloneScoreboard(weekBoard);
+  if (!copy) return weekBoard;
   const events = extractEvents(copy);
   if (!events.length) {
     return copy;
@@ -313,11 +328,15 @@ export function getGameDisplayForTeam(event, teamAbbr) {
 
   const sSelf = Number(self && self.score);
   const sOpp = Number(opp && opp.score);
-  if (!state && (self && self.winner !== undefined)) { state = 'post'; }
-  if (!state && isFinite(sSelf) && isFinite(sOpp)) { state = 'post'; }
+  // Pregame boards often have score "0". That is not Final.
+  if (!state && self && self.winner !== undefined && self.winner !== null) {
+    state = 'post';
+  }
   if (!state) {
     state = 'pre';
   }
+
+  const eventId = event.id != null ? String(event.id) : null;
 
   if (state === 'post') {
     const scoreStr = isFinite(sSelf) && isFinite(sOpp) ? `${sSelf}-${sOpp}` : '';
@@ -327,6 +346,7 @@ export function getGameDisplayForTeam(event, teamAbbr) {
       text: `${finalLabel} ${scoreStr} ${perspective}  `.trim(),
       live: false,
       completed: true,
+      eventId,
       timeRemainingFrac: 0,
       simulated: Boolean(event._dbbSimulated),
     };
@@ -340,6 +360,7 @@ export function getGameDisplayForTeam(event, teamAbbr) {
       text: `${q} ${clock} ${perspective} ${scoreStr}`.trim(),
       live: true,
       completed: false,
+      eventId,
       period,
       displayClock: clock,
       timeRemainingFrac: nflTimeRemainingFrac(period, clock),
@@ -352,6 +373,7 @@ export function getGameDisplayForTeam(event, teamAbbr) {
     text: `${when} ${perspective}`.trim(),
     live: false,
     completed: false,
+    eventId,
     timeRemainingFrac: 1,
   };
 }

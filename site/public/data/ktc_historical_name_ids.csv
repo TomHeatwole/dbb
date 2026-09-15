@@ -134,7 +134,7 @@ Dameon Pierce,0,1207,dameon-pierce-1207,8129,Dameon Pierce,RB,PHI,exact,exact
 Daniel Bellinger,0,1322,daniel-bellinger-1322,8225,Daniel Bellinger,TE,TEN,exact,exact
 Daniel Jones,0,87,daniel-jones-87,5870,Daniel Jones,QB,IND,exact,exact
 Danny Gray,0,,,8176,Danny Gray,WR,PHI,no_ktc,exact
-Darius Slayton,0,77,darius-slayton-77,6149,Darius Slayton,WR,NYG,exact,exact
+Darius Slayton,0,77,darius-slayton-77,6149,Darius Slayton,WR,FA,exact,exact
 Darnell Mooney,0,911,darnell-mooney-911,7090,Darnell Mooney,WR,NYG,exact,exact
 Darnell Washington,0,1431,darnell-washington-1431,9479,Darnell Washington,TE,PIT,exact,exact
 Darren Waller,0,349,darren-waller-349,2505,Darren Waller,TE,CAR,exact,exact
@@ -176,7 +176,7 @@ Dontayvion Wicks,0,1448,dontayvion-wicks-1448,9486,Dontayvion Wicks,WR,PHI,exact
 Dorian Thompson-Robinson,0,,,10862,Dorian Thompson-Robinson,QB,,no_ktc,exact
 Drake London,0,1268,drake-london-1268,8112,Drake London,WR,ATL,exact,exact
 Drake Maye,0,1551,drake-maye-1551,11564,Drake Maye,QB,NEP,exact,exact
-Drew Lock,0,,,5854,Drew Lock,QB,SEA,no_ktc,exact
+Drew Lock,0,33,drew-lock-33,5854,Drew Lock,QB,SEA,exact,exact
 Drew Sample,0,,,6001,Drew Sample,TE,CIN,no_ktc,exact
 Durham Smythe,0,,,5008,Durham Smythe,TE,BAL,no_ktc,exact
 Dyami Brown,0,1069,dyami-brown-1069,7587,Dyami Brown,WR,WAS,exact,exact
@@ -268,7 +268,7 @@ Jelani Woods,0,,,8219,Jelani Woods,TE,NYJ,no_ktc,exact
 Jeremy Ruckert,0,,,8145,Jeremy Ruckert,TE,NYJ,no_ktc,exact
 Jerick McKinnon,0,,,2161,Jerick McKinnon,RB,,no_ktc,exact
 Jermaine Burton,0,,,11640,Jermaine Burton,WR,,no_ktc,exact
-Jerome Ford,0,1229,jerome-ford-1229,8143,Jerome Ford,RB,FA,exact,exact
+Jerome Ford,0,,,8143,Jerome Ford,RB,WAS,no_ktc,exact
 Jerry Jeudy,0,545,jerry-jeudy-545,6783,Jerry Jeudy,WR,CLE,exact,exact
 Jimmy Garoppolo,0,,,1837,Jimmy Garoppolo,QB,,no_ktc,exact
 Joe Burrow,0,601,joe-burrow-601,6770,Joe Burrow,QB,CIN,exact,exact
@@ -324,7 +324,7 @@ Kenny McIntosh,0,,,10216,Kenny McIntosh,RB,,no_ktc,exact
 Kenny Pickett,0,1208,kenny-pickett-1208,8160,Kenny Pickett,QB,CAR,exact,exact
 Keon Coleman,0,1588,keon-coleman-1588,11637,Keon Coleman,WR,BUF,exact,exact
 Kevin Harris,0,,,8174,Kevin Harris,RB,,no_ktc,exact
-Khalil Herbert,0,994,khalil-herbert-994,7608,Khalil Herbert,RB,FA,exact,exact
+Khalil Herbert,0,,,7608,Khalil Herbert,RB,,no_ktc,exact
 Khalil Shakir,0,1278,khalil-shakir-1278,8134,Khalil Shakir,WR,BUF,exact,exact
 Kirk Cousins,0,396,kirk-cousins-396,1166,Kirk Cousins,QB,LVR,exact,exact
 Kyle Philips,0,,,8171,Kyle Philips,WR,,no_ktc,exact
@@ -423,7 +423,7 @@ Salvon Ahmed,0,,,6918,Salvon Ahmed,RB,CHI,no_ktc,exact
 Sam Darnold,0,331,sam-darnold-331,4943,Sam Darnold,QB,SEA,exact,exact
 Sam Howell,0,1209,sam-howell-1209,8162,Sam Howell,QB,DAL,exact,exact
 Sam LaPorta,0,1429,sam-laporta-1429,10859,Sam LaPorta,TE,DET,exact,exact
-Samaje Perine,0,,,4147,Samaje Perine,RB,CIN,no_ktc,exact
+Samaje Perine,0,785,samaje-perine-785,4147,Samaje Perine,RB,CIN,exact,exact
 Samori Toure,0,,,8235,Samori Toure,WR,,no_ktc,exact
 Saquon Barkley,0,1,saquon-barkley-1,4866,Saquon Barkley,RB,PHI,exact,exact
 Scotty Miller,0,,,6290,Scotty Miller,WR,CHI,no_ktc,exact

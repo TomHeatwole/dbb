@@ -73,6 +73,18 @@ export function overlayEspnOnWeeks(weeks, week, espnBySleeperId) {
   next[idx] = overlayEspnOnWeek(weeks[idx], espnBySleeperId);
   return next;
 }
+export function filterEspnRowsToEvents(espnBySleeperId, eventIds) {
+  const allowed = eventIds instanceof Set
+    ? eventIds
+    : new Set((eventIds || []).map(String));
+  if (!allowed.size) return {};
+  const out = {};
+  for (const [pid, row] of Object.entries(espnBySleeperId || {})) {
+    if (!row || row.eventId == null || !allowed.has(String(row.eventId))) continue;
+    out[pid] = row;
+  }
+  return out;
+}
 
 export function statLinesFromEspn(espnBySleeperId) {
   const out = {};
@@ -81,6 +93,24 @@ export function statLinesFromEspn(espnBySleeperId) {
     out[String(pid)] = {
       statLine: row.statLine,
       ptsFrom: row.live ? 'espn' : 'box',
+      eventId: row.eventId != null ? String(row.eventId) : null,
+    };
+  }
+  return out;
+}
+
+/** Attach ESPN stat lines only for this week's live or completed game. */
+export function mergeEspnStatLinesIntoLabels(playerGameLabels, espnStatLines) {
+  const out = { ...(playerGameLabels || {}) };
+  for (const [pid, meta] of Object.entries(espnStatLines || {})) {
+    if (!meta || !meta.statLine) continue;
+    const prev = out[pid] || out[String(pid)];
+    if (!prev || (!prev.live && !prev.completed)) continue;
+    if (meta.eventId && prev.eventId && String(meta.eventId) !== String(prev.eventId)) continue;
+    out[pid] = {
+      ...prev,
+      statLine: meta.statLine,
+      ptsFrom: meta.ptsFrom || prev.ptsFrom,
     };
   }
   return out;

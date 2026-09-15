@@ -33,6 +33,14 @@ function extractEvents(scoreboardJson) {
   return [];
 }
 
+export function scoreboardEventIdSet(scoreboardJson) {
+  const ids = new Set();
+  for (const ev of extractEvents(scoreboardJson)) {
+    if (ev && ev.id != null) ids.add(String(ev.id));
+  }
+  return ids;
+}
+
 const ESPN_TO_SLEEPER_DEF = {
   WSH: 'WAS',
   WAS: 'WAS',

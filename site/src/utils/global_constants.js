@@ -53,6 +53,9 @@ export const SEASON_START_DAY = "09/09";
 export const CURRENT_WEEK_OVERRIDE = null;
 export const PREVIOUS_CURRENT_WEEK_OVERRIDE = null;
 export const HOME_OFFSEASON_OVERRIDE = null;
+
+/** Home splash art: 'stadium' (full illustration) | 'field' (dragon on field). */
+export const HOME_LOADING_VARIANT = 'field';
 export const SIMULATE_WEEK1_DONE = false;
 export const SIMULATE_MIDWEEK = false;
 

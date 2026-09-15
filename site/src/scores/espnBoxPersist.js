@@ -31,6 +31,27 @@ export function emptyWeekBox(season, week) {
   };
 }
 
+export function pruneWeekBoxToEvents(box, eventIds) {
+  const allowed = eventIds instanceof Set
+    ? eventIds
+    : new Set((eventIds || []).map(String));
+  const prev = box || emptyWeekBox();
+  if (!allowed.size) {
+    return { ...prev, eventIds: [], bySleeperId: {} };
+  }
+  const bySleeperId = {};
+  for (const [pid, row] of Object.entries(prev.bySleeperId || {})) {
+    if (row && row.eventId != null && allowed.has(String(row.eventId))) {
+      bySleeperId[pid] = row;
+    }
+  }
+  return {
+    ...prev,
+    bySleeperId,
+    eventIds: (prev.eventIds || []).filter((id) => allowed.has(String(id))),
+  };
+}
+
 export function mergePersistedWeekBox(prev, espnBySleeper, season, week) {
   const next = {
     season: Number(season) || (prev && prev.season) || null,

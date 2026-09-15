@@ -7,14 +7,27 @@ function columnHeight(cards) {
   return cards.reduce((sum, card) => sum + Math.max(0, Number(card.height) || 0), 0);
 }
 
-function lastMovableIndex(cards) {
-  for (let i = cards.length - 1; i >= 0; i -= 1) {
-    const card = cards[i];
+function findBestMoveIndex(tall, short) {
+  const tallH = columnHeight(tall);
+  const shortH = columnHeight(short);
+  const currentGap = Math.abs(tallH - shortH);
+  let bestIdx = -1;
+  let bestGap = currentGap;
+
+  for (let i = tall.length - 1; i >= 0; i -= 1) {
+    const card = tall[i];
     if (card.pinned) continue;
-    if ((Number(card.height) || 0) <= 0) continue;
-    return i;
+    const height = Number(card.height) || 0;
+    if (height <= 0) continue;
+
+    const newGap = Math.abs(tallH - height - (shortH + height));
+    if (newGap < bestGap) {
+      bestGap = newGap;
+      bestIdx = i;
+    }
   }
-  return -1;
+
+  return bestIdx;
 }
 
 function insertBeforePinned(cards, card) {
@@ -34,8 +47,8 @@ export function movableIdsEqual(a, b) {
 }
 
 /**
- * Move the bottom-most unpinned card from the longer column until the visual
- * tails differ by at most one full (moved) card. Pinned cards stay last.
+ * Move unpinned cards from the taller column onto the shorter one until no
+ * single move can reduce the height gap. Pinned cards stay last.
  */
 export function balanceHomeColumns(left, right, options = {}) {
   const maxMoves = Number.isFinite(options.maxMoves) ? options.maxMoves : DEFAULT_MAX_MOVES;
@@ -50,13 +63,10 @@ export function balanceHomeColumns(left, right, options = {}) {
 
     const tall = diff > 0 ? nextLeft : nextRight;
     const short = diff > 0 ? nextRight : nextLeft;
-    const overhang = Math.abs(diff);
-    const idx = lastMovableIndex(tall);
+    const idx = findBestMoveIndex(tall, short);
     if (idx < 0) break;
 
     const card = tall[idx];
-    if (overhang <= card.height) break;
-
     tall.splice(idx, 1);
     insertBeforePinned(short, card);
   }

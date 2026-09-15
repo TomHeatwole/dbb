@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
@@ -17,17 +17,106 @@ import { getPlayerLogoUrl } from '../utils/playerLogo';
 
 const SLEEPER_BOT = '/data/sleeper-bot.png';
 
+const ASSETS_MODES = [
+  { id: 'points', label: 'PF' },
+  { id: 'ktc', label: 'KTC' },
+  { id: 'posRank', label: 'Pos Rank (PF)' },
+];
+
 function formatSeasonPoints(pts) {
   const n = Number(pts) || 0;
   return n.toFixed(1);
+}
+
+function buildPfPositionRankMap(seasonTotals, playersData, idMap) {
+  const byPos = {};
+  for (const [pid, pts] of Object.entries(seasonTotals || {})) {
+    const points = Number(pts);
+    if (!Number.isFinite(points) || points <= 0) continue;
+    const playerInfo = getPlayerInfo(pid, playersData, idMap);
+    const position = playerInfo?.position;
+    if (!position) continue;
+    if (!byPos[position]) byPos[position] = [];
+    byPos[position].push({ pid: String(pid), points });
+  }
+
+  const rankMap = {};
+  for (const [position, entries] of Object.entries(byPos)) {
+    entries.sort((a, b) => b.points - a.points);
+    entries.forEach((entry, idx) => {
+      rankMap[entry.pid] = { rank: idx + 1, position };
+    });
+  }
+  return rankMap;
+}
+
+function buildRosterAssetRows(playerIds, playersData, idMap, seasonTotals, ktcMap) {
+  return playerIds.map((pid) => {
+    const playerInfo = getPlayerInfo(pid, playersData, idMap);
+    if (!playerInfo) return null;
+    const name = playerInfo.full_name || playerInfo.name || '';
+    const hints = {
+      position: playerInfo.position,
+      team: playerInfo.team || playerInfo.team_abbr,
+      age: playerInfo.age,
+    };
+    const entry = getKtcEntryByName(name, ktcMap, 'sf_tep', hints);
+    const pidKey = String(pid);
+    return {
+      playerId: pid,
+      name,
+      position: playerInfo.position || entry?.position || '',
+      photo: playerInfo.espn_photo_url || null,
+      fullInfo: playerInfo,
+      points: seasonTotals[pidKey] || seasonTotals[pid] || 0,
+      ktcValue: entry?.ktcValue || 0,
+    };
+  }).filter(Boolean);
+}
+
+function rankTopAssets(assets, assetsMode, positionRankMap) {
+  const ranked = assets.map((asset) => {
+    const pidKey = String(asset.playerId);
+    const posRankInfo = positionRankMap[pidKey] || null;
+    if (assetsMode === 'posRank') {
+      return {
+        ...asset,
+        value: posRankInfo?.rank ?? null,
+        displayRank: posRankInfo,
+      };
+    }
+    if (assetsMode === 'ktc') {
+      return { ...asset, value: asset.ktcValue, displayRank: null };
+    }
+    return { ...asset, value: asset.points, displayRank: null };
+  });
+
+  ranked.sort((a, b) => {
+    if (assetsMode === 'posRank') {
+      const rankA = a.value ?? Number.POSITIVE_INFINITY;
+      const rankB = b.value ?? Number.POSITIVE_INFINITY;
+      if (rankA !== rankB) return rankA - rankB;
+      return (b.points || 0) - (a.points || 0);
+    }
+    return (b.value || 0) - (a.value || 0);
+  });
+
+  if (assetsMode === 'posRank') {
+    return ranked.filter((asset) => asset.value != null).slice(0, 3);
+  }
+  return ranked.slice(0, 3);
 }
 
 function YourTeamHomeCard() {
   const { user } = useAuthUser();
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState(null);
-  const [topAssets, setTopAssets] = useState([]);
-  const [assetsMode, setAssetsMode] = useState('ktc'); // 'ktc' | 'points'
+  const [rosterAssets, setRosterAssets] = useState([]);
+  const [seasonTotals, setSeasonTotals] = useState({});
+  const [rankingContext, setRankingContext] = useState(null);
+  const [assetsMode, setAssetsMode] = useState(() => (
+    getCompletedWeeksCount() > 0 ? 'points' : 'ktc'
+  ));
   const [teamData, setTeamData] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
@@ -52,22 +141,22 @@ function YourTeamHomeCard() {
     let cancelled = false;
     if (!user && getLoggedInTeamOverride() == null) {
       setTeam(null);
-      setTopAssets([]);
+      setRosterAssets([]);
+      setSeasonTotals({});
+      setRankingContext(null);
       setLoading(false);
       return undefined;
     }
 
-    const usePoints = getCompletedWeeksCount() > 0;
     setLoading(true);
-    const loads = [
+    Promise.all([
       loadCurrentTeamData(),
       fetchPlayerIdMap(),
       fetchPlayersData(),
-      usePoints ? fetchScoresData(CURRENT_YEAR) : fetchKtcData(),
-    ];
-
-    Promise.all(loads)
-      .then(([teamPayload, idMap, playersData, rankingSource]) => {
+      fetchScoresData(CURRENT_YEAR).catch(() => null),
+      fetchKtcData().catch(() => null),
+    ])
+      .then(([teamPayload, idMap, playersData, scoresData, ktcData]) => {
         if (cancelled) return;
         const { rosters, users } = teamPayload;
         setTeamData({ rosters, users });
@@ -86,61 +175,36 @@ function YourTeamHomeCard() {
 
         const roster = (rosters || []).find((r) => Number(r.roster_id) === Number(rosterId));
         const playerIds = Array.isArray(roster?.players) ? roster.players : [];
+        const totals = getPlayerSeasonTotalsMap(scoresData);
+        const map = ktcData?.map || null;
 
-        if (usePoints) {
-          const seasonTotals = getPlayerSeasonTotalsMap(rankingSource);
-          const ranked = playerIds.map((pid) => {
-            const playerInfo = getPlayerInfo(pid, playersData, idMap);
-            if (!playerInfo) return null;
-            return {
-              playerId: pid,
-              name: playerInfo.full_name || playerInfo.name || '',
-              position: playerInfo.position || '',
-              photo: playerInfo.espn_photo_url || null,
-              value: seasonTotals[String(pid)] || seasonTotals[pid] || 0,
-              fullInfo: playerInfo,
-            };
-          }).filter(Boolean);
-          ranked.sort((a, b) => b.value - a.value);
-          setAssetsMode('points');
-          setTopAssets(ranked.slice(0, 3));
-        } else {
-          const ktcMap = rankingSource?.map || null;
-          const ranked = playerIds.map((pid) => {
-            const playerInfo = getPlayerInfo(pid, playersData, idMap);
-            if (!playerInfo) return null;
-            const name = playerInfo.full_name || playerInfo.name || '';
-            const hints = {
-              position: playerInfo.position,
-              team: playerInfo.team || playerInfo.team_abbr,
-              age: playerInfo.age,
-            };
-            const entry = getKtcEntryByName(name, ktcMap, 'sf_tep', hints);
-            return {
-              playerId: pid,
-              name,
-              position: playerInfo.position || entry?.position || '',
-              photo: playerInfo.espn_photo_url || null,
-              value: entry?.ktcValue || 0,
-              fullInfo: playerInfo,
-            };
-          }).filter(Boolean);
-          ranked.sort((a, b) => b.value - a.value);
-          setAssetsMode('ktc');
-          setTopAssets(ranked.slice(0, 3));
-        }
+        setSeasonTotals(totals);
+        setRankingContext({ playersData, idMap });
+        setRosterAssets(buildRosterAssetRows(playerIds, playersData, idMap, totals, map));
         setLoading(false);
       })
       .catch(() => {
         if (!cancelled) {
           setTeam(null);
-          setTopAssets([]);
+          setRosterAssets([]);
+          setSeasonTotals({});
+          setRankingContext(null);
           setLoading(false);
         }
       });
 
     return () => { cancelled = true; };
   }, [user]);
+
+  const topAssets = useMemo(() => {
+    if (!rosterAssets.length) return [];
+    const rankMap = buildPfPositionRankMap(
+      seasonTotals,
+      rankingContext?.playersData,
+      rankingContext?.idMap
+    );
+    return rankTopAssets(rosterAssets, assetsMode, rankMap);
+  }, [rosterAssets, assetsMode, seasonTotals, rankingContext]);
 
   const modal = selectedPlayer ? (
     <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
@@ -177,8 +241,11 @@ function YourTeamHomeCard() {
     );
   } else {
     const showOwnerPic = team.ownerAvatarUrl && team.ownerAvatarUrl !== team.teamAvatarUrl;
-    const assetsTitle = assetsMode === 'points' ? 'Top Assets (Pts)' : 'Top Assets (KTC)';
-    const emptyLabel = assetsMode === 'points' ? 'No points yet.' : 'No KTC values yet.';
+    const emptyLabel = assetsMode === 'points'
+      ? 'No points yet.'
+      : assetsMode === 'ktc'
+        ? 'No KTC values yet.'
+        : 'No position ranks yet.';
     body = (
       <>
         <Link to={`/team/${team.rosterId}`} className="your-team-home-hero">
@@ -214,7 +281,20 @@ function YourTeamHomeCard() {
 
         <div className="your-team-home-assets">
           <div className="your-team-home-assets-header">
-            <span className="your-team-home-assets-title">{assetsTitle}</span>
+            <span className="your-team-home-assets-title">Top Assets</span>
+            <div className="your-team-home-assets-toggle" role="group" aria-label="Top assets ranking">
+              {ASSETS_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  className={`your-team-home-assets-toggle-btn${assetsMode === mode.id ? ' is-active' : ''}`}
+                  aria-pressed={assetsMode === mode.id}
+                  onClick={() => setAssetsMode(mode.id)}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
           </div>
           {topAssets.length === 0 ? (
             <div className="your-team-home-assets-empty">{emptyLabel}</div>
@@ -242,7 +322,11 @@ function YourTeamHomeCard() {
                       <span className="your-team-home-asset-value">
                         {assetsMode === 'points'
                           ? `${formatSeasonPoints(asset.value)} pts`
-                          : formatKtcValue(asset.value)}
+                          : assetsMode === 'ktc'
+                            ? formatKtcValue(asset.value)
+                            : (asset.displayRank
+                              ? `${asset.displayRank.position}${asset.displayRank.rank}`
+                              : '—')}
                       </span>
                     </span>
                   </button>

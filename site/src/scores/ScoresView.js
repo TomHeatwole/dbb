@@ -23,6 +23,7 @@ import useLeagueHproj from './useLeagueHproj';
 import { hprojPageHref, ownerFirstNameCounts } from './hprojTeamSim';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 import { rosterWeekActivity } from './rosterWeekActivity';
+import { resolveScoresLineupMode } from './scoresLineupMode';
 
 /**
  * Reusable league scores view (per-week scoreboard).
@@ -229,6 +230,10 @@ function ScoresView({
   const hprojFirstNameCounts = useMemo(
     () => ownerFirstNameCounts(rosters, users),
     [rosters, users],
+  );
+  const { effectiveMode: effectiveLineupMode, showLineupModeToggle } = useMemo(
+    () => resolveScoresLineupMode({ season, week, isWeekCompleteByGames, lineupMode }),
+    [season, week, isWeekCompleteByGames, lineupMode],
   );
 
   // Compute player->game labels for the selected week (web tables)
@@ -444,7 +449,9 @@ function ScoresView({
             minWeek={safeMinWeek}
             maxWeek={safeMaxWeek}
           />
-          <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+          {showLineupModeToggle ? (
+            <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+          ) : null}
         </div>
         <div>No scores found for this week.</div>
       </>
@@ -520,7 +527,7 @@ function ScoresView({
     .map((e) => {
       const rid = e.roster_id;
       const raw = breakdownByRoster[rid];
-      const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode) : null;
+      const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode) : null;
       const pts = computed
         ? computed.starterTotal
         : typeof e.points === 'number'
@@ -550,7 +557,7 @@ function ScoresView({
     });
   const liveBoard = computedEntries.some((row) => row.hasActual);
   computedEntries.sort((a, b) => compareLeagueScoreRows(a, b, {
-    lineupMode,
+    lineupMode: effectiveLineupMode,
     useHproj: HPROJ_ON_SCORES,
     liveBoard,
   }));
@@ -567,7 +574,9 @@ function ScoresView({
           minWeek={safeMinWeek}
           maxWeek={safeMaxWeek}
         />
-        <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+        {showLineupModeToggle ? (
+          <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+        ) : null}
       </div>
       <MidweekSimBanner season={season} />
       <div

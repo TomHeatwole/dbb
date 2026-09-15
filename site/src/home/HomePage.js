@@ -1,28 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import ActivePlayoffsCard from './ActivePlayoffsCard';
-import ChampionshipCard from './ChampionshipCard';
-import CurrentPlayoffPictureCard from './CurrentPlayoffPictureCard';
-import BubbleCard from './BubbleCard';
-import HotTeamCard from './HotTeamCard';
-import TankRaceCard from './TankRaceCard';
-import TopPFRaceCard from './TopPFRaceCard';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import PodcastCard from './PodcastCard';
 import CommissionerNoteCard from './CommissionerNoteCard';
 import HomeCardsSplit from './HomeCardsSplit';
-import LastWeeksTopPerformanceCard from './LastWeeksTopPerformanceCard';
-import ThisWeeksProjectionsCard from './ThisWeeksProjectionsCard';
+import HomePageLoading from './HomePageLoading';
+import { useHomePageSplash } from './useHomePageSplash';
 import Week1CountdownCard from './Week1CountdownCard';
-import AuthHomeCard from './AuthHomeCard';
-import PreviousYearRecapCard from './PreviousYearRecapCard';
-import RecentTradesCard from './RecentTradesCard';
-import RecentWaiversCard from './RecentWaiversCard';
-import RookieDraftCard from './RookieDraftCard';
-import RookieDraftRecapCard from './RookieDraftRecapCard';
 import IosShortcutNoticeCard from './IosShortcutNoticeCard';
-import TrendingFreeAgentsCard from './TrendingFreeAgentsCard';
-import HwangAICard from './HwangAICard';
-import LeagueHistoryCard from './LeagueHistoryCard';
-import LoadingState from '../LoadingState';
+import { useHomeCardElements } from './useHomeCardElements';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsIos from '../hooks/useIsIos';
 import useIsPwa from '../hooks/useIsPwa';
@@ -33,14 +17,19 @@ import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { isScoreboardWeekComplete } from '../scores/GamesParser';
 import './Home.css';
 
+function homeSplitKey(split) {
+  return `${split.left.map((card) => card.id).join(',')}|${split.right.map((card) => card.id).join(',')}`;
+}
+
 function HomePage() {
   const isMobile = useIsMobile();
   const isIos = useIsIos();
   const isPwa = useIsPwa();
   const WEEK_14 = 14;
 
-  // Home page specific logic: as soon as a week is completed, advance to the next week
-  const [homePageCurrentWeek, setHomePageCurrentWeek] = useState(null);
+  // Start with the calendar week so cards mount immediately with their own spinners.
+  // Refine asynchronously once scoreboard + draft status are known.
+  const [homePageCurrentWeek, setHomePageCurrentWeek] = useState(() => getCurrentNFLWeek());
   const [rookieDraftComplete, setRookieDraftComplete] = useState(false);
   const [kickoffTick, setKickoffTick] = useState(0);
 
@@ -56,13 +45,13 @@ function HomePage() {
         ]);
         // Flip to next week only after the last NFL game on this week's board is final.
         const weekCompleted = Boolean(scoreboard && isScoreboardWeekComplete(scoreboard));
-        
+
         // If the current week is completed, advance to the next week for home page display
         // NOTE: We intentionally allow "18" here after Week 17 completes so that
         // "last week" cards can still reference Week 17 (currentWeek - 1).
         // We clamp weeks passed to data-fetching cards separately.
         const effectiveWeek = weekCompleted ? baseWeek + 1 : baseWeek;
-        
+
         if (!cancelled) {
           setHomePageCurrentWeek(effectiveWeek);
           setRookieDraftComplete(draftComplete);
@@ -92,15 +81,6 @@ function HomePage() {
     return () => clearTimeout(id);
   }, [kickoffTick]);
 
-  // Show loading state while determining which week to display
-  if (homePageCurrentWeek === null) {
-    return (
-      <main className="home-main home-dashboard">
-        <LoadingState label="Loading…" ariaLabel="Loading home page" />
-      </main>
-    );
-  }
-
   // Week comes from DateHelper (SEASON_START_DAY / CURRENT_WEEK_OVERRIDE in global_constants)
   const effectiveWeekOverride = homePageCurrentWeek;
   const safeWeekForCards = Math.min(17, Number(effectiveWeekOverride) || 1);
@@ -121,63 +101,8 @@ function HomePage() {
       : !!HOME_OFFSEASON_OVERRIDE;
   const showWeek1CountdownCard = isOffSeasonHome && !week1InProgress;
   const showThisWeekCard = Number.isFinite(weekNum) && weekNum >= 1 && weekNum <= 17;
-  const thisWeekCard = showThisWeekCard
-    ? <ThisWeeksProjectionsCard currentWeekOverride={safeWeekForCards} />
-    : null;
   const showTrendCards = getCompletedWeeksCount() >= 2;
 
-  // Off-season layout: separate "home cards set" once Week 17 is completed.
-  if (isOffSeasonHome) {
-    if (isMobile) {
-      return (
-        <main className="home-main home-dashboard">
-          <div className="home-cards-grid home-cards-grid--single">
-            {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
-            {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
-            <AuthHomeCard />
-            {thisWeekCard}
-            <PreviousYearRecapCard />
-            <RecentTradesCard />
-            <RecentWaiversCard />
-            {rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard />}
-            <LeagueHistoryCard />
-            <TrendingFreeAgentsCard />
-            <HwangAICard />
-            <CommissionerNoteCard />
-            <PodcastCard />
-          </div>
-        </main>
-      );
-    }
-
-    // Desktop: keep the split-column layout. Put the countdown full-width on top,
-    // then render the remaining cards side-by-side. Podcast / commissioner note
-    // stay pinned at the bottom; taller tails rebalance one card above them.
-    return (
-      <main className="home-main home-dashboard">
-        <div className="home-cards-grid">
-          {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
-          <HomeCardsSplit
-            left={[
-              { id: 'auth', node: <AuthHomeCard /> },
-              ...(thisWeekCard ? [{ id: 'this-week', node: thisWeekCard }] : []),
-              { id: 'trades', node: <RecentTradesCard /> },
-              { id: 'waivers', node: <RecentWaiversCard /> },
-              { id: 'trending', node: <TrendingFreeAgentsCard /> },
-            ]}
-            right={[
-              { id: 'recap', node: <PreviousYearRecapCard /> },
-              { id: 'rookie-draft', node: rookieDraftComplete ? <RookieDraftRecapCard /> : <RookieDraftCard /> },
-              { id: 'league-history', node: <LeagueHistoryCard /> },
-              { id: 'hwang-ai', node: <HwangAICard /> },
-            ]}
-          />
-        </div>
-      </main>
-    );
-  }
-
-  // Determine which playoff card to show
   let showPlayoffMatchupsCard = false;
   let showChampionshipCard = false;
 
@@ -192,23 +117,77 @@ function HomePage() {
     }
   }
 
-  const playoffCard = showChampionshipCard ? (
-    <ChampionshipCard currentWeekOverride={safeWeekForCards} />
-  ) : showPlayoffMatchupsCard ? (
-    <ActivePlayoffsCard currentWeekOverride={safeWeekForCards} />
-  ) : (
-    <CurrentPlayoffPictureCard currentWeekOverride={safeWeekForCards} />
-  );
+  const cards = useHomeCardElements({
+    safeWeekForCards,
+    effectiveWeekOverride,
+    rookieDraftComplete,
+    showThisWeekCard,
+    showTrendCards,
+    showPlayoffMatchupsCard,
+    showChampionshipCard,
+  });
 
-  const bubbleCard = showTrendCards && !showPlayoffMatchupsCard && !showChampionshipCard ? (
-    <BubbleCard currentWeekOverride={safeWeekForCards} />
-  ) : null;
-  const topPfCard = showTrendCards
-    ? <TopPFRaceCard currentWeekOverride={safeWeekForCards} />
-    : null;
-  const tankRaceCard = showTrendCards
-    ? <TankRaceCard currentWeekOverride={safeWeekForCards} />
-    : null;
+  const gridRef = useRef(null);
+  const [splitLayoutReady, setSplitLayoutReady] = useState(isMobile);
+  const desktopSplit = isOffSeasonHome
+    ? cards.offSeasonDesktopSplit
+    : cards.inSeasonDesktopSplit;
+  const splashResetKey = useMemo(() => homeSplitKey(desktopSplit), [desktopSplit]);
+  const onSplitLayoutReady = useCallback(() => setSplitLayoutReady(true), []);
+
+  useEffect(() => {
+    if (!isMobile) setSplitLayoutReady(false);
+  }, [splashResetKey, isMobile]);
+
+  const { showLoader, exiting, progress } = useHomePageSplash({
+    enabled: true,
+    resetKey: splashResetKey,
+    layoutReady: isMobile || splitLayoutReady,
+    gridRef,
+  });
+
+  // Off-season layout: separate "home cards set" once Week 17 is completed.
+  if (isOffSeasonHome) {
+    if (isMobile) {
+      return (
+        <main className="home-main home-dashboard">
+          {showLoader ? <HomePageLoading exiting={exiting} progress={progress} /> : null}
+          <div ref={gridRef} className="home-cards-grid home-cards-grid--single">
+            {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
+            {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
+            {cards.auth}
+            {showThisWeekCard ? cards.thisWeek : null}
+            {cards.recap}
+            {cards.trades}
+            {cards.waivers}
+            {cards.rookieDraft}
+            {cards.leagueHistory}
+            {cards.trending}
+            {cards.hwangAi}
+            <CommissionerNoteCard />
+            <PodcastCard />
+          </div>
+        </main>
+      );
+    }
+
+    // Desktop: keep the split-column layout. Put the countdown full-width on top,
+    // then render the remaining cards side-by-side. Podcast / commissioner note
+    // stay pinned at the bottom; taller tails rebalance one card above them.
+    return (
+      <main className="home-main home-dashboard">
+        {showLoader ? <HomePageLoading exiting={exiting} progress={progress} /> : null}
+        <div ref={gridRef} className="home-cards-grid">
+          {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
+          <HomeCardsSplit
+            left={cards.offSeasonDesktopSplit.left}
+            right={cards.offSeasonDesktopSplit.right}
+            onLayoutReady={onSplitLayoutReady}
+          />
+        </div>
+      </main>
+    );
+  }
 
   if (isMobile) {
     // Mobile ordering:
@@ -222,19 +201,20 @@ function HomePage() {
     // 8) Podcast
     return (
       <main className="home-main home-dashboard">
-        <div className="home-cards-grid home-cards-grid--single">
+        {showLoader ? <HomePageLoading exiting={exiting} progress={progress} /> : null}
+        <div ref={gridRef} className="home-cards-grid home-cards-grid--single">
           {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
-          <AuthHomeCard />
+          {cards.auth}
           {!isPwa && isIos ? <IosShortcutNoticeCard /> : null}
-          {playoffCard}
-          <HotTeamCard currentWeekOverride={safeWeekForCards} />
-          {thisWeekCard}
-          {bubbleCard}
-          {topPfCard}
-          <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} />
-          {tankRaceCard}
-          <LeagueHistoryCard />
-          <HwangAICard />
+          {cards.playoff}
+          {cards.hotTeam}
+          {showThisWeekCard ? cards.thisWeek : null}
+          {showTrendCards && !showPlayoffMatchupsCard && !showChampionshipCard ? cards.bubble : null}
+          {showTrendCards ? cards.topPf : null}
+          {cards.lastWeek}
+          {showTrendCards ? cards.tankRace : null}
+          {cards.leagueHistory}
+          {cards.hwangAi}
           <CommissionerNoteCard />
           <PodcastCard />
         </div>
@@ -243,28 +223,18 @@ function HomePage() {
   }
 
   // Web ordering starts with this preferred split. Podcast and the
-  // commissioner note stay pinned at the bottom; if one tail hangs by more
-  // than a full card, cards move from the bottom (just above those pins).
+  // commissioner note stay pinned at the bottom; unpinned cards move across
+  // columns when that reduces the height gap.
 
   return (
     <main className="home-main home-dashboard">
-      <div className="home-cards-grid">
+      {showLoader ? <HomePageLoading exiting={exiting} progress={progress} /> : null}
+      <div ref={gridRef} className="home-cards-grid">
         {showWeek1CountdownCard ? <Week1CountdownCard /> : null}
         <HomeCardsSplit
-          left={[
-            { id: 'auth', node: <AuthHomeCard /> },
-            { id: 'playoffs', node: playoffCard },
-            ...(topPfCard ? [{ id: 'top-pf', node: topPfCard }] : []),
-            ...(tankRaceCard ? [{ id: 'tank', node: tankRaceCard }] : []),
-          ]}
-          right={[
-            { id: 'hot-team', node: <HotTeamCard currentWeekOverride={safeWeekForCards} /> },
-            ...(thisWeekCard ? [{ id: 'this-week', node: thisWeekCard }] : []),
-            ...(bubbleCard ? [{ id: 'bubble', node: bubbleCard }] : []),
-            { id: 'last-week', node: <LastWeeksTopPerformanceCard currentWeekOverride={effectiveWeekOverride} /> },
-            { id: 'league-history', node: <LeagueHistoryCard /> },
-            { id: 'hwang-ai', node: <HwangAICard /> },
-          ]}
+          left={cards.inSeasonDesktopSplit.left}
+          right={cards.inSeasonDesktopSplit.right}
+          onLayoutReady={onSplitLayoutReady}
         />
       </div>
     </main>

@@ -17,6 +17,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import LeagueScoresTeamBreakdown from '../scores/LeagueScoresTeamBreakdown';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { ensureEspnWeekBox } from '../lookups/EspnBoxScoreLookup';
+import { mergeEspnStatLinesIntoLabels } from '../scores/overlayEspnLiveScores';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { readPlayersSnapshot } from '../utils/database';
@@ -31,6 +32,7 @@ import useLeagueHproj from '../scores/useLeagueHproj';
 import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 import { rosterWeekActivity } from '../scores/rosterWeekActivity';
+import { resolveScoresLineupMode } from '../scores/scoresLineupMode';
 
 const OG_TITLE = 'Scores – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
@@ -86,15 +88,14 @@ function LeagueScores() {
 	const labelBaselineKeyRef = useRef(null);
 	const [playersTeamMap, setPlayersTeamMap] = useState({}); // playerId -> team abbr (from weekly snapshot)
 
-	const labelsWithEspn = useMemo(() => {
-		const out = { ...(playerGameLabels || {}) };
-		for (const [pid, meta] of Object.entries(espnStatLines || {})) {
-			if (!meta) continue;
-			const prev = out[pid] || {};
-			out[pid] = { ...prev, statLine: meta.statLine || prev.statLine, ptsFrom: meta.ptsFrom || prev.ptsFrom };
-		}
-		return out;
-	}, [playerGameLabels, espnStatLines]);
+	const labelsWithEspn = useMemo(
+		() => mergeEspnStatLinesIntoLabels(playerGameLabels, espnStatLines),
+		[playerGameLabels, espnStatLines],
+	);
+
+	useEffect(() => {
+		setEspnStatLines({});
+	}, [season, week]);
 
 	const playerSeasonTotalsMap = useMemo(() => {
 		return getPlayerSeasonTotalsMap(weeksParsedData);
@@ -120,6 +121,10 @@ function LeagueScores() {
 		() => ownerFirstNameCounts(rosters, users),
 		[rosters, users],
 	);
+	const { effectiveMode: effectiveLineupMode, showLineupModeToggle } = useMemo(
+		() => resolveScoresLineupMode({ season, week, isWeekCompleteByGames, lineupMode }),
+		[season, week, isWeekCompleteByGames, lineupMode],
+	);
 
 	const buildExpandedData = useCallback((srcWeeksParsedData, targetWeek, labels, seasonTotalsMap) => {
 		if (!srcWeeksParsedData) { return null; }
@@ -136,7 +141,7 @@ function LeagueScores() {
 		const rows = weekEntries.map((e) => {
 			const rid = e.roster_id;
 			const raw = breakdownByRoster[rid];
-			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || labelsWithEspn, injuriesMap, seasonTotalsMap, projectedPtsById, lineupMode) : null;
+			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || labelsWithEspn, injuriesMap, seasonTotalsMap, projectedPtsById, effectiveLineupMode) : null;
 			const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 			const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
 			const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
@@ -154,7 +159,7 @@ function LeagueScores() {
 		const teams = {};
 		rows.forEach(r => { teams[r.rosterId] = { total: r.total, starters: r.starters, bench: r.bench }; });
 		return { order, teams };
-	}, [playersData, playerIdMap, labelsWithEspn, injuriesMap, projectedPtsById, lineupMode]);
+	}, [playersData, playerIdMap, labelsWithEspn, injuriesMap, projectedPtsById, effectiveLineupMode]);
 
 	function compareExpanded(prev, next) {
 		if (!prev || !next) { return []; }
@@ -425,7 +430,7 @@ function LeagueScores() {
 				}
 				const box = await boxPromise;
 				if (!cancelled && box && box.statLines) {
-					setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+					setEspnStatLines(box.statLines);
 				}
 			})
 			.catch(() => {
@@ -508,7 +513,7 @@ function LeagueScores() {
 					playersData,
 				});
 				if (!cancelled && box && box.statLines) {
-					setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+					setEspnStatLines(box.statLines);
 				}
 			} catch (_) {
 				// keep scores without stored box lines
@@ -715,7 +720,9 @@ function LeagueScores() {
 		<InfoPageWrapper title="Scores" subtitle={null} leftHeader={leftHeader}>
 			<div className="team-scores-container">
 				<WeekSelector week={week} onChange={setWeek} />
-				<LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+				{showLineupModeToggle ? (
+					<LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+				) : null}
 			</div>
 			{week >= 15 ? <YoffsLink /> : null}
 			<MidweekSimBanner season={season} />
@@ -791,7 +798,7 @@ function LeagueScores() {
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
-							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode) : null;
+							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)
@@ -813,7 +820,7 @@ function LeagueScores() {
 						});
 						const liveBoard = computedEntries.some((row) => row.hasActual);
 						computedEntries.sort((a, b) => compareLeagueScoreRows(a, b, {
-							lineupMode,
+							lineupMode: effectiveLineupMode,
 							useHproj: HPROJ_ON_SCORES,
 							liveBoard,
 						}));

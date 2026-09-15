@@ -441,7 +441,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,bb10,rtsports,underd
 440,Erik Ezukanma,23755,erik-ezukanma,,,WR,168,,,321,,,,321,8114
 441,Carson Wentz,15520,carson-wentz,MIN,6,QB,53,341,,427,,,,384,3161
 442,Zavier Scott,25748,zavier-scott,CHI,10,RB,125,323,,,,,,323,11299
-443,Jerome Ford,22921,jerome-ford,WAS,7,RB,126,324,,,,,,324,8143
+443,Jerome Ford,22921,jerome-ford,,,RB,126,324,,,,,,324,8143
 444,Lan Larison,27498,lan-larison,NE,11,RB,127,325,,,,,,325,12969
 445,Olamide Zaccheaus,18864,olamide-zaccheaus,ATL,11,WR,169,447,,325,,,,386,6271
 446,Chris Brazzell II,28047,chris-brazzell-ii,CAR,5,WR,170,416,,356,,,,386,13353
@@ -505,7 +505,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,bb10,rtsports,underd
 504,Luke Schoonmaker,25267,luke-schoonmaker,DAL,14,TE,83,,,400,,,,400,10871
 505,Tommy DeVito,25746,tommy-devito,NE,11,QB,77,400,,,,,,400,11292
 506,Adam Trautman,19423,adam-trautman,DEN,10,TE,84,,,401,,,,401,6869
-507,Jarquez Hunter,24335,jarquez-hunter,,,RB,141,404,,446,,,,425,11569
+507,Jarquez Hunter,24335,jarquez-hunter,MIA,6,RB,141,404,,446,,,,425,11569
 508,Devin Neal,23682,devin-neal,,,RB,142,415,,436,,,,425.5,12476
 509,Ja'Tavion Sanders,24334,jatavion-sanders,CAR,5,TE,85,405,,,,,,405,11600
 510,Tanner Koziol,27499,tanner-koziol,JAC,7,TE,86,,,406,,,,406,13408

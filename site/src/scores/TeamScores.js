@@ -10,12 +10,14 @@ import WeekSelector from './WeekSelector';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { ensureEspnWeekBox } from '../lookups/EspnBoxScoreLookup';
+import { mergeEspnStatLinesIntoLabels } from './overlayEspnLiveScores';
 import { mapPlayersToGames, getEventLabelForTeam, getGameDisplayForTeam, isScoreboardWeekComplete } from './GamesParser';
 import LeagueScoresTeamBreakdown from './LeagueScoresTeamBreakdown';
 import useIsMobile from '../hooks/useIsMobile';
 import { createLiveScoresPoller } from '../utils/livePolling';
 import MidweekSimBanner from './MidweekSimBanner';
 import LineupModeToggle from './LineupModeToggle';
+import { resolveScoresLineupMode } from './scoresLineupMode';
 
 // Lazy import to avoid circular deps at module init
 async function readPlayersSnapshotFromDb(season, week) {
@@ -304,7 +306,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
         }
         const box = await boxPromise;
         if (!cancelled && box && box.statLines) {
-          setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+          setEspnStatLines(box.statLines);
         }
       })
       .catch(() => {
@@ -318,15 +320,14 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     };
   }, [season, week, rosterId, playersDataForWeek, playerIdMap, effectiveWeeksParsedData, playersTeamMap]);
 
-  const labelsWithEspn = useMemo(() => {
-    const out = { ...(playerGameLabels || {}) };
-    for (const [pid, meta] of Object.entries(espnStatLines || {})) {
-      if (!meta) continue;
-      const prev = out[pid] || {};
-      out[pid] = { ...prev, statLine: meta.statLine || prev.statLine, ptsFrom: meta.ptsFrom || prev.ptsFrom };
-    }
-    return out;
-  }, [playerGameLabels, espnStatLines]);
+  const labelsWithEspn = useMemo(
+    () => mergeEspnStatLinesIntoLabels(playerGameLabels, espnStatLines),
+    [playerGameLabels, espnStatLines],
+  );
+
+  useEffect(() => {
+    setEspnStatLines({});
+  }, [season, week]);
 
   overlayCtxRef.current = { playerIdMap, playersData: playersDataForWeek };
 
@@ -344,7 +345,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
           playersData: playersDataForWeek,
         });
         if (!cancelled && box && box.statLines) {
-          setEspnStatLines((prev) => ({ ...box.statLines, ...prev }));
+          setEspnStatLines(box.statLines);
         }
       } catch (_) {
         // keep scores without stored box lines
@@ -391,11 +392,15 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     return getPlayerSeasonTotalsMap(weeksParsedData);
   }, [weeksParsedData]);
   const projectedPtsById = useWeeklyProjectedPoints(season, week);
+  const { effectiveMode: effectiveLineupMode, showLineupModeToggle } = useMemo(
+    () => resolveScoresLineupMode({ season, week, isWeekCompleteByGames, lineupMode }),
+    [season, week, isWeekCompleteByGames, lineupMode],
+  );
 
   // Get week breakdown for this roster
   const rawWeekBreakdown = effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week)[rosterId] : null;
   const weekBreakdown = rawWeekBreakdown
-    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, lineupMode)
+    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode)
     : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
@@ -451,7 +456,9 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
   return (
     <div className="team-scores-container team-scores-container--modern">
       <WeekSelector week={week} onChange={handleSelect} />
-      <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+      {showLineupModeToggle ? (
+        <LineupModeToggle value={lineupMode} onChange={setLineupMode} />
+      ) : null}
       <MidweekSimBanner season={season} />
 
       {isActiveWeek && (
