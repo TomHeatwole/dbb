@@ -11,9 +11,6 @@ function HomePageLoadingStadium({ exiting = false, progress = 0 }) {
       role="status"
       aria-live="polite"
       aria-label="The Hwang Dynasty is loading"
-      aria-valuenow={pct}
-      aria-valuemin={0}
-      aria-valuemax={100}
     >
       <div className="home-page-loading__stadium-wrap">
         <img
@@ -22,7 +19,14 @@ function HomePageLoadingStadium({ exiting = false, progress = 0 }) {
           className="home-page-loading__stadium-art"
           draggable={false}
         />
-        <div className="home-page-loading__stadium-bar" aria-hidden="true">
+        <div
+          className="home-page-loading__stadium-bar"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Loading progress"
+        >
           <div
             className="home-page-loading__stadium-bar-fill"
             style={{ width: `${pct}%` }}

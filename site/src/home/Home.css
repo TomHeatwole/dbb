@@ -1519,6 +1519,106 @@
   100% { transform: translateY(-4%); }
 }
 
+/* Chase-mode hunters (synced to 9s runner loop) */
+.home-page-loading__hunter {
+  position: absolute;
+  width: clamp(5rem, 13vw, 9.5rem);
+  z-index: 4;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+}
+
+.home-page-loading__hunter-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 58% 62%;
+  filter:
+    drop-shadow(0 0 14px rgba(255, 120, 0, 0.42))
+    drop-shadow(0 5px 12px rgba(0, 0, 0, 0.5));
+  animation: home-loading-dragon-breathe 0.45s ease-in-out infinite alternate;
+}
+
+.home-page-loading__hunter-art--mirror {
+  animation: home-loading-dragon-breathe-mirror 0.45s ease-in-out infinite alternate;
+}
+
+.home-page-loading__hunter-art--down-left {
+  transform: rotate(28deg);
+  animation: home-loading-dragon-breathe-tilt 0.45s ease-in-out infinite alternate;
+}
+
+.home-page-loading__hunter-art--up {
+  transform: rotate(-90deg);
+  animation: home-loading-dragon-breathe-tilt 0.45s ease-in-out infinite alternate;
+}
+
+.home-page-loading__hunter--1 {
+  animation: home-loading-hunter-1 9s linear infinite;
+}
+
+.home-page-loading__hunter--2 {
+  animation: home-loading-hunter-2 9s linear infinite;
+}
+
+.home-page-loading__hunter--3 {
+  animation: home-loading-hunter-3 9s linear infinite;
+}
+
+.home-page-loading__hunter--4 {
+  animation: home-loading-hunter-4 9s linear infinite;
+}
+
+@keyframes home-loading-dragon-breathe-tilt {
+  0% {
+    filter:
+      drop-shadow(0 0 12px rgba(255, 120, 0, 0.35))
+      drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+  }
+  100% {
+    filter:
+      drop-shadow(0 0 24px rgba(255, 160, 0, 0.72))
+      drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+  }
+}
+
+/* Lurks left sideline, lunges as Hwang sprints east — he cuts north at 19%. */
+@keyframes home-loading-hunter-1 {
+  0%, 4% { left: 6%; top: 68%; opacity: 0; transform: translate(-50%, -50%) scale(0.82); }
+  5%, 6% { left: 10%; top: 58%; opacity: 0.65; transform: translate(-50%, -50%) scale(0.9); }
+  7%, 14% { left: 58%; top: 50%; opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+  15%, 20% { left: 71%; top: 42%; opacity: 0.75; transform: translate(-50%, -50%) scale(0.95); }
+  21%, 100% { left: 104%; top: 28%; opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+/* Drops from top-right while Hwang runs the north lane — he peels west at 38%. */
+@keyframes home-loading-hunter-2 {
+  0%, 18% { left: 88%; top: -6%; opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  19%, 21% { left: 78%; top: 10%; opacity: 0.7; transform: translate(-50%, -50%) scale(0.92); }
+  22%, 31% { left: 56%; top: 27%; opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  32%, 38% { left: 38%; top: 32%; opacity: 0.8; transform: translate(-50%, -50%) scale(0.96); }
+  39%, 100% { left: 12%; top: -8%; opacity: 0; transform: translate(-50%, -50%) scale(0.82); }
+}
+
+/* Bursts from bottom when Hwang heads south — he jukes east at 78%. */
+@keyframes home-loading-hunter-3 {
+  0%, 52% { left: 38%; top: 108%; opacity: 0; transform: translate(-50%, -50%) scale(0.84); }
+  53%, 55% { left: 32%; top: 88%; opacity: 0.68; transform: translate(-50%, -50%) scale(0.94); }
+  56%, 66% { left: 38%; top: 68%; opacity: 1; transform: translate(-50%, -50%) scale(1.07); }
+  67%, 73% { left: 52%; top: 74%; opacity: 0.78; transform: translate(-50%, -50%) scale(0.94); }
+  74%, 100% { left: 82%; top: 108%; opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+/* Stalks then rips from the west when Hwang runs the west sideline — he dives south at 58%. */
+@keyframes home-loading-hunter-4 {
+  0%, 34% { left: -8%; top: 38%; opacity: 0; transform: translate(-50%, -50%) scale(0.83); }
+  35%, 37% { left: 6%; top: 42%; opacity: 0.62; transform: translate(-50%, -50%) scale(0.9); }
+  38%, 47% { left: 24%; top: 48%; opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  48%, 54% { left: 30%; top: 58%; opacity: 0.72; transform: translate(-50%, -50%) scale(0.92); }
+  55%, 100% { left: -10%; top: 72%; opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
 @keyframes home-loading-dot-pulse {
   0%, 60%, 100% { opacity: 0.25; }
   30% { opacity: 1; }

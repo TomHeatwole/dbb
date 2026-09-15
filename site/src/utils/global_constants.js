@@ -56,6 +56,9 @@ export const HOME_OFFSEASON_OVERRIDE = null;
 
 /** Home splash art: 'stadium' (full illustration) | 'field' (dragon on field). */
 export const HOME_LOADING_VARIANT = 'field';
+
+/** Field loader dragons: 'corners' (pinned) | 'chase' (sporadic lunges). */
+export const HOME_FIELD_DRAGON_MODE = 'corners';
 export const SIMULATE_WEEK1_DONE = false;
 export const SIMULATE_MIDWEEK = false;
 
