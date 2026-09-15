@@ -1286,6 +1286,67 @@
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
 }
 
+/* TD rush — opaque full-screen overlay, whole field (endzones) scaled to fit */
+.home-page-loading--field-td {
+  background: #0a1628;
+}
+
+.home-page-loading--field-td .home-page-loading__td-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 45%, rgba(18, 48, 32, 0.55), transparent 70%),
+    linear-gradient(180deg, #0a1628 0%, #0c1810 48%, #0a1628 100%);
+}
+
+.home-page-loading__td-field-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+  padding: clamp(0.5rem, 2vw, 1.25rem);
+  box-sizing: border-box;
+}
+
+.home-page-loading--field-td .simulator-hwang-track--immersive {
+  width: min(100cqw, calc(100cqh * 2172 / 724));
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 2172 / 724;
+  margin: 0;
+  flex-shrink: 0;
+  border-radius: 0.85rem;
+  overflow: visible;
+  filter: drop-shadow(0 14px 40px rgba(0, 0, 0, 0.55));
+}
+
+@supports not (width: 1cqw) {
+  .home-page-loading--field-td .simulator-hwang-track--immersive {
+    width: min(100%, calc(100dvh * 2172 / 724));
+    max-height: calc(100dvh - 2rem);
+  }
+}
+
+.home-page-loading--field-td .simulator-hwang-track--immersive .simulator-hwang-track-bg {
+  object-fit: fill;
+  border-radius: 0.85rem;
+}
+
+.home-page-loading--field-td .home-page-loading__arena-vignette {
+  z-index: 2;
+  background:
+    linear-gradient(180deg, rgba(8, 14, 28, 0.35) 0%, transparent 18%, transparent 80%, rgba(8, 14, 28, 0.4) 100%);
+  pointer-events: none;
+}
+
+.home-page-loading--field-td .home-page-loading__arena-title {
+  z-index: 3;
+}
+
 /* Full-field arena (field loader variant) */
 .home-page-loading__arena {
   position: relative;

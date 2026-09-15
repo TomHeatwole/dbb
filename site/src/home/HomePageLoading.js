@@ -5,7 +5,7 @@ import HomePageLoadingStadium from './HomePageLoadingStadium';
 
 function HomePageLoading({ exiting = false, progress = 0 }) {
   if (HOME_LOADING_VARIANT === 'field') {
-    return <HomePageLoadingField exiting={exiting} />;
+    return <HomePageLoadingField exiting={exiting} progress={progress} />;
   }
 
   return <HomePageLoadingStadium exiting={exiting} progress={progress} />;
