@@ -6,6 +6,13 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 import { HelmetProvider } from './HelmetShim';
 
+// Chrome reports this as window.error; CRA's overlay treats it as a crash.
+window.addEventListener('error', (event) => {
+  if (typeof event.message === 'string' && event.message.includes('ResizeObserver loop')) {
+    event.stopImmediatePropagation();
+  }
+}, true);
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

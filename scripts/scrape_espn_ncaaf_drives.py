@@ -300,7 +300,7 @@ def events_from_scoreboard(data, year, seasontype, week, group):
     return rows
 
 
-def list_season_games(year, sleep):
+def list_season_games(year, sleep, weeks_filter=None):
     by_id = {}
     for seasontype in SEASON_TYPES:
         try:
@@ -308,6 +308,11 @@ def list_season_games(year, sleep):
         except Exception as e:
             print(f'  season {year} type {seasontype} calendar failed: {e}', flush=True)
             weeks = list(range(1, 17 if seasontype == 2 else 7))
+        if weeks_filter and seasontype == 2:
+            wanted = set(weeks_filter)
+            weeks = [w for w in weeks if w in wanted]
+        elif weeks_filter and seasontype != 2:
+            continue
         label = 'regular' if seasontype == 2 else 'post'
         print(f'  {year} {label}: weeks {weeks[0] if weeks else "-"}-{weeks[-1] if weeks else "-"}', flush=True)
         for week in weeks:
@@ -526,6 +531,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--seasons', nargs='+', type=int, default=[2023, 2024, 2025],
                     help='ESPN season years (2023 = 2023 NCAAF season)')
+    ap.add_argument('--weeks', nargs='+', type=int, default=None,
+                    help='Regular-season week numbers only (e.g. 1 2)')
     ap.add_argument('--game-id', help='scrape a single ESPN gameId and exit')
     ap.add_argument('--max-games', type=int, default=0)
     ap.add_argument('--sleep', type=float, default=0.22)
@@ -559,7 +566,7 @@ def main():
     all_games = []
     for year in args.seasons:
         print(f'season {year}', flush=True)
-        games = list_season_games(year, args.sleep)
+        games = list_season_games(year, args.sleep, weeks_filter=args.weeks)
         all_games.extend(games)
         print(f'  {len(games)} completed games', flush=True)
 

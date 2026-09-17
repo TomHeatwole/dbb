@@ -150,8 +150,11 @@ def features_actual(row):
     }
 
 
+PREGAME_START_JSON = os.path.join(ROOT, 'site', 'src', 'drives', 'pregameFirstDriveStartTables.json')
+
+
 def features_site_pregame(row):
-    """What /drives prices before kickoff: own-25, Q1 15:00, zeros."""
+    """Legacy flat own-25 pregame card (superseded by features_site_pregame_role)."""
     feat = features_actual(row)
     feat.update({
         'ytg': 75.0,
@@ -166,6 +169,65 @@ def features_site_pregame(row):
         'fp_code': 1.0,
         'half_code': 0.0,
     })
+    return feat
+
+
+def game_first_receiver(rows):
+    out = {}
+    for row in rows:
+        try:
+            dn = int(float(row.get('drive_n') or 0))
+        except (TypeError, ValueError):
+            continue
+        if dn == 1:
+            out[row.get('game_id')] = row.get('offense_side')
+    return out
+
+
+def load_pregame_start_tables():
+    with open(PREGAME_START_JSON, encoding='utf-8') as fh:
+        return json.load(fh)
+
+
+def spread_bin_id(spread):
+    if not math.isfinite(spread):
+        return None
+    for key, lo, hi in (
+        ('fav_le_21', -99, -21),
+        ('fav_21_14', -21, -14),
+        ('fav_14_7', -14, -7),
+        ('fav_7_3', -7, -3),
+        ('pick', -3, 3),
+        ('dog_3_7', 3, 7),
+        ('dog_7_14', 7, 14),
+        ('dog_14_21', 14, 21),
+        ('dog_ge_21', 21, 99),
+    ):
+        if lo <= spread < hi:
+            return key
+    return None
+
+
+def pregame_start_cell(tables, role, spread):
+    layer = tables.get(role) or {}
+    global_cell = (tables.get('global') or {}).get(role) or {}
+    key = spread_bin_id(spread)
+    return layer.get(key) or global_cell
+
+
+def features_site_pregame_role(row, recv_by_game, pregame_tables):
+    """Pregame /drives card: kickoff return vs after opponent opening drive."""
+    feat = features_site_pregame(row)
+    recv = recv_by_game.get(row.get('game_id'))
+    side = row.get('offense_side')
+    spread = to_float(row.get('offense_spread'))
+    role = 'receive' if recv and side == recv else 'afterOpponent'
+    cell = pregame_start_cell(pregame_tables, role, spread)
+    feat['ytg'] = float(cell.get('ytg', 75.0))
+    feat['sec_left'] = float(cell.get('secLeft', 3600.0))
+    feat['clock_sec'] = float(cell.get('clockSec', 900.0))
+    fp = fp_bucket(feat['ytg'])
+    feat['fp_code'] = float(FP_CODES[fp]) if fp else float('nan')
     return feat
 
 
@@ -391,6 +453,9 @@ def main():
     team_first_2026 = team_first_drives(recent_raw)
     kick_2025 = [r for r in team_first_2025 if is_true_kickoff_start(r)]
     kick_2026 = [r for r in team_first_2026 if is_true_kickoff_start(r)]
+    recv_by_game = game_first_receiver(all_raw)
+    pregame_tables = load_pregame_start_tables()
+    feat_site_role = lambda row: features_site_pregame_role(row, recv_by_game, pregame_tables)
     print(
         f'  recent 2026 drives {len(recent_raw)}  game-first {len(first_2026)}  '
         f'team-first {len(team_first_2026)}  kickoff-start {len(kick_2026)}',
@@ -407,8 +472,10 @@ def main():
         ('recent_all_actual', recent_raw, features_actual),
         ('recent_game_first_site', first_2026, features_site_pregame),
         ('recent_team_first_site', team_first_2026, features_site_pregame),
+        ('recent_team_first_site_role', team_first_2026, feat_site_role),
         ('recent_kickoff_site', kick_2026, features_site_pregame),
         ('y2025_team_first_site', team_first_2025, features_site_pregame),
+        ('y2025_team_first_site_role', team_first_2025, feat_site_role),
         ('y2025_kickoff_site', kick_2025, features_site_pregame),
         ('y2025_first_actual', first_2025, features_actual),
         ('y2025_all_actual', [r for r in all_raw if str(r.get('season')) == '2025'], features_actual),
@@ -427,7 +494,8 @@ def main():
             'recentDates': sorted(RECENT_DATES),
             'note': (
                 'Drive-start LightGBM (train 2023–24). '
-                'site = own-25 / Q1 15:00 the /drives pregame card uses. '
+                'site = own-25 / Q1 15:00 (legacy flat pregame). '
+                'site_role = kickoff return vs after opponent opening drive. '
                 'team-first = each offense first possession (DK 1st-drive). '
                 'kickoff-start = start_text says own 15–30. '
                 'No stored DK/FD first-drive quotes — comparison is model vs ESPN result.'
@@ -439,6 +507,7 @@ def main():
         ('recent_team_first_site', team_first_2026, features_site_pregame),
         ('recent_kickoff_site', kick_2026, features_site_pregame),
         ('y2025_team_first_site', team_first_2025, features_site_pregame),
+        ('y2025_team_first_site_role', team_first_2025, feat_site_role),
         ('y2025_kickoff_site', kick_2025, features_site_pregame),
     ):
         rows, p, y = pack_rows(raw, score, feat_fn)

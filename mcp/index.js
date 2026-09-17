@@ -39,6 +39,7 @@ import {
   simulateRosterChangeOdds,
   lookupDraftPick,
   getPlayerStats,
+  getPlayerLeaguePoints,
 } from '../site/lib/mcp/tools.mjs';
 import { MCP_TOOL_RENDER_MODE } from '../site/lib/mcp/renderConfig.mjs';
 
@@ -228,6 +229,17 @@ server.tool(
       .describe('NFL season year e.g. 2024, 2025. Omit for most recent complete season.'),
   },
   wrapTool(({ name, season }) => getPlayerStats(name, season))
+);
+
+server.tool(
+  'get_player_league_points',
+  "Get a player's actual fantasy points in the Hwang Dynasty league for the current season — season total plus weekly breakdown through completed weeks.",
+  {
+    name: z.string().describe('Player full name e.g. "Ja\'Marr Chase"'),
+    season: z.number().int().optional().describe('Season year e.g. 2026. Omit for current season.'),
+    week: z.number().int().min(1).max(17).optional().describe('Optional single week (1-17).'),
+  },
+  wrapTool(({ name, season, week }) => getPlayerLeaguePoints(name, season, week))
 );
 
 server.tool(

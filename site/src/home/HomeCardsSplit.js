@@ -59,7 +59,7 @@ function checkSlotsPlaced(leftCol, rightCol, slots, movableIds) {
   });
 }
 
-function HomeCardsSplit({ left, right, onLayoutReady }) {
+function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
   const pinnedPodcast = useMemo(() => <PodcastCard />, []);
   const pinnedCommissionerNote = useMemo(() => <CommissionerNoteCard />, []);
   const preferredKey = cardSetKey(left, right);
@@ -168,14 +168,21 @@ function HomeCardsSplit({ left, right, onLayoutReady }) {
 
     let frame = 0;
     let lastBalanceAt = 0;
+    let measuring = false;
     const ro = new ResizeObserver(() => {
+      if (measuring) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const now = Date.now();
         // Throttle rebalance while cards load in parallel to avoid layout thrash.
         if (now - lastBalanceAt < 120) return;
         lastBalanceAt = now;
-        measureAndBalance();
+        measuring = true;
+        try {
+          measureAndBalance();
+        } finally {
+          measuring = false;
+        }
       });
     });
     ro.observe(leftCol);
@@ -189,6 +196,15 @@ function HomeCardsSplit({ left, right, onLayoutReady }) {
   return (
     <div className="home-cards-grid--split">
       <div ref={leftColRef} className="home-cards-column home-cards-column--left">
+        {pinnedTopLeft ? (
+          <div
+            className="home-card-slot home-card-slot--pinned-top"
+            data-card-id="auth"
+            data-pinned="true"
+          >
+            {pinnedTopLeft}
+          </div>
+        ) : null}
         <div
           ref={leftPinnedRef}
           className="home-card-slot"
@@ -221,6 +237,7 @@ function HomeCardsSplit({ left, right, onLayoutReady }) {
 }
 
 function splitPropsEqual(prev, next) {
+  if (prev.pinnedTopLeft !== next.pinnedTopLeft) return false;
   if (prev.left.length !== next.left.length || prev.right.length !== next.right.length) {
     return false;
   }

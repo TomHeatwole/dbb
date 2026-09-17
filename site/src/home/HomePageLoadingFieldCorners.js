@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 const FIELD_SRC = '/loading_hwang_background.png';
+const RUNNER_ROAM_DURATION_S = 9;
 const DRAGON_SRC = '/home_loading_dragon_keyed.png';
 const RUNNER_SRC = '/hwang_running_clean_transparent_dust.png';
 
@@ -13,6 +14,12 @@ const CORNER_DRAGONS = [
 
 /** Pinned corner dragons — previous field loader look. */
 function HomePageLoadingFieldCorners({ exiting = false }) {
+  // Start mid-loop so Hwang doesn't always burst east from center.
+  const runnerRoamDelay = useMemo(
+    () => `${-(Math.random() * RUNNER_ROAM_DURATION_S)}s`,
+    [],
+  );
+
   return (
     <div
       className={`home-page-loading home-page-loading--field home-page-loading--field-corners${exiting ? ' home-page-loading--exit' : ''}`}
@@ -47,7 +54,10 @@ function HomePageLoadingFieldCorners({ exiting = false }) {
             </div>
           ))}
 
-          <div className="home-page-loading__arena-runner">
+          <div
+            className="home-page-loading__arena-runner"
+            style={{ animationDelay: runnerRoamDelay }}
+          >
             <img
               src={RUNNER_SRC}
               alt=""

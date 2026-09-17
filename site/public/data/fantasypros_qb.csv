@@ -47,10 +47,10 @@ rank,name,team,position,tier,sleeper_id
 46,Tyrod Taylor,GB,QB,6,827
 47,Davis Mills,HOU,QB,6,7585
 48,Taylen Green,CLE,QB,6,13306
-49,Tyson Bagent,CHI,QB,7,11256
+49,Tyson Bagent,CHI,QB,6,11256
 50,Gardner Minshew II,ARI,QB,7,6011
-51,Joe Milton III,DAL,QB,7,11557
-52,Trey Lance,LAC,QB,7,7610
+51,Trey Lance,LAC,QB,7,7610
+52,Joe Milton III,DAL,QB,7,11557
 53,Tyler Huntley,BAL,QB,7,7083
 54,Quinn Ewers,JAC,QB,7,12500
 55,Spencer Rattler,NO,QB,7,11562
@@ -62,16 +62,16 @@ rank,name,team,position,tier,sleeper_id
 61,Carson Wentz,MIN,QB,7,3161
 62,Mitchell Trubisky,TEN,QB,7,3976
 63,Dillon Gabriel,CLE,QB,7,12486
-64,Tommy DeVito,NE,QB,7,11292
-65,Jalon Daniels,TB,QB,7,13425
+64,Jalon Daniels,TB,QB,7,13425
+65,Tommy DeVito,NE,QB,7,11292
 66,Joshua Dobbs,DET,QB,7,4179
 67,Kenny Pickett,CAR,QB,7,8160
 68,Mason Rudolph,PIT,QB,7,4972
 69,Drew Lock,SEA,QB,7,5854
 70,Kyle McCord,MIA,QB,7,12494
 71,Kyle Allen,BUF,QB,7,5127
-72,Haynes King,CAR,QB,7,13415
-73,Jack Strand,ATL,QB,7,13602
+72,Jack Strand,ATL,QB,7,13602
+73,Haynes King,CAR,QB,7,13415
 74,Andy Dalton,PHI,QB,7,829
 75,Tanner McKee,PHI,QB,7,9230
 76,Zach Wilson,NO,QB,8,7538
@@ -83,16 +83,16 @@ rank,name,team,position,tier,sleeper_id
 82,Stetson Bennett IV,LAR,QB,8,10857
 83,Jake Browning,FA,QB,8,6111
 84,Case Keenum,CHI,QB,8,1737
-85,Collin Hill,FA,QB,8,7983
+85,Sam Ehlinger,DEN,QB,8,7583
 86,Brady Cook,MIA,QB,8,12538
-87,Sam Ehlinger,DEN,QB,8,7583
-88,Joe Fagnano,BAL,QB,8,13350
-89,Behren Morton,NE,QB,8,13295
-90,Athan Kaliakmanis,WAS,QB,8,13557
-91,Kurtis Rourke,SF,QB,8,12477
+87,Collin Hill,FA,QB,8,7983
+88,Behren Morton,NE,QB,8,13295
+89,Kurtis Rourke,SF,QB,8,12477
+90,Joe Fagnano,BAL,QB,8,13350
+91,Athan Kaliakmanis,WAS,QB,8,13557
 92,Hendon Hooker,TEN,QB,8,9998
-93,Will Levis,FA,QB,8,9999
-94,Nick Mullens,JAC,QB,8,4464
+93,Will Levis,FA,QB,9,9999
+94,Nick Mullens,JAC,QB,9,4464
 95,Sean Clifford,CIN,QB,9,10983
 96,Luke Altmyer,DET,QB,9,13314
 97,Cole Payton,PHI,QB,9,13335

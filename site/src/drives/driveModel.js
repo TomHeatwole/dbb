@@ -17,6 +17,19 @@ import {
 import { DRIVE_RESULT_MODEL, scoreLgbmLayer } from './driveResultLgbm.js';
 import { isMadeScoreLabel } from './espnDriveChart.js';
 import { predictOpponentStart } from './nextDriveStart.js';
+import {
+  afterOpponentStartMix,
+  blendDriveResultProbs,
+  clockSecFromSecLeft,
+  knownOpeningReceiveSide,
+  mixDriveResultProbs,
+  OPENING_RESULTS,
+  periodFromSecLeft,
+  predictPregameFirstDriveStartForRole,
+  receiveStartMix,
+  SCORE_AFTER_OPENING,
+  soFarAfterOpening,
+} from './pregameFirstDriveStart.js';
 import { ytgFromSpot } from './ytgFromSpot.js';
 import { formatDownAndDistance, formatDownAndDistanceSpoken, formatLiveSituationLine, liveSpotsDisagree, liveSnapsAgree, espnClockAheadOfFd, applyFdAheadLive } from './fdLiveSituation.js';
 
@@ -979,6 +992,255 @@ export function driveStartPriors(game, { nextDrive = false } = {}) {
   return { drive_n: driveN, ...counts };
 }
 
+function buildPregameFirstDriveBuilt({
+  view,
+  side,
+  offenseSpread,
+  ou,
+  expOff,
+  expDef,
+  scoreDiff,
+  role,
+  openingReceiveSide = null,
+}) {
+  const pre = predictPregameFirstDriveStartForRole(role, offenseSpread);
+  const ytg = Number(pre.expectedYtg);
+  const startPeriod = pre.expectedPeriod;
+  const startClock = pre.expectedClockSec;
+  const afterOpening = role === 'afterOpponent';
+  return {
+    layer: 'driveStart',
+    assumed: false,
+    predictedStart: true,
+    pregameFirstDrive: true,
+    pregameRole: role,
+    openingReceiveSide,
+    side,
+    features: {
+      ytg,
+      sec_left: pre.expectedSecLeft,
+      clock_sec: startClock,
+      period: startPeriod,
+      score_diff: Number.isFinite(scoreDiff) ? scoreDiff : 0,
+      offense_spread: offenseSpread,
+      over_under: ou,
+      exp_off: expOff,
+      exp_def: expDef,
+      drive_n: afterOpening ? 2 : 1,
+      so_far_td: 0,
+      so_far_fg: 0,
+      so_far_punt: 0,
+      so_far_other: 0,
+      is_home: side === 'away' ? 0 : side === 'home' ? 1 : NaN,
+      fp_code: fpCode(ytg),
+      half_code: halfCode(startPeriod),
+    },
+  };
+}
+
+function pregameOffenseContext(view) {
+  const side = inferOffenseSide(view, view?.nextDrive);
+  const homeSpread = extractHomeSpread(view);
+  const ou = extractOverUnder(view);
+  const offenseSpread = !side
+    ? NaN
+    : side === 'away'
+      ? (Number.isFinite(homeSpread) ? -homeSpread : NaN)
+      : (Number.isFinite(homeSpread) ? homeSpread : NaN);
+  const expOff = Number.isFinite(ou) && Number.isFinite(offenseSpread)
+    ? (ou - offenseSpread) / 2
+    : NaN;
+  const expDef = Number.isFinite(ou) && Number.isFinite(offenseSpread)
+    ? (ou + offenseSpread) / 2
+    : NaN;
+  const scoreDiff = scoreDiffForOffense(view, side || 'home');
+  return { view, side, offenseSpread, ou, expOff, expDef, scoreDiff };
+}
+
+function pregameStartFeatures(ctx, {
+  ytg,
+  secLeft,
+  scoreDiff,
+  driveN,
+  soFar,
+}) {
+  const period = periodFromSecLeft(secLeft);
+  const clockSec = clockSecFromSecLeft(secLeft);
+  return {
+    ytg,
+    sec_left: secLeft,
+    clock_sec: clockSec,
+    period,
+    score_diff: Number.isFinite(scoreDiff) ? scoreDiff : 0,
+    offense_spread: ctx.offenseSpread,
+    over_under: ctx.ou,
+    exp_off: ctx.expOff,
+    exp_def: ctx.expDef,
+    drive_n: driveN,
+    is_home: ctx.side === 'away' ? 0 : ctx.side === 'home' ? 1 : NaN,
+    fp_code: fpCode(ytg),
+    half_code: halfCode(period),
+    ...soFar,
+  };
+}
+
+function packPregameMixture(ctx, parts, extra = {}) {
+  const scored = parts.filter((part) => part?.p && Number.isFinite(part.weight) && part.weight > 0);
+  if (!scored.length) return null;
+  const p = mixDriveResultProbs(scored);
+  const ytg = scored.reduce((s, part) => s + part.weight * part.ytg, 0)
+    / scored.reduce((s, part) => s + part.weight, 0);
+  const secLeft = scored.reduce((s, part) => s + part.weight * part.secLeft, 0)
+    / scored.reduce((s, part) => s + part.weight, 0);
+  const features = pregameStartFeatures(ctx, {
+    ytg,
+    secLeft,
+    scoreDiff: extra.scoreDiff ?? 0,
+    driveN: extra.driveN ?? 1,
+    soFar: extra.soFar ?? EMPTY_SO_FAR,
+  });
+  return {
+    layer: 'driveStart',
+    assumed: false,
+    predictedStart: true,
+    pregameFirstDrive: true,
+    side: ctx.side,
+    features,
+    p,
+    model: {
+      ...LGBM_MODEL_META,
+      layer: 'driveStart',
+      layerLabel: 'Drive start',
+    },
+    ...extra,
+  };
+}
+
+function scoreReceiveMixture(ctx) {
+  const bins = receiveStartMix(ctx.offenseSpread);
+  const parts = [];
+  for (const bin of bins) {
+    const secLeft = Number(bin.secLeft) || 3600;
+    const features = pregameStartFeatures(ctx, {
+      ytg: bin.ytg,
+      secLeft,
+      scoreDiff: 0,
+      driveN: 1,
+      soFar: EMPTY_SO_FAR,
+    });
+    const scored = scoreLgbmLayer('driveStart', features);
+    if (!scored?.p) continue;
+    parts.push({
+      p: scored.p,
+      weight: bin.p,
+      ytg: bin.ytg,
+      secLeft,
+      bin: bin.id,
+    });
+  }
+  return packPregameMixture(ctx, parts, {
+    pregameRole: 'receive',
+    pregameStartMix: parts.map((part) => ({ bin: part.bin, ytg: part.ytg, weight: part.weight })),
+    driveN: 1,
+    soFar: EMPTY_SO_FAR,
+    scoreDiff: 0,
+  });
+}
+
+function opponentPregameContext(ctx) {
+  if (ctx.side !== 'home' && ctx.side !== 'away') return null;
+  return {
+    view: ctx.view,
+    side: ctx.side === 'home' ? 'away' : 'home',
+    offenseSpread: Number.isFinite(ctx.offenseSpread) ? -ctx.offenseSpread : NaN,
+    ou: ctx.ou,
+    expOff: ctx.expDef,
+    expDef: ctx.expOff,
+    scoreDiff: 0,
+  };
+}
+
+function scoreAfterOpponentMixture(ctx) {
+  const opp = opponentPregameContext(ctx);
+  const opening = opp ? scoreReceiveMixture(opp) : null;
+  const openP = opening?.p;
+  const parts = [];
+  const byPrior = [];
+  for (const result of OPENING_RESULTS) {
+    const wOpen = Number(openP?.[result]);
+    if (!Number.isFinite(wOpen) || wOpen <= 0) continue;
+    const bins = afterOpponentStartMix(result, ctx.offenseSpread);
+    const soFar = soFarAfterOpening(result);
+    const scoreDiff = SCORE_AFTER_OPENING[result];
+    let priorMass = 0;
+    let priorYtg = 0;
+    for (const bin of bins) {
+      const secLeft = Number(bin.secLeft) || 3300;
+      const features = pregameStartFeatures(ctx, {
+        ytg: bin.ytg,
+        secLeft,
+        scoreDiff,
+        driveN: 2,
+        soFar,
+      });
+      const scored = scoreLgbmLayer('driveStart', features);
+      if (!scored?.p) continue;
+      const weight = wOpen * bin.p;
+      parts.push({
+        p: scored.p,
+        weight,
+        ytg: bin.ytg,
+        secLeft,
+        bin: bin.id,
+        prior: result,
+      });
+      priorMass += bin.p;
+      priorYtg += bin.p * bin.ytg;
+    }
+    byPrior.push({
+      result,
+      weight: wOpen,
+      ytg: priorMass > 0 ? priorYtg / priorMass : NaN,
+    });
+  }
+  return packPregameMixture(ctx, parts, {
+    pregameRole: 'afterOpponent',
+    pregameAfterOpponent: true,
+    openingResultP: openP || null,
+    pregameStartMix: byPrior,
+    driveN: 2,
+    soFar: EMPTY_SO_FAR,
+    scoreDiff: 0,
+  });
+}
+
+function predictPregameFirstDriveCoinTossBlend(view) {
+  const ctx = pregameOffenseContext(view);
+  if (!ctx.side) return null;
+  const receive = scoreReceiveMixture(ctx);
+  const after = scoreAfterOpponentMixture(ctx);
+  if (!receive?.p || !after?.p) return null;
+  const blendedP = blendDriveResultProbs([receive, after]);
+  const avgYtg = (receive.features.ytg + after.features.ytg) / 2;
+  return {
+    ...after,
+    pregameRole: null,
+    pregameCoinTossBlend: true,
+    pregameAfterOpponent: true,
+    p: blendedP,
+    features: {
+      ...receive.features,
+      ytg: avgYtg,
+      fp_code: fpCode(avgYtg),
+    },
+    pregameScenarios: [
+      { role: 'receive', ytg: receive.features.ytg, p: receive.p },
+      { role: 'afterOpponent', ytg: after.features.ytg, p: after.p },
+    ],
+    openingResultP: after.openingResultP,
+  };
+}
+
 /**
  * Build the feature map the trees expect. `layer` is driveStart | snap.
  */
@@ -1155,6 +1417,27 @@ export function featuresFromGame(game) {
     : null;
   const predictedYtg = Number(nextStart?.expectedYtg);
   const predictedClock = nextStart?.expectedClock;
+
+  if (!inPlay && !clock.halfKickoff && side) {
+    const receiveSide = knownOpeningReceiveSide(view);
+    const role = receiveSide
+      ? (side === receiveSide ? 'receive' : 'afterOpponent')
+      : null;
+    if (role) {
+      return buildPregameFirstDriveBuilt({
+        view,
+        side,
+        offenseSpread,
+        ou,
+        expOff,
+        expDef,
+        scoreDiff,
+        role,
+        openingReceiveSide: receiveSide,
+      });
+    }
+  }
+
   const assumedKickoff = !inPlay || clock.halfKickoff || (!Number.isFinite(predictedYtg) && !Number.isFinite(ytgLive));
   const ytg = Number.isFinite(predictedYtg) ? predictedYtg : (assumedKickoff ? 75 : ytgLive);
   const startPeriod = !inPlay
@@ -1192,6 +1475,30 @@ export function featuresFromGame(game) {
 }
 
 export function predictDriveResult(game) {
+  const view = applyFdAheadLive(game);
+  const live = view?.live ?? {};
+  const inPlay = Boolean(view?.inPlay) && live.state !== 'pre';
+  const clock = normalizeLiveClock(live);
+  const ctx = pregameOffenseContext(view);
+
+  if (!inPlay && !clock?.halfKickoff && ctx.side) {
+    try {
+      const receiveSide = knownOpeningReceiveSide(view);
+      if (!receiveSide) {
+        const blended = predictPregameFirstDriveCoinTossBlend(view);
+        if (blended) return blended;
+      } else if (ctx.side === receiveSide) {
+        const receive = scoreReceiveMixture(ctx);
+        if (receive) return { ...receive, openingReceiveSide: receiveSide };
+      } else {
+        const after = scoreAfterOpponentMixture(ctx);
+        if (after) return { ...after, openingReceiveSide: receiveSide };
+      }
+    } catch {
+      // Fall through to the ordinary drive-start feature path.
+    }
+  }
+
   const built = featuresFromGame(game);
   const scored = scoreLgbmLayer(built.layer, built.features);
   if (!scored) return null;

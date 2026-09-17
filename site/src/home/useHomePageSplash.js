@@ -46,16 +46,16 @@ export function useHomePageSplash({ enabled, resetKey, layoutReady, gridRef }) {
     dismissStartedRef.current = false;
     sawSpinnerRef.current = false;
     maxSpinnersRef.current = 0;
-    setProgress(0.08);
+    setProgress(0);
     setPhase('loading');
 
     maxRef.current = setTimeout(beginDismiss, SPLASH_MAX_MS);
     creepRef.current = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 0.38) return prev;
-        return prev + 0.015;
+        if (prev >= 0.18) return prev;
+        return prev + 0.006;
       });
-    }, 180);
+    }, 200);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -82,15 +82,15 @@ export function useHomePageSplash({ enabled, resetKey, layoutReady, gridRef }) {
         sawSpinnerRef.current = true;
         maxSpinnersRef.current = Math.max(maxSpinnersRef.current, spinners);
         const loaded = 1 - spinners / maxSpinnersRef.current;
-        setProgress((prev) => Math.max(prev, 0.38 + loaded * 0.54));
+        setProgress((prev) => Math.max(prev, 0.18 + loaded * 0.72));
         if (debounceRef.current) clearTimeout(debounceRef.current);
         return;
       }
 
       if (sawSpinnerRef.current) {
-        setProgress((prev) => Math.max(prev, 0.96));
+        setProgress((prev) => Math.max(prev, 0.92));
       } else if (cards >= 3) {
-        setProgress((prev) => Math.max(prev, 0.55));
+        setProgress((prev) => Math.max(prev, 0.36));
       }
 
       // Avoid dismissing while only the pinned footer cards are on screen.

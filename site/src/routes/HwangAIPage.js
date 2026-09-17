@@ -254,12 +254,15 @@ function HwangAIPage() {
     setMessages(prev => [...prev, { role: 'assistant', searching: true }]);
 
     try {
+      const searchMessages = phase1Data?.message
+        ? [...newMessages, { role: 'assistant', content: phase1Data.message }]
+        : newMessages;
       const searchRes = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: searchMessages }),
       });
-      const searchData = searchRes.ok ? await searchRes.json() : null;
+      const searchData = searchRes.ok ? await searchRes.json() : await searchRes.json().catch(() => null);
       if (searchData?.message) {
         setMessages(prev => {
           const updated = [...prev];
@@ -275,13 +278,16 @@ function HwangAIPage() {
           return updated;
         });
       } else {
+        const failMessage = searchRes.status === 429
+          ? "Search is rate-limited right now — Google's quota, not your question. Give it a minute and try again."
+          : "Web search came back empty. The clanker's internet privileges got revoked for a sec — try again.";
         setMessages(prev => {
           const updated = [...prev];
           const lastIdx = updated.length - 1;
           if (updated[lastIdx]?.searching) {
             updated[lastIdx] = {
               role: 'assistant',
-              content: "Web search came back empty. The clanker's internet privileges got revoked for a sec — try again.",
+              content: failMessage,
               searchFailed: true,
             };
           }

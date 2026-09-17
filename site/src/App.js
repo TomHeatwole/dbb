@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -38,7 +38,6 @@ import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
 import SOPPage, { SOP2Page } from './routes/SOPPage';
 import CornersPage from './routes/CornersPage';
-import DrivesPage from './routes/DrivesPage';
 import HprojPage from './routes/HprojPage';
 import DKPage from './routes/DKPage';
 import PreflopPage from './routes/PreflopPage';
@@ -51,6 +50,8 @@ import RequireAdmin from './layout/RequireAdmin';
 import { canAccessRedraftDash } from './utils/adminAccounts';
 import { LIVE_PROJ_YELLOW_THEME, MAIN_FEATURES, isFeatureEnabled } from './utils/featureToggles';
 import { inkNavClass, navIsAnyActive, NAV_MATCH } from './layout/navActive';
+
+const DrivesPage = React.lazy(() => import('./routes/DrivesPage'));
 
 const PODCAST_LINK = 'https://open.spotify.com/show/0bM4EGBJzZcMTj3VOpNLko';
 
@@ -203,8 +204,8 @@ function AppInner() {
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
       <Route path="/corners/*" element={<CornersPage />} />
       <Route path="/CORNERS/*" element={<CornersPage />} />
-      <Route path="/drives/*" element={<DrivesPage />} />
-      <Route path="/DRIVES/*" element={<DrivesPage />} />
+      <Route path="/drives/*" element={<Suspense fallback={null}><DrivesPage /></Suspense>} />
+      <Route path="/DRIVES/*" element={<Suspense fallback={null}><DrivesPage /></Suspense>} />
       <Route path="/hproj" element={<HprojPage />} />
       <Route path="/HPROJ" element={<HprojPage />} />
       <Route path="/dk/*" element={<DKPage />} />

@@ -309,6 +309,13 @@ function formatQuarterClock(clockSec) {
 }
 
 function clockLabel(pred) {
+  if (pred?.pregameCoinTossBlend) return '50/50 coin toss (projected)';
+  if (pred?.pregameFirstDrive) {
+    const q = periodLabel(pred?.features?.period);
+    const qclock = formatQuarterClock(pred?.features?.clock_sec);
+    if (q && qclock) return `${q} · ${qclock} (projected)`;
+    return 'Opening kickoff (projected)';
+  }
   if (pred?.assumed) {
     if (Number(pred.features?.period) === 3) return '2nd half kickoff (assumed)';
     return 'Opening kickoff';
@@ -340,6 +347,44 @@ function reasoningRows(game, pred) {
         ? 'Own 25 · 2nd half kickoff (assumed)'
         : 'Own 25 · opening kickoff (assumed)',
     ]);
+  } else if (pred.pregameCoinTossBlend && pred.pregameScenarios?.length) {
+    const recv = pred.pregameScenarios.find((sc) => sc.role === 'receive');
+    const kick = pred.pregameScenarios.find((sc) => sc.role === 'afterOpponent');
+    const recvSpot = yardLineLabel(recv?.ytg);
+    const kickSpot = yardLineLabel(kick?.ytg);
+    const open = pred.openingResultP;
+    rows.push([
+      'Spot',
+      [
+        '50/50 coin toss',
+        recvSpot ? `${recvSpot} if receive` : null,
+        kickSpot ? `${kickSpot} E[start] if kick` : null,
+        Number.isFinite(open?.punt) ? `open P(punt) ${formatSharePct(open.punt)}` : null,
+      ].filter(Boolean).join(' · '),
+    ]);
+  } else if (pred.pregameAfterOpponent) {
+    const open = pred.openingResultP;
+    rows.push([
+      'Spot',
+      [
+        spot ? `E[start] ${spot}` : 'After opponent opening drive',
+        'mix over punt / TD / FG / turnover spots',
+        Number.isFinite(open?.punt) ? `P(open punt) ${formatSharePct(open.punt)}` : null,
+        Number.isFinite(open?.td) ? `P(open TD) ${formatSharePct(open.td)}` : null,
+      ].filter(Boolean).join(' · '),
+    ]);
+  } else if (pred.pregameFirstDrive && spot) {
+    if (pred.pregameRole === 'receive') {
+      rows.push(['Spot', `Projected ${spot} · opening kickoff-return mix`]);
+    } else {
+      const recv = teamOnSide(game, pred.openingReceiveSide);
+      rows.push([
+        'Spot',
+        recv
+          ? `Projected ${spot} · after ${possessiveTeam(recv)} opening drive`
+          : `Projected ${spot} · after opponent opening drive`,
+      ]);
+    }
   } else if (pred.predictedStart && spot) {
     const prior = teamOnSide(game, pred.priorSide);
     rows.push([
@@ -719,7 +764,13 @@ function DriveSide({
                 : ` Drive-start log-loss ${LGBM_HOLDOUT.driveStart.logloss} vs raw ${LGBM_HOLDOUT.driveStart.raw} (n=${LGBM_HOLDOUT.driveStart.n.toLocaleString()}).`}
             {model.pred?.assumed && espnStateUnreachable(game)
               ? ' Can\'t reach ESPN for game state — assuming own 25.'
-              : model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
+              : model.pred?.pregameCoinTossBlend
+                ? ' Pregame 1st-drive: 50/50 coin toss. Receive = kickoff-return mix. Kick = opponent opening result (LightGBM) × empirical start bins, then blend output probs.'
+                : model.pred?.pregameAfterOpponent
+                  ? ' Going second: opponent opening result from the drive-start model, then mix start bins (punt / score / turnover) with drive_n=2 and so_far set.'
+                  : model.pred?.pregameFirstDrive
+                    ? ' Pregame 1st-drive: kickoff-return start mix.'
+                    : model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
             {model.situationLag && model.situationLagDetail?.rows?.length
               ? ` ${model.situationLagDetail.rows.map((row) => `${row.label} ${row.value}`).join(' · ')}`
               : ''}

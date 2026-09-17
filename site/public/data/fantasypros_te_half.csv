@@ -1,12 +1,12 @@
 rank,name,team,position,tier,sleeper_id
 1,Trey McBride,ARI,TE,1,8130
 2,Colston Loveland,CHI,TE,1,12517
-3,Tyler Warren,IND,TE,1,12518
-4,Brock Bowers,LV,TE,1,11604
+3,Brock Bowers,LV,TE,1,11604
+4,Tyler Warren,IND,TE,1,12518
 5,Tucker Kraft,GB,TE,2,9484
 6,Harold Fannin Jr.,CLE,TE,2,12506
-7,Sam LaPorta,DET,TE,2,10859
-8,Kyle Pitts Sr.,ATL,TE,2,7553
+7,Kyle Pitts Sr.,ATL,TE,2,7553
+8,Sam LaPorta,DET,TE,2,10859
 9,George Kittle,SF,TE,2,4217
 10,Travis Kelce,KC,TE,3,1466
 11,Dalton Kincaid,BUF,TE,3,10236
@@ -37,7 +37,7 @@ rank,name,team,position,tier,sleeper_id
 36,Mike Gesicki,CIN,TE,5,4993
 37,Darren Waller,CAR,TE,5,2505
 38,Michael Mayer,LV,TE,5,9482
-39,Jake Tonges,SF,TE,6,8698
+39,Jake Tonges,SF,TE,5,8698
 40,Charlie Kolar,LAC,TE,6,8127
 41,Darnell Washington,PIT,TE,6,9479
 42,Elijah Arroyo,SEA,TE,6,12521
@@ -51,8 +51,8 @@ rank,name,team,position,tier,sleeper_id
 50,Max Klare,LAR,TE,6,13278
 51,Ja'Tavion Sanders,CAR,TE,6,11600
 52,Noah Fant,NO,TE,6,5857
-53,Daniel Bellinger,TEN,TE,7,8225
-54,Ben Sinnott,WAS,TE,7,11596
+53,Ben Sinnott,WAS,TE,7,11596
+54,Daniel Bellinger,TEN,TE,7,8225
 55,Jonnu Smith,GB,TE,7,4144
 56,Tommy Tremble,CAR,TE,7,7694
 57,Mitchell Evans,CAR,TE,7,12473
@@ -143,7 +143,7 @@ rank,name,team,position,tier,sleeper_id
 142,Khalil Dinkins,SF,TE,10,13432
 143,Mark Redman,GB,TE,10,13013
 144,David Martin-Robinson,TEN,TE,10,12357
-145,Jack Stoll,FA,TE,10,7946
+145,Jack Stoll,SF,TE,10,7946
 146,Miles Kitselman,FA,TE,10,13431
 147,Cole Turner,MIA,TE,10,8214
 148,Devin Culp,FA,TE,10,11820
@@ -153,10 +153,10 @@ rank,name,team,position,tier,sleeper_id
 152,John Michael Gyllenborg,KC,TE,10,13342
 153,Jack Westover,WAS,TE,10,12045
 154,CJ Dippre,TB,TE,10,12984
-155,Shane Zylstra,NE,TE,11,8041
+155,Shane Zylstra,FA,TE,11,8041
 156,Jaren Kanak,TEN,TE,11,13422
 157,Joel Wilson,TEN,TE,11,11113
-158,Josiah Deguara,FA,TE,11,7050
+158,Josiah Deguara,PHI,TE,11,7050
 159,Carter Runyon,LV,TE,11,13122
 160,Jaheim Bell,FA,TE,11,11605
 161,DJ Rogers,DAL,TE,11,13355

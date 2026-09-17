@@ -31,10 +31,66 @@ function logConversation(messages, response = null) {
 }
 
 const SYSTEM_INSTRUCTION = `You are a web search assistant for HwangAI, a dynasty fantasy football AI. \
-The user asked a question and the main AI has already given an answer from its training data. \
-Your job is to search the web for current, up-to-date information that enriches or corrects that answer — \
-specifically: recent injuries, player news, NFL transactions, depth chart changes, or any breaking \
-information from the last few weeks. Be concise and direct. Lead with the most relevant current facts.`;
+The user asked a question about current NFL news — injuries, transactions, depth charts, roster moves, \
+or player status. Search the web and return concise, factual, up-to-date information. \
+Lead with the most relevant current facts. If you cannot find reliable information, say so briefly.`;
+
+function buildSearchContents(messages) {
+  // Include the full conversation (including any partial assistant reply from phase 1)
+  // so the search knows which player/topic to look up.
+  const contents = [];
+  for (const m of messages) {
+    const role = m.role === 'assistant' ? 'model' : 'user';
+    const text = (m.content || '').trim();
+    if (!text) continue;
+    const prev = contents[contents.length - 1];
+    if (prev && prev.role === role) {
+      prev.parts.push({ text });
+    } else {
+      contents.push({ role, parts: [{ text }] });
+    }
+  }
+
+  // Gemini requires alternating roles — merge trailing model turns into the
+  // final user message if needed.
+  if (contents.length > 0 && contents[contents.length - 1].role === 'model') {
+    const lastModel = contents.pop();
+    const modelText = lastModel.parts.map(p => p.text).join('\n\n');
+    if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+      const prev = contents[contents.length - 1];
+      prev.parts.push({ text: `\n\n[Assistant context before searching: ${modelText}]` });
+    } else {
+      contents.push({
+        role: 'user',
+        parts: [{ text: `[Search for current information related to this conversation. Assistant context: ${modelText}]` }],
+      });
+    }
+  }
+
+  if (contents.length === 0) {
+    contents.push({ role: 'user', parts: [{ text: 'Search for the latest relevant NFL news.' }] });
+  }
+
+  return contents;
+}
+
+function extractGroundedText(data) {
+  const candidate = data?.candidates?.[0];
+  const parts = candidate?.content?.parts || [];
+  const text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n').trim();
+  if (text) return text;
+
+  // Some grounded responses only populate groundingMetadata without prose.
+  const chunks = candidate?.groundingMetadata?.groundingChunks || [];
+  const snippets = chunks
+    .map(c => c.web?.title && c.web?.uri ? `- ${c.web.title}: ${c.web.uri}` : null)
+    .filter(Boolean);
+  if (snippets.length > 0) {
+    return `Here's what turned up:\n\n${snippets.slice(0, 5).join('\n')}`;
+  }
+
+  return '';
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -58,10 +114,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
   }
 
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }));
+  const contents = buildSearchContents(messages);
 
   try {
     const payload = {
@@ -73,7 +126,7 @@ export default async function handler(req, res) {
     let data = null;
     let lastStatus = 500;
     let lastErr = {};
-    let blipRetries = 2; // budget for short rate-limit waits (maxDuration 30s)
+    let blipRetries = 2;
     let modelIdx = 0;
     while (modelIdx < GEMINI_MODELS.length) {
       const geminiRes = await fetch(`${geminiUrlFor(GEMINI_MODELS[modelIdx])}?key=${apiKey}`, {
@@ -89,34 +142,38 @@ export default async function handler(req, res) {
       lastErr = await geminiRes.json().catch(() => ({}));
 
       if (geminiRes.status === 429) {
-        // Per-minute blip (phase 1 chat just burned several requests) → wait
         const delay = parseRetryDelaySeconds(lastErr);
         if (delay != null && delay <= 10 && blipRetries > 0) {
           blipRetries -= 1;
           await sleep(delay * 1000 + 250);
-          continue; // retry same model
+          continue;
         }
-        modelIdx += 1; // exhausted quota → next model
+        modelIdx += 1;
         continue;
       }
       if (geminiRes.status === 404) {
-        modelIdx += 1; // model unavailable to this key → next model
+        modelIdx += 1;
         continue;
       }
-      break; // other errors: bail
+      break;
     }
 
     if (!data) {
+      if (lastStatus === 429) {
+        return res.status(429).json({
+          error: 'Search rate limited',
+          message: "Search is rate-limited right now — Google's quota, not your question. Give it a minute and try again.",
+        });
+      }
       return res.status(lastStatus).json({ error: 'Search API error', details: lastErr });
     }
+
     const candidate = data.candidates?.[0];
-    const parts = candidate?.content?.parts || [];
-    const text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n').trim();
     const searchQueries = candidate?.groundingMetadata?.webSearchQueries || [];
+    const text = extractGroundedText(data);
 
     if (!text) {
-      // Empty grounded result — let the frontend show its themed failure copy
-      return res.status(502).json({ error: 'Empty search result' });
+      return res.status(502).json({ error: 'Empty search result', searchQueries });
     }
 
     logConversation(messages, text);

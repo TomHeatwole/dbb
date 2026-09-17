@@ -32,20 +32,20 @@ rank,name,team,position,tier,sleeper_id
 31,Kyren Williams,LAR,RB,3,8150
 32,Colston Loveland,CHI,TE,3,12517
 33,Tee Higgins,CIN,WR,3,6801
-34,Breece Hall,NYJ,RB,3,8155
-35,Lamar Jackson,BAL,QB,3,4881
-36,Jaylen Waddle,DEN,WR,3,7526
-37,Brock Bowers,LV,TE,3,11604
+34,Lamar Jackson,BAL,QB,3,4881
+35,Breece Hall,NYJ,RB,3,8155
+36,Brock Bowers,LV,TE,3,11604
+37,Jaylen Waddle,DEN,WR,3,7526
 38,Garrett Wilson,NYJ,WR,3,8146
 39,Ladd McConkey,LAC,WR,3,11635
 40,Jeremiyah Love,ARI,RB,3,13287
 41,Tetairoa McMillan,CAR,WR,3,12526
-42,Emeka Egbuka,TB,WR,4,12514
-43,Drake Maye,NE,QB,4,11564
-44,Travis Etienne Jr.,NO,RB,4,7543
+42,Drake Maye,NE,QB,4,11564
+43,Travis Etienne Jr.,NO,RB,4,7543
+44,Emeka Egbuka,TB,WR,4,12514
 45,D'Andre Swift,CHI,RB,4,6790
-46,Luther Burden III,CHI,WR,4,12519
-47,Davante Adams,LAR,WR,4,2133
+46,Davante Adams,LAR,WR,4,2133
+47,Luther Burden III,CHI,WR,4,12519
 48,Joe Burrow,CIN,QB,4,6770
 49,Tyler Warren,IND,TE,4,12518
 50,Terry McLaurin,WAS,WR,4,5927
@@ -72,13 +72,13 @@ rank,name,team,position,tier,sleeper_id
 71,Trevor Lawrence,JAC,QB,5,7523
 72,TreVeyon Henderson,NE,RB,5,12529
 73,Carnell Tate,TEN,WR,5,13279
-74,Rico Dowdle,PIT,RB,5,7021
-75,Dak Prescott,DAL,QB,5,3294
+74,Dak Prescott,DAL,QB,5,3294
+75,Rico Dowdle,PIT,RB,5,7021
 76,DK Metcalf,PIT,WR,5,5846
 77,Tony Pollard,TEN,RB,5,5967
-78,Sam LaPorta,DET,TE,5,10859
+78,Brian Thomas Jr.,JAC,WR,5,11631
 79,Chris Godwin Jr.,TB,WR,5,4037
-80,Brian Thomas Jr.,JAC,WR,5,11631
+80,Sam LaPorta,DET,TE,5,10859
 81,Kyle Pitts Sr.,ATL,TE,5,7553
 82,Harold Fannin Jr.,CLE,TE,5,12506
 83,Jonathon Brooks,CAR,RB,5,11583
@@ -93,7 +93,7 @@ rank,name,team,position,tier,sleeper_id
 92,Alec Pierce,IND,WR,5,8142
 93,MarShawn Lloyd,GB,RB,5,11581
 94,Brock Purdy,SF,QB,5,8183
-95,Stefon Diggs,WAS,WR,5,2449
+95,Stefon Diggs,WAS,WR,6,2449
 96,Bo Nix,DEN,QB,6,11563
 97,Jordan Mason,MIN,RB,6,8408
 98,Josh Downs,IND,WR,6,9500
@@ -103,9 +103,9 @@ rank,name,team,position,tier,sleeper_id
 102,Jayden Reed,GB,WR,6,10222
 103,Patrick Mahomes II,KC,QB,6,4046
 104,Travis Kelce,KC,TE,6,1466
-105,Jared Goff,DET,QB,6,3163
-106,Kenny Gainwell,TB,RB,6,7567
-107,Wan'Dale Robinson,TEN,WR,6,8126
+105,Wan'Dale Robinson,TEN,WR,6,8126
+106,Jared Goff,DET,QB,6,3163
+107,Kenny Gainwell,TB,RB,6,7567
 108,Jordan Addison,MIN,WR,6,9756
 109,Matthew Stafford,LAR,QB,6,421
 110,Dalton Kincaid,BUF,TE,6,10236
@@ -114,7 +114,7 @@ rank,name,team,position,tier,sleeper_id
 113,Kyler Murray,MIN,QB,6,5849
 114,De'Zhaun Stribling,SF,WR,6,13417
 115,Dallas Goedert,PHI,TE,6,5022
-116,KC Concepcion,CLE,WR,6,13298
+116,KC Concepcion Jr.,CLE,WR,6,13298
 117,Makai Lemon,PHI,WR,6,13294
 118,Jakobi Meyers,JAC,WR,6,5947
 119,Isaiah Likely,NYG,TE,6,8131
@@ -134,8 +134,8 @@ rank,name,team,position,tier,sleeper_id
 133,Mark Andrews,BAL,TE,6,5012
 134,Malik Willis,MIA,QB,6,8161
 135,Khalil Shakir,BUF,WR,6,8134
-136,Deebo Samuel Sr.,SF,WR,6,5872
-137,Tyjae Spears,TEN,RB,6,9508
+136,Tyjae Spears,TEN,RB,6,9508
+137,Deebo Samuel Sr.,SF,WR,6,5872
 138,Jonah Coleman,DEN,RB,6,13345
 139,Mike Washington Jr.,LV,RB,6,13305
 140,Rashid Shaheed,SEA,WR,7,8676
@@ -143,8 +143,8 @@ rank,name,team,position,tier,sleeper_id
 142,Tank Bigsby,PHI,RB,7,9225
 143,C.J. Stroud,HOU,QB,7,9758
 144,Daniel Jones,IND,QB,7,5870
-145,Tre Tucker,LV,WR,7,10213
-146,Keaton Mitchell,LAC,RB,7,9511
+145,Keaton Mitchell,LAC,RB,7,9511
+146,Tre Tucker,LV,WR,7,10213
 147,Denzel Boston,CLE,WR,7,13346
 148,Hunter Henry,NE,TE,7,3214
 149,Brenton Strange,JAC,TE,7,9480
@@ -154,8 +154,8 @@ rank,name,team,position,tier,sleeper_id
 153,Dalton Schultz,HOU,TE,7,5001
 154,Jordyn Tyson,NO,WR,7,13281
 155,Adonai Mitchell,NYJ,WR,7,11625
-156,Cam Ward,TEN,QB,7,12522
-157,Zach Charbonnet,SEA,RB,7,9753
+156,Zach Charbonnet,SEA,RB,7,9753
+157,Cam Ward,TEN,QB,7,12522
 158,Kayshon Boutte,HOU,WR,7,9504
 159,Emmett Johnson,KC,RB,7,13337
 160,Braelon Allen,NYJ,RB,7,11576
@@ -173,107 +173,107 @@ rank,name,team,position,tier,sleeper_id
 172,Tre' Harris,LAC,WR,7,12509
 173,Pat Bryant,DEN,WR,8,12492
 174,Keenan Allen,IND,WR,8,1479
-175,Jauan Jennings,MIN,WR,8,7049
-176,Ryan Flournoy,DAL,WR,8,11783
+175,Ryan Flournoy,DAL,WR,8,11783
+176,Jauan Jennings,MIN,WR,8,7049
 177,Jerry Jeudy,CLE,WR,8,6783
 178,Houston Texans,HOU,DST,8,
 179,Malik Washington,MIA,WR,8,11610
 180,Jacoby Brissett,ARI,QB,8,3257
 181,Ja'Kobi Lane,BAL,WR,8,13293
-182,Los Angeles Rams,LAR,DST,8,
-183,Omar Cooper Jr.,NYJ,WR,8,13276
-184,Denver Broncos,DEN,DST,8,
-185,Seattle Seahawks,SEA,DST,8,
-186,Kenyon Sadiq,NYJ,TE,8,13330
+182,Omar Cooper Jr.,NYJ,WR,8,13276
+183,Los Angeles Rams,LAR,DST,8,
+184,Kenyon Sadiq,NYJ,TE,8,13330
+185,Denver Broncos,DEN,DST,8,
+186,Seattle Seahawks,SEA,DST,8,
 187,Malik Davis,DAL,RB,8,8800
 188,Aaron Rodgers,PIT,QB,8,96
-189,Philadelphia Eagles,PHI,DST,8,
-190,Kaelon Black,SF,RB,8,13414
-191,Brandon Aubrey,DAL,K,8,
-192,Kimani Vidal,LAC,RB,8,11647
-193,Ka'imi Fairbairn,HOU,K,8,
-194,Cameron Dicker,LAC,K,8,
-195,Calvin Ridley,TEN,WR,8,4981
-196,Pat Freiermuth,PIT,TE,8,7600
+189,Kaelon Black,SF,RB,8,13414
+190,Kimani Vidal,LAC,RB,8,11647
+191,Philadelphia Eagles,PHI,DST,8,
+192,Brandon Aubrey,DAL,K,8,
+193,Calvin Ridley,TEN,WR,8,4981
+194,Pat Freiermuth,PIT,TE,8,7600
+195,Sean Tucker,TB,RB,8,9506
+196,Ka'imi Fairbairn,HOU,K,8,
 197,Gunnar Helm,TEN,TE,8,12502
-198,Sean Tucker,TB,RB,8,9506
-199,Pittsburgh Steelers,PIT,DST,8,
-200,New England Patriots,NE,DST,8,
-201,Chris Bell,MIA,WR,8,13311
+198,Cameron Dicker,LAC,K,8,
+199,Chris Bell,MIA,WR,8,13311
+200,Pittsburgh Steelers,PIT,DST,8,
+201,New England Patriots,NE,DST,8,
 202,Baltimore Ravens,BAL,DST,8,
 203,Jacksonville Jaguars,JAC,DST,8,
 204,Cam Little,JAC,K,8,
-205,Oronde Gadsden II,LAC,TE,8,12493
-206,Geno Smith,NYJ,QB,8,1373
-207,Minnesota Vikings,MIN,DST,8,
-208,Jaylin Noel,HOU,WR,8,12536
+205,Geno Smith,NYJ,QB,8,1373
+206,Jaylin Noel,HOU,WR,8,12536
+207,Oronde Gadsden II,LAC,TE,8,12493
+208,Kaytron Allen,WAS,RB,8,13405
 209,Rashod Bateman,BAL,WR,8,7571
-210,Kaytron Allen,WAS,RB,8,13405
-211,Jason Myers,SEA,K,8,
-212,Cade Otton,TB,TE,8,8111
-213,Malachi Fields,NYG,WR,8,13285
-214,Nicholas Singleton,TEN,RB,8,13288
-215,Najee Harris,NYG,RB,8,7528
+210,Cade Otton,TB,TE,8,8111
+211,Minnesota Vikings,MIN,DST,8,
+212,Malachi Fields,NYG,WR,8,13285
+213,Nicholas Singleton,TEN,RB,8,13288
+214,Najee Harris,NYG,RB,8,7528
+215,Jason Myers,SEA,K,8,
 216,Los Angeles Chargers,LAC,DST,8,
 217,Eddy Pineiro,SF,K,8,
 218,Kansas City Chiefs,KC,DST,8,
-219,Travis Hunter,JAC,WR,8,
-220,Justice Hill,BAL,RB,8,5995
-221,Cooper Kupp,SEA,WR,8,4039
-222,George Holani,SEA,RB,8,12048
+219,Justice Hill,BAL,RB,8,5995
+220,Cooper Kupp,SEA,WR,8,4039
+221,George Holani,SEA,RB,8,12048
+222,Travis Hunter,JAC,WR,8,
 223,Zachariah Branch,ATL,WR,8,13320
-224,Jake Bates,DET,K,8,
-225,Jaylen Wright,MIA,RB,8,11643
-226,Isaac TeSlaa,DET,WR,8,12535
-227,Tyler Loop,BAL,K,8,
-228,Darnell Mooney,NYG,WR,8,7090
+224,Jaylen Wright,MIA,RB,8,11643
+225,Isaac TeSlaa,DET,WR,8,12535
+226,Jake Bates,DET,K,8,
+227,Darnell Mooney,NYG,WR,8,7090
+228,Tyler Loop,BAL,K,8,
 229,Devaughn Vele,NO,WR,8,11834
 230,Fernando Mendoza,LV,QB,8,13269
-231,Harrison Mevis,LAR,K,8,
-232,Kaleb Johnson,GB,RB,8,12504
-233,Samaje Perine,CIN,RB,8,4147
-234,Cairo Santos,CHI,K,8,
-235,Buffalo Bills,BUF,DST,8,
-236,Greg Dulcich,MIA,TE,8,8172
-237,Chase McLaughlin,TB,K,8,
-238,Evan Engram,DEN,TE,8,4066
-239,Germie Bernard,PIT,WR,8,13274
+231,Kaleb Johnson,GB,RB,8,12504
+232,Samaje Perine,CIN,RB,8,4147
+233,Harrison Mevis,LAR,K,8,
+234,Evan Engram,DEN,TE,8,4066
+235,Cairo Santos,CHI,K,8,
+236,Germie Bernard,PIT,WR,8,13274
+237,Greg Dulcich,MIA,TE,8,8172
+238,Buffalo Bills,BUF,DST,8,
+239,Chase McLaughlin,TB,K,8,
 240,Isiah Pacheco,DET,RB,8,8205
 241,Green Bay Packers,GB,DST,9,
-242,Evan McPherson,CIN,K,9,
-243,Chris Brooks,GB,RB,9,11370
+242,Chris Brooks,GB,RB,9,11370
+243,Evan McPherson,CIN,K,9,
 244,Emanuel Wilson,SEA,RB,9,11435
 245,Ted Hurst III,TB,WR,9,13317
-246,James Conner,ARI,RB,9,4137
-247,Andy Borregales,NE,K,9,
-248,Demond Claiborne,MIN,RB,9,13347
+246,Demond Claiborne,MIN,RB,9,13347
+247,James Conner,ARI,RB,9,4137
+248,Andy Borregales,NE,K,9,
 249,Caleb Douglas,MIA,WR,9,13296
 250,Detroit Lions,DET,DST,9,
 251,Troy Franklin,DEN,WR,9,11627
-252,David Njoku,LAC,TE,9,4033
-253,Harrison Butker,KC,K,9,
-254,Keon Coleman,BUF,WR,9,11637
-255,Cleveland Browns,CLE,DST,9,
+252,Keon Coleman,BUF,WR,9,11637
+253,David Njoku,LAC,TE,9,4033
+254,Harrison Butker,KC,K,9,
+255,Ollie Gordon II,MIA,RB,9,12495
 256,Tua Tagovailoa,ATL,QB,9,6768
-257,Ollie Gordon II,MIA,RB,9,12495
-258,Antonio Williams,WAS,WR,9,13301
-259,Chris Boswell,PIT,K,9,
-260,Jack Bech,LV,WR,9,12483
+257,Antonio Williams,WAS,WR,9,13301
+258,Cleveland Browns,CLE,DST,9,
+259,Jack Bech,LV,WR,9,12483
+260,Chris Boswell,PIT,K,9,
 261,Michael Penix Jr.,ATL,QB,9,11559
 262,Kirk Cousins,LV,QB,9,1166
 263,Jordan James,SF,RB,9,12467
 264,Ty Johnson,BUF,RB,9,6039
 265,Colby Parkinson,LAR,TE,9,6865
 266,Tyquan Thornton,KC,WR,9,8188
-267,Wil Lutz,DEN,K,9,
-268,Isaiah Davis,NYJ,RB,9,11571
-269,Kendre Miller,NO,RB,9,9757
+267,Isaiah Davis,NYJ,RB,9,11571
+268,Wil Lutz,DEN,K,9,
+269,LeQuint Allen Jr.,JAC,RB,9,12544
 270,Tory Horton,SEA,WR,9,12497
-271,LeQuint Allen Jr.,JAC,RB,9,12544
-272,Will Reichard,MIN,K,9,
-273,Seth McGowan,IND,RB,9,13424
-274,Xavier Legette,CAR,WR,9,11626
-275,Shedeur Sanders,CLE,QB,9,12524
+271,Kendre Miller,NO,RB,9,9757
+272,Seth McGowan,IND,RB,9,13424
+273,Will Reichard,MIN,K,9,
+274,Shedeur Sanders,CLE,QB,9,12524
+275,Xavier Legette,CAR,WR,9,11626
 276,Deshaun Watson,CLE,QB,9,4017
 277,Elic Ayomanor,TEN,WR,9,12499
 278,Cyrus Allen,KC,WR,9,13413
@@ -286,8 +286,8 @@ rank,name,team,position,tier,sleeper_id
 285,Kyle Williams,NE,WR,9,12547
 286,Devin Singletary,NYG,RB,9,6130
 287,San Francisco 49ers,SF,DST,9,
-288,New Orleans Saints,NO,DST,9,
-289,Elijah Sarratt,BAL,WR,9,13268
+288,Elijah Sarratt,BAL,WR,9,13268
+289,New Orleans Saints,NO,DST,9,
 290,Adam Randall,BAL,RB,9,13302
 291,Emari Demercado,DAL,RB,9,11199
 292,Theo Johnson,NYG,TE,9,11597
@@ -296,30 +296,30 @@ rank,name,team,position,tier,sleeper_id
 295,Mack Hollins,NE,WR,9,4177
 296,Darius Slayton,FA,WR,9,6149
 297,Tahj Brooks,CIN,RB,9,12543
-298,Andrei Iosivas,CIN,WR,9,10226
-299,Skyler Bell,BUF,WR,9,13402
-300,Christian Kirk,SF,WR,10,4950
-301,Atlanta Falcons,ATL,DST,10,
-302,Trevor Etienne,CAR,RB,10,12531
-303,Mike Gesicki,CIN,TE,10,4993
+298,Christian Kirk,SF,WR,9,4950
+299,Andrei Iosivas,CIN,WR,9,10226
+300,Atlanta Falcons,ATL,DST,10,
+301,Skyler Bell,BUF,WR,10,13402
+302,Mike Gesicki,CIN,TE,10,4993
+303,Trevor Etienne,CAR,RB,10,12531
 304,Eli Stowers,PHI,TE,10,13349
-305,DeMario Douglas,NE,WR,10,9501
-306,Isaiah Bond,CLE,WR,10,12503
-307,Jaydon Blue,PHI,RB,10,12457
+305,Isaiah Bond,CLE,WR,10,12503
+306,DeMario Douglas,NE,WR,10,9501
+307,Michael Mayer,LV,TE,10,9482
 308,Darren Waller,CAR,TE,10,2505
-309,Michael Mayer,LV,TE,10,9482
+309,Jaydon Blue,PHI,RB,10,12457
 310,Audric Estime,NO,RB,10,11579
 311,Will Shipley,PHI,RB,10,11577
 312,Jahan Dotson,ATL,WR,10,8119
 313,Charlie Kolar,LAC,TE,10,8127
 314,Jaleel McLaughlin,CLE,RB,10,11439
 315,Isaac Guerendo,SF,RB,10,11651
-316,Jacob Saylors,DET,RB,10,11237
-317,Chicago Bears,CHI,DST,10,
+316,Chicago Bears,CHI,DST,10,
+317,Jacob Saylors,DET,RB,10,11237
 318,Jake Tonges,SF,TE,10,8698
 319,Devin Neal,FA,RB,10,12476
-320,Trey Benson,ARI,RB,10,11589
-321,Darnell Washington,PIT,TE,10,9479
+320,Darnell Washington,PIT,TE,10,9479
+321,Trey Benson,ARI,RB,10,11589
 322,Kareem Hunt,FA,RB,10,4098
 323,Elijah Arroyo,SEA,TE,10,12521
 324,Jarquez Hunter,MIA,RB,10,11569
@@ -327,69 +327,69 @@ rank,name,team,position,tier,sleeper_id
 326,Jake Elliott,PHI,K,10,
 327,Bryce Lance,NO,WR,10,13420
 328,Jalen Tolbert,MIA,WR,10,8117
-329,Jerome Ford,FA,RB,10,8143
+329,Jerome Ford,MIN,RB,10,8143
 330,Oscar Delp,NO,TE,10,13319
 331,Kendrick Bourne,ARI,WR,10,4454
-332,Dallas Cowboys,DAL,DST,10,
-333,Carson Beck,ARI,QB,10,13272
+332,Carson Beck,ARI,QB,10,13272
+333,Dallas Cowboys,DAL,DST,10,
 334,Dawson Knox,BUF,TE,10,5906
 335,Erick All Jr.,CIN,TE,10,11592
 336,Cole Kmet,CHI,TE,10,6826
 337,Joshua Palmer,BUF,WR,10,7670
 338,Eli Raridon,NE,TE,10,13421
 339,Roschon Johnson,CHI,RB,10,10235
-340,Zavion Thomas,CHI,WR,10,13411
-341,Tez Johnson,TB,WR,10,12485
-342,Malik Benson,LV,WR,10,13329
-343,Olamide Zaccheaus,ATL,WR,10,6271
-344,Bam Knight,ARI,RB,10,8122
-345,Charlie Smyth,NO,K,10,
-346,Brandon Aiyuk,SF,WR,10,6803
-347,Brenen Thompson,LAC,WR,10,13380
+340,Tez Johnson,TB,WR,10,12485
+341,Charlie Smyth,NO,K,10,
+342,Zavion Thomas,CHI,WR,10,13411
+343,Malik Benson,LV,WR,10,13329
+344,Olamide Zaccheaus,ATL,WR,10,6271
+345,Bam Knight,ARI,RB,10,8122
+346,Brenen Thompson,LAC,WR,10,13380
+347,Brandon Aiyuk,SF,WR,10,6803
 348,Tyreek Hill,FA,WR,10,3321
 349,Tyler Higbee,LAR,TE,10,3271
 350,Roman Wilson,PIT,WR,10,11630
-351,Treylon Burks,WAS,WR,11,8135
+351,Treylon Burks,WAS,WR,10,8135
 352,Luke McCaffrey,WAS,WR,11,11650
-353,Tyler Bass,BUF,K,11,
-354,Noah Gray,KC,TE,11,7828
-355,KaVontae Turpin,DAL,WR,11,8917
-356,Mac Jones,SF,QB,11,7527
+353,Noah Gray,KC,TE,11,7828
+354,Tyler Bass,BUF,K,11,
+355,Mac Jones,SF,QB,11,7527
+356,KaVontae Turpin,DAL,WR,11,8917
 357,J.J. McCarthy,MIN,QB,11,11565
 358,Kalif Raymond,CHI,WR,11,3634
-359,Sione Vaki,DET,RB,11,11729
-360,Ja'Tavion Sanders,CAR,TE,11,11600
+359,Ja'Tavion Sanders,CAR,TE,11,11600
+360,Sione Vaki,DET,RB,11,11729
 361,Trey Smack,GB,K,11,
 362,Jalen Royals,KC,WR,11,12505
 363,New York Giants,NYG,DST,11,
-364,Konata Mumpfield,LAR,WR,11,12718
-365,Odell Beckham Jr.,NYG,WR,11,2078
-366,Max Klare,LAR,TE,11,13278
-367,Carolina Panthers,CAR,DST,11,
-368,Raheim Sanders,CLE,RB,11,12472
-369,Eli Heidenreich,PIT,RB,11,13423
+364,Odell Beckham Jr.,NYG,WR,11,2078
+365,Max Klare,LAR,TE,11,13278
+366,Konata Mumpfield,LAR,WR,11,12718
+367,Raheim Sanders,CLE,RB,11,12472
+368,Eli Heidenreich,PIT,RB,11,13423
+369,Carolina Panthers,CAR,DST,11,
 370,Rasheen Ali,BAL,RB,11,11570
-371,Tampa Bay Buccaneers,TB,DST,11,
-372,Noah Fant,NO,TE,11,5857
+371,Noah Fant,NO,TE,11,5857
+372,Tampa Bay Buccaneers,TB,DST,11,
 373,Justin Fields,KC,QB,11,7591
-374,Cedric Tillman,NO,WR,11,10444
+374,Demarcus Robinson,SF,WR,11,3286
 375,Kevin Coleman Jr.,MIA,WR,11,13338
-376,Demarcus Robinson,SF,WR,11,3286
-377,Colbie Young,CIN,WR,11,13477
-378,Joe Mixon,FA,RB,11,4018
-379,Ty Simpson,LAR,QB,11,13275
+376,Cedric Tillman,NO,WR,11,10444
+377,Joe Mixon,FA,RB,11,4018
+378,Ty Simpson,LAR,QB,11,13275
+379,Colbie Young,CIN,WR,11,13477
 380,Tutu Atwell,LAR,WR,11,7562
 381,Ben Sinnott,WAS,TE,11,11596
 382,Kyle Juszczyk,SF,RB,11,
 383,Tommy Tremble,CAR,TE,11,7694
 384,Daniel Bellinger,TEN,TE,11,8225
 385,Savion Williams,GB,WR,11,12482
-386,Jonnu Smith,GB,TE,11,4144
-387,Dylan Laube,LV,RB,11,11574
-388,Anthony Richardson Sr.,IND,QB,11,9229
-389,Spencer Shrader,IND,K,11,
-390,CJ Daniels,LAR,WR,11,13270
-391,Barion Brown,NO,WR,11,13533
+386,Dylan Laube,LV,RB,11,11574
+387,Anthony Richardson Sr.,IND,QB,11,9229
+388,Jonnu Smith,GB,TE,11,4144
+389,Barion Brown,NO,WR,11,13533
+390,Spencer Shrader,IND,K,11,
+391,CJ Daniels,LAR,WR,11,13270
 392,Jordan Whittington,LAR,WR,11,11623
 393,Jaylin Lane,WAS,WR,11,12641
 394,Elijah Higgins,ARI,TE,11,10231
@@ -399,10 +399,10 @@ rank,name,team,position,tier,sleeper_id
 398,Joe Flacco,CIN,QB,11,19
 399,Cincinnati Bengals,CIN,DST,11,
 400,Michael Carter,TEN,RB,11,7607
-401,Daniel Carlson,NO,K,11,
-402,Dont'e Thornton Jr.,LV,WR,11,12541
-403,AJ Dillon,CAR,RB,11,6828
-404,John Metchie III,CAR,WR,11,8147
+401,John Metchie III,CAR,WR,11,8147
+402,Daniel Carlson,NO,K,11,
+403,Dont'e Thornton Jr.,LV,WR,11,12541
+404,AJ Dillon,CAR,RB,11,6828
 405,Cade Klubnik,NYJ,QB,11,13303
 406,Ashton Dulin,IND,WR,11,6427
 407,Matt Hibner,BAL,TE,11,13324
@@ -419,21 +419,21 @@ rank,name,team,position,tier,sleeper_id
 418,Adam Trautman,DEN,TE,11,6869
 419,Ameer Abdullah,JAC,RB,11,2359
 420,Isaiah Williams,NYJ,WR,11,11608
-421,Hunter Luepke,DAL,RB,11,
-422,Deion Burks,IND,WR,11,13333
-423,Jeremy McNichols,WAS,RB,11,4219
-424,Marlin Klein,HOU,TE,11,13307
-425,Tai Felton,MIN,WR,11,12496
-426,J'Mari Taylor,JAC,RB,11,13348
+421,Tai Felton,MIN,WR,11,12496
+422,Hunter Luepke,DAL,RB,11,
+423,Deion Burks,IND,WR,11,13333
+424,J'Mari Taylor,JAC,RB,11,13348
+425,Jeremy McNichols,WAS,RB,11,4219
+426,Marlin Klein,HOU,TE,11,13307
 427,Chris Brazzell II,CAR,WR,11,13353
 428,Luke Musgrave,GB,TE,11,9481
 429,Marcus Mariota,WAS,QB,11,2307
 430,Will Kacmarek,MIA,TE,11,13434
-431,Julius Chestnut,TEN,RB,11,8254
+431,Julius Chestnut,TEN,RB,12,8254
 432,Nate Boerkircher,JAC,TE,12,13299
 433,Chad Ryland,ARI,K,12,
 434,Jackson Hawes,BUF,TE,12,12658
-435,Jimmy Horn Jr.,CAR,WR,12,12523
+435,Jimmy Horn Jr.,FA,WR,12,12523
 436,Luke Schoonmaker,DAL,TE,12,10871
 437,Joey Slye,TEN,K,12,
 438,Kene Nwangwu,NYJ,RB,12,7720
@@ -448,21 +448,21 @@ rank,name,team,position,tier,sleeper_id
 447,Las Vegas Raiders,LV,DST,12,
 448,Austin Ekeler,FA,RB,12,4663
 449,Cade Stover,HOU,TE,12,11599
-450,Max Bredeson,MIN,RB,12,13516
-451,Phil Mafah,FA,RB,12,12738
-452,Nick Folk,ATL,K,12,
-453,Xavier Smith,LAR,WR,12,11168
-454,Alec Ingold,LAC,RB,12,
-455,Tanner Hudson,CIN,TE,12,5409
-456,Patrick Ricard,NYG,RB,12,
-457,Tim Patrick,NYJ,WR,12,4351
-458,Zach Ertz,FA,TE,12,1339
-459,Dohnte Meyers,CIN,WR,12,13264
-460,Josh Cameron,JAC,WR,12,13394
-461,Reggie Virgil,ARI,WR,12,13297
-462,Kaden Wetjen,PIT,WR,12,13491
+450,Kaden Wetjen,PIT,WR,12,13491
+451,Max Bredeson,MIN,RB,12,13516
+452,Phil Mafah,NYG,RB,12,12738
+453,Nick Folk,ATL,K,12,
+454,Xavier Smith,LAR,WR,12,11168
+455,Alec Ingold,LAC,RB,12,
+456,Tanner Hudson,CIN,TE,12,5409
+457,Patrick Ricard,NYG,RB,12,
+458,Tim Patrick,NYJ,WR,12,4351
+459,Zach Ertz,FA,TE,12,1339
+460,Dohnte Meyers,CIN,WR,12,13264
+461,Josh Cameron,JAC,WR,12,13394
+462,Reggie Virgil,ARI,WR,12,13297
 463,Durham Smythe,BAL,TE,12,5008
-464,Tyler Goodson,ATL,RB,12,8207
+464,Tyler Goodson,DAL,RB,12,8207
 465,Ryan Fitzgerald,CAR,K,12,
 466,Tanner Koziol,JAC,TE,12,13408
 467,Mo Alie-Cox,IND,TE,12,4054
@@ -504,7 +504,7 @@ rank,name,team,position,tier,sleeper_id
 503,Drew Ogletree,IND,TE,12,8489
 504,Lil'Jordan Humphrey,DEN,WR,12,5938
 505,Greg Dortch,BUF,WR,12,5970
-506,Khalil Herbert,FA,RB,12,7608
+506,Khalil Herbert,ATL,RB,12,7608
 507,Payne Durham,TB,TE,12,10227
 508,Taylen Green,CLE,QB,12,13306
 509,Hunter Long,ARI,TE,12,7535
@@ -532,7 +532,7 @@ rank,name,team,position,tier,sleeper_id
 531,Zavier Scott,CHI,RB,13,11299
 532,Tyrell Shavers,BUF,WR,13,11377
 533,Kameron Johnson,TB,WR,13,11994
-534,Marquez Valdes-Scantling,FA,WR,13,5086
+534,Marquez Valdes-Scantling,LAC,WR,13,5086
 535,Andre Szmyt,CLE,K,13,
 536,Josh Williams,TB,RB,13,12787
 537,Jake Briningstool,KC,TE,13,12817
@@ -598,12 +598,12 @@ rank,name,team,position,tier,sleeper_id
 597,Sincere McCormick,SF,RB,13,8220
 598,Cash Jones,ATL,RB,13,13595
 599,Ian Thomas,LV,TE,13,4995
-600,Israel Abanikanda,DAL,RB,13,9227
+600,Israel Abanikanda,FA,RB,13,9227
 601,Tyrod Taylor,GB,QB,13,827
 602,Spencer Rattler,NO,QB,13,11562
 603,Ben Sauls,FA,K,13,
 604,Donovan Edwards,FA,RB,13,12515
-605,Hassan Haskins,NE,RB,13,8123
+605,Hassan Haskins,FA,RB,13,8123
 606,Jacardia Wright,SEA,RB,13,13047
 607,Raheem Mostert,LV,RB,13,2749
 608,Myles Montgomery,NE,RB,13,13964
@@ -630,12 +630,12 @@ rank,name,team,position,tier,sleeper_id
 629,Travis Homer,PIT,RB,13,6012
 630,Lan Larison,NE,RB,13,12969
 631,Brayden Willis,SF,TE,13,10224
-632,Jake Moody,BAL,K,13,
+632,Jake Moody,FA,K,13,
 633,Brevin Jordan,HOU,TE,13,7568
 634,Quintin Morris,JAC,TE,13,7536
 635,Roman Hemby,LV,RB,13,13416
 636,Teagan Quitoriano,ARI,TE,13,8227
-637,Jack Stoll,FA,TE,13,7946
+637,Jack Stoll,SF,TE,13,7946
 638,Diontae Johnson,FA,WR,13,5937
 639,Colson Yankoff,WAS,TE,13,11942
 640,David Sills V,TB,WR,13,6154
@@ -657,7 +657,7 @@ rank,name,team,position,tier,sleeper_id
 656,Ko Kieft,TB,TE,13,8484
 657,Hayden Large,CHI,TE,13,13712
 658,Jack Westover,WAS,TE,13,12045
-659,Eric Gray,FA,RB,13,10223
+659,Eric Gray,CLE,RB,13,10223
 660,Cole Turner,MIA,TE,13,8214
 661,Albert Okwuegbunam Jr.,FA,TE,14,6843
 662,Curtis Samuel,FA,WR,14,4082
@@ -667,11 +667,11 @@ rank,name,team,position,tier,sleeper_id
 666,Ryan Miller,MIA,WR,14,11421
 667,James Mitchell,DAL,TE,14,8170
 668,Jack Strand,ATL,QB,14,13602
-669,Sterling Shepard,FA,WR,14,3200
+669,Sterling Shepard,NYJ,WR,14,3200
 670,Raheem Blackshear,FA,RB,14,8255
 671,Miles Kitselman,FA,TE,14,13431
 672,Anthony Gould,IND,WR,14,11762
-673,Nate Carter,KC,RB,14,
+673,Nate Carter,KC,RB,14,12897
 674,Joshua Karty,FA,K,14,
 675,Mark Redman,GB,TE,14,13013
 676,Justin Watson,FA,WR,14,5374
@@ -686,7 +686,7 @@ rank,name,team,position,tier,sleeper_id
 685,Simi Fehoko,ARI,WR,14,7812
 686,Tim Jones,JAC,WR,14,8013
 687,Taysom Hill,FA,TE,14,4381
-688,Gage Larvadain,FA,WR,14,13101
+688,Gage Larvadain,BAL,WR,14,13101
 689,Tom Kennedy,DET,WR,14,6588
 690,Miles Davis,FA,RB,14,14044
 691,Ricky White III,SEA,WR,14,12475
@@ -694,7 +694,7 @@ rank,name,team,position,tier,sleeper_id
 693,Mitchell Trubisky,TEN,QB,14,3976
 694,Cameron Latu,NE,TE,14,10210
 695,Khalil Dinkins,SF,TE,14,13432
-696,Tyler Johnson,FA,WR,14,6960
+696,Tyler Johnson,NYJ,WR,14,6960
 697,David Martin-Robinson,TEN,TE,14,12357
 698,Jeff Caldwell,KC,WR,14,13392
 699,Pharaoh Brown,IND,TE,14,4443
@@ -704,7 +704,7 @@ rank,name,team,position,tier,sleeper_id
 703,Gregory Desrosiers,LAC,RB,14,13603
 704,Lucas Krull,DEN,TE,14,8249
 705,Austin Trammell,JAC,WR,14,7746
-706,Josiah Deguara,FA,TE,14,7050
+706,Josiah Deguara,PHI,TE,14,7050
 707,Drake Dabney,GB,TE,14,13210
 708,Britain Covey,PHI,WR,14,8414
 709,Xavier Weaver,FA,WR,14,11921
@@ -835,7 +835,7 @@ rank,name,team,position,tier,sleeper_id
 834,Kenny Yeboah,FA,TE,15,7597
 835,Luke Lachey,FA,TE,15,12725
 836,Mitchell Wilcox,FA,TE,15,6894
-837,Shane Zylstra,NE,TE,15,8041
+837,Shane Zylstra,FA,TE,15,8041
 838,Tre Watson,MIA,TE,15,13116
 839,Nick Boyle,FA,TE,15,2474
 840,Jordan Waters,LAR,RB,15,13010
@@ -962,7 +962,7 @@ rank,name,team,position,tier,sleeper_id
 961,Omari Evans,KC,WR,16,13905
 962,Isaiah Neyor,GB,WR,16,13074
 963,JP Richardson,CHI,WR,16,12746
-964,Chris Hilton Jr.,GB,WR,16,13674
+964,Chris Hilton Jr.,FA,WR,16,13674
 965,Jaden Bradley,WAS,WR,16,13760
 966,Brennan Presley,LAR,WR,16,13011
 967,Jordan Moore,CIN,WR,16,12761

@@ -75,7 +75,7 @@ Braxton Berrios,0,,,5121,Braxton Berrios,WR,NYG,no_ktc,exact
 Breece Hall,0,1224,breece-hall-1224,8155,Breece Hall,RB,NYJ,exact,exact
 Brenden Rice,0,,,11621,Brenden Rice,WR,,no_ktc,exact
 Brenton Strange,0,1461,brenton-strange-1461,9480,Brenton Strange,TE,JAC,exact,exact
-Brevin Jordan,0,,,7568,Brevin Jordan,TE,HOU,no_ktc,exact
+Brevin Jordan,0,1052,brevin-jordan-1052,7568,Brevin Jordan,TE,HOU,exact,exact
 Brian Robinson,0,1232,brian-robinson-1232,8154,Brian Robinson,RB,ATL,exact,exact
 Brian Thomas Jr.,0,1589,brian-thomas-jr-1589,11631,Brian Thomas,WR,JAC,exact,normalised
 Brock Bowers,0,1612,brock-bowers-1612,11604,Brock Bowers,TE,LVR,exact,exact
@@ -268,7 +268,7 @@ Jelani Woods,0,,,8219,Jelani Woods,TE,NYJ,no_ktc,exact
 Jeremy Ruckert,0,,,8145,Jeremy Ruckert,TE,NYJ,no_ktc,exact
 Jerick McKinnon,0,,,2161,Jerick McKinnon,RB,,no_ktc,exact
 Jermaine Burton,0,,,11640,Jermaine Burton,WR,,no_ktc,exact
-Jerome Ford,0,,,8143,Jerome Ford,RB,WAS,no_ktc,exact
+Jerome Ford,0,,,8143,Jerome Ford,RB,,no_ktc,exact
 Jerry Jeudy,0,545,jerry-jeudy-545,6783,Jerry Jeudy,WR,CLE,exact,exact
 Jimmy Garoppolo,0,,,1837,Jimmy Garoppolo,QB,,no_ktc,exact
 Joe Burrow,0,601,joe-burrow-601,6770,Joe Burrow,QB,CIN,exact,exact
@@ -486,7 +486,7 @@ Wan'Dale Robinson,0,1274,wan-dale-robinson-1274,8126,Wan'Dale Robinson,WR,TEN,ex
 Will Dissly,0,,,5010,Will Dissly,TE,,no_ktc,exact
 Will Levis,0,,,9999,Will Levis,QB,,no_ktc,exact
 Will Shipley,0,1572,will-shipley-1572,11577,Will Shipley,RB,PHI,exact,exact
-Xavier Gipson,0,,,11306,Xavier Gipson,WR,,no_ktc,exact
+Xavier Gipson,0,,,11306,Xavier Gipson,WR,PHI,no_ktc,exact
 Xavier Hutchinson,0,1454,xavier-hutchinson-1454,10218,Xavier Hutchinson,WR,HOU,exact,exact
 Xavier Legette,0,1610,xavier-legette-1610,11626,Xavier Legette,WR,CAR,exact,exact
 Xavier Worthy,0,1591,xavier-worthy-1591,11624,Xavier Worthy,WR,KCC,exact,exact

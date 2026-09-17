@@ -3,11 +3,12 @@ import {
   searchPlayer, comparePlayers, evaluateTrade, lookupDraftPick,
   getKtcRankings, getFantasyCalcRankings,
   getTrendingPlayers, getRecentTrades, getFreeAgents, getSiteLink,
-  runScenario, getPlayerStats, getHistoricalResults,
+  runScenario, getPlayerStats, getPlayerLeaguePoints, getHistoricalResults,
   getPlayerValueBreakdown, getTeamValueSummary,
   getSeasonOdds, simulateRosterChangeOdds,
   loadCompletedTrades,
 } from '../lib/mcp/tools.mjs';
+import { formatSeasonContext } from '../lib/mcp/seasonContext.mjs';
 import { CHAT_TOOL_RENDER_MODE } from '../lib/mcp/renderConfig.mjs';
 import { loadPlayersData, loadOwnerAliasesByRoster } from '../lib/mcp/dataLoader.mjs';
 import { CURRENT_YEAR } from '../lib/mcp/config.mjs';
@@ -158,11 +159,35 @@ function questionNeedsSearch(messages) {
   return QUESTION_SEARCH_PATTERNS.some(re => re.test(q));
 }
 
+// Questions answerable from league tools — never route to web search.
+const LEAGUE_DATA_PATTERNS = [
+  /\bhow many points\b/i,
+  /\bpoints did\b/i,
+  /\bscored\b/i,
+  /\bgame log\b/i,
+  /\bfantasy points\b/i,
+  /\b(this|the) season('s)?\s+(points|stats|production|scores)\b/i,
+  /\bwhat('s| is) (he|she|they|\w+('s)?)\s+(scoring|averaging|putting up)\b/i,
+  /\bleague (points|scores|standings)\b/i,
+  /\bmy (team('s)?|roster('s)?)\s+(points|score|record)\b/i,
+  /\bhow (is|has|did)\s+\w+(\s+\w+)?\s+(doing|performed|playing)\s+(this season|in \d{4})\b/i,
+  /\bwho('s| is) (leading|winning|in first)\b/i,
+  /\bstandings\b/i,
+  /\bweekly scores\b/i,
+  /\bhow (is|are) (my|the) (team|roster)\b/i,
+];
+
+function questionNeedsLeagueData(messages) {
+  const lastUser = [...messages].reverse().find(m => m.role === 'user');
+  const q = lastUser?.content || '';
+  return LEAGUE_DATA_PATTERNS.some(re => re.test(q));
+}
+
 // Fallback patterns on the MODEL'S RESPONSE — catches cases the model
 // verbally signals search intent instead of using <!--search-->.
 const RESPONSE_SEARCH_PHRASES = [
-  /\blet me (check|search|look( that)? up|see|find|grab|pull up)\b/i,
-  /\bI'?ll (check|search|look|find|see|pull up)\b/i,
+  /\blet me (check|search|look( that)? up|see|find|grab)\b/i,
+  /\bI'?ll (check|search|look|find|see)\b/i,
   /\bhere'?s what'?s current\b/i,
   /\bas for the (absolute )?(latest|current)\b/i,
   /\bthe absolute latest\b/i,
@@ -237,12 +262,25 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'get_player_stats',
-    description: "Get a player's NFL regular season stats (passing, rushing, receiving) and fantasy points for a given season. Data is available from 2005 through 2025. Fantasy points shown are standard 0-PPR scoring; TE stats also show TEP-adjusted totals. Use this whenever a user asks about a player's stats, production, or fantasy output in any past season. Also use this to VERIFY whether a player has NFL production — if they appear in the database with stats for a given year, they have played. This is the definitive check for 'has this player played in the NFL.'",
+    description: "Get a player's NFL regular season stats (passing, rushing, receiving) and fantasy points for a given season. Data is available from 2005 through 2025. Fantasy points shown are standard 0-PPR scoring; TE stats also show TEP-adjusted totals. Use this for NFL box-score detail in past seasons. For the CURRENT in-season league, prefer get_player_league_points — it has live scoring through completed weeks.",
     parameters: {
       type: 'OBJECT',
       properties: {
         name:   { type: 'STRING',  description: 'Player full name e.g. "Justin Jefferson"' },
         season: { type: 'INTEGER', description: 'NFL season year e.g. 2024, 2025. Omit to default to the most recent complete season.' },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'get_player_league_points',
+    description: "Get a player's actual fantasy points scored in the Hwang Dynasty league for the current (or specified) season. Returns season total plus weekly breakdown through completed weeks, using this league's scoring rules. ALWAYS call this when a user asks how many points a player has scored this season, how a player is performing in 2026, or for a game log — do NOT use KTC values or web search for in-season production questions.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        name:   { type: 'STRING',  description: 'Player full name e.g. "Ja\'Marr Chase"' },
+        season: { type: 'INTEGER', description: 'Season year e.g. 2026. Omit for current season.' },
+        week:   { type: 'INTEGER', description: 'Optional: return points for a single NFL week only (1-17).' },
       },
       required: ['name'],
     },
@@ -551,6 +589,7 @@ async function executeTool(name, args) {
       case 'get_team_scores':        return await getTeamScores(args.team, args.season);
       case 'search_player':          return await searchPlayer(args.name);
       case 'get_player_stats':       return getPlayerStats(args.name, args.season);
+      case 'get_player_league_points': return await getPlayerLeaguePoints(args.name, args.season, args.week);
       case 'compare_players':        return await comparePlayers(args.names);
       case 'evaluate_trade':         return await evaluateTrade(args.giving, args.receiving, args.value_source, CHAT_TOOL_RENDER_MODE);
       case 'get_player_value':       return getPlayerValueBreakdown(args.name, CHAT_TOOL_RENDER_MODE);
@@ -825,7 +864,7 @@ export default async function handler(req, res) {
     ? [systemPrompt, formatScenarioContext(scenarioSnapshot, loadPlayersData())].filter(Boolean).join('\n\n')
     : fredduelBulk
       ? [systemPrompt, formatFredDuelContext(fredduelSnapshot)].filter(Boolean).join('\n\n')
-      : systemPrompt;
+      : [systemPrompt, formatSeasonContext()].filter(Boolean).join('\n\n');
   const requestBase = {
     ...(plain ? {} : {
       tools: [{
@@ -866,14 +905,36 @@ export default async function handler(req, res) {
       // No tool calls — extract the text response (skip Gemini 3.x thought-
       // summary parts, join multiple text parts) and stitch side query
       let text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n\n');
-      const needsSearch = !plain && !scenarioEditor && !fredduelBulk && (
+      const wantsWebSearch = (
         text.includes('<!--search-->') ||
         RESPONSE_SEARCH_PHRASES.some(re => re.test(text)) ||
         questionNeedsSearch(messages)
       );
+      const needsSearch = !plain && !scenarioEditor && !fredduelBulk
+        && !questionNeedsLeagueData(messages)
+        && wantsWebSearch;
       text = text.replace(/<!--search-->/g, '').trim();
       if (!plain && !scenarioEditor && !fredduelBulk) {
         text = await sanitizeInternalLeaks(text, apiKey, geminiState);
+      }
+
+      // Model deferred on a league-data question without calling tools — nudge once.
+      if (
+        !retriedEmptyResponse
+        && questionNeedsLeagueData(messages)
+        && !/\d/.test(text)
+        && text.length < 280
+      ) {
+        retriedEmptyResponse = true;
+        contents.push({
+          role: 'user',
+          parts: [{
+            text: '[System: This question is about in-season league scoring, standings, or player production. '
+              + 'Call get_player_league_points (for "how many points" / game log), get_player_stats, '
+              + 'get_standings, or get_weekly_scores NOW — do not defer, do not use <!--search-->.]',
+          }],
+        });
+        continue;
       }
 
       // Never ship an empty bubble: a model can occasionally return a bare

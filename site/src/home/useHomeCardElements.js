@@ -79,7 +79,6 @@ export function useHomeCardElements({
 
   const offSeasonDesktopSplit = useMemo(() => ({
     left: [
-      { id: 'auth', node: auth },
       ...(showThisWeekCard ? [{ id: 'this-week', node: thisWeek }] : []),
       { id: 'trades', node: trades },
       { id: 'waivers', node: waivers },
@@ -92,13 +91,12 @@ export function useHomeCardElements({
       { id: 'hwang-ai', node: hwangAi },
     ],
   }), [
-    auth, thisWeek, trades, waivers, trending, recap, rookieDraft, leagueHistory, hwangAi,
+    thisWeek, trades, waivers, trending, recap, rookieDraft, leagueHistory, hwangAi,
     showThisWeekCard,
   ]);
 
   const inSeasonDesktopSplit = useMemo(() => ({
     left: [
-      { id: 'auth', node: auth },
       { id: 'playoffs', node: playoff },
       ...(showTrendCards ? [{ id: 'top-pf', node: topPf }] : []),
       ...(showTrendCards ? [{ id: 'tank', node: tankRace }] : []),
@@ -114,7 +112,7 @@ export function useHomeCardElements({
       { id: 'hwang-ai', node: hwangAi },
     ],
   }), [
-    auth, playoff, topPf, tankRace, hotTeam, thisWeek, bubble, lastWeek, leagueHistory, hwangAi,
+    playoff, topPf, tankRace, hotTeam, thisWeek, bubble, lastWeek, leagueHistory, hwangAi,
     showThisWeekCard, showTrendCards, showPlayoffMatchupsCard, showChampionshipCard,
   ]);
 

@@ -182,6 +182,7 @@ function HomePage() {
           <HomeCardsSplit
             left={cards.offSeasonDesktopSplit.left}
             right={cards.offSeasonDesktopSplit.right}
+            pinnedTopLeft={cards.auth}
             onLayoutReady={onSplitLayoutReady}
           />
         </div>
@@ -234,6 +235,7 @@ function HomePage() {
         <HomeCardsSplit
           left={cards.inSeasonDesktopSplit.left}
           right={cards.inSeasonDesktopSplit.right}
+          pinnedTopLeft={cards.auth}
           onLayoutReady={onSplitLayoutReady}
         />
       </div>

@@ -1595,6 +1595,103 @@ export function getPlayerStats(name, season) {
   return lines.join('\n');
 }
 
+// ─── Player League Fantasy Points (current season) ───────────────────────────
+
+export async function getPlayerLeaguePoints(name, season, week) {
+  const result = findPlayerByName(name);
+  if (!result) {
+    return `Player "${name}" not found. Try a full name like "Justin Jefferson".`;
+  }
+
+  const { playerId, player } = result;
+  const displayName = getPlayerDisplayName(player);
+  const pos = (player.position || '').toUpperCase();
+  const yr = season ? String(season) : CURRENT_YEAR;
+  const completedWeeks = getCompletedWeeksCount(yr);
+
+  if (completedWeeks === 0) {
+    return `The ${yr} season hasn't started yet — no league scoring data available for ${displayName}.`;
+  }
+
+  const targetWeek = week != null ? Number(week) : null;
+  if (targetWeek != null && (!Number.isFinite(targetWeek) || targetWeek < 1 || targetWeek > 17)) {
+    return `Invalid week ${week}. Use a week number between 1 and 17.`;
+  }
+  if (targetWeek != null && targetWeek > completedWeeks) {
+    return `Week ${targetWeek} hasn't completed yet (through Week ${completedWeeks} as of now).`;
+  }
+
+  const weeksToFetch = targetWeek != null ? 1 : completedWeeks;
+  const startWeek = targetWeek != null ? targetWeek : 1;
+  const weekNums = targetWeek != null
+    ? [targetWeek]
+    : Array.from({ length: weeksToFetch }, (_, i) => i + 1);
+
+  const [weeksData, rosters, users] = await Promise.all([
+    Promise.all(weekNums.map((w) => fetchMatchups(w, yr).catch(() => null))),
+    fetchRosters(yr),
+    fetchUsers(yr),
+  ]);
+  const teamMap = buildTeamMap(rosters, users);
+
+  // Find which roster owns this player (for context in output)
+  let ownerRid = null;
+  for (const r of rosters) {
+    if ((r.players || []).includes(playerId)) {
+      ownerRid = r.roster_id;
+      break;
+    }
+  }
+  const ownerInfo = ownerRid != null ? teamMap[Number(ownerRid)] : null;
+
+  const weeklyPts = {};
+  for (let i = 0; i < weekNums.length; i++) {
+    const wk = weekNums[i];
+    const weekData = weeksData[i];
+    if (!weekData) continue;
+    for (const entry of weekData) {
+      const pts = entry?.players_points?.[playerId];
+      if (pts != null && typeof pts === 'number') {
+        weeklyPts[wk] = Math.round(pts * 10) / 10;
+        break;
+      }
+    }
+  }
+
+  const weekKeys = Object.keys(weeklyPts).map(Number).sort((a, b) => a - b);
+  if (weekKeys.length === 0) {
+    const scope = targetWeek != null ? `Week ${targetWeek}` : `the ${yr} season so far`;
+    return `No league scoring data found for ${displayName} in ${scope}. They may not have played yet or recorded fantasy points.`;
+  }
+
+  const seasonTotal = weekKeys.reduce((sum, wk) => sum + weeklyPts[wk], 0);
+  const gamesPlayed = weekKeys.filter((wk) => weeklyPts[wk] > 0).length;
+
+  const lines = [
+    `**${displayName}** — ${yr} Hwang Dynasty Fantasy Points`,
+    `Position: ${pos}${ownerInfo ? ` | League owner: ${ownerInfo.teamName} (${ownerInfo.ownerName})` : ' | Free Agent'}`,
+    '',
+  ];
+
+  if (targetWeek != null) {
+    lines.push(`**Week ${targetWeek}:** ${weeklyPts[targetWeek]} pts`);
+  } else {
+    lines.push(`**Season total (Weeks 1–${completedWeeks}):** ${Math.round(seasonTotal * 10) / 10} pts`);
+    if (gamesPlayed > 0) {
+      lines.push(`**Per game (weeks with points):** ${(seasonTotal / gamesPlayed).toFixed(1)} pts/game`);
+    }
+    lines.push('');
+    lines.push('**Weekly breakdown:**');
+    for (const wk of weekKeys) {
+      lines.push(`  Wk ${String(wk).padStart(2)}: ${weeklyPts[wk]} pts`);
+    }
+  }
+
+  lines.push('');
+  lines.push('*(Points use this league\'s scoring: standard + 0.5 TEP for TEs, best-ball optimal lineup for team totals.)*');
+  return lines.join('\n');
+}
+
 // ─── Free Agents ──────────────────────────────────────────────────────────────
 
 export async function getFreeAgents(position) {
