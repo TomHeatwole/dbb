@@ -633,15 +633,11 @@
 
 /* ── Current Playoff Picture card ────────────────────────────────────────── */
 
-.home-dashboard .playoff-picture-card {
-  --pp-tile-bg: rgba(255, 255, 255, 0.04);
-  --pp-tile-border: rgba(148, 180, 255, 0.2);
-}
-
 .home-dashboard .playoff-picture-body {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
 }
 
 .home-dashboard .playoff-picture-caption {
@@ -652,83 +648,65 @@
   color: rgba(226, 232, 240, 0.5);
 }
 
-.home-dashboard .playoff-picture-matchups {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.home-dashboard .playoff-picture-matchup {
+.home-dashboard .playoff-picture-teams {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
+  gap: 0.28rem;
 }
 
-.home-dashboard .playoff-picture-matchup-label {
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(148, 180, 255, 0.65);
-  padding-left: 0.15rem;
-}
-
-.home-dashboard .playoff-picture-matchup-box {
+.home-dashboard .playoff-picture-team-row {
   display: flex;
-  flex-direction: column;
-  border-radius: 0.65rem;
-  border: 1px solid var(--pp-tile-border);
-  background: var(--pp-tile-bg);
-  overflow: hidden;
-}
-
-.home-dashboard .playoff-picture-team {
-  display: grid;
-  grid-template-columns: 1.6rem 1.85rem minmax(0, 1fr);
+  flex-direction: row;
   align-items: center;
-  gap: 0.38rem;
-  padding: 0.52rem 0.55rem;
+  gap: 0.5rem;
+  padding: 0.42rem 0.5rem;
+  border-radius: 0.55rem;
   color: inherit;
   text-decoration: none;
   transition: background 0.14s ease;
 }
 
-.home-dashboard .playoff-picture-team-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.12rem;
-  min-width: 0;
-}
-
-.home-dashboard .playoff-picture-team:hover {
+.home-dashboard .playoff-picture-team-row:hover {
   background: rgba(255, 255, 255, 0.06);
   text-decoration: none;
 }
 
-.home-dashboard .playoff-picture-team--empty {
-  cursor: default;
-}
-
-.home-dashboard .playoff-picture-team--me {
+.home-dashboard .playoff-picture-team-row--me {
   background: rgba(74, 222, 128, 0.08);
 }
 
-.home-dashboard .playoff-picture-team--me:hover {
+.home-dashboard .playoff-picture-team-row--me:hover {
   background: rgba(74, 222, 128, 0.12);
 }
 
 .home-dashboard .playoff-picture-seed {
-  font-size: 0.68rem;
   font-weight: 800;
-  color: #f6e05e;
+  font-size: 0.88rem;
+  min-width: 2.2rem;
+  text-align: right;
   font-variant-numeric: tabular-nums;
-  text-align: center;
+  flex-shrink: 0;
+}
+
+.home-dashboard .playoff-picture-teams .playoff-picture-team-row:nth-child(1) .playoff-picture-seed {
+  color: #ecc94b;
+}
+
+.home-dashboard .playoff-picture-teams .playoff-picture-team-row:nth-child(2) .playoff-picture-seed {
+  color: #48bb78;
+}
+
+.home-dashboard .playoff-picture-teams .playoff-picture-team-row:nth-child(3) .playoff-picture-seed {
+  color: #4fd1c5;
+}
+
+.home-dashboard .playoff-picture-teams .playoff-picture-team-row:nth-child(4) .playoff-picture-seed {
+  color: #4299e1;
 }
 
 .home-dashboard .playoff-picture-avatar {
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 50%;
   object-fit: cover;
   background: #1a202c;
@@ -741,6 +719,14 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.home-dashboard .playoff-picture-team-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .home-dashboard .playoff-picture-name {
   min-width: 0;
   font-size: 0.78rem;
@@ -751,7 +737,7 @@
   text-overflow: ellipsis;
 }
 
-.home-dashboard .playoff-picture-team--me .playoff-picture-name {
+.home-dashboard .playoff-picture-team-row--me .playoff-picture-name {
   color: #ecfdf3;
 }
 
@@ -770,47 +756,17 @@
   opacity: 0.75;
 }
 
-.home-dashboard .playoff-picture-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.12rem 0;
-  background: rgba(0, 0, 0, 0.18);
-  border-top: 1px solid rgba(148, 180, 255, 0.12);
-  border-bottom: 1px solid rgba(148, 180, 255, 0.12);
-}
-
-.home-dashboard .playoff-picture-divider span {
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.4);
-}
-
 @media (max-width: 40em) {
-  .home-dashboard .playoff-picture-matchups {
-    grid-template-columns: 1fr;
-    gap: 0.45rem;
+  .home-dashboard .playoff-picture-team-row {
+    gap: 0.38rem;
+    padding: 0.38rem 0.42rem;
   }
 
-  .home-dashboard .playoff-picture-team {
-    grid-template-columns: 1.4rem 1.55rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.45rem 0.48rem;
-  }
-
-  .home-dashboard .playoff-picture-team-info {
+  .home-dashboard .playoff-picture-team-meta {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
     gap: 0.35rem;
-  }
-
-  .home-dashboard .playoff-picture-pts {
-    font-size: 0.72rem;
-    text-align: right;
   }
 
   .home-dashboard .playoff-picture-avatar {
@@ -824,6 +780,7 @@
 
   .home-dashboard .playoff-picture-pts {
     font-size: 0.72rem;
+    text-align: right;
   }
 }
 

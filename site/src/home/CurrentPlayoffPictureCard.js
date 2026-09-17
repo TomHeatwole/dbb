@@ -122,13 +122,7 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
         const playerSeasonTotalsMap = getPlayerSeasonTotalsMap(weeksData);
 
         if (effectiveCompletedWeeks === 0) {
-          setPicture({
-            weeksCount: 0,
-            seed1: null,
-            seed4: null,
-            seed2: null,
-            seed3: null,
-          });
+          setPicture({ weeksCount: 0, teams: [] });
           setLoading(false);
           return;
         }
@@ -145,13 +139,7 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
         );
 
         if (!allRosterIds.length) {
-          setPicture({
-            weeksCount: effectiveCompletedWeeks,
-            seed1: null,
-            seed4: null,
-            seed2: null,
-            seed3: null,
-          });
+          setPicture({ weeksCount: effectiveCompletedWeeks, teams: [] });
           setLoading(false);
           return;
         }
@@ -212,42 +200,18 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
           .slice()
           .sort((a, b) => b.total - a.total || a.rid - b.rid);
 
-        if (!sortedByPointsDesc.length) {
-          setPicture({
-            weeksCount: effectiveCompletedWeeks,
-            seed1: null,
-            seed4: null,
-            seed2: null,
-            seed3: null,
-          });
+        if (sortedByPointsDesc.length < 4) {
+          setPicture({ weeksCount: effectiveCompletedWeeks, teams: [] });
           setLoading(false);
           return;
         }
-
-        const placeByRosterId = {};
-        sortedByPointsDesc.forEach((entry, index) => {
-          placeByRosterId[entry.rid] = index + 1;
-        });
 
         const top4Raw = sortedByPointsDesc.slice(0, 4);
-
-        if (top4Raw.length < 4) {
-          setPicture({
-            weeksCount: effectiveCompletedWeeks,
-            seed1: null,
-            seed4: null,
-            seed2: null,
-            seed3: null,
-          });
-          setLoading(false);
-          return;
-        }
-
-        const mappedTop = top4Raw.map((entry) => {
+        const teams = top4Raw.map((entry, index) => {
           const rosterId = entry.rid;
           return {
             rosterId,
-            seed: placeByRosterId[rosterId] || null,
+            seed: index + 1,
             teamName: getTeamName(
               teamData.rosters,
               teamData.users,
@@ -262,25 +226,9 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
           };
         });
 
-        const orderedBySeed = mappedTop
-          .slice()
-          .sort((a, b) => (a.seed || 0) - (b.seed || 0));
-
-        const seed1 = orderedBySeed.find((t) => t.seed === 1) || orderedBySeed[0];
-        const seed2 = orderedBySeed.find((t) => t.seed === 2) || orderedBySeed[1];
-        const seed3 =
-          orderedBySeed.find((t) => t.seed === 3) ||
-          orderedBySeed[Math.min(2, orderedBySeed.length - 1)];
-        const seed4 =
-          orderedBySeed.find((t) => t.seed === 4) ||
-          orderedBySeed[orderedBySeed.length - 1];
-
         setPicture({
           weeksCount: effectiveCompletedWeeks,
-          seed1,
-          seed4,
-          seed2,
-          seed3,
+          teams,
         });
         setLoading(false);
       } catch (e) {
@@ -306,62 +254,6 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
     return '—';
   };
 
-  const renderTeam = (team) => {
-    if (!team) {
-      return (
-        <div className="playoff-picture-team playoff-picture-team--empty">
-          <span className="playoff-picture-seed">—</span>
-          <div className="playoff-picture-team-info">
-            <span className="playoff-picture-name">TBD</span>
-            <span className="playoff-picture-pts">—</span>
-          </div>
-        </div>
-      );
-    }
-
-    const mine = isMyRoster(team.rosterId, myRosterId);
-    return (
-      <Link
-        to={`/team/${team.rosterId}`}
-        className={`playoff-picture-team${mine ? ' playoff-picture-team--me' : ''}`}
-      >
-        <span className="playoff-picture-seed">#{team.seed}</span>
-        {team.avatarUrl ? (
-          <img
-            className={`playoff-picture-avatar${mine ? ' me-avatar' : ''}`}
-            src={team.avatarUrl}
-            alt=""
-          />
-        ) : (
-          <span className="playoff-picture-avatar playoff-picture-avatar--empty" aria-hidden="true" />
-        )}
-        <div className="playoff-picture-team-info">
-          <span className="playoff-picture-name">
-            {team.teamName}
-            {mine ? <span className="me-chip">YOU</span> : null}
-          </span>
-          <span className="playoff-picture-pts">
-            {formatScore(team.totalPoints)}
-            <span className="playoff-picture-pts-units"> pts</span>
-          </span>
-        </div>
-      </Link>
-    );
-  };
-
-  const renderMatchup = (top, bottom, label) => (
-    <div className="playoff-picture-matchup">
-      <div className="playoff-picture-matchup-label">{label}</div>
-      <div className="playoff-picture-matchup-box">
-        {renderTeam(top)}
-        <div className="playoff-picture-divider" aria-hidden="true">
-          <span>vs</span>
-        </div>
-        {renderTeam(bottom)}
-      </div>
-    </div>
-  );
-
   let body = null;
 
   if (loading) {
@@ -378,7 +270,7 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
         {error}
       </div>
     );
-  } else if (!picture || !picture.seed1 || !picture.seed4 || !picture.seed2 || !picture.seed3) {
+  } else if (!picture || !picture.teams || picture.teams.length < 4) {
     body = (
       <div className="active-playoffs-status">
         Not enough data yet to show the playoff picture.
@@ -391,9 +283,38 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
         <p className="playoff-picture-caption">
           Top 4 by season points · through {weeksLabel}
         </p>
-        <div className="playoff-picture-matchups">
-          {renderMatchup(picture.seed1, picture.seed4, 'Semifinal 1')}
-          {renderMatchup(picture.seed2, picture.seed3, 'Semifinal 2')}
+        <div className="playoff-picture-teams">
+          {picture.teams.map((team) => {
+            const mine = isMyRoster(team.rosterId, myRosterId);
+            return (
+              <Link
+                key={team.rosterId}
+                to={`/team/${team.rosterId}`}
+                className={`playoff-picture-team-row${mine ? ' playoff-picture-team-row--me' : ''}`}
+              >
+                <span className="playoff-picture-seed">#{team.seed}</span>
+                {team.avatarUrl ? (
+                  <img
+                    className={`playoff-picture-avatar${mine ? ' me-avatar' : ''}`}
+                    src={team.avatarUrl}
+                    alt=""
+                  />
+                ) : (
+                  <span className="playoff-picture-avatar playoff-picture-avatar--empty" aria-hidden="true" />
+                )}
+                <div className="playoff-picture-team-meta">
+                  <span className="playoff-picture-name">
+                    {team.teamName}
+                    {mine ? <span className="me-chip">YOU</span> : null}
+                  </span>
+                  <span className="playoff-picture-pts">
+                    {formatScore(team.totalPoints)}
+                    <span className="playoff-picture-pts-units"> pts</span>
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     );
@@ -404,8 +325,8 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
       <div className="home-card-inner">
         <div className="home-card-title-row">
           <h2 className="home-card-title">🖼️ Current Playoff Picture</h2>
-          <Link className="active-playoffs-link" to="/Standings">
-            View Standings →
+          <Link className="active-playoffs-link" to="/yoffs">
+            View Playoffs →
           </Link>
         </div>
         {body}
@@ -415,6 +336,3 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
 }
 
 export default CurrentPlayoffPictureCard;
-
-
-
