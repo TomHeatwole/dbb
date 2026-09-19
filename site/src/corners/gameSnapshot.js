@@ -86,11 +86,12 @@ export function pickHeadlineCornerPlay(model) {
   ));
 }
 
-export function buildCornersGameSnapshot(game, { bucketed = true } = {}) {
+export function buildCornersGameSnapshot(game, { bucketed = true, league } = {}) {
   const longest = findLongestCornerBaseline(game);
   const model = evaluateGameCorners(game, {
     bucketed,
     baselineBook: longest?.book ?? 'fd',
+    league,
   });
   const play = pickHeadlineCornerPlay(model);
 
@@ -111,8 +112,8 @@ export function buildCornersGameSnapshot(game, { bucketed = true } = {}) {
   };
 }
 
-export function buildCornersMonitorRows(games, { bucketed = true, now = Date.now() } = {}) {
+export function buildCornersMonitorRows(games, { bucketed = true, league, now = Date.now() } = {}) {
   return (games ?? [])
     .filter((game) => isActiveMonitorGame(game, now))
-    .map((game) => buildCornersGameSnapshot(game, { bucketed }));
+    .map((game) => buildCornersGameSnapshot(game, { bucketed, league }));
 }

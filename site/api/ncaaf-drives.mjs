@@ -10,6 +10,7 @@
  */
 
 import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
+import { annotateGamesWithLineLogging } from '../lib/drive-line-log.mjs';
 import { fdDriveRowsForGame, matchingFdDriveRows, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
 import { fdLiveFromRows, fdStateAheadOfEspn, applyFdAheadLive } from '../src/drives/fdLiveSituation.js';
 import { uniqueScoreboardDates } from '../src/drives/espnScoreboardDates.js';
@@ -1637,25 +1638,29 @@ async function fetchNcaafDriveBook(opts = {}) {
     return new Date(a.openDate) - new Date(b.openDate);
   });
 
+  const fetchedAt = new Date().toISOString();
+  const { games: loggedGames, lineLog } = annotateGamesWithLineLogging(numbered, { fetchedAt });
+
   return {
-    fetchedAt: new Date().toISOString(),
-    games: numbered,
+    fetchedAt,
+    games: loggedGames,
+    lineLog,
     stats: {
-      games: numbered.length,
-      live: numbered.filter((g) => g.inPlay).length,
-      withDriveLine: numbered.filter((g) => g.nextDrive || g.driveMarkets?.length).length,
-      withFdDriveLine: numbered.filter((g) => driveMarketsOf(g).some(marketHasFd)).length,
-      withDbFdDriveLine: numbered.filter((g) => g.debug?.fdDriveSource === 'db').length,
-      withDkFirstDrive: numbered.filter((g) => driveMarketsOf(g).some(marketHasDk)).length,
-      espnMatched: numbered.filter((g) => g.espnId).length,
-      fdxProbed: numbered.filter((g) => g.debug?.fdxStatus != null || g.debug?.fdxError).length,
-      fdxQuickBets: numbered.filter((g) => g.debug?.isQuickBetsAvailable).length,
-      dkMatched: numbered.filter((g) => g.debug?.dkMatched).length,
+      games: loggedGames.length,
+      live: loggedGames.filter((g) => g.inPlay).length,
+      withDriveLine: loggedGames.filter((g) => g.nextDrive || g.driveMarkets?.length).length,
+      withFdDriveLine: loggedGames.filter((g) => driveMarketsOf(g).some(marketHasFd)).length,
+      withDbFdDriveLine: loggedGames.filter((g) => g.debug?.fdDriveSource === 'db').length,
+      withDkFirstDrive: loggedGames.filter((g) => driveMarketsOf(g).some(marketHasDk)).length,
+      espnMatched: loggedGames.filter((g) => g.espnId).length,
+      fdxProbed: loggedGames.filter((g) => g.debug?.fdxStatus != null || g.debug?.fdxError).length,
+      fdxQuickBets: loggedGames.filter((g) => g.debug?.isQuickBetsAvailable).length,
+      dkMatched: loggedGames.filter((g) => g.debug?.dkMatched).length,
     },
     espn: {
       ok: Boolean(espn.ok),
       error: espn.error ? compactProviderError(espn.error) : null,
-      matched: numbered.filter((g) => g.espnId).length,
+      matched: loggedGames.filter((g) => g.espnId).length,
     },
   };
 }

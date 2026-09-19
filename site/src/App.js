@@ -38,6 +38,7 @@ import HwangAIPage from './routes/HwangAIPage';
 import Teams2Page from './routes/Teams2Page';
 import SOPPage, { SOP2Page } from './routes/SOPPage';
 import CornersPage from './routes/CornersPage';
+import MlsCornersPage from './routes/MlsCornersPage';
 import HprojPage from './routes/HprojPage';
 import DKPage from './routes/DKPage';
 import PreflopPage from './routes/PreflopPage';
@@ -204,6 +205,8 @@ function AppInner() {
       <Route path="/SOP-experimental" element={<Navigate to="/SOP" replace />} />
       <Route path="/corners/*" element={<CornersPage />} />
       <Route path="/CORNERS/*" element={<CornersPage />} />
+      <Route path="/mlscorner/*" element={<MlsCornersPage />} />
+      <Route path="/MLSCORNER/*" element={<MlsCornersPage />} />
       <Route path="/drives/*" element={<Suspense fallback={null}><DrivesPage /></Suspense>} />
       <Route path="/DRIVES/*" element={<Suspense fallback={null}><DrivesPage /></Suspense>} />
       <Route path="/hproj" element={<HprojPage />} />

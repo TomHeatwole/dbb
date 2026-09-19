@@ -46,19 +46,32 @@ function drivesClockLabel(game) {
   return [q, clock].filter(Boolean).join(' ') || 'LIVE';
 }
 
-const DRIVE_UPCOMING_MS = 6 * 60 * 60 * 1000;
+function hasDriveMonitorMarket(game) {
+  return Boolean(game?.nextDrive || game?.driveMarkets?.length);
+}
 
-export function isActiveDriveMonitorGame(game, now = Date.now()) {
+function isLocalCalendarDay(ms, nowMs) {
+  const a = new Date(ms);
+  const b = new Date(nowMs);
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
+export function isActiveDriveMonitorGame(game, now = Date.now(), { todayOnly = true } = {}) {
   if (game?.inPlay) return true;
-  if (!game?.nextDrive && !game?.driveMarkets?.length) return false;
+  if (!hasDriveMonitorMarket(game)) return false;
   const kick = Date.parse(game?.openDate ?? '');
   if (!Number.isFinite(kick)) return false;
-  return kick <= now + DRIVE_UPCOMING_MS;
+  if (!todayOnly) return true;
+  return isLocalCalendarDay(kick, now);
 }
 
 export function pickHeadlineDrivePlay(model) {
   const candidates = (model?.rows ?? []).filter((row) => (
-    Number.isFinite(row.american) && Number.isFinite(row.edgePoints)
+    Number.isFinite(row.american)
+    && Number.isFinite(row.edgePoints)
+    && !row.lineFiltered
   ));
   if (!candidates.length) return null;
   return candidates.reduce((best, cur) => (
@@ -145,9 +158,9 @@ export function buildDrivesGameSnapshot(game, { granular = false, nextDriveOnly 
 }
 
 export function buildDrivesMonitorRows(games, now = Date.now(), opts = {}) {
-  const { nextDriveOnly = false } = opts;
+  const { nextDriveOnly = false, todayOnly = true } = opts;
   return (games ?? [])
-    .filter((game) => isActiveDriveMonitorGame(game, now))
+    .filter((game) => isActiveDriveMonitorGame(game, now, { todayOnly }))
     .map((game) => buildDrivesGameSnapshot(game, opts))
     .filter((row) => !nextDriveOnly || Number.isFinite(row.oddsAmerican))
     .sort(compareDriveSnapshotRows);

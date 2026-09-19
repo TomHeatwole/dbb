@@ -2,6 +2,7 @@ import {
   buildDrivesGameSnapshot,
   buildDrivesMonitorRows,
   compareDriveSnapshotRows,
+  isActiveDriveMonitorGame,
   pickHeadlineDrivePlay,
   shortDriveGameName,
 } from './gameSnapshot';
@@ -162,5 +163,42 @@ describe('drives game snapshot', () => {
     const rows = buildDrivesMonitorRows([live], Date.now(), { nextDriveOnly: true });
     expect(rows).toHaveLength(1);
     expect(rows[0].role).toBe('next');
+  });
+
+  it('limits the snapshot to today unless the today-only filter is off', () => {
+    const now = new Date(2026, 8, 16, 15, 0, 0).getTime();
+    const priced = {
+      nextDrive: {
+        source: 'fd',
+        outcomes: { td: { american: 250 }, punt: { american: -110 } },
+      },
+    };
+    const laterToday = {
+      ...priced,
+      eventId: 'today',
+      openDate: new Date(2026, 8, 16, 20, 0, 0).toISOString(),
+    };
+    const tomorrow = {
+      ...priced,
+      eventId: 'tomorrow',
+      openDate: new Date(2026, 8, 17, 12, 0, 0).toISOString(),
+    };
+    const live = { eventId: 'live', inPlay: true };
+    const noMarket = {
+      eventId: 'bare',
+      openDate: new Date(2026, 8, 17, 12, 0, 0).toISOString(),
+    };
+
+    expect(isActiveDriveMonitorGame(live, now)).toBe(true);
+    expect(isActiveDriveMonitorGame(laterToday, now)).toBe(true);
+    expect(isActiveDriveMonitorGame(tomorrow, now)).toBe(false);
+    expect(isActiveDriveMonitorGame(tomorrow, now, { todayOnly: false })).toBe(true);
+    expect(isActiveDriveMonitorGame(noMarket, now, { todayOnly: false })).toBe(false);
+
+    expect(buildDrivesMonitorRows([laterToday, tomorrow], now).map((row) => row.eventId))
+      .toEqual(['today']);
+    expect(buildDrivesMonitorRows([laterToday, tomorrow], now, { todayOnly: false })
+      .map((row) => row.eventId).sort())
+      .toEqual(['today', 'tomorrow']);
   });
 });

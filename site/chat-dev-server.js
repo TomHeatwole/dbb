@@ -48,6 +48,7 @@ const server = http.createServer(async (req, res) => {
     '/api/fanduel-sop': './api/fanduel-sop.mjs',
     '/api/ncaaf-drives': './api/ncaaf-drives.mjs',
     '/api/pl-corners': './api/pl-corners.mjs',
+    '/api/mls-corners': './api/mls-corners.mjs',
     '/api/dk-corners': './lib/dk-corners.mjs',
     '/api/kalshi-corners': './lib/kalshi-corners.mjs',
     '/api/draftkings-goal-method': './api/draftkings-goal-method.mjs',

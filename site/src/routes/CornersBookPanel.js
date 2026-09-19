@@ -17,7 +17,9 @@ import {
   breakevenStoppageForBet,
   TYPICAL_FT_STOPPAGE_MIN,
   TYPICAL_HT_STOPPAGE_MIN,
+  resolveCornerLeagueModel,
 } from '../corners/cornerModel';
+import { CORNER_LEAGUE_SPECS } from '../corners/cornerModelLeagues';
 import { computeKellyStake, formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
 import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
 import { buildCornersMonitorRows } from '../corners/gameSnapshot';
@@ -26,8 +28,8 @@ import GameMonitorTable from './GameMonitorTable';
 
 const REFRESH_MS = 60_000;
 const TEAM_SEARCH_LIST_ID = 'corners-book-team-search';
-const BUCKETED_KEY = 'corners-bucketed';
-const SHOW_WORK_KEY = 'corners-show-work';
+const DEFAULT_BUCKETED_KEY = 'corners-bucketed';
+const DEFAULT_SHOW_WORK_KEY = 'corners-show-work';
 const DK_BOTH_SIZE_KEY = 'corners-dk-both-size';
 const DEFAULT_DK_BOTH_SIZE = '100';
 
@@ -1090,6 +1092,7 @@ function GameCard({
   kellyFraction,
   cornersAlready,
   onCornersAlreadyChange,
+  league = 'pl',
 }) {
   const [expanded, setExpanded] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
@@ -1107,8 +1110,8 @@ function GameCard({
     persistDkBothSizeInput(value);
   };
   const model = useMemo(
-    () => evaluateGameCorners(patchedGame, { bucketed, baselineBook }),
-    [patchedGame, bucketed, baselineBook],
+    () => evaluateGameCorners(patchedGame, { bucketed, baselineBook, league }),
+    [patchedGame, bucketed, baselineBook, league],
   );
   const commitAlreadyDraft = (raw) => {
     setAlreadyInput(raw);
@@ -1436,10 +1439,18 @@ function CornersBookPanel({
   refreshing,
   loading = false,
   onRefresh,
+  league = 'pl',
+  title = 'Corners',
+  subtitle = 'Premier League + Champions League · FanDuel + DraftKings + Kalshi',
+  emptyMessage = 'No Premier League or Champions League games found.',
+  bucketLegend = CORNER_LEAGUE_SPECS.pl.bucketLegend,
+  bucketedKey = DEFAULT_BUCKETED_KEY,
+  showWorkKey = DEFAULT_SHOW_WORK_KEY,
 }) {
   const [teamQuery, setTeamQuery] = useState('');
-  const [bucketed, setBucketed] = useState(() => readFlag(BUCKETED_KEY, true));
-  const [showWork, setShowWork] = useState(() => readFlag(SHOW_WORK_KEY, true));
+  const [bucketed, setBucketed] = useState(() => readFlag(bucketedKey, true));
+  const [showWork, setShowWork] = useState(() => readFlag(showWorkKey, true));
+  const leagueModel = useMemo(() => resolveCornerLeagueModel({ league }), [league]);
   const [alreadyByEvent, setAlreadyByEvent] = useState({});
   const {
     enabled: kellyEnabled,
@@ -1463,11 +1474,11 @@ function CornersBookPanel({
 
   const setBucketedPersist = (v) => {
     setBucketed(v);
-    writeFlag(BUCKETED_KEY, v);
+    writeFlag(bucketedKey, v);
   };
   const setShowWorkPersist = (v) => {
     setShowWork(v);
-    writeFlag(SHOW_WORK_KEY, v);
+    writeFlag(showWorkKey, v);
   };
 
   if (loading) {
@@ -1483,9 +1494,9 @@ function CornersBookPanel({
   return (
     <div className="sop-exp-content">
       <header className="sop-exp-header">
-        <h1 className="sop-exp-title">Corners</h1>
+        <h1 className="sop-exp-title">{title}</h1>
         <p className="sop-exp-subtitle">
-          Premier League + Champions League · FanDuel + DraftKings + Kalshi
+          {subtitle}
           {fetchedAt && (
             <span className="sop-exp-updated">
               {' '}
@@ -1503,7 +1514,7 @@ function CornersBookPanel({
 
       {!error && games.length > 0 && (
         <GameMonitorTable
-          rows={buildCornersMonitorRows(monitorGames, { bucketed })}
+          rows={buildCornersMonitorRows(monitorGames, { bucketed, league })}
           marketHeader="Play"
           caption="Best window vs longest total"
           showMarket
@@ -1515,7 +1526,7 @@ function CornersBookPanel({
           label="Bucketed timing"
           checked={bucketed}
           onChange={setBucketedPersist}
-          hint="On: ESPN 5-minute histogram. Off: uniform per minute including typical stoppage."
+          hint={`On: ${leagueModel.label} 5-minute histogram. Off: uniform per minute including typical stoppage.`}
         />
         <Toggle
           label="Show my work"
@@ -1577,8 +1588,11 @@ function CornersBookPanel({
       </section>
       <p className="corners-bucket-legend">
         5-min slice is usually vs uniform on each window below.
-        {' '}90+ is <strong>7.42%</strong> of corners vs <strong>4.89%</strong> uniform
-        (4.8′ / 98.1′). HT extra is <strong>3.57%</strong> vs <strong>3.36%</strong>.
+        {' '}90+ is <strong>{bucketLegend.ftPlusShare.toFixed(2)}%</strong> of corners vs{' '}
+        <strong>{bucketLegend.ftPlusUniform.toFixed(2)}%</strong> uniform
+        ({leagueModel.ftStoppageMin.toFixed(1)}′ / {leagueModel.typicalMatchMinutes.toFixed(1)}′).
+        HT extra is <strong>{bucketLegend.htPlusShare.toFixed(2)}%</strong> vs{' '}
+        <strong>{bucketLegend.htPlusUniform.toFixed(2)}%</strong>.
       </p>
 
       <div className="sop-exp-toolbar">
@@ -1623,6 +1637,7 @@ function CornersBookPanel({
             <GameCard
               key={g.eventId}
               game={g}
+              league={league}
               bucketed={bucketed}
               showWork={showWork}
               onEnableShowWork={() => setShowWorkPersist(true)}
@@ -1652,7 +1667,7 @@ function CornersBookPanel({
       )}
 
       {!error && games.length === 0 && (
-        <p className="sop-exp-status">No Premier League or Champions League games found.</p>
+        <p className="sop-exp-status">{emptyMessage}</p>
       )}
 
       <p className="sop-exp-footer">

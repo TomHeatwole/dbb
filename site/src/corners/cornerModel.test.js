@@ -1,6 +1,8 @@
 import {
   CORNER_BINS,
   MEAN_CORNERS_PER_MATCH,
+  MLS_CORNER_BINS,
+  MLS_MEAN_CORNERS_PER_MATCH,
   TYPICAL_FT_STOPPAGE_MIN,
   TYPICAL_MATCH_MINUTES,
   evaluateGameCorners,
@@ -88,5 +90,23 @@ describe('FanDuel 5/10-min windows do not pay added time', () => {
     expect(plus.pModel).toBeLessThan(0.55);
     expect(plus.pModel).toBeCloseTo(1 - Math.exp(-model.next5.lambda), 5);
     expect(MEAN_CORNERS_PER_MATCH).toBeGreaterThan(10);
+  });
+});
+
+describe('MLS 2025–26 buckets', () => {
+  it('uses the MLS mean and heavier 90+ share', () => {
+    expect(MLS_MEAN_CORNERS_PER_MATCH).toBeCloseTo(8914 / 912, 3);
+    const pl90 = CORNER_BINS.find((b) => b.id === '90+');
+    const mls90 = MLS_CORNER_BINS.find((b) => b.id === '90+');
+    expect(mls90.share).toBeGreaterThan(pl90.share);
+  });
+
+  it('evaluates with league=mls', () => {
+    const model = evaluateGameCorners(
+      { cornersSoFar: 0, total: { line: 9.5, over: { american: -110 }, under: { american: -110 } } },
+      { league: 'mls' },
+    );
+    expect(model.meanKickoff).toBeCloseTo(8914 / 912, 3);
+    expect(model.league).toBe('mls');
   });
 });

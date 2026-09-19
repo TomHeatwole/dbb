@@ -16,6 +16,7 @@ import {
   marketSelectionsFor,
   selectionQuote,
 } from '../api/draftkings-goal-method.mjs';
+import { dkLeagueEntries } from '../src/sop/soccerLeagues.js';
 
 const TOTAL_PRE_ID = '17865';
 const TOTAL_LIVE_ID = '12393';
@@ -37,10 +38,10 @@ function nameFromSlug(slug) {
     .trim();
 }
 
-async function listDkCornerEvents() {
+async function listDkCornerEvents({ leagues = DK_SOP_LEAGUES } = {}) {
   const listed = (
     await Promise.all(
-      DK_SOP_LEAGUES.map(async (league) => {
+      leagues.map(async (league) => {
         const events = await listDkLeagueEvents(league.id, league.seo);
         return events.map((event) => ({
           ...event,
@@ -233,11 +234,11 @@ function emptyPayload({ timedOut = false, error = null } = {}) {
   };
 }
 
-export async function fetchDkCornerOdds({ timeoutMs = DK_HANDLER_TIMEOUT_MS } = {}) {
+export async function fetchDkCornerOdds({ timeoutMs = DK_HANDLER_TIMEOUT_MS, leagues } = {}) {
   const deadline = Date.now() + timeoutMs;
   const remaining = () => Math.max(0, deadline - Date.now());
 
-  const events = await listDkCornerEvents();
+  const events = await listDkCornerEvents({ leagues });
   if (remaining() <= 0) return emptyPayload({ timedOut: true });
 
   const results = await mapPool(events, DK_FETCH_CONCURRENCY, async (event) => {
@@ -297,9 +298,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const leagues = req.query?.league === 'mls'
+    ? dkLeagueEntries('all').filter((row) => row.competition === 'mls')
+    : undefined;
+
   try {
     const data = await Promise.race([
-      fetchDkCornerOdds(),
+      fetchDkCornerOdds({ leagues }),
       sleep(DK_HANDLER_TIMEOUT_MS + 250).then(() =>
         emptyPayload({ timedOut: true, error: 'DraftKings timed out' }),
       ),

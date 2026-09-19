@@ -37,6 +37,7 @@ import {
 } from '../sop/sopModel';
 import { useSOPKellySettings } from '../sop/useSOPKellySettings';
 import { buildDrivesMonitorRows, maxDriveEdgePoints } from '../drives/gameSnapshot';
+import { describeLineDivergence } from '../drives/lineDivergence';
 import PuntStyleWarning from '../drives/PuntStyleWarning';
 import { gameAnchorId } from '../sop/gameSnapshot';
 import GameMonitorTable from './GameMonitorTable';
@@ -46,6 +47,7 @@ const SHOW_WORK_KEY = 'drives-show-work';
 const SORT_EDGE_KEY = 'drives-sort-edge';
 const DK_GRANULAR_KEY = 'drives-dk-granular';
 const NEXT_DRIVE_ONLY_KEY = 'drives-snapshot-next-only';
+const TODAY_ONLY_KEY = 'drives-snapshot-today-only';
 
 function readFlag(key, fallback) {
   try {
@@ -639,6 +641,11 @@ function DriveSide({
         {startLine && (
           <p className="drives-situation">{startLine}</p>
         )}
+        {model.lineFilterActive && model.lineDivergence && (
+          <p className="drives-line-filter-banner" role="status">
+            {describeLineDivergence(model.lineDivergence)}
+          </p>
+        )}
         {model.situationLag && <SpotLagCompare detail={model.situationLagDetail} />}
         {market?.marketName && (
           <p className="drives-situation">{market.marketName}</p>
@@ -718,8 +725,15 @@ function DriveSide({
                     '—'
                   )}
                 </div>
-                <div className={`sop-exp-goal-edge${row.profitable && model.situationLagKind === 'espnBehind' ? ' sop-exp-goal-edge--lag' : ''}`}>
-                  {row.profitable && row.edgePoints != null ? (
+                <div className={`sop-exp-goal-edge${row.profitable && model.situationLagKind === 'espnBehind' ? ' sop-exp-goal-edge--lag' : ''}${row.lineFiltered ? ' sop-exp-goal-edge--line-filter' : ''}`}>
+                  {row.lineFiltered && row.preFilterEdgePoints != null ? (
+                    <span className="drives-edge-line">
+                      <span className="sop-exp-edge-minus drives-edge-filtered">
+                        {formatEdgePoints(row.preFilterEdgePoints)} edge · line filter
+                      </span>
+                      <PuntStyleWarning warning={row.styleWarning} />
+                    </span>
+                  ) : row.profitable && row.edgePoints != null ? (
                     <>
                       <span className="drives-edge-line">
                         <span className="sop-exp-edge-plus">
@@ -821,6 +835,7 @@ function GameCard({
     return markets.map((market) => evaluateDriveGame(view, { ...opts, market }));
   }, [view, markets, kellyEnabled, kellyBudget, kellyFraction]);
   const evCount = models.reduce((sum, model) => sum + model.evCount, 0);
+  const lineFilterActive = models.some((model) => model.lineFilterActive);
   const lagCount = models.filter((model) => model.situationLagKind === 'espnBehind').length;
   const espnDown = espnStateUnreachable(view);
   const situation = liveSummary(view);
@@ -871,6 +886,9 @@ function GameCard({
               )}
               {!expanded && lagCount > 0 && (
                 <span className="sop-exp-lag-badge">spot lag</span>
+              )}
+              {!expanded && lineFilterActive && (
+                <span className="sop-exp-lag-badge">line filter</span>
               )}
               {!expanded && evCount > 0 && (
                 <span className="sop-exp-ev-badge">{evCount} +EV</span>
@@ -960,6 +978,7 @@ function DrivesBookPanel({
   const [sortByEdge, setSortByEdge] = useState(() => readFlag(SORT_EDGE_KEY, false));
   const [dkGranular, setDkGranular] = useState(() => readFlag(DK_GRANULAR_KEY, false));
   const [nextDriveOnly, setNextDriveOnly] = useState(() => readFlag(NEXT_DRIVE_ONLY_KEY, false));
+  const [todayOnly, setTodayOnly] = useState(() => readFlag(TODAY_ONLY_KEY, true));
   const {
     enabled: kellyEnabled,
     setEnabled: setKellyEnabled,
@@ -1033,12 +1052,28 @@ function DrivesBookPanel({
           rows={buildDrivesMonitorRows(filteredGames, Date.now(), {
             granular: dkGranular,
             nextDriveOnly,
+            todayOnly,
           })}
           marketHeader="Play"
           caption={nextDriveOnly ? 'Best next-drive result vs model' : 'Best drive result vs model'}
           showMarket
           toolbar={(
             <div className="sop-monitor-toolbar">
+              <button
+                type="button"
+                className={`sop-exp-filter-chip${todayOnly ? ' sop-exp-filter-chip--on' : ''}`}
+                aria-pressed={todayOnly}
+                title="Limit the snapshot to games kicking off today. Turn off to include the full slate."
+                onClick={() => {
+                  setTodayOnly((v) => {
+                    const next = !v;
+                    writeFlag(TODAY_ONLY_KEY, next);
+                    return next;
+                  });
+                }}
+              >
+                Today only
+              </button>
               <button
                 type="button"
                 className={`sop-exp-filter-chip${nextDriveOnly ? ' sop-exp-filter-chip--on' : ''}`}

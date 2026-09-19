@@ -8,10 +8,9 @@
  */
 
 import {
-  TYPICAL_FT_STOPPAGE_MIN,
-  TYPICAL_HT_STOPPAGE_MIN,
   blendHalfStoppage,
   regularMinutesLeftInHalf,
+  resolveCornerLeagueModel,
 } from '../src/corners/cornerModel.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
@@ -19,9 +18,10 @@ const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
 const PL_COMPETITION_ID = 10932509;
 const CL_COMPETITION_ID = 228;
+const MLS_COMPETITION_ID = 141;
 const FD_EVENT_CONCURRENCY = Number(process.env.FD_CORNER_CONCURRENCY || 8);
 
-const ESPN_LEAGUES = {
+const ESPN_PL_LEAGUES = {
   pl: {
     slug: 'eng.1',
     urls: [
@@ -37,6 +37,17 @@ const ESPN_LEAGUES = {
       'https://site.web.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
     ],
     referer: 'https://www.espn.com/soccer/scoreboard/_/league/uefa.champions',
+  },
+};
+
+const ESPN_MLS_LEAGUES = {
+  mls: {
+    slug: 'usa.1',
+    urls: [
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
+      'https://site.web.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
+    ],
+    referer: 'https://www.espn.com/soccer/scoreboard/_/league/usa.1',
   },
 };
 const ESPN_PLAYS_BASE = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues';
@@ -111,6 +122,78 @@ const TEAM_CANON = [
   ['slovan bratislava', 'slovan'],
   ['sabah', 'fc sabah', 'sabah fk'],
 ];
+
+const MLS_TEAM_CANON = [
+  ['inter miami', 'inter miami cf'],
+  ['la galaxy', 'los angeles galaxy'],
+  ['lafc', 'los angeles fc', 'la fc'],
+  ['seattle sounders', 'seattle sounders fc'],
+  ['atlanta united', 'atlanta united fc'],
+  ['new york city', 'new york city fc', 'nycfc', 'nyc'],
+  ['red bulls', 'new york red bulls', 'ny red bulls', 'red bull new york'],
+  ['philadelphia union', 'philly union'],
+  ['orlando city', 'orlando city sc'],
+  ['chicago fire', 'chicago fire fc'],
+  ['columbus crew', 'columbus crew sc'],
+  ['fc cincinnati', 'cincinnati'],
+  ['nashville sc', 'nashville'],
+  ['charlotte fc', 'charlotte'],
+  ['dc united', 'd c united'],
+  ['new england revolution', 'revolution'],
+  ['toronto fc', 'toronto'],
+  ['cf montreal', 'montreal', 'cf montreal'],
+  ['sporting kansas city', 'sporting kc', 'sporting kansas city'],
+  ['st louis city', 'st louis city sc', 'st louis'],
+  ['minnesota united', 'minnesota united fc'],
+  ['colorado rapids', 'rapids'],
+  ['fc dallas', 'dallas'],
+  ['houston dynamo', 'houston dynamo fc'],
+  ['austin fc', 'austin'],
+  ['san jose earthquakes', 'earthquakes'],
+  ['portland timbers', 'timbers'],
+  ['vancouver whitecaps', 'whitecaps fc', 'vancouver whitecaps fc'],
+  ['real salt lake', 'salt lake'],
+  ['san diego fc', 'san diego'],
+];
+
+export const PL_BOOK_CONFIG = {
+  key: 'pl',
+  league: 'pl',
+  competitionIds: [PL_COMPETITION_ID, CL_COMPETITION_ID],
+  espnLeagues: ESPN_PL_LEAGUES,
+  teamCanon: TEAM_CANON,
+  espnLiveField: 'livePremierLeague',
+  competitionMeta(competitionId) {
+    if (Number(competitionId) === CL_COMPETITION_ID) {
+      return {
+        competitionId: CL_COMPETITION_ID,
+        competition: 'ucl',
+        competitionName: 'Champions League',
+      };
+    }
+    return {
+      competitionId: PL_COMPETITION_ID,
+      competition: 'pl',
+      competitionName: 'Premier League',
+    };
+  },
+};
+
+export const MLS_BOOK_CONFIG = {
+  key: 'mls',
+  league: 'mls',
+  competitionIds: [MLS_COMPETITION_ID],
+  espnLeagues: ESPN_MLS_LEAGUES,
+  teamCanon: [...TEAM_CANON, ...MLS_TEAM_CANON],
+  espnLiveField: 'liveMls',
+  competitionMeta() {
+    return {
+      competitionId: MLS_COMPETITION_ID,
+      competition: 'mls',
+      competitionName: 'MLS',
+    };
+  },
+};
 
 function runnersList(market) {
   const runners = market?.runners;
@@ -201,23 +284,8 @@ function scoreDisplay(score) {
   return `${score.home}-${score.away}`;
 }
 
-function competitionMeta(competitionId) {
-  if (Number(competitionId) === CL_COMPETITION_ID) {
-    return {
-      competitionId: CL_COMPETITION_ID,
-      competition: 'ucl',
-      competitionName: 'Champions League',
-    };
-  }
-  return {
-    competitionId: PL_COMPETITION_ID,
-    competition: 'pl',
-    competitionName: 'Premier League',
-  };
-}
-
-function cornerMatchEvents(payload) {
-  const allowed = new Set([PL_COMPETITION_ID, CL_COMPETITION_ID]);
+function cornerMatchEvents(payload, bookConfig = PL_BOOK_CONFIG) {
+  const allowed = new Set(bookConfig.competitionIds);
   const events = payload?.attachments?.events ?? {};
   return Object.entries(events)
     .filter(([, ev]) => allowed.has(Number(ev.competitionId)) && String(ev.name ?? '').includes(' v '))
@@ -226,7 +294,7 @@ function cornerMatchEvents(payload) {
       name: ev.name,
       openDate: ev.openDate ?? null,
       inPlay: Boolean(ev.inPlay),
-      ...competitionMeta(ev.competitionId),
+      ...bookConfig.competitionMeta(ev.competitionId),
     }));
 }
 
@@ -630,7 +698,7 @@ async function fetchEventBundle(eventId) {
   };
 }
 
-function canonTeam(name) {
+function canonTeam(name, teamCanon = TEAM_CANON) {
   const raw = String(name ?? '')
     .toLowerCase()
     .normalize('NFKD')
@@ -639,15 +707,15 @@ function canonTeam(name) {
     .replace(/\s+/g, ' ')
     .trim();
   if (!raw) return '';
-  for (const [canon, ...alts] of TEAM_CANON) {
+  for (const [canon, ...alts] of teamCanon) {
     if (raw === canon || alts.includes(raw)) return canon;
   }
   return raw.replace(/\s+fc$/, '').replace(/^afc\s+/, '').trim();
 }
 
-function namesMatch(a, b) {
-  const ca = canonTeam(a);
-  const cb = canonTeam(b);
+function namesMatch(a, b, teamCanon = TEAM_CANON) {
+  const ca = canonTeam(a, teamCanon);
+  const cb = canonTeam(b, teamCanon);
   if (!ca || !cb) return false;
   return ca === cb || ca.includes(cb) || cb.includes(ca);
 }
@@ -810,8 +878,8 @@ async function espnGetJson(url, referer) {
 
 const espnScoreboardBaseByLeague = {};
 
-async function espnGetScoreboard(leagueKey, dates) {
-  const league = ESPN_LEAGUES[leagueKey] ?? ESPN_LEAGUES.pl;
+async function espnGetScoreboard(leagueKey, dates, espnLeagues = ESPN_PL_LEAGUES) {
+  const league = espnLeagues[leagueKey] ?? Object.values(espnLeagues)[0];
   const suffix = dates ? `?dates=${dates}` : '';
   const preferred = espnScoreboardBaseByLeague[leagueKey];
   const bases = preferred
@@ -1065,7 +1133,10 @@ function espnClockForBlend({ finished, halftime, period, clock, status }) {
   };
 }
 
-function extractEspnStoppage(event, plays) {
+function extractEspnStoppage(event, plays, bookConfig = PL_BOOK_CONFIG) {
+  const leagueModel = resolveCornerLeagueModel({ league: bookConfig.league });
+  const htStoppage = leagueModel.htStoppageMin;
+  const ftStoppage = leagueModel.ftStoppageMin;
   const competition = event?.competitions?.[0] ?? {};
   const status = competition.status ?? {};
   const teams = competitorsFromEspnEvent(event);
@@ -1084,7 +1155,7 @@ function extractEspnStoppage(event, plays) {
   const playedMinutes = playedSeconds != null ? playedSeconds / 60 : (clock.inStoppage ? clock.plus : 0);
   const clockLike = espnClockForBlend({ finished, halftime, period, clock, status });
   const half = clockLike.period === 2 ? 2 : 1;
-  const typical = half === 2 ? TYPICAL_FT_STOPPAGE_MIN : TYPICAL_HT_STOPPAGE_MIN;
+  const typical = half === 2 ? ftStoppage : htStoppage;
   const blend = blendHalfStoppage({
     typical,
     earnedMinutes: clockLike.phase === 'live' ? earnedMinutes : 0,
@@ -1106,7 +1177,7 @@ function extractEspnStoppage(event, plays) {
     : playCornersH1;
 
   if (halftime) {
-    const shSeconds = TYPICAL_FT_STOPPAGE_MIN * 60;
+    const shSeconds = ftStoppage * 60;
     return {
       matchStatus: matchStatus || 'Halftime',
       status: status.type?.state ?? 'in',
@@ -1116,9 +1187,9 @@ function extractEspnStoppage(event, plays) {
       inStoppage: false,
       announced: null,
       played: "0'",
-      expectedMinutes: TYPICAL_FT_STOPPAGE_MIN,
+      expectedMinutes: ftStoppage,
       earnedMinutes: 0,
-      futureMinutes: TYPICAL_FT_STOPPAGE_MIN,
+      futureMinutes: ftStoppage,
       regularLeftMinutes: 45,
       remainingLabel: formatClockLabel(shSeconds),
       expectedLabel: formatClockLabel(Math.round(shSeconds / 30) * 30),
@@ -1130,7 +1201,7 @@ function extractEspnStoppage(event, plays) {
       period: 1,
       halfTime: true,
       breakdown: null,
-      breakdownLabel: 'First-half extra is done · second-half extra starts at typical 4.8′',
+      breakdownLabel: `First-half extra is done · second-half extra starts at typical ${ftStoppage.toFixed(1)}′`,
       cornersSoFar,
       firstHalfCornersSoFar,
     };
@@ -1171,24 +1242,28 @@ function extractEspnStoppage(event, plays) {
   };
 }
 
-function summarizeEspnEvent(event, plays) {
+function summarizeEspnEvent(event, plays, bookConfig = PL_BOOK_CONFIG) {
   const teams = competitorsFromEspnEvent(event);
   return {
     id: event?.id ?? event?.competitions?.[0]?.id ?? null,
     teams: { home: teams.home, away: teams.away },
     startTime: event?.date ?? event?.competitions?.[0]?.date ?? null,
-    stoppage: extractEspnStoppage(event, plays),
+    stoppage: extractEspnStoppage(event, plays, bookConfig),
   };
 }
 
-async function fetchEspnStoppage(openDates) {
+async function fetchEspnStoppage(openDates, bookConfig = PL_BOOK_CONFIG) {
   try {
     const dates = uniqueScoreboardDates(openDates);
-    const leagueKeys = Object.keys(ESPN_LEAGUES);
+    const leagueKeys = Object.keys(bookConfig.espnLeagues);
     const payloads = await Promise.all(
       leagueKeys.flatMap((leagueKey) => dates.map(async (date) => {
         try {
-          return { leagueKey, date, payload: await espnGetScoreboard(leagueKey, date) };
+          return {
+            leagueKey,
+            date,
+            payload: await espnGetScoreboard(leagueKey, date, bookConfig.espnLeagues),
+          };
         } catch (err) {
           return { leagueKey, date, __error: err };
         }
@@ -1202,7 +1277,7 @@ async function fetchEspnStoppage(openDates) {
         scoreboardErrors.push(`${row.date}: ${row.__error.message}`);
         continue;
       }
-      const leagueSlug = ESPN_LEAGUES[row.leagueKey]?.slug ?? 'eng.1';
+      const leagueSlug = bookConfig.espnLeagues[row.leagueKey]?.slug ?? 'eng.1';
       for (const event of row.payload?.events ?? []) {
         if (event?.id) eventsById.set(String(event.id), { event, leagueSlug });
       }
@@ -1232,12 +1307,16 @@ async function fetchEspnStoppage(openDates) {
       }),
     );
 
-    const matches = rows.map(({ event }) => summarizeEspnEvent(event, playsById.get(String(event.id)) ?? []));
+    const matches = rows.map(({ event }) => summarizeEspnEvent(
+      event,
+      playsById.get(String(event.id)) ?? [],
+      bookConfig,
+    ));
     return {
       ok: playErrors.length === 0,
       error: playErrors.length ? compactProviderError(playErrors[0]) : null,
       matches,
-      livePremierLeague: needPlays.length,
+      [bookConfig.espnLiveField]: needPlays.length,
     };
   } catch (err) {
     return {
@@ -1248,22 +1327,23 @@ async function fetchEspnStoppage(openDates) {
   }
 }
 
-function findLiveMatch(game, matchSets) {
+function findLiveMatch(game, matchSets, teamCanon = TEAM_CANON) {
   const home = game.teams?.home;
   const away = game.teams?.away;
   if (!home || !away) return null;
   for (const { source, matches } of matchSets) {
     const hit = (matches ?? []).find(
-      (m) => namesMatch(home, m.teams.home) && namesMatch(away, m.teams.away),
+      (m) => namesMatch(home, m.teams.home, teamCanon)
+        && namesMatch(away, m.teams.away, teamCanon),
     );
     if (hit) return { ...hit, source };
   }
   return null;
 }
 
-function attachStoppage(game, matchSets) {
+function attachStoppage(game, matchSets, bookConfig = PL_BOOK_CONFIG) {
   if (game.error || !game._markets) return { ...game, stoppage: null };
-  const hit = findLiveMatch(game, matchSets);
+  const hit = findLiveMatch(game, matchSets, bookConfig.teamCanon);
   if (!hit) return { ...game, stoppage: null };
 
   const stoppage = hit.stoppage;
@@ -1295,9 +1375,9 @@ function attachStoppage(game, matchSets) {
   };
 }
 
-async function fetchPlCornerBook() {
+export async function fetchCornerBook(bookConfig = PL_BOOK_CONFIG) {
   const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
-  const events = cornerMatchEvents(sportPage);
+  const events = cornerMatchEvents(sportPage, bookConfig);
 
   const [fdGames, espn] = await Promise.all([
     mapPool(events, FD_EVENT_CONCURRENCY, async (ev) => {
@@ -1327,14 +1407,14 @@ async function fetchPlCornerBook() {
         return { ...ev, error: err.message, stoppage: null };
       }
     }),
-    fetchEspnStoppage(events.map((ev) => ev.openDate)),
+    fetchEspnStoppage(events.map((ev) => ev.openDate), bookConfig),
   ]);
 
   const matchSets = [{ source: 'espn', matches: espn.matches }];
 
   const games = fdGames
     .map((game) => {
-      const merged = attachStoppage(game, matchSets);
+      const merged = attachStoppage(game, matchSets, bookConfig);
       const { _markets, ...rest } = merged;
       return {
         ...rest,
@@ -1353,14 +1433,21 @@ async function fetchPlCornerBook() {
 
   return {
     fetchedAt: new Date().toISOString(),
+    league: bookConfig.key,
     games,
     espn: {
       ok: espn.ok,
       error: espn.error ? compactProviderError(espn.error) : null,
       livePremierLeague: espn.livePremierLeague ?? 0,
+      liveMls: espn.liveMls ?? 0,
       matched: games.filter((g) => g.stoppage).length,
     },
   };
+}
+
+/** @deprecated use fetchCornerBook */
+export async function fetchPlCornerBook() {
+  return fetchCornerBook(PL_BOOK_CONFIG);
 }
 
 export default async function handler(req, res) {
@@ -1369,7 +1456,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchPlCornerBook();
+    const data = await fetchCornerBook(PL_BOOK_CONFIG);
     res.setHeader('Cache-Control', 'public, max-age=15');
     return res.status(200).json(data);
   } catch (err) {

@@ -14,50 +14,31 @@ import {
   formatAmericanOdds,
   probToAmerican,
 } from '../sop/sopModel.js';
+import { cornerLeagueModel } from './cornerModelLeagues.js';
 
-export const MEAN_CORNERS_PER_MATCH = 10.347673397717296; // 11786 / 1139
-export const TYPICAL_HT_STOPPAGE_MIN = 3.3;
-export const TYPICAL_FT_STOPPAGE_MIN = 4.8;
 export const REGULAR_MINUTES = 90;
 export const HALF_REGULAR_MIN = 45;
 
-/** ESPN 2023–26 counts / 11,786. */
-export const CORNER_BINS = [
-  { id: '1-5', start: 0, end: 5, half: 1, kind: 'regular', n: 527 },
-  { id: '6-10', start: 5, end: 10, half: 1, kind: 'regular', n: 602 },
-  { id: '11-15', start: 10, end: 15, half: 1, kind: 'regular', n: 574 },
-  { id: '16-20', start: 15, end: 20, half: 1, kind: 'regular', n: 556 },
-  { id: '21-25', start: 20, end: 25, half: 1, kind: 'regular', n: 578 },
-  { id: '26-30', start: 25, end: 30, half: 1, kind: 'regular', n: 529 },
-  { id: '31-35', start: 30, end: 35, half: 1, kind: 'regular', n: 540 },
-  { id: '36-40', start: 35, end: 40, half: 1, kind: 'regular', n: 584 },
-  { id: '41-45', start: 40, end: 45, half: 1, kind: 'regular', n: 613 },
-  { id: '45+', start: 45, end: 45, half: 1, kind: 'ht+', n: 421 },
-  { id: '46-50', start: 45, end: 50, half: 2, kind: 'regular', n: 569 },
-  { id: '51-55', start: 50, end: 55, half: 2, kind: 'regular', n: 681 },
-  { id: '56-60', start: 55, end: 60, half: 2, kind: 'regular', n: 629 },
-  { id: '61-65', start: 60, end: 65, half: 2, kind: 'regular', n: 641 },
-  { id: '66-70', start: 65, end: 70, half: 2, kind: 'regular', n: 622 },
-  { id: '71-75', start: 70, end: 75, half: 2, kind: 'regular', n: 573 },
-  { id: '76-80', start: 75, end: 80, half: 2, kind: 'regular', n: 532 },
-  { id: '81-85', start: 80, end: 85, half: 2, kind: 'regular', n: 568 },
-  { id: '86-90', start: 85, end: 90, half: 2, kind: 'regular', n: 573 },
-  { id: '90+', start: 90, end: 90, half: 2, kind: 'ft+', n: 874 },
-];
+const PL_MODEL = cornerLeagueModel('pl');
+const MLS_MODEL = cornerLeagueModel('mls');
 
-const TOTAL_N = CORNER_BINS.reduce((s, b) => s + b.n, 0);
-
-for (const bin of CORNER_BINS) {
-  bin.share = bin.n / TOTAL_N;
-  bin.typicalMinutes = bin.kind === 'ht+'
-    ? TYPICAL_HT_STOPPAGE_MIN
-    : bin.kind === 'ft+'
-      ? TYPICAL_FT_STOPPAGE_MIN
-      : bin.end - bin.start;
+export function resolveCornerLeagueModel({ league } = {}) {
+  return league === 'mls' ? MLS_MODEL : PL_MODEL;
 }
 
-export const TYPICAL_MATCH_MINUTES =
-  REGULAR_MINUTES + TYPICAL_HT_STOPPAGE_MIN + TYPICAL_FT_STOPPAGE_MIN;
+/** Default book curve — Premier League 2023–26. */
+export const MEAN_CORNERS_PER_MATCH = PL_MODEL.meanCornersPerMatch;
+export const TYPICAL_HT_STOPPAGE_MIN = PL_MODEL.htStoppageMin;
+export const TYPICAL_FT_STOPPAGE_MIN = PL_MODEL.ftStoppageMin;
+export const CORNER_BINS = PL_MODEL.bins;
+export const TYPICAL_MATCH_MINUTES = PL_MODEL.typicalMatchMinutes;
+
+/** MLS 2025–26 ESPN curve. */
+export const MLS_MEAN_CORNERS_PER_MATCH = MLS_MODEL.meanCornersPerMatch;
+export const MLS_TYPICAL_HT_STOPPAGE_MIN = MLS_MODEL.htStoppageMin;
+export const MLS_TYPICAL_FT_STOPPAGE_MIN = MLS_MODEL.ftStoppageMin;
+export const MLS_CORNER_BINS = MLS_MODEL.bins;
+export const MLS_TYPICAL_MATCH_MINUTES = MLS_MODEL.typicalMatchMinutes;
 
 export function poissonPmf(k, lambda) {
   if (lambda <= 0) return k === 0 ? 1 : 0;
@@ -845,14 +826,20 @@ function minutesFromLabel(label) {
   return Number.isFinite(n) ? n : null;
 }
 
-export function stoppagePlan(clock, stoppage, { hasFirstHalfLine = false } = {}) {
+export function stoppagePlan(
+  clock,
+  stoppage,
+  { hasFirstHalfLine = false, leagueModel = PL_MODEL } = {},
+) {
   const played = minutesFromLabel(stoppage?.played) ?? (clock.inStoppage ? clock.plus : 0);
   const announced = minutesFromLabel(stoppage?.announced);
   const earnedRaw = Number(stoppage?.earnedMinutes);
   const earned = Number.isFinite(earnedRaw) ? earnedRaw : 0;
+  const htTypical = leagueModel.htStoppageMin;
+  const ftTypical = leagueModel.ftStoppageMin;
 
   const htBlend = blendHalfStoppage({
-    typical: TYPICAL_HT_STOPPAGE_MIN,
+    typical: htTypical,
     earnedMinutes: clock.period === 1 && clock.phase === 'live' ? earned : 0,
     announcedMinutes: clock.period === 1 ? announced : null,
     playedMinutes: clock.period === 1 ? played : 0,
@@ -860,7 +847,7 @@ export function stoppagePlan(clock, stoppage, { hasFirstHalfLine = false } = {})
     inStoppage: Boolean(clock.period === 1 && clock.inStoppage),
   });
   const ftBlend = blendHalfStoppage({
-    typical: TYPICAL_FT_STOPPAGE_MIN,
+    typical: ftTypical,
     earnedMinutes: clock.period === 2 && clock.phase === 'live' ? earned : 0,
     announcedMinutes: clock.period === 2 ? announced : null,
     playedMinutes: clock.period === 2 ? played : 0,
@@ -874,11 +861,11 @@ export function stoppagePlan(clock, stoppage, { hasFirstHalfLine = false } = {})
 
   if (clock.phase === 'pre') {
     used = hasFirstHalfLine
-      ? 'pre-match first-half line · typical HT 3.3′'
-      : 'pre-match typical HT 3.3′ + FT 4.8′';
+      ? `pre-match first-half line · typical HT ${htTypical.toFixed(1)}′`
+      : `pre-match typical HT ${htTypical.toFixed(1)}′ + FT ${ftTypical.toFixed(1)}′`;
   } else if (clock.phase === 'ht') {
     htRemaining = 0;
-    used = 'half-time · second-half extra starts at typical 4.8′';
+    used = `half-time · second-half extra starts at typical ${ftTypical.toFixed(1)}′`;
   } else if (clock.phase === 'post') {
     htRemaining = 0;
     ftRemaining = 0;
@@ -886,7 +873,7 @@ export function stoppagePlan(clock, stoppage, { hasFirstHalfLine = false } = {})
   } else if (clock.period === 1) {
     used = hasFirstHalfLine
       ? `first-half line · ${formatStoppageUsed(1, htBlend)}`
-      : `${formatStoppageUsed(1, htBlend)} + upcoming FT 4.8′`;
+      : `${formatStoppageUsed(1, htBlend)} + upcoming FT ${ftTypical.toFixed(1)}′`;
   } else {
     htRemaining = 0;
     used = formatStoppageUsed(2, ftBlend);
@@ -927,27 +914,27 @@ function binRemainingMinutes(bin, clock, plan) {
   return bin.end - played;
 }
 
-function binShareForMinutes(bin, minutes, mode) {
+function binShareForMinutes(bin, minutes, mode, leagueModel = PL_MODEL) {
   if (minutes <= 0) return 0;
   if (mode === 'uniform') {
-    return minutes / TYPICAL_MATCH_MINUTES;
+    return minutes / leagueModel.typicalMatchMinutes;
   }
   const typical = bin.typicalMinutes || 5;
   return bin.share * (minutes / typical);
 }
 
-export function remainingBreakdown(clock, plan, mode = 'bucketed') {
-  const rows = CORNER_BINS.map((bin) => {
+export function remainingBreakdown(clock, plan, mode = 'bucketed', leagueModel = PL_MODEL) {
+  const rows = leagueModel.bins.map((bin) => {
     const minutes = binRemainingMinutes(bin, clock, plan);
-    const share = binShareForMinutes(bin, minutes, mode);
-    const uniformShare = binShareForMinutes(bin, minutes, 'uniform');
-    const expected = MEAN_CORNERS_PER_MATCH * share;
+    const share = binShareForMinutes(bin, minutes, mode, leagueModel);
+    const uniformShare = binShareForMinutes(bin, minutes, 'uniform', leagueModel);
+    const expected = leagueModel.meanCornersPerMatch * share;
     return {
       id: bin.id,
       kind: bin.kind,
       half: bin.half,
       histShare: bin.share,
-      uniformBinShare: (bin.typicalMinutes || 5) / TYPICAL_MATCH_MINUTES,
+      uniformBinShare: (bin.typicalMinutes || 5) / leagueModel.typicalMatchMinutes,
       minutes,
       remainingShare: share,
       uniformRemainingShare: uniformShare,
@@ -987,7 +974,13 @@ function windowRegularRange(windowMarket) {
  * at 45:00 / 90:00 (or 44:59 / 89:59) does not pay 45+ / 90+ added time.
  * Full-game leftover still uses remainingBreakdown, which keeps stoppage.
  */
-export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed') {
+export function windowRemainingShare(
+  windowMarket,
+  clock,
+  plan,
+  mode = 'bucketed',
+  leagueModel = PL_MODEL,
+) {
   const range = windowRegularRange(windowMarket);
   if (!range) return null;
   const { startMin, endMin } = range;
@@ -997,7 +990,7 @@ export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed
   let minutes = 0;
   const bits = [];
 
-  for (const bin of CORNER_BINS) {
+  for (const bin of leagueModel.bins) {
     if (bin.kind !== 'regular') continue;
     const overlapStart = Math.max(bin.start, startMin);
     const overlapEnd = Math.min(bin.end, endMin);
@@ -1006,8 +999,8 @@ export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed
     const remainingStart = Math.max(overlapStart, played);
     const rem = Math.max(0, overlapEnd - remainingStart);
     if (rem <= 0) continue;
-    const s = binShareForMinutes(bin, rem, mode);
-    const u = binShareForMinutes(bin, rem, 'uniform');
+    const s = binShareForMinutes(bin, rem, mode, leagueModel);
+    const u = binShareForMinutes(bin, rem, 'uniform', leagueModel);
     share += s;
     uniformShare += u;
     minutes += rem;
@@ -1016,18 +1009,18 @@ export function windowRemainingShare(windowMarket, clock, plan, mode = 'bucketed
       minutes: rem,
       share: s,
       histShare: bin.share,
-      expected: MEAN_CORNERS_PER_MATCH * s,
+      expected: leagueModel.meanCornersPerMatch * s,
       extra: false,
     });
   }
 
-  const histWindowShare = CORNER_BINS
+  const histWindowShare = leagueModel.bins
     .filter((b) => b.kind === 'regular' && b.end > startMin && b.start < endMin)
     .reduce((s, b) => {
       const overlap = Math.min(b.end, endMin) - Math.max(b.start, startMin);
       return s + b.share * (overlap / (b.end - b.start));
     }, 0);
-  const uniformWindowShare = (endMin - startMin) / TYPICAL_MATCH_MINUTES;
+  const uniformWindowShare = (endMin - startMin) / leagueModel.typicalMatchMinutes;
 
   return {
     startMin,
@@ -1098,7 +1091,7 @@ function leverLabel(lever) {
   return 'HT+FT extra';
 }
 
-function planWithLeverRemaining(plan, lever, remaining) {
+function planWithLeverRemaining(plan, lever, remaining, leagueModel = PL_MODEL) {
   const mins = Math.max(0, Number(remaining) || 0);
   if (lever === 'ht') return { ...plan, htRemaining: mins };
   if (lever === 'ft') return { ...plan, ftRemaining: mins };
@@ -1107,7 +1100,7 @@ function planWithLeverRemaining(plan, lever, remaining) {
   const sum0 = ht0 + ft0;
   const htShare = sum0 > 0.02
     ? ht0 / sum0
-    : TYPICAL_HT_STOPPAGE_MIN / (TYPICAL_HT_STOPPAGE_MIN + TYPICAL_FT_STOPPAGE_MIN);
+    : leagueModel.htStoppageMin / (leagueModel.htStoppageMin + leagueModel.ftStoppageMin);
   return {
     ...plan,
     htRemaining: mins * htShare,
@@ -1115,8 +1108,8 @@ function planWithLeverRemaining(plan, lever, remaining) {
   };
 }
 
-function lineRemainingForMass(model, remainingMass) {
-  const ourRemaining = MEAN_CORNERS_PER_MATCH * remainingMass;
+function lineRemainingForMass(model, remainingMass, leagueModel = PL_MODEL) {
+  const ourRemaining = leagueModel.meanCornersPerMatch * remainingMass;
   const implied = model.fullImplied;
   if (implied && !implied.alreadyOver && Number.isFinite(implied.remaining)) {
     return implied.remaining;
@@ -1137,16 +1130,27 @@ function usesMarketRemaining(model) {
 
 function regularTimeRemainingMass(model) {
   const noExtra = { ...model.plan, htRemaining: 0, ftRemaining: 0 };
-  return remainingBreakdown(model.clock, noExtra, model.mode).remainingShare;
+  return remainingBreakdown(
+    model.clock,
+    noExtra,
+    model.mode,
+    model.leagueModel,
+  ).remainingShare;
 }
 
 function pModelAtStoppagePlan(model, bet, plan) {
   const windowMarket = windowMarketForBet(model, bet);
   if (!windowMarket) return null;
-  const breakdown = remainingBreakdown(model.clock, plan, model.mode);
+  const breakdown = remainingBreakdown(model.clock, plan, model.mode, model.leagueModel);
   const remainingMass = breakdown.remainingShare;
-  const lineRemaining = lineRemainingForMass(model, remainingMass);
-  const win = windowRemainingShare(windowMarket, model.clock, plan, model.mode);
+  const lineRemaining = lineRemainingForMass(model, remainingMass, model.leagueModel);
+  const win = windowRemainingShare(
+    windowMarket,
+    model.clock,
+    plan,
+    model.mode,
+    model.leagueModel,
+  );
   if (!win || remainingMass <= 0) return settledPModel(bet);
   const lambda = lineRemaining * (win.remainingShare / remainingMass);
   if (bet.kind.startsWith('dk-both')) {
@@ -1222,7 +1226,7 @@ export function breakevenStoppageForBet(model, bet) {
   const edgeAtRemaining = (remaining) => edgePointsAtStoppagePlan(
     model,
     bet,
-    planWithLeverRemaining(model.plan, lever, remaining),
+    planWithLeverRemaining(model.plan, lever, remaining, model.leagueModel),
   );
   const now = edgeAtRemaining(modelRemaining);
   if (!Number.isFinite(now)) return null;
@@ -1302,6 +1306,7 @@ function buildDkBothPackages({
   mode,
   lineRemaining,
   remainingMass,
+  leagueModel = PL_MODEL,
 }) {
   const byWindow = new Map();
   for (const row of intervals ?? []) {
@@ -1315,7 +1320,7 @@ function buildDkBothPackages({
   const packages = [];
   for (const [window, rows] of byWindow) {
     if (rows.length < 2) continue;
-    const win = windowRemainingShare({ window }, clock, plan, mode);
+    const win = windowRemainingShare({ window }, clock, plan, mode, leagueModel);
     if (!win) continue;
     const fracOfRemaining = remainingMass > 0 ? win.remainingShare / remainingMass : 0;
     const lambda = lineRemaining * fracOfRemaining;
@@ -1461,16 +1466,22 @@ function evalSide({ label, american, pModel, kind, meta, baseline = false }) {
   };
 }
 
-export function evaluateGameCorners(game, { bucketed = true, baselineBook: requestedBook = 'fd' } = {}) {
+export function evaluateGameCorners(game, {
+  bucketed = true,
+  baselineBook: requestedBook = 'fd',
+  league,
+} = {}) {
+  const leagueModel = resolveCornerLeagueModel({ league });
   const mode = bucketed ? 'bucketed' : 'uniform';
   const clock = parseClockState(game.stoppage);
   const hasFirstHalfLine = Boolean(game.firstHalfTotal);
   // Full-game remaining always keeps typical/live FT stoppage in H1.
   // A first-half line uses HT stoppage only — never second-half extra.
-  const plan = stoppagePlan(clock, game.stoppage, { hasFirstHalfLine: false });
-  const h1Plan = stoppagePlan(clock, game.stoppage, { hasFirstHalfLine: true });
-  const breakdown = remainingBreakdown(clock, plan, mode);
-  const h1Breakdown = remainingBreakdown(clock, h1Plan, mode);
+  const planOpts = { leagueModel };
+  const plan = stoppagePlan(clock, game.stoppage, { hasFirstHalfLine: false, ...planOpts });
+  const h1Plan = stoppagePlan(clock, game.stoppage, { hasFirstHalfLine: true, ...planOpts });
+  const breakdown = remainingBreakdown(clock, plan, mode, leagueModel);
+  const h1Breakdown = remainingBreakdown(clock, h1Plan, mode, leagueModel);
   const c = Number.isFinite(game.cornersSoFar) ? game.cornersSoFar : 0;
 
   const resolved = resolveCornerBaseline(game, requestedBook);
@@ -1481,11 +1492,11 @@ export function evaluateGameCorners(game, { bucketed = true, baselineBook: reque
     ? impliedRemainingFromLine(game.firstHalfTotal, game.firstHalfCornersSoFar ?? c)
     : null;
 
-  const ourRemaining = MEAN_CORNERS_PER_MATCH * breakdown.remainingShare;
+  const ourRemaining = leagueModel.meanCornersPerMatch * breakdown.remainingShare;
   const h1Share = h1Breakdown.rows
     .filter((r) => r.half === 1)
     .reduce((s, r) => s + r.remainingShare, 0);
-  const ourH1Remaining = MEAN_CORNERS_PER_MATCH * h1Share;
+  const ourH1Remaining = leagueModel.meanCornersPerMatch * h1Share;
   const marketRemaining = fullImplied?.remaining ?? null;
   const marketImpliedTotal = fullImplied?.impliedTotal ?? null;
 
@@ -1520,7 +1531,7 @@ export function evaluateGameCorners(game, { bucketed = true, baselineBook: reque
   const windowBets = [];
   const attachWindow = (windowMarket, title) => {
     if (!windowMarket) return null;
-    const win = windowRemainingShare(windowMarket, clock, plan, mode);
+    const win = windowRemainingShare(windowMarket, clock, plan, mode, leagueModel);
     if (!win) return { title, windowMarket, win: null, lambda: 0, bets: [] };
     const fracOfRemaining = remainingMass > 0 ? win.remainingShare / remainingMass : 0;
     const lambda = lineRemaining * fracOfRemaining;
@@ -1561,6 +1572,7 @@ export function evaluateGameCorners(game, { bucketed = true, baselineBook: reque
     mode,
     lineRemaining,
     remainingMass,
+    leagueModel,
   });
   bets.push(...dkPackages);
 
@@ -1568,13 +1580,15 @@ export function evaluateGameCorners(game, { bucketed = true, baselineBook: reque
 
   return {
     mode,
+    league,
+    leagueModel,
     clock,
     plan,
     h1Plan,
     breakdown,
     h1Breakdown,
     cornersSoFar: c,
-    meanKickoff: MEAN_CORNERS_PER_MATCH,
+    meanKickoff: leagueModel.meanCornersPerMatch,
     ourRemaining,
     ourH1Remaining,
     lineRemaining,

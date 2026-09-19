@@ -32,6 +32,10 @@ import {
 } from './pregameFirstDriveStart.js';
 import { ytgFromSpot } from './ytgFromSpot.js';
 import { formatDownAndDistance, formatDownAndDistanceSpoken, formatLiveSituationLine, liveSpotsDisagree, liveSnapsAgree, espnClockAheadOfFd, applyFdAheadLive } from './fdLiveSituation.js';
+import {
+  applyLineDivergenceFilter,
+  lineDivergenceForGame,
+} from './lineDivergence.js';
 
 export { applyFdAheadLive };
 
@@ -1522,6 +1526,7 @@ export function evaluateDriveGame(game, {
   kellyBudget = 0,
   kellyFraction = 1,
   market = null,
+  lineFilter = true,
 } = {}) {
   const nextDrive = market ?? game?.nextDrive ?? null;
   const base = applyFdAheadLive(game);
@@ -1607,7 +1612,8 @@ export function evaluateDriveGame(game, {
     });
   }
 
-  return {
+  const lineDivergence = lineDivergenceForGame(view);
+  const evaluated = {
     model: pred?.model ?? RAW_MODEL_META,
     pred,
     rows,
@@ -1622,7 +1628,13 @@ export function evaluateDriveGame(game, {
     situationLag,
     situationLagKind: situationLag ? kind : null,
     situationLagDetail: situationLag ? describeSpotLag(view) : null,
+    lineDivergence,
+    lineFilterActive: false,
   };
+  if (lineFilter && lineDivergence.filterActive) {
+    return applyLineDivergenceFilter(evaluated, lineDivergence);
+  }
+  return evaluated;
 }
 
 export { formatAmericanOdds };

@@ -25608,6 +25608,21 @@ button.corners-bet:hover {
   color: #fde047;
 }
 
+.drives-line-filter-banner {
+  margin: 0.45rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fde68a;
+}
+
+.drives-edge-filtered {
+  opacity: 0.88;
+}
+
 .sop-monitor-market .drives-punt-warn {
   margin-left: 0.3rem;
   vertical-align: middle;
