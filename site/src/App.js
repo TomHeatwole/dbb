@@ -142,6 +142,7 @@ function AppInner() {
     pathUpper === '/SOP' || pathUpper.startsWith('/SOP/')
     || pathUpper === '/SOP2' || pathUpper.startsWith('/SOP2/')
     || pathUpper === '/CORNERS' || pathUpper.startsWith('/CORNERS/')
+    || pathUpper === '/MLSCORNER' || pathUpper.startsWith('/MLSCORNER/')
     || pathUpper === '/DRIVES' || pathUpper.startsWith('/DRIVES/')
     || pathUpper === '/DK' || pathUpper.startsWith('/DK/');
   

@@ -19,7 +19,7 @@ import {
   TYPICAL_HT_STOPPAGE_MIN,
   resolveCornerLeagueModel,
 } from '../corners/cornerModel.mjs';
-import { CORNER_LEAGUE_SPECS } from '../corners/cornerModelLeagues';
+import { CORNER_LEAGUE_SPECS } from '../corners/cornerModelLeagues.mjs';
 import { computeKellyStake, formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
 import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
 import { buildCornersMonitorRows } from '../corners/gameSnapshot';

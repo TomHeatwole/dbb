@@ -5,7 +5,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PageMeta from '../PageMeta';
 import CornersBookPanel from './CornersBookPanel';
-import { CORNER_LEAGUE_SPECS } from '../corners/cornerModelLeagues';
+import { CORNER_LEAGUE_SPECS } from '../corners/cornerModelLeagues.mjs';
 import {
   dkCornerGamesLoaded,
   mergeDkCornersIntoFdGames,
@@ -111,7 +111,10 @@ function MlsCornersPage() {
 
     applyMerges();
 
-    await fetchJsonWithTimeout('/api/dk-corners?league=mls', DK_CLIENT_TIMEOUT_MS).then((data) => {
+    await fetchJsonWithTimeout(
+      '/api/draftkings-goal-method?book=corners&league=mls',
+      DK_CLIENT_TIMEOUT_MS,
+    ).then((data) => {
       if (dkCornerGamesLoaded(data)) {
         dkHold.current = data;
         dkData = data;
