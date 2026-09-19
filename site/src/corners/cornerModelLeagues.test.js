@@ -1,4 +1,4 @@
-import { buildCornerLeagueModel, CORNER_LEAGUE_SPECS } from './cornerModelLeagues';
+import { buildCornerLeagueModel, CORNER_LEAGUE_SPECS } from './cornerModelLeagues.mjs';
 
 describe('cornerModelLeagues', () => {
   it('builds MLS shares that sum to 1', () => {

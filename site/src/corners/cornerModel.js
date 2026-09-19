@@ -14,7 +14,7 @@ import {
   formatAmericanOdds,
   probToAmerican,
 } from '../sop/sopModel.js';
-import { cornerLeagueModel } from './cornerModelLeagues.js';
+import { cornerLeagueModel } from './cornerModelLeagues.mjs';
 
 export const REGULAR_MINUTES = 90;
 export const HALF_REGULAR_MIN = 45;
