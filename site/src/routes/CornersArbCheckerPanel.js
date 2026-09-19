@@ -9,7 +9,7 @@ import {
   formatParsedOdds,
   parseOddsInput,
 } from '../corners/arbChecker';
-import { formatAmericanOdds, formatEdgePct, formatSharePct } from '../corners/cornerModel';
+import { formatAmericanOdds, formatEdgePct, formatSharePct } from '../corners/cornerModel.mjs';
 
 const SIZE_KEY = 'corners-arb-checker-size';
 const DEFAULT_SIZE = '100';

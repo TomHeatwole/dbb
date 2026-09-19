@@ -7,7 +7,7 @@ import {
   evaluateGameCorners,
   formatAmericanOdds,
   listCornerBaselines,
-} from './cornerModel';
+} from './cornerModel.mjs';
 
 function formatCornersScore(game) {
   const score = game?.scoreDisplay ?? '0-0';

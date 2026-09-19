@@ -11,7 +11,7 @@ import {
   blendHalfStoppage,
   regularMinutesLeftInHalf,
   resolveCornerLeagueModel,
-} from '../src/corners/cornerModel.js';
+} from '../src/corners/cornerModel.mjs';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =

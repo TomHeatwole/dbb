@@ -3,7 +3,7 @@ import {
   findLongestCornerBaseline,
   pickHeadlineCornerPlay,
 } from './gameSnapshot';
-import { evaluateGameCorners } from './cornerModel';
+import { evaluateGameCorners } from './cornerModel.mjs';
 
 describe('corners game snapshot', () => {
   const game = {

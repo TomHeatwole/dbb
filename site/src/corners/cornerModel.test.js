@@ -9,7 +9,7 @@ import {
   parseClockState,
   stoppagePlan,
   windowRemainingShare,
-} from './cornerModel';
+} from './cornerModel.mjs';
 
 function liveClock(clock, extras = {}) {
   return parseClockState({ status: 'in', period: 2, clock, ...extras });

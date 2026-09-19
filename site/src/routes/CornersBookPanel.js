@@ -18,7 +18,7 @@ import {
   TYPICAL_FT_STOPPAGE_MIN,
   TYPICAL_HT_STOPPAGE_MIN,
   resolveCornerLeagueModel,
-} from '../corners/cornerModel';
+} from '../corners/cornerModel.mjs';
 import { CORNER_LEAGUE_SPECS } from '../corners/cornerModelLeagues';
 import { computeKellyStake, formatKellyFractionLabel, formatKellyStake } from '../sop/sopModel';
 import { DEFAULT_KELLY_FRACTION, MIN_KELLY_FRACTION, useSOPKellySettings } from '../sop/useSOPKellySettings';
