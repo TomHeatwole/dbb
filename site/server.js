@@ -101,7 +101,8 @@ async function main() {
 
   app.get('/api/mls-corners', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/mls-corners.mjs');
+      req.query = { ...req.query, league: req.query?.league || 'mls' };
+      const { default: handler } = await import('./api/pl-corners.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });
@@ -157,15 +158,6 @@ async function main() {
   app.get('/api/sop-static', sopStaticHandler);
   app.get(['/sop-static.txt', '/SOP-static.txt'], sopStaticHandler);
 
-  app.get('/api/db-hello', async (req, res) => {
-    try {
-      const { default: handler } = await import('./api/db-hello.mjs');
-      return handler(req, res);
-    } catch (e) {
-      return res.status(500).json({ error: e.message });
-    }
-  });
-
   app.all('/api/exchange', async (req, res) => {
     try {
       const { default: handler } = await import('./api/exchange.mjs');
@@ -177,7 +169,7 @@ async function main() {
 
   app.get('/api/me', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/me.mjs');
+      const { default: handler } = await import('./api/auth.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });
@@ -186,7 +178,7 @@ async function main() {
 
   app.post('/api/onboard', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/onboard.mjs');
+      const { default: handler } = await import('./api/auth.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });

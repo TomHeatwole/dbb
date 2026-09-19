@@ -1455,13 +1455,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const league = String(req.query?.league ?? 'pl').toLowerCase();
+  const bookConfig = league === 'mls' ? MLS_BOOK_CONFIG : PL_BOOK_CONFIG;
+  const label = bookConfig.key === 'mls' ? 'mls-corners' : 'pl-corners';
+
   try {
-    const data = await fetchCornerBook(PL_BOOK_CONFIG);
+    const data = await fetchCornerBook(bookConfig);
     res.setHeader('Cache-Control', 'public, max-age=15');
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('[pl-corners]', err);
-    return res.status(502).json({ error: err.message || 'Corners fetch failed' });
+    console.error(`[${label}]`, err);
+    return res.status(502).json({
+      error: err.message || (bookConfig.key === 'mls' ? 'MLS corners fetch failed' : 'Corners fetch failed'),
+    });
   }
 }

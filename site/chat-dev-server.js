@@ -41,14 +41,15 @@ const server = http.createServer(async (req, res) => {
     '/api/chat': './api/chat.mjs',
     '/api/search': './api/search.mjs',
     '/api/exchange': './api/exchange.mjs',
-    '/api/onboard': './api/onboard.mjs',
+    '/api/onboard': './api/auth.mjs',
+    '/api/auth': './api/auth.mjs',
   };
 
   const getHandlers = {
     '/api/fanduel-sop': './api/fanduel-sop.mjs',
     '/api/ncaaf-drives': './api/ncaaf-drives.mjs',
     '/api/pl-corners': './api/pl-corners.mjs',
-    '/api/mls-corners': './api/mls-corners.mjs',
+    '/api/mls-corners': './api/pl-corners.mjs',
     '/api/dk-corners': './lib/dk-corners.mjs',
     '/api/kalshi-corners': './lib/kalshi-corners.mjs',
     '/api/draftkings-goal-method': './api/draftkings-goal-method.mjs',
@@ -57,8 +58,8 @@ const server = http.createServer(async (req, res) => {
     '/sop-static.txt': './lib/sop-static.mjs',
     '/SOP-static.txt': './lib/sop-static.mjs',
     '/api/exchange': './api/exchange.mjs',
-    '/api/db-hello': './api/db-hello.mjs',
-    '/api/me': './api/me.mjs',
+    '/api/me': './api/auth.mjs',
+    '/api/auth': './api/auth.mjs',
   };
 
   const handlerName =
@@ -72,6 +73,9 @@ const server = http.createServer(async (req, res) => {
         req.body = body;
         const parsed = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
         req.query = Object.fromEntries(parsed.searchParams);
+        if (pathname === '/api/mls-corners' && !req.query.league) {
+          req.query.league = 'mls';
+        }
         const { default: handler } = await import(`${handlerName}?v=${Date.now()}`);
         await handler(req, res);
       } catch (err) {

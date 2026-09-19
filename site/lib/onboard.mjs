@@ -2,8 +2,8 @@
 // to the authenticated user's account. The username must resolve to a real
 // Sleeper user via the public Sleeper API.
 
-import { getSql } from '../lib/db.mjs';
-import { getSessionUser } from '../lib/authServer.mjs';
+import { getSql } from './db.mjs';
+import { getSessionUser } from './authServer.mjs';
 
 const SLEEPER_USERNAME_RE = /^[A-Za-z0-9_]{1,32}$/;
 
@@ -24,7 +24,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Enter a valid Sleeper username (letters, numbers, underscores)' });
     }
 
-    // Verify against Sleeper — returns the user object, or null/404 if no such user
     const sleeperRes = await fetch(`https://api.sleeper.app/v1/user/${encodeURIComponent(username)}`);
     const sleeperUser = sleeperRes.ok ? await sleeperRes.json().catch(() => null) : null;
     if (!sleeperUser || !sleeperUser.user_id) {
@@ -51,7 +50,6 @@ export default async function handler(req, res) {
       sleeperDisplayName: profile.sleeper_display_name,
     });
   } catch (e) {
-    // Unique violation: that Sleeper account is already claimed by another login
     if (e.code === '23505') {
       return res.status(409).json({ error: 'That Sleeper account is already linked to another user' });
     }

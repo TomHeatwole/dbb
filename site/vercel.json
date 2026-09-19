@@ -16,12 +16,6 @@
     "api/pl-corners.mjs": {
       "maxDuration": 30
     },
-    "api/mls-corners.mjs": {
-      "maxDuration": 30
-    },
-    "api/dk-corners.mjs": {
-      "maxDuration": 30
-    },
     "api/draftkings-goal-method.mjs": {
       "maxDuration": 30,
       "includeFiles": "lib/named-export.mjs,src/sop/sopModel.js,src/sop/fixtureKey.js,lib/dk-corners.mjs"
@@ -36,7 +30,10 @@
   },
   "rewrites": [
     { "source": "/sop-static.txt", "destination": "/api/fanduel-sop?format=static" },
-    { "source": "/SOP-static.txt", "destination": "/api/fanduel-sop?format=static" }
+    { "source": "/SOP-static.txt", "destination": "/api/fanduel-sop?format=static" },
+    { "source": "/api/mls-corners", "destination": "/api/pl-corners?league=mls" },
+    { "source": "/api/me", "destination": "/api/auth" },
+    { "source": "/api/onboard", "destination": "/api/auth" }
   ],
   "headers": [
     {

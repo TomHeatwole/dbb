@@ -81,7 +81,7 @@ function MlsCornersPage() {
     let fdGames = [];
     let espn = null;
     try {
-      const res = await fetch('/api/mls-corners');
+      const res = await fetch('/api/pl-corners?league=mls');
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);

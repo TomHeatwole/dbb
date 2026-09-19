@@ -3,7 +3,7 @@
 // Returns { user: null } when not signed in (200, not 401, so the frontend
 // can treat "signed out" as a normal state).
 
-import { getSessionUser, getAppProfile } from '../lib/authServer.mjs';
+import { getSessionUser, getAppProfile } from './authServer.mjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
