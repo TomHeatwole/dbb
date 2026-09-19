@@ -2,8 +2,8 @@
  * Compact per-game drives snapshot: best drive result vs the model line.
  */
 
-import { shortTeamName } from '../sop/gameSnapshot';
-import { driveCardRole, evaluateDriveGame, formatAmericanOdds, formatDriveOrdinal, isHalftimeLive, listDriveSides, resolveOffenseTeam } from './driveModel';
+import { shortTeamName } from '../sop/gameSnapshot.js';
+import { driveCardRole, evaluateDriveGame, formatAmericanOdds, formatDriveOrdinal, isHalftimeLive, listDriveSides, resolveOffenseTeam } from './driveModel.js';
 
 function shortDriveTeam(name) {
   const raw = String(name ?? '')
