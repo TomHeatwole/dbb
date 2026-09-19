@@ -40,6 +40,12 @@ describe('pregame first-drive field position', () => {
     expect(knownOpeningReceiveSide({ openingReceiveSide: 'away' })).toBe('away');
   });
 
+  it('infers openingReceiveSide from the ESPN drive chart', () => {
+    expect(knownOpeningReceiveSide({
+      live: { driveChart: { openingReceiveSide: 'home' } },
+    })).toBe('home');
+  });
+
   it('maps offense spread into spread bins', () => {
     expect(spreadBin(-29.5)?.id).toBe('fav_le_21');
     expect(spreadBin(29.5)?.id).toBe('dog_ge_21');

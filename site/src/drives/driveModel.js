@@ -633,11 +633,17 @@ export function scoringSideAfterMadeKick(game) {
   return null;
 }
 
+/** Team that did not receive the opening kickoff gets the 2nd-half ball. */
+export function secondHalfReceiveSide(game) {
+  const opening = knownOpeningReceiveSide(game);
+  return opening ? flipSide(opening) : null;
+}
+
 /** Who is actually up now. After a score, the other team is getting the kickoff. */
 export function firstUpSide(game) {
   const view = applyFdAheadLive(game);
   if (!view?.inPlay || view?.live?.state === 'pre') return null;
-  if (isHalftimeLive(view.live)) return null;
+  if (isHalftimeLive(view.live)) return secondHalfReceiveSide(view);
   if (view.live?.spotSource === 'fd') {
     const fdPoss = livePossessionSide(view);
     if (fdPoss) return fdPoss;
@@ -661,7 +667,15 @@ export function firstUpSide(game) {
 export function situationOffenseLabel(game) {
   const view = applyFdAheadLive(game);
   if (!view?.inPlay) return null;
-  if (isHalftimeLive(view.live)) return 'Halftime';
+  if (isHalftimeLive(view.live)) {
+    const side = firstUpSide(view);
+    const name = side === 'away'
+      ? (view?.teams?.away ?? view?.live?.possessionName)
+      : side === 'home'
+        ? (view?.teams?.home ?? view?.live?.possessionName)
+        : null;
+    return name ? `${name} gets the 2nd-half kickoff` : 'Halftime';
+  }
   const side = firstUpSide(view);
   const name = side === 'away'
     ? (view?.teams?.away ?? view?.live?.possessionName)
@@ -732,7 +746,6 @@ export function shouldShowBothDriveSides(game) {
 /** current = team with the ball (or next up); next = opponent after that. */
 export function driveCardRole(game, pred) {
   if (!game?.inPlay || game?.live?.state === 'pre') return 'first';
-  if (isHalftimeLive(game.live)) return 'next';
   if (pred?.layer === 'snap' || pred?.firstUp) return 'current';
   if (pred?.afterPriorDrive || pred?.predictedStart) return 'next';
   const poss = firstUpSide(game);
@@ -1271,7 +1284,8 @@ export function featuresFromGame(game) {
   const side = inferOffenseSide(view, view?.nextDrive);
   const firstUp = firstUpSide(view);
   const isWaiting = Boolean(inPlay && firstUp && side && side !== firstUp);
-  const hasSnap = Number.isFinite(down) && down > 0
+  const hasSnap = !clock.halfKickoff
+    && Number.isFinite(down) && down > 0
     && Number.isFinite(ytgLive) && ytgLive >= 1 && ytgLive <= 99;
   const pricingCurrentDrive = Boolean(side && firstUp && side === firstUp && hasSnap);
   const canSnap = pricingCurrentDrive
@@ -1324,6 +1338,7 @@ export function featuresFromGame(game) {
       predictedStart: Number.isFinite(predictedYtg),
       afterPriorDrive: true,
       priorSide: firstUp,
+      halfKickoff: Boolean(clock.halfKickoff),
       side,
       features: {
         ytg,
@@ -1344,7 +1359,7 @@ export function featuresFromGame(game) {
   }
 
   if (inPlay && firstUp && side === firstUp && !canSnap) {
-    const ytg = Number.isFinite(ytgLive) ? ytgLive : 75;
+    const ytg = clock.halfKickoff ? 75 : (Number.isFinite(ytgLive) ? ytgLive : 75);
     const startPeriod = Number.isFinite(period) ? period : 1;
     const startClock = Number.isFinite(clockSec) ? clockSec : (clock.halfKickoff ? 900 : NaN);
     const secLeft = Number.isFinite(startPeriod) && Number.isFinite(startClock)
@@ -1356,6 +1371,7 @@ export function featuresFromGame(game) {
       predictedStart: false,
       afterPriorDrive: false,
       firstUp: true,
+      halfKickoff: Boolean(clock.halfKickoff),
       side,
       features: {
         ytg,

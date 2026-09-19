@@ -183,7 +183,7 @@ function liveSummary(game) {
   const live = game.live;
   if (!live) return null;
   if (live.state === 'pre' && !game.inPlay) return null;
-  if (isHalftimeLive(live)) return 'Halftime';
+  if (isHalftimeLive(live)) return situationOffenseLabel(game) || 'Halftime';
   let spot = live.possessionText;
   if (spot && /^\d+$/.test(String(spot))) spot = `at ${spot}`;
   const poss = live.possession;
@@ -318,6 +318,7 @@ function clockLabel(pred) {
     if (q && qclock) return `${q} · ${qclock} (projected)`;
     return 'Opening kickoff (projected)';
   }
+  if (pred?.halfKickoff && pred?.firstUp) return '2nd half kickoff';
   if (pred?.assumed) {
     if (Number(pred.features?.period) === 3) return '2nd half kickoff (assumed)';
     return 'Opening kickoff';
@@ -349,6 +350,8 @@ function reasoningRows(game, pred) {
         ? 'Own 25 · 2nd half kickoff (assumed)'
         : 'Own 25 · opening kickoff (assumed)',
     ]);
+  } else if (pred.halfKickoff && pred.firstUp && spot) {
+    rows.push(['Spot', `${spot} · 2nd half kickoff`]);
   } else if (pred.pregameCoinTossBlend && pred.pregameScenarios?.length) {
     const recv = pred.pregameScenarios.find((sc) => sc.role === 'receive');
     const kick = pred.pregameScenarios.find((sc) => sc.role === 'afterOpponent');
@@ -784,7 +787,11 @@ function DriveSide({
                   ? ' Going second: opponent opening result from the drive-start model, then mix start bins (punt / score / turnover) with drive_n=2 and so_far set.'
                   : model.pred?.pregameFirstDrive
                     ? ' Pregame 1st-drive: kickoff-return start mix.'
-                    : model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
+                    : model.pred?.halfKickoff && model.pred?.firstUp
+                      ? ' 2nd-half kickoff: team that did not receive the opening kickoff, from own 25.'
+                      : model.pred?.halfKickoff && model.pred?.afterPriorDrive
+                        ? ' After the 2nd-half kickoff drive (not another own-25 start).'
+                        : model.pred?.assumed ? ' Pregame card assumes own-25 opening kickoff.' : ''}
             {model.situationLag && model.situationLagDetail?.rows?.length
               ? ` ${model.situationLagDetail.rows.map((row) => `${row.label} ${row.value}`).join(' · ')}`
               : ''}
@@ -845,7 +852,7 @@ function GameCard({
   const liveSpot = situationHeadline(view);
   const pairLabel = paired
     ? (isHalftimeLive(view.live)
-      ? 'Both 2nd-half kickoffs'
+      ? (firstUpSide(view) ? '2nd-half kickoff + next drive' : 'Both 2nd-half kickoffs')
       : (view.inPlay
         ? (firstUpSide(view) ? 'Current drive + next drive' : 'Next drive · both teams')
         : '1st-drive result · both teams'))

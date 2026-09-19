@@ -94,6 +94,7 @@ export function parseEspnDriveBlob(blob, sideOf) {
   const seen = new Set();
   const started = { home: 0, away: 0 };
   const soFar = { td: 0, fg: 0, punt: 0, other: 0 };
+  let openingReceiveSide = null;
   const add = (drive) => {
     if (!drive || typeof drive !== 'object') return;
     const id = drive.id != null ? String(drive.id) : null;
@@ -103,7 +104,10 @@ export function parseEspnDriveBlob(blob, sideOf) {
     }
     if (!isCountableTeamDrive(drive)) return;
     const side = sideOf(drive);
-    if (side === 'home' || side === 'away') started[side] += 1;
+    if (side === 'home' || side === 'away') {
+      if (!openingReceiveSide) openingReceiveSide = side;
+      started[side] += 1;
+    }
     const bucket = classifyEspnDriveBucket(drive);
     if (bucket) soFar[bucket] += 1;
   };
@@ -125,5 +129,6 @@ export function parseEspnDriveBlob(blob, sideOf) {
     currentSide: liveCurrent,
     currentResult,
     finishedSide,
+    openingReceiveSide,
   };
 }

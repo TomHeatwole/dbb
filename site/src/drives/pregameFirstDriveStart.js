@@ -38,9 +38,11 @@ export const SPREAD_BINS = [
 export const PREGAME_FIRST_DRIVE_ROLES = ['receive', 'afterOpponent'];
 export const START_BINS = tables.startBins || [];
 
-/** Set only when coin toss / kickoff order is known. */
+/** Set only when coin toss / kickoff order is known (or inferred from the first series). */
 export function knownOpeningReceiveSide(game) {
-  const side = game?.openingReceiveSide ?? game?.live?.openingReceiveSide;
+  const side = game?.openingReceiveSide
+    ?? game?.live?.openingReceiveSide
+    ?? game?.live?.driveChart?.openingReceiveSide;
   return side === 'home' || side === 'away' ? side : null;
 }
 

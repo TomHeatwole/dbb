@@ -7,6 +7,7 @@ import {
   driveNumberFromName,
   driveNumberForSide,
   firstUpSide,
+  secondHalfReceiveSide,
   formatDriveOrdinal,
   inferOffenseSide,
   listDriveSides,
@@ -306,7 +307,7 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(driveCardRole(game, live)).toBe('current');
   });
 
-  it('shows both next drives at halftime, each from own 25', () => {
+  it('falls back to both own-25 kickoffs at halftime when the opening receiver is unknown', () => {
     const game = wazzuAtWashington({
       clockSeconds: null,
       clock: 'Halftime',
@@ -314,6 +315,7 @@ describe('live clock vs stale end-of-half snaps', () => {
       halfTime: true,
     });
     expect(shouldShowBothDriveSides(game)).toBe(true);
+    expect(firstUpSide(game)).toBeNull();
     const sides = listDriveSides(game);
     expect(sides).toHaveLength(2);
     expect(sides.map((row) => row.offenseSide)).toEqual(['away', 'home']);
@@ -329,6 +331,57 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(uw.pred.features.offense_spread).toBe(-20.5);
     expect(txst.rows.find((row) => row.key === 'td').p)
       .toBeLessThan(uw.rows.find((row) => row.key === 'td').p);
+  });
+
+  it('at halftime prices the 2nd-half receiver from own 25 and the other team after that drive', () => {
+    const game = wazzuAtWashington({
+      clockSeconds: null,
+      clock: 'Halftime',
+      statusText: 'Halftime',
+      halfTime: true,
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 94,
+      openingReceiveSide: 'away',
+    });
+    expect(secondHalfReceiveSide(game)).toBe('home');
+    expect(firstUpSide(game)).toBe('home');
+    expect(situationOffenseLabel(game)).toBe('Washington gets the 2nd-half kickoff');
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => row.offenseSide)).toEqual(['home', 'away']);
+    const recv = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const wait = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(recv.side).toBe('home');
+    expect(recv.firstUp).toBe(true);
+    expect(recv.halfKickoff).toBe(true);
+    expect(recv.features.ytg).toBe(75);
+    expect(recv.features.period).toBe(3);
+    expect(recv.features.clock_sec).toBe(900);
+    expect(driveCardRole(game, recv)).toBe('current');
+    expect(wait.side).toBe('away');
+    expect(wait.afterPriorDrive).toBe(true);
+    expect(wait.priorSide).toBe('home');
+    expect(wait.features.ytg).not.toBe(75);
+    expect(wait.features.period).toBe(3);
+    expect(driveCardRole(game, wait)).toBe('next');
+  });
+
+  it('reads the opening receiver from the ESPN chart at halftime', () => {
+    const game = wazzuAtWashington({
+      clockSeconds: null,
+      clock: 'Halftime',
+      statusText: 'Halftime',
+      halfTime: true,
+      driveChart: {
+        homeStarted: 5,
+        awayStarted: 6,
+        openingReceiveSide: 'away',
+        currentSide: null,
+        finishedSide: 'away',
+      },
+    });
+    expect(firstUpSide(game)).toBe('home');
+    expect(secondHalfReceiveSide(game)).toBe('home');
   });
 
   it('prices the waiting team after the current possession, not the same start', () => {
@@ -594,6 +647,7 @@ describe('live clock vs stale end-of-half snaps', () => {
       currentSide: null,
       currentResult: 'Touchdown',
       finishedSide: 'home',
+      openingReceiveSide: 'home',
     });
     const game = wazzuAtWashington({
       period: 3,
@@ -665,6 +719,7 @@ describe('live clock vs stale end-of-half snaps', () => {
       currentSide: null,
       currentResult: 'End of Half',
       finishedSide: 'away',
+      openingReceiveSide: 'away',
     });
     const game = {
       inPlay: true,
@@ -755,6 +810,7 @@ describe('live clock vs stale end-of-half snaps', () => {
       currentSide: null,
       currentResult: null,
       finishedSide: null,
+      openingReceiveSide: 'away',
     });
     const game = wazzuAtWashington({
       period: 4,
