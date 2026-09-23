@@ -16,6 +16,7 @@ import {
   FINAL_KTC_YEARS,
   HWANG_ADP_YEARS,
   FP_ECR_SOURCES,
+  FP_ROS_SOURCES,
 } from './rankingsSources';
 import { normalisePlayerName } from '../utils/playerNameMatcher';
 import { loadRedraftRankLookup } from '../redraftValueIndex/redraftRankLookupLoader';
@@ -1166,6 +1167,32 @@ export async function loadFpRankings(fpKey) {
   };
 }
 
+export async function loadFpRosRankings(fpRosKey) {
+  const cfg = FP_ROS_SOURCES[fpRosKey];
+  if (!cfg) throw new Error(`Unknown FantasyPros ROS source: ${fpRosKey}`);
+
+  let rows = [];
+  if (fpRosKey === 'ros_all') {
+    const parts = await Promise.all(
+      Object.entries(FP_ROS_SOURCES)
+        .filter(([key]) => key !== 'ros_all')
+        .map(([, c]) => loadSingleFpCsv(c.path, c.position)),
+    );
+    rows = parts.flat().sort((a, b) => a.rank - b.rank);
+  } else {
+    rows = await loadSingleFpCsv(cfg.path, cfg.position);
+    rows.sort((a, b) => a.rank - b.rank);
+  }
+
+  return {
+    rows,
+    meta: {
+      sourceLabel: cfg.label,
+      rowCount: rows.length,
+    },
+  };
+}
+
 export async function loadRankings(sourceOption, { year, date } = {}) {
   switch (sourceOption.kind) {
     case 'adp':
@@ -1200,6 +1227,8 @@ export async function loadRankings(sourceOption, { year, date } = {}) {
       return loadFfbRankings();
     case 'fp':
       return loadFpRankings(sourceOption.fpKey);
+    case 'fp_ros':
+      return loadFpRosRankings(sourceOption.fpRosKey);
     default:
       throw new Error(`Unsupported source kind: ${sourceOption.kind}`);
   }

@@ -184,6 +184,7 @@ function HomePage() {
             right={cards.offSeasonDesktopSplit.right}
             pinnedTopLeft={cards.auth}
             onLayoutReady={onSplitLayoutReady}
+            allowRebalance={showLoader}
           />
         </div>
       </main>
@@ -237,6 +238,7 @@ function HomePage() {
           right={cards.inSeasonDesktopSplit.right}
           pinnedTopLeft={cards.auth}
           onLayoutReady={onSplitLayoutReady}
+          allowRebalance={showLoader}
         />
       </div>
     </main>

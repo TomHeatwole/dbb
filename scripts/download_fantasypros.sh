@@ -6,6 +6,9 @@
 # The script auto-discovers all .sh files in fantasypros_scrape/, so adding a
 # new position is as simple as dropping another curl file in that directory.
 #
+# Rest-of-season boards (ros_*.sh) write fantasypros_ros_<name>.csv alongside
+# the season-long ECR files (qb, rb_std, wr_std, te_half, ecr_half, …).
+#
 # Output columns: rank, name, team, position, sleeper_id
 #
 # Usage (run from project root):

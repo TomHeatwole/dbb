@@ -59,7 +59,7 @@ function checkSlotsPlaced(leftCol, rightCol, slots, movableIds) {
   });
 }
 
-function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
+function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady, allowRebalance = true }) {
   const pinnedPodcast = useMemo(() => <PodcastCard />, []);
   const pinnedCommissionerNote = useMemo(() => <CommissionerNoteCard />, []);
   const preferredKey = cardSetKey(left, right);
@@ -74,8 +74,10 @@ function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
   const assignmentRef = useRef({ leftIds, rightIds });
   const cardsRef = useRef([]);
   const layoutReadyRef = useRef(false);
+  const allowRebalanceRef = useRef(allowRebalance);
   assignmentRef.current = { leftIds, rightIds };
   cardsRef.current = [...left, ...right];
+  allowRebalanceRef.current = allowRebalance;
 
   const notifyLayoutReady = useCallback(() => {
     if (layoutReadyRef.current) return;
@@ -139,6 +141,7 @@ function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
   }, []);
 
   const measureAndBalance = useCallback(() => {
+    if (!allowRebalanceRef.current) return;
     const leftCol = leftColRef.current;
     const rightCol = rightColRef.current;
     if (!leftCol || !rightCol) return;
@@ -148,12 +151,12 @@ function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
     applyBalance(stripPinnedIds(next.leftIds), stripPinnedIds(next.rightIds));
   }, [applyBalance, syncSlotsToColumns]);
 
-  // Card set changed — initial slot placement and balance.
+  // Card set changed or rebalance re-enabled (splash restart) — place slots and balance.
   useLayoutEffect(() => {
     syncSlotsToColumns();
     measureAndBalance();
     notifyLayoutReady();
-  }, [preferredKey, syncSlotsToColumns, measureAndBalance, notifyLayoutReady]);
+  }, [preferredKey, allowRebalance, syncSlotsToColumns, measureAndBalance, notifyLayoutReady]);
 
   // Column assignment changed — sync DOM only (no re-measure on parent re-renders).
   useLayoutEffect(() => {
@@ -161,7 +164,11 @@ function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
     notifyLayoutReady();
   }, [leftIds, rightIds, syncSlotsToColumns, notifyLayoutReady]);
 
+  // Rebalance only while the home splash is up (cards still loading). After that,
+  // freeze column assignment so expanding the commissioner note (etc.) does not reshuffle.
   useEffect(() => {
+    if (!allowRebalance) return undefined;
+
     const leftCol = leftColRef.current;
     const rightCol = rightColRef.current;
     if (!leftCol || !rightCol || typeof ResizeObserver === 'undefined') return undefined;
@@ -170,9 +177,10 @@ function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
     let lastBalanceAt = 0;
     let measuring = false;
     const ro = new ResizeObserver(() => {
-      if (measuring) return;
+      if (measuring || !allowRebalanceRef.current) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        if (!allowRebalanceRef.current) return;
         const now = Date.now();
         // Throttle rebalance while cards load in parallel to avoid layout thrash.
         if (now - lastBalanceAt < 120) return;
@@ -191,7 +199,7 @@ function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
       cancelAnimationFrame(frame);
       ro.disconnect();
     };
-  }, [preferredKey, measureAndBalance]);
+  }, [preferredKey, measureAndBalance, allowRebalance]);
 
   return (
     <div className="home-cards-grid--split">
@@ -238,6 +246,7 @@ function HomeCardsSplit({ left, right, pinnedTopLeft, onLayoutReady }) {
 
 function splitPropsEqual(prev, next) {
   if (prev.pinnedTopLeft !== next.pinnedTopLeft) return false;
+  if (prev.allowRebalance !== next.allowRebalance) return false;
   if (prev.left.length !== next.left.length || prev.right.length !== next.right.length) {
     return false;
   }

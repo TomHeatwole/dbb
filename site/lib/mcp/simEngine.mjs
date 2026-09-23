@@ -1234,6 +1234,26 @@ function placeId(standings, place) {
   return row ? Number(row.rosterId) : null;
 }
 
+function lookupScore(map, rid) {
+  if (!map) return 0;
+  const direct = map[rid];
+  if (direct != null) return Number(direct) || 0;
+  return Number(map[String(rid)]) || 0;
+}
+
+function highestTotalScoreRid(regTotals, ploffTotals, rosterIds) {
+  let bestRid = null;
+  let bestTotal = -Infinity;
+  for (const rid of rosterIds) {
+    const total = lookupScore(regTotals, rid) + lookupScore(ploffTotals, rid);
+    if (total > bestTotal) {
+      bestTotal = total;
+      bestRid = rid;
+    }
+  }
+  return bestRid;
+}
+
 /**
  * Score the same weekly draws under cumulative and bracket rules.
  * Returns disagreement counts for 1st and 2nd place.
@@ -1246,8 +1266,14 @@ export function runPlayoffFormatDisagreement(ctx, iterations = DEFAULT_ITERATION
   let differentWinner = 0;
   let differentSecond = 0;
   let differentBoth = 0;
+  let cumTotalLeaderWins = 0;
+  let bracketTotalLeaderWins = 0;
+  let totalLeaderNotChampionCum = 0;
+  let totalLeaderNotChampionBracket = 0;
   const winnerPairs = {};
   const secondPairs = {};
+  const cumUpsetPairs = {};
+  const bracketUpsetPairs = {};
 
   const bump = (map, a, b) => {
     const key = `${a}->${b}`;
@@ -1276,6 +1302,11 @@ export function runPlayoffFormatDisagreement(ctx, iterations = DEFAULT_ITERATION
     const br1 = placeId(br, 1);
     const cum2 = placeId(cum, 2);
     const br2 = placeId(br, 2);
+    const totalLeader = highestTotalScoreRid(
+      scored.regTotals,
+      scored.ploffTotals,
+      ctx.rosterIds,
+    );
     const winDiff = cum1 != null && br1 != null && cum1 !== br1;
     const secondDiff = cum2 != null && br2 != null && cum2 !== br2;
     if (winDiff) {
@@ -1287,6 +1318,16 @@ export function runPlayoffFormatDisagreement(ctx, iterations = DEFAULT_ITERATION
       bump(secondPairs, cum2, br2);
     }
     if (winDiff && secondDiff) differentBoth += 1;
+    if (totalLeader != null && cum1 === totalLeader) cumTotalLeaderWins += 1;
+    if (totalLeader != null && br1 === totalLeader) bracketTotalLeaderWins += 1;
+    if (totalLeader != null && cum1 != null && cum1 !== totalLeader) {
+      totalLeaderNotChampionCum += 1;
+      bump(cumUpsetPairs, totalLeader, cum1);
+    }
+    if (totalLeader != null && br1 != null && br1 !== totalLeader) {
+      totalLeaderNotChampionBracket += 1;
+      bump(bracketUpsetPairs, totalLeader, br1);
+    }
 
     if (progressEvery && ((i + 1) % progressEvery === 0 || i + 1 === n)) {
       opts.onProgress((i + 1) / n);
@@ -1298,8 +1339,14 @@ export function runPlayoffFormatDisagreement(ctx, iterations = DEFAULT_ITERATION
     differentWinner,
     differentSecond,
     differentBoth,
+    cumTotalLeaderWins,
+    bracketTotalLeaderWins,
+    totalLeaderNotChampionCum,
+    totalLeaderNotChampionBracket,
     winnerPairs,
     secondPairs,
+    cumUpsetPairs,
+    bracketUpsetPairs,
   };
 }
 
@@ -1418,13 +1465,6 @@ export function runSeasonSim(ctx, iterations = DEFAULT_ITERATIONS, opts = {}) {
     results: buildResults(stats, n, ctx.rosterIds),
     baselineResults: baselineStats ? buildResults(baselineStats, n, ctx.rosterIds) : null,
   };
-}
-
-function lookupScore(map, rid) {
-  if (!map) return 0;
-  const direct = map[rid];
-  if (direct != null) return Number(direct) || 0;
-  return Number(map[String(rid)]) || 0;
 }
 
 /**

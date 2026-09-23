@@ -167,11 +167,18 @@ const batches = await Promise.all(chunks.map((n, workerIndex) => runWorker(
 )));
 
 process.stdout.write('\n');
-const differentWinner = batches.reduce((s, b) => s + (b.differentWinner || 0), 0);
-const differentSecond = batches.reduce((s, b) => s + (b.differentSecond || 0), 0);
-const differentBoth = batches.reduce((s, b) => s + (b.differentBoth || 0), 0);
+const sum = (key) => batches.reduce((s, b) => s + (b[key] || 0), 0);
+const differentWinner = sum('differentWinner');
+const differentSecond = sum('differentSecond');
+const differentBoth = sum('differentBoth');
+const cumTotalLeaderWins = sum('cumTotalLeaderWins');
+const bracketTotalLeaderWins = sum('bracketTotalLeaderWins');
+const totalLeaderNotChampionCum = sum('totalLeaderNotChampionCum');
+const totalLeaderNotChampionBracket = sum('totalLeaderNotChampionBracket');
 const winnerPairs = mergePairs(batches, 'winnerPairs');
 const secondPairs = mergePairs(batches, 'secondPairs');
+const cumUpsetPairs = mergePairs(batches, 'cumUpsetPairs');
+const bracketUpsetPairs = mergePairs(batches, 'bracketUpsetPairs');
 const elapsed = ((Date.now() - startedRun) / 1000).toFixed(1);
 
 const pct = (n) => `${(n / iterations * 100).toFixed(1)}%`;
@@ -185,3 +192,12 @@ console.log('\nMost common champion flips (cumulative → bracket)');
 console.log(formatPairs(winnerPairs, teamMap, iterations));
 console.log('\nMost common 2nd-place flips (cumulative → bracket)');
 console.log(formatPairs(secondPairs, teamMap, iterations));
+console.log('\n17-week total score leader wins the league');
+console.log(`  Cumulative format:  ${cumTotalLeaderWins.toLocaleString()}  (${pct(cumTotalLeaderWins)})`);
+console.log(`  2025 Bracket:       ${bracketTotalLeaderWins.toLocaleString()}  (${pct(bracketTotalLeaderWins)})`);
+console.log(`  Upset (leader ≠ champ, cumulative):  ${totalLeaderNotChampionCum.toLocaleString()}  (${pct(totalLeaderNotChampionCum)})`);
+console.log(`  Upset (leader ≠ champ, bracket):     ${totalLeaderNotChampionBracket.toLocaleString()}  (${pct(totalLeaderNotChampionBracket)})`);
+console.log('\nMost common upsets — cumulative (total leader → actual champion)');
+console.log(formatPairs(cumUpsetPairs, teamMap, iterations));
+console.log('\nMost common upsets — 2025 bracket (total leader → actual champion)');
+console.log(formatPairs(bracketUpsetPairs, teamMap, iterations));

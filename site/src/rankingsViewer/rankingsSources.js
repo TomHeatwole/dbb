@@ -90,6 +90,14 @@ export const FP_ECR_SOURCES = {
   all: { label: 'FantasyPros ECR — All Positions', paths: null, position: null },
 };
 
+export const FP_ROS_SOURCES = {
+  ros_qb: { label: 'FantasyPros ROS — QB (STD)', path: '/data/fantasypros_ros_qb.csv', position: 'QB' },
+  ros_rb: { label: 'FantasyPros ROS — RB (STD)', path: '/data/fantasypros_ros_rb_std.csv', position: 'RB' },
+  ros_wr: { label: 'FantasyPros ROS — WR (STD)', path: '/data/fantasypros_ros_wr_std.csv', position: 'WR' },
+  ros_te: { label: 'FantasyPros ROS — TE (Half PPR)', path: '/data/fantasypros_ros_te_half.csv', position: 'TE' },
+  ros_all: { label: 'FantasyPros ROS — All Positions', paths: null, position: null },
+};
+
 /** Flat list for the source `<select>` with optgroups applied in the UI. */
 export function buildSourceOptions() {
   const groups = [];
@@ -199,6 +207,12 @@ export function buildSourceOptions() {
         label: cfg.label,
         kind: 'fp',
         fpKey: key,
+      })),
+      ...Object.entries(FP_ROS_SOURCES).map(([key, cfg]) => ({
+        id: `fp_ros:${key}`,
+        label: cfg.label,
+        kind: 'fp_ros',
+        fpRosKey: key,
       })),
     ],
   });

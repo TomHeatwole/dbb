@@ -1,0 +1,11 @@
+{
+  "season": "2026",
+  "iterations": 1000000,
+  "workers": 9,
+  "variance": "openTail",
+  "monotone": "quantiles",
+  "rankSource": "adp",
+  "playoffFormat": "cumulative + 2025 bracket win %",
+  "elapsedMs": 576269,
+  "savedAt": "2026-09-11T23:34:03.825Z"
+}
