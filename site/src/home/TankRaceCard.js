@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import {
   ResponsiveContainer,
@@ -13,12 +14,84 @@ import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
-import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { CURRENT_YEAR, getHomeCardCompletedWeeks } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { StartSitSort } from '../players/StartSitDecider';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
+
+/** 2026 season only — show 8th vs 9th for the 1.02 instead of bottom-two for 1.01. */
+const TANK_RACE_102_SEASON = '2026';
+const USE_2026_102_RACE = String(CURRENT_YEAR) === TANK_RACE_102_SEASON;
+const TANK_RACE_102_HINT =
+  'Predictions show Race for the 1.02 is more interesting than 1.01 for the 2026 Hwang Dynasty Season';
+
+function TankRace102Hint() {
+  const isMobile = useIsMobile();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isMobile) {
+      return undefined;
+    }
+    if (modalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [modalOpen, isMobile]);
+
+  if (isMobile) {
+    const modal = modalOpen
+      ? createPortal(
+          <div className="tank-race-102-hint-overlay" onClick={() => setModalOpen(false)}>
+            <div
+              className="tank-race-102-hint-card"
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="tank-race-102-hint-close"
+                aria-label="Close"
+                onClick={() => setModalOpen(false)}
+              >
+                ×
+              </button>
+              <p>{TANK_RACE_102_HINT}</p>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
+    return (
+      <>
+        <button
+          type="button"
+          className="info-icon tank-race-102-hint"
+          aria-label={TANK_RACE_102_HINT}
+          onClick={() => setModalOpen(true)}
+        >
+          ℹ️
+        </button>
+        {modal}
+      </>
+    );
+  }
+
+  return (
+    <span className="info-icon tank-race-102-hint" aria-label={TANK_RACE_102_HINT}>
+      ℹ️
+      <span className="info-icon-tooltip tank-race-102-hint-tooltip" role="tooltip">
+        {TANK_RACE_102_HINT}
+      </span>
+    </span>
+  );
+}
 
 function computeTankRaceSeries(weeksParsedData, completedWeeks, playersData, playerIdMap, playerSeasonTotalsMap) {
   if (!Array.isArray(weeksParsedData)) {
@@ -255,19 +328,10 @@ function TankRaceCard({ currentWeekOverride = null }) {
       try {
         const season = CURRENT_YEAR;
 
-        let currentWeek = getCurrentNFLWeek(season);
-        if (currentWeekOverride != null) {
-          const parsed = Number(currentWeekOverride);
-          if (Number.isFinite(parsed) && parsed > 0) {
-            currentWeek = parsed;
-          }
-        }
-
-        if (!Number.isFinite(currentWeek) || currentWeek < 1) {
-          currentWeek = 1;
-        }
-
-        const effectiveWeek = Math.max(1, Math.min(14, currentWeek));
+        const effectiveWeek = Math.max(
+          0,
+          Math.min(14, getHomeCardCompletedWeeks(season, currentWeekOverride)),
+        );
 
         const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),
@@ -322,9 +386,11 @@ function TankRaceCard({ currentWeekOverride = null }) {
           .slice()
           .sort((a, b) => a.total - b.total || a.rid - b.rid);
 
-        const tankTeamsRaw = sortedByPointsAsc.slice(0, 2);
+        const tankTeamsRaw = USE_2026_102_RACE
+          ? sortedByPointsDesc.slice(7, 9)
+          : sortedByPointsAsc.slice(0, 2);
 
-        if (!tankTeamsRaw.length) {
+        if (tankTeamsRaw.length < 2) {
           setBottomTeams(null);
           setChartData(null);
           setLoading(false);
@@ -342,9 +408,9 @@ function TankRaceCard({ currentWeekOverride = null }) {
           };
         });
 
-        const orderedForDisplay = mappedBottom
-          .slice()
-          .sort((a, b) => (b.place || 0) - (a.place || 0));
+        const orderedForDisplay = USE_2026_102_RACE
+          ? mappedBottom
+          : mappedBottom.slice().sort((a, b) => (b.place || 0) - (a.place || 0));
 
         const tankRosterIds = orderedForDisplay.map((team) => team.rosterId);
 
@@ -571,8 +637,9 @@ function TankRaceCard({ currentWeekOverride = null }) {
     <HomeCard>
       <div className="home-card-inner">
         <div className="home-card-title-row">
-          <h2 className="home-card-title">
-            📉 Race for the 1.01
+          <h2 className={`home-card-title${USE_2026_102_RACE ? ' home-card-title--with-hint' : ''}`}>
+            {USE_2026_102_RACE ? '📉 Race for the 1.02' : '📉 Race for the 1.01'}
+            {USE_2026_102_RACE ? <TankRace102Hint /> : null}
           </h2>
           {bottomTeams && bottomTeams.length === 2 ? (
             <Link

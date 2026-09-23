@@ -349,10 +349,31 @@ export function flipSide(side) {
   return null;
 }
 
+/** When ESPN omits possession, own-vs-opp ytg + spot text still names the offense. */
+export function possessionFromSpotAndYtg(text, ytg, game) {
+  const y = Number(ytg);
+  if (!Number.isFinite(y) || y < 1 || y > 99 || y === 50) return null;
+  const teams = {
+    home: game?.teams?.home,
+    away: game?.teams?.away,
+    homeAbbr: game?.espnHomeAbbr,
+    awayAbbr: game?.espnAwayAbbr,
+  };
+  const asHome = ytgFromSpot(text, { ...teams, possession: 'home' });
+  const asAway = ytgFromSpot(text, { ...teams, possession: 'away' });
+  const homeFit = asHome === y;
+  const awayFit = asAway === y;
+  if (homeFit && !awayFit) return 'home';
+  if (awayFit && !homeFit) return 'away';
+  return null;
+}
+
 export function livePossessionSide(game) {
   const live = game?.live;
   if (live?.possession === 'home' || live?.possession === 'away') return live.possession;
-  return pickNamedSide(live?.possessionName || '', game?.teams?.home, game?.teams?.away);
+  const named = pickNamedSide(live?.possessionName || '', game?.teams?.home, game?.teams?.away);
+  if (named) return named;
+  return possessionFromSpotAndYtg(live?.possessionText, live?.yardsToEndzone, game);
 }
 
 export function hasLiveOffensiveSnap(game) {
@@ -385,6 +406,34 @@ export function playYardageFromText(text) {
 function lastPlayEndedSeries(type, text) {
   if (isMadeScoreLabel(type) || isMadeScoreLabel(text)) return true;
   return SERIES_OVER_PLAY.test(type) || SERIES_OVER_PLAY.test(text);
+}
+
+function lastPlayIsKickoff(live) {
+  const type = String(live?.lastPlayType ?? '');
+  const text = String(live?.lastPlay ?? '');
+  return /kickoff/i.test(type) || /kickoff/i.test(text);
+}
+
+/** Score / punt / INT / kickoff — possession has flipped or is flipping. */
+function lastPlayClosedSeries(live) {
+  if (!live) return false;
+  return lastPlayEndedSeries(live.lastPlayType, live.lastPlay) || lastPlayIsKickoff(live);
+}
+
+/** Team whose series just ended. Return/takeaway lastPlaySide is the team that now has it. */
+function seriesEndingSide(live, bookLead) {
+  if (!live) return null;
+  const type = String(live.lastPlayType ?? '');
+  const text = String(live.lastPlay ?? '');
+  const side = live.lastPlaySide;
+  if (lastPlayIsKickoff(live)) {
+    return bookLead === 'home' || bookLead === 'away'
+      ? bookLead
+      : (side === 'home' || side === 'away' ? side : null);
+  }
+  if (side !== 'home' && side !== 'away') return null;
+  if (/return/i.test(type) || /return/i.test(text)) return flipSide(side);
+  return side;
 }
 
 function isDeadBallClockPlay(type, text) {
@@ -524,7 +573,7 @@ export function situationUntrusted(game) {
  */
 export function spotLagKind(game) {
   const view = applyFdAheadLive(game);
-  if (view.live?.spotSource === 'fd') return null;
+  if (view.live?.spotSource === 'fd' || view.live?.spotSource === 'manual') return null;
   if (!view?.inPlay || isHalftimeLive(view.live)) return null;
   const espn = view?.live;
   const fd = espn?.fd || game?.fdLive;
@@ -648,16 +697,22 @@ export function firstUpSide(game) {
     const fdPoss = livePossessionSide(view);
     if (fdPoss) return fdPoss;
   }
-  if (hasLiveOffensiveSnap(view)) {
-    const snapPoss = livePossessionSide(view);
-    if (snapPoss) return snapPoss;
-  }
   const book = bookLiveDrive(view);
-  if (book?.lead) return book.lead;
+  const closed = lastPlayClosedSeries(view.live);
+  const ended = seriesEndingSide(view.live, book?.lead);
+  const snapPoss = hasLiveOffensiveSnap(view) ? livePossessionSide(view) : null;
+  const leftover = espnSnapIsLeftover(view, snapPoss);
+  if (snapPoss && leftover) return flipSide(snapPoss);
+  if (snapPoss && !leftover) return snapPoss;
   const scorer = scoringSideAfterMadeKick(view);
   if (scorer) return flipSide(scorer);
   const chartSide = view?.live?.driveChart?.currentSide;
   if (chartSide === 'home' || chartSide === 'away') return chartSide;
+  if (book?.lead) {
+    if (ended === book.lead) return flipSide(book.lead);
+    if (closed && ended && ended !== book.lead) return book.lead;
+    if (!closed) return book.lead;
+  }
   const finished = view?.live?.driveChart?.finishedSide;
   // Punt / INT / missed FG: series is over, but the next snap is not a kickoff.
   if (finished === 'home' || finished === 'away') return null;
@@ -746,12 +801,12 @@ export function shouldShowBothDriveSides(game) {
 /** current = team with the ball (or next up); next = opponent after that. */
 export function driveCardRole(game, pred) {
   if (!game?.inPlay || game?.live?.state === 'pre') return 'first';
-  if (pred?.layer === 'snap' || pred?.firstUp) return 'current';
-  if (pred?.afterPriorDrive || pred?.predictedStart) return 'next';
   const poss = firstUpSide(game);
   const side = pred?.side;
-  if (poss && side && side === poss) return 'current';
   if (poss && side && side !== poss) return 'next';
+  if (poss && side && side === poss) return 'current';
+  if (pred?.layer === 'snap' || pred?.firstUp) return 'current';
+  if (pred?.afterPriorDrive || pred?.predictedStart) return 'next';
   return 'next';
 }
 
@@ -809,6 +864,40 @@ export function bookLiveDrive(game) {
   return { lead, n, trailN };
 }
 
+function bookHasDrive(game, side, n) {
+  if ((side !== 'home' && side !== 'away') || !Number.isFinite(n)) return false;
+  const rows = Array.isArray(game?.driveMarkets) ? game.driveMarkets : [];
+  return rows.some((market) => (
+    marketTeamSide(game, market) === side && marketDriveNumber(market) === n
+  ));
+}
+
+/**
+ * ESPN still has a down/distance from a series the book has already taken down.
+ * DK posting Oregon N+1 and dropping Oregon N means that snap is leftover —
+ * the other team is up.
+ */
+export function espnSnapIsLeftover(game, snapPoss) {
+  if (snapPoss !== 'home' && snapPoss !== 'away') return false;
+  const live = game?.live;
+  const book = bookLiveDrive(game);
+  const closed = lastPlayClosedSeries(live);
+  const ended = seriesEndingSide(live, book?.lead);
+  const chartSide = live?.driveChart?.currentSide;
+  if (
+    closed
+    && ended === snapPoss
+    && chartSide !== snapPoss
+    && !lastPlayIsKickoff(live)
+  ) return true;
+  if (!book || book.lead !== snapPoss || book.n !== book.trailN + 1) return false;
+  const started = Number(snapPoss === 'home'
+    ? live?.driveChart?.homeStarted
+    : live?.driveChart?.awayStarted);
+  if (!Number.isFinite(started) || started < 1 || book.n <= started) return false;
+  return !bookHasDrive(game, snapPoss, started);
+}
+
 /** True when this book market is the drive we are actually pricing. */
 export function marketMatchesDriveNumber(game, market, side, extras = {}) {
   const wanted = driveNumberForSide(game, side, { ...extras, market: undefined });
@@ -837,8 +926,10 @@ export function driveNumberForSide(game, side, extras = {}) {
   const role = extras.role ?? driveCardRole(game, extras.pred);
   if (role === 'first' || !game?.inPlay || game?.live?.state === 'pre') return 1;
   const book = bookLiveDrive(game);
+  const up = firstUpSide(game);
   if (book?.lead && (side === 'home' || side === 'away')) {
-    return book.n;
+    if (up === book.lead) return book.n;
+    if (up) return side === book.lead ? book.n : book.trailN;
   }
   const chart = game?.live?.driveChart;
   if (chart && (side === 'home' || side === 'away')) {
@@ -1275,6 +1366,8 @@ export function featuresFromGame(game) {
       possession: livePossessionSide(view),
       home: view?.teams?.home,
       away: view?.teams?.away,
+      homeAbbr: view?.espnHomeAbbr,
+      awayAbbr: view?.espnAwayAbbr,
     });
     if (Number.isFinite(fromText)) ytgLive = fromText;
   }
@@ -1284,7 +1377,9 @@ export function featuresFromGame(game) {
   const side = inferOffenseSide(view, view?.nextDrive);
   const firstUp = firstUpSide(view);
   const isWaiting = Boolean(inPlay && firstUp && side && side !== firstUp);
-  const hasSnap = !clock.halfKickoff
+  const leftoverSnap = espnSnapIsLeftover(view, livePossessionSide(view));
+  const hasSnap = !leftoverSnap
+    && !clock.halfKickoff
     && Number.isFinite(down) && down > 0
     && Number.isFinite(ytgLive) && ytgLive >= 1 && ytgLive <= 99;
   const pricingCurrentDrive = Boolean(side && firstUp && side === firstUp && hasSnap);

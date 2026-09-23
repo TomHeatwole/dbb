@@ -278,43 +278,59 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
     );
   } else {
     const weeksLabel = picture.weeksCount === 1 ? '1 week' : `${picture.weeksCount} weeks`;
+    const bySeed = Object.fromEntries(picture.teams.map((team) => [team.seed, team]));
+    const columns = [
+      [bySeed[1], bySeed[2]],
+      [bySeed[3], bySeed[4]],
+    ];
+
+    const renderTeam = (team) => {
+      if (!team) return null;
+      const mine = isMyRoster(team.rosterId, myRosterId);
+      return (
+        <Link
+          key={team.rosterId}
+          to={`/team/${team.rosterId}`}
+          className={`playoff-picture-team-row${mine ? ' playoff-picture-team-row--me' : ''}`}
+        >
+          <span className={`playoff-picture-seed playoff-picture-seed--${team.seed}`}>
+            #{team.seed}
+          </span>
+          {team.avatarUrl ? (
+            <img
+              className={`playoff-picture-avatar${mine ? ' me-avatar' : ''}`}
+              src={team.avatarUrl}
+              alt=""
+            />
+          ) : (
+            <span className="playoff-picture-avatar playoff-picture-avatar--empty" aria-hidden="true" />
+          )}
+          <span className="playoff-picture-name">
+            {team.teamName}
+            {mine ? <span className="me-chip">YOU</span> : null}
+          </span>
+          <span className="playoff-picture-pts">
+            {formatScore(team.totalPoints)}
+            <span className="playoff-picture-pts-units"> pts</span>
+          </span>
+        </Link>
+      );
+    };
+
     body = (
       <div className="playoff-picture-body">
         <p className="playoff-picture-caption">
           Top 4 by season points · through {weeksLabel}
         </p>
         <div className="playoff-picture-teams">
-          {picture.teams.map((team) => {
-            const mine = isMyRoster(team.rosterId, myRosterId);
-            return (
-              <Link
-                key={team.rosterId}
-                to={`/team/${team.rosterId}`}
-                className={`playoff-picture-team-row${mine ? ' playoff-picture-team-row--me' : ''}`}
-              >
-                <span className="playoff-picture-seed">#{team.seed}</span>
-                {team.avatarUrl ? (
-                  <img
-                    className={`playoff-picture-avatar${mine ? ' me-avatar' : ''}`}
-                    src={team.avatarUrl}
-                    alt=""
-                  />
-                ) : (
-                  <span className="playoff-picture-avatar playoff-picture-avatar--empty" aria-hidden="true" />
-                )}
-                <div className="playoff-picture-team-meta">
-                  <span className="playoff-picture-name">
-                    {team.teamName}
-                    {mine ? <span className="me-chip">YOU</span> : null}
-                  </span>
-                  <span className="playoff-picture-pts">
-                    {formatScore(team.totalPoints)}
-                    <span className="playoff-picture-pts-units"> pts</span>
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+          {columns.map((colTeams) => (
+            <div
+              className="playoff-picture-col"
+              key={colTeams.map((team) => team?.rosterId || 'x').join('-')}
+            >
+              {colTeams.map((team) => renderTeam(team))}
+            </div>
+          ))}
         </div>
       </div>
     );

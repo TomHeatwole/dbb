@@ -143,15 +143,13 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
     const rows = payload
       .slice()
       .sort((a, b) => {
-        const aMine = isMyRoster(a.dataKey, myRosterId);
-        const bMine = isMyRoster(b.dataKey, myRosterId);
-        if (aMine !== bMine) return aMine ? -1 : 1;
-        const av = typeof a.value === 'number' ? a.value : -Infinity;
-        const bv = typeof b.value === 'number' ? b.value : -Infinity;
+        const av = typeof a.payload?.[`c_${a.dataKey}`] === 'number' ? a.payload[`c_${a.dataKey}`] : -Infinity;
+        const bv = typeof b.payload?.[`c_${b.dataKey}`] === 'number' ? b.payload[`c_${b.dataKey}`] : -Infinity;
         return bv - av;
       })
-      .map((item) => {
+      .map((item, index) => {
         const ridKey = item.dataKey;
+        const rankLabel = `#${index + 1}`;
         const ridNum = Number(ridKey);
         const mine = isMyRoster(ridNum, myRosterId);
         const fullName = (rosterIdToName && rosterIdToName[ridNum]) ? rosterIdToName[ridNum] : (item.name || `Team ${ridKey}`);
@@ -182,7 +180,7 @@ export default function PlayoffRaceGraph({ weeksParsedData, completedWeeks, rost
               maxWidth: isMobile ? '65%' : 'unset',
             }}
             >
-              {teamName}{mine ? ' · YOU' : ''}
+              {rankLabel} {teamName}{mine ? ' · YOU' : ''}
             </span>
             <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: mine ? 800 : 400 }}>{valueText}</span>
           </div>

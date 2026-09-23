@@ -14,7 +14,7 @@ import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
 import useIsMobile from '../hooks/useIsMobile';
 import { useMyCurrentRosterId, isMyRoster } from '../hooks/useAuthUser';
-import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { CURRENT_YEAR, getHomeCardCompletedWeeks } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
@@ -256,19 +256,11 @@ function BubbleCard({ currentWeekOverride = null }) {
       try {
         const season = CURRENT_YEAR;
 
-        let currentWeek = getCurrentNFLWeek(season);
-        if (currentWeekOverride != null) {
-          const parsed = Number(currentWeekOverride);
-          if (Number.isFinite(parsed) && parsed > 0) {
-            currentWeek = parsed;
-          }
-        }
-
-        if (!Number.isFinite(currentWeek) || currentWeek < 1) {
-          currentWeek = 1;
-        }
-
-        const effectiveWeek = Math.max(1, Math.min(14, currentWeek));
+        const completedWeeks = Math.max(
+          0,
+          Math.min(14, getHomeCardCompletedWeeks(season, currentWeekOverride)),
+        );
+        const effectiveWeek = completedWeeks;
 
         const [weeksData, teamData, players, idMap] = await Promise.all([
           fetchScoresData(season),

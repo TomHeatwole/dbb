@@ -7,32 +7,49 @@ export function normAbbr(s) {
   return String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-function teamTokens(abbr, name) {
-  const out = new Set();
-  const a = normAbbr(abbr);
-  if (a) out.add(a);
-  const n = String(name ?? '').trim();
-  if (!n) return [...out];
-  out.add(normAbbr(n));
-  const words = n.split(/\s+/).filter(Boolean);
-  if (words.length >= 2) {
-    out.add(normAbbr(words.map((w) => w[0]).join('')));
-  }
-  const last = words[words.length - 1];
-  if (last && last.length >= 2 && last.length <= 5) out.add(normAbbr(last));
-  return [...out].filter(Boolean);
+function normName(s) {
+  return String(s ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/['’`]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\bst\b/g, 'state')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-function hits(tok, tokens) {
-  if (!tok) return false;
-  return tokens.some((t) => {
-    if (!t) return false;
-    if (t === tok) return true;
-    if ((t.startsWith(tok) || tok.startsWith(t)) && Math.min(t.length, tok.length) >= 2) {
-      return true;
-    }
-    return false;
-  });
+function phraseScore(hay, needle) {
+  const h = normName(hay);
+  const n = normName(needle);
+  if (!h || !n) return 0;
+  if (h === n) return 1000 + n.length;
+  const hw = h.split(' ').filter(Boolean);
+  const nw = n.split(' ').filter(Boolean);
+  if (!nw.length || nw.length > hw.length) return 0;
+  for (let i = 0; i <= hw.length - nw.length; i += 1) {
+    if (nw.every((w, j) => hw[i + j] === w)) return 100 + nw.length * 20 + n.length;
+  }
+  return 0;
+}
+
+function initialsOf(name) {
+  const words = normName(name).split(' ').filter(Boolean);
+  if (words.length < 2) return '';
+  return words.map((w) => w[0]).join('').toUpperCase();
+}
+
+/** Exact abbr / full-name / initials. No prefix match (ORE must not hit ORST). */
+function spotSideScore(spotName, name, abbr) {
+  const tok = normAbbr(spotName);
+  let best = 0;
+  const a = normAbbr(abbr);
+  if (tok && a && tok === a) best = Math.max(best, 2000 + tok.length);
+  best = Math.max(best, phraseScore(spotName, name));
+  const init = initialsOf(name);
+  if (tok && init && tok === init) best = Math.max(best, 400 + tok.length);
+  const n = normName(name);
+  if (tok === 'PSU' && n.includes('portland state')) best = Math.max(best, 1500);
+  return best;
 }
 
 export function ytgFromSpot(text, teams = {}) {
@@ -45,11 +62,19 @@ export function ytgFromSpot(text, teams = {}) {
   if (!Number.isFinite(yl) || yl < 0 || yl > 50) return null;
   if (yl === 50) return 50;
   if (yl === 0) return 99;
-  const tok = normAbbr(m[1]);
-  const home = teamTokens(teams.homeAbbr, teams.home);
-  const away = teamTokens(teams.awayAbbr, teams.away);
-  const off = teams.possession === 'home' ? home : teams.possession === 'away' ? away : [];
-  if (hits(tok, off)) return 100 - yl;
-  if (hits(tok, home) || hits(tok, away)) return yl;
+  const homeScore = spotSideScore(m[1], teams.home, teams.homeAbbr);
+  const awayScore = spotSideScore(m[1], teams.away, teams.awayAbbr);
+  const offScore = teams.possession === 'home'
+    ? homeScore
+    : teams.possession === 'away'
+      ? awayScore
+      : 0;
+  const defScore = teams.possession === 'home'
+    ? awayScore
+    : teams.possession === 'away'
+      ? homeScore
+      : Math.max(homeScore, awayScore);
+  if (offScore > defScore && offScore > 0) return 100 - yl;
+  if (homeScore > 0 || awayScore > 0) return yl;
   return yl;
 }

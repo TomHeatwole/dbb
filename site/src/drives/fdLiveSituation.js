@@ -134,23 +134,41 @@ function parsePossessionToken(text) {
   return null;
 }
 
+function normTeamName(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/['’`]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\bst\b/g, 'state')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function teamPhraseScore(hay, needle) {
+  const h = normTeamName(hay);
+  const n = normTeamName(needle);
+  if (!h || !n) return 0;
+  if (h === n) return 1000 + n.length;
+  const hw = h.split(' ').filter(Boolean);
+  const nw = n.split(' ').filter(Boolean);
+  if (!nw.length || nw.length > hw.length) return 0;
+  for (let i = 0; i <= hw.length - nw.length; i += 1) {
+    if (nw.every((w, j) => hw[i + j] === w)) return 100 + nw.length * 20 + n.length;
+  }
+  return 0;
+}
+
 export function resolveFdPossessionSide(sit, teams = {}) {
   if (!sit) return null;
   if (sit.possession === 'home' || sit.possession === 'away') return sit.possession;
   if (sit.possessionSide === 'home' || sit.possessionSide === 'away') return sit.possessionSide;
   const name = String(sit.possessionName || '').trim();
   if (name) {
-    const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-    const n = norm(name);
-    const home = norm(teams.home);
-    const away = norm(teams.away);
-    if (n && n === home && n !== away) return 'home';
-    if (n && n === away && n !== home) return 'away';
-    const homeHit = home && (n.includes(home) || home.includes(n));
-    const awayHit = away && (n.includes(away) || away.includes(n));
-    if (homeHit && !awayHit) return 'home';
-    if (awayHit && !homeHit) return 'away';
-    if (homeHit && awayHit) return home.length >= away.length ? 'home' : 'away';
+    const homeScore = teamPhraseScore(name, teams.home);
+    const awayScore = teamPhraseScore(name, teams.away);
+    if (homeScore > awayScore && homeScore > 0) return 'home';
+    if (awayScore > homeScore && awayScore > 0) return 'away';
   }
   if (sit.possessionArrow === 'left') return 'away';
   if (sit.possessionArrow === 'right') return 'home';
@@ -619,7 +637,7 @@ function finiteYtg(raw) {
  * so the model and labels use FD instead of a stale ESPN spot.
  */
 export function applyFdAheadLive(game) {
-  if (!game?.inPlay || game.live?.spotSource === 'fd') return game;
+  if (!game?.inPlay || game.live?.spotSource === 'fd' || game.live?.spotSource === 'manual') return game;
   const espn = game.live ?? {};
   const fd = espn.fd || game.fdLive;
   if (!fd || typeof fd !== 'object') return game;
@@ -676,6 +694,8 @@ export function applyFdAheadLive(game) {
       possession: live.possession,
       home: game.teams?.home,
       away: game.teams?.away,
+      homeAbbr: game.espnHomeAbbr,
+      awayAbbr: game.espnAwayAbbr,
     }));
   }
   if (Number.isFinite(ytg)) live.yardsToEndzone = ytg;

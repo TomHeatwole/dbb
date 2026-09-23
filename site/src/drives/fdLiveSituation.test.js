@@ -1,4 +1,5 @@
 import {
+  applyFdAheadLive,
   espnClockAheadOfFd,
   fdLiveFromRows,
   fdStateAheadOfEspn,
@@ -109,6 +110,17 @@ describe('parseFdLiveSituation', () => {
       { possessionArrow: 'right' },
       { home: 'Florida State', away: 'SMU' },
     )).toBe('home');
+  });
+
+  it('does not treat Oregon as a hit on Oregon State', () => {
+    const teams = { home: 'Oregon', away: 'Oregon State' };
+    expect(resolveFdPossessionSide({ possessionName: 'Oregon' }, teams)).toBe('home');
+    expect(resolveFdPossessionSide({ possessionName: 'Oregon State' }, teams)).toBe('away');
+    expect(resolveFdPossessionSide({ possessionName: 'Oregon St' }, teams)).toBe('away');
+    expect(resolveFdPossessionSide(
+      { possessionName: 'Portland St' },
+      { home: 'Oregon', away: 'Portland State' },
+    )).toBe('away');
   });
 });
 
@@ -293,5 +305,33 @@ describe('espnClockAheadOfFd', () => {
       { period: 3, clock: '0:45', clockSeconds: 45 },
       { clock: '0:45', clockSeconds: 45 },
     )).toBe(false);
+  });
+});
+
+describe('applyFdAheadLive', () => {
+  it('leaves a manual spot alone even when FanDuel looks ahead', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      live: {
+        spotSource: 'manual',
+        period: 3,
+        down: 2,
+        distance: 7,
+        yardsToEndzone: 40,
+        fdAheadOfEspn: true,
+        fd: {
+          period: 3,
+          clockSeconds: 120,
+          down: 1,
+          distance: 10,
+          yardsToEndzone: 75,
+        },
+      },
+    };
+    const out = applyFdAheadLive(game);
+    expect(out.live.spotSource).toBe('manual');
+    expect(out.live.down).toBe(2);
+    expect(out.live.yardsToEndzone).toBe(40);
   });
 });

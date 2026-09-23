@@ -25647,6 +25647,101 @@ button.corners-bet:hover {
   color: rgba(180, 255, 210, 0.88);
 }
 
+.drives-situation--manual {
+  color: rgba(255, 224, 138, 0.88);
+}
+
+.drives-spot-editor {
+  margin-top: 0.55rem;
+}
+
+.drives-spot-editor-toggle {
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(180, 210, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.drives-spot-editor-toggle:hover {
+  color: rgba(220, 235, 255, 0.95);
+}
+
+.drives-spot-editor--on .drives-spot-editor-toggle {
+  color: rgba(255, 224, 138, 0.92);
+}
+
+.drives-spot-editor-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.55rem 0.7rem;
+  margin-top: 0.45rem;
+  padding: 0.55rem 0.6rem 0.5rem;
+  border-radius: 0.45rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.drives-spot-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  min-width: 4.4rem;
+}
+
+.drives-spot-editor-field span {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.7);
+}
+
+.drives-spot-editor-field select,
+.drives-spot-editor-field input {
+  width: 5.2rem;
+  padding: 0.32rem 0.4rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.drives-spot-editor-field input {
+  width: 4.4rem;
+}
+
+.drives-spot-editor-clear {
+  padding: 0.32rem 0.55rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(255, 224, 138, 0.35);
+  background: transparent;
+  color: rgba(255, 224, 138, 0.9);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.drives-spot-editor-clear:hover {
+  background: rgba(255, 224, 138, 0.1);
+}
+
+.drives-spot-editor-hint {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.68rem;
+  color: rgba(220, 230, 245, 0.62);
+}
+
 .drives-missing-line {
   margin-top: 0.45rem;
 }

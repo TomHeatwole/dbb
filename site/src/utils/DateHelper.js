@@ -114,11 +114,30 @@ export function getCompletedWeeksCount(season = null) {
 
   const MS_PER_DAY = 1000 * 60 * 60 * 24;
   const daysSinceStart = Math.floor((now - seasonStart) / MS_PER_DAY);
-  // A week is completed once "start + 5 days" (Tuesday) has occurred
-  // Derivation: count weeks w such that now >= start + 7*w + 5
-  // => w <= (daysSinceStart - 5) / 7; number of such weeks = floor((daysSinceStart - 5)/7) + 1
-  const raw = Math.floor((daysSinceStart - 5) / 7) + 1;
+  // A week is completed once Tuesday has begun (after Monday Night Football).
+  // Week w starts at seasonStart + 7*(w-1); threshold is +6 days (Tue 00:00 local).
+  // Derivation: count weeks w such that now >= start + 7*w + 6
+  // => w <= (daysSinceStart - 6) / 7; number of such weeks = floor((daysSinceStart - 6)/7) + 1
+  const WEEK_COMPLETE_OFFSET_DAYS = 6;
+  const raw = Math.floor((daysSinceStart - WEEK_COMPLETE_OFFSET_DAYS) / 7) + 1;
   return Math.max(0, Math.min(17, raw));
+}
+
+/**
+ * Completed weeks for home cumulative cards. Home passes display week (current);
+ * the last fully finished week is one less, capped by calendar completion.
+ */
+export function getHomeCardCompletedWeeks(season = null, currentWeekOverride = null) {
+  const baseCompleted = getCompletedWeeksCount(season);
+  if (currentWeekOverride == null) {
+    return Math.max(0, Math.min(17, baseCompleted));
+  }
+  const parsed = Number(currentWeekOverride);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return Math.max(0, Math.min(17, baseCompleted));
+  }
+  const fromDisplayWeek = Math.max(0, parsed - 1);
+  return Math.max(0, Math.min(fromDisplayWeek, baseCompleted));
 }
 
 /** Kickoff instant for Week 1 — Wed Sep 9, 2026 @ 8:20 PM ET (SEA vs NE). */
@@ -178,7 +197,8 @@ export function isCurrentWeekCompletedByDate(season = null) {
 
   const currentWeek = getCurrentNFLWeek(season);
   const currentWeekStart = new Date(seasonStart.getTime() + (currentWeek - 1) * 7 * 24 * 60 * 60 * 1000);
-  const tuesdayThreshold = new Date(currentWeekStart.getTime() + 5 * 24 * 60 * 60 * 1000);
+  // Tuesday 00:00 local — after Monday Night Football concludes.
+  const tuesdayThreshold = new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
   return now >= tuesdayThreshold;
 }
 

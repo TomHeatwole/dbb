@@ -14,6 +14,11 @@ import { annotateGamesWithLineLogging } from '../lib/drive-line-log.mjs';
 import { fdDriveRowsForGame, matchingFdDriveRows, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
 import { fdLiveFromRows, fdStateAheadOfEspn, applyFdAheadLive } from '../src/drives/fdLiveSituation.js';
 import { uniqueScoreboardDates } from '../src/drives/espnScoreboardDates.js';
+import { ytgFromSpot } from '../src/drives/ytgFromSpot.js';
+import {
+  liveSpotFromCurrentDrive,
+  shouldApplyCurrentDriveSpot,
+} from '../src/drives/espnDriveChart.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -964,40 +969,10 @@ function parseClockSeconds(display) {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
-function normAbbr(s) {
-  return String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-}
-
-function abbrClose(a, b) {
-  if (!a || !b) return false;
-  if (a === b) return true;
-  if (a.startsWith(b) || b.startsWith(a)) return Math.min(a.length, b.length) >= 2;
-  return false;
-}
-
 function ytgFromSituation(situation, possessionText, teams = {}) {
   const ytg = Number(situation?.yardsToEndzone);
   if (Number.isFinite(ytg) && ytg >= 1 && ytg <= 99) return ytg;
-  const text = String(possessionText ?? '').trim();
-  if (text === '50') return 50;
-  const m = text.match(/^(?:at\s+)?(.+?)\s+(\d{1,2})$/i);
-  if (!m) return null;
-  const yl = Number(m[2]);
-  if (!Number.isFinite(yl) || yl < 0 || yl > 50) return null;
-  if (yl === 50) return 50;
-  if (yl === 0) return 99;
-  const tok = normAbbr(m[1]);
-  const initials = (name) => {
-    const words = String(name ?? '').split(/\s+/).filter(Boolean);
-    return words.length >= 2 ? normAbbr(words.map((w) => w[0]).join('')) : '';
-  };
-  const homeToks = [normAbbr(teams.homeAbbr), normAbbr(teams.home), initials(teams.home)].filter(Boolean);
-  const awayToks = [normAbbr(teams.awayAbbr), normAbbr(teams.away), initials(teams.away)].filter(Boolean);
-  const offToks = teams.possession === 'home' ? homeToks : teams.possession === 'away' ? awayToks : [];
-  const hit = (toks) => toks.some((t) => t === tok || abbrClose(tok, t));
-  if (hit(offToks)) return 100 - yl;
-  if (hit(homeToks) || hit(awayToks)) return yl;
-  return yl;
+  return ytgFromSpot(possessionText, teams);
 }
 
 function compactProviderError(err) {
@@ -1212,7 +1187,7 @@ async function fetchEspnDriveChart(espnId, teams) {
       const chart = await parseEspnDriveChart(summary, teams);
       return {
         chart,
-        snapshot: parseEspnSummaryLive(summary),
+        snapshot: parseEspnSummaryLive(summary, teams, chart),
       };
     } catch (err) {
       lastErr = err;
@@ -1222,7 +1197,7 @@ async function fetchEspnDriveChart(espnId, teams) {
   return null;
 }
 
-function parseEspnSummaryLive(summary) {
+function parseEspnSummaryLive(summary, teams = {}, chart = null) {
   const header = summary?.header;
   const comp = header?.competitions?.[0];
   if (!comp) return null;
@@ -1232,13 +1207,52 @@ function parseEspnSummaryLive(summary) {
     status: comp.status,
   });
   if (!parsed) return null;
+  const current = summary?.drives?.current;
   if (!parsed.lastPlay) {
-    const plays = summary?.drives?.current?.plays;
+    const plays = current?.plays;
     const last = Array.isArray(plays) && plays.length ? plays[plays.length - 1] : null;
     if (last?.text) {
       parsed.lastPlay = last.text;
       parsed.lastPlayType = last.type?.text ?? parsed.lastPlayType;
     }
+  }
+  if (!parsed.possession && (chart?.currentSide === 'home' || chart?.currentSide === 'away')) {
+    parsed.possession = chart.currentSide;
+  }
+  const spotTeams = {
+    possession: parsed.possession,
+    homeAbbr: teams.homeAbbr ?? parsed.homeAbbr,
+    awayAbbr: teams.awayAbbr ?? parsed.awayAbbr,
+    home: teams.home ?? parsed.home,
+    away: teams.away ?? parsed.away,
+  };
+  const playSpot = liveSpotFromCurrentDrive(current);
+  if (shouldApplyCurrentDriveSpot(parsed.possessionText, current, playSpot)) {
+    if (playSpot.possessionText) parsed.possessionText = playSpot.possessionText;
+    if (playSpot.down != null) parsed.down = playSpot.down;
+    if (playSpot.distance != null) parsed.distance = playSpot.distance;
+    if (playSpot.yardLine != null) parsed.yardLine = playSpot.yardLine;
+    if (playSpot.downDistance) parsed.downDistance = playSpot.downDistance;
+    if (playSpot.yardsToEndzone != null) {
+      parsed.yardsToEndzone = playSpot.yardsToEndzone;
+    } else if (playSpot.possessionText) {
+      parsed.yardsToEndzone = ytgFromSituation({}, playSpot.possessionText, spotTeams);
+    }
+  } else if (!parsed.possessionText) {
+    const spot = current?.end?.text || current?.start?.text || null;
+    if (spot) {
+      parsed.possessionText = spot;
+      if (parsed.yardsToEndzone == null) {
+        parsed.yardsToEndzone = ytgFromSituation({ yardsToEndzone: parsed.yardsToEndzone }, spot, spotTeams);
+      }
+    }
+  }
+  if (!parsed.possession && parsed.possessionText && parsed.yardsToEndzone != null) {
+    const y = Number(parsed.yardsToEndzone);
+    const asHome = ytgFromSpot(parsed.possessionText, { ...spotTeams, possession: 'home' });
+    const asAway = ytgFromSpot(parsed.possessionText, { ...spotTeams, possession: 'away' });
+    if (asHome === y && asAway !== y) parsed.possession = 'home';
+    else if (asAway === y && asHome !== y) parsed.possession = 'away';
   }
   return parsed;
 }
@@ -1278,8 +1292,16 @@ function applyEspnSummarySnapshot(game, rec) {
       live.halfTime = Boolean(snap.halfTime);
       live.state = snap.state;
     }
+    if (!live.possession && (rec.chart?.currentSide === 'home' || rec.chart?.currentSide === 'away')) {
+      live.possession = rec.chart.currentSide;
+    }
     if (live.possession === 'home') live.possessionName = game.teams?.home ?? live.possessionName;
     else if (live.possession === 'away') live.possessionName = game.teams?.away ?? live.possessionName;
+  } else if (rec.chart?.currentSide === 'home' || rec.chart?.currentSide === 'away') {
+    live.possession = rec.chart.currentSide;
+    live.possessionName = live.possession === 'away'
+      ? (game.teams?.away ?? live.possessionName)
+      : (game.teams?.home ?? live.possessionName);
   }
   const score = snap?.homeScore != null && snap?.awayScore != null
     ? { home: snap.homeScore, away: snap.awayScore }

@@ -302,6 +302,155 @@ function downDistanceLabel(down, distance) {
   return `${d}${suffix} & ${dist}`;
 }
 
+function fieldFromYtg(ytg) {
+  const y = Math.round(Number(ytg));
+  if (!Number.isFinite(y) || y < 1 || y > 99) return { territory: 'own', yard: 25 };
+  if (y === 50) return { territory: 'mid', yard: 50 };
+  if (y > 50) return { territory: 'own', yard: 100 - y };
+  return { territory: 'opp', yard: y };
+}
+
+function ytgFromField(territory, yard) {
+  if (territory === 'mid') return 50;
+  const yl = Number(yard);
+  if (!Number.isFinite(yl) || yl < 1 || yl > 49) return NaN;
+  return territory === 'own' ? 100 - yl : yl;
+}
+
+function draftFromLive(live) {
+  const down = Number(live?.down);
+  const distance = Number(live?.distance);
+  const field = fieldFromYtg(live?.yardsToEndzone);
+  return {
+    down: Number.isFinite(down) && down >= 1 && down <= 4 ? String(down) : '1',
+    distance: Number.isFinite(distance) && distance >= 0 ? String(distance) : '10',
+    territory: field.territory,
+    yard: String(field.yard),
+  };
+}
+
+function normalizeSpotDraft(draft) {
+  if (!draft) return null;
+  const down = Number(draft.down);
+  const distance = Number(draft.distance);
+  const ytg = ytgFromField(draft.territory, draft.territory === 'mid' ? 50 : draft.yard);
+  if (!Number.isFinite(down) || down < 1 || down > 4) return null;
+  if (!Number.isFinite(distance) || distance < 0 || distance > 99) return null;
+  if (!Number.isFinite(ytg) || ytg < 1 || ytg > 99) return null;
+  const territory = draft.territory === 'opp' || draft.territory === 'mid' ? draft.territory : 'own';
+  return { down, distance, ytg, territory };
+}
+
+function applyManualSpot(game, spot) {
+  if (!spot) return game;
+  const downDistance = downDistanceLabel(spot.down, spot.distance);
+  const possessionText = spot.territory === 'mid'
+    ? '50'
+    : spot.territory === 'opp'
+      ? `opp ${spot.ytg}`
+      : `own ${100 - spot.ytg}`;
+  const live = {
+    ...(game.live ?? {}),
+    down: spot.down,
+    distance: spot.distance,
+    yardsToEndzone: spot.ytg,
+    yardLine: spot.ytg,
+    downDistance,
+    possessionText,
+    spotSource: 'manual',
+  };
+  return {
+    ...game,
+    inPlay: game.inPlay || game.live?.state === 'in',
+    live,
+  };
+}
+
+function ManualSpotEditor({ live, draft, active, open, onToggle, onDraftChange, onClear }) {
+  return (
+    <div className={`drives-spot-editor${active ? ' drives-spot-editor--on' : ''}`}>
+      <button
+        type="button"
+        className="drives-spot-editor-toggle"
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        {open ? 'Hide spot editor' : (active ? 'Edit spot · manual' : 'Edit spot')}
+      </button>
+      {open && (
+        <div className="drives-spot-editor-panel">
+          <label className="drives-spot-editor-field">
+            <span>Down</span>
+            <select
+              value={draft.down}
+              onChange={(e) => onDraftChange({ ...draft, down: e.target.value })}
+            >
+              <option value="1">1st</option>
+              <option value="2">2nd</option>
+              <option value="3">3rd</option>
+              <option value="4">4th</option>
+            </select>
+          </label>
+          <label className="drives-spot-editor-field">
+            <span>Distance</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max="99"
+              value={draft.distance}
+              onChange={(e) => onDraftChange({ ...draft, distance: e.target.value })}
+            />
+          </label>
+          <label className="drives-spot-editor-field">
+            <span>Field</span>
+            <select
+              value={draft.territory}
+              onChange={(e) => {
+                const territory = e.target.value;
+                onDraftChange({
+                  ...draft,
+                  territory,
+                  yard: territory === 'mid' ? '50' : (draft.territory === 'mid' ? '25' : draft.yard),
+                });
+              }}
+            >
+              <option value="own">Own</option>
+              <option value="mid">50</option>
+              <option value="opp">Opp</option>
+            </select>
+          </label>
+          {draft.territory !== 'mid' && (
+            <label className="drives-spot-editor-field">
+              <span>Yardline</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="49"
+                value={draft.yard}
+                onChange={(e) => onDraftChange({ ...draft, yard: e.target.value })}
+              />
+            </label>
+          )}
+          {active && (
+            <button type="button" className="drives-spot-editor-clear" onClick={onClear}>
+              Use ESPN
+            </button>
+          )}
+          <p className="drives-spot-editor-hint">
+            {active
+              ? `${downDistanceLabel(Number(draft.down), Number(draft.distance)) || 'Down'} · ${
+                draft.territory === 'mid' ? 'midfield' : `${draft.territory} ${draft.yard}`
+              } — model uses this spot`
+              : 'Change a field to override the live snap'}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function formatQuarterClock(clockSec) {
   const s = Number(clockSec);
   if (!Number.isFinite(s) || s < 0) return null;
@@ -831,7 +980,13 @@ function GameCard({
   const [expanded, setExpanded] = useState(defaultOpen);
   const [openLine, setOpenLine] = useState(null);
   const [quoteDraft, setQuoteDraft] = useState('');
-  const view = useMemo(() => applyFdAheadLive(game), [game]);
+  const [spotEditorOpen, setSpotEditorOpen] = useState(false);
+  const [spotDraft, setSpotDraft] = useState(() => draftFromLive(game.live));
+  const [spotManual, setSpotManual] = useState(false);
+  const view = useMemo(() => {
+    const base = applyFdAheadLive(game);
+    return applyManualSpot(base, spotManual ? normalizeSpotDraft(spotDraft) : null);
+  }, [game, spotDraft, spotManual]);
   useEffect(() => {
     setQuoteDraft('');
   }, [openLine?.sideIndex, openLine?.key, game.eventId]);
@@ -919,6 +1074,30 @@ function GameCard({
             )}
             {nextStart?.line && <p className="drives-situation drives-situation--next">{nextStart.line}</p>}
             {lines && <p className="drives-situation drives-situation--lines">{lines}</p>}
+            {spotManual && (
+              <p className="drives-situation drives-situation--manual">
+                Manual spot — live ESPN/FD snap ignored
+              </p>
+            )}
+            <ManualSpotEditor
+              draft={spotDraft}
+              active={spotManual}
+              open={spotEditorOpen}
+              onToggle={() => {
+                setSpotEditorOpen((was) => {
+                  if (!was && !spotManual) setSpotDraft(draftFromLive(view.live));
+                  return !was;
+                });
+              }}
+              onDraftChange={(next) => {
+                setSpotDraft(next);
+                if (normalizeSpotDraft(next)) setSpotManual(true);
+              }}
+              onClear={() => {
+                setSpotManual(false);
+                setSpotDraft(draftFromLive(game.live));
+              }}
+            />
             {!hasDriveLine(game) && !paired && (
               <p className="sop-exp-status drives-missing-line">
                 {game.inPlay

@@ -7,6 +7,7 @@ import {
   driveNumberFromName,
   driveNumberForSide,
   firstUpSide,
+  possessionFromSpotAndYtg,
   secondHalfReceiveSide,
   formatDriveOrdinal,
   inferOffenseSide,
@@ -88,6 +89,33 @@ describe('CFB name collisions (Texas vs Texas State)', () => {
     expect(nameMatchScore('1st Texas Drive Result', 'Texas State')).toBe(0);
     expect(nameMatchScore('1st Texas State Drive Result', 'Texas State'))
       .toBeGreaterThan(nameMatchScore('1st Texas State Drive Result', 'Texas'));
+  });
+
+  it('does not treat Oregon as Oregon State on a yardline or market title', () => {
+    const civil = {
+      possession: 'away',
+      home: 'Oregon',
+      away: 'Oregon State',
+      homeAbbr: 'ORE',
+      awayAbbr: 'ORST',
+    };
+    expect(ytgFromSpot('Oregon 35', civil)).toBe(35);
+    expect(ytgFromSpot('Oregon State 35', { ...civil, possession: 'home' })).toBe(35);
+    expect(ytgFromSpot('ORE 25', { ...civil, possession: 'home' })).toBe(75);
+    expect(ytgFromSpot('ORST 25', civil)).toBe(75);
+    const psuAtOre = {
+      possession: 'home',
+      home: 'Oregon',
+      away: 'Portland State',
+      homeAbbr: 'ORE',
+      awayAbbr: 'PRST',
+    };
+    expect(ytgFromSpot('ORE 45', psuAtOre)).toBe(55);
+    expect(ytgFromSpot('ORE 22', psuAtOre)).toBe(78);
+    expect(ytgFromSpot('PRST 31', psuAtOre)).toBe(31);
+    expect(nameMatchScore('11th Oregon Drive Result', 'Oregon State')).toBe(0);
+    expect(nameMatchScore('11th Oregon Drive Result', 'Oregon'))
+      .toBeGreaterThan(nameMatchScore('11th Oregon Drive Result', 'Oregon State'));
   });
 
   it('reads the home spread from the Texas runner, not Texas State listed first', () => {
@@ -739,6 +767,286 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(driveNumberForSide(game, 'home', { role: 'next' })).toBe(6);
   });
 
+  it('labels Oregon next while Portland St is on the live snap, even if Oregon Drive N+1 is posted', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Oregon', away: 'Portland State' },
+      score: { home: 70, away: 0 },
+      driveMarkets: [
+        {
+          source: 'dk',
+          marketName: '11th Portland State Drive Result',
+          offenseName: 'Portland State',
+          offenseSide: 'away',
+          driveN: 11,
+        },
+        {
+          source: 'dk',
+          marketName: '12th Oregon Drive Result',
+          offenseName: 'Oregon',
+          offenseSide: 'home',
+          driveN: 12,
+        },
+      ],
+      live: {
+        period: 4,
+        clock: '14:09',
+        clockSeconds: 14 * 60 + 9,
+        down: 2,
+        distance: 10,
+        yardsToEndzone: 75,
+        possession: 'away',
+        possessionName: 'Portland State',
+        possessionText: 'PRST 25',
+        lastPlay: 'Shotgun #23 N.Raby rush right for 0 yards to the PSU25',
+        lastPlayType: 'Rush',
+        lastPlaySide: 'away',
+        state: 'in',
+        driveChart: {
+          homeStarted: 11,
+          awayStarted: 11,
+          currentSide: 'away',
+          currentResult: null,
+          finishedSide: null,
+        },
+      },
+    };
+    expect(firstUpSide(game)).toBe('away');
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => [row.offenseSide, row.driveN])).toEqual([
+      ['away', 11],
+      ['home', 12],
+    ]);
+    const psu = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const ore = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(driveCardRole(game, psu)).toBe('current');
+    expect(driveCardRole(game, ore)).toBe('next');
+    expect(driveNumberForSide(game, 'away', { pred: psu })).toBe(11);
+    expect(driveNumberForSide(game, 'home', { pred: ore })).toBe(12);
+  });
+
+  it('keeps the receiving team current after a punt return, not the punter', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Oregon', away: 'Portland State' },
+      score: { home: 70, away: 0 },
+      driveMarkets: [
+        {
+          source: 'dk',
+          marketName: '12th Portland State Drive Result',
+          offenseName: 'Portland State',
+          offenseSide: 'away',
+          driveN: 12,
+        },
+        {
+          source: 'dk',
+          marketName: '12th Oregon Drive Result',
+          offenseName: 'Oregon',
+          offenseSide: 'home',
+          driveN: 12,
+        },
+      ],
+      live: {
+        period: 4,
+        clock: '12:38',
+        clockSeconds: 12 * 60 + 38,
+        down: 1,
+        distance: 10,
+        yardsToEndzone: 78,
+        possession: 'home',
+        possessionName: 'Oregon',
+        possessionText: 'ORE 22',
+        lastPlay: 'punt 57 yards to the ORE12 #1 D.Moore return 10 yards to the ORE22',
+        lastPlayType: 'Punt Return',
+        lastPlaySide: 'home',
+        state: 'in',
+        driveChart: {
+          homeStarted: 12,
+          awayStarted: 11,
+          currentSide: 'home',
+          currentResult: null,
+          finishedSide: null,
+        },
+      },
+    };
+    expect(firstUpSide(game)).toBe('home');
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => row.offenseSide)).toEqual(['home', 'away']);
+    expect(driveCardRole(game, featuresFromGame({ ...game, nextDrive: sides[0] }))).toBe('current');
+    expect(driveCardRole(game, featuresFromGame({ ...game, nextDrive: sides[1] }))).toBe('next');
+  });
+
+  it('does not treat the scoring team as current just because the book listed their next drive', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Oregon', away: 'Portland State' },
+      score: { home: 70, away: 0 },
+      driveMarkets: [
+        {
+          source: 'dk',
+          marketName: '11th Portland State Drive Result',
+          offenseName: 'Portland State',
+          offenseSide: 'away',
+          driveN: 11,
+        },
+        {
+          source: 'dk',
+          marketName: '12th Oregon Drive Result',
+          offenseName: 'Oregon',
+          offenseSide: 'home',
+          driveN: 12,
+        },
+      ],
+      live: {
+        period: 4,
+        clock: '6:52',
+        clockSeconds: 6 * 60 + 52,
+        down: null,
+        distance: null,
+        yardsToEndzone: null,
+        possession: null,
+        lastPlay: '(14:56) #25 R.Graziano kickoff 65 yards to the PSU00, Touchback',
+        lastPlayType: 'Kickoff',
+        lastPlaySide: 'home',
+        state: 'in',
+        driveChart: {
+          homeStarted: 11,
+          awayStarted: 10,
+          currentSide: null,
+          currentResult: null,
+          finishedSide: null,
+          openingReceiveSide: 'home',
+        },
+      },
+    };
+    expect(firstUpSide(game)).toBe('away');
+    expect(situationOffenseLabel(game)).toMatch(/Portland State/);
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => row.offenseSide)).toEqual(['away', 'home']);
+    const recv = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const wait = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(recv.side).toBe('away');
+    expect(driveCardRole(game, recv)).toBe('current');
+    expect(wait.side).toBe('home');
+    expect(driveCardRole(game, wait)).toBe('next');
+    expect(driveNumberForSide(game, 'away', { pred: recv })).toBe(11);
+    expect(driveNumberForSide(game, 'home', { pred: wait })).toBe(12);
+  });
+
+  it('treats a leftover ESPN snap as over when the book has already opened N+1', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Oregon', away: 'Portland State' },
+      score: { home: 77, away: 0 },
+      driveMarkets: [
+        {
+          source: 'dk',
+          marketName: '12th Portland State Drive Result',
+          offenseName: 'Portland State',
+          offenseSide: 'away',
+          driveN: 12,
+        },
+        {
+          source: 'dk',
+          marketName: '13th Oregon Drive Result',
+          offenseName: 'Oregon',
+          offenseSide: 'home',
+          driveN: 13,
+        },
+      ],
+      live: {
+        period: 4,
+        clock: '7:19',
+        clockSeconds: 7 * 60 + 19,
+        down: 2,
+        distance: 10,
+        yardsToEndzone: 16,
+        possession: 'home',
+        possessionName: 'Oregon',
+        possessionText: 'PRST 16',
+        lastPlay: '(08:08) Shotgun #12 B.Thomas pass incomplete short right to #87 A.Pugliano thrown to PSU00',
+        lastPlayType: 'Pass Incompletion',
+        lastPlaySide: 'home',
+        state: 'in',
+        driveChart: {
+          homeStarted: 12,
+          awayStarted: 11,
+          currentSide: 'home',
+          currentResult: null,
+          finishedSide: null,
+        },
+      },
+    };
+    expect(firstUpSide(game)).toBe('away');
+    expect(situationOffenseLabel(game)).toMatch(/Portland State/);
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => [row.offenseSide, row.driveN])).toEqual([
+      ['away', 12],
+      ['home', 13],
+    ]);
+    const psu = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const ore = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(driveCardRole(game, psu)).toBe('current');
+    expect(driveCardRole(game, ore)).toBe('next');
+    expect(driveNumberForSide(game, 'away', { pred: psu })).toBe(12);
+    expect(driveNumberForSide(game, 'home', { pred: ore })).toBe(13);
+    expect(psu.layer).not.toBe('snap');
+    expect(ore.layer).not.toBe('snap');
+  });
+
+  it('after a kickoff touchback puts the receiving team on offense, not the kicker', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Oregon', away: 'Portland State' },
+      espnHomeAbbr: 'ORE',
+      espnAwayAbbr: 'PRST',
+      score: { home: 77, away: 0 },
+      driveMarkets: [
+        {
+          source: 'dk',
+          marketName: '13th Oregon Drive Result',
+          offenseName: 'Oregon',
+          offenseSide: 'home',
+          driveN: 13,
+        },
+      ],
+      live: {
+        period: 4,
+        clock: '5:21',
+        clockSeconds: 5 * 60 + 21,
+        down: 1,
+        distance: 10,
+        yardsToEndzone: 75,
+        possession: null,
+        possessionName: null,
+        possessionText: 'PRST 25',
+        lastPlay: '(05:21) #25 R.Graziano kickoff 65 yards to the PSU00, Touchback',
+        lastPlayType: 'Kickoff',
+        lastPlaySide: 'away',
+        state: 'in',
+        driveChart: {
+          homeStarted: 12,
+          awayStarted: 11,
+          currentSide: null,
+          currentResult: null,
+          finishedSide: null,
+          openingReceiveSide: 'home',
+        },
+      },
+    };
+    expect(possessionFromSpotAndYtg('PRST 25', 75, game)).toBe('away');
+    expect(firstUpSide(game)).toBe('away');
+    expect(situationOffenseLabel(game)).toMatch(/Portland State/);
+    const sides = listDriveSides(game);
+    expect(sides.map((row) => row.offenseSide)).toEqual(['away', 'home']);
+    const psu = featuresFromGame({ ...game, nextDrive: sides[0] });
+    const ore = featuresFromGame({ ...game, nextDrive: sides[1] });
+    expect(driveCardRole(game, psu)).toBe('current');
+    expect(driveCardRole(game, ore)).toBe('next');
+    expect(driveNumberForSide(game, 'away', { pred: psu })).toBe(12);
+    expect(driveNumberForSide(game, 'home', { pred: ore })).toBe(13);
+  });
+
   it('after a TD treats the other team as first up for the kickoff', () => {
     const game = wazzuAtWashington({
       period: 4,
@@ -828,6 +1136,87 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(scoringSideAfterMadeKick(game)).toBe('away');
     expect(firstUpSide(game)).toBe('home');
     expect(situationOffenseLabel(game)).toBe('Washington gets the ball');
+  });
+
+  it('keeps Portland St on offense when ESPN stamps a NO PLAY INT and DK has opened Oregon N+1', () => {
+    const current = {
+      id: '40185845531',
+      team: { abbreviation: 'PRST', displayName: 'Portland State Vikings', shortDisplayName: 'Portland St' },
+      result: { displayName: 'INT' },
+      offensivePlays: 0,
+      start: { text: 'PRST 25', yardLine: 75 },
+      end: { text: 'PRST 35', yardLine: 65 },
+      plays: [
+        { type: { text: 'Kickoff' }, text: '(04:08) #25 R.Graziano kickoff 65 yards to the PSU00, Touchback' },
+        {
+          type: { text: 'Pass Interception' },
+          text: '(04:03) Shotgun #5 G.Downing pass intercepted by #24 J.Washington at PSU35 PENALTY ORE Pass Interference (#13 G.Nix) 10 yards from PSU25 to PSU35, 1ST DOWN. NO PLAY',
+        },
+      ],
+    };
+    const chart = parseEspnDriveBlob({ previous: [], current }, (drive) => {
+      const abbr = drive?.team?.abbreviation;
+      if (abbr === 'ORE') return 'home';
+      if (abbr === 'PRST') return 'away';
+      return null;
+    });
+    expect(chart.currentSide).toBe('away');
+    expect(chart.finishedSide).toBeNull();
+    expect(ytgFromSpot('PRST 35', {
+      possession: 'away',
+      home: 'Oregon',
+      away: 'Portland State',
+      homeAbbr: 'ORE',
+      awayAbbr: 'PRST',
+    })).toBe(65);
+    expect(ytgFromSpot('PSU 35', {
+      possession: 'away',
+      home: 'Oregon',
+      away: 'Portland State',
+      homeAbbr: 'ORE',
+      awayAbbr: 'PRST',
+    })).toBe(65);
+    const game = {
+      inPlay: true,
+      teams: { home: 'Oregon', away: 'Portland State' },
+      driveMarkets: [
+        {
+          source: 'dk',
+          marketName: '10th Portland State Drive Result',
+          offenseName: 'Portland State',
+          offenseSide: 'away',
+          driveN: 10,
+        },
+        {
+          source: 'dk',
+          marketName: '11th Oregon Drive Result',
+          offenseName: 'Oregon',
+          offenseSide: 'home',
+          driveN: 11,
+        },
+      ],
+      live: {
+        period: 3,
+        clock: '4:03',
+        clockSeconds: 243,
+        down: null,
+        distance: null,
+        yardsToEndzone: null,
+        possession: null,
+        possessionName: null,
+        lastPlay: current.plays[1].text,
+        lastPlayType: 'Pass Interception',
+        state: 'in',
+        driveChart: chart,
+      },
+    };
+    expect(firstUpSide(game)).toBe('away');
+    expect(situationOffenseLabel(game)).toBe('Portland State on offense');
+    const sides = listDriveSides(game);
+    expect(sides[0].offenseSide).toBe('away');
+    expect(sides[1].offenseSide).toBe('home');
+    expect(driveCardRole(game, featuresFromGame({ ...game, nextDrive: sides[0] }))).toBe('current');
+    expect(driveCardRole(game, featuresFromGame({ ...game, nextDrive: sides[1] }))).toBe('next');
   });
 
   it('does not treat a missed FG as a kickoff to the other team', () => {
@@ -1065,6 +1454,30 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     });
     const cleared = applyOddsAheadFlags(still, [moved]);
     expect(cleared[0].live.oddsAheadOfSpot).toBeUndefined();
+  });
+
+  it('prices a manual spot and does not flag ESPN lag', () => {
+    const espn = wazzuAtWashington({ clockSeconds: 7 * 60, clock: '7:00' });
+    const manual = {
+      ...espn,
+      live: {
+        ...espn.live,
+        down: 3,
+        distance: 4,
+        yardsToEndzone: 12,
+        downDistance: '3rd & 4',
+        possessionText: 'opp 12',
+        spotSource: 'manual',
+      },
+    };
+    const espnView = evaluateDriveGame(espn, { market: listDriveSides(espn)[0] });
+    const manualView = evaluateDriveGame(manual, { market: listDriveSides(manual)[0] });
+    expect(manualView.pred.layer).toBe('snap');
+    expect(manualView.pred.features.ytg).toBe(12);
+    expect(manualView.pred.features.down).toBe(3);
+    expect(manualView.pred.features.distance).toBe(4);
+    expect(manualView.situationLag).toBe(false);
+    expect(espnView.pred.features.ytg).toBe(94);
   });
 
   it('still prices the current drive when FanDuel is ahead of ESPN', () => {

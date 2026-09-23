@@ -19,7 +19,8 @@ export function getCompletedWeeksCount(season = null) {
   const seasonStart = new Date(year, month - 1, day);
   if (now < seasonStart) return 0;
   const daysSinceStart = Math.floor((now - seasonStart) / (1000 * 60 * 60 * 24));
-  const raw = Math.floor((daysSinceStart - 5) / 7) + 1;
+  // After Tuesday 00:00 local (Monday Night Football concluded). Keep in sync with DateHelper.js.
+  const raw = Math.floor((daysSinceStart - 6) / 7) + 1;
   return Math.max(0, Math.min(17, raw));
 }
 

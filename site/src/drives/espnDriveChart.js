@@ -72,8 +72,22 @@ export function isKickoffOnlyDrive(drive) {
   ));
 }
 
+/**
+ * ESPN sometimes stamps INT/fumble/TD on the current drive after a penalty
+ * wiped the play ("NO PLAY"). The series is still live.
+ */
+export function isNegatedDriveResult(drive) {
+  const plays = Array.isArray(drive?.plays) ? drive.plays : [];
+  const last = plays.length ? plays[plays.length - 1] : null;
+  const text = String(last?.text || last?.shortText || '');
+  if (!text || !/\bno play\b/i.test(text)) return false;
+  const result = espnDriveResultName(drive);
+  return Boolean(result) && !/in progress/i.test(result);
+}
+
 export function isInProgressDrive(drive) {
   if (!drive || isClockStubDrive(drive) || isKickoffOnlyDrive(drive)) return false;
+  if (isNegatedDriveResult(drive)) return true;
   const result = espnDriveResultName(drive);
   return !result || /in progress/i.test(result);
 }
@@ -131,4 +145,73 @@ export function parseEspnDriveBlob(blob, sideOf) {
     finishedSide,
     openingReceiveSide,
   };
+}
+
+function normSpotText(s) {
+  return String(s ?? '').replace(/^\s*at\s+/i, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/** ESPN play start/end hash → live snap fields. */
+export function spotFromEspnHash(hash) {
+  if (!hash || typeof hash !== 'object') return null;
+  const possessionText = String(hash.possessionText || hash.text || '').trim() || null;
+  const ytg = Number(hash.yardsToEndzone);
+  const yl = Number(hash.yardLine);
+  const down = Number(hash.down);
+  const distance = Number(hash.distance);
+  const downDistance = hash.shortDownDistanceText || hash.downDistanceText || null;
+  const hasYtg = Number.isFinite(ytg) && ytg >= 1 && ytg <= 99;
+  if (!possessionText && !hasYtg && !downDistance && !(Number.isFinite(down) && down > 0)) {
+    return null;
+  }
+  return {
+    possessionText,
+    yardsToEndzone: hasYtg ? ytg : null,
+    yardLine: Number.isFinite(yl) ? yl : null,
+    down: Number.isFinite(down) && down > 0 ? down : null,
+    distance: Number.isFinite(distance) ? distance : null,
+    downDistance: downDistance || null,
+  };
+}
+
+/** Prefer the play's end (next snap) over its start. */
+export function liveSpotFromPlay(play) {
+  if (!play || typeof play !== 'object') return null;
+  const end = spotFromEspnHash(play.end);
+  const start = spotFromEspnHash(play.start);
+  if (end && (end.possessionText || end.yardsToEndzone != null || end.down != null)) return end;
+  return start;
+}
+
+/** Latest snap on the in-progress series — not drive.start (opening hash). */
+export function liveSpotFromCurrentDrive(drive) {
+  const plays = Array.isArray(drive?.plays) ? drive.plays : [];
+  for (let i = plays.length - 1; i >= 0; i -= 1) {
+    const spot = liveSpotFromPlay(plays[i]);
+    if (spot) return spot;
+  }
+  return null;
+}
+
+export function currentDrivePlayMoved(drive, playSpot) {
+  const startText = normSpotText(drive?.start?.text || drive?.start?.possessionText);
+  const playText = normSpotText(playSpot?.possessionText);
+  if (startText && playText && playText !== startText) return true;
+  const startYtg = Number(drive?.start?.yardsToEndzone);
+  const playYtg = Number(playSpot?.yardsToEndzone);
+  return Number.isFinite(startYtg) && Number.isFinite(playYtg) && startYtg !== playYtg;
+}
+
+/**
+ * Use the current-drive play spot when the header is empty, still showing
+ * drive.start, or the series has already moved off that opening hash.
+ * Keep a header that is ahead of an un-updated play list.
+ */
+export function shouldApplyCurrentDriveSpot(headerPossessionText, drive, playSpot) {
+  if (!playSpot) return false;
+  if (!headerPossessionText) return true;
+  const startText = normSpotText(drive?.start?.text || drive?.start?.possessionText);
+  const headerText = normSpotText(headerPossessionText);
+  if (startText && headerText === startText) return true;
+  return currentDrivePlayMoved(drive, playSpot);
 }
