@@ -685,7 +685,6 @@ export function scoringSideAfterMadeKick(game) {
   if (!game?.inPlay || isHalftimeLive(game.live)) return null;
   const chart = game?.live?.driveChart;
   const driveResult = chart?.currentResult;
-  const playResult = game?.live?.lastPlayType || game?.live?.lastPlay;
   const scored = isMadeScoreLabel(driveResult) || lastPlayWasMadeScore(game?.live);
   if (!scored) return null;
 
