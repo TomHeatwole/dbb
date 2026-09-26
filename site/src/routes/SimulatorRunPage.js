@@ -30,14 +30,28 @@ import SimulatorTeamDetail from '../scenarios/SimulatorTeamDetail';
 import { loadOutcomeScenarioRosterData } from '../scenarios/outcomeScenarioLoader';
 import { normalizeOutcomeScenarioYear } from '../scenarios/outcomeScenarioConfig';
 import { DEFAULT_VARIANCE, VARIANCE_LEVELS, normalizeVariance, DEFAULT_MONOTONE, MONOTONE_MODES, normalizeMonotone } from '../scenarios/outcomeDistribution';
+import { getCurrentYear } from '../utils/DateHelper';
+import {
+  getLockedRegularSeasonWeeks,
+  loadLockedRegularSeasonPoints,
+  loadRosPositionMaxRanks,
+  loadRosRankMap,
+} from '../scenarios/rosRankLoader';
 
 import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
 import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
 
 const OG_TITLE = 'Season Simulator — Results';
 const OG_DESCRIPTION = 'Championship odds from outcome-roll simulations.';
+const ROS_OG_TITLE = 'ROS Simulator — Results';
+const ROS_OG_DESCRIPTION = 'In-season championship odds with finished weeks locked and the rest rolled from FantasyPros ROS ranks.';
 
-function SimulatorRunPage() {
+function SimulatorRunPage({ variant = 'season' }) {
+  const isRos = variant === 'ros';
+  const pagePath = isRos ? '/rossimulator' : '/simulator';
+  const pendingStorageKey = isRos
+    ? 'pendingRosSimulatorBuilderScenario'
+    : 'pendingSimulatorBuilderScenario';
   const myRosterId = useMyCurrentRosterId();
   const [searchParams] = useSearchParams();
   const scenarioParam = searchParams.get('scenario');
@@ -72,7 +86,9 @@ function SimulatorRunPage() {
       return;
     }
 
-    const seasonYear = normalizeOutcomeScenarioYear(decoded.sy);
+    const seasonYear = isRos
+      ? getCurrentYear()
+      : normalizeOutcomeScenarioYear(decoded.sy);
     const runCount = decoded.n ?? DEFAULT_ITERATIONS;
     const runVariance = normalizeVariance(decoded.v);
     const runMonotone = normalizeMonotone(decoded.m);
@@ -94,14 +110,23 @@ function SimulatorRunPage() {
         const [rosterData, cfg, adpMap, maxRanks] = await Promise.all([
           loadOutcomeScenarioRosterData(seasonYear),
           fetch('/data/score_format.json').then((r) => r.json()).catch(() => null),
-          loadSimulatorRankMap(seasonYear, runRankSource),
-          loadSimulatorPositionMaxRanks(seasonYear, runRankSource),
+          isRos
+            ? loadRosRankMap()
+            : loadSimulatorRankMap(seasonYear, runRankSource),
+          isRos
+            ? loadRosPositionMaxRanks()
+            : loadSimulatorPositionMaxRanks(seasonYear, runRankSource),
         ]);
 
         if (cancelled) return;
 
         const { teams, originalRosters: orig, idMap, players } = rosterData;
-        const catalog = await loadHistoricalOutcomeCatalog(Number(seasonYear), players);
+        const [catalog, lockedWeeks] = await Promise.all([
+          loadHistoricalOutcomeCatalog(Number(seasonYear), players),
+          isRos
+            ? loadLockedRegularSeasonPoints(seasonYear, cfg, players)
+            : Promise.resolve({ lockedWeekCount: 0, lockedWeekPoints: null, lockedTeamWeekPoints: null }),
+        ]);
         const modified = applyScenarioChanges(orig, decoded.c);
 
         setTeamsForGrid(teams);
@@ -138,6 +163,9 @@ function SimulatorRunPage() {
           playersData: players,
           variance: runVariance,
           monotone: runMonotone,
+          lockedWeekCount: lockedWeeks.lockedWeekCount,
+          lockedWeekPoints: lockedWeeks.lockedWeekPoints,
+          lockedTeamWeekPoints: lockedWeeks.lockedTeamWeekPoints,
         });
 
         setLoadingProgress(1);
@@ -190,17 +218,24 @@ function SimulatorRunPage() {
 
     run();
     return () => { cancelled = true; };
-  }, [scenarioParam]);
+  }, [scenarioParam, isRos]);
 
   const simSamplesAvailable = !isLightweightSimulatorRun(iterations);
 
+  const lockedWeeks = isRos ? getLockedRegularSeasonWeeks(scenarioSeason) : 0;
+  const subtitle = scenarioSeason
+    ? (isRos
+      ? `${scenarioSeason} ROS · ${lockedWeeks > 0 ? `weeks 1–${lockedWeeks} locked` : 'no weeks locked'} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
+      : `${scenarioSeason} ${rankSourceShortLabel(rankSource, scenarioSeason)} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`)
+    : null;
+
   const backLink = (
     <Link
-      to="/simulator?state=builder"
+      to={`${pagePath}?state=builder`}
       className="scenario-eval-back-link"
       onClick={() => {
         if (scenarioParam) {
-          sessionStorage.setItem('pendingSimulatorBuilderScenario', scenarioParam);
+          sessionStorage.setItem(pendingStorageKey, scenarioParam);
         }
       }}
     >
@@ -210,12 +245,13 @@ function SimulatorRunPage() {
 
   return (
     <>
-      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
+      <PageMeta
+        title={isRos ? ROS_OG_TITLE : OG_TITLE}
+        description={isRos ? ROS_OG_DESCRIPTION : OG_DESCRIPTION}
+      />
       <InfoPageWrapper
-        title="Season Simulator"
-        subtitle={scenarioSeason
-          ? `${scenarioSeason} ${rankSourceShortLabel(rankSource, scenarioSeason)} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
-          : null}
+        title={isRos ? 'ROS Simulator' : 'Season Simulator'}
+        subtitle={subtitle}
         leftHeader={backLink}
       >
         {(phase === 'loading' || phase === 'running' || phase === 'celebrating') && (
@@ -235,7 +271,7 @@ function SimulatorRunPage() {
         {phase === 'error' && (
           <div className="scenario-eval-error">
             <p>{error || 'Something went wrong.'}</p>
-            <Link to="/simulator" className="scenario-eval-back-link">
+            <Link to={pagePath} className="scenario-eval-back-link">
               ← Back to Builder
             </Link>
           </div>

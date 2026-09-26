@@ -222,7 +222,15 @@ export function computeOptimalWeekStarterTotal(playerList, weekPts, playerPositi
 /**
  * Score all rosters in one pass — reg + playoff totals and per-slot season sums.
  */
-export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seasonTotals) {
+function lockedTeamWeekTotal(lockedTeamWeekPts, weekIndex, rosterId) {
+  const weekMap = lockedTeamWeekPts && lockedTeamWeekPts[weekIndex];
+  if (!weekMap) return null;
+  const raw = weekMap[rosterId] ?? weekMap[String(rosterId)];
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seasonTotals, lockedTeamWeekPts = null) {
   const regTotals = {};
   const ploffTotals = {};
   const playoffWeekTotals = {};
@@ -239,6 +247,14 @@ export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seaso
     const ploffSlots = new Float32Array(numSlots);
 
     for (let wi = 0; wi < NUM_WEEKS; wi++) {
+      const actualTotal = wi < REG_SEASON_WEEKS
+        ? lockedTeamWeekTotal(lockedTeamWeekPts, wi, rid)
+        : null;
+      if (actualTotal != null) {
+        reg += actualTotal;
+        continue;
+      }
+
       const slotPts = computeOptimalWeekStarters(
         playerList,
         weekBuffers[wi],
@@ -247,9 +263,10 @@ export function scoreAllRostersFast(rosters, weekBuffers, playerPositions, seaso
       );
       let weekTotal = 0;
       for (let si = 0; si < numSlots; si++) {
-        weekTotal += slotPts[si];
-        if (wi < REG_SEASON_WEEKS) regSlots[si] += slotPts[si];
-        else ploffSlots[si] += slotPts[si];
+        const slot = slotPts[si];
+        weekTotal += slot;
+        if (wi < REG_SEASON_WEEKS) regSlots[si] += slot;
+        else ploffSlots[si] += slot;
       }
       if (wi < REG_SEASON_WEEKS) {
         reg += weekTotal;

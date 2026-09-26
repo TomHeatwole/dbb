@@ -25702,6 +25702,10 @@ button.corners-bet:hover {
   color: rgba(255, 224, 138, 0.7);
 }
 
+.drives-spot-editor-field--team select {
+  width: 8.5rem;
+}
+
 .drives-spot-editor-field select,
 .drives-spot-editor-field input {
   width: 5.2rem;
@@ -25716,6 +25720,11 @@ button.corners-bet:hover {
 
 .drives-spot-editor-field input {
   width: 4.4rem;
+}
+
+.drives-spot-editor-field select option {
+  color: #111;
+  background: #fff;
 }
 
 .drives-spot-editor-clear {

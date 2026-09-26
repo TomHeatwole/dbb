@@ -27,7 +27,7 @@ import NotesPage from './routes/NotesPage';
 import ScenariosPage from './routes/ScenariosPage';
 import FutureScenariosPage from './routes/FutureScenariosPage';
 import FutureScenarios2Page from './routes/FutureScenarios2Page';
-import SimulatorPage from './routes/SimulatorPage';
+import SimulatorPage, { ROSSimulatorPage } from './routes/SimulatorPage';
 import TradesPage from './routes/TradesPage';
 import LeagueHistoryPage from './routes/LeagueHistoryPage';
 import SandboxPage from './routes/SandboxPage';
@@ -187,6 +187,9 @@ function AppInner() {
       )}
       {isFeatureEnabled('SIMULATOR_ENABLED', MAIN_FEATURES) && (
         <Route path="/simulator" element={<RequireAdmin><SimulatorPage /></RequireAdmin>} />
+      )}
+      {isFeatureEnabled('SIMULATOR_ENABLED', MAIN_FEATURES) && (
+        <Route path="/rossimulator" element={<RequireAdmin><ROSSimulatorPage /></RequireAdmin>} />
       )}
       {isFeatureEnabled('PLAYOFFS_ENABLED', MAIN_FEATURES) && (
         <Route path="/yoffs" element={<YoffsPage />} />

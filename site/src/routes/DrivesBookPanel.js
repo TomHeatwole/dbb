@@ -25,7 +25,7 @@ import {
   puntStyleWarningForOffense,
   resolveOffenseTeam,
   situationUntrusted,
-  applyFdAheadLive,
+  pickBestLiveState,
 } from '../drives/driveModel';
 import { predictDriveSituation } from '../drives/driveSituation';
 import {
@@ -317,15 +317,19 @@ function ytgFromField(territory, yard) {
   return territory === 'own' ? 100 - yl : yl;
 }
 
-function draftFromLive(live) {
+function draftFromLive(live, offenseSide) {
   const down = Number(live?.down);
   const distance = Number(live?.distance);
   const field = fieldFromYtg(live?.yardsToEndzone);
+  const offense = offenseSide === 'home' || offenseSide === 'away'
+    ? offenseSide
+    : (live?.possession === 'home' || live?.possession === 'away' ? live.possession : '');
   return {
     down: Number.isFinite(down) && down >= 1 && down <= 4 ? String(down) : '1',
     distance: Number.isFinite(distance) && distance >= 0 ? String(distance) : '10',
     territory: field.territory,
     yard: String(field.yard),
+    offense,
   };
 }
 
@@ -338,7 +342,8 @@ function normalizeSpotDraft(draft) {
   if (!Number.isFinite(distance) || distance < 0 || distance > 99) return null;
   if (!Number.isFinite(ytg) || ytg < 1 || ytg > 99) return null;
   const territory = draft.territory === 'opp' || draft.territory === 'mid' ? draft.territory : 'own';
-  return { down, distance, ytg, territory };
+  const offense = draft.offense === 'home' || draft.offense === 'away' ? draft.offense : null;
+  return { down, distance, ytg, territory, offense };
 }
 
 function applyManualSpot(game, spot) {
@@ -349,6 +354,7 @@ function applyManualSpot(game, spot) {
     : spot.territory === 'opp'
       ? `opp ${spot.ytg}`
       : `own ${100 - spot.ytg}`;
+  const offense = spot.offense === 'home' || spot.offense === 'away' ? spot.offense : null;
   const live = {
     ...(game.live ?? {}),
     down: spot.down,
@@ -359,6 +365,10 @@ function applyManualSpot(game, spot) {
     possessionText,
     spotSource: 'manual',
   };
+  if (offense) {
+    live.possession = offense;
+    live.possessionName = offense === 'away' ? game.teams?.away : game.teams?.home;
+  }
   return {
     ...game,
     inPlay: game.inPlay || game.live?.state === 'in',
@@ -366,7 +376,9 @@ function applyManualSpot(game, spot) {
   };
 }
 
-function ManualSpotEditor({ live, draft, active, open, onToggle, onDraftChange, onClear }) {
+function ManualSpotEditor({
+  teams, draft, active, open, onToggle, onDraftChange, onClear,
+}) {
   return (
     <div className={`drives-spot-editor${active ? ' drives-spot-editor--on' : ''}`}>
       <button
@@ -379,6 +391,17 @@ function ManualSpotEditor({ live, draft, active, open, onToggle, onDraftChange, 
       </button>
       {open && (
         <div className="drives-spot-editor-panel">
+          <label className="drives-spot-editor-field drives-spot-editor-field--team">
+            <span>Offense</span>
+            <select
+              value={draft.offense || ''}
+              onChange={(e) => onDraftChange({ ...draft, offense: e.target.value })}
+            >
+              <option value="">Team</option>
+              {teams?.away && <option value="away">{teams.away}</option>}
+              {teams?.home && <option value="home">{teams.home}</option>}
+            </select>
+          </label>
           <label className="drives-spot-editor-field">
             <span>Down</span>
             <select
@@ -440,10 +463,12 @@ function ManualSpotEditor({ live, draft, active, open, onToggle, onDraftChange, 
           )}
           <p className="drives-spot-editor-hint">
             {active
-              ? `${downDistanceLabel(Number(draft.down), Number(draft.distance)) || 'Down'} · ${
+              ? `${
+                draft.offense === 'away' ? teams?.away : draft.offense === 'home' ? teams?.home : 'Offense'
+              } · ${downDistanceLabel(Number(draft.down), Number(draft.distance)) || 'Down'} · ${
                 draft.territory === 'mid' ? 'midfield' : `${draft.territory} ${draft.yard}`
               } — model uses this spot`
-              : 'Change a field to override the live snap'}
+              : 'Change offense, down, or field to override the live snap'}
           </p>
         </div>
       )}
@@ -981,10 +1006,15 @@ function GameCard({
   const [openLine, setOpenLine] = useState(null);
   const [quoteDraft, setQuoteDraft] = useState('');
   const [spotEditorOpen, setSpotEditorOpen] = useState(false);
-  const [spotDraft, setSpotDraft] = useState(() => draftFromLive(game.live));
+  const [spotDraft, setSpotDraft] = useState(() => draftFromLive(
+    game.live,
+    game.live?.possession === 'home' || game.live?.possession === 'away'
+      ? game.live.possession
+      : firstUpSide(game),
+  ));
   const [spotManual, setSpotManual] = useState(false);
   const view = useMemo(() => {
-    const base = applyFdAheadLive(game);
+    const base = pickBestLiveState(game);
     return applyManualSpot(base, spotManual ? normalizeSpotDraft(spotDraft) : null);
   }, [game, spotDraft, spotManual]);
   useEffect(() => {
@@ -1080,12 +1110,18 @@ function GameCard({
               </p>
             )}
             <ManualSpotEditor
+              teams={view.teams}
               draft={spotDraft}
               active={spotManual}
               open={spotEditorOpen}
               onToggle={() => {
                 setSpotEditorOpen((was) => {
-                  if (!was && !spotManual) setSpotDraft(draftFromLive(view.live));
+                  if (!was && !spotManual) {
+                    const side = view.live?.possession === 'home' || view.live?.possession === 'away'
+                      ? view.live.possession
+                      : firstUpSide(view);
+                    setSpotDraft(draftFromLive(view.live, side));
+                  }
                   return !was;
                 });
               }}
@@ -1095,7 +1131,10 @@ function GameCard({
               }}
               onClear={() => {
                 setSpotManual(false);
-                setSpotDraft(draftFromLive(game.live));
+                const side = game.live?.possession === 'home' || game.live?.possession === 'away'
+                  ? game.live.possession
+                  : firstUpSide(game);
+                setSpotDraft(draftFromLive(game.live, side));
               }}
             />
             {!hasDriveLine(game) && !paired && (
@@ -1233,7 +1272,7 @@ function DrivesBookPanel({
         </p>
       )}
 
-      {!error && games.length > 0 && (
+      {games.length > 0 && (
         <GameMonitorTable
           rows={buildDrivesMonitorRows(filteredGames, Date.now(), {
             granular: dkGranular,
@@ -1404,7 +1443,7 @@ function DrivesBookPanel({
 
       {error && <p className="sop-exp-error">{error}</p>}
 
-      {!error && filteredGames.length > 0 && (
+      {filteredGames.length > 0 && (
         <div className="sop-exp-games">
           {filteredGames.map((g) => (
             <GameCard

@@ -7,15 +7,19 @@ import { useSearchParams } from 'react-router-dom';
 import SimulatorBuilderPage from './SimulatorBuilderPage';
 import SimulatorRunPage from './SimulatorRunPage';
 
-function SimulatorPage() {
+function SimulatorPage({ variant = 'season' }) {
   const [searchParams] = useSearchParams();
   const pageState = searchParams.get('state') || 'builder';
 
   if (pageState === 'run') {
-    return <SimulatorRunPage />;
+    return <SimulatorRunPage variant={variant} />;
   }
 
-  return <SimulatorBuilderPage />;
+  return <SimulatorBuilderPage variant={variant} />;
+}
+
+export function ROSSimulatorPage() {
+  return <SimulatorPage variant="ros" />;
 }
 
 export default SimulatorPage;

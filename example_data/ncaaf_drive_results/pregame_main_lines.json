@@ -716,7 +716,7 @@
     "openDate": "2026-09-24T23:30:00.000Z",
     "spread": 2.5,
     "total": 50.5,
-    "capturedAt": "2026-09-22T16:30:12.755Z",
+    "capturedAt": "2026-09-24T23:02:14.831Z",
     "source": "fd"
   },
   "36073771": {
@@ -726,7 +726,7 @@
     "openDate": "2026-09-25T20:00:00.000Z",
     "spread": 3.5,
     "total": 48.5,
-    "capturedAt": "2026-09-21T23:55:04.541Z",
+    "capturedAt": "2026-09-25T17:48:21.951Z",
     "source": "fd"
   },
   "36073778": {
@@ -735,8 +735,8 @@
     "away": "Navy",
     "openDate": "2026-09-25T23:00:00.000Z",
     "spread": 6.5,
-    "total": 51.5,
-    "capturedAt": "2026-09-23T01:39:14.651Z",
+    "total": 50.5,
+    "capturedAt": "2026-09-25T22:24:46.818Z",
     "source": "fd"
   },
   "36073779": {
@@ -746,7 +746,7 @@
     "openDate": "2026-09-26T00:00:00.000Z",
     "spread": -20.5,
     "total": 49.5,
-    "capturedAt": "2026-09-21T19:20:09.519Z",
+    "capturedAt": "2026-09-25T22:25:29.849Z",
     "source": "fd"
   },
   "36073785": {
@@ -755,8 +755,8 @@
     "away": "Wisconsin",
     "openDate": "2026-09-26T21:00:00.000Z",
     "spread": -9.5,
-    "total": 44.5,
-    "capturedAt": "2026-09-23T18:16:23.972Z",
+    "total": 43.5,
+    "capturedAt": "2026-09-24T21:30:28.223Z",
     "source": "fd"
   },
   "36073786": {
@@ -766,7 +766,7 @@
     "openDate": "2026-09-26T19:30:00.000Z",
     "spread": -13.5,
     "total": 44.5,
-    "capturedAt": "2026-09-22T21:35:18.563Z",
+    "capturedAt": "2026-09-25T13:44:49.601Z",
     "source": "fd"
   },
   "36073789": {
@@ -775,8 +775,8 @@
     "away": "Notre Dame",
     "openDate": "2026-09-26T18:00:00.000Z",
     "spread": 27.5,
-    "total": 58.5,
-    "capturedAt": "2026-09-22T21:35:18.563Z",
+    "total": 57.5,
+    "capturedAt": "2026-09-25T19:07:25.533Z",
     "source": "fd"
   },
   "36073791": {
@@ -785,8 +785,8 @@
     "away": "Illinois",
     "openDate": "2026-09-26T16:00:00.000Z",
     "spread": -27.5,
-    "total": 54.5,
-    "capturedAt": "2026-09-23T01:39:14.651Z",
+    "total": 53.5,
+    "capturedAt": "2026-09-25T23:52:28.760Z",
     "source": "fd"
   },
   "36073793": {
@@ -805,8 +805,8 @@
     "away": "Oregon",
     "openDate": "2026-09-26T23:30:00.000Z",
     "spread": 3.5,
-    "total": 62.5,
-    "capturedAt": "2026-09-23T20:17:17.014Z",
+    "total": 61.5,
+    "capturedAt": "2026-09-25T22:24:46.818Z",
     "source": "fd"
   },
   "36073803": {
@@ -815,8 +815,8 @@
     "away": "Sam Houston State",
     "openDate": "2026-09-26T16:00:00.000Z",
     "spread": -34.5,
-    "total": 55.5,
-    "capturedAt": "2026-09-22T15:29:16.007Z",
+    "total": 56.5,
+    "capturedAt": "2026-09-25T13:44:49.601Z",
     "source": "fd"
   },
   "36073804": {
@@ -825,8 +825,8 @@
     "away": "Utah",
     "openDate": "2026-09-26T19:30:00.000Z",
     "spread": 8.5,
-    "total": 48.5,
-    "capturedAt": "2026-09-22T11:25:16.043Z",
+    "total": 47.5,
+    "capturedAt": "2026-09-24T07:35:12.185Z",
     "source": "fd"
   },
   "36073807": {
@@ -846,7 +846,7 @@
     "openDate": "2026-09-26T23:45:00.000Z",
     "spread": -5.5,
     "total": 58.5,
-    "capturedAt": "2026-09-21T00:16:18.878Z",
+    "capturedAt": "2026-09-25T15:00:13.525Z",
     "source": "fd"
   },
   "36073811": {
@@ -854,9 +854,9 @@
     "home": "Georgia Southern",
     "away": "Houston",
     "openDate": "2026-09-26T20:00:00.000Z",
-    "spread": 18.5,
+    "spread": 17.5,
     "total": 56.5,
-    "capturedAt": "2026-09-21T23:55:04.541Z",
+    "capturedAt": "2026-09-24T22:14:51.063Z",
     "source": "fd"
   },
   "36073812": {
@@ -865,8 +865,8 @@
     "away": "Vanderbilt",
     "openDate": "2026-09-26T20:15:00.000Z",
     "spread": -9.5,
-    "total": 54.5,
-    "capturedAt": "2026-09-23T11:38:35.888Z",
+    "total": 55.5,
+    "capturedAt": "2026-09-25T20:07:16.180Z",
     "source": "fd"
   },
   "36073814": {
@@ -926,7 +926,7 @@
     "openDate": "2026-09-27T03:00:00.000Z",
     "spread": -9.5,
     "total": 45.5,
-    "capturedAt": "2026-09-21T14:15:09.231Z",
+    "capturedAt": "2026-09-25T23:35:39.931Z",
     "source": "fd"
   },
   "36073883": {
@@ -935,8 +935,8 @@
     "away": "San Diego State",
     "openDate": "2026-09-26T16:00:00.000Z",
     "spread": -2.5,
-    "total": 52.5,
-    "capturedAt": "2026-09-23T01:39:14.651Z",
+    "total": 51.5,
+    "capturedAt": "2026-09-24T19:21:29.115Z",
     "source": "fd"
   },
   "36073885": {
@@ -946,7 +946,7 @@
     "openDate": "2026-09-26T16:00:00.000Z",
     "spread": -13.5,
     "total": 57.5,
-    "capturedAt": "2026-09-21T19:20:09.519Z",
+    "capturedAt": "2026-09-25T20:08:34.980Z",
     "source": "fd"
   },
   "36073886": {
@@ -966,7 +966,7 @@
     "openDate": "2026-09-26T19:30:00.000Z",
     "spread": -3.5,
     "total": 51.5,
-    "capturedAt": "2026-09-21T19:20:09.519Z",
+    "capturedAt": "2026-09-25T12:28:11.087Z",
     "source": "fd"
   },
   "36073889": {
@@ -976,7 +976,7 @@
     "openDate": "2026-09-26T22:30:00.000Z",
     "spread": 10.5,
     "total": 49.5,
-    "capturedAt": "2026-09-22T11:25:16.043Z",
+    "capturedAt": "2026-09-25T22:24:46.818Z",
     "source": "fd"
   },
   "36073891": {
@@ -984,9 +984,9 @@
     "home": "UL Monroe",
     "away": "Florida Atlantic",
     "openDate": "2026-09-27T00:00:00.000Z",
-    "spread": 13.5,
+    "spread": 11.5,
     "total": 57.5,
-    "capturedAt": "2026-09-21T03:46:05.598Z",
+    "capturedAt": "2026-09-25T16:27:11.253Z",
     "source": "fd"
   },
   "36073895": {
@@ -996,7 +996,7 @@
     "openDate": "2026-09-26T23:00:00.000Z",
     "spread": -18.5,
     "total": 52.5,
-    "capturedAt": "2026-09-22T16:30:12.755Z",
+    "capturedAt": "2026-09-25T16:40:32.679Z",
     "source": "fd"
   },
   "36073896": {
@@ -1004,9 +1004,9 @@
     "home": "Bowling Green",
     "away": "South Florida",
     "openDate": "2026-09-26T21:00:00.000Z",
-    "spread": 18.5,
+    "spread": 17.5,
     "total": 48.5,
-    "capturedAt": "2026-09-23T16:59:14.328Z",
+    "capturedAt": "2026-09-25T23:35:39.931Z",
     "source": "fd"
   },
   "36073900": {
@@ -1025,8 +1025,8 @@
     "away": "Northern Illinois",
     "openDate": "2026-09-26T18:00:00.000Z",
     "spread": -10.5,
-    "total": 55.5,
-    "capturedAt": "2026-09-21T23:55:04.541Z",
+    "total": 56.5,
+    "capturedAt": "2026-09-26T00:52:10.137Z",
     "source": "fd"
   },
   "36073903": {
@@ -1044,9 +1044,9 @@
     "home": "Kent State",
     "away": "Ball State",
     "openDate": "2026-09-26T16:00:00.000Z",
-    "spread": -3.5,
+    "spread": -2.5,
     "total": 51.5,
-    "capturedAt": "2026-09-22T13:00:03.066Z",
+    "capturedAt": "2026-09-25T08:43:23.288Z",
     "source": "fd"
   },
   "36073917": {
@@ -1054,9 +1054,9 @@
     "home": "Sacramento State",
     "away": "Massachusetts",
     "openDate": "2026-09-27T01:00:00.000Z",
-    "spread": 3.5,
+    "spread": 4.5,
     "total": 48.5,
-    "capturedAt": "2026-09-23T11:38:35.888Z",
+    "capturedAt": "2026-09-25T01:29:51.403Z",
     "source": "fd"
   },
   "36073919": {
@@ -1064,9 +1064,9 @@
     "home": "Old Dominion",
     "away": "James Madison",
     "openDate": "2026-09-26T22:00:00.000Z",
-    "spread": 5.5,
-    "total": 45.5,
-    "capturedAt": "2026-09-21T23:55:04.541Z",
+    "spread": 6.5,
+    "total": 44.5,
+    "capturedAt": "2026-09-25T18:14:36.584Z",
     "source": "fd"
   },
   "36073928": {
@@ -1075,8 +1075,8 @@
     "away": "Texas",
     "openDate": "2026-09-26T16:00:00.000Z",
     "spread": 4.5,
-    "total": 55.5,
-    "capturedAt": "2026-09-23T11:38:35.888Z",
+    "total": 54.5,
+    "capturedAt": "2026-09-25T20:22:26.691Z",
     "source": "fd"
   },
   "36073932": {
@@ -1086,7 +1086,7 @@
     "openDate": "2026-09-26T16:00:00.000Z",
     "spread": -12.5,
     "total": 57.5,
-    "capturedAt": "2026-09-22T22:19:35.274Z",
+    "capturedAt": "2026-09-25T16:27:11.253Z",
     "source": "fd"
   },
   "36073933": {
@@ -1094,9 +1094,9 @@
     "home": "Pittsburgh",
     "away": "Bucknell",
     "openDate": "2026-09-26T16:00:00.000Z",
-    "spread": -51.5,
-    "total": 61.5,
-    "capturedAt": "2026-09-22T22:19:35.274Z",
+    "spread": -54.5,
+    "total": 63.5,
+    "capturedAt": "2026-09-25T22:24:46.818Z",
     "source": "fd"
   },
   "36073934": {
@@ -1104,9 +1104,9 @@
     "home": "Boston College",
     "away": "Virginia Tech",
     "openDate": "2026-09-26T16:00:00.000Z",
-    "spread": 14.5,
-    "total": 48.5,
-    "capturedAt": "2026-09-23T01:39:14.651Z",
+    "spread": 13.5,
+    "total": 47.5,
+    "capturedAt": "2026-09-25T16:27:11.253Z",
     "source": "fd"
   },
   "36073935": {
@@ -1125,8 +1125,8 @@
     "away": "Lindenwood",
     "openDate": "2026-09-26T17:00:00.000Z",
     "spread": -26.5,
-    "total": 49.5,
-    "capturedAt": "2026-09-23T01:39:14.651Z",
+    "total": 50.5,
+    "capturedAt": "2026-09-25T06:26:20.373Z",
     "source": "fd"
   },
   "36073941": {
@@ -1134,9 +1134,9 @@
     "home": "Florida State",
     "away": "Central Arkansas",
     "openDate": "2026-09-26T19:00:00.000Z",
-    "spread": -45.5,
-    "total": 62.5,
-    "capturedAt": "2026-09-23T19:03:07.736Z",
+    "spread": -46.5,
+    "total": 63.5,
+    "capturedAt": "2026-09-25T20:07:16.180Z",
     "source": "fd"
   },
   "36073947": {
@@ -1144,9 +1144,9 @@
     "home": "Wyoming",
     "away": "Hawaii",
     "openDate": "2026-09-26T19:00:00.000Z",
-    "spread": 3.5,
-    "total": 44.5,
-    "capturedAt": "2026-09-22T11:25:16.043Z",
+    "spread": 2.5,
+    "total": 43.5,
+    "capturedAt": "2026-09-25T03:19:13.067Z",
     "source": "fd"
   },
   "36073950": {
@@ -1165,8 +1165,8 @@
     "away": "Robert Morris",
     "openDate": "2026-09-26T19:30:00.000Z",
     "spread": -28.5,
-    "total": 44.5,
-    "capturedAt": "2026-09-22T05:46:57.825Z",
+    "total": 46.5,
+    "capturedAt": "2026-09-25T20:52:58.141Z",
     "source": "fd"
   },
   "36073952": {
@@ -1175,8 +1175,8 @@
     "away": "Stonehill",
     "openDate": "2026-09-26T19:30:00.000Z",
     "spread": -32.5,
-    "total": 52.5,
-    "capturedAt": "2026-09-23T16:59:14.328Z",
+    "total": 53.5,
+    "capturedAt": "2026-09-24T19:18:48.050Z",
     "source": "fd"
   },
   "36073953": {
@@ -1184,9 +1184,9 @@
     "home": "Marshall",
     "away": "Gardner Webb",
     "openDate": "2026-09-26T19:30:00.000Z",
-    "spread": -24.5,
+    "spread": -23.5,
     "total": 51.5,
-    "capturedAt": "2026-09-23T19:03:07.736Z",
+    "capturedAt": "2026-09-25T00:28:46.367Z",
     "source": "fd"
   },
   "36073956": {
@@ -1195,8 +1195,8 @@
     "away": "North Carolina Central",
     "openDate": "2026-09-26T20:00:00.000Z",
     "spread": -35.5,
-    "total": 54.5,
-    "capturedAt": "2026-09-23T16:59:14.328Z",
+    "total": 56.5,
+    "capturedAt": "2026-09-24T19:18:48.050Z",
     "source": "fd"
   },
   "36073960": {
@@ -1205,8 +1205,8 @@
     "away": "Incarnate Word",
     "openDate": "2026-09-26T22:00:00.000Z",
     "spread": -30.5,
-    "total": 64.5,
-    "capturedAt": "2026-09-22T22:19:35.274Z",
+    "total": 65.5,
+    "capturedAt": "2026-09-24T19:18:48.050Z",
     "source": "fd"
   },
   "36073962": {
@@ -1214,9 +1214,9 @@
     "home": "FIU",
     "away": "Long Island",
     "openDate": "2026-09-26T22:00:00.000Z",
-    "spread": -33.5,
-    "total": 51.5,
-    "capturedAt": "2026-09-23T15:08:40.125Z",
+    "spread": -35.5,
+    "total": 53.5,
+    "capturedAt": "2026-09-25T20:07:16.180Z",
     "source": "fd"
   },
   "36073964": {
@@ -1225,8 +1225,8 @@
     "away": "South Carolina",
     "openDate": "2026-09-26T23:00:00.000Z",
     "spread": -12.5,
-    "total": 53.5,
-    "capturedAt": "2026-09-22T16:30:12.755Z",
+    "total": 54.5,
+    "capturedAt": "2026-09-24T22:47:25.960Z",
     "source": "fd"
   },
   "36073965": {
@@ -1244,9 +1244,9 @@
     "home": "Western Kentucky",
     "away": "Mercyhurst",
     "openDate": "2026-09-26T23:00:00.000Z",
-    "spread": -39.5,
-    "total": 55.5,
-    "capturedAt": "2026-09-23T19:03:07.736Z",
+    "spread": -40.5,
+    "total": 57.5,
+    "capturedAt": "2026-09-25T23:35:39.931Z",
     "source": "fd"
   },
   "36073967": {
@@ -1265,8 +1265,8 @@
     "away": "Texas A&M",
     "openDate": "2026-09-26T23:30:00.000Z",
     "spread": -8.5,
-    "total": 51.5,
-    "capturedAt": "2026-09-22T16:30:12.755Z",
+    "total": 52.5,
+    "capturedAt": "2026-09-25T15:00:13.525Z",
     "source": "fd"
   },
   "36073969": {
@@ -1284,9 +1284,9 @@
     "home": "Utah State",
     "away": "Troy",
     "openDate": "2026-09-26T23:30:00.000Z",
-    "spread": -3.5,
+    "spread": -2.5,
     "total": 47.5,
-    "capturedAt": "2026-09-22T16:30:12.755Z",
+    "capturedAt": "2026-09-24T19:18:48.050Z",
     "source": "fd"
   },
   "36073976": {
@@ -1304,9 +1304,9 @@
     "home": "NC State",
     "away": "Appalachian State",
     "openDate": "2026-09-26T23:30:00.000Z",
-    "spread": -14.5,
+    "spread": -13.5,
     "total": 55.5,
-    "capturedAt": "2026-09-21T16:38:37.098Z",
+    "capturedAt": "2026-09-25T16:27:11.253Z",
     "source": "fd"
   },
   "36073981": {
@@ -1316,7 +1316,7 @@
     "openDate": "2026-09-27T00:00:00.000Z",
     "spread": -7.5,
     "total": 50.5,
-    "capturedAt": "2026-09-22T16:30:12.755Z",
+    "capturedAt": "2026-09-26T01:58:49.302Z",
     "source": "fd"
   },
   "36073983": {
@@ -1324,9 +1324,9 @@
     "home": "SMU",
     "away": "Missouri State",
     "openDate": "2026-09-27T01:00:00.000Z",
-    "spread": -34.5,
+    "spread": -33.5,
     "total": 60.5,
-    "capturedAt": "2026-09-23T20:17:17.014Z",
+    "capturedAt": "2026-09-26T03:00:37.024Z",
     "source": "fd"
   },
   "36073984": {
@@ -1335,8 +1335,8 @@
     "away": "Oregon State",
     "openDate": "2026-09-27T01:00:00.000Z",
     "spread": 10.5,
-    "total": 55.5,
-    "capturedAt": "2026-09-22T16:30:12.755Z",
+    "total": 56.5,
+    "capturedAt": "2026-09-24T19:18:48.050Z",
     "source": "fd"
   },
   "36073985": {
@@ -1345,8 +1345,8 @@
     "away": "Rice",
     "openDate": "2026-09-27T02:00:00.000Z",
     "spread": -13.5,
-    "total": 44.5,
-    "capturedAt": "2026-09-21T01:21:45.724Z",
+    "total": 43.5,
+    "capturedAt": "2026-09-25T20:07:16.180Z",
     "source": "fd"
   },
   "36073993": {
@@ -1364,9 +1364,9 @@
     "home": "California",
     "away": "Clemson",
     "openDate": "2026-09-26T02:30:00.000Z",
-    "spread": 1.5,
-    "total": 50.5,
-    "capturedAt": "2026-09-21T19:20:09.519Z",
+    "spread": 2.5,
+    "total": 51.5,
+    "capturedAt": "2026-09-25T19:20:34.332Z",
     "source": "fd"
   },
   "36094730": {
@@ -1395,8 +1395,8 @@
     "away": "Oklahoma State",
     "openDate": "2026-09-26T23:00:00.000Z",
     "spread": -1.5,
-    "total": 59.5,
-    "capturedAt": "2026-09-22T15:29:16.007Z",
+    "total": 61.5,
+    "capturedAt": "2026-09-25T00:28:46.367Z",
     "source": "fd"
   },
   "36102692": {
@@ -1407,6 +1407,86 @@
     "spread": -43.5,
     "total": 62.5,
     "capturedAt": "2026-09-22T11:25:16.043Z",
+    "source": "fd"
+  },
+  "36112224": {
+    "eventId": 36112224,
+    "home": "Virginia Tech",
+    "away": "Pittsburgh",
+    "openDate": "2026-10-02T23:00:00.000Z",
+    "spread": -6.5,
+    "total": 56.5,
+    "capturedAt": "2026-09-26T00:22:47.360Z",
+    "source": "fd"
+  },
+  "36112228": {
+    "eventId": 36112228,
+    "home": "Northwestern",
+    "away": "Penn State",
+    "openDate": "2026-10-03T00:00:00.000Z",
+    "spread": 6.5,
+    "total": 48.5,
+    "capturedAt": "2026-09-25T15:00:13.525Z",
+    "source": "fd"
+  },
+  "36112238": {
+    "eventId": 36112238,
+    "home": "Clemson",
+    "away": "Miami Florida",
+    "openDate": "2026-10-03T16:00:00.000Z",
+    "spread": 17.5,
+    "total": 52.5,
+    "capturedAt": "2026-09-26T00:22:47.360Z",
+    "source": "fd"
+  },
+  "36112239": {
+    "eventId": 36112239,
+    "home": "Mississippi State",
+    "away": "Alabama",
+    "openDate": "2026-10-03T16:00:00.000Z",
+    "spread": 3.5,
+    "total": 60.5,
+    "capturedAt": "2026-09-25T00:28:46.367Z",
+    "source": "fd"
+  },
+  "36112240": {
+    "eventId": 36112240,
+    "home": "Minnesota",
+    "away": "Michigan",
+    "openDate": "2026-10-03T16:00:00.000Z",
+    "spread": 7.5,
+    "total": 43.5,
+    "capturedAt": "2026-09-24T22:14:51.063Z",
+    "source": "fd"
+  },
+  "36112241": {
+    "eventId": 36112241,
+    "home": "Iowa",
+    "away": "Ohio State",
+    "openDate": "2026-10-03T19:30:00.000Z",
+    "spread": 14.5,
+    "total": 43.5,
+    "capturedAt": "2026-09-24T23:08:05.756Z",
+    "source": "fd"
+  },
+  "36112242": {
+    "eventId": 36112242,
+    "home": "Tennessee",
+    "away": "Auburn",
+    "openDate": "2026-10-03T19:30:00.000Z",
+    "spread": -8.5,
+    "total": 58.5,
+    "capturedAt": "2026-09-24T22:14:51.063Z",
+    "source": "fd"
+  },
+  "36112246": {
+    "eventId": 36112246,
+    "home": "Missouri",
+    "away": "Florida",
+    "openDate": "2026-10-03T19:30:00.000Z",
+    "spread": 2.5,
+    "total": 54.5,
+    "capturedAt": "2026-09-25T06:26:19.838Z",
     "source": "fd"
   }
 }

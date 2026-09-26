@@ -12,7 +12,12 @@
 import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
 import { annotateGamesWithLineLogging } from '../lib/drive-line-log.mjs';
 import { fdDriveRowsForGame, matchingFdDriveRows, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
-import { fdLiveFromRows, fdStateAheadOfEspn, applyFdAheadLive } from '../src/drives/fdLiveSituation.js';
+import {
+  fdLiveFromRows,
+  fdStateAheadOfEspn,
+  pickBestLiveState,
+  nonEspnSourceAhead,
+} from '../src/drives/fdLiveSituation.js';
 import { uniqueScoreboardDates } from '../src/drives/espnScoreboardDates.js';
 import { ytgFromSpot } from '../src/drives/ytgFromSpot.js';
 import {
@@ -1363,7 +1368,10 @@ async function refreshEspnIfFdAhead(games, { espnRefresh } = {}) {
   for (const game of games) {
     if (!game?.espnId) continue;
     if (!game.inPlay && !fdLooksLive(gameFdLive(game))) continue;
-    if (fdStateAheadOfEspn(gameFdLive(game), espnCompareSit(game))) {
+    if (nonEspnSourceAhead({
+      ...game,
+      live: { ...(game.live ?? {}), fd: gameFdLive(game) },
+    })) {
       wanted.add(String(game.espnId));
     }
   }
@@ -1619,8 +1627,12 @@ async function fetchNcaafDriveBook(opts = {}) {
         : (game.driveMarkets?.length ? game.driveMarkets : (game.nextDrive ? [game.nextDrive] : []));
       const driveMarkets = mergeFdAndDkMarkets(fdMarkets, dkMarkets);
       const nextDrive = driveMarkets[0] ?? null;
+      const fdSbapiLive = game.inPlay && game.score
+        ? { homeScore: game.score.home, awayScore: game.score.away }
+        : null;
       const withEspn = mergeFdxLive(attachEspn({
         ...game,
+        fdSbapiLive,
         nextDrive,
         driveMarkets,
         debug: {
@@ -1653,7 +1665,7 @@ async function fetchNcaafDriveBook(opts = {}) {
   const numbered = (await refreshEspnIfFdAhead(
     await attachEspnDriveCharts(games),
     { espnRefresh: opts.espnRefresh },
-  )).map((game) => applyFdAheadLive(game)).sort((a, b) => {
+  )).map((game) => pickBestLiveState(game)).sort((a, b) => {
     if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
     if (!a.openDate) return 1;
     if (!b.openDate) return -1;

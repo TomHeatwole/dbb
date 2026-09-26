@@ -291,13 +291,49 @@ export function formatLiveSituationLine(sit) {
   return bits.join('  ');
 }
 
-function clockSecondsOf(sit) {
+export function clockSecondsOf(sit) {
   const sec = intOrNull(sit?.clockSeconds);
   if (sec != null && sec >= 0) return sec;
   const clock = String(sit?.clock || '').trim();
   const m = clock.match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return null;
   return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function totalScorePts(sit) {
+  if (!sit) return 0;
+  return (intOrNull(sit.homeScore) ?? 0) + (intOrNull(sit.awayScore) ?? 0);
+}
+
+/**
+ * Higher rank = further into the game (later period, less clock remaining).
+ * Approximate FanDuel clocks rank slightly lower than exact ones.
+ */
+export function liveStateAdvanceRank(sit) {
+  if (!sit || typeof sit !== 'object') return -1;
+  if (sit.halfTime || sit.clock === 'Halftime') {
+    const p = intOrNull(sit.period) ?? 2;
+    return p * 10000 + 900;
+  }
+  const period = intOrNull(sit.period);
+  if (period == null) return -1;
+  const clock = clockSecondsOf(sit);
+  if (clock == null) return period * 10000;
+  const otExtra = period > 4 ? (period - 4) * 10000 : 0;
+  const basePeriod = period > 4 ? 4 : period;
+  let rank = basePeriod * 10000 + (900 - clock) + otExtra;
+  if (sit.clockApproximate) rank -= 50;
+  return rank;
+}
+
+/** True when source A is further into the game than source B. */
+export function liveSourceAheadOf(a, b) {
+  const aRank = liveStateAdvanceRank(a);
+  const bRank = liveStateAdvanceRank(b);
+  if (aRank >= 0 && bRank >= 0 && aRank !== bRank) return aRank > bRank;
+  if (aRank >= 0 && bRank < 0) return true;
+  if (aRank < 0 && bRank >= 0) return false;
+  return totalScorePts(a) > totalScorePts(b);
 }
 
 /**
@@ -632,49 +668,107 @@ function finiteYtg(raw) {
   return Number.isFinite(y) && y >= 1 && y <= 99 ? y : NaN;
 }
 
-/**
- * When FanDuel's live header is ahead of ESPN, copy that snap onto `live`
- * so the model and labels use FD instead of a stale ESPN spot.
- */
-export function applyFdAheadLive(game) {
-  if (!game?.inPlay || game.live?.spotSource === 'fd' || game.live?.spotSource === 'manual') return game;
-  const espn = game.live ?? {};
-  const fd = espn.fd || game.fdLive;
-  if (!fd || typeof fd !== 'object') return game;
-  if (!fdStateAheadOfEspn(fd, espn)) return game;
+function espnSitFromGame(game) {
+  const live = game?.live ?? {};
+  return espnSitFrom({
+    ...live,
+    homeScore: live.homeScore ?? game?.score?.home,
+    awayScore: live.awayScore ?? game?.score?.away,
+  });
+}
 
-  const live = { ...espn, fd };
-  const fdDown = Number(fd.down);
-  const espnDown = Number(espn.down);
-  const downChanged = Number.isFinite(fdDown) && fdDown >= 1
+function rawEspnSnapshot(game) {
+  if (game?.live?.espnSnapshot) return { ...game.live.espnSnapshot };
+  const live = { ...(game?.live ?? {}) };
+  delete live.fd;
+  delete live.fdAheadOfEspn;
+  delete live.spotSource;
+  delete live.liveSources;
+  delete live.espnSnapshot;
+  return {
+    ...live,
+    homeScore: live.homeScore ?? game?.score?.home,
+    awayScore: live.awayScore ?? game?.score?.away,
+  };
+}
+
+function collectLiveSourceCandidates(game) {
+  const espnRaw = rawEspnSnapshot(game);
+  const espn = espnSitFrom(espnRaw);
+  const fd = game?.fdLive || game?.live?.fd || null;
+  const fdSbapi = game?.fdSbapiLive || null;
+  const out = [];
+  if (hasAnySpot(espn)) out.push({ id: 'espn', sit: espn, raw: espnRaw });
+  if (hasAnySpot(fd)) out.push({ id: 'fd', sit: fd, raw: fd });
+  if (
+    fdSbapi
+    && (intOrNull(fdSbapi.homeScore) != null || intOrNull(fdSbapi.awayScore) != null)
+  ) {
+    out.push({ id: 'fdSbapi', sit: fdSbapi, raw: fdSbapi });
+  }
+  return out;
+}
+
+function pickWinningSource(candidates) {
+  if (!candidates.length) return null;
+  let winner = candidates[0];
+  for (let i = 1; i < candidates.length; i += 1) {
+    const next = candidates[i];
+    if (liveSourceAheadOf(next.sit, winner.sit)) winner = next;
+    else if (
+      liveStateAdvanceRank(next.sit) === liveStateAdvanceRank(winner.sit)
+      && fdStateAheadOfEspn(next.sit, winner.sit)
+    ) {
+      winner = next;
+    }
+  }
+  return winner;
+}
+
+function applyWinningLiveSource(game, winner, espnBase, fd) {
+  const win = winner.raw;
+  const live = { ...espnBase, fd: fd || espnBase.fd };
+  const winDown = Number(win.down);
+  const espnDown = Number(espnBase.down);
+  const downChanged = Number.isFinite(winDown) && winDown >= 1
     && Number.isFinite(espnDown) && espnDown >= 1
-    && fdDown !== espnDown;
+    && winDown !== espnDown;
 
-  if (Number.isFinite(Number(fd.period)) && Number(fd.period) > 0) live.period = Number(fd.period);
-  const fdClock = Number(fd.clockSeconds);
-  if (Number.isFinite(fdClock) && fdClock >= 0) {
-    live.clockSeconds = fdClock;
-    if (fd.clock) live.clock = fd.clock;
-  } else if (fd.clock) {
-    live.clock = fd.clock;
+  if (Number.isFinite(Number(win.period)) && Number(win.period) > 0) live.period = Number(win.period);
+  const winClock = Number(win.clockSeconds);
+  if (Number.isFinite(winClock) && winClock >= 0) {
+    live.clockSeconds = winClock;
+    if (win.clock) live.clock = win.clock;
+  } else if (win.clock) {
+    live.clock = win.clock;
   }
-  if (Number.isFinite(fdDown) && fdDown >= 1) {
-    live.down = fdDown;
-    if (Number.isFinite(Number(fd.distance))) live.distance = Number(fd.distance);
-    live.downDistance = fd.downDistance || downDistanceLabel(fdDown, live.distance);
+  if (Number.isFinite(winDown) && winDown >= 1) {
+    live.down = winDown;
+    if (Number.isFinite(Number(win.distance))) live.distance = Number(win.distance);
+    live.downDistance = win.downDistance || downDistanceLabel(winDown, live.distance);
   }
-  if (fd.halfTime) {
+  if (win.halfTime) {
     live.halfTime = true;
     live.state = 'halftime';
   }
 
-  let possession = resolveFdPossessionSide(fd, game.teams)
-    || (fd.possession === 'home' || fd.possession === 'away' ? fd.possession : null);
+  let possession = winner.id === 'fd'
+    ? (resolveFdPossessionSide(win, game.teams)
+      || (win.possession === 'home' || win.possession === 'away' ? win.possession : null))
+    : (win.possession === 'home' || win.possession === 'away' ? win.possession : null);
+  if (
+    possession
+    && lastPlayEndedSeries(espnBase.lastPlayType, espnBase.lastPlay)
+    && possession === espnBase.lastPlaySide
+    && (isMadeScoreLabel(espnBase.lastPlayType) || isMadeScoreLabel(espnBase.lastPlay))
+  ) {
+    possession = null;
+  }
   if (!possession) {
-    const playSide = espn.lastPlaySide;
+    const playSide = espnBase.lastPlaySide;
     if (
       (playSide === 'home' || playSide === 'away')
-      && !lastPlayEndedSeries(espn.lastPlayType, espn.lastPlay)
+      && !lastPlayEndedSeries(espnBase.lastPlayType, espnBase.lastPlay)
     ) {
       possession = playSide;
     }
@@ -682,15 +776,15 @@ export function applyFdAheadLive(game) {
   if (possession) {
     live.possession = possession;
     live.possessionName = possession === 'away'
-      ? (game.teams?.away ?? fd.possessionName ?? live.possessionName)
-      : (game.teams?.home ?? fd.possessionName ?? live.possessionName);
-  } else if (fd.possessionName) {
-    live.possessionName = fd.possessionName;
+      ? (game.teams?.away ?? win.possessionName ?? live.possessionName)
+      : (game.teams?.home ?? win.possessionName ?? live.possessionName);
+  } else if (win.possessionName) {
+    live.possessionName = win.possessionName;
   }
 
-  let ytg = finiteYtg(fd.yardsToEndzone);
-  if (!Number.isFinite(ytg) && fd.possessionText) {
-    ytg = finiteYtg(ytgFromSpot(fd.possessionText, {
+  let ytg = finiteYtg(win.yardsToEndzone);
+  if (!Number.isFinite(ytg) && win.possessionText) {
+    ytg = finiteYtg(ytgFromSpot(win.possessionText, {
       possession: live.possession,
       home: game.teams?.home,
       away: game.teams?.away,
@@ -700,19 +794,121 @@ export function applyFdAheadLive(game) {
   }
   if (Number.isFinite(ytg)) live.yardsToEndzone = ytg;
   else if (downChanged) live.yardsToEndzone = null;
-  if (fd.possessionText) live.possessionText = fd.possessionText;
+  if (win.possessionText) live.possessionText = win.possessionText;
   else if (downChanged) live.possessionText = null;
 
-  const hs = Number(fd.homeScore);
-  const as = Number(fd.awayScore);
+  const hs = Number(win.homeScore);
+  const as = Number(win.awayScore);
   if (Number.isFinite(hs) && Number.isFinite(as) && hs + as > 0) {
     live.homeScore = hs;
     live.awayScore = as;
   }
 
-  live.spotSource = 'fd';
-  live.fdAheadOfEspn = true;
-  return { ...game, live };
+  live.spotSource = winner.id;
+  if (winner.id !== 'espn') live.fdAheadOfEspn = winner.id === 'fd';
+  return live;
+}
+
+function bestScoreFromSources(candidates, situationWinnerId) {
+  let best = null;
+  let bestPts = -1;
+  for (const row of candidates) {
+    const hs = intOrNull(row.sit?.homeScore);
+    const as = intOrNull(row.sit?.awayScore);
+    if (hs == null || as == null) continue;
+    const pts = hs + as;
+    if (pts > bestPts) {
+      bestPts = pts;
+      best = { home: hs, away: as, source: row.id };
+    }
+  }
+  if (!best) return null;
+  const sitWinner = candidates.find((row) => row.id === situationWinnerId);
+  if (sitWinner && totalScorePts(sitWinner.sit) >= bestPts) {
+    const hs = intOrNull(sitWinner.sit?.homeScore);
+    const as = intOrNull(sitWinner.sit?.awayScore);
+    if (hs != null && as != null) return { home: hs, away: as, source: situationWinnerId };
+  }
+  return best;
+}
+
+/**
+ * Pick the freshest live snapshot across ESPN, FanDuel (Neon), and FD sbapi
+ * scores. Least clock remaining in the latest period wins; scores follow the
+ * highest total when sources disagree.
+ */
+export function pickBestLiveState(game) {
+  if (!game?.inPlay || game.live?.spotSource === 'manual') return game;
+
+  const espnBase = { ...(game.live ?? {}) };
+  const fd = espnBase.fd || game.fdLive || null;
+  delete espnBase.fdAheadOfEspn;
+  delete espnBase.spotSource;
+
+  const candidates = collectLiveSourceCandidates(game);
+  if (!candidates.length) return game;
+
+  const winner = pickWinningSource(candidates);
+  const espnCandidate = candidates.find((row) => row.id === 'espn');
+  const fdAhead = winner?.id !== 'espn'
+    && espnCandidate
+    && (liveSourceAheadOf(winner.sit, espnCandidate.sit)
+      || fdStateAheadOfEspn(winner.sit, espnCandidate.sit));
+
+  let live;
+  if (!winner || winner.id === 'espn') {
+    live = { ...espnBase, fd: fd || undefined };
+    live.spotSource = 'espn';
+  } else {
+    live = applyWinningLiveSource(game, winner, espnBase, fd);
+  }
+
+  const espnRaw = candidates.find((row) => row.id === 'espn')?.raw ?? null;
+  if (espnRaw) live.espnSnapshot = espnRaw;
+  live.liveSources = Object.fromEntries(
+    candidates.map((row) => [row.id, {
+      period: row.sit?.period ?? null,
+      clock: row.sit?.clock ?? null,
+      clockSeconds: clockSecondsOf(row.sit),
+      down: intOrNull(row.sit?.down),
+      distance: intOrNull(row.sit?.distance),
+      homeScore: intOrNull(row.sit?.homeScore),
+      awayScore: intOrNull(row.sit?.awayScore),
+    }]),
+  );
+  if (fdAhead) live.fdAheadOfEspn = true;
+
+  const scorePick = bestScoreFromSources(candidates, live.spotSource);
+  const score = scorePick
+    ? { home: scorePick.home, away: scorePick.away }
+    : game.score;
+  return {
+    ...game,
+    live,
+    score,
+    scoreDisplay: score ? `${score.home}-${score.away}` : game.scoreDisplay,
+  };
+}
+
+/** @deprecated use pickBestLiveState */
+export function applyFdAheadLive(game) {
+  return pickBestLiveState(game);
+}
+
+/** True when any non-ESPN source looks further along than ESPN (clock or spot). */
+export function nonEspnSourceAhead(game) {
+  const espn = espnSitFromGame(game);
+  const fd = game?.fdLive || game?.live?.fd;
+  if (fd && (liveSourceAheadOf(fd, espn) || fdStateAheadOfEspn(fd, espn))) return true;
+  const fdSbapi = game?.fdSbapiLive;
+  if (
+    fdSbapi
+    && totalScorePts(fdSbapi) > totalScorePts(espn)
+    && (intOrNull(fdSbapi.homeScore) != null || intOrNull(fdSbapi.awayScore) != null)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export function fdLiveToDbRow(sit, teams = {}) {

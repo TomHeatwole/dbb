@@ -1,0 +1,176 @@
+Loading ranks, rosters, catalog…
+Fetching historical weekly stats 2021–2025…
+Locked weeks: 2
+Using preseason 1M from /Users/tomh/dev/dbb/example_data/hwang_season_sim_1m/results_summary.csv (10 teams)
+Running ROS 100,000…
+  ROS 5%  9s
+  ROS 10%  19s
+  ROS 15%  28s
+  ROS 20%  37s
+  ROS 25%  46s
+  ROS 30%  54s
+  ROS 35%  63s
+  ROS 40%  71s
+  ROS 45%  81s
+  ROS 50%  89s
+  ROS 55%  98s
+  ROS 60%  110s
+  ROS 65%  127s
+  ROS 70%  140s
+  ROS 75%  149s
+  ROS 80%  160s
+  ROS 85%  171s
+  ROS 90%  183s
+  ROS 95%  195s
+  ROS 100%  205s
+ROS done in 204.8s
+
+=== ROS 100,000 vs preseason 1M (hwang_season_sim_1m)  |  weeks 1–2 locked ===
+team                         title pre   title ros    dTitle   playoff d    avg14 d
+Swift Otton Pitts               20.62%    29.45%     8.83       7.7      74.7
+The Ladds                       24.08%    19.74%    -4.33      -5.9       2.2
+DrakeHigginsAchane ²            24.83%    19.07%    -5.76     -11.4     -19.1
+House of Hwang                  10.74%    12.62%     1.88       3.7      43.8
+Team seanjcrow                   9.81%    10.06%     0.25       5.7      50.8
+Team MrZaccheaus                 5.69%     6.84%     1.15      12.8      79.9
+Eat It While She Sleeper         4.23%     2.21%    -2.01     -12.5     -17.1
+PUPpy Bowl                       0.00%     0.00%    -0.00      -0.0      29.5
+Sell for Sellers                 0.00%     0.00%     0.00       0.0      98.8
+The Boomers                      0.00%     0.00%    -0.00      -0.0     -49.0
+
+--- Swift Otton Pitts (dwol11)  title 20.62% → 29.45% (+8.83)  playoff +7.7  avg14 +74.7 ---
+  Banked weeks 1–2: actual 368.0 vs preseason lineup expectation 261.1 (+106.8)
+  Rest-of-season lineup expectation weeks 3–14: 1394.5 → 1398.6 (+4.0)
+  Starters whose weeks 3–14 lineup points moved:
+    A.J. Brown               WR7     → WR27     lineup   101.9 →    61.8  (-40.1)
+    Christian McCaffrey      RB3     → RB7      lineup   146.3 →   110.9  (-35.4)
+    J.K. Dobbins             RB38    → RB35     lineup     0.0 →    34.5  (+34.5)
+    Kenneth Walker           RB11    → RB3      lineup   118.2 →   150.1  (+31.9)
+    Kyle Pitts               TE6     → TE13     lineup    90.7 →    63.9  (-26.8)
+    Joe Burrow               QB3     → QB6      lineup   199.9 →   183.5  (-16.4)
+    D'Andre Swift            RB19    → RB13     lineup    96.5 →   112.8  (+16.3)
+    Breece Hall              RB16    → RB17     lineup   103.2 →    87.1  (-16.2)
+  Weeks 1–2 actual starters vs what the preseason model expected them to score:
+    Kenneth Walker           RB11     actual   48.9  expected   24.3  (+24.6)
+    D'Andre Swift            RB19     actual   39.3  expected   17.1  (+22.2)
+    Amon-Ra St. Brown        WR4      actual   44.9  expected   25.1  (+19.8)
+    Deshaun Watson           QB35     actual   19.7  expected    5.5  (+14.2)
+    Darren Waller            TE40     actual   16.8  expected    3.9  (+12.9)
+    Tre Tucker               WR66     actual   17.9  expected    8.6  (+9.3)
+
+--- House of Hwang (mhwang12)  title 10.74% → 12.62% (+1.88)  playoff +3.7  avg14 +43.8 ---
+  Banked weeks 1–2: actual 333.5 vs preseason lineup expectation 218.9 (+114.6)
+  Rest-of-season lineup expectation weeks 3–14: 1228.9 → 1254.4 (+25.5)
+  Starters whose weeks 3–14 lineup points moved:
+    Juwan Johnson            TE15    → TE12     lineup    19.9 →    62.5  (+42.7)
+    Jordan Mason             RB35    → RB42     lineup    44.7 →     4.5  (-40.2)
+    Mike Evans               WR28    → WR21     lineup    40.8 →    80.1  (+39.3)
+    Patrick Mahomes          QB14    → QB9      lineup   140.4 →   168.2  (+27.8)
+    Quentin Johnston         WR39    → WR43     lineup    35.5 →    15.2  (-20.2)
+    Dak Prescott             QB8     → QB8      lineup   180.6 →   162.3  (-18.3)
+    David Montgomery         RB21    → RB19     lineup    97.5 →    83.8  (-13.7)
+    Travis Kelce             TE12    → TE9      lineup    53.6 →    65.3  (+11.8)
+  Weeks 1–2 actual starters vs what the preseason model expected them to score:
+    Jonathan Taylor          RB4      actual   47.3  expected   23.9  (+23.4)
+    Patrick Mahomes          QB14     actual   50.6  expected   31.4  (+19.3)
+    Travis Kelce             TE12     actual   29.2  expected   14.0  (+15.2)
+    Dak Prescott             QB8      actual   44.2  expected   31.3  (+12.9)
+    Rashod Bateman           WR90     actual   14.8  expected    4.6  (+10.2)
+    Juwan Johnson            TE15     actual   21.5  expected   11.4  (+10.1)
+
+--- Team MrZaccheaus (MrZaccheaus)  title 5.69% → 6.84% (+1.15)  playoff +12.8  avg14 +79.9 ---
+  Banked weeks 1–2: actual 317.7 vs preseason lineup expectation 218.1 (+99.6)
+  Rest-of-season lineup expectation weeks 3–14: 1169.9 → 1216.1 (+46.2)
+  Starters whose weeks 3–14 lineup points moved:
+    Dalton Kincaid           TE11    → TE3      lineup    59.8 →   104.0  (+44.2)
+    Marvin Harrison          WR36    → WR52     lineup    51.1 →    22.0  (-29.1)
+    Rhamondre Stevenson      RB27    → RB26     lineup    79.4 →    51.9  (-27.6)
+    Michael Pittman          WR41    → WR57     lineup    31.4 →     4.7  (-26.7)
+    Davante Adams            WR25    → WR20     lineup    57.3 →    77.3  (+20.0)
+    Romeo Doubs              WR45    → WR42     lineup     0.0 →    18.7  (+18.7)
+    Chris Godwin             WR35    → WR34     lineup    35.4 →    53.9  (+18.6)
+    Jared Goff               QB11    → QB10     lineup   133.1 →   151.4  (+18.3)
+  Weeks 1–2 actual starters vs what the preseason model expected them to score:
+    Derrick Henry            RB8      actual   49.0  expected   25.2  (+23.8)
+    Kirk Cousins             QB32     actual   34.0  expected   13.0  (+21.0)
+    Dalton Kincaid           TE11     actual   34.5  expected   13.8  (+20.7)
+    Davante Adams            WR25     actual   31.5  expected   13.6  (+17.9)
+    Jared Goff               QB11     actual   46.2  expected   31.0  (+15.2)
+    Saquon Barkley           RB12     actual    8.0  expected   22.3  (-14.3)
+
+--- Team seanjcrow (seanjcrow)  title 9.81% → 10.06% (+0.25)  playoff +5.7  avg14 +50.8 ---
+  Banked weeks 1–2: actual 373.6 vs preseason lineup expectation 236.4 (+137.2)
+  Rest-of-season lineup expectation weeks 3–14: 1289.6 → 1289.0 (-0.6)
+  Starters whose weeks 3–14 lineup points moved:
+    Jaxson Dart              QB16    → UNR      lineup   100.9 →     0.0  (-100.9)
+    Tyler Shough             QB20    → QB14     lineup    35.8 →   135.0  (+99.2)
+    Terry McLaurin           WR29    → WR28     lineup    30.9 →    51.8  (+20.9)
+    Michael Wilson           WR31    → WR45     lineup    17.9 →     0.0  (-17.9)
+    Harold Fannin            TE8     → TE11     lineup    86.3 →    72.5  (-13.8)
+    Blake Corum              RB30    → RB28     lineup    43.5 →    30.6  (-12.9)
+    Isaiah Likely            TE10    → TE10     lineup    74.1 →    82.6  (+8.5)
+  Weeks 1–2 actual starters vs what the preseason model expected them to score:
+    Josh Allen               QB1      actual   76.5  expected   44.1  (+32.4)
+    Jaxon Smith-Njigba       WR3      actual   51.7  expected   25.6  (+26.1)
+    Jahmyr Gibbs             RB1      actual   45.9  expected   21.2  (+24.7)
+    Isaiah Likely            TE10     actual   29.6  expected   11.1  (+18.5)
+    Devaughn Vele            WR84     actual   19.3  expected    5.0  (+14.3)
+    Mike Gesicki             TE39     actual   16.3  expected    4.8  (+11.5)
+
+--- Eat It While She Sleeper (GIVEDADDYASPIKE)  title 4.23% → 2.21% (-2.01)  playoff -12.5  avg14 -17.1 ---
+  Banked weeks 1–2: actual 276.3 vs preseason lineup expectation 212.8 (+63.5)
+  Rest-of-season lineup expectation weeks 3–14: 1108.5 → 1078.5 (-30.0)
+  Starters whose weeks 3–14 lineup points moved:
+    Caleb Williams           QB5     → QB11     lineup   179.3 →   113.8  (-65.5)
+    Malik Willis             QB21    → QB18     lineup    23.2 →    71.2  (+48.0)
+    Kenny Gainwell           RB34    → RB44     lineup    46.6 →     0.0  (-46.6)
+    Jadarian Price           RB31    → RB24     lineup    44.9 →    84.7  (+39.8)
+    Parker Washington        WR26    → WR12     lineup    57.2 →    93.6  (+36.3)
+    Jaylen Warren            RB26    → RB29     lineup    80.5 →    52.1  (-28.3)
+    Bryce Young              QB26    → QB17     lineup     0.0 →    28.2  (+28.2)
+    Kaelon Black             RB55    → RB38     lineup     0.0 →    24.7  (+24.7)
+  Weeks 1–2 actual starters vs what the preseason model expected them to score:
+    Bryce Young              QB26     actual   55.5  expected   24.6  (+31.0)
+    Kyle Monangai            RB36     actual   24.2  expected    7.5  (+16.7)
+    Parker Washington        WR26     actual   24.1  expected   13.1  (+11.0)
+    Matthew Golden           WR57     actual   15.3  expected    7.0  (+8.3)
+    Jadarian Price           RB31     actual    5.8  expected   14.6  (-8.8)
+
+--- The Ladds (KobeCopters)  title 24.08% → 19.74% (-4.33)  playoff -5.9  avg14 +2.2 ---
+  Banked weeks 1–2: actual 317.5 vs preseason lineup expectation 228.3 (+89.1)
+  Rest-of-season lineup expectation weeks 3–14: 1241.8 → 1250.4 (+8.5)
+  Starters whose weeks 3–14 lineup points moved:
+    RJ Harvey                RB24    → RB43     lineup    62.5 →     0.0  (-62.5)
+    Christian Watson         WR27    → WR13     lineup    13.8 →    74.9  (+61.1)
+    Trevor Lawrence          QB10    → QB4      lineup   151.6 →   199.5  (+47.9)
+    Ladd McConkey            WR21    → WR25     lineup    59.9 →    15.8  (-44.1)
+    Jeremiyah Love           RB15    → RB18     lineup   117.3 →    74.2  (-43.1)
+    Zay Flowers              WR16    → WR9      lineup    42.5 →    78.3  (+35.8)
+    Baker Mayfield           QB19    → QB20     lineup   127.0 →    98.6  (-28.4)
+    Jacoby Brissett          QB27    → QB28     lineup    12.4 →    34.6  (+22.2)
+  Weeks 1–2 actual starters vs what the preseason model expected them to score:
+    Christian Watson         WR27     actual   36.8  expected   12.0  (+24.8)
+    Chris Olave              WR9      actual   32.8  expected   21.5  (+11.3)
+    Dallas Goedert           TE13     actual   21.7  expected   10.7  (+11.0)
+    Jeremiyah Love           RB15     actual   11.0  expected   19.4  (-8.4)
+    Baker Mayfield           QB19     actual   12.2  expected   27.3  (-15.2)
+
+--- DrakeHigginsAchane ² (davisdaniel1)  title 24.83% → 19.07% (-5.76)  playoff -11.4  avg14 -19.1 ---
+  Banked weeks 1–2: actual 296.4 vs preseason lineup expectation 253.6 (+42.8)
+  Rest-of-season lineup expectation weeks 3–14: 1318.8 → 1312.8 (-6.0)
+  Starters whose weeks 3–14 lineup points moved:
+    Drake London             WR8     → WR16     lineup   102.8 →    65.7  (-37.1)
+    Drake Maye               QB4     → QB5      lineup   199.5 →   165.4  (-34.0)
+    Stefon Diggs             WR49    → WR37     lineup     0.0 →    33.3  (+33.3)
+    Travis Etienne           RB17    → RB22     lineup   102.6 →    73.0  (-29.6)
+    Matthew Stafford         QB12    → QB15     lineup     0.0 →    26.1  (+26.1)
+    Aaron Jones              RB42    → RB31     lineup     0.0 →    21.6  (+21.6)
+    Jacory Croskey-Merritt   RB39    → RB30     lineup    10.0 →    29.2  (+19.2)
+    Jakobi Meyers            WR40    → WR50     lineup    18.9 →     0.0  (-18.9)
+  Weeks 1–2 actual starters vs what the preseason model expected them to score:
+    Stefon Diggs             WR49     actual   28.2  expected    7.8  (+20.4)
+    Trey McBride             TE2      actual   34.1  expected   16.8  (+17.3)
+    Aaron Jones              RB42     actual   20.5  expected    8.3  (+12.2)
+    Nico Collins             WR10     actual   14.2  expected   22.5  (-8.3)
+    De'Von Achane            RB7      actual    9.3  expected   24.1  (-14.8)
+    Drake London             WR8      actual    4.9  expected   21.3  (-16.4)

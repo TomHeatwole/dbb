@@ -5,9 +5,13 @@ import {
   fdStateAheadOfEspn,
   formatFdLiveSpot,
   formatLiveSituationLine,
+  liveSourceAheadOf,
   liveSpotsDisagree,
   liveSnapsAgree,
+  liveStateAdvanceRank,
+  nonEspnSourceAhead,
   parseFdLiveSituation,
+  pickBestLiveState,
   resolveFdPossessionSide,
   situationKey,
 } from './fdLiveSituation';
@@ -305,6 +309,118 @@ describe('espnClockAheadOfFd', () => {
       { period: 3, clock: '0:45', clockSeconds: 45 },
       { clock: '0:45', clockSeconds: 45 },
     )).toBe(false);
+  });
+});
+
+describe('liveStateAdvanceRank', () => {
+  it('ranks a later quarter with less clock ahead', () => {
+    expect(liveStateAdvanceRank({ period: 3, clockSeconds: 36 }))
+      .toBeGreaterThan(liveStateAdvanceRank({ period: 3, clockSeconds: 120 }));
+    expect(liveStateAdvanceRank({ period: 4, clockSeconds: 900 }))
+      .toBeGreaterThan(liveStateAdvanceRank({ period: 3, clockSeconds: 0 }));
+  });
+
+  it('prefers exact clocks over approximate ones in the same spot', () => {
+    expect(liveStateAdvanceRank({ period: 1, clockSeconds: 540, clockApproximate: false }))
+      .toBeGreaterThan(liveStateAdvanceRank({ period: 1, clockSeconds: 540, clockApproximate: true }));
+  });
+});
+
+describe('liveSourceAheadOf', () => {
+  it('trusts the source with less clock remaining', () => {
+    expect(liveSourceAheadOf(
+      { period: 2, clockSeconds: 120 },
+      { period: 2, clockSeconds: 180 },
+    )).toBe(true);
+    expect(liveSourceAheadOf(
+      { period: 2, clockSeconds: 180 },
+      { period: 2, clockSeconds: 120 },
+    )).toBe(false);
+  });
+});
+
+describe('pickBestLiveState', () => {
+  it('uses FanDuel when its clock has run further', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      score: { home: 0, away: 7 },
+      scoreDisplay: '0-7',
+      fdLive: {
+        period: 1,
+        clockSeconds: 8 * 60 + 12,
+        clock: '8:12',
+        down: 2,
+        distance: 7,
+        homeScore: 0,
+        awayScore: 7,
+      },
+      live: {
+        period: 1,
+        clockSeconds: 9 * 60 + 1,
+        clock: '9:01',
+        down: 1,
+        distance: 10,
+        homeScore: 0,
+        awayScore: 7,
+      },
+    };
+    const out = pickBestLiveState(game);
+    expect(out.live.spotSource).toBe('fd');
+    expect(out.live.down).toBe(2);
+    expect(out.live.clockSeconds).toBe(492);
+    expect(out.live.fdAheadOfEspn).toBe(true);
+    expect(out.live.liveSources.espn.clockSeconds).toBe(541);
+    expect(out.live.liveSources.fd.clockSeconds).toBe(492);
+  });
+
+  it('keeps ESPN when it is further along', () => {
+    const game = {
+      inPlay: true,
+      score: { home: 14, away: 7 },
+      fdLive: { period: 2, clockSeconds: 600, down: 1, distance: 10 },
+      live: { period: 2, clockSeconds: 540, down: 3, distance: 2 },
+    };
+    const out = pickBestLiveState(game);
+    expect(out.live.spotSource).toBe('espn');
+    expect(out.live.down).toBe(3);
+  });
+
+  it('is idempotent on repeated picks', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      score: { home: 0, away: 7 },
+      fdLive: { period: 1, clockSeconds: 492, down: 2, distance: 7 },
+      live: { period: 1, clockSeconds: 541, down: 1, distance: 10, possession: 'away' },
+    };
+    const once = pickBestLiveState(game);
+    const twice = pickBestLiveState(once);
+    expect(twice.live.spotSource).toBe('fd');
+    expect(twice.live.down).toBe(2);
+    expect(twice.live.clockSeconds).toBe(once.live.clockSeconds);
+    expect(twice.live.espnSnapshot?.clockSeconds).toBe(541);
+  });
+
+  it('pulls a fresher score from FD sbapi when totals differ', () => {
+    const game = {
+      inPlay: true,
+      score: { home: 7, away: 7 },
+      fdSbapiLive: { homeScore: 14, awayScore: 7 },
+      live: { period: 3, clockSeconds: 300, homeScore: 7, awayScore: 7 },
+    };
+    const out = pickBestLiveState(game);
+    expect(out.score).toEqual({ home: 14, away: 7 });
+  });
+});
+
+describe('nonEspnSourceAhead', () => {
+  it('flags when FanDuel clock is ahead of ESPN', () => {
+    expect(nonEspnSourceAhead({
+      score: { home: 0, away: 7 },
+      fdLive: { period: 1, clockSeconds: 492, down: 2, distance: 7 },
+      live: { period: 1, clockSeconds: 541, down: 1, distance: 10 },
+    })).toBe(true);
   });
 });
 

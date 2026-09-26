@@ -117,17 +117,30 @@ function fillRandomRolls(allPlayerIds, rolls, playoffRolls = {}) {
   }
 }
 
+function lockedWeekPointsFor(ctx, pid, wi) {
+  const locked = ctx.lockedWeekPts && ctx.lockedWeekPts[pid];
+  if (!locked || wi >= locked.length) return 0;
+  const p = locked[wi];
+  return Number.isFinite(p) ? p : 0;
+}
+
 function fillWeeklyFromRolls(ctx) {
   const {
     allPlayerIds, pools, poolCumWeights, outcomeWeekPts, playoffIndex,
     playerPositions, weekBuffers, seasonTotals, rolls, playoffRolls,
   } = ctx;
+  const lockedCount = Math.max(0, Math.min(REG_SEASON_WEEKS, ctx.lockedWeekCount || 0));
 
   for (const pid of allPlayerIds) {
     const poolLen = pools[pid]?.length ?? 0;
     if (poolLen === 0) {
-      for (let wi = 0; wi < NUM_WEEKS; wi++) weekBuffers[wi][pid] = 0;
-      seasonTotals[pid] = 0;
+      let total = 0;
+      for (let wi = 0; wi < NUM_WEEKS; wi++) {
+        const p = wi < lockedCount ? lockedWeekPointsFor(ctx, pid, wi) : 0;
+        weekBuffers[wi][pid] = p;
+        total += p;
+      }
+      seasonTotals[pid] = total;
       continue;
     }
     const pct = rolls[pid] ?? 50;
@@ -137,7 +150,7 @@ function fillWeeklyFromRolls(ctx) {
     let total = 0;
     let reg = 0;
     for (let wi = 0; wi < REG_SEASON_WEEKS; wi++) {
-      const p = ptsArr[wi];
+      const p = wi < lockedCount ? lockedWeekPointsFor(ctx, pid, wi) : ptsArr[wi];
       weekBuffers[wi][pid] = p;
       total += p;
       reg += p;
@@ -369,6 +382,7 @@ function scoreRostersFromWeekly(ctx, rosters, lightweight) {
     weekBuffers,
     playerPositions,
     seasonTotals,
+    ctx.lockedTeamWeekPts,
   );
   const standings = buildFinalStandings(regTotals, ploffTotals, {
     format: PLAYOFF_FORMAT_CUMULATIVE,
@@ -476,6 +490,30 @@ export function computeSimulatorResultDeltas(baselineResults, scenarioResults) {
 /**
  * Prepare reusable simulation context with precomputed outcome weekly points.
  */
+function buildLockedTeamWeekPts(lockedWeekCount, lockedTeamWeekPoints) {
+  const count = Math.max(0, Math.min(REG_SEASON_WEEKS, lockedWeekCount || 0));
+  if (count === 0 || !lockedTeamWeekPoints) return null;
+  return lockedTeamWeekPoints.slice(0, count);
+}
+
+function buildLockedWeekPts(playerIdList, lockedWeekCount, lockedWeekPoints) {
+  const count = Math.max(0, Math.min(REG_SEASON_WEEKS, lockedWeekCount || 0));
+  if (count === 0) return null;
+  const out = {};
+  for (const pid of playerIdList) {
+    const arr = new Float32Array(count);
+    const key = String(pid);
+    for (let wi = 0; wi < count; wi++) {
+      const weekMap = lockedWeekPoints && lockedWeekPoints[wi];
+      const raw = weekMap ? (weekMap[key] ?? weekMap[pid]) : 0;
+      const p = Number(raw);
+      arr[wi] = Number.isFinite(p) ? p : 0;
+    }
+    out[pid] = arr;
+  }
+  return out;
+}
+
 export function prepareSimulatorContext({
   scenarioRosters,
   baselineRosters = null,
@@ -487,6 +525,9 @@ export function prepareSimulatorContext({
   playersData,
   variance,
   monotone,
+  lockedWeekCount = 0,
+  lockedWeekPoints = null,
+  lockedTeamWeekPoints = null,
 }) {
   const allPlayerIds = new Set();
   for (const rid in scenarioRosters) {
@@ -511,11 +552,15 @@ export function prepareSimulatorContext({
   const playerPositions = buildPlayerPositionsMap(playerIdList, playersData);
   const runtime = createRuntimeBuffers(playerIdList);
   const rosterIds = Object.keys(scenarioRosters).map(Number);
+  const lockedCount = Math.max(0, Math.min(REG_SEASON_WEEKS, lockedWeekCount || 0));
 
   return {
     scenarioRosters,
     baselineRosters: trackBaseline ? baselineRosters : null,
     hwangAdpRankMap,
+    lockedWeekCount: lockedCount,
+    lockedWeekPts: buildLockedWeekPts(playerIdList, lockedCount, lockedWeekPoints),
+    lockedTeamWeekPts: buildLockedTeamWeekPts(lockedCount, lockedTeamWeekPoints),
     allPlayerIds: playerIdList,
     pools,
     poolCumWeights,

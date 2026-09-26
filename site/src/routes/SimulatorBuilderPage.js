@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
@@ -42,30 +42,49 @@ import {
 import { DEFAULT_ITERATIONS } from '../scenarios/simulatorMonteCarlo';
 import { DEFAULT_VARIANCE, normalizeVariance, DEFAULT_MONOTONE, normalizeMonotone } from '../scenarios/outcomeDistribution';
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
+import { getCurrentYear } from '../utils/DateHelper';
+import { getLockedRegularSeasonWeeks, loadRosRankRows } from '../scenarios/rosRankLoader';
 
 const OG_TITLE = 'Season Simulator';
 const OG_DESCRIPTION = 'Run outcome-roll simulations and see championship odds.';
+const ROS_OG_TITLE = 'ROS Simulator';
+const ROS_OG_DESCRIPTION = 'In-season simulations: finished weeks stay real, the rest of the season rolls from FantasyPros ROS ranks.';
 
-function SimulatorTooltip({ season, iterations, rankSource }) {
+function SimulatorTooltip({ season, iterations, rankSource, isRos, lockedWeeks }) {
   const years = getOutcomeHistoryYears(season);
   const yearLabel = years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : 'past seasons';
   const rankLabel = rankSource === RANK_SOURCE_DASH
     ? 'Redraft Dash positional rank'
     : `${season} Hwang ADP`;
+  const nextWeek = lockedWeeks + 1;
 
   return (
-    <span className="info-icon scenario-builder-tooltip" aria-label="About the Season Simulator">
+    <span className="info-icon scenario-builder-tooltip" aria-label={isRos ? 'About the ROS Simulator' : 'About the Season Simulator'}>
       ℹ️
       <span className="info-icon-tooltip">
         <div className="scenario-builder-tooltip-inner">
           <div className="scenario-builder-tooltip-body">
-            <p style={{ margin: '0 0 0.6em 0' }}>
-              Same outcome engine as Future Scenarios v2 — each player gets a random
-              percentile roll from their {rankLabel} ±2 historical pool ({yearLabel}),
-              densified with synthetic in-between seasons, for weeks 1–14. Playoff weeks
-              15–17 are rolled independently from real historical playoffs of similar
-              regular-season scorers.
-            </p>
+            {isRos ? (
+              <p style={{ margin: '0 0 0.6em 0' }}>
+                Finished weeks stay the scores that already happened
+                {lockedWeeks > 0 ? ` (weeks 1–${lockedWeeks} team totals are locked)` : ''}.
+                Each player then gets a random percentile roll from their FantasyPros
+                rest-of-season positional rank ±2 historical pool ({yearLabel}) for
+                {lockedWeeks > 0 ? ` weeks ${nextWeek}–14` : ' weeks 1–14'}.
+                QB, RB, and WR use standard ROS; TE uses half-PPR ROS.
+                Those future weeks are optimal lineups, same as the full-season simulator.
+                Playoff weeks 15–17 are rolled from real historical playoffs of similar
+                weeks 1–14 scorers — actual points already played, plus the rolled rest.
+              </p>
+            ) : (
+              <p style={{ margin: '0 0 0.6em 0' }}>
+                Same outcome engine as Future Scenarios v2 — each player gets a random
+                percentile roll from their {rankLabel} ±2 historical pool ({yearLabel}),
+                densified with synthetic in-between seasons, for weeks 1–14. Playoff weeks
+                15–17 are rolled independently from real historical playoffs of similar
+                regular-season scorers.
+              </p>
+            )}
             <p style={{ margin: 0 }}>
               Edit rosters directly or tell HwangAI the move in plain English, then run
               {' '}<strong>{iterations.toLocaleString()} simulations</strong> to
@@ -79,7 +98,11 @@ function SimulatorTooltip({ season, iterations, rankSource }) {
   );
 }
 
-function SimulatorBuilderPage() {
+function SimulatorBuilderPage({ variant = 'season' }) {
+  const isRos = variant === 'ros';
+  const pendingStorageKey = isRos
+    ? 'pendingRosSimulatorBuilderScenario'
+    : 'pendingSimulatorBuilderScenario';
   const myRosterId = useMyCurrentRosterId();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -101,6 +124,7 @@ function SimulatorBuilderPage() {
   const [originalRosters, setOriginalRosters] = useState({});
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [season, setSeason] = useState(() => {
+    if (isRos) return getCurrentYear();
     const pre = pendingScenarioRef.current;
     if (pre?.sy) return normalizeOutcomeScenarioYear(pre.sy);
     return DEFAULT_OUTCOME_SCENARIO_YEAR;
@@ -135,13 +159,14 @@ function SimulatorBuilderPage() {
       setLoading(true);
       setError(null);
       try {
-        const [rosterData, players, hwangRows, dashRows] = await Promise.all([
+        const [rosterData, players, hwangRows, dashRows, rosRows] = await Promise.all([
           loadOutcomeScenarioRosterData(season),
           fetch('/data/players.txt').then((r) => r.json()).catch(() => null),
-          loadHwangAdpRowsForYear(season).catch(() => []),
-          isCurrentSeasonRankDashAllowed(season)
+          isRos ? Promise.resolve([]) : loadHwangAdpRowsForYear(season).catch(() => []),
+          !isRos && isCurrentSeasonRankDashAllowed(season)
             ? loadRedraftDashRankRows().catch(() => [])
             : Promise.resolve([]),
+          isRos ? loadRosRankRows().catch(() => []) : Promise.resolve([]),
         ]);
 
         if (cancelled) return;
@@ -150,15 +175,15 @@ function SimulatorBuilderPage() {
 
         setPlayersData(players);
         setPlayerIdMap(idMap);
-        setHwangRankRows(hwangRows);
+        setHwangRankRows(isRos ? rosRows : hwangRows);
         setDashRankRows(dashRows);
         setTeamsForGrid(teams);
 
-        const storedEncoded = sessionStorage.getItem('pendingSimulatorBuilderScenario');
+        const storedEncoded = sessionStorage.getItem(pendingStorageKey);
         const pending = storedEncoded
           ? decodeFutureScenario2(storedEncoded)
           : pendingScenarioRef.current;
-        if (storedEncoded) sessionStorage.removeItem('pendingSimulatorBuilderScenario');
+        if (storedEncoded) sessionStorage.removeItem(pendingStorageKey);
         pendingScenarioRef.current = null;
 
         if (pending?.sy && normalizeOutcomeScenarioYear(pending.sy) === season) {
@@ -207,12 +232,12 @@ function SimulatorBuilderPage() {
   }, [loading, teamsForGrid.length]);
 
   useEffect(() => {
-    if (loading) return;
+    if (isRos || loading) return;
     setRankSource((prev) => {
       if (prev === RANK_SOURCE_DASH && dashRankRows.length === 0) return DEFAULT_RANK_SOURCE;
       return normalizeRankSource(prev, season);
     });
-  }, [loading, season, dashRankRows.length]);
+  }, [isRos, loading, season, dashRankRows.length]);
 
   const topPlayersBySeason = useMemo(() => {
     if (!playersData || !playerIdMap) return [];
@@ -304,26 +329,48 @@ function SimulatorBuilderPage() {
     ? `${historyYears[0]}–${historyYears[historyYears.length - 1]}`
     : 'historical seasons';
 
+  const lockedWeeks = isRos ? getLockedRegularSeasonWeeks(season) : 0;
+  const rosWeekLabel = lockedWeeks > 0
+    ? `Weeks 1–${lockedWeeks} actual · ${lockedWeeks + 1}–14 ROS`
+    : 'ROS ranks · no weeks completed yet';
+
   const leftHeader = (
     <div className="outcome-scenario-header-meta">
-      <OutcomeScenarioSeasonDropdown
-        season={season}
-        onSeasonChange={(next) => {
-          setSeason(next);
-          setRankSource((prev) => normalizeRankSource(prev, next));
-        }}
-      />
-      <span className="future-scenario-proj-label">
-        {season} {rankSourceShortLabel(rankSource, season)} · outcomes {historyLabel}
-      </span>
+      {isRos ? (
+        <span className="future-scenario-proj-label">
+          {season} {rosWeekLabel} · outcomes {historyLabel}
+        </span>
+      ) : (
+        <>
+          <OutcomeScenarioSeasonDropdown
+            season={season}
+            onSeasonChange={(next) => {
+              setSeason(next);
+              setRankSource((prev) => normalizeRankSource(prev, next));
+            }}
+          />
+          <span className="future-scenario-proj-label">
+            {season} {rankSourceShortLabel(rankSource, season)} · outcomes {historyLabel}
+          </span>
+        </>
+      )}
+      <Link
+        to={isRos ? '/simulator' : '/rossimulator'}
+        className="scenario-eval-back-link"
+      >
+        {isRos ? 'Full-season simulator' : 'ROS Simulator'}
+      </Link>
     </div>
   );
 
   return (
     <>
-      <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
+      <PageMeta
+        title={isRos ? ROS_OG_TITLE : OG_TITLE}
+        description={isRos ? ROS_OG_DESCRIPTION : OG_DESCRIPTION}
+      />
       <InfoPageWrapper
-        title={<>Season Simulator <SimulatorTooltip season={season} iterations={iterations} rankSource={rankSource} /></>}
+        title={<>{isRos ? 'ROS Simulator' : 'Season Simulator'} <SimulatorTooltip season={season} iterations={iterations} rankSource={rankSource} isRos={isRos} lockedWeeks={lockedWeeks} /></>}
         subtitle={null}
         leftHeader={leftHeader}
       >
@@ -403,8 +450,8 @@ function SimulatorBuilderPage() {
                     monotone={monotone}
                     onChangeMonotone={setMonotone}
                     rankSource={rankSource}
-                    onChangeRankSource={setRankSource}
-                    allowRedraftDash={dashRanksAvailable}
+                    onChangeRankSource={isRos ? null : setRankSource}
+                    allowRedraftDash={!isRos && dashRanksAvailable}
                   />
                 </div>
               </div>

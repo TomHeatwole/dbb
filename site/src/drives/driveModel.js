@@ -31,13 +31,22 @@ import {
   soFarAfterOpening,
 } from './pregameFirstDriveStart.js';
 import { ytgFromSpot } from './ytgFromSpot.js';
-import { formatDownAndDistance, formatDownAndDistanceSpoken, formatLiveSituationLine, liveSpotsDisagree, liveSnapsAgree, espnClockAheadOfFd, applyFdAheadLive } from './fdLiveSituation.js';
+import {
+  formatDownAndDistance,
+  formatDownAndDistanceSpoken,
+  formatLiveSituationLine,
+  liveSpotsDisagree,
+  liveSnapsAgree,
+  espnClockAheadOfFd,
+  pickBestLiveState,
+  applyFdAheadLive,
+} from './fdLiveSituation.js';
 import {
   applyLineDivergenceFilter,
   lineDivergenceForGame,
 } from './lineDivergence.js';
 
-export { applyFdAheadLive };
+export { applyFdAheadLive, pickBestLiveState };
 
 /** ESPN scrape: example_data/ncaaf_drive_results/espn_ncaaf_drives.csv */
 export const RAW_DRIVE_N = 113712;
@@ -572,8 +581,9 @@ export function situationUntrusted(game) {
  * oddsStale: ESPN is ahead of FanDuel, so the posted price may be old.
  */
 export function spotLagKind(game) {
-  const view = applyFdAheadLive(game);
-  if (view.live?.spotSource === 'fd' || view.live?.spotSource === 'manual') return null;
+  const view = pickBestLiveState(game);
+  if (view.live?.spotSource && view.live.spotSource !== 'espn') return null;
+  if (view.live?.spotSource === 'manual') return null;
   if (!view?.inPlay || isHalftimeLive(view.live)) return null;
   const espn = view?.live;
   const fd = espn?.fd || game?.fdLive;
@@ -661,25 +671,57 @@ export function describeSpotLag(game) {
   };
 }
 
+function lastPlayWasMadeScore(live) {
+  const type = live?.lastPlayType;
+  const text = live?.lastPlay;
+  return isMadeScoreLabel(type) || isMadeScoreLabel(text);
+}
+
 /**
  * Team that just scored a TD / made FG. That series is over; ESPN often
  * still tags them as possession through the PAT. Kickoff goes the other way.
  */
 export function scoringSideAfterMadeKick(game) {
   if (!game?.inPlay || isHalftimeLive(game.live)) return null;
-  if (hasLiveOffensiveSnap(game)) return null;
   const chart = game?.live?.driveChart;
-  if (chart?.currentSide === 'home' || chart?.currentSide === 'away') return null;
   const driveResult = chart?.currentResult;
   const playResult = game?.live?.lastPlayType || game?.live?.lastPlay;
-  if (!isMadeScoreLabel(driveResult) && !isMadeScoreLabel(playResult)) return null;
+  const scored = isMadeScoreLabel(driveResult) || lastPlayWasMadeScore(game?.live);
+  if (!scored) return null;
+
+  if (hasLiveOffensiveSnap(game)) {
+    const poss = livePossessionSide(game);
+    const playSide = game?.live?.lastPlaySide;
+    // Receiving team already has a real snap after the kickoff.
+    if (poss && playSide && poss !== playSide) return null;
+    // Down/distance still tagged on the scoring team after a TD/PAT.
+    if (!(poss && playSide && poss === playSide)) return null;
+  } else if (chart?.currentSide === 'home' || chart?.currentSide === 'away') {
+    return null;
+  }
   if (isMadeScoreLabel(driveResult) && (chart?.finishedSide === 'home' || chart?.finishedSide === 'away')) {
+    // ESPN tags a fumble-return or pick-six on the offense that gave it up.
+    if (/fumble|interception|\bint\b|return|pick[- ]six/i.test(String(driveResult))) {
+      return flipSide(chart.finishedSide);
+    }
     return chart.finishedSide;
   }
   if (game?.live?.lastPlaySide === 'home' || game?.live?.lastPlaySide === 'away') {
     return game.live.lastPlaySide;
   }
   return null;
+}
+
+/** Possession still names the scoring team while a snap is posted — ignore it. */
+function snapPossessionIsStaleScorerTag(game, snapPoss) {
+  if (snapPoss !== 'home' && snapPoss !== 'away') return false;
+  const live = game?.live;
+  if (!lastPlayClosedSeries(live)) return false;
+  const playSide = live?.lastPlaySide;
+  if (playSide !== snapPoss) return false;
+  if (lastPlayWasMadeScore(live)) return true;
+  const result = live?.driveChart?.currentResult;
+  return isMadeScoreLabel(result);
 }
 
 /** Team that did not receive the opening kickoff gets the 2nd-half ball. */
@@ -690,22 +732,34 @@ export function secondHalfReceiveSide(game) {
 
 /** Who is actually up now. After a score, the other team is getting the kickoff. */
 export function firstUpSide(game) {
-  const view = applyFdAheadLive(game);
+  const view = pickBestLiveState(game);
   if (!view?.inPlay || view?.live?.state === 'pre') return null;
   if (isHalftimeLive(view.live)) return secondHalfReceiveSide(view);
-  if (view.live?.spotSource === 'fd') {
-    const fdPoss = livePossessionSide(view);
-    if (fdPoss) return fdPoss;
+  if (view.live?.spotSource === 'manual') {
+    const pinned = livePossessionSide(view);
+    if (pinned) return pinned;
   }
+
   const book = bookLiveDrive(view);
   const closed = lastPlayClosedSeries(view.live);
   const ended = seriesEndingSide(view.live, book?.lead);
-  const snapPoss = hasLiveOffensiveSnap(view) ? livePossessionSide(view) : null;
-  const leftover = espnSnapIsLeftover(view, snapPoss);
-  if (snapPoss && leftover) return flipSide(snapPoss);
-  if (snapPoss && !leftover) return snapPoss;
+
   const scorer = scoringSideAfterMadeKick(view);
   if (scorer) return flipSide(scorer);
+
+  const snapPoss = hasLiveOffensiveSnap(view) ? livePossessionSide(view) : null;
+  const bookPinnedSnap = view.live?.spotSource
+    && view.live.spotSource !== 'espn'
+    && view.live.spotSource !== 'manual';
+  if (snapPoss && bookPinnedSnap) {
+    if (snapPossessionIsStaleScorerTag(view, snapPoss)) return flipSide(snapPoss);
+    return snapPoss;
+  }
+  const leftover = espnSnapIsLeftover(view, snapPoss);
+  if (snapPoss && leftover) return flipSide(snapPoss);
+  if (snapPoss && snapPossessionIsStaleScorerTag(view, snapPoss)) return flipSide(snapPoss);
+  if (snapPoss && !leftover) return snapPoss;
+
   const chartSide = view?.live?.driveChart?.currentSide;
   if (chartSide === 'home' || chartSide === 'away') return chartSide;
   if (book?.lead) {
@@ -716,11 +770,16 @@ export function firstUpSide(game) {
   const finished = view?.live?.driveChart?.finishedSide;
   // Punt / INT / missed FG: series is over, but the next snap is not a kickoff.
   if (finished === 'home' || finished === 'away') return null;
+
+  if (view.live?.spotSource && view.live.spotSource !== 'espn') {
+    const pinned = livePossessionSide(view);
+    if (pinned) return pinned;
+  }
   return livePossessionSide(view);
 }
 
 export function situationOffenseLabel(game) {
-  const view = applyFdAheadLive(game);
+  const view = pickBestLiveState(game);
   if (!view?.inPlay) return null;
   if (isHalftimeLive(view.live)) {
     const side = firstUpSide(view);
@@ -884,8 +943,12 @@ export function espnSnapIsLeftover(game, snapPoss) {
   const closed = lastPlayClosedSeries(live);
   const ended = seriesEndingSide(live, book?.lead);
   const chartSide = live?.driveChart?.currentSide;
+  // 1st down after a punt / turnover is the new series, not a stale snap
+  // of the team that just gave the ball up.
+  const freshSeries = Number(live?.down) === 1 && closed;
   if (
-    closed
+    !freshSeries
+    && closed
     && ended === snapPoss
     && chartSide !== snapPoss
     && !lastPlayIsKickoff(live)
@@ -1017,7 +1080,7 @@ function pairBothDriveSides(game, books) {
 
 /** Book markets plus a card for each team. Live: current drive, then next. */
 export function listDriveSides(game, opts = {}) {
-  const view = applyFdAheadLive(game);
+  const view = pickBestLiveState(game);
   const books = listDriveMarkets(view, opts);
   if (!shouldShowBothDriveSides(view)) return books;
   const pair = pairBothDriveSides(view, books);
@@ -1353,7 +1416,7 @@ function predictPregameFirstDriveCoinTossBlend(view) {
  * Build the feature map the trees expect. `layer` is driveStart | snap.
  */
 export function featuresFromGame(game) {
-  const view = applyFdAheadLive(game);
+  const view = pickBestLiveState(game);
   const live = view?.live ?? {};
   const inPlay = Boolean(view?.inPlay) && live.state !== 'pre';
   const clock = normalizeLiveClock(live);
@@ -1377,7 +1440,9 @@ export function featuresFromGame(game) {
   const side = inferOffenseSide(view, view?.nextDrive);
   const firstUp = firstUpSide(view);
   const isWaiting = Boolean(inPlay && firstUp && side && side !== firstUp);
-  const leftoverSnap = espnSnapIsLeftover(view, livePossessionSide(view));
+  const leftoverSnap = view.live?.spotSource === 'manual'
+    ? false
+    : espnSnapIsLeftover(view, livePossessionSide(view));
   const hasSnap = !leftoverSnap
     && !clock.halfKickoff
     && Number.isFinite(down) && down > 0
@@ -1454,7 +1519,8 @@ export function featuresFromGame(game) {
   }
 
   if (inPlay && firstUp && side === firstUp && !canSnap) {
-    const ytg = clock.halfKickoff ? 75 : (Number.isFinite(ytgLive) ? ytgLive : 75);
+    const kickoffStart = clock.halfKickoff || Boolean(scoringSideAfterMadeKick(view));
+    const ytg = kickoffStart ? 75 : (Number.isFinite(ytgLive) ? ytgLive : 75);
     const startPeriod = Number.isFinite(period) ? period : 1;
     const startClock = Number.isFinite(clockSec) ? clockSec : (clock.halfKickoff ? 900 : NaN);
     const secLeft = Number.isFinite(startPeriod) && Number.isFinite(startClock)
@@ -1590,7 +1656,7 @@ export function featuresFromGame(game) {
 }
 
 export function predictDriveResult(game) {
-  const view = applyFdAheadLive(game);
+  const view = pickBestLiveState(game);
   const live = view?.live ?? {};
   const inPlay = Boolean(view?.inPlay) && live.state !== 'pre';
   const clock = normalizeLiveClock(live);
@@ -1640,7 +1706,7 @@ export function evaluateDriveGame(game, {
   lineFilter = true,
 } = {}) {
   const nextDrive = market ?? game?.nextDrive ?? null;
-  const base = applyFdAheadLive(game);
+  const base = pickBestLiveState(game);
   const view = nextDrive && nextDrive !== base.nextDrive
     ? { ...base, nextDrive }
     : base;

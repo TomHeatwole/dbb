@@ -1086,6 +1086,120 @@ describe('live clock vs stale end-of-half snaps', () => {
     expect(driveNumberForSide(game, 'away', { pred: scorer })).toBe(9);
   });
 
+  it('after a fumble-return TD the team that scored kicks off, ignoring a leftover goal-line spot', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'California', away: 'Clemson' },
+      score: { home: 7, away: 0 },
+      driveMarkets: [
+        {
+          marketName: '4th Clemson Drive Result',
+          offenseSide: 'away',
+          offenseName: 'Clemson',
+          driveN: 4,
+          outcomes: { td: { american: 275, dk: { american: 275 } } },
+        },
+        {
+          marketName: '3rd California Drive Result',
+          offenseSide: 'home',
+          offenseName: 'California',
+          driveN: 3,
+          outcomes: { td: { american: 205, dk: { american: 205 } } },
+        },
+      ],
+      live: {
+        period: 1,
+        clock: '5:15',
+        clockSeconds: 5 * 60 + 15,
+        down: null,
+        distance: null,
+        yardsToEndzone: 3,
+        possession: null,
+        lastPlay: 'Timeout California, clock 05:15',
+        lastPlayType: 'Timeout',
+        state: 'in',
+        driveChart: {
+          homeStarted: 2,
+          awayStarted: 3,
+          currentSide: null,
+          currentResult: 'FUMBLE TD',
+          finishedSide: 'away',
+        },
+      },
+    };
+    expect(scoringSideAfterMadeKick(game)).toBe('home');
+    expect(firstUpSide(game)).toBe('away');
+    expect(situationOffenseLabel(game)).toBe('Clemson gets the ball');
+    const sides = listDriveSides(game);
+    expect(sides[0].offenseName).toBe('Clemson');
+    expect(sides[0].driveN).toBe(4);
+    const recv = evaluateDriveGame(game, { market: sides[0] });
+    expect(recv.pred.features.ytg).toBe(75);
+    expect(driveCardRole(game, recv.pred)).toBe('current');
+  });
+
+  it('after a California TD does not keep California on offense when FD still tags them', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'California', away: 'Clemson' },
+      score: { home: 14, away: 7 },
+      driveMarkets: [
+        {
+          marketName: '4th Clemson Drive Result',
+          offenseSide: 'away',
+          offenseName: 'Clemson',
+          driveN: 4,
+          outcomes: { td: { american: 275, dk: { american: 275 } } },
+        },
+        {
+          marketName: '3rd California Drive Result',
+          offenseSide: 'home',
+          offenseName: 'California',
+          driveN: 3,
+          outcomes: { td: { american: 205, dk: { american: 205 } } },
+        },
+      ],
+      fdLive: {
+        period: 2,
+        clockSeconds: 10 * 60,
+        clock: '10:00',
+        down: 1,
+        distance: 10,
+        yardsToEndzone: 75,
+        possession: 'home',
+        possessionName: 'California',
+        possessionText: 'California 25',
+      },
+      live: {
+        period: 2,
+        clockSeconds: 10 * 60 + 8,
+        clock: '10:08',
+        down: null,
+        distance: null,
+        yardsToEndzone: null,
+        possession: 'home',
+        possessionName: 'California',
+        lastPlay: 'Plato pass complete for 22 yards TOUCHDOWN',
+        lastPlayType: 'Passing Touchdown',
+        lastPlaySide: 'home',
+        state: 'in',
+        driveChart: {
+          homeStarted: 3,
+          awayStarted: 3,
+          currentSide: null,
+          currentResult: 'Touchdown',
+          finishedSide: 'home',
+        },
+      },
+    };
+    expect(scoringSideAfterMadeKick(game)).toBe('home');
+    expect(firstUpSide(game)).toBe('away');
+    expect(situationOffenseLabel(game)).toBe('Clemson gets the ball');
+    const sides = listDriveSides(game);
+    expect(sides[0].offenseName).toBe('Clemson');
+    expect(sides[0].driveN).toBe(4);
+  });
+
   it('after the extra point, a kickoff-only ESPN current is not the scoring team on offense', () => {
     const sideOf = (drive) => {
       const abbr = drive?.team?.abbreviation;
@@ -1478,6 +1592,125 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     expect(manualView.pred.features.distance).toBe(4);
     expect(manualView.situationLag).toBe(false);
     expect(espnView.pred.features.ytg).toBe(94);
+  });
+
+  it('keeps California on a fresh 1st down after Clemson’s punt and uses that drive line', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'California', away: 'Clemson' },
+      driveMarkets: [
+        {
+          marketName: '3rd Clemson Drive Result',
+          offenseSide: 'away',
+          offenseName: 'Clemson',
+          driveN: 3,
+          outcomes: { td: { american: 230, dk: { american: 230 } } },
+        },
+        {
+          marketName: '2nd California Drive Result',
+          offenseSide: 'home',
+          offenseName: 'California',
+          driveN: 2,
+          outcomes: { td: { american: 135, dk: { american: 135 } } },
+        },
+      ],
+      live: {
+        period: 1,
+        clock: '9:14',
+        clockSeconds: 9 * 60 + 14,
+        down: 1,
+        distance: 10,
+        yardsToEndzone: 70,
+        possession: 'home',
+        possessionName: 'California',
+        possessionText: 'CAL 30',
+        lastPlay: '(09:29) #89 J.Smith punt 31 yards to the CAL30 fair catch by #23 I.Crosby at CAL30',
+        lastPlayType: 'Punt',
+        lastPlaySide: 'home',
+        state: 'in',
+        driveChart: {
+          homeStarted: 2,
+          awayStarted: 3,
+          currentSide: null,
+          currentResult: 'Punt',
+          finishedSide: 'away',
+        },
+      },
+    };
+    expect(firstUpSide(game)).toBe('home');
+    const sides = listDriveSides(game);
+    expect(sides[0].offenseName).toBe('California');
+    expect(sides[0].driveN).toBe(2);
+    const priced = evaluateDriveGame(game, { market: sides[0] });
+    expect(priced.pred.layer).toBe('snap');
+    expect(priced.pred.features.down).toBe(1);
+    expect(priced.pred.features.ytg).toBe(70);
+    expect(driveCardRole(game, priced.pred)).toBe('current');
+  });
+
+  it('lets a manual spot pin the offense when the book still has the other team ahead', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'California', away: 'Clemson' },
+      driveMarkets: [
+        {
+          marketName: '3rd Clemson Drive Result',
+          offenseSide: 'away',
+          offenseName: 'Clemson',
+          driveN: 3,
+          outcomes: { td: { american: 230, dk: { american: 230 } } },
+        },
+        {
+          marketName: '2nd California Drive Result',
+          offenseSide: 'home',
+          offenseName: 'California',
+          driveN: 2,
+          outcomes: { td: { american: 135, dk: { american: 135 } } },
+        },
+      ],
+      live: {
+        period: 1,
+        clock: '9:14',
+        clockSeconds: 9 * 60 + 14,
+        down: 2,
+        distance: 7,
+        yardsToEndzone: 40,
+        possession: 'away',
+        possessionName: 'Clemson',
+        possessionText: 'CAL 40',
+        lastPlay: 'punt',
+        lastPlayType: 'Punt',
+        lastPlaySide: 'away',
+        state: 'in',
+        driveChart: {
+          homeStarted: 2,
+          awayStarted: 3,
+          currentSide: null,
+          finishedSide: 'away',
+        },
+      },
+    };
+    const manual = {
+      ...game,
+      live: {
+        ...game.live,
+        down: 1,
+        distance: 10,
+        yardsToEndzone: 34,
+        possession: 'home',
+        possessionName: 'California',
+        possessionText: 'opp 34',
+        spotSource: 'manual',
+      },
+    };
+    expect(firstUpSide(manual)).toBe('home');
+    const sides = listDriveSides(manual);
+    expect(sides[0].offenseName).toBe('California');
+    const priced = evaluateDriveGame(manual, { market: sides[0] });
+    expect(priced.pred.layer).toBe('snap');
+    expect(priced.pred.features.ytg).toBe(34);
+    expect(priced.pred.features.down).toBe(1);
+    expect(priced.situationLag).toBe(false);
   });
 
   it('still prices the current drive when FanDuel is ahead of ESPN', () => {
