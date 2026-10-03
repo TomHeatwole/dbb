@@ -13,6 +13,10 @@
     "api/ncaaf-drives.mjs": {
       "maxDuration": 30
     },
+    "api/rawarb.mjs": {
+      "maxDuration": 30,
+      "includeFiles": "src/rawarb/**,src/corners/arbChecker.js,src/sop/sopModel.js"
+    },
     "api/pl-corners.mjs": {
       "maxDuration": 30
     },
