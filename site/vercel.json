@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/chat.mjs": {
-      "includeFiles": "lib/mcp/**,public/data/players.txt,public/data/ktc_values.csv,public/data/fantasycalc.csv,public/data/ffb.csv,public/data/score_format.json,public/data/hwang_adjusted_positional_adp.csv,public/data/true_rookie_pick_chart.json,public/data/ktc_redraft_value_index.csv,public/data/stats_player_reg_*.csv,public/data/chinese_characters_prompt.txt,public/data/chinese_characters_input.txt",
+      "includeFiles": "lib/mcp/**,public/data/{players.txt,score_format.json,true_rookie_pick_chart.json,ktc_values.csv,ktc_redraft_value_index.csv,fantasycalc.csv,ffb.csv,hwang_adjusted_positional_adp.csv},public/data/stats_player_reg_*.csv,public/data/chinese_characters_*.txt",
       "maxDuration": 120
     },
     "api/search.mjs": {
