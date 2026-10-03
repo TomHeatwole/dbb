@@ -1504,9 +1504,9 @@
     "home": "Clemson",
     "away": "Miami Florida",
     "openDate": "2026-10-03T23:30:00.000Z",
-    "spread": 15.5,
+    "spread": 14.5,
     "total": 47.5,
-    "capturedAt": "2026-10-02T22:15:11.891Z",
+    "capturedAt": "2026-10-03T13:32:24.267Z",
     "source": "fd"
   },
   "36112239": {
@@ -1635,8 +1635,8 @@
     "away": "Washington",
     "openDate": "2026-10-03T23:30:00.000Z",
     "spread": -9.5,
-    "total": 58.5,
-    "capturedAt": "2026-09-28T15:51:56.673Z",
+    "total": 57.5,
+    "capturedAt": "2026-10-03T13:32:24.267Z",
     "source": "fd"
   },
   "36112294": {

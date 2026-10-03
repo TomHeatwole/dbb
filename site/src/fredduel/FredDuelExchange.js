@@ -222,10 +222,9 @@ function SortSelect({ value, open, onToggleOpen, onChange }) {
  *   client  — exchange client (createTestClient / createRemoteClient)
  *   actor   — { id, name } the current identity
  *   teams   — [{ rosterId, teamName, ownerName }]
- *   isAdmin — can manually grade live bets in production
  *   onResetTestData — optional, shown only for the test client
  */
-function FredDuelExchange({ client, actor, teams, isAdmin = false, onResetTestData }) {
+function FredDuelExchange({ client, actor, teams, onResetTestData }) {
   const now = useNow(1000);
   const [data, setData] = useState({ offers: [], bets: [] });
   const [loading, setLoading] = useState(true);
@@ -324,24 +323,22 @@ function FredDuelExchange({ client, actor, teams, isAdmin = false, onResetTestDa
     return () => clearInterval(t);
   }, [refresh]);
 
-  const canGrade = client.isTest || isAdmin;
-
   useEffect(() => {
-    if (!canGrade) return undefined;
+    if (!client.isTest) return undefined;
     let cancelled = false;
     fetchScoresData(CURRENT_YEAR)
       .then((weeks) => { if (!cancelled) setWeeksParsed(weeks); })
       .catch(() => { if (!cancelled) setWeeksParsed([]); });
     return () => { cancelled = true; };
-  }, [canGrade]);
+  }, [client.isTest]);
 
   const settlementSnapshot = useMemo(() => {
-    if (!canGrade || !Array.isArray(weeksParsed)) return null;
+    if (!client.isTest || !Array.isArray(weeksParsed)) return null;
     return buildSettlementSnapshot(weeksParsed, {
       completedWeeks,
       season: CURRENT_YEAR,
     });
-  }, [canGrade, weeksParsed, completedWeeks]);
+  }, [client.isTest, weeksParsed, completedWeeks]);
 
   useEffect(() => {
     if (!client.isTest || !settlementSnapshot || !client.applyAutoSettlements) return;
@@ -606,7 +603,7 @@ function FredDuelExchange({ client, actor, teams, isAdmin = false, onResetTestDa
       'No live bets — take an offer or get one taken.',
       myBetsAll.filter((b) => b.status === 'live').length,
       'live bets',
-      { allowSettle: canGrade },
+      { allowSettle: client.isTest },
     );
   } else if (tab === 'settled') {
     body = (
@@ -626,7 +623,7 @@ function FredDuelExchange({ client, actor, teams, isAdmin = false, onResetTestDa
       'No live bets on the exchange yet.',
       liveBetsAll.length,
       'live bets',
-      { allowSettle: canGrade },
+      { allowSettle: client.isTest },
     );
   }
 

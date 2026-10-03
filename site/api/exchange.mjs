@@ -432,7 +432,7 @@ async function handleSettle(req, res, sql) {
 
   const graded = applyManualSettlementToBet(bet, result, { note });
   if (graded === bet) {
-    return res.status(400).json({ error: 'Pick backer, layer, or void.' });
+    return res.status(400).json({ error: 'Pick yes, no, or push.' });
   }
 
   const [updated] = await sql`

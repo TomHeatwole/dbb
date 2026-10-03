@@ -17,6 +17,10 @@
       "maxDuration": 30,
       "includeFiles": "src/rawarb/**,src/corners/arbChecker.js,src/sop/sopModel.js"
     },
+    "api/rawarb-deep.mjs": {
+      "maxDuration": 60,
+      "includeFiles": "src/rawarb/**,src/corners/arbChecker.js,src/sop/sopModel.js,api/rawarb.mjs"
+    },
     "api/pl-corners.mjs": {
       "maxDuration": 30
     },

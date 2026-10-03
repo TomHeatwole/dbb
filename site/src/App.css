@@ -24120,11 +24120,20 @@ button.corners-bet:hover {
   font-weight: 650;
 }
 
+.fd-settle-grade {
+  margin: 0.45rem 0 0.5rem;
+}
+
+.fd-settle-prompt {
+  font-size: 0.88rem;
+  font-weight: 650;
+  margin-bottom: 0.4rem;
+}
+
 .fd-settle-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin: 0.45rem 0 0.5rem;
 }
 
 .fd-settle-week {
@@ -24141,6 +24150,38 @@ button.corners-bet:hover {
   color: inherit;
   border-radius: 6px;
   padding: 0.2rem 0.4rem;
+}
+
+/* --- Admin settle page --- */
+.fd-settle-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.fd-settle-page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.fd-settle-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.fd-settle-item + .fd-settle-item {
+  margin-top: 0.15rem;
+}
+
+.fd-settle-offer-note {
+  margin: 0 0 0.35rem 0.15rem;
+  max-width: 52rem;
 }
 
 /* --- Settled ledger --- */
@@ -27507,6 +27548,37 @@ button.corners-bet:hover {
 
 .rawarb-empty {
   color: #64748b;
+}
+
+.rawarb-table tbody th.rawarb-th-wide {
+  width: auto;
+  min-width: 7.5rem;
+  max-width: 14rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.rawarb-more {
+  margin-top: 0.45rem;
+}
+
+.rawarb-more summary {
+  cursor: pointer;
+  color: #7dd3fc;
+  font-size: 0.75rem;
+  font-weight: 700;
+  list-style-position: outside;
+}
+
+.rawarb-more .rawarb-table {
+  margin-top: 0.3rem;
+}
+
+.rawarb-scan {
+  margin: 0.4rem 0 0;
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 @media (max-width: 640px) {

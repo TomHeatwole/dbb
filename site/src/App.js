@@ -43,6 +43,7 @@ import HprojPage from './routes/HprojPage';
 import DKPage from './routes/DKPage';
 import PreflopPage from './routes/PreflopPage';
 import FredDuelPage from './routes/FredDuelPage';
+import FredDuelSettlePage from './routes/FredDuelSettlePage';
 import FredDuelSetupPage from './routes/FredDuelSetupPage';
 import AccountSetupPage from './routes/AccountSetupPage';
 import AuthCallbackPage from './routes/AuthCallbackPage';
@@ -221,6 +222,8 @@ function AppInner() {
       <Route path="/preflop" element={<PreflopPage />} />
       <Route path="/FredDuel" element={<FredDuelPage />} />
       <Route path="/fredduel" element={<FredDuelPage />} />
+      <Route path="/FredDuel/settle" element={<RequireAdmin><FredDuelSettlePage /></RequireAdmin>} />
+      <Route path="/fredduel/settle" element={<Navigate to="/FredDuel/settle" replace />} />
       <Route path="/FredDuel/setup" element={<FredDuelSetupPage />} />
       <Route path="/account/setup" element={<AccountSetupPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />

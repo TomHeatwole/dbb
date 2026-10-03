@@ -249,14 +249,14 @@ export function matchFdToDk(fdGames, dkGames) {
       return true;
     });
     if (hit) used.add(dkGames.indexOf(hit));
-    return { fd, dk: orientDkToFd(hit, orientation) };
+    return { fd, dk: orientDkToFd(hit, orientation), dkFlipped: orientation === 'swap' };
   });
 }
 
 export function mergeBookGames(fdGames, dkGames, sport) {
   const pairs = matchFdToDk(fdGames, dkGames);
   const matchedDk = new Set(pairs.filter((row) => row.dk).map((row) => row.dk.eventId));
-  const merged = pairs.map(({ fd, dk }) => buildGameMarkets({
+  const merged = pairs.map(({ fd, dk, dkFlipped }) => buildGameMarkets({
     sport,
     home: fd.home,
     away: fd.away,
@@ -264,6 +264,7 @@ export function mergeBookGames(fdGames, dkGames, sport) {
     inPlay: Boolean(fd.inPlay || dk?.inPlay),
     fdEventId: fd.eventId ?? null,
     dkEventId: dk?.eventId ?? null,
+    dkFlipped: Boolean(dkFlipped),
     moneyline: { fd: fd.moneyline || null, dk: dk?.moneyline || null },
     spread: { fd: fd.spread || null, dk: dk?.spread || null },
     total: { fd: fd.total || null, dk: dk?.total || null },

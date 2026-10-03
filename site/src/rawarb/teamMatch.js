@@ -157,6 +157,14 @@ export function namesMatch(a, b) {
   return extra.length > 0 && extra.every((t) => !SCHOOL_QUALIFIERS.has(t));
 }
 
+/** True only when the label is the team itself — not "Rams Defense" / "Colts TD". */
+export function isBareTeamName(label, team) {
+  if (!label || !team) return false;
+  if (!teamsMatch(label, team) && !namesMatch(label, team)) return false;
+  const extra = teamTokens(label).filter((t) => !teamTokens(team).includes(t));
+  return extra.length === 0;
+}
+
 /** CFB token match, then last-word mascot (IND Colts ↔ Indianapolis Colts). */
 export function teamsMatch(a, b) {
   if (namesMatch(a, b)) return true;

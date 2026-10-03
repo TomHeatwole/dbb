@@ -379,14 +379,14 @@ export function applyManualSettlementToBet(bet, result, { now = new Date(), note
   if (result === BET_WINNER.TAKER) {
     return applyResolvedOfferToBet(
       bet,
-      { status: MARKET_RESULT.YES, detail: note || 'Graded by hand: backer.' },
+      { status: MARKET_RESULT.YES, detail: note || 'Graded by hand: yes.' },
       { now, settledBy: SETTLED_BY.MANUAL },
     );
   }
   if (result === BET_WINNER.CREATOR) {
     return applyResolvedOfferToBet(
       bet,
-      { status: MARKET_RESULT.NO, detail: note || 'Graded by hand: layer.' },
+      { status: MARKET_RESULT.NO, detail: note || 'Graded by hand: no.' },
       { now, settledBy: SETTLED_BY.MANUAL },
     );
   }

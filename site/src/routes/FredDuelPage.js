@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { getAuthClient, getSessionToken, clearSessionCache } from '../utils/authClient';
 import { setAuthReturnTo } from '../utils/authReturn';
@@ -179,7 +179,6 @@ function FredDuelPage() {
             client={testClient}
             actor={testActor}
             teams={teams}
-            isAdmin
             onResetTestData={() => testClient.resetTestData()}
           />
         </div>
@@ -212,11 +211,16 @@ function FredDuelPage() {
             Signed in as <strong>{actor.name}</strong>
           </span>
           {isAdmin && (
-            <button className="fd-btn fd-btn-ghost" onClick={() => toggleTestMode(true)}>Test mode</button>
+            <>
+              <Link to="/FredDuel/settle" className="fd-btn fd-btn-ghost">Settle bets</Link>
+              <button type="button" className="fd-btn fd-btn-ghost" onClick={() => toggleTestMode(true)}>
+                Test mode
+              </button>
+            </>
           )}
           <button className="fd-btn fd-btn-ghost" onClick={signOut}>Sign out</button>
         </div>
-        <FredDuelExchange client={remoteClient} actor={actor} teams={teams} isAdmin={isAdmin} />
+        <FredDuelExchange client={remoteClient} actor={actor} teams={teams} />
       </div>
     );
   }

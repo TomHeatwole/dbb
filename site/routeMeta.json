@@ -81,12 +81,12 @@
   },
   "/rawarb": {
     "ogTitle": "Raw Arb",
-    "ogDescription": "FanDuel vs DraftKings CFB and NFL moneyline, spread, and total",
+    "ogDescription": "FanDuel vs DraftKings CFB and NFL two-way markets",
     "ogImage": "/logo.png"
   },
   "/RAWARB": {
     "ogTitle": "Raw Arb",
-    "ogDescription": "FanDuel vs DraftKings CFB and NFL moneyline, spread, and total",
+    "ogDescription": "FanDuel vs DraftKings CFB and NFL two-way markets",
     "ogImage": "/logo.png"
   },
   "/admincontrols": {

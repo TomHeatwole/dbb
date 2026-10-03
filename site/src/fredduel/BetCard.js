@@ -3,12 +3,16 @@ import { formatLine, formatMoney } from './oddsMath';
 import { formatTimestamp } from './timeFmt';
 import { MARKET_RESULT, settlementPayout } from './settlement';
 
+function propositionHappened(bet) {
+  return bet.result === 'taker';
+}
+
 function statusChip(bet) {
-  if (bet.status === 'void') return <span className="fd-chip fd-chip-void">Void</span>;
+  if (bet.status === 'void') return <span className="fd-chip fd-chip-void">Push</span>;
   if (bet.status === 'settled') {
     return (
       <span className="fd-chip fd-chip-settled">
-        {bet.result === 'taker' ? 'Backer won' : 'Layer won'}
+        {propositionHappened(bet) ? 'Yes' : 'No'}
       </span>
     );
   }
@@ -18,18 +22,19 @@ function statusChip(bet) {
 function resultCopy(bet, actor) {
   if (bet.status === 'void') return 'Push — stakes returned.';
   if (bet.status !== 'settled') return null;
+  const yes = propositionHappened(bet);
   const iAmTaker = actor && bet.takerId === actor.id;
-  const iAmLayer = actor && bet.creatorId === actor.id;
+  const iAmCreator = actor && bet.creatorId === actor.id;
   const payout = settlementPayout(bet, bet.result);
   if (iAmTaker) {
-    if (payout.takerDelta > 0) return `You won ${formatMoney(payout.takerDelta)}.`;
-    if (payout.takerDelta < 0) return `You lost ${formatMoney(-payout.takerDelta)}.`;
+    if (payout.takerDelta > 0) return `Yes — you won ${formatMoney(payout.takerDelta)}.`;
+    if (payout.takerDelta < 0) return `No — you lost ${formatMoney(-payout.takerDelta)}.`;
   }
-  if (iAmLayer) {
-    if (payout.creatorDelta > 0) return `You won ${formatMoney(payout.creatorDelta)}.`;
-    if (payout.creatorDelta < 0) return `You lost ${formatMoney(-payout.creatorDelta)}.`;
+  if (iAmCreator) {
+    if (payout.creatorDelta > 0) return `No — you won ${formatMoney(payout.creatorDelta)}.`;
+    if (payout.creatorDelta < 0) return `Yes — you lost ${formatMoney(-payout.creatorDelta)}.`;
   }
-  return bet.result === 'taker' ? 'Backer won.' : 'Layer won.';
+  return yes ? 'Outcome: yes.' : 'Outcome: no.';
 }
 
 /**
@@ -38,7 +43,7 @@ function resultCopy(bet, actor) {
  */
 function BetCard({ bet, actor, highlight = false, preview = null, onSettle = null }) {
   const iAmTaker = actor && bet.takerId === actor.id;
-  const iAmLayer = actor && bet.creatorId === actor.id;
+  const iAmCreator = actor && bet.creatorId === actor.id;
   const canSettle = Boolean(onSettle) && bet.status === 'live';
   const copy = resultCopy(bet, actor);
 
@@ -49,7 +54,7 @@ function BetCard({ bet, actor, highlight = false, preview = null, onSettle = nul
     >
       <div className="fd-card-top">
         {statusChip(bet)}
-        {(iAmTaker || iAmLayer) && <span className="fd-chip fd-chip-mine">Yours</span>}
+        {(iAmTaker || iAmCreator) && <span className="fd-chip fd-chip-mine">Yours</span>}
         {bet.settledBy === 'auto' && <span className="fd-chip">Auto</span>}
         {bet.settledBy === 'manual' && <span className="fd-chip">Manual</span>}
         <span className="fd-spacer" />
@@ -64,7 +69,7 @@ function BetCard({ bet, actor, highlight = false, preview = null, onSettle = nul
 
       <div className="fd-bet-sides">
         <div className={`fd-bet-side${iAmTaker ? ' fd-bet-side-me' : ''}`}>
-          <div className="fd-bet-role">Backer {formatLine(bet.line)}</div>
+          <div className="fd-bet-role">Yes {formatLine(bet.line)}</div>
           <div className="fd-bet-who">{bet.takerName}</div>
           <div className="fd-small">
             risks <strong>{formatMoney(bet.takerStake)}</strong> to win{' '}
@@ -72,8 +77,8 @@ function BetCard({ bet, actor, highlight = false, preview = null, onSettle = nul
           </div>
         </div>
         <div className="fd-bet-vs">vs</div>
-        <div className={`fd-bet-side${iAmLayer ? ' fd-bet-side-me' : ''}`}>
-          <div className="fd-bet-role">Layer {formatLine(-bet.line)}</div>
+        <div className={`fd-bet-side${iAmCreator ? ' fd-bet-side-me' : ''}`}>
+          <div className="fd-bet-role">No {formatLine(-bet.line)}</div>
           <div className="fd-bet-who">{bet.creatorName}</div>
           <div className="fd-small">
             risks <strong>{formatMoney(bet.creatorRisk)}</strong> to win{' '}
@@ -94,16 +99,19 @@ function BetCard({ bet, actor, highlight = false, preview = null, onSettle = nul
       )}
 
       {canSettle && (
-        <div className="fd-settle-actions">
-          <button type="button" className="fd-btn fd-btn-primary" onClick={() => onSettle('taker')}>
-            Backer wins
-          </button>
-          <button type="button" className="fd-btn" onClick={() => onSettle('creator')}>
-            Layer wins
-          </button>
-          <button type="button" className="fd-btn fd-btn-ghost" onClick={() => onSettle('push')}>
-            Void
-          </button>
+        <div className="fd-settle-grade">
+          <div className="fd-settle-prompt">Did this happen?</div>
+          <div className="fd-settle-actions">
+            <button type="button" className="fd-btn fd-btn-primary" onClick={() => onSettle('taker')}>
+              Yes
+            </button>
+            <button type="button" className="fd-btn" onClick={() => onSettle('creator')}>
+              No
+            </button>
+            <button type="button" className="fd-btn fd-btn-ghost" onClick={() => onSettle('push')}>
+              Push
+            </button>
+          </div>
         </div>
       )}
 

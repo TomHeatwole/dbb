@@ -289,7 +289,7 @@ export function createTestClient(getActor) {
       if (!bet) throw new Error('Bet not found.');
       if (bet.status !== 'live') throw new Error(`Bet is already ${bet.status}.`);
       const graded = applyManualSettlementToBet(bet, result, { note });
-      if (graded === bet) throw new Error('Pick backer, layer, or void.');
+      if (graded === bet) throw new Error('Pick yes, no, or push.');
       Object.assign(bet, graded);
       saveTestDb(db);
       return bet;
