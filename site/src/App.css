@@ -23977,6 +23977,8 @@ button.corners-bet:hover {
 .fd-muted { opacity: 0.6; }
 .fd-small { font-size: 0.8rem; }
 .fd-pos { color: #4ade80; }
+
+.fd-neg { color: #f87171; }
 .fd-error {
   margin-top: 0.5rem;
   color: #fca5a5;
@@ -24139,6 +24141,64 @@ button.corners-bet:hover {
   color: inherit;
   border-radius: 6px;
   padding: 0.2rem 0.4rem;
+}
+
+/* --- Settled ledger --- */
+.fd-ledger {
+  margin: 0 0 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.85rem 1rem 1rem;
+}
+
+.fd-ledger-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.fd-ledger-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.fd-ledger-table-wrap {
+  overflow-x: auto;
+}
+
+.fd-ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.fd-ledger-table th,
+.fd-ledger-table td {
+  padding: 0.4rem 0.55rem;
+  text-align: right;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fd-ledger-table th:first-child,
+.fd-ledger-table td:first-child {
+  text-align: left;
+}
+
+.fd-ledger-table th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.fd-ledger-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 /* --- Create panel --- */

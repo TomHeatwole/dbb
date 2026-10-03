@@ -1,0 +1,47 @@
+CPU optimization changes
+Logged 2026-10-03
+If a live book, /sop-static.txt, or HwangAI season odds start looking stale or stuck, this is the list of what changed. Nothing about the pages themselves was redesigned: same polls, same fields, same manual refresh.
+
+Why
+Hobby Fluid Active CPU is 4 hours per month. Past that, Vercel pauses deploys. Active CPU is time spent executing JavaScript. Waiting on FanDuel, DraftKings, ESPN, Kalshi, Neon, or Gemini does not count. Parsing those payloads and running the season Monte Carlo does.
+
+What changed
+
+1. One FanDuel soccer scrape per window, shared by SOP, DraftKings goal-method, and Kalshi.
+   Before, each of those three rebuilt the FanDuel book. DraftKings and Kalshi now reuse the book the SOP request just built (in-memory on the same instance, otherwise the cpu_result_cache row). Kalshi still keeps Premier League games only.
+   Code: site/api/fanduel-sop.mjs, site/api/draftkings-goal-method.mjs, site/api/kalshi-sop.mjs (via fetchPremierLeagueSopOdds).
+
+2. Shared snapshot for the other books, timed from the start of the scrape, equal to the poll the page already uses.
+   Drives: 8s while any game is in play, otherwise 60s.
+   SOP / DraftKings goal-method: 12s while any game is in play, otherwise 60s.
+   Raw arb, corners, MLS corners, Kalshi corners: 60s.
+   The next scheduled poll still misses that window and scrapes again. A second tab, or a poll that arrives while the first scrape is still running, gets the snapshot already in flight instead of starting another one.
+   A manual refresh (and the drives ESPN catch-up request) sends fresh=1, skips the snapshot, and stores the new one.
+   Code: site/lib/bookCache.mjs, site/api/ncaaf-drives.mjs, site/api/rawarb.mjs, site/api/pl-corners.mjs, site/lib/dk-corners.mjs, site/lib/kalshi-corners.mjs.
+   Client polls that used to add ?t=Date.now() and cache:no-store no longer do, so the CDN can collapse identical requests. Browser max-age stays 0, so the page still asks every poll. CDN s-maxage is 4s on the fast polls and 15s on the 60s polls, which is shorter than the poll, so one open tab still reaches the function on its next tick.
+
+3. /sop-static.txt no longer calls the three book URLs over HTTP (that was four function runs, and DraftKings/Kalshi each scraped FanDuel again). It builds the same text in one function and reuses it for 12 seconds. The edge cache on /sop-static.txt and /SOP-static.txt is s-maxage=12 instead of no-store.
+   Code: site/lib/sop-static.mjs, site/vercel.json.
+   If a scraper needs a line newer than 12 seconds, add ?fresh=1.
+
+4. HwangAI get_season_odds keeps the same 1,000-iteration default and the same 15-minute result. A repeat for the same rosters reads the stored text instead of rerunning the Monte Carlo. Roster changes miss the cache and simulate again. simulate_roster_change_odds is unchanged.
+   Code: site/lib/mcp/tools.mjs, site/lib/cpuResultCache.mjs.
+
+5. The chat function no longer ships all of public/data (player game logs, historical KTC dumps, and the rest). It ships only the files the tools read: players.txt, the value CSVs, score_format.json, hwang_adjusted_positional_adp.csv, true_rookie_pick_chart.json, ktc_redraft_value_index.csv, stats_player_reg_*.csv, and the two Chinese-character prompts.
+   Code: site/vercel.json includeFiles on api/chat.mjs.
+   If a chat tool suddenly says a data file is missing, this list is too narrow.
+
+Storage
+Table cpu_result_cache (cache_key, payload, started_at, ttl_ms). Handlers create it on demand. site/scripts/db-migrate.mjs creates it too. A failed read or write is ignored and the request recomputes, so a database problem shows up as slower responses, not empty pages.
+
+What this does not change
+Scores, KTC, standings, and the scenario pages. Those run in the browser.
+The LightGBM drive model. It still runs in the browser.
+Function size / memory. Not reduced.
+Iteration count on season sims. Not reduced.
+
+If something looks wrong
+- Odds stuck on one snapshot: the window above is too long, or fresh=1 is not being sent. The refresh button should force a new scrape.
+- /sop-static.txt repeating itself: 12s reuse. ?fresh=1 bypasses it.
+- HwangAI season odds ignoring a trade for up to 15 minutes: the stored sim is keyed by the roster. A roster change should miss. If it does not, the cache key is wrong.
+- Chat tool cannot find a CSV: add that file back to api/chat.mjs includeFiles.

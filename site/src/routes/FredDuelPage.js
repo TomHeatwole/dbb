@@ -10,6 +10,7 @@ import {
 } from '../fredduel/exchangeClient';
 import { FALLBACK_TEAMS, testActorForRosterId } from '../fredduel/testSeed';
 import PageMeta from '../PageMeta';
+import { isAdminUser } from '../utils/adminAccounts';
 
 const OG_TITLE = 'FredDuel';
 const OG_DESCRIPTION = 'The Hwang Dynasty exchange';
@@ -19,15 +20,6 @@ const OG_IMAGE = `${process.env.PUBLIC_URL || ''}/og_fredduel.jpg`;
 // Auth flow: Google sign-in → unverified accounts finish at /account/setup,
 // then return here. Admins can toggle a "test data DB" mode (localStorage
 // sandbox) to try the exchange acting as any of the 10 teams.
-
-// Hardcoded admin list (Sleeper usernames) — the only accounts that can see
-// and use test mode.
-const ADMIN_SLEEPER_USERNAMES = ['sleeperdotcom'];
-
-function isAdminUser(me) {
-  const handle = String(me?.sleeperUsername || '').toLowerCase();
-  return ADMIN_SLEEPER_USERNAMES.includes(handle);
-}
 
 function loadTeamsList() {
   return import('../hooks/useAuthUser')
@@ -187,6 +179,7 @@ function FredDuelPage() {
             client={testClient}
             actor={testActor}
             teams={teams}
+            isAdmin
             onResetTestData={() => testClient.resetTestData()}
           />
         </div>
@@ -223,7 +216,7 @@ function FredDuelPage() {
           )}
           <button className="fd-btn fd-btn-ghost" onClick={signOut}>Sign out</button>
         </div>
-        <FredDuelExchange client={remoteClient} actor={actor} teams={teams} />
+        <FredDuelExchange client={remoteClient} actor={actor} teams={teams} isAdmin={isAdmin} />
       </div>
     );
   }

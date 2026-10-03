@@ -5,7 +5,7 @@
 
 import { evaluateTwoWayArb } from '../corners/arbChecker.js';
 import { americanToImpliedProb, formatAmericanOdds } from '../sop/sopModel.js';
-import { gameOrientation, teamsMatch } from './teamMatch.js';
+import { gameOrientation } from './teamMatch.js';
 
 export function parseSignedAmerican(raw) {
   if (raw == null || raw === '') return null;

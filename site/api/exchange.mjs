@@ -20,6 +20,9 @@
 
 import { getSql } from '../lib/db.mjs';
 import { getSessionUser, getAppProfile } from '../lib/authServer.mjs';
+import { applyAutoSettlementsInDb } from '../lib/freduelAutoSettle.mjs';
+import { applyManualSettlementToBet } from '../src/fredduel/settlement.js';
+import { ADMIN_SLEEPER_USERNAMES } from '../src/utils/adminAccounts.js';
 
 // --- odds math (mirror of site/src/fredduel/oddsMath.js) ---
 
@@ -92,7 +95,18 @@ async function requireBettor(req, res) {
   return {
     id: user.userId,
     name: profile.sleeper_display_name || profile.sleeper_username,
+    sleeperUsername: String(profile.sleeper_username || '').toLowerCase(),
   };
+}
+
+async function requireAdmin(req, res) {
+  const bettor = await requireBettor(req, res);
+  if (!bettor) return null;
+  if (!ADMIN_SLEEPER_USERNAMES.includes(bettor.sleeperUsername)) {
+    res.status(403).json({ error: 'Admin only.' });
+    return null;
+  }
+  return bettor;
 }
 
 async function expireStaleOffers(sql) {
@@ -106,6 +120,11 @@ async function expireStaleOffers(sql) {
 
 async function handleGet(req, res, sql) {
   await expireStaleOffers(sql);
+  try {
+    await applyAutoSettlementsInDb(sql);
+  } catch (e) {
+    console.error('FredDuel auto-settle on read:', e);
+  }
 
   const offers = await sql`
     SELECT * FROM fd_offers ORDER BY created_at DESC LIMIT 300
@@ -389,6 +408,52 @@ async function handleCancel(req, res, sql, bettor) {
   return res.status(200).json({ offer: mapOffer(cancelled) });
 }
 
+async function handleSettle(req, res, sql) {
+  const idNum = Number(req.body?.betId);
+  const { result, note } = req.body || {};
+  if (!Number.isInteger(idNum)) {
+    return res.status(400).json({ error: 'betId must be an integer' });
+  }
+  if (!['taker', 'creator', 'push'].includes(result)) {
+    return res.status(400).json({ error: "result must be 'taker', 'creator', or 'push'" });
+  }
+
+  const [row] = await sql`
+    SELECT b.*, o.title AS offer_title
+    FROM fd_bets b JOIN fd_offers o ON o.id = b.offer_id
+    WHERE b.id = ${idNum}
+  `;
+  if (!row) return res.status(404).json({ error: 'Bet not found' });
+
+  const bet = mapBet(row);
+  if (bet.status !== 'live') {
+    return res.status(409).json({ error: `Bet is already ${bet.status}` });
+  }
+
+  const graded = applyManualSettlementToBet(bet, result, { note });
+  if (graded === bet) {
+    return res.status(400).json({ error: 'Pick backer, layer, or void.' });
+  }
+
+  const [updated] = await sql`
+    UPDATE fd_bets
+    SET status = ${graded.status},
+        result = ${graded.result},
+        settled_at = ${graded.settledAt},
+        settled_by = ${graded.settledBy},
+        settlement_note = ${graded.settlementNote || ''}
+    WHERE id = ${idNum} AND status = 'live'
+    RETURNING *
+  `;
+  if (!updated) {
+    return res.status(409).json({ error: 'Bet changed while settling — refresh and retry' });
+  }
+
+  return res.status(200).json({
+    bet: mapBet({ ...updated, offer_title: row.offer_title }),
+  });
+}
+
 export default async function handler(req, res) {
   let sql;
   try {
@@ -402,14 +467,19 @@ export default async function handler(req, res) {
       return await handleGet(req, res, sql);
     }
     if (req.method === 'POST') {
+      const action = req.body?.action;
+      if (action === 'settle') {
+        const admin = await requireAdmin(req, res);
+        if (!admin) return undefined;
+        return await handleSettle(req, res, sql);
+      }
       const bettor = await requireBettor(req, res);
       if (!bettor) return undefined;
-      const action = req.body?.action;
       if (action === 'create') return await handleCreate(req, res, sql, bettor);
       if (action === 'take') return await handleTake(req, res, sql, bettor);
       if (action === 'updateExposure') return await handleUpdateExposure(req, res, sql, bettor);
       if (action === 'cancel') return await handleCancel(req, res, sql, bettor);
-      return res.status(400).json({ error: "action must be 'create', 'take', 'updateExposure', or 'cancel'" });
+      return res.status(400).json({ error: "action must be 'create', 'take', 'updateExposure', 'cancel', or 'settle'" });
     }
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {

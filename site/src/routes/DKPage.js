@@ -54,7 +54,10 @@ function DKPage() {
     if (manual) setBookRefreshing(true);
     else setBookLoading(true);
     try {
-      const res = await fetch('/api/draftkings-goal-method');
+      const res = await fetch(
+        manual ? '/api/draftkings-goal-method?fresh=1' : '/api/draftkings-goal-method',
+        manual ? { cache: 'no-store' } : undefined,
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);

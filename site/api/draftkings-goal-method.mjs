@@ -8,6 +8,15 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchWorldCupSopOdds as fetchFanDuelGames } from './fanduel-sop.mjs';
+import {
+  cachedBook,
+  cdnSecondsForMemoryTtl,
+  fillBookCache,
+  requestIsFresh,
+  setNoStore,
+  setSharedCacheHeaders,
+  sopTtlMs,
+} from '../lib/bookCache.mjs';
 import { pickExport } from '../lib/named-export.mjs';
 import * as fixtureKey from '../src/sop/fixtureKey.js';
 import * as sopModel from '../src/sop/sopModel.js';
@@ -988,7 +997,7 @@ async function fetchUnmatchedDkLeagueGames(scheduleGames, fetchedResults, remain
   }).then((rows) => rows.filter(Boolean));
 }
 
-export async function fetchWorldCupGoalMethodOdds({
+async function fetchWorldCupGoalMethodOddsUncached({
   upcomingOnly = true,
   timeoutMs = DK_HANDLER_TIMEOUT_MS,
   soccerScope = 'core',
@@ -1053,6 +1062,26 @@ export async function fetchWorldCupGoalMethodOdds({
   return buildDkPayload(results, { timedOut: remaining() <= 0 });
 }
 
+export async function fetchWorldCupGoalMethodOdds(options = {}) {
+  const soccerScope = options.soccerScope === 'all' ? 'all' : 'core';
+  const upcomingOnly = options.upcomingOnly !== false;
+  const key = `dk-sop:${soccerScope}:${upcomingOnly ? 'up' : 'all'}`;
+  const run = () => fetchWorldCupGoalMethodOddsUncached({ ...options, soccerScope, upcomingOnly });
+  if (options.fresh) {
+    const data = await run();
+    if (!data?.timedOut) {
+      await fillBookCache(key, data, sopTtlMs(data), { persist: true });
+    }
+    return data;
+  }
+  return cachedBook(
+    key,
+    run,
+    (data) => (data?.timedOut ? 0 : sopTtlMs(data)),
+    { persist: true },
+  );
+}
+
 function countGameEvBets(game) {
   if (!game.goalTypes || !game.noGoalMarkets) return 0;
   const noGoal =
@@ -1094,13 +1123,15 @@ export default async function handler(req, res) {
     const soccerScope = req.query?.soccer === 'all' || req.query?.leagues === 'all'
       ? 'all'
       : 'core';
+    const fresh = requestIsFresh(req);
     const data = await Promise.race([
-      fetchWorldCupGoalMethodOdds({ upcomingOnly, soccerScope }),
+      fetchWorldCupGoalMethodOdds({ upcomingOnly, soccerScope, fresh }),
       sleep(DK_HANDLER_TIMEOUT_MS + 250).then(() =>
         emptyDkPayload({ timedOut: true, error: 'DraftKings timed out' }),
       ),
     ]);
-    res.setHeader('Cache-Control', 'public, max-age=15');
+    if (fresh || data?.timedOut) setNoStore(res);
+    else setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(sopTtlMs(data)));
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

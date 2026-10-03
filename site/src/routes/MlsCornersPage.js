@@ -81,7 +81,10 @@ function MlsCornersPage() {
     let fdGames = [];
     let espn = null;
     try {
-      const res = await fetch('/api/pl-corners?league=mls');
+      const res = await fetch(
+        manual ? '/api/pl-corners?league=mls&fresh=1' : '/api/pl-corners?league=mls',
+        manual ? { cache: 'no-store' } : undefined,
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
@@ -112,7 +115,9 @@ function MlsCornersPage() {
     applyMerges();
 
     await fetchJsonWithTimeout(
-      '/api/draftkings-goal-method?book=corners&league=mls',
+      manual
+        ? '/api/draftkings-goal-method?book=corners&league=mls&fresh=1'
+        : '/api/draftkings-goal-method?book=corners&league=mls',
       DK_CLIENT_TIMEOUT_MS,
     ).then((data) => {
       if (dkCornerGamesLoaded(data)) {

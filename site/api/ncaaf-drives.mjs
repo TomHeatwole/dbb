@@ -9,6 +9,15 @@
  * /drives load from the NCAAF league subcategory.
  */
 
+import {
+  cachedBook,
+  cdnSecondsForMemoryTtl,
+  drivesTtlMs,
+  fillBookCache,
+  requestIsFresh,
+  setNoStore,
+  setSharedCacheHeaders,
+} from '../lib/bookCache.mjs';
 import { readFdDriveOdds } from '../lib/fd-drive-odds.mjs';
 import { annotateGamesWithLineLogging } from '../lib/drive-line-log.mjs';
 import { fdDriveRowsForGame, matchingFdDriveRows, mergeFdAndDkMarkets } from '../src/drives/fdDriveOdds.js';
@@ -1725,8 +1734,21 @@ export default async function handler(req, res) {
 
   try {
     const espnRefresh = String(req.query?.espnRefresh || '').trim();
-    const data = await fetchNcaafDriveBook({ espnRefresh: espnRefresh || undefined });
-    res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+    const fresh = requestIsFresh(req) || Boolean(espnRefresh);
+    const data = fresh
+      ? await fetchNcaafDriveBook({ espnRefresh: espnRefresh || undefined })
+      : await cachedBook(
+        'ncaaf-drives',
+        () => fetchNcaafDriveBook(),
+        drivesTtlMs,
+        { persist: true },
+      );
+    if (fresh) {
+      await fillBookCache('ncaaf-drives', data, drivesTtlMs(data), { persist: true });
+      setNoStore(res);
+    } else {
+      setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(drivesTtlMs(data)));
+    }
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

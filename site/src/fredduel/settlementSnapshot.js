@@ -10,7 +10,7 @@ import {
   buildFinalStandings,
   normalizePlayoffFormat,
   playoffFormatForSeason,
-} from '../scenarios/playoffStandings';
+} from '../scenarios/playoffStandings.js';
 
 export { playoffFormatForSeason };
 

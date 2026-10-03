@@ -66,6 +66,7 @@ add_task adp               "./scrape_adp"
 add_task hwang_adp         "python3 scripts/compute_hwang_scoring_adp.py"
 add_task player_ids        "bash scripts/update_player_ids.sh"
 add_task players           "bash scripts/update_players.sh"
+add_task fredduel_history  "node scripts/fetch_fredduel_betting_history.mjs"
 add_task gibbs_deltas      "node scripts/process_gibbs_deltas.js"
 add_task yafsb_adp         "node scripts/process_yafsb_adp.js"
 if [ "$HAVE_DBBP" -eq 1 ]; then

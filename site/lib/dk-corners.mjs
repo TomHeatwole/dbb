@@ -2,6 +2,14 @@
  * DraftKings Premier League + Champions League corner totals (full, 1H, 2H) and live team intervals.
  */
 
+import {
+  cachedBook,
+  cdnSecondsForMemoryTtl,
+  fillBookCache,
+  requestIsFresh,
+  setNoStore,
+  setSharedCacheHeaders,
+} from './bookCache.mjs';
 import { pickExport } from './named-export.mjs';
 import * as sopModel from '../src/sop/sopModel.js';
 
@@ -298,18 +306,34 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const leagues = req.query?.league === 'mls'
+  const leagueKey = req.query?.league === 'mls' ? 'mls' : 'core';
+  const leagues = leagueKey === 'mls'
     ? dkLeagueEntries('all').filter((row) => row.competition === 'mls')
     : undefined;
+  const key = `dk-corners:${leagueKey}`;
+  const ttlMs = 60_000;
+  const fresh = requestIsFresh(req);
 
   try {
-    const data = await Promise.race([
+    const run = () => Promise.race([
       fetchDkCornerOdds({ leagues }),
       sleep(DK_HANDLER_TIMEOUT_MS + 250).then(() =>
         emptyPayload({ timedOut: true, error: 'DraftKings timed out' }),
       ),
     ]);
-    res.setHeader('Cache-Control', 'public, max-age=15');
+    const data = fresh
+      ? await run()
+      : await cachedBook(
+        key,
+        run,
+        (payload) => (payload?.timedOut ? 0 : ttlMs),
+        { persist: true },
+      );
+    if (fresh && !data?.timedOut) {
+      await fillBookCache(key, data, ttlMs, { persist: true });
+    }
+    if (fresh || data?.timedOut) setNoStore(res);
+    else setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

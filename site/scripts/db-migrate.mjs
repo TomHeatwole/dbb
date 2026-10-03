@@ -193,6 +193,15 @@ const statements = [
 
   `CREATE INDEX IF NOT EXISTS idx_espn_sop_goals_game
      ON espn_sop_goals (espn_game_id)`,
+
+  // Shared snapshots for Fluid Active CPU: one scrape or season sim reused
+  // until its poll window ends. The handlers also create this table on demand.
+  `CREATE TABLE IF NOT EXISTS cpu_result_cache (
+    cache_key  text PRIMARY KEY,
+    payload    text NOT NULL,
+    started_at timestamptz NOT NULL,
+    ttl_ms     integer NOT NULL
+  )`,
 ];
 
 for (const stmt of statements) {

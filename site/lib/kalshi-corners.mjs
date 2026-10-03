@@ -4,6 +4,14 @@
  */
 
 import {
+  cachedBook,
+  cdnSecondsForMemoryTtl,
+  fillBookCache,
+  requestIsFresh,
+  setNoStore,
+  setSharedCacheHeaders,
+} from './bookCache.mjs';
+import {
   fetchAllKalshiEvents,
   fetchMarketsForEvent,
   kalshiAskToAmerican,
@@ -156,8 +164,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchKalshiCornerOdds();
-    res.setHeader('Cache-Control', 'public, max-age=15');
+    const fresh = requestIsFresh(req);
+    const key = 'kalshi-corners';
+    const ttlMs = 60_000;
+    const data = fresh
+      ? await fetchKalshiCornerOdds()
+      : await cachedBook(key, fetchKalshiCornerOdds, () => ttlMs, { persist: true });
+    if (fresh) {
+      await fillBookCache(key, data, ttlMs, { persist: true });
+      setNoStore(res);
+    } else {
+      setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));
+    }
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

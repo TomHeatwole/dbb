@@ -24,9 +24,9 @@
     "home": "Alabama",
     "away": "Georgia",
     "openDate": "2026-10-10T23:30:00.000Z",
-    "spread": 2.5,
+    "spread": 1.5,
     "total": 55.5,
-    "capturedAt": "2026-10-01T08:11:05.397Z",
+    "capturedAt": "2026-10-03T12:49:13.081Z",
     "source": "fd"
   },
   "35632875": {
@@ -34,9 +34,9 @@
     "home": "Oklahoma",
     "away": "Texas",
     "openDate": "2026-10-10T19:30:00.000Z",
-    "spread": 9.5,
-    "total": 41.5,
-    "capturedAt": "2026-10-01T08:11:09.100Z",
+    "spread": 8.5,
+    "total": 40.5,
+    "capturedAt": "2026-10-03T12:49:13.377Z",
     "source": "fd"
   },
   "36056706": {
@@ -1595,8 +1595,8 @@
     "away": "Kentucky",
     "openDate": "2026-10-03T20:15:00.000Z",
     "spread": -2.5,
-    "total": 53.5,
-    "capturedAt": "2026-10-03T12:21:15.152Z",
+    "total": 52.5,
+    "capturedAt": "2026-10-03T13:06:55.067Z",
     "source": "fd"
   },
   "36112262": {
@@ -1744,9 +1744,9 @@
     "home": "Buffalo",
     "away": "Western Michigan",
     "openDate": "2026-10-03T17:00:00.000Z",
-    "spread": 13.5,
+    "spread": 12.5,
     "total": 46.5,
-    "capturedAt": "2026-10-03T12:21:15.152Z",
+    "capturedAt": "2026-10-03T13:06:55.066Z",
     "source": "fd"
   },
   "36112680": {
@@ -1994,9 +1994,9 @@
     "home": "San Diego State",
     "away": "Texas State",
     "openDate": "2026-10-04T02:30:00.000Z",
-    "spread": 9.5,
+    "spread": 10.5,
     "total": 57.5,
-    "capturedAt": "2026-10-02T22:15:11.891Z",
+    "capturedAt": "2026-10-03T13:06:55.067Z",
     "source": "fd"
   },
   "36112825": {
@@ -2014,9 +2014,9 @@
     "home": "Troy",
     "away": "Southern Miss",
     "openDate": "2026-10-07T00:00:00.000Z",
-    "spread": -9.5,
+    "spread": -10.5,
     "total": 50.5,
-    "capturedAt": "2026-09-30T17:13:44.317Z",
+    "capturedAt": "2026-10-03T12:49:13.377Z",
     "source": "fd"
   },
   "36130031": {

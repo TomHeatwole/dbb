@@ -10,6 +10,15 @@ import { attachEspnGoals } from '../lib/espn-soccer-goals.mjs';
 import sopStaticHandler from '../lib/sop-static.mjs';
 import { pickExport } from '../lib/named-export.mjs';
 import * as soccerLeagues from '../src/sop/soccerLeagues.js';
+import {
+  cachedBook,
+  cdnSecondsForMemoryTtl,
+  fillBookCache,
+  requestIsFresh,
+  setNoStore,
+  setSharedCacheHeaders,
+  sopTtlMs,
+} from '../lib/bookCache.mjs';
 
 const competitionMetaForFd = pickExport(soccerLeagues, 'competitionMetaForFd');
 const espnLeagueKeys = pickExport(soccerLeagues, 'espnLeagueKeys');
@@ -475,82 +484,118 @@ async function fetchEventBundle(eventId) {
   };
 }
 
-export async function fetchPremierLeagueSopOdds({
-  includeEspn = false,
-  includeChampionsLeague = true,
-  soccerScope = 'core',
-} = {}) {
-  const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
-  const competitions = sportPage?.attachments?.competitions ?? {};
-  const expanded = soccerScope === 'all';
-  const competitionIds = expanded
-    ? null
-    : [PL_COMPETITION_ID, ...(includeChampionsLeague ? [CL_COMPETITION_ID] : [])];
-  let events = sopMatchEvents(sportPage, { competitionIds, competitions });
-  if (expanded) {
-    events = await keepEventsWithNextGoalMethod(events);
-  }
-  const espnLeagues = espnLeagueKeys(expanded ? 'all' : 'core', events);
-
-  const espnPromise = includeEspn
-    ? fetchEspnSoccerScoreboards(events.map((ev) => ev.openDate), espnLeagues)
-    : Promise.resolve(null);
-
-  const [results, espn] = await Promise.all([
-    mapPool(events, FD_EVENT_CONCURRENCY, async (ev) => {
-      try {
-        const bundle = await fetchEventBundle(ev.eventId);
-        return {
-          ...ev,
-          inPlay: bundle.inPlay,
-          score: bundle.score,
-          scoreDisplay: scoreDisplay(bundle.score),
-          teams: bundle.teams,
-          goalTypes: bundle.goalTypes,
-          noGoalMarkets: bundle.noGoalMarkets,
-        };
-      } catch (err) {
-        return { ...ev, error: err.message };
-      }
-    }),
-    espnPromise,
-  ]);
-
-  let games = espn
-    ? results.map((game) => attachEspnClock(game, espn.matches))
-    : results;
-
-  if (includeEspn) {
-    const attached = await attachEspnGoals(games);
-    games = Array.isArray(attached) ? attached : attached?.games;
-  }
-  if (!Array.isArray(games)) games = [];
-
+function sortSopGames(games) {
   games.sort((a, b) => {
     if (a.inPlay !== b.inPlay) return a.inPlay ? -1 : 1;
     if (!a.openDate) return 1;
     if (!b.openDate) return -1;
     return new Date(a.openDate) - new Date(b.openDate);
   });
+  return games;
+}
+
+async function scrapePremierLeagueSopOdds(soccerScope) {
+  const sportPage = await fdFetch(`/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=1`);
+  const competitions = sportPage?.attachments?.competitions ?? {};
+  const expanded = soccerScope === 'all';
+  const competitionIds = expanded
+    ? null
+    : [PL_COMPETITION_ID, CL_COMPETITION_ID];
+  let events = sopMatchEvents(sportPage, { competitionIds, competitions });
+  if (expanded) {
+    events = await keepEventsWithNextGoalMethod(events);
+  }
+
+  const results = await mapPool(events, FD_EVENT_CONCURRENCY, async (ev) => {
+    try {
+      const bundle = await fetchEventBundle(ev.eventId);
+      return {
+        ...ev,
+        inPlay: bundle.inPlay,
+        score: bundle.score,
+        scoreDisplay: scoreDisplay(bundle.score),
+        teams: bundle.teams,
+        goalTypes: bundle.goalTypes,
+        noGoalMarkets: bundle.noGoalMarkets,
+      };
+    } catch (err) {
+      return { ...ev, error: err.message };
+    }
+  });
 
   return {
     fetchedAt: new Date().toISOString(),
-    games,
-    espn: espn
-      ? {
-        ok: espn.ok,
-        error: espn.error ? compactEspnError(espn.error) : null,
-        livePremierLeague: espn.livePremierLeague ?? 0,
-        liveMatches: espn.liveMatches ?? espn.livePremierLeague ?? 0,
-        matched: games.filter((g) => g.espn).length,
-        goals: {
-          live: games.filter((g) => g.inPlay && g.espnId).length,
-          withGoals: games.filter((g) => (g.goalsSoFar ?? []).length).length,
-          errors: games.map((g) => g.espnGoalsError).filter(Boolean),
-        },
-      }
-      : undefined,
+    games: sortSopGames(results),
   };
+}
+
+async function attachEspnLayer(book, soccerScope) {
+  const expanded = soccerScope === 'all';
+  const espnLeagues = espnLeagueKeys(expanded ? 'all' : 'core', book.games);
+  const espn = await fetchEspnSoccerScoreboards(
+    book.games.map((ev) => ev.openDate),
+    espnLeagues,
+  );
+  let games = book.games.map((game) => attachEspnClock(game, espn.matches));
+  const attached = await attachEspnGoals(games);
+  games = Array.isArray(attached) ? attached : attached?.games;
+  if (!Array.isArray(games)) games = [];
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    games: sortSopGames(games),
+    espn: {
+      ok: espn.ok,
+      error: espn.error ? compactEspnError(espn.error) : null,
+      livePremierLeague: espn.livePremierLeague ?? 0,
+      liveMatches: espn.liveMatches ?? espn.livePremierLeague ?? 0,
+      matched: games.filter((g) => g.espn).length,
+      goals: {
+        live: games.filter((g) => g.inPlay && g.espnId).length,
+        withGoals: games.filter((g) => (g.goalsSoFar ?? []).length).length,
+        errors: games.map((g) => g.espnGoalsError).filter(Boolean),
+      },
+    },
+  };
+}
+
+export async function fetchPremierLeagueSopOdds({
+  includeEspn = false,
+  includeChampionsLeague = true,
+  soccerScope = 'core',
+  fresh = false,
+} = {}) {
+  const scope = soccerScope === 'all' ? 'all' : 'core';
+  const bookKey = `fd-sop-book:${scope}`;
+  const book = fresh
+    ? await (async () => {
+      const scraped = await scrapePremierLeagueSopOdds(scope);
+      return fillBookCache(bookKey, scraped, sopTtlMs(scraped), { persist: true });
+    })()
+    : await cachedBook(
+      bookKey,
+      () => scrapePremierLeagueSopOdds(scope),
+      sopTtlMs,
+      { persist: true },
+    );
+
+  const sourceGames = Array.isArray(book?.games) ? book.games : [];
+  const includeCl = includeChampionsLeague !== false || scope === 'all';
+  const games = includeCl
+    ? sourceGames.slice()
+    : sourceGames.filter((game) => game.competition === 'pl');
+
+  if (!includeEspn) {
+    return { ...book, games };
+  }
+
+  const espnKey = `fd-sop-espn:${scope}`;
+  const layer = () => attachEspnLayer({ ...book, games: sourceGames.slice() }, scope);
+  if (fresh) {
+    const attached = await layer();
+    return fillBookCache(espnKey, attached, sopTtlMs(attached), { persist: true });
+  }
+  return cachedBook(espnKey, layer, sopTtlMs, { persist: true });
 }
 
 /** @deprecated alias — DK/Kalshi helpers still import this name */
@@ -603,19 +648,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    const fresh = requestIsFresh(req);
     const data = await fetchPremierLeagueSopOdds({
       includeEspn: true,
       soccerScope: wantsExpandedSoccer(req) ? 'all' : 'core',
+      fresh,
     });
-    const live = (data.games ?? []).some((game) => game.inPlay);
-    res.setHeader(
-      'Cache-Control',
-      live ? 'private, no-store, no-cache, must-revalidate' : 'public, max-age=15',
-    );
-    if (live) {
-      res.setHeader('CDN-Cache-Control', 'no-store');
-      res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
-    }
+    if (fresh) setNoStore(res);
+    else setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(sopTtlMs(data)));
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

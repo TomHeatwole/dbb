@@ -1,0 +1,14 @@
+{
+  "updatedAt": "2026-10-03T12:57:10.235Z",
+  "latestFile": "2026-10-03T125710235Z.json",
+  "latestHash": "4a6e63f822ce9280491a5b5e2937b1f0023484e3ff294e2bf7196d122f26a167",
+  "snapshots": [
+    {
+      "capturedAt": "2026-10-03T12:57:10.235Z",
+      "file": "2026-10-03T125710235Z.json",
+      "offerCount": 101,
+      "betCount": 17,
+      "contentHash": "4a6e63f822ce9280491a5b5e2937b1f0023484e3ff294e2bf7196d122f26a167"
+    }
+  ]
+}

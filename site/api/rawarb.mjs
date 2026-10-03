@@ -4,6 +4,14 @@
  */
 
 import {
+  cachedBook,
+  cdnSecondsForMemoryTtl,
+  fillBookCache,
+  requestIsFresh,
+  setNoStore,
+  setSharedCacheHeaders,
+} from '../lib/bookCache.mjs';
+import {
   mergeBookGames,
   parseSignedAmerican,
 } from '../src/rawarb/rawArbModel.js';
@@ -279,8 +287,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const data = await fetchRawArbBook();
-    res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+    const fresh = requestIsFresh(req);
+    const ttlMs = 60_000;
+    const data = fresh
+      ? await fetchRawArbBook()
+      : await cachedBook('rawarb', fetchRawArbBook, () => ttlMs, { persist: true });
+    if (fresh) {
+      await fillBookCache('rawarb', data, ttlMs, { persist: true });
+      setNoStore(res);
+    } else {
+      setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));
+    }
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

@@ -113,7 +113,7 @@ function CornersPage() {
     let fdGames = [];
     let espn = null;
     try {
-      const res = await fetch('/api/pl-corners');
+      const res = await fetch(manual ? '/api/pl-corners?fresh=1' : '/api/pl-corners', manual ? { cache: 'no-store' } : undefined);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
@@ -150,7 +150,7 @@ function CornersPage() {
     applyMerges();
 
     await Promise.all([
-      fetchJsonWithTimeout('/api/draftkings-goal-method?book=corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
+      fetchJsonWithTimeout(manual ? '/api/draftkings-goal-method?book=corners&fresh=1' : '/api/draftkings-goal-method?book=corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
         if (dkCornerGamesLoaded(data)) {
           dkHold.current = data;
           dkData = data;
@@ -159,7 +159,7 @@ function CornersPage() {
         }
         applyMerges();
       }),
-      fetchJsonWithTimeout('/api/kalshi-sop?book=corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
+      fetchJsonWithTimeout(manual ? '/api/kalshi-sop?book=corners&fresh=1' : '/api/kalshi-sop?book=corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
         if (kalshiCornerGamesLoaded(data)) {
           kalshiHold.current = data;
           kalshiData = data;

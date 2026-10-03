@@ -8,6 +8,7 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import OfferCard from './OfferCard';
 import BetCard from './BetCard';
 import CreateOfferPanel from './CreateOfferPanel';
+import TotalLedger from './TotalLedger';
 
 // Weekly bets are only offered on the upcoming week: the first week that
 // hasn't completed yet. Before the season starts this is week 1.
@@ -28,7 +29,8 @@ const TABS = [
   { id: 'market', label: 'Market' },
   { id: 'myOffers', label: 'My offers' },
   { id: 'myBets', label: 'My bets' },
-  { id: 'liveBets', label: 'All bets' },
+  { id: 'liveBets', label: 'Live bets' },
+  { id: 'settled', label: 'Settled' },
 ];
 
 const SORT_NEWEST = 'newest';
@@ -220,9 +222,10 @@ function SortSelect({ value, open, onToggleOpen, onChange }) {
  *   client  — exchange client (createTestClient / createRemoteClient)
  *   actor   — { id, name } the current identity
  *   teams   — [{ rosterId, teamName, ownerName }]
+ *   isAdmin — can manually grade live bets in production
  *   onResetTestData — optional, shown only for the test client
  */
-function FredDuelExchange({ client, actor, teams, onResetTestData }) {
+function FredDuelExchange({ client, actor, teams, isAdmin = false, onResetTestData }) {
   const now = useNow(1000);
   const [data, setData] = useState({ offers: [], bets: [] });
   const [loading, setLoading] = useState(true);
@@ -321,22 +324,24 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     return () => clearInterval(t);
   }, [refresh]);
 
+  const canGrade = client.isTest || isAdmin;
+
   useEffect(() => {
-    if (!client.isTest) return undefined;
+    if (!canGrade) return undefined;
     let cancelled = false;
     fetchScoresData(CURRENT_YEAR)
       .then((weeks) => { if (!cancelled) setWeeksParsed(weeks); })
       .catch(() => { if (!cancelled) setWeeksParsed([]); });
     return () => { cancelled = true; };
-  }, [client]);
+  }, [canGrade]);
 
   const settlementSnapshot = useMemo(() => {
-    if (!client.isTest || !Array.isArray(weeksParsed)) return null;
+    if (!canGrade || !Array.isArray(weeksParsed)) return null;
     return buildSettlementSnapshot(weeksParsed, {
       completedWeeks,
       season: CURRENT_YEAR,
     });
-  }, [client, weeksParsed, completedWeeks]);
+  }, [canGrade, weeksParsed, completedWeeks]);
 
   useEffect(() => {
     if (!client.isTest || !settlementSnapshot || !client.applyAutoSettlements) return;
@@ -426,7 +431,14 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     () => data.bets.filter((b) => actor && (b.takerId === actor.id || b.creatorId === actor.id)),
     [data.bets, actor],
   );
-  const liveBetsAll = useMemo(() => data.bets, [data.bets]);
+  const liveBetsAll = useMemo(
+    () => data.bets.filter((b) => b.status === 'live'),
+    [data.bets],
+  );
+  const settledBetsAll = useMemo(
+    () => data.bets.filter((b) => b.status === 'settled' || b.status === 'void'),
+    [data.bets],
+  );
 
   const openOffers = useMemo(
     () => sortOffers(openOffersAll.filter(filterOffer)),
@@ -444,12 +456,17 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     () => sortBets(liveBetsAll.filter(filterBet)),
     [liveBetsAll, filterBet, sortBets],
   );
+  const settledBets = useMemo(
+    () => sortBets(settledBetsAll.filter(filterBet)),
+    [settledBetsAll, filterBet, sortBets],
+  );
 
   const counts = {
     market: openOffers.length,
     myOffers: myOffers.length,
-    myBets: myBets.length,
+    myBets: myBets.filter((b) => b.status === 'live').length,
     liveBets: liveBets.length,
+    settled: settledBets.length,
   };
 
   const filteringTeams = filterIds.length > 0;
@@ -527,7 +544,7 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     return nodes;
   };
 
-  const renderBetCards = (bets) => {
+  const renderBetCards = (bets, { allowSettle = false } = {}) => {
     const nodes = [];
     let lastGroup = null;
     for (const bet of bets) {
@@ -549,7 +566,7 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
               ? resolveOffer(offersById[bet.offerId] || { marketKind: 'custom' }, settlementSnapshot)
               : null
           }
-          onSettle={client.isTest ? settleBet(bet.id) : null}
+          onSettle={allowSettle && client.settleBet ? settleBet(bet.id) : null}
         />,
       );
     }
@@ -566,14 +583,14 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
     return renderOfferCards(offers);
   };
 
-  const renderBets = (bets, emptyText, unfilteredCount, noun) => {
+  const renderBets = (bets, emptyText, unfilteredCount, noun, options = {}) => {
     if (bets.length === 0) {
       const msg = hasListFilters && unfilteredCount > 0
         ? emptyForFilters(noun, emptyFilterArgs)
         : emptyText;
       return <div className="fd-empty">{msg}</div>;
     }
-    return renderBetCards(bets);
+    return renderBetCards(bets, options);
   };
 
   let body;
@@ -584,9 +601,33 @@ function FredDuelExchange({ client, actor, teams, onResetTestData }) {
   } else if (tab === 'myOffers') {
     body = renderOffers(myOffers, "You haven't posted any offers yet.", myOffersAll.length, 'offers');
   } else if (tab === 'myBets') {
-    body = renderBets(myBets, 'No bets yet — take an offer or get one taken.', myBetsAll.length, 'bets');
+    body = renderBets(
+      myBets.filter((b) => b.status === 'live'),
+      'No live bets — take an offer or get one taken.',
+      myBetsAll.filter((b) => b.status === 'live').length,
+      'live bets',
+      { allowSettle: canGrade },
+    );
+  } else if (tab === 'settled') {
+    body = (
+      <>
+        <TotalLedger bets={settledBetsAll} />
+        {renderBets(
+          settledBets,
+          'No settled bets yet.',
+          settledBetsAll.length,
+          'settled bets',
+        )}
+      </>
+    );
   } else {
-    body = renderBets(liveBets, 'No bets on the exchange yet.', liveBetsAll.length, 'bets');
+    body = renderBets(
+      liveBets,
+      'No live bets on the exchange yet.',
+      liveBetsAll.length,
+      'live bets',
+      { allowSettle: canGrade },
+    );
   }
 
   return (

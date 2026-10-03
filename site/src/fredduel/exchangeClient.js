@@ -360,6 +360,11 @@ export function createRemoteClient(getToken) {
       const data = await authed({ action: 'cancel', offerId });
       return data.offer;
     },
+
+    async settleBet(betId, { result, note } = {}) {
+      const data = await authed({ action: 'settle', betId, result, note });
+      return data.bet;
+    },
   };
 }
 

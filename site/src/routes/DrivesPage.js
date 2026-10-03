@@ -54,10 +54,14 @@ function DrivesPage() {
     if (manual) setBookRefreshing(true);
 
     try {
-      const params = new URLSearchParams({ t: String(Date.now()) });
+      const params = new URLSearchParams();
       if (manual) params.set('fresh', '1');
       if (espnRefresh) params.set('espnRefresh', String(espnRefresh));
-      const res = await fetch(`/api/ncaaf-drives?${params}`, { cache: 'no-store' });
+      const qs = params.toString();
+      const res = await fetch(
+        qs ? `/api/ncaaf-drives?${qs}` : '/api/ncaaf-drives',
+        manual || espnRefresh ? { cache: 'no-store' } : undefined,
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);

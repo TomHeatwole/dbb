@@ -14,8 +14,8 @@
  * timer. A later job can call resolveOffer / applyAutoSettlementsToDb.
  */
 
-import { MARKET_KINDS } from './markets';
-import { roundCents } from './oddsMath';
+import { MARKET_KINDS } from './markets.js';
+import { roundCents } from './oddsMath.js';
 
 export const MARKET_RESULT = {
   PENDING: 'pending',
@@ -427,4 +427,36 @@ export function previewOfferSettlements(offers, snapshot) {
     weeksNeeded: weeksNeededForMarket(offer.marketKind, offer.market),
     ...resolveOffer(offer, snapshot),
   }));
+}
+
+/** Running P&L per participant from graded bets (settled + void). */
+export function buildTotalLedger(bets) {
+  const totals = new Map();
+
+  const bump = (id, name, delta, countTicket = false) => {
+    if (id == null || id === '') return;
+    const key = String(id);
+    let row = totals.get(key);
+    if (!row) {
+      row = { id, name: name || key, net: 0, won: 0, lost: 0, tickets: 0 };
+      totals.set(key, row);
+    }
+    if (name && !row.name) row.name = name;
+    row.net = roundCents(row.net + delta);
+    if (delta > 0) row.won = roundCents(row.won + delta);
+    if (delta < 0) row.lost = roundCents(row.lost + -delta);
+    if (countTicket) row.tickets += 1;
+  };
+
+  for (const bet of bets || []) {
+    if (bet.status === 'live') continue;
+    const payout = settlementPayout(bet, bet.result);
+    const count = bet.status === 'settled';
+    bump(bet.takerId, bet.takerName, payout.takerDelta, count);
+    bump(bet.creatorId, bet.creatorName, payout.creatorDelta, count);
+  }
+
+  return [...totals.values()].sort(
+    (a, b) => b.net - a.net || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+  );
 }

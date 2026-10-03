@@ -8,6 +8,14 @@
  */
 
 import {
+  cachedBook,
+  cdnSecondsForMemoryTtl,
+  fillBookCache,
+  requestIsFresh,
+  setNoStore,
+  setSharedCacheHeaders,
+} from '../lib/bookCache.mjs';
+import {
   blendHalfStoppage,
   regularMinutesLeftInHalf,
   resolveCornerLeagueModel,
@@ -1460,8 +1468,18 @@ export default async function handler(req, res) {
   const label = bookConfig.key === 'mls' ? 'mls-corners' : 'pl-corners';
 
   try {
-    const data = await fetchCornerBook(bookConfig);
-    res.setHeader('Cache-Control', 'public, max-age=15');
+    const fresh = requestIsFresh(req);
+    const key = `corners:${bookConfig.key}`;
+    const ttlMs = 60_000;
+    const data = fresh
+      ? await fetchCornerBook(bookConfig)
+      : await cachedBook(key, () => fetchCornerBook(bookConfig), () => ttlMs, { persist: true });
+    if (fresh) {
+      await fillBookCache(key, data, ttlMs, { persist: true });
+      setNoStore(res);
+    } else {
+      setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));
+    }
     return res.status(200).json(data);
   } catch (err) {
     // eslint-disable-next-line no-console

@@ -1,3 +1,4 @@
+import { hashCacheKey, readFreshCache, writeFreshCache } from '../cpuResultCache.mjs';
 import { CURRENT_YEAR, SITE_BASE_URL, PREVIOUS_YEARS, getLeagueIdForSeason } from './config.mjs';
 import {
   fetchRosters, fetchUsers, fetchMatchups, fetchTransactions,
@@ -1008,6 +1009,13 @@ export async function getSeasonOdds(iterations) {
     return seasonOddsCache.output;
   }
 
+  const persistedKey = hashCacheKey('season-odds', cacheKey);
+  const persisted = await readFreshCache(persistedKey);
+  if (persisted?.payload) {
+    seasonOddsCache = { key: cacheKey, ts: persisted.startedAt, output: persisted.payload };
+    return persisted.payload;
+  }
+
   const inputs = await loadSimulationInputs();
   const ctx = prepareSimContext({
     scenarioRosters: rosterMap,
@@ -1033,7 +1041,9 @@ export async function getSeasonOdds(iterations) {
   }
 
   const output = lines.join('\n');
-  seasonOddsCache = { key: cacheKey, ts: Date.now(), output };
+  const storedAt = Date.now();
+  seasonOddsCache = { key: cacheKey, ts: storedAt, output };
+  await writeFreshCache(persistedKey, output, SEASON_ODDS_TTL_MS, storedAt);
   return output;
 }
 

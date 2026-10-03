@@ -95,7 +95,7 @@ function RawArbPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`/api/rawarb?t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch('/api/rawarb');
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
       setGames(body.games ?? []);

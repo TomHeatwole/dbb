@@ -31,15 +31,20 @@ async function fetchJsonWithTimeout(url, timeoutMs) {
   }
 }
 
-async function fetchKalshiOddsForSop() {
-  return fetchJsonWithTimeout('/api/kalshi-sop', KALSHI_CLIENT_TIMEOUT_MS);
+function withFresh(url, fresh) {
+  if (!fresh) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}fresh=1`;
 }
 
-async function fetchDkOddsForSop(soccerScope = 'core') {
+async function fetchKalshiOddsForSop(fresh = false) {
+  return fetchJsonWithTimeout(withFresh('/api/kalshi-sop', fresh), KALSHI_CLIENT_TIMEOUT_MS);
+}
+
+async function fetchDkOddsForSop(soccerScope = 'core', fresh = false) {
   const url = soccerScope === 'all'
     ? '/api/draftkings-goal-method?soccer=all'
     : '/api/draftkings-goal-method';
-  return fetchJsonWithTimeout(url, DK_CLIENT_TIMEOUT_MS);
+  return fetchJsonWithTimeout(withFresh(url, fresh), DK_CLIENT_TIMEOUT_MS);
 }
 
 const OG_TITLE = 'SHOT OPEN PLAY';
@@ -156,8 +161,11 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false, soccer
     // so a slow DraftKings probe/Akamai block cannot hang the whole page.
     let fdGames = [];
     try {
-      const fdUrl = soccerScope === 'all' ? '/api/fanduel-sop?soccer=all' : '/api/fanduel-sop';
-      const fdRes = await fetch(fdUrl, { cache: 'no-store' });
+      const fdUrl = withFresh(
+        soccerScope === 'all' ? '/api/fanduel-sop?soccer=all' : '/api/fanduel-sop',
+        manual,
+      );
+      const fdRes = await fetch(fdUrl, manual ? { cache: 'no-store' } : undefined);
       if (!fdRes.ok) {
         const body = await fdRes.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${fdRes.status}`);
@@ -193,7 +201,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false, soccer
     };
 
     await Promise.all([
-      fetchDkOddsForSop(soccerScope).then((data) => {
+      fetchDkOddsForSop(soccerScope, manual).then((data) => {
         dkData = data;
         applyMerges();
         const hasMergedDk = (data?.games ?? []).some(
@@ -206,7 +214,7 @@ export function SOPPageShell({ basePath = '/SOP', skipBootLoader = false, soccer
           setDkNotice(null);
         }
       }),
-      fetchKalshiOddsForSop().then((data) => {
+      fetchKalshiOddsForSop(manual).then((data) => {
         kalshiData = data;
         applyMerges();
       }),
