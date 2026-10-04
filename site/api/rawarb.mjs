@@ -1,6 +1,6 @@
 /**
- * Cross-book CFB + NFL main lines (FanDuel + DraftKings).
- * Moneyline, spread, and game total only — no props.
+ * Cross-book two-way mains (FanDuel + DraftKings) for every sport
+ * both books list as a two-sided event.
  */
 
 import {
@@ -15,23 +15,30 @@ import {
   mergeBookGames,
   parseSignedAmerican,
 } from '../src/rawarb/rawArbModel.js';
-import { parseEventTeams, teamsMatch } from '../src/rawarb/teamMatch.js';
+import {
+  DK_LEAGUES,
+  FD_EVENT_TYPES,
+  SPREAD_MARKET_NAMES,
+  TOTAL_MARKET_NAMES,
+  dkReferer,
+  isSkippableCompetition,
+  isSkippableEventName,
+  isNonMatchWinnerMarket,
+  isThreeWayMoneyline,
+  isTwoSidedName,
+  isTwoWayWinnerName,
+  matchModeForSport,
+  mlMarketNamesForSport,
+  sportFromFd,
+} from '../src/rawarb/sportCatalog.js';
+import { parseEventTeams, sidesMatch } from '../src/rawarb/teamMatch.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
   'currencyCode=USD&exchangeLocale=en_US&includePrices=true&language=en&regionCode=NAMERICA&timezone=America%2FNew_York&_ak=FhMFpcPWXMeyZxOx';
-const FD_FOOTBALL_EVENT_TYPE = 6423;
-const FD_COMPETITIONS = {
-  nfl: 12282733,
-  cfb: 12529073,
-};
 
 const DK_PE_LOC = 'US-NJ';
 const DK_NASH_BASE = `https://sportsbook-nash.draftkings.com/sites/${DK_PE_LOC}-SB/api`;
-const DK_LEAGUES = {
-  nfl: { id: '88808', referer: 'https://sportsbook.draftkings.com/leagues/football/nfl' },
-  cfb: { id: '87637', referer: 'https://sportsbook.draftkings.com/leagues/football/ncaaf' },
-};
 
 const FD_HEADERS = {
   Accept: 'application/json',
@@ -57,6 +64,19 @@ function dkHeaders(referer) {
   };
 }
 
+async function mapPool(items, limit, fn) {
+  const out = new Array(items.length);
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) {
+      const idx = i;
+      i += 1;
+      out[idx] = await fn(items[idx], idx);
+    }
+  }));
+  return out;
+}
+
 function runnersList(market) {
   const runners = market?.runners;
   if (!runners) return [];
@@ -67,15 +87,15 @@ function fdAmerican(runner) {
   return parseSignedAmerican(runner?.winRunnerOdds?.americanDisplayOdds?.americanOdds);
 }
 
-function mapTeamSides(runners, teams, lineFrom) {
-  const away = runners.find((runner) => teamsMatch(runner.runnerName, teams.away));
-  const home = runners.find((runner) => teamsMatch(runner.runnerName, teams.home));
+function mapTeamSides(runners, teams, lineFrom, mode = 'loose') {
+  const away = runners.find((runner) => sidesMatch(runner.runnerName, teams.away, mode));
+  const home = runners.find((runner) => sidesMatch(runner.runnerName, teams.home, mode));
   const pick = (runner, team) => {
     if (!runner) return null;
     const american = fdAmerican(runner);
     if (american == null) return null;
     const line = lineFrom(runner);
-    return { american, line: Number.isFinite(line) ? line : null, team };
+    return { american, line: Number.isFinite(line) ? line : null, team: runner.runnerName || team };
   };
   return {
     away: pick(away, teams.away),
@@ -83,19 +103,30 @@ function mapTeamSides(runners, teams, lineFrom) {
   };
 }
 
-function extractFdEvent(event, markets) {
+function findMarket(eventMarkets, names) {
+  const want = names.map((name) => String(name).toLowerCase());
+  return eventMarkets.find((market) => want.includes(String(market.marketName ?? '').toLowerCase())) ?? null;
+}
+
+function extractFdEvent(event, markets, sport, league) {
   const teams = parseEventTeams(event.name);
   if (!teams.home || !teams.away) return null;
   const eventMarkets = Object.values(markets ?? {}).filter(
     (market) => Number(market.eventId) === Number(event.eventId),
   );
-  const byName = (names) => eventMarkets.find((market) => names.includes(String(market.marketName ?? ''))) ?? null;
-  const ml = byName(['Moneyline']);
-  const spread = byName(['Spread']);
-  const total = byName(['Total Points', 'Total']);
-  const moneyline = ml ? mapTeamSides(runnersList(ml), teams, () => 0) : null;
+  const mode = matchModeForSport(sport);
+  const ml = findMarket(
+    eventMarkets.filter((market) => !isNonMatchWinnerMarket(market.marketName, market._tab)),
+    mlMarketNamesForSport(sport),
+  );
+  const spread = findMarket(eventMarkets, SPREAD_MARKET_NAMES);
+  const total = findMarket(eventMarkets, TOTAL_MARKET_NAMES);
+  const mlRunners = ml ? runnersList(ml) : [];
+  const moneyline = ml && !isThreeWayMoneyline(ml.marketName, mlRunners.map((r) => r.runnerName))
+    ? mapTeamSides(mlRunners, teams, () => 0, mode)
+    : null;
   const spreadSides = spread
-    ? mapTeamSides(runnersList(spread), teams, (runner) => Number(runner.handicap))
+    ? mapTeamSides(runnersList(spread), teams, (runner) => Number(runner.handicap), mode)
     : null;
   let totalSides = null;
   if (total) {
@@ -112,11 +143,26 @@ function extractFdEvent(event, markets) {
   }
   const hasAny = [moneyline?.away, moneyline?.home, spreadSides?.away, spreadSides?.home, totalSides?.over, totalSides?.under]
     .some(Boolean);
-  if (!hasAny) return null;
+  if (!hasAny) {
+    return {
+      eventId: String(event.eventId),
+      home: teams.home,
+      away: teams.away,
+      sport,
+      league,
+      openDate: event.openDate ?? null,
+      inPlay: Boolean(event.inPlay),
+      moneyline: null,
+      spread: null,
+      total: null,
+    };
+  }
   return {
     eventId: String(event.eventId),
     home: teams.home,
     away: teams.away,
+    sport,
+    league,
     openDate: event.openDate ?? null,
     inPlay: Boolean(event.inPlay),
     moneyline,
@@ -125,25 +171,34 @@ function extractFdEvent(event, markets) {
   };
 }
 
-function extractFdSport(payload, sport) {
-  const competitionId = FD_COMPETITIONS[sport];
-  const events = Object.entries(payload?.attachments?.events ?? {})
-    .filter(([, ev]) => Number(ev.competitionId) === competitionId)
-    .map(([id, ev]) => ({
+function extractFdPayload(payload) {
+  const competitions = payload?.attachments?.competitions ?? {};
+  const markets = payload?.attachments?.markets ?? {};
+  const games = [];
+  for (const [id, ev] of Object.entries(payload?.attachments?.events ?? {})) {
+    const name = ev?.name ?? '';
+    if (!isTwoSidedName(name) || isSkippableEventName(name)) continue;
+    const comp = competitions[ev.competitionId] || competitions[String(ev.competitionId)] || {};
+    const compName = comp.name || '';
+    if (isSkippableCompetition(compName)) continue;
+    const sport = sportFromFd(ev.eventTypeId, ev.competitionId, compName);
+    if (!sport) continue;
+    const extracted = extractFdEvent({
       eventId: Number(id),
-      name: ev.name,
+      name,
       openDate: ev.openDate ?? null,
       inPlay: Boolean(ev.inPlay),
-    }));
-  const markets = payload?.attachments?.markets ?? {};
-  return events.map((event) => extractFdEvent(event, markets)).filter(Boolean);
+    }, markets, sport, compName || null);
+    if (extracted) games.push(extracted);
+  }
+  return games;
 }
 
 function dkAmerican(selection) {
   return parseSignedAmerican(selection?.displayOdds?.american);
 }
 
-function extractDkLeague(payload) {
+function extractDkLeague(payload, sport, leagueName) {
   const selectionsByMarket = new Map();
   for (const sel of payload?.selections ?? []) {
     const mid = String(sel.marketId ?? '');
@@ -161,23 +216,49 @@ function extractDkLeague(payload) {
   const games = [];
   for (const event of payload?.events ?? []) {
     if (!event?.id || !event?.name) continue;
-    const teams = parseEventTeams(String(event.name).replace(/\s+vs\.?\s+/i, ' @ '));
+    if (!isTwoSidedName(event.name) || isSkippableEventName(event.name)) continue;
+    const teams = parseEventTeams(String(event.name));
     if (!teams.home || !teams.away) continue;
     const markets = marketsByEvent.get(String(event.id)) ?? [];
-    const byName = (name) => markets.find((market) => String(market.name ?? '') === name) ?? null;
     const sels = (market) => (market ? selectionsByMarket.get(String(market.id)) ?? [] : []);
+    const mode = matchModeForSport(sport);
+    const byNames = (names, { moneyline: wantMl = false } = {}) => {
+      const hits = markets.filter((market) => (
+        names.some((name) => String(market.name ?? '').toLowerCase() === name.toLowerCase())
+      ));
+      if (!wantMl) return hits[0] ?? null;
+      const ranked = hits.map((market) => {
+        const list = sels(market);
+        const americans = list.map(dkAmerican).filter((n) => n != null);
+        if (isNonMatchWinnerMarket(market.name, market.subcategoryName || market.hint)) return 5;
+        if (americans.length < 2) return 4;
+        if (americans.every((n) => n > 0) && !isTwoWayWinnerName(market.name)) return 3;
+        return 0;
+      });
+      let best = -1;
+      ranked.forEach((rank, idx) => {
+        if (rank < 3 && (best < 0 || rank < ranked[best])) best = idx;
+      });
+      return best >= 0 ? hits[best] : null;
+    };
 
     const teamSide = (list, team, role) => {
-      const hit = list.find((sel) => {
-        const outcome = String(sel.outcomeType ?? '').toLowerCase();
-        if (role && outcome === role) return true;
-        return teamsMatch(sel.label, team);
+      const named = list.find((sel) => sidesMatch(sel.label, team, mode));
+      const hit = named || list.find((sel) => {
+        const lab = String(sel.label ?? '').trim();
+        if (lab && !/^(away|home)$/i.test(lab)) return false;
+        return role && String(sel.outcomeType ?? '').toLowerCase() === role;
       });
       if (!hit) return null;
       const american = dkAmerican(hit);
       if (american == null) return null;
       const line = Number(hit.points);
-      return { american, line: Number.isFinite(line) ? line : null, team };
+      const label = String(hit.label ?? '').trim();
+      return {
+        american,
+        line: Number.isFinite(line) ? line : null,
+        team: label && !/^(away|home)$/i.test(label) ? label : team,
+      };
     };
     const ouSide = (list, role) => {
       const hit = list.find((sel) => String(sel.outcomeType ?? '').toLowerCase() === role
@@ -189,13 +270,26 @@ function extractDkLeague(payload) {
       return { american, line: Number.isFinite(line) ? line : null };
     };
 
-    const mlSels = sels(byName('Moneyline'));
-    const spreadSels = sels(byName('Spread'));
-    const totalSels = sels(byName('Total'));
-    const moneyline = {
+    const mlMarket = byNames(mlMarketNamesForSport(sport), { moneyline: true });
+    const mlSels = sels(mlMarket);
+    const skipMl = mlMarket && isThreeWayMoneyline(
+      mlMarket.name,
+      mlSels.map((sel) => sel.label),
+    );
+    const spreadSels = sels(byNames(SPREAD_MARKET_NAMES));
+    const totalSels = sels(byNames(TOTAL_MARKET_NAMES));
+    const moneyline = skipMl ? { away: null, home: null } : {
       away: teamSide(mlSels, teams.away, 'away'),
       home: teamSide(mlSels, teams.home, 'home'),
     };
+    if (
+      moneyline.away && moneyline.home
+      && moneyline.away.american > 0 && moneyline.home.american > 0
+      && !isTwoWayWinnerName(mlMarket?.name)
+    ) {
+      moneyline.away = null;
+      moneyline.home = null;
+    }
     const spread = {
       away: teamSide(spreadSels, teams.away, 'away'),
       home: teamSide(spreadSels, teams.home, 'home'),
@@ -204,12 +298,13 @@ function extractDkLeague(payload) {
       over: ouSide(totalSels, 'over'),
       under: ouSide(totalSels, 'under'),
     };
-    const hasAny = [moneyline.away, moneyline.home, spread.away, spread.home, total.over, total.under].some(Boolean);
-    if (!hasAny) continue;
     games.push({
       eventId: String(event.id),
       home: teams.home,
       away: teams.away,
+      sport,
+      league: leagueName || null,
+      leagueId: String(event.leagueId ?? payload?.leagues?.[0]?.id ?? ''),
       openDate: event.startEventDate ?? null,
       inPlay: String(event.status ?? '').toUpperCase() === 'STARTED',
       moneyline,
@@ -220,21 +315,20 @@ function extractDkLeague(payload) {
   return games;
 }
 
-async function fdFetch() {
+async function fdFetch(eventTypeId) {
   const res = await fetch(
-    `${FD_BASE}/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=${FD_FOOTBALL_EVENT_TYPE}`,
+    `${FD_BASE}/content-managed-page?${FD_QUERY}&page=SPORT&eventTypeId=${eventTypeId}`,
     { headers: FD_HEADERS },
   );
-  if (!res.ok) throw new Error(`FanDuel football page returned ${res.status}`);
+  if (!res.ok) throw new Error(`FanDuel eventType ${eventTypeId} returned ${res.status}`);
   return res.json();
 }
 
-async function dkFetch(sport) {
-  const league = DK_LEAGUES[sport];
+async function dkFetch(league) {
   const res = await fetch(`${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${league.id}`, {
-    headers: dkHeaders(league.referer),
+    headers: dkHeaders(dkReferer(league)),
   });
-  if (!res.ok) throw new Error(`DraftKings ${sport} returned ${res.status}`);
+  if (!res.ok) throw new Error(`DraftKings ${league.path} returned ${res.status}`);
   return res.json();
 }
 
@@ -243,41 +337,71 @@ function compactError(err) {
 }
 
 export async function fetchRawArbBook() {
-  const [fdResult, nflDkResult, cfbDkResult] = await Promise.allSettled([
-    fdFetch(),
-    dkFetch('nfl'),
-    dkFetch('cfb'),
+  const [fdResults, dkResults] = await Promise.all([
+    mapPool(FD_EVENT_TYPES, 5, async (row) => {
+      try {
+        return { ok: true, eventTypeId: row.id, payload: await fdFetch(row.id) };
+      } catch (err) {
+        return { ok: false, eventTypeId: row.id, error: compactError(err) };
+      }
+    }),
+    mapPool(DK_LEAGUES, 8, async (league) => {
+      try {
+        return { ok: true, league, payload: await dkFetch(league) };
+      } catch (err) {
+        return { ok: false, league, error: compactError(err) };
+      }
+    }),
   ]);
 
   const notices = [];
-  const fdPayload = fdResult.status === 'fulfilled' ? fdResult.value : null;
-  if (fdResult.status === 'rejected') notices.push(`FanDuel: ${compactError(fdResult.reason)}`);
+  const fdBySport = new Map();
+  for (const row of fdResults) {
+    if (!row.ok) {
+      notices.push(`FanDuel ${row.eventTypeId}: ${row.error}`);
+      continue;
+    }
+    for (const game of extractFdPayload(row.payload)) {
+      if (!fdBySport.has(game.sport)) fdBySport.set(game.sport, []);
+      fdBySport.get(game.sport).push(game);
+    }
+  }
 
-  const dkNfl = nflDkResult.status === 'fulfilled' ? extractDkLeague(nflDkResult.value) : [];
-  if (nflDkResult.status === 'rejected') notices.push(`DraftKings NFL: ${compactError(nflDkResult.reason)}`);
+  const dkBySport = new Map();
+  for (const row of dkResults) {
+    if (!row.ok) {
+      notices.push(`DraftKings ${row.league.path}: ${row.error}`);
+      continue;
+    }
+    const leagueName = row.payload?.leagues?.[0]?.name || row.league.path;
+    for (const game of extractDkLeague(row.payload, row.league.sport, leagueName)) {
+      if (!dkBySport.has(game.sport)) dkBySport.set(game.sport, []);
+      dkBySport.get(game.sport).push(game);
+    }
+  }
 
-  const dkCfb = cfbDkResult.status === 'fulfilled' ? extractDkLeague(cfbDkResult.value) : [];
-  if (cfbDkResult.status === 'rejected') notices.push(`DraftKings CFB: ${compactError(cfbDkResult.reason)}`);
-
-  const fdNfl = fdPayload ? extractFdSport(fdPayload, 'nfl') : [];
-  const fdCfb = fdPayload ? extractFdSport(fdPayload, 'cfb') : [];
-
-  const games = [
-    ...mergeBookGames(fdCfb, dkCfb, 'cfb'),
-    ...mergeBookGames(fdNfl, dkNfl, 'nfl'),
-  ];
+  const sports = new Set([...fdBySport.keys(), ...dkBySport.keys()]);
+  const games = [];
+  for (const sport of sports) {
+    games.push(...mergeBookGames(fdBySport.get(sport) ?? [], dkBySport.get(sport) ?? [], sport));
+  }
 
   const fetchedAt = new Date().toISOString();
+  const bySport = {};
+  for (const game of games) {
+    bySport[game.sport] = (bySport[game.sport] || 0) + 1;
+  }
   return {
     fetchedAt,
     games,
     notices,
     stats: {
       games: games.length,
-      cfb: games.filter((g) => g.sport === 'cfb').length,
-      nfl: games.filter((g) => g.sport === 'nfl').length,
+      bySport,
       withBothBooks: games.filter((g) => g.fdEventId && g.dkEventId).length,
       withTwoWay: games.filter((g) => g.bestPSum != null).length,
+      cfb: bySport.cfb || 0,
+      nfl: bySport.nfl || 0,
     },
   };
 }
@@ -291,9 +415,9 @@ export default async function handler(req, res) {
     const ttlMs = 60_000;
     const data = fresh
       ? await fetchRawArbBook()
-      : await cachedBook('rawarb', fetchRawArbBook, () => ttlMs, { persist: true });
+      : await cachedBook('rawarb-v2', fetchRawArbBook, () => ttlMs, { persist: true });
     if (fresh) {
-      await fillBookCache('rawarb', data, ttlMs, { persist: true });
+      await fillBookCache('rawarb-v2', data, ttlMs, { persist: true });
       setNoStore(res);
     } else {
       setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));

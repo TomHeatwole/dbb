@@ -14,6 +14,7 @@ import {
 import { fetchRawArbBook } from './rawarb.mjs';
 import { extractDkContracts, extractFdContracts } from '../src/rawarb/extractMarkets.js';
 import { attachDeepMarkets } from '../src/rawarb/mergeDeep.js';
+import { DK_LEAGUES, dkReferer } from '../src/rawarb/sportCatalog.js';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -23,7 +24,7 @@ const FD_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (compatible; HwangDynasty-RawArb/1.0)',
 };
 
-const FD_TAB_SKIP = /parlay|sgm|same game|td scorer|touchdown scorer|quick bet/i;
+const FD_TAB_SKIP = /parlay|sgm|same game|td scorer|touchdown scorer|quick bet|quick parlays|point by point|lasers|sgp game/i;
 const FD_TAB_SLUG = {
   popular: 'popular',
   '1st half': '1st-half',
@@ -44,16 +45,13 @@ const FD_FALLBACK_TABS = [...new Set(Object.values(FD_TAB_SLUG))];
 
 const DK_PE_LOC = 'US-NJ';
 const DK_NASH_BASE = `https://sportsbook-nash.draftkings.com/sites/${DK_PE_LOC}-SB/api`;
-const DK_LEAGUES = {
-  nfl: { id: '88808', referer: 'https://sportsbook.draftkings.com/leagues/football/nfl' },
-  cfb: { id: '87637', referer: 'https://sportsbook.draftkings.com/leagues/football/ncaaf' },
-};
+const DK_LEAGUE_BY_ID = new Map(DK_LEAGUES.map((league) => [String(league.id), league]));
 
 const DK_SKIP_CAT = new Set([
   529, 787, 1076, 1286, 1803, 999, 1303, 1972, 1653, 1858, 1969, 1003,
 ]);
-const DK_SKIP_SUB = /winning margin|correct score|3[\s-]?way|squares|octopus|most |combined |either player|each player|in each |shutout|comeback|halves won|every quarter|half time|full time|bands|to score 1st|to win with|largest lead|2 pt|game winning|drive|first down|1st (?:sack|turnover|first|reception)|specials$|dk specials|quick hits|scoring props|td props|quarter tds|safety props|punt props|field goal props(?!.*o\/u)|h2h|race to|listed half(?!.*total)/i;
-const DK_KEEP_SUB = /alternate|o\/u|over.?under|odd\/?even|overtime|both teams|team total|pass |rush |rec |reception|completion|attempt|intercept|longest|sack|tackle|fantasy|kick|fg |pat |punt|1st score|highest scoring|quarter team|pass tds|rush \+ rec|^game$|1st half|2nd half|1st quarter|2nd quarter|3rd quarter|4th quarter/i;
+const DK_SKIP_SUB = /winning margin|correct score|3[\s-]?way|squares|octopus|most |combined |either player|each player|in each |shutout|comeback|halves won|every quarter|half time|full time|bands|to score 1st|to win with|largest lead|2 pt|game winning|drive|first down|1st (?:sack|turnover|first|reception)|specials$|dk specials|quick hits|scoring props|td props|quarter tds|safety props|punt props|field goal props(?!.*o\/u)|h2h|race to|listed half(?!.*total)|both win set|listed set|win a set/i;
+const DK_KEEP_SUB = /alternate|o\/u|over.?under|odd\/?even|overtime|both teams|team total|pass |rush |rec |reception|completion|attempt|intercept|longest|sack|tackle|fantasy|kick|fg |pat |punt|1st score|highest scoring|quarter team|pass tds|rush \+ rec|^game$|1st half|2nd half|1st quarter|2nd quarter|3rd quarter|4th quarter|points|assists|rebounds|threes|pra|shots|saves|goals|hits|strikeouts|corners|cards|aces|games|sets|rounds|puck line|run line|spread|total|moneyline|handicap|draw no bet|player|period|inning|first 5/i;
 
 function dkHeaders(referer, page = 'league') {
   return {
@@ -100,14 +98,21 @@ async function mapPool(items, limit, fn) {
   return out;
 }
 
+function slugifyTab(title) {
+  return String(title ?? '')
+    .toLowerCase()
+    .replace(/™/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function slugsFromFdLayout(layout) {
   const tabs = Object.values(layout?.tabs ?? {});
   const slugs = [];
   for (const tab of tabs) {
     const title = String(tab.title ?? '').trim();
     if (!title || tab.isSameGameMulti || FD_TAB_SKIP.test(title)) continue;
-    const slug = FD_TAB_SLUG[title.toLowerCase()];
-    if (slug) slugs.push(slug);
+    slugs.push(FD_TAB_SLUG[title.toLowerCase()] || slugifyTab(title));
   }
   return slugs.length ? [...new Set(slugs)] : FD_FALLBACK_TABS;
 }
@@ -158,16 +163,71 @@ export function twoWaySubsFromLeague(json) {
   return out;
 }
 
-async function dkLeague(sport) {
-  const league = DK_LEAGUES[sport];
-  return fetchJson(`${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${league.id}`, dkHeaders(league.referer));
+async function dkLeague(league) {
+  return fetchJson(`${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${league.id}`, dkHeaders(dkReferer(league)));
 }
 
-async function dkLeagueSub(sport, categoryId, subcategoryId, hint = '') {
-  const league = DK_LEAGUES[sport];
+async function dkLeagueSub(league, categoryId, subcategoryId, hint = '') {
   const url = `${DK_NASH_BASE}/sportscontent/dkusny/v1/leagues/${league.id}?categoryId=${categoryId}&subcategoryId=${subcategoryId}`;
-  const json = await fetchJson(url, dkHeaders(league.referer), 16000);
+  const json = await fetchJson(url, dkHeaders(dkReferer(league)), 16000);
   return { markets: json?.markets ?? [], selections: json?.selections ?? [], hint };
+}
+
+function leaguesForGames(games) {
+  const out = new Map();
+  for (const game of games ?? []) {
+    const fromId = game.dkLeagueId && DK_LEAGUE_BY_ID.get(String(game.dkLeagueId));
+    if (fromId) {
+      out.set(fromId.id, fromId);
+      continue;
+    }
+    for (const league of DK_LEAGUES) {
+      if (league.sport === game.sport) out.set(league.id, league);
+    }
+  }
+  return [...out.values()];
+}
+
+function pickDeepTargets(matched, cap = 160) {
+  const now = Date.now();
+  const horizon = now + 21 * 24 * 60 * 60 * 1000;
+  const eligible = [...matched]
+    .map((game) => {
+      const t = Date.parse(game.openDate);
+      return { game, start: Number.isFinite(t) ? t : horizon, live: Boolean(game.inPlay) };
+    })
+    .filter((row) => row.live || row.start <= horizon)
+    .sort((a, b) => {
+      if (a.live !== b.live) return a.live ? -1 : 1;
+      return a.start - b.start;
+    });
+  const live = eligible.filter((row) => row.live).map((row) => row.game);
+  const rest = eligible.filter((row) => !row.live);
+  const bySport = new Map();
+  for (const row of rest) {
+    const key = row.game.sport || 'other';
+    if (!bySport.has(key)) bySport.set(key, []);
+    bySport.get(key).push(row.game);
+  }
+  const picked = [...live];
+  const seen = new Set(live.map((game) => game.fdEventId || game.dkEventId));
+  let i = 0;
+  let added = true;
+  while (picked.length < cap && added) {
+    added = false;
+    for (const list of bySport.values()) {
+      const game = list[i];
+      if (!game) continue;
+      const id = game.fdEventId || game.dkEventId;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      picked.push(game);
+      added = true;
+      if (picked.length >= cap) break;
+    }
+    i += 1;
+  }
+  return picked;
 }
 
 function groupDkByEvent(bundles) {
@@ -225,32 +285,35 @@ function slimExtra(row) {
 export async function fetchRawArbDeep(baseGames) {
   const games = baseGames ?? (await fetchRawArbBook()).games;
   const matched = games.filter((game) => game.fdEventId && game.dkEventId);
-  const now = Date.now();
-  const fdTargets = matched.filter((game) => {
-    if (game.inPlay) return true;
-    const t = Date.parse(game.openDate);
-    if (!Number.isFinite(t)) return true;
-    return t <= now + 21 * 24 * 60 * 60 * 1000;
-  });
+  const fdTargets = pickDeepTargets(matched, 160);
+  const dkLeagues = leaguesForGames(matched);
 
   const fdMarketsById = new Map();
-  const dkBySport = { nfl: new Map(), cfb: new Map() };
-  const dkSubCounts = { nfl: 0, cfb: 0 };
+  const dkByEvent = new Map();
+  const dkSubCounts = {};
 
   await Promise.all([
-    mapPool(fdTargets, 6, async (game) => {
+    mapPool(fdTargets, 7, async (game) => {
       try {
         fdMarketsById.set(String(game.fdEventId), await fdEventTabs(game.fdEventId));
       } catch {
         fdMarketsById.set(String(game.fdEventId), {});
       }
     }),
-    mapPool(['nfl', 'cfb'], 2, async (sport) => {
-      const catalog = await dkLeague(sport);
+    mapPool(dkLeagues, 4, async (league) => {
+      const catalog = await dkLeague(league);
       const subs = twoWaySubsFromLeague(catalog || {});
-      dkSubCounts[sport] = subs.length;
-      const bundles = await mapPool(subs, 8, ([cat, sub, hint]) => dkLeagueSub(sport, cat, sub, hint));
-      dkBySport[sport] = groupDkByEvent(bundles);
+      dkSubCounts[league.path] = subs.length;
+      const bundles = await mapPool(subs, 6, ([cat, sub, hint]) => dkLeagueSub(league, cat, sub, hint));
+      for (const [eid, bundle] of groupDkByEvent(bundles)) {
+        const prev = dkByEvent.get(eid);
+        if (!prev) {
+          dkByEvent.set(eid, bundle);
+          continue;
+        }
+        prev.markets.push(...bundle.markets);
+        prev.selections.push(...bundle.selections);
+      }
     }),
   ]);
 
@@ -258,7 +321,7 @@ export async function fetchRawArbDeep(baseGames) {
     const teams = { home: game.home, away: game.away };
     const fdContracts = extractFdContracts(fdMarketsById.get(String(game.fdEventId)) ?? {}, teams);
     let dkContracts = [];
-    const dkBundle = dkBySport[game.sport]?.get(String(game.dkEventId));
+    const dkBundle = dkByEvent.get(String(game.dkEventId));
     if (dkBundle) {
       dkContracts = extractDkContracts(dkBundle.markets, dkBundle.selections, teams);
       if (game.dkFlipped) dkContracts = flipDkContracts(dkContracts);
@@ -282,6 +345,7 @@ export async function fetchRawArbDeep(baseGames) {
       extras: attachments.reduce((n, row) => n + (row.extraCount ?? 0), 0),
       extraArbs: attachments.reduce((n, row) => n + (row.extraArbCount ?? 0), 0),
       fdEvents: fdMarketsById.size,
+      dkLeagues: dkLeagues.length,
       dkSubs: dkSubCounts,
     },
   };
@@ -296,9 +360,9 @@ export default async function handler(req, res) {
     const ttlMs = 60_000;
     const data = fresh
       ? await fetchRawArbDeep()
-      : await cachedBook('rawarb-deep', fetchRawArbDeep, () => ttlMs, { persist: true });
+      : await cachedBook('rawarb-deep-v5', fetchRawArbDeep, () => ttlMs, { persist: true });
     if (fresh) {
-      await fillBookCache('rawarb-deep', data, ttlMs, { persist: true });
+      await fillBookCache('rawarb-deep-v5', data, ttlMs, { persist: true });
       setNoStore(res);
     } else {
       setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));

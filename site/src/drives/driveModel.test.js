@@ -1914,6 +1914,76 @@ describe('ESPN situation lag vs live FanDuel prices', () => {
     expect(spotLagKind(game)).toBeNull();
     expect(evaluateDriveGame(game, { market: listDriveSides(game)[0] }).situationLag).toBe(false);
   });
+
+  it('locks a punt and the other team’s 1st-and-10 as one spot and prices both drives from it', () => {
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      driveMarkets: [
+        {
+          marketName: 'SMU Drive 4 - Result',
+          offenseName: 'SMU',
+          offenseSide: 'away',
+          driveN: 4,
+          outcomes: goalLineFd,
+        },
+        {
+          marketName: 'Florida St Drive 5 - Result',
+          offenseName: 'Florida St',
+          offenseSide: 'home',
+          driveN: 5,
+          outcomes: goalLineFd,
+        },
+      ],
+      live: {
+        period: 2,
+        clock: '8:40',
+        clockSeconds: 8 * 60 + 40,
+        down: 4,
+        distance: 6,
+        yardsToEndzone: 48,
+        possession: 'away',
+        possessionName: 'SMU',
+        possessionText: 'Florida State 48',
+        lastPlay: 'Smith punt 39 yards, fair catch at the SMU29',
+        lastPlayType: 'Punt',
+        lastPlaySide: 'away',
+        state: 'in',
+        driveChart: {
+          homeStarted: 4,
+          awayStarted: 4,
+          currentResult: 'Punt',
+          finishedSide: 'away',
+        },
+        fd: {
+          period: 2,
+          clock: '8:12',
+          clockSeconds: 8 * 60 + 12,
+          down: 1,
+          distance: 10,
+          yardsToEndzone: 71,
+          possession: 'home',
+          possessionText: 'Florida State 29',
+          downDistance: '1st & 10',
+        },
+      },
+    };
+    expect(spotLagKind(game)).toBeNull();
+    const sides = listDriveSides(game);
+    const current = evaluateDriveGame(game, { market: sides[0] });
+    const next = evaluateDriveGame(game, { market: sides[1] });
+    expect(current.situationLag).toBe(false);
+    expect(next.situationLag).toBe(false);
+    expect(current.offenseSide).toBe('home');
+    expect(current.pred.layer).toBe('snap');
+    expect(current.pred.features.down).toBe(1);
+    expect(current.pred.features.distance).toBe(10);
+    expect(current.pred.features.ytg).toBe(71);
+    expect(next.offenseSide).toBe('away');
+    expect(next.pred.layer).toBe('driveStart');
+    expect(next.pred.predictedStart).toBe(true);
+    expect(next.pred.features.ytg).not.toBe(48);
+  });
 });
 
 describe('FAU / Army punt style warning', () => {

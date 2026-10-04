@@ -12,6 +12,7 @@ import {
   nonEspnSourceAhead,
   parseFdLiveSituation,
   pickBestLiveState,
+  postPuntReceiptLock,
   resolveFdPossessionSide,
   situationKey,
 } from './fdLiveSituation';
@@ -411,6 +412,48 @@ describe('pickBestLiveState', () => {
     };
     const out = pickBestLiveState(game);
     expect(out.score).toEqual({ home: 14, away: 7 });
+  });
+});
+
+describe('postPuntReceiptLock', () => {
+  it('parses Drive Over as a series-over spot', () => {
+    const sit = parseFdLiveSituation(xmlWith(['Q2', '8:10', 'Drive Over']));
+    expect(sit.downDistance).toBe('Drive Over');
+    expect(sit.seriesOver).toBe('drive over');
+    expect(sit.down).toBeUndefined();
+  });
+
+  it('locks the other team’s 1st-and-10 instead of the Drive Over clock', () => {
+    const espn = {
+      period: 2,
+      clockSeconds: 8 * 60 + 40,
+      down: 1,
+      distance: 10,
+      yardsToEndzone: 68,
+      possession: 'home',
+      lastPlay: 'Smith punt 42 yards to the FSU32',
+      lastPlayType: 'Punt',
+    };
+    const fd = {
+      period: 2,
+      clockSeconds: 8 * 60 + 10,
+      downDistance: 'Drive Over',
+      seriesOver: 'drive over',
+      possession: 'away',
+    };
+    expect(postPuntReceiptLock(espn, fd)).toBe(espn);
+    expect(liveSpotsDisagree(espn, fd)).toBe(true);
+
+    const game = {
+      inPlay: true,
+      teams: { home: 'Florida State', away: 'SMU' },
+      live: { ...espn, fd },
+    };
+    const best = pickBestLiveState(game);
+    expect(best.live.spotSource).toBe('espn');
+    expect(best.live.down).toBe(1);
+    expect(best.live.yardsToEndzone).toBe(68);
+    expect(best.live.fdAheadOfEspn).toBeUndefined();
   });
 });
 

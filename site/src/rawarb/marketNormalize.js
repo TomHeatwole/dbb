@@ -50,6 +50,19 @@ export function parsePeriod(name) {
   if (/\b2nd (?:quarter|qtr)\b|\b2q\b|\bsecond quarter\b|\bq2\b/.test(n)) return '2q';
   if (/\b3rd (?:quarter|qtr)\b|\b3q\b|\bthird quarter\b|\bq3\b/.test(n)) return '3q';
   if (/\b4th (?:quarter|qtr)\b|\b4q\b|\bfourth quarter\b|\bq4\b/.test(n)) return '4q';
+  if (/\bfirst 5 innings\b|\b1st 5 innings\b|\bf5\b/.test(n)) return 'f5';
+  if (/\b1st period\b|\bfirst period\b|\bp1\b/.test(n)) return '1p';
+  if (/\b2nd period\b|\bsecond period\b|\bp2\b/.test(n)) return '2p';
+  if (/\b3rd period\b|\bthird period\b|\bp3\b/.test(n)) return '3p';
+  if (
+    /\b60\s*min(?:ute)?s?\b/.test(n)
+    || /\bregulation\b/.test(n)
+    || /\bexcl(?:uding|\.)?\s*ot\b/.test(n)
+    || /\bexclud(?:es|ing)\s+overtime\b/.test(n)
+  ) return 'reg';
+  if (/\b1st set\b|\bfirst set\b|\bset 1\b/.test(n)) return '1s';
+  if (/\b2nd set\b|\bsecond set\b|\bset 2\b/.test(n)) return '2s';
+  if (/\b3rd set\b|\bthird set\b|\bset 3\b/.test(n)) return '3s';
   return 'fg';
 }
 
@@ -98,19 +111,51 @@ const STAT_RULES = [
   [/team to score first|1st score|first score/i, 'first_score'],
   [/team to score last|last score/i, 'last_score'],
   [/highest scoring half/i, 'highest_half'],
+  [/shots on (?:goal|target)|\bsog\b|\bsot\b/i, 'shots'],
+  [/anytime goal|goal ?scorer|to score a goal|(?<!on )\bgoals?\b/i, 'goals'],
+  [/player points|skater points|puck points|(?:^|[\s:-])points(?:\s|$)/i, 'player_pts'],
+  [/pts?\s*\+\s*reb(?:ounds?)?\s*\+\s*ast(?:ists?)?|\bpra\b/i, 'pra'],
+  [/pts?\s*\+\s*reb(?:ounds?)?/i, 'pts_reb'],
+  [/pts?\s*\+\s*ast(?:ists?)?/i, 'pts_ast'],
+  [/reb(?:ounds?)?\s*\+\s*ast(?:ists?)?/i, 'reb_ast'],
+  [/double.?double/i, 'double_double'],
+  [/three.?pointers?|\bthrees\b|3pt/i, 'threes'],
+  [/assists?/i, 'assists'],
+  [/rebounds?/i, 'rebounds'],
+  [/steals?/i, 'steals'],
+  [/blocks?/i, 'blocks'],
+  [/shots on target|\bsot\b/i, 'sot'],
+  [/\bshots\b/i, 'shots'],
+  [/saves/i, 'saves'],
+  [/strikeouts?|\bks\b/i, 'strikeouts'],
+  [/hits?\b/i, 'hits'],
+  [/total bases/i, 'total_bases'],
+  [/\baces\b/i, 'aces'],
+  [/corners/i, 'corners'],
+  [/cards|bookings/i, 'cards'],
+  [/significant strikes/i, 'sig_strikes'],
+  [/takedowns/i, 'takedowns'],
 ];
 
 export function parseStat(name) {
   const raw = String(name ?? '');
+  if (/\b(?:total points|total goals|total runs|total games|total sets|total rounds|total corners)\b/i.test(raw)
+    && !/ - /.test(raw)
+    && !/pass|rush|rec|yards|assists|rebounds|threes|strikeouts|aces|shots|saves|player/i.test(raw)) {
+    return 'points';
+  }
   const btts = raw.match(/both teams to score\s*(\d+)\+/i);
   if (btts) return `btts_${btts[1]}`;
+  if (/both teams to score/i.test(raw) && !/[&/]/.test(raw)) return 'btts';
+  if (/draw no bet/i.test(raw)) return 'dnb';
   const race = raw.match(/race to\s*(\d+)/i);
   if (race) return `race_${race[1]}`;
   for (const [re, stat] of STAT_RULES) {
     if (re.test(raw)) return stat;
   }
-  if (/\btotal points\b|\btotal\b|\bo\/u\b/i.test(raw)) return 'points';
-  if (/\bspread\b|\bhandicap\b|\bwinner\b|\bmoneyline\b/i.test(raw)) return 'points';
+  if (/\bspread\b|\bhandicap\b|\bpuck line\b|\brun line\b|\bwinner\b|\bmoneyline\b/i.test(raw)) {
+    return 'points';
+  }
   return 'points';
 }
 
@@ -123,8 +168,12 @@ export function parseKind(name, runnerHints = {}) {
     if (isTeamTotalName(n) || runnerHints.team) return 'team_total';
     return 'total';
   }
-  if (/\bspread\b|\bhandicap\b|alternate spread/.test(n)) return 'spread';
-  if (/\bmoneyline\b|\bwinner\b|\bto win\b/.test(n) && !/margin/.test(n)) return 'moneyline';
+  if (/\bspread\b|\bhandicap\b|alternate spread|puck line|run line|point spread|game spread/.test(n)) {
+    return 'spread';
+  }
+  if (/\bmoneyline\b|\bwinner\b|\bto win\b|draw no bet/.test(n) && !/margin|3[\s-]?way/.test(n)) {
+    return 'moneyline';
+  }
   if (/\brace to\b|team to score|highest scoring/.test(n)) return 'moneyline';
   return runnerHints.kind || null;
 }
@@ -160,6 +209,14 @@ export function formatPeriod(period) {
     '2q': '2Q ',
     '3q': '3Q ',
     '4q': '4Q ',
+    f5: 'F5 ',
+    '1p': '1P ',
+    '2p': '2P ',
+    '3p': '3P ',
+    reg: '60m ',
+    '1s': '1S ',
+    '2s': '2S ',
+    '3s': '3S ',
   }[period] || '';
 }
 
@@ -199,6 +256,31 @@ export function formatStat(stat) {
     last_score: 'Last score',
     highest_half: 'Highest half',
     winner: 'ML',
+    btts: 'Both teams to score',
+    dnb: 'Draw no bet',
+    pra: 'Pts+reb+ast',
+    pts_reb: 'Pts+reb',
+    pts_ast: 'Pts+ast',
+    reb_ast: 'Reb+ast',
+    double_double: 'Double-double',
+    threes: 'Threes',
+    assists: 'Assists',
+    rebounds: 'Rebounds',
+    steals: 'Steals',
+    blocks: 'Blocks',
+    sot: 'SOT',
+    shots: 'Shots',
+    saves: 'Saves',
+    strikeouts: 'Ks',
+    hits: 'Hits',
+    total_bases: 'Total bases',
+    aces: 'Aces',
+    corners: 'Corners',
+    cards: 'Cards',
+    sig_strikes: 'Sig strikes',
+    takedowns: 'Takedowns',
+    goals: 'Goals',
+    player_pts: 'Points',
   };
   return labels[stat] || stat;
 }

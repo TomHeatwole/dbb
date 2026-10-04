@@ -5,7 +5,16 @@
 
 import { evaluateTwoWayArb } from '../corners/arbChecker.js';
 import { formatAmericanOdds } from '../sop/sopModel.js';
+import { peopleMatch } from './marketNormalize.js';
 import { lineFitFromCushion, quoteFromAmerican } from './rawArbModel.js';
+import { namesMatch, teamsMatch } from './teamMatch.js';
+
+function sameCompetitor(a, b) {
+  const la = a?.label || a?.team;
+  const lb = b?.label || b?.team;
+  if (!la || !lb) return false;
+  return namesMatch(la, lb) || peopleMatch(la, lb) || teamsMatch(la, lb);
+}
 
 function asQuote(side) {
   if (!side) return null;
@@ -45,7 +54,7 @@ export function pairMoneyline(fd, dk) {
   for (const [b1, s1, q1, b2, s2, q2] of options) {
     const a = asQuote(q1);
     const b = asQuote(q2);
-    if (!a || !b) continue;
+    if (!a || !b || sameCompetitor(q1, q2)) continue;
     const ev = evaluateTwoWayArb(a, b, 100);
     best = better(best, pack(ev, 'lock', 0, {
       book: b1, side: s1, label: q1.label || q1.team || s1, american: a.american, line: null,
@@ -56,7 +65,24 @@ export function pairMoneyline(fd, dk) {
   return best;
 }
 
+function impliedOf(side) {
+  const q = asQuote(side);
+  return q?.implied ?? null;
+}
+
+/** Same-name Yes/No on two books still has to be the same contract. */
+function yesNoSameMarket(fd, dk, yesKey, noKey) {
+  const fdYes = impliedOf(fd?.[yesKey]);
+  const dkYes = impliedOf(dk?.[yesKey]);
+  if (fdYes != null && dkYes != null && Math.abs(fdYes - dkYes) > 0.2) return false;
+  const fdNo = impliedOf(fd?.[noKey]);
+  const dkNo = impliedOf(dk?.[noKey]);
+  if (fdNo != null && dkNo != null && Math.abs(fdNo - dkNo) > 0.2) return false;
+  return true;
+}
+
 export function pairYesNo(fd, dk, yesKey = 'yes', noKey = 'no') {
+  if (!yesNoSameMarket(fd, dk, yesKey, noKey)) return null;
   const options = [
     ['fd', yesKey, fd?.[yesKey], 'dk', noKey, dk?.[noKey]],
     ['fd', noKey, fd?.[noKey], 'dk', yesKey, dk?.[yesKey]],
@@ -141,6 +167,39 @@ export function pairTotals(fd, dk) {
   return { best, arbs };
 }
 
+/** Player O/U only at a line both books actually two-side. No longshot alt vs main. */
+export function pairPlayerTotals(fd, dk) {
+  const lines = new Set();
+  for (const book of [fd, dk]) {
+    for (const side of ['over', 'under']) {
+      for (const row of listSides(book, side)) {
+        if (Number.isFinite(row.line)) lines.add(row.line);
+      }
+    }
+  }
+  let best = null;
+  const arbs = [];
+  const atLine = (book, side, line) => (
+    listSides(book, side).find((row) => row.line === line) || null
+  );
+  for (const line of lines) {
+    const fdOver = atLine(fd, 'over', line);
+    const fdUnder = atLine(fd, 'under', line);
+    const dkOver = atLine(dk, 'over', line);
+    const dkUnder = atLine(dk, 'under', line);
+    if (!fdOver || !fdUnder || !dkOver || !dkUnder) continue;
+    const { best: row, arbs: extra } = pairTotals(
+      { over: fdOver, under: fdUnder },
+      { over: dkOver, under: dkUnder },
+    );
+    if (row) best = better(best, row);
+    for (const arb of extra) {
+      if (arb !== row) arbs.push(arb);
+    }
+  }
+  return { best, arbs };
+}
+
 export function pairContract(kind, fd, dk) {
   if (kind === 'moneyline') return { best: pairMoneyline(fd, dk), arbs: [] };
   if (kind === 'yesno') {
@@ -148,6 +207,7 @@ export function pairContract(kind, fd, dk) {
     return { best: pairYesNo(fd, dk, 'yes', 'no'), arbs: [] };
   }
   if (kind === 'spread') return pairSpreads(fd, dk);
+  if (kind === 'player_ou') return pairPlayerTotals(fd, dk);
   return pairTotals(fd, dk);
 }
 

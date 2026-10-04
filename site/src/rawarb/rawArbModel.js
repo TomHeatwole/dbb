@@ -5,12 +5,17 @@
 
 import { evaluateTwoWayArb } from '../corners/arbChecker.js';
 import { americanToImpliedProb, formatAmericanOdds } from '../sop/sopModel.js';
-import { gameOrientation } from './teamMatch.js';
+import { peopleMatch } from './marketNormalize.js';
+import { matchModeForSport } from './sportCatalog.js';
+import { nycVisibleExtras } from './nycFilter.js';
+import { matchQuality, namesMatch, teamsMatch } from './teamMatch.js';
 
 export function parseSignedAmerican(raw) {
   if (raw == null || raw === '') return null;
   if (typeof raw === 'number' && Number.isFinite(raw) && raw !== 0) return raw;
-  const n = Number(String(raw).trim().replace(/\u2212/g, '-').replace(/^\+/, ''));
+  const n = Number(
+    String(raw).trim().replace(/[\u2212\u2013\u2014]/g, '-').replace(/^\+/, ''),
+  );
   return Number.isFinite(n) && n !== 0 ? n : null;
 }
 
@@ -128,25 +133,33 @@ function totalPair(over, under, overLeg, underLeg) {
   };
 }
 
+function sameCompetitor(a, b) {
+  const ta = a?.team;
+  const tb = b?.team;
+  if (!ta || !tb) return false;
+  return namesMatch(ta, tb) || peopleMatch(ta, tb) || teamsMatch(ta, tb);
+}
+
 export function moneylineTwoWay(fd, dk, teams = {}) {
   const fdAway = sideQuote(fd, 'away', { team: teams.away });
   const fdHome = sideQuote(fd, 'home', { team: teams.home });
   const dkAway = sideQuote(dk, 'away', { team: teams.away });
   const dkHome = sideQuote(dk, 'home', { team: teams.home });
+  if (sameCompetitor(fdAway, fdHome) || sameCompetitor(dkAway, dkHome)) return null;
   return pickBestTwoWay(
-    {
+    sameCompetitor(fdAway, dkHome) ? null : {
       a: fdAway,
       b: dkHome,
       lineFit: 'lock',
-      legA: leg('fd', 'away', fdAway, teams.away || 'Away'),
-      legB: leg('dk', 'home', dkHome, teams.home || 'Home'),
+      legA: leg('fd', 'away', fdAway, fdAway?.team || teams.away || 'Away'),
+      legB: leg('dk', 'home', dkHome, dkHome?.team || teams.home || 'Home'),
     },
-    {
+    sameCompetitor(fdHome, dkAway) ? null : {
       a: fdHome,
       b: dkAway,
       lineFit: 'lock',
-      legA: leg('fd', 'home', fdHome, teams.home || 'Home'),
-      legB: leg('dk', 'away', dkAway, teams.away || 'Away'),
+      legA: leg('fd', 'home', fdHome, fdHome?.team || teams.home || 'Home'),
+      legB: leg('dk', 'away', dkAway, dkAway?.team || teams.away || 'Away'),
     },
   );
 }
@@ -237,57 +250,46 @@ function orientDkToFd(dk, orientation) {
   };
 }
 
-export function matchFdToDk(fdGames, dkGames) {
+export function matchFdToDk(fdGames, dkGames, mode = 'loose') {
   const used = new Set();
   return fdGames.map((fd) => {
-    let orientation = null;
-    const hit = dkGames.find((dk, idx) => {
-      if (used.has(idx)) return false;
-      const how = gameOrientation(fd, dk);
-      if (!how) return false;
-      orientation = how;
-      return true;
+    let best = null;
+    dkGames.forEach((dk, idx) => {
+      if (used.has(idx)) return;
+      const quality = matchQuality(fd, dk, mode);
+      if (!quality) return;
+      if (!best || quality.score > best.quality.score) best = { dk, idx, quality };
     });
-    if (hit) used.add(dkGames.indexOf(hit));
-    return { fd, dk: orientDkToFd(hit, orientation), dkFlipped: orientation === 'swap' };
+    if (best) used.add(best.idx);
+    const orientation = best?.quality.how ?? null;
+    return {
+      fd,
+      dk: orientDkToFd(best?.dk, orientation),
+      dkFlipped: orientation === 'swap',
+    };
   });
 }
 
 export function mergeBookGames(fdGames, dkGames, sport) {
-  const pairs = matchFdToDk(fdGames, dkGames);
-  const matchedDk = new Set(pairs.filter((row) => row.dk).map((row) => row.dk.eventId));
-  const merged = pairs.map(({ fd, dk, dkFlipped }) => buildGameMarkets({
+  const pairs = matchFdToDk(fdGames, dkGames, matchModeForSport(sport));
+  return pairs.filter((row) => row.dk).map(({ fd, dk, dkFlipped }) => buildGameMarkets({
     sport,
     home: fd.home,
     away: fd.away,
+    league: fd.league || dk?.league || null,
     openDate: fd.openDate || dk?.openDate || null,
     inPlay: Boolean(fd.inPlay || dk?.inPlay),
     fdEventId: fd.eventId ?? null,
     dkEventId: dk?.eventId ?? null,
+    dkLeagueId: dk?.leagueId ?? null,
     dkFlipped: Boolean(dkFlipped),
     moneyline: { fd: fd.moneyline || null, dk: dk?.moneyline || null },
     spread: { fd: fd.spread || null, dk: dk?.spread || null },
     total: { fd: fd.total || null, dk: dk?.total || null },
   }));
-  for (const dk of dkGames) {
-    if (matchedDk.has(dk.eventId)) continue;
-    merged.push(buildGameMarkets({
-      sport,
-      home: dk.home,
-      away: dk.away,
-      openDate: dk.openDate || null,
-      inPlay: Boolean(dk.inPlay),
-      fdEventId: null,
-      dkEventId: dk.eventId ?? null,
-      moneyline: { fd: null, dk: dk.moneyline || null },
-      spread: { fd: null, dk: dk.spread || null },
-      total: { fd: null, dk: dk.total || null },
-    }));
-  }
-  return merged;
 }
 
-export function sortGames(games, mode = 'best') {
+export function sortGames(games, mode = 'best', sortOpts = null) {
   const copy = [...(games ?? [])];
   if (mode === 'kickoff') {
     copy.sort((a, b) => {
@@ -300,8 +302,8 @@ export function sortGames(games, mode = 'best') {
     return copy;
   }
   copy.sort((a, b) => {
-    const pa = a.bestPSum;
-    const pb = b.bestPSum;
+    const pa = sortPSum(a, sortOpts);
+    const pb = sortPSum(b, sortOpts);
     if (pa == null && pb == null) return String(a.away).localeCompare(String(b.away));
     if (pa == null) return 1;
     if (pb == null) return -1;
@@ -311,11 +313,90 @@ export function sortGames(games, mode = 'best') {
   return copy;
 }
 
-export function filterGames(games, sport = 'all') {
-  if (sport === 'cfb' || sport === 'nfl') {
-    return (games ?? []).filter((game) => game.sport === sport);
+export function bookQuoteAmericans(book) {
+  if (!book || typeof book !== 'object') return [];
+  return Object.values(book).flatMap((side) => {
+    const n = parseSignedAmerican(side?.american);
+    return n == null ? [] : [n];
+  });
+}
+
+export function marketHasMinOdds(market, book, minAmerican) {
+  if (!book || !Number.isFinite(minAmerican)) return true;
+  return bookQuoteAmericans(market?.[book]).some((n) => n >= minAmerican);
+}
+
+function scorableMarkets(game, filterNyc = false) {
+  return [game?.moneyline, game?.spread, game?.total, ...nycVisibleExtras(game, filterNyc)];
+}
+
+export function gameHasMinOdds(game, book, minAmerican, filterNyc = false) {
+  if (!book || !Number.isFinite(minAmerican)) return true;
+  return scorableMarkets(game, filterNyc)
+    .some((market) => marketHasMinOdds(market, book, minAmerican));
+}
+
+export function twoWayHasMinOdds(twoWay, book, minAmerican) {
+  if (!book || !Number.isFinite(minAmerican) || !twoWay?.legs?.length) return false;
+  return twoWay.legs.some((leg) => (
+    leg.book === book && parseSignedAmerican(leg.american) >= minAmerican
+  ));
+}
+
+export function bestPSumForMinOdds(game, book, minAmerican, filterNyc = false) {
+  if (!book || !Number.isFinite(minAmerican)) return visibleBestPSum(game, filterNyc);
+  const sums = scorableMarkets(game, filterNyc)
+    .map((market) => market?.twoWay)
+    .filter((twoWay) => twoWayHasMinOdds(twoWay, book, minAmerican))
+    .map((twoWay) => twoWay.pSum)
+    .filter((n) => Number.isFinite(n));
+  return sums.length ? Math.min(...sums) : null;
+}
+
+/** Main ML / spread / O-U only — deep extras stay out of default sort. */
+export function visibleBestPSum(game, _filterNyc = false) {
+  const sums = [game?.moneyline, game?.spread, game?.total]
+    .map((market) => market?.twoWay?.pSum)
+    .filter((n) => Number.isFinite(n));
+  return sums.length ? Math.min(...sums) : null;
+}
+
+export function sortPSum(game, sortOpts = null) {
+  const oddsFilter = sortOpts?.oddsFilter ?? sortOpts;
+  const filterNyc = Boolean(sortOpts?.filterNyc);
+  const book = oddsFilter?.book === 'dk' || oddsFilter?.book === 'fd' ? oddsFilter.book : null;
+  const minAmerican = oddsFilter?.minAmerican;
+  if (book && Number.isFinite(minAmerican)) {
+    return bestPSumForMinOdds(game, book, minAmerican, filterNyc);
   }
-  return [...(games ?? [])];
+  return visibleBestPSum(game, filterNyc);
+}
+
+export function isBestTwoWay(market, game, sortOpts = null) {
+  const twoWay = market?.twoWay;
+  if (!twoWay || !Number.isFinite(twoWay.pSum)) return false;
+  const target = sortPSum(game, sortOpts);
+  if (!Number.isFinite(target) || twoWay.pSum !== target) return false;
+  const oddsFilter = sortOpts?.oddsFilter ?? sortOpts;
+  const book = oddsFilter?.book === 'dk' || oddsFilter?.book === 'fd' ? oddsFilter.book : null;
+  if (book && Number.isFinite(oddsFilter?.minAmerican)) {
+    return twoWayHasMinOdds(twoWay, book, oddsFilter.minAmerican);
+  }
+  return true;
+}
+
+export function filterGames(games, sport = 'all', timing = 'all', filterOpts = null) {
+  const oddsFilter = filterOpts?.oddsFilter ?? filterOpts;
+  const filterNyc = Boolean(filterOpts?.filterNyc);
+  const book = oddsFilter?.book === 'dk' || oddsFilter?.book === 'fd' ? oddsFilter.book : null;
+  const minAmerican = oddsFilter?.minAmerican;
+  return (games ?? []).filter((game) => {
+    if (sport && sport !== 'all' && game.sport !== sport) return false;
+    if (timing === 'live' && !game.inPlay) return false;
+    if (timing === 'upcoming' && game.inPlay) return false;
+    if (book && Number.isFinite(minAmerican) && !gameHasMinOdds(game, book, minAmerican, filterNyc)) return false;
+    return true;
+  });
 }
 
 export function formatBookSides(book, kind) {

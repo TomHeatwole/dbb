@@ -8,20 +8,17 @@ import {
   formatCombinedPct,
   formatJuicePct,
   formatTwoWayLegs,
+  isBestTwoWay,
+  parseSignedAmerican,
   sortGames,
 } from '../rawarb/rawArbModel';
 import { formatSidesForRow } from '../rawarb/twoWayPairs';
 import { applyDeepAttachments, extraRowsForDisplay } from '../rawarb/mergeDeep';
+import { sportFiltersFor, sportLabel } from '../rawarb/sportCatalog';
 
 const OG_TITLE = 'Raw Arb';
-const OG_DESCRIPTION = 'FanDuel vs DraftKings CFB and NFL two-way markets';
+const OG_DESCRIPTION = 'FanDuel vs DraftKings two-way markets across every sport both books list';
 const REFRESH_MS = 60_000;
-
-const SPORT_FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'cfb', label: 'CFB' },
-  { id: 'nfl', label: 'NFL' },
-];
 
 const MARKET_ROWS = [
   { key: 'moneyline', label: 'ML', kind: 'moneyline' },
@@ -89,15 +86,17 @@ function MarketRow({ label, kind, market, best, wide }) {
   );
 }
 
-function GameCard({ game, deepStatus }) {
-  const { promoted, rest } = extraRowsForDisplay(game);
+function GameCard({ game, deepStatus, oddsFilter, filterNyc }) {
+  const { promoted, rest } = extraRowsForDisplay(game, { oddsFilter, filterNyc });
   const [open, setOpen] = useState(false);
   return (
     <article className="rawarb-card">
       <header className="rawarb-card-head">
-        <span className="rawarb-sport">{game.sport.toUpperCase()}</span>
+        <span className="rawarb-sport">{sportLabel(game.sport)}</span>
         <h2>
-          {game.away} @ {game.home}
+          {['soccer', 'tennis', 'mma', 'boxing'].includes(game.sport)
+            ? `${game.home} v ${game.away}`
+            : `${game.away} @ ${game.home}`}
         </h2>
         <span className="rawarb-kick">
           {game.inPlay ? 'Live · ' : ''}
@@ -121,7 +120,7 @@ function GameCard({ game, deepStatus }) {
               label={row.label}
               kind={row.kind}
               market={game[row.key]}
-              best={game[row.key]?.twoWay && game[row.key].twoWay.pSum === game.bestPSum}
+              best={isBestTwoWay(game[row.key], game, { oddsFilter, filterNyc })}
             />
           ))}
           {promoted.map((row) => (
@@ -130,7 +129,7 @@ function GameCard({ game, deepStatus }) {
               label={row.label}
               kind={row.kind}
               market={row}
-              best={row.twoWay && row.twoWay.pSum === game.bestPSum}
+              best={isBestTwoWay(row, game, { oddsFilter, filterNyc })}
               wide
             />
           ))}
@@ -149,7 +148,7 @@ function GameCard({ game, deepStatus }) {
                   label={row.label}
                   kind={row.kind}
                   market={row}
-                  best={row.twoWay && row.twoWay.pSum === game.bestPSum}
+                  best={isBestTwoWay(row, game, { oddsFilter, filterNyc })}
                   wide
                 />
               ))}
@@ -174,7 +173,11 @@ function RawArbPage() {
   const [loading, setLoading] = useState(true);
   const [deepStatus, setDeepStatus] = useState('idle');
   const [sport, setSport] = useState('all');
+  const [timing, setTiming] = useState('all');
   const [sortMode, setSortMode] = useState('best');
+  const [oddsBook, setOddsBook] = useState('fd');
+  const [oddsMinRaw, setOddsMinRaw] = useState('');
+  const [filterNyc, setFilterNyc] = useState(true);
   const attachmentsRef = useRef([]);
   const deepInFlight = useRef(false);
 
@@ -233,10 +236,26 @@ function RawArbPage() {
     };
   }, [refresh, refreshDeep]);
 
-  const visible = useMemo(
-    () => sortGames(filterGames(games, sport), sortMode),
-    [games, sport, sortMode],
+  const sportFilters = useMemo(() => sportFiltersFor(games), [games]);
+  const minAmerican = useMemo(() => parseSignedAmerican(oddsMinRaw), [oddsMinRaw]);
+  const oddsFilter = Number.isFinite(minAmerican) ? { book: oddsBook, minAmerican } : null;
+  const filterOpts = useMemo(
+    () => ({ oddsFilter, filterNyc }),
+    [oddsFilter, filterNyc],
   );
+  const bySport = useMemo(() => filterGames(games, sport), [games, sport]);
+  const liveCount = useMemo(() => bySport.filter((game) => game.inPlay).length, [bySport]);
+  const upcomingCount = bySport.length - liveCount;
+  const visible = useMemo(
+    () => sortGames(filterGames(games, sport, timing, filterOpts), sortMode, filterOpts),
+    [games, sport, timing, sortMode, filterOpts],
+  );
+
+  useEffect(() => {
+    if (sport !== 'all' && !sportFilters.some((opt) => opt.id === sport)) {
+      setSport('all');
+    }
+  }, [sport, sportFilters]);
 
   const stamp = fetchedAt
     ? new Date(fetchedAt).toLocaleTimeString('en-US', { timeZone: 'America/New_York' })
@@ -249,16 +268,32 @@ function RawArbPage() {
       <div className="rawarb-page">
         <header className="rawarb-head">
           <h1>Raw Arb</h1>
-          <p>CFB + NFL · FanDuel vs DraftKings · every pairable two-way</p>
+          <p>Every sport on both books · FanDuel vs DraftKings · every pairable two-way</p>
         </header>
         <div className="rawarb-toolbar">
           <div className="rawarb-filters" role="group" aria-label="Sport">
-            {SPORT_FILTERS.map((opt) => (
+            {sportFilters.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
                 className={`rawarb-chip${sport === opt.id ? ' rawarb-chip--on' : ''}`}
                 onClick={() => setSport(opt.id)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div className="rawarb-filters rawarb-filters--timing" role="group" aria-label="When">
+            {[
+              { id: 'all', label: 'All games' },
+              { id: 'live', label: liveCount ? `Live ${liveCount}` : 'Live' },
+              { id: 'upcoming', label: upcomingCount ? `Upcoming ${upcomingCount}` : 'Upcoming' },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                className={`rawarb-chip${opt.id === 'live' ? ' rawarb-chip--live' : ''}${timing === opt.id ? ' rawarb-chip--on' : ''}`}
+                onClick={() => setTiming(opt.id)}
               >
                 {opt.label}
               </button>
@@ -271,6 +306,35 @@ function RawArbPage() {
               <option value="kickoff">Kickoff</option>
             </select>
           </label>
+          <div className="rawarb-odds" role="group" aria-label="Minimum odds">
+            <span>Min odds</span>
+            {[{ id: 'fd', label: 'FD' }, { id: 'dk', label: 'DK' }].map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                className={`rawarb-chip${oddsBook === opt.id ? ' rawarb-chip--on' : ''}`}
+                onClick={() => setOddsBook(opt.id)}
+              >
+                {opt.label}
+              </button>
+            ))}
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="+1500"
+              value={oddsMinRaw}
+              onChange={(e) => setOddsMinRaw(e.target.value)}
+              aria-label="Minimum American odds"
+            />
+          </div>
+          <button
+            type="button"
+            className={`rawarb-chip${filterNyc ? ' rawarb-chip--on' : ''}`}
+            onClick={() => setFilterNyc((on) => !on)}
+            aria-pressed={filterNyc}
+          >
+            Filter out NYC
+          </button>
           <div className="rawarb-meta">
             {stats
               ? `${visible.length} games · ${stats.withTwoWay ?? 0} with both books`
@@ -303,10 +367,20 @@ function RawArbPage() {
                 key={`${game.sport}-${game.fdEventId || game.dkEventId || `${game.away}-${game.home}`}`}
                 game={game}
                 deepStatus={deepStatus}
+                oddsFilter={oddsFilter}
+                filterNyc={filterNyc}
               />
             ))}
             {!visible.length && !loading && (
-              <p className="rawarb-empty">No games for that sport right now.</p>
+              <p className="rawarb-empty">
+                {oddsFilter
+                  ? `No games with ${oddsBook === 'dk' ? 'DraftKings' : 'FanDuel'} ${minAmerican > 0 ? '+' : ''}${minAmerican} or longer.`
+                  : timing === 'live'
+                    ? 'No live games right now.'
+                    : timing === 'upcoming'
+                      ? 'No upcoming games for that sport.'
+                      : 'No games for that sport right now.'}
+              </p>
             )}
           </div>
         )}

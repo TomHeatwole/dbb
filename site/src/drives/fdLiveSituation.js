@@ -394,6 +394,63 @@ export function liveSpotsDisagree(a, b) {
   return false;
 }
 
+function situationBlob(sit) {
+  return [
+    sit?.downDistance,
+    sit?.situationText,
+    sit?.statusText,
+    sit?.seriesOver,
+    sit?.lastPlay,
+    sit?.lastPlayType,
+    sit?.driveChart?.currentResult,
+  ].filter(Boolean).join(' ');
+}
+
+function possessionSideOf(sit) {
+  return sit?.possession === 'home' || sit?.possession === 'away' ? sit.possession : null;
+}
+
+function isFreshFirstDown(sit) {
+  if (intOrNull(sit?.down) !== 1) return false;
+  if (isGoalToGo(sit)) return true;
+  const dist = intOrNull(sit?.distance);
+  return dist == null || dist >= 10;
+}
+
+function isDriveOverSit(sit) {
+  return /drive\s*over/i.test(situationBlob(sit));
+}
+
+/**
+ * A punt that already happened, and the other team’s ensuing 1st-and-10,
+ * are the same spot. Clock skew between "Drive Over" and that 1st down
+ * is not a new snap.
+ *
+ * Returns the 1st-down snapshot to lock, or null.
+ */
+export function postPuntReceiptLock(espn, fd) {
+  if (!espn || !fd) return null;
+  const punt = /punt/i.test(situationBlob(espn))
+    || /punt/i.test(situationBlob(fd))
+    || isDriveOverSit(espn)
+    || isDriveOverSit(fd);
+  if (!punt) return null;
+  const espnFirst = isFreshFirstDown(espn);
+  const fdFirst = isFreshFirstDown(fd);
+  if (espnFirst === fdFirst) return null;
+  const first = espnFirst ? espn : fd;
+  const stale = espnFirst ? fd : espn;
+  const staleDown = intOrNull(stale.down);
+  const staleIsPriorSeries = isDriveOverSit(stale)
+    || staleDown == null
+    || staleDown >= 4;
+  if (!staleIsPriorSeries) return null;
+  const firstPoss = possessionSideOf(first);
+  const stalePoss = possessionSideOf(stale);
+  if (firstPoss && stalePoss && firstPoss === stalePoss) return null;
+  return first;
+}
+
 /** Posted clock / down / distance agree. FanDuel omitting yardline still counts as a match. */
 export function liveSnapsAgree(a, b) {
   if (!a || !b) return false;
@@ -439,6 +496,10 @@ export function parseFdLiveSituation(xml) {
         if (out.clockSeconds == null) out.clockSeconds = 0;
         if (!out.clock) out.clock = 'Halftime';
       }
+    }
+    if (/^drive\s*over$/i.test(String(text || '').trim()) && !out.seriesOver) {
+      out.seriesOver = 'drive over';
+      if (!out.downDistance) out.downDistance = 'Drive Over';
     }
     const down = parseDownToken(text);
     if (down && out.down == null) {
@@ -848,9 +909,18 @@ export function pickBestLiveState(game) {
   const candidates = collectLiveSourceCandidates(game);
   if (!candidates.length) return game;
 
-  const winner = pickWinningSource(candidates);
   const espnCandidate = candidates.find((row) => row.id === 'espn');
-  const fdAhead = winner?.id !== 'espn'
+  const fdCandidate = candidates.find((row) => row.id === 'fd');
+  const receipt = postPuntReceiptLock(espnCandidate?.raw, fdCandidate?.raw);
+  let winner = pickWinningSource(candidates);
+  if (receipt) {
+    const locked = candidates.find((row) => row.raw === receipt);
+    if (locked) winner = locked;
+  }
+  // A punt receipt is one spot. Don't treat the other feed's clock as ahead.
+  const puntLocked = Boolean(receipt && winner?.raw === receipt);
+  const fdAhead = !puntLocked
+    && winner?.id !== 'espn'
     && espnCandidate
     && (liveSourceAheadOf(winner.sit, espnCandidate.sit)
       || fdStateAheadOfEspn(winner.sit, espnCandidate.sit));

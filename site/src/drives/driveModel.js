@@ -38,6 +38,7 @@ import {
   liveSpotsDisagree,
   liveSnapsAgree,
   espnClockAheadOfFd,
+  postPuntReceiptLock,
   pickBestLiveState,
   applyFdAheadLive,
 } from './fdLiveSituation.js';
@@ -588,6 +589,8 @@ export function spotLagKind(game) {
   const espn = view?.live;
   const fd = espn?.fd || game?.fdLive;
   if (liveSnapsAgree(espn, fd)) return null;
+  // Punt already happened and the other team is at 1st-and-10. Same spot.
+  if (postPuntReceiptLock(espn, fd)) return null;
   const behind = Boolean(espn?.oddsAheadOfSpot)
     || Boolean(espn?.fdAheadOfEspn)
     || espnSituationLagsLastPlay(game);
@@ -945,9 +948,9 @@ export function espnSnapIsLeftover(game, snapPoss) {
   // 1st down after a punt / turnover is the new series, not a stale snap
   // of the team that just gave the ball up.
   const freshSeries = Number(live?.down) === 1 && closed;
+  if (freshSeries) return false;
   if (
-    !freshSeries
-    && closed
+    closed
     && ended === snapPoss
     && chartSide !== snapPoss
     && !lastPlayIsKickoff(live)

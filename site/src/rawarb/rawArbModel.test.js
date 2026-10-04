@@ -3,6 +3,8 @@ import {
   filterGames,
   formatCombinedPct,
   formatJuicePct,
+  gameHasMinOdds,
+  isBestTwoWay,
   mergeBookGames,
   moneylineTwoWay,
   parseSignedAmerican,
@@ -11,12 +13,16 @@ import {
   sortGames,
   spreadTwoWay,
   totalTwoWay,
+  visibleBestPSum,
 } from './rawArbModel';
-import { gamesMatch, parseEventTeams, teamsMatch } from './teamMatch';
+import { gamesMatch, parseEventTeams, personMatch, teamsMatch } from './teamMatch';
+import { isThreeWayMoneyline, SPORT_FILTERS, sportFiltersFor } from './sportCatalog';
+import { fillMainsFromExtras } from './mergeDeep';
 
 describe('parseSignedAmerican', () => {
   it('reads unicode minus and plus prefixes', () => {
     expect(parseSignedAmerican('−110')).toBe(-110);
+    expect(parseSignedAmerican('–1660')).toBe(-1660);
     expect(parseSignedAmerican('+150')).toBe(150);
     expect(parseSignedAmerican(-105)).toBe(-105);
   });
@@ -31,6 +37,16 @@ describe('team matching', () => {
     expect(teamsMatch('New York Giants', 'NY Jets')).toBe(false);
     expect(teamsMatch('Los Angeles Rams', 'LA Rams')).toBe(true);
     expect(teamsMatch('Los Angeles Chargers', 'LA Rams')).toBe(false);
+    expect(teamsMatch('Detroit Lions', 'DET Lions')).toBe(true);
+    expect(teamsMatch('Denver Broncos', 'DEN Broncos')).toBe(true);
+    expect(teamsMatch('Chicago Bears', 'CHI Bears')).toBe(true);
+    expect(teamsMatch('Atlanta Falcons', 'ATL Falcons')).toBe(true);
+    expect(teamsMatch('Philadelphia Eagles', 'PHI Eagles')).toBe(true);
+    expect(teamsMatch('Dallas Cowboys', 'DAL Cowboys')).toBe(true);
+    expect(gamesMatch(
+      parseEventTeams('Detroit Lions @ Carolina Panthers'),
+      parseEventTeams('DET Lions @ CAR Panthers'),
+    )).toBe(true);
   });
 
   it('does not collapse Georgia / Georgia Tech', () => {
@@ -53,6 +69,28 @@ describe('team matching', () => {
     )).toBe(true);
     expect(teamsMatch('Connecticut', 'UConn')).toBe(true);
     expect(teamsMatch('Massachusetts', 'UMass')).toBe(true);
+  });
+
+  it('strips pitcher notes and matches soccer / tennis names', () => {
+    expect(parseEventTeams('Atlanta Braves (TBD) @ Los Angeles Dodgers (T Skubal)')).toEqual({
+      away: 'Atlanta Braves',
+      home: 'Los Angeles Dodgers',
+    });
+    expect(teamsMatch('Manchester City', 'Man City')).toBe(true);
+    expect(teamsMatch('Newcastle United', 'Manchester United')).toBe(false);
+    expect(personMatch('Elena Rybakina', 'E. Rybakina')).toBe(true);
+    expect(parseEventTeams('Polina Kudermetova v Mirra Andreeva')).toEqual({
+      home: 'Polina Kudermetova',
+      away: 'Mirra Andreeva',
+    });
+    expect(parseEventTeams('Polina Kudermetova vs Mirra Andreeva')).toEqual({
+      home: 'Polina Kudermetova',
+      away: 'Mirra Andreeva',
+    });
+    expect(isThreeWayMoneyline('Moneyline (3-way)', ['Liverpool', 'Draw', 'Man City'])).toBe(true);
+    expect(isThreeWayMoneyline('Moneyline', ['Inter', 'Draw', 'Parma'])).toBe(true);
+    expect(isThreeWayMoneyline('Moneyline', ['Celtics', 'Pistons'])).toBe(false);
+    expect(isThreeWayMoneyline('Draw No Bet', ['Inter', 'Parma'])).toBe(false);
   });
 });
 
@@ -82,6 +120,21 @@ describe('cross-book two-way', () => {
     );
     expect(twoWay.hasArb).toBe(true);
     expect(twoWay.pSum).toBeLessThan(1);
+  });
+
+  it('does not pair the same tennis player on both books', () => {
+    const twoWay = moneylineTwoWay(
+      {
+        away: { american: -1800, team: 'Mirra Andreeva' },
+        home: { american: 920, team: 'Polina Kudermetova' },
+      },
+      {
+        away: { american: 860, team: 'Polina Kudermetova' },
+        home: { american: 860, team: 'Polina Kudermetova' },
+      },
+      { away: 'Mirra Andreeva', home: 'Polina Kudermetova' },
+    );
+    expect(twoWay).toBe(null);
   });
 
   it('keeps complementary spreads and +3.5 vs -3 middles, drops -3.5 vs +3 gaps', () => {
@@ -174,6 +227,39 @@ describe('merge + sort', () => {
     total: { over: { american: -105, line: 55.5 }, under: { american: -115, line: 55.5 } },
   }];
 
+  it('does not treat an NBA home-and-home as one flipped game', () => {
+    const [xmas] = mergeBookGames(
+      [{
+        eventId: 'fd-xmas',
+        home: 'Minnesota Timberwolves',
+        away: 'Oklahoma City Thunder',
+        openDate: '2026-12-26T01:00:00.000Z',
+        moneyline: { away: { american: -158 }, home: { american: 134 } },
+      }],
+      [
+        {
+          eventId: 'dk-nov',
+          home: 'Oklahoma City Thunder',
+          away: 'Minnesota Timberwolves',
+          openDate: '2026-11-26T00:40:00.000Z',
+          moneyline: { away: { american: 295 }, home: { american: -375 } },
+        },
+        {
+          eventId: 'dk-xmas',
+          home: 'Minnesota Timberwolves',
+          away: 'Oklahoma City Thunder',
+          openDate: '2026-12-26T01:10:00.000Z',
+          moneyline: { away: { american: -155 }, home: { american: 130 } },
+        },
+      ],
+      'nba',
+    );
+    expect(xmas.dkEventId).toBe('dk-xmas');
+    expect(xmas.moneyline.dk.away.american).toBe(-155);
+    expect(xmas.moneyline.dk.home.american).toBe(130);
+    expect(xmas.moneyline.twoWay.hasArb).toBe(false);
+  });
+
   it('flips DK sides when home/away are reversed', () => {
     const [game] = mergeBookGames(
       [{
@@ -231,6 +317,102 @@ describe('merge + sort', () => {
     const sorted = sortGames([wide, close], 'best');
     expect(sorted[0].sport).toBe('nfl');
     expect(filterGames(sorted, 'cfb')).toHaveLength(1);
+    const live = { ...close, inPlay: true };
+    const upcoming = { ...wide, inPlay: false };
+    expect(filterGames([live, upcoming], 'all', 'live')).toEqual([live]);
+    expect(filterGames([live, upcoming], 'all', 'upcoming')).toEqual([upcoming]);
+    expect(sportFiltersFor(sorted).map((row) => row.id)).toEqual(SPORT_FILTERS.map((row) => row.id));
+    expect(gameHasMinOdds(close, 'fd', 1500)).toBe(false);
+    const longshot = {
+      ...close,
+      extras: [{
+        key: 'fg|yesno|anytime|player:foo',
+        fd: { yes: { american: 1600 }, no: { american: -4000 } },
+        dk: { yes: { american: 900 }, no: { american: -2000 } },
+      }],
+    };
+    expect(gameHasMinOdds(longshot, 'fd', 1500)).toBe(true);
+    expect(gameHasMinOdds(longshot, 'dk', 1500)).toBe(false);
+    expect(filterGames([close, longshot], 'all', 'all', { oddsFilter: { book: 'fd', minAmerican: 1500 } })).toEqual([longshot]);
+    expect(gameHasMinOdds({ moneyline: { fd: { away: { american: -110 }, home: { american: -110 } } } }, 'fd', -110)).toBe(true);
+    expect(gameHasMinOdds({ moneyline: { fd: { away: { american: -150 }, home: { american: 130 } } } }, 'fd', -110)).toBe(true);
+    expect(gameHasMinOdds({ moneyline: { fd: { away: { american: -150 }, home: { american: -170 } } } }, 'fd', -110)).toBe(false);
+
+    const emptyMainsHiddenExtra = buildGameMarkets({
+      sport: 'soccer',
+      home: 'Netherlands',
+      away: 'Serbia',
+      moneyline: { fd: null, dk: null },
+      spread: { fd: null, dk: null },
+      total: { fd: null, dk: null },
+    });
+    emptyMainsHiddenExtra.extras = [{
+      key: 'fg|moneyline|winner|game',
+      label: 'ML',
+      kind: 'moneyline',
+      main: true,
+      twoWay: { pSum: 0.57, hasArb: true, legs: [] },
+    }];
+    expect(visibleBestPSum(emptyMainsHiddenExtra)).toBeNull();
+    const withMain = buildGameMarkets({
+      sport: 'tennis',
+      home: 'Coco Gauff',
+      away: 'Xinran Sun',
+      moneyline: {
+        fd: { away: { american: 1160 }, home: { american: -2800 } },
+        dk: { away: { american: -2200 }, home: { american: 1020 } },
+      },
+    });
+    expect(sortGames([emptyMainsHiddenExtra, withMain], 'best')[0].home).toBe('Coco Gauff');
+
+    const juiceLongshot = {
+      ...close,
+      away: 'Broncos',
+      extras: [{
+        key: 'fg|yesno|anytime|player:juice',
+        fd: { yes: { american: 1600 }, no: { american: -4000 } },
+        twoWay: {
+          pSum: 1.12,
+          legs: [{ book: 'fd', american: 1600 }, { book: 'dk', american: -220 }],
+        },
+      }],
+    };
+    const evenLongshot = {
+      ...wide,
+      extras: [{
+        key: 'fg|yesno|anytime|player:even',
+        fd: { yes: { american: 1800 }, no: { american: -5000 } },
+        twoWay: {
+          pSum: 1.03,
+          legs: [{ book: 'fd', american: 1800 }, { book: 'dk', american: -110 }],
+        },
+      }],
+    };
+    expect(sortGames([juiceLongshot, evenLongshot], 'best')[0].away).toBe('Broncos');
+    expect(sortGames([juiceLongshot, evenLongshot], 'best', { oddsFilter: { book: 'fd', minAmerican: 1500 } })[0].away).toBe('Georgia');
+    expect(isBestTwoWay(juiceLongshot.moneyline, juiceLongshot, { oddsFilter: { book: 'fd', minAmerican: 1500 } })).toBe(false);
+    expect(isBestTwoWay(evenLongshot.extras[0], evenLongshot, { oddsFilter: { book: 'fd', minAmerican: 1500 } })).toBe(true);
+  });
+
+  it('fills empty soccer mains from deep extras', () => {
+    const game = buildGameMarkets({
+      sport: 'soccer',
+      home: 'Liverpool',
+      away: 'Man City',
+      moneyline: { fd: null, dk: null },
+      spread: { fd: null, dk: null },
+      total: { fd: null, dk: null },
+    });
+    const filled = fillMainsFromExtras(game, [{
+      key: 'fg|total|points|game',
+      kind: 'total',
+      main: true,
+      fd: { over: { american: -110, line: 2.5 }, under: { american: -110, line: 2.5 } },
+      dk: { over: { american: 100, line: 2.5 }, under: { american: -120, line: 2.5 } },
+      twoWay: { pSum: 0.99, hasArb: true, legs: [] },
+    }]);
+    expect(filled.total.twoWay.pSum).toBe(0.99);
+    expect(filled.bestPSum).toBe(0.99);
   });
 
   it('does not rank a gap spread as the game best', () => {
