@@ -12,6 +12,9 @@ import './App.css';
 import HomePage from './routes/HomePage';
 import OldHomePage from './routes/OldHomePage';
 import Sidebar from './layout/Sidebar';
+import GamblingSidebar from './layout/GamblingSidebar';
+import GamblingMobileNav from './layout/GamblingMobileNav';
+import { isGamblingRoute } from './layout/gamblingNav';
 import SignOutControl from './layout/SignOutControl';
 import useViewportMode, { 
   useShowVerticalSidebar, 
@@ -140,6 +143,7 @@ function AppInner() {
   const location = useLocation();
   const isHomeRoute = location.pathname === '/oldhome/';
   const pathUpper = location.pathname.toUpperCase();
+  const gamblingRoute = isGamblingRoute(location.pathname);
   const isSopRoute =
     pathUpper === '/SOP' || pathUpper.startsWith('/SOP/')
     || pathUpper === '/SOP2' || pathUpper.startsWith('/SOP2/')
@@ -238,10 +242,12 @@ function AppInner() {
     <div className={`App${isSopRoute ? ' App--sop' : ''}`}>
       {!isSopRoute && <div className="background-bg" />}
       <div className={`content-wrapper${isSopRoute ? ' content-wrapper--sop' : ''}`}>
-        {showVerticalSidebar && !isSopRoute && <Sidebar />}
+        {showVerticalSidebar && gamblingRoute && <GamblingSidebar />}
+        {showVerticalSidebar && !gamblingRoute && <Sidebar />}
         <div className={mainClassName}>
           {!isSopRoute && <div className="watermark-bg" />}
-          {showHorizontalNav && !isSopRoute && <MobileTopNav />}
+          {showHorizontalNav && gamblingRoute && <GamblingMobileNav />}
+          {showHorizontalNav && !gamblingRoute && !isSopRoute && <MobileTopNav />}
           {viewportMode === VIEWPORT_MODES.MOBILE && !isSopRoute ? (
             <div className="mobile-scale-container">{routes}</div>
           ) : (
