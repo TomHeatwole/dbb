@@ -238,7 +238,10 @@ function RawArbPage() {
 
   const sportFilters = useMemo(() => sportFiltersFor(games), [games]);
   const minAmerican = useMemo(() => parseSignedAmerican(oddsMinRaw), [oddsMinRaw]);
-  const oddsFilter = Number.isFinite(minAmerican) ? { book: oddsBook, minAmerican } : null;
+  const oddsFilter = useMemo(
+    () => (Number.isFinite(minAmerican) ? { book: oddsBook, minAmerican } : null),
+    [oddsBook, minAmerican],
+  );
   const filterOpts = useMemo(
     () => ({ oddsFilter, filterNyc }),
     [oddsFilter, filterNyc],
