@@ -17075,6 +17075,15 @@ body.modal-open {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.teams2-player-card .injury-badge {
+  flex-shrink: 0;
+  margin-left: 0;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
 }
 
 .teams2-player-card-team {

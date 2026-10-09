@@ -7,9 +7,28 @@ import { fetchTradedPicks, fetchRookieDraftComplete, buildRosterIdToTeamInfoMap 
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { calculateDraftOrder, convertPlacementToPickNumbers } from '../utils/DraftOrderHelper';
 import { getPlayerLogoUrl } from '../utils/playerLogo';
+import { getInjuryAbbreviation } from '../lookups/InjuryLookup';
 import PlayerWeeklyScores from '../players/PlayerWeeklyScores';
 import LoadingState from '../LoadingState';
 import PositionBadge from '../PositionBadge';
+
+function overviewInjuryStatus(player) {
+  if (!player) return null;
+  return player.injury_status
+    || player.injury_notes
+    || (player.status && /out|pup|questionable|doubtful|suspended|ir|injured reserve/i.test(player.status)
+      ? player.status
+      : null);
+}
+
+function InjuryTag({ player }) {
+  const status = overviewInjuryStatus(player);
+  const ab = status ? getInjuryAbbreviation(status) : null;
+  if (!ab) return null;
+  return (
+    <span className="injury-badge" title={status}>{ab}</span>
+  );
+}
 
 function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, playerList, rosters, users }) {
   const { id } = useParams();
@@ -231,6 +250,7 @@ function Teams2Overview({ weeksParsedData, loading, playersData, playerIdMap, pl
                   />
                   <div className="teams2-player-card-info">
                     <span className="teams2-player-card-name">{p.name}</span>
+                    {isCurrentSeason && <InjuryTag player={p} />}
                     {p.team && (
                       <span className="teams2-player-card-team">{p.team || p.team_abbr || ''}</span>
                     )}
