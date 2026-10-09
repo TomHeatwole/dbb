@@ -12,9 +12,14 @@ import {
   setSharedCacheHeaders,
 } from '../lib/bookCache.mjs';
 import {
+  applyEnabledBooks,
+  attachBookGames,
   mergeBookGames,
   parseSignedAmerican,
 } from '../src/rawarb/rawArbModel.js';
+import { RAW_BOOK_IDS } from '../src/rawarb/bookCatalog.js';
+import { fetchMgmGames } from './rawarb-mgm.mjs';
+import { fetchCaesarsGames } from './rawarb-caesars.mjs';
 import {
   DK_LEAGUES,
   FD_EVENT_TYPES,
@@ -337,7 +342,7 @@ function compactError(err) {
 }
 
 export async function fetchRawArbBook() {
-  const [fdResults, dkResults] = await Promise.all([
+  const [fdResults, dkResults, mgmResult, czrResult] = await Promise.all([
     mapPool(FD_EVENT_TYPES, 5, async (row) => {
       try {
         return { ok: true, eventTypeId: row.id, payload: await fdFetch(row.id) };
@@ -352,9 +357,11 @@ export async function fetchRawArbBook() {
         return { ok: false, league, error: compactError(err) };
       }
     }),
+    fetchMgmGames().catch((err) => ({ games: [], notices: [`BetMGM: ${compactError(err)}`] })),
+    fetchCaesarsGames().catch((err) => ({ games: [], notices: [`Caesars: ${compactError(err)}`] })),
   ]);
 
-  const notices = [];
+  const notices = [...(mgmResult.notices || []), ...(czrResult.notices || [])];
   const fdBySport = new Map();
   for (const row of fdResults) {
     if (!row.ok) {
@@ -381,10 +388,13 @@ export async function fetchRawArbBook() {
   }
 
   const sports = new Set([...fdBySport.keys(), ...dkBySport.keys()]);
-  const games = [];
+  let games = [];
   for (const sport of sports) {
     games.push(...mergeBookGames(fdBySport.get(sport) ?? [], dkBySport.get(sport) ?? [], sport));
   }
+  games = attachBookGames(games, mgmResult.games || [], 'mgm');
+  games = attachBookGames(games, czrResult.games || [], 'czr');
+  games = games.map((game) => applyEnabledBooks(game, RAW_BOOK_IDS));
 
   const fetchedAt = new Date().toISOString();
   const bySport = {};
@@ -399,6 +409,8 @@ export async function fetchRawArbBook() {
       games: games.length,
       bySport,
       withBothBooks: games.filter((g) => g.fdEventId && g.dkEventId).length,
+      withMgm: games.filter((g) => g.mgmEventId).length,
+      withCzr: games.filter((g) => g.czrEventId).length,
       withTwoWay: games.filter((g) => g.bestPSum != null).length,
       cfb: bySport.cfb || 0,
       nfl: bySport.nfl || 0,
@@ -415,9 +427,9 @@ export default async function handler(req, res) {
     const ttlMs = 60_000;
     const data = fresh
       ? await fetchRawArbBook()
-      : await cachedBook('rawarb-v2', fetchRawArbBook, () => ttlMs, { persist: true });
+      : await cachedBook('rawarb-v4', fetchRawArbBook, () => ttlMs, { persist: true });
     if (fresh) {
-      await fillBookCache('rawarb-v2', data, ttlMs, { persist: true });
+      await fillBookCache('rawarb-v4', data, ttlMs, { persist: true });
       setNoStore(res);
     } else {
       setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));

@@ -51,6 +51,18 @@ export function parsePeriod(name) {
   if (/\b3rd (?:quarter|qtr)\b|\b3q\b|\bthird quarter\b|\bq3\b/.test(n)) return '3q';
   if (/\b4th (?:quarter|qtr)\b|\b4q\b|\bfourth quarter\b|\bq4\b/.test(n)) return '4q';
   if (/\bfirst 5 innings\b|\b1st 5 innings\b|\bf5\b/.test(n)) return 'f5';
+  if (/\bfirst 3 innings\b|\b1st 3 innings\b/.test(n)) return 'f3';
+  if (/\bfirst 7 innings\b|\b1st 7 innings\b/.test(n)) return 'f7';
+  const inningNo = n.match(/\b(\d+)(?:st|nd|rd|th)\s+inning\b/);
+  if (inningNo) {
+    const inning = Number(inningNo[1]);
+    if (inning >= 1 && inning <= 9) return `${inning}i`;
+  }
+  const inningWord = n.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)\s+inning\b/);
+  if (inningWord) {
+    const nIn = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9 }[inningWord[1]];
+    return `${nIn}i`;
+  }
   if (/\b1st period\b|\bfirst period\b|\bp1\b/.test(n)) return '1p';
   if (/\b2nd period\b|\bsecond period\b|\bp2\b/.test(n)) return '2p';
   if (/\b3rd period\b|\bthird period\b|\bp3\b/.test(n)) return '3p';
@@ -88,6 +100,7 @@ const STAT_RULES = [
   [/interceptions?/i, 'interceptions'],
   [/longest\s+completion|longest\s+pass/i, 'longest_pass'],
   [/rec(?:eiving)?\s+(?:yds?|yards?)/i, 'rec_yds'],
+  [/receptions?\s+(?:yds?|yards?)/i, 'rec_yds'],
   [/receptions?/i, 'receptions'],
   [/longest\s+reception/i, 'longest_rec'],
   [/rush(?:ing)?\s+(?:yds?|yards?)/i, 'rush_yds'],
@@ -102,6 +115,8 @@ const STAT_RULES = [
   [/\bsacks?\b/i, 'sacks'],
   [/\btackles?\b/i, 'tackles'],
   [/fantasy/i, 'fantasy_pts'],
+  [/rush(?:ing)?\s+(?:td|touchdowns?)/i, 'rush_td'],
+  [/rec(?:eiving)?\s+(?:td|touchdowns?)/i, 'rec_td'],
   [/total touchdowns|touchdowns scored|\btd props\b|touchdown props|\btotal tds\b/i, 'tds'],
   [/anytime\s+(?:td|touchdown)|to score a touchdown/i, 'anytime_td'],
   [/overtime|will there be overtime/i, 'overtime'],
@@ -111,6 +126,8 @@ const STAT_RULES = [
   [/team to score first|1st score|first score/i, 'first_score'],
   [/team to score last|last score/i, 'last_score'],
   [/highest scoring half/i, 'highest_half'],
+  // "1st half TDs" has no word "total", so it used to fall through and merge into the points O/U.
+  [/\btd(?:s)?\b|\btouchdowns?\b/i, 'tds'],
   [/shots on (?:goal|target)|\bsog\b|\bsot\b/i, 'shots'],
   [/anytime goal|goal ?scorer|to score a goal|(?<!on )\bgoals?\b/i, 'goals'],
   [/player points|skater points|puck points|(?:^|[\s:-])points(?:\s|$)/i, 'player_pts'],
@@ -128,6 +145,18 @@ const STAT_RULES = [
   [/\bshots\b/i, 'shots'],
   [/saves/i, 'saves'],
   [/strikeouts?|\bks\b/i, 'strikeouts'],
+  [/earned runs/i, 'earned_runs'],
+  [/hits?\s*\+\s*runs?\s*\+\s*rbis?/i, 'hrr'],
+  [/runs?\s*\+\s*rbis?/i, 'runs_rbis'],
+  [/\bruns\b/i, 'runs'],
+  [/home runs?/i, 'home_runs'],
+  [/stolen bases/i, 'stolen_bases'],
+  [/\brbis?\b/i, 'rbis'],
+  [/walks/i, 'walks'],
+  [/\bouts\b/i, 'outs'],
+  [/doubles/i, 'doubles'],
+  [/triples/i, 'triples'],
+  [/singles/i, 'singles'],
   [/hits?\b/i, 'hits'],
   [/total bases/i, 'total_bases'],
   [/\baces\b/i, 'aces'],
@@ -139,8 +168,7 @@ const STAT_RULES = [
 
 export function parseStat(name) {
   const raw = String(name ?? '');
-  if (/\b(?:total points|total goals|total runs|total games|total sets|total rounds|total corners)\b/i.test(raw)
-    && !/ - /.test(raw)
+  if (/\b(?:total points|total goals|total runs|total games|total sets|total rounds)\b/i.test(raw)
     && !/pass|rush|rec|yards|assists|rebounds|threes|strikeouts|aces|shots|saves|player/i.test(raw)) {
     return 'points';
   }
@@ -191,6 +219,15 @@ function isTeamTotalName(name) {
   return /team total|total points\s*-|total touchdowns\s*-/i.test(name);
 }
 
+/** Yes/no markets name the team in the title. Leaving the subject as "game" merges different questions. */
+export function yesNoSubject(name, teams = {}) {
+  const head = String(name ?? '')
+    .split(/\s+-\s+/)[0]
+    .replace(/\bhome runs?\b|\bruns? scored\b|\bto score\b.*$/i, '')
+    .trim();
+  return teamSubject(head, teams) || teamSubject(name, teams) || 'game';
+}
+
 export function marketKey({ period, kind, stat, subject }) {
   return `${period || 'fg'}|${kind}|${stat || 'points'}|${subject || 'game'}`;
 }
@@ -209,7 +246,18 @@ export function formatPeriod(period) {
     '2q': '2Q ',
     '3q': '3Q ',
     '4q': '4Q ',
+    f3: 'F3 ',
     f5: 'F5 ',
+    f7: 'F7 ',
+    '1i': '1I ',
+    '2i': '2I ',
+    '3i': '3I ',
+    '4i': '4I ',
+    '5i': '5I ',
+    '6i': '6I ',
+    '7i': '7I ',
+    '8i': '8I ',
+    '9i': '9I ',
     '1p': '1P ',
     '2p': '2P ',
     '3p': '3P ',
@@ -249,6 +297,8 @@ export function formatStat(stat) {
     tackles_ast: 'Tackles+ast',
     fantasy_pts: 'Fantasy',
     tds: 'TDs',
+    rush_td: 'Rush TDs',
+    rec_td: 'Rec TDs',
     anytime_td: 'Anytime TD',
     overtime: 'Overtime',
     odd_even: 'Odd/Even',
@@ -273,6 +323,18 @@ export function formatStat(stat) {
     saves: 'Saves',
     strikeouts: 'Ks',
     hits: 'Hits',
+    home_runs: 'Home runs',
+    doubles: 'Doubles',
+    triples: 'Triples',
+    singles: 'Singles',
+    walks: 'Walks',
+    outs: 'Outs',
+    rbis: 'RBIs',
+    stolen_bases: 'SB',
+    earned_runs: 'Earned runs',
+    runs: 'Runs',
+    hrr: 'H+R+RBI',
+    runs_rbis: 'R+RBI',
     total_bases: 'Total bases',
     aces: 'Aces',
     corners: 'Corners',
@@ -293,6 +355,9 @@ export function formatMarketLabel(key, fallback) {
   }
   if (kind === 'spread' && subject === 'game') return `${p}Spread`.trim();
   if (kind === 'total' && subject === 'game' && stat === 'points') return `${p}O/U`.trim();
+  if (kind === 'total' && subject === 'game') {
+    return `${p}${formatStat(stat) || 'O/U'}`.replace(/\s+/g, ' ').trim();
+  }
   if (kind === 'team_total') {
     return `${p}${subject} ${formatStat(stat) || 'total'}`.replace(/\s+/g, ' ').trim();
   }

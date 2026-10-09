@@ -16,6 +16,12 @@ describe('market normalize', () => {
     expect(parsePeriod('Alternate Total Goals (Excl OT)')).toBe('reg');
     expect(parsePeriod('Total Goals (Inc. OT/SO)')).toBe('fg');
     expect(parsePeriod('2nd Period Goals')).toBe('2p');
+    expect(parsePeriod('CLE Guardians: Team Total Runs - 1st 3 Innings')).toBe('f3');
+    expect(parsePeriod('Total Runs - 1st 7 Innings')).toBe('f7');
+    expect(parsePeriod('CLE Guardians: Team Total Runs - 1st 5 Innings')).toBe('f5');
+    expect(parsePeriod('Runs - 1st Inning')).toBe('1i');
+    expect(parsePeriod('Runs - 9th Inning')).toBe('9i');
+    expect(parsePeriod('CLE Guardians: Team Total Runs')).toBe('fg');
   });
 
   it('maps player and game stats', () => {
@@ -27,6 +33,12 @@ describe('market normalize', () => {
     expect(parseStat('Nick Suzuki - Goals')).toBe('goals');
     expect(parseStat('Sidney Crosby Points')).toBe('player_pts');
     expect(parseStat('Total Goals')).toBe('points');
+    expect(parseStat('Total corners')).toBe('corners');
+    expect(parseStat('1st half total corners')).toBe('corners');
+    expect(parseStat('1st half totals')).toBe('points');
+    expect(parseStat('1st half TDs')).toBe('tds');
+    expect(parseStat('Passing TDs')).toBe('pass_td');
+    expect(parseStat('Anytime TD')).toBe('anytime_td');
     expect(parseStat('Point Spread')).not.toBe('player_pts');
     expect(parseStat('Anytime Goal Scorer')).toBe('goals');
     expect(parseStat('Sidney Crosby - Shots on Goal')).toBe('shots');
@@ -71,6 +83,9 @@ describe('extract + skip', () => {
     expect(shouldSkipMarketName('Anytime Goal Scorer')).toBe(true);
     expect(shouldSkipMarketName('Moneyline - Listed Set')).toBe(true);
     expect(shouldSkipMarketName('1st Quarter Total')).toBe(false);
+    expect(shouldSkipMarketName('Borussia Dortmund: Total goals, 15:01 - 30:00')).toBe(true);
+    expect(shouldSkipMarketName('Total corners: 00:00 - 15:00')).toBe(true);
+    expect(shouldSkipMarketName('Total goals')).toBe(false);
     expect(isBareTeamName('Los Angeles Rams Defense', 'Los Angeles Rams')).toBe(false);
     expect(isBareTeamName('LA Rams', 'Los Angeles Rams')).toBe(true);
   });
@@ -134,6 +149,63 @@ describe('extract + skip', () => {
       { yes: { american: 114 }, no: { american: -144 } },
       { yes: { american: 105 }, no: { american: -140 } },
     )).toBeTruthy();
+  });
+
+  it('keeps early-inning team runs off the full-game team total', () => {
+    const teams = { away: 'Cleveland Guardians', home: 'Chicago White Sox' };
+    const rows = extractDkContracts(
+      [
+        { id: 1, name: 'CLE Guardians: Team Total Runs', hint: 'Team Totals Total Runs' },
+        { id: 2, name: 'CLE Guardians: Team Total Runs - 1st 3 Innings', hint: '1st X Innings 1st 3 Innings' },
+        { id: 3, name: 'CLE Guardians: Team Total Runs - 1st 7 Innings', hint: '1st X Innings 1st 7 Innings' },
+        { id: 4, name: 'Total Runs - 1st 3 Innings', hint: '1st X Innings 1st 3 Innings' },
+      ],
+      [
+        { marketId: 1, label: 'Over', outcomeType: 'Over', points: 3.5, displayOdds: { american: '-115' } },
+        { marketId: 1, label: 'Under', outcomeType: 'Under', points: 3.5, displayOdds: { american: '-115' } },
+        { marketId: 2, label: 'Over', outcomeType: 'Over', points: 0.5, displayOdds: { american: '-115' } },
+        { marketId: 2, label: 'Under', outcomeType: 'Under', points: 0.5, displayOdds: { american: '-115' } },
+        { marketId: 3, label: 'Over', outcomeType: 'Over', points: 2.5, displayOdds: { american: '-110' } },
+        { marketId: 3, label: 'Under', outcomeType: 'Under', points: 2.5, displayOdds: { american: '-120' } },
+        { marketId: 4, label: 'Over', outcomeType: 'Over', points: 2.5, displayOdds: { american: '+135' } },
+        { marketId: 4, label: 'Under', outcomeType: 'Under', points: 2.5, displayOdds: { american: '-175' } },
+      ],
+      teams,
+    );
+    const full = rows.find((row) => row.key === 'fg|team_total|points|Cleveland Guardians');
+    expect(full.dk.overs.map((row) => row.line)).toEqual([3.5]);
+    expect(rows.some((row) => row.key === 'f3|team_total|points|Cleveland Guardians')).toBe(true);
+    expect(rows.some((row) => row.key === 'f7|team_total|points|Cleveland Guardians')).toBe(true);
+    expect(rows.some((row) => row.key === 'f3|total|points|game')).toBe(true);
+    expect(rows.some((row) => row.key === 'fg|total|points|game')).toBe(false);
+
+    const stray = extractDkContracts(
+      [
+        { id: 5, name: 'Hagen Smith Walks Allowed O/U', hint: 'Pitcher Props Walks Allowed O/U' },
+        { id: 6, name: 'Total Doubles', hint: 'Game Totals Doubles' },
+        { id: 7, name: 'Total', hint: 'Game Lines Game' },
+        { id: 8, name: 'Jose Ramirez Runs O/U', hint: 'Batter Props Runs O/U' },
+      ],
+      [
+        { marketId: 5, label: 'Over', outcomeType: 'Over', points: 0.5, displayOdds: { american: '-166' }, participants: [{ name: 'Hagen Smith' }] },
+        { marketId: 5, label: 'Under', outcomeType: 'Under', points: 0.5, displayOdds: { american: '+125' }, participants: [{ name: 'Hagen Smith' }] },
+        { marketId: 6, label: 'Over', outcomeType: 'Over', points: 2.5, displayOdds: { american: '-110' } },
+        { marketId: 6, label: 'Under', outcomeType: 'Under', points: 2.5, displayOdds: { american: '-130' } },
+        { marketId: 7, label: 'Over', outcomeType: 'Over', points: 7, displayOdds: { american: '-112' } },
+        { marketId: 7, label: 'Under', outcomeType: 'Under', points: 7, displayOdds: { american: '-107' } },
+        { marketId: 8, label: 'Over', outcomeType: 'Over', points: 0.5, displayOdds: { american: '+112' }, participants: [{ name: 'Jose Ramirez' }] },
+        { marketId: 8, label: 'Under', outcomeType: 'Under', points: 0.5, displayOdds: { american: '-154' }, participants: [{ name: 'Jose Ramirez' }] },
+      ],
+      teams,
+    );
+    const runs = stray.find((row) => row.key === 'fg|total|points|game');
+    expect(runs.dk.overs.map((row) => row.line)).toEqual([7]);
+    expect(stray.some((row) => row.key.includes('walks') && row.key.includes('Hagen Smith'))).toBe(true);
+    expect(stray.some((row) => row.key === 'fg|total|doubles|game')).toBe(true);
+    expect(stray.some((row) => row.key === 'fg|player_ou|runs|Jose Ramirez')).toBe(true);
+    expect(parseStat('Brenton Doyle Hits + Runs + RBIs O/U')).toBe('hrr');
+    expect(parseStat('Jose Ramirez Runs O/U')).toBe('runs');
+    expect(parseStat('CHI White Sox Home Run - 1st Inning?')).toBe('home_runs');
   });
 
   it('extracts FD quarter totals, team alts, and player O/U', () => {
@@ -350,6 +422,11 @@ describe('two-way pairing', () => {
       { unders: [{ american: -120, line: 9.5, label: 'Under' }] },
     );
     expect(wide.best).toBe(null);
+    const quarter = pairTotals(
+      { overs: [{ american: -110, line: 2.25, label: 'Over' }] },
+      { unders: [{ american: 145, line: 2.5, label: 'Under' }] },
+    );
+    expect(quarter.best).toBe(null);
   });
 
   it('prints the two-way price, not another quote at the same line', () => {

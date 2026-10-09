@@ -1,8 +1,10 @@
 import { MAIN_KEYS, formatMarketLabel, parseMarketKey } from './marketNormalize.js';
-import { mergeContracts } from './extractMarkets.js';
-import { marketHasMinOdds, twoWayHasMinOdds } from './rawArbModel.js';
+import { mergeBookContracts, mergeContracts } from './extractMarkets.js';
+import { marketHasMinOdds, pinClosestQuotes, twoWayHasMinOdds } from './rawArbModel.js';
 import { isNycBlockedExtra } from './nycFilter.js';
-import { pairContract } from './twoWayPairs.js';
+import { pairAmongBooks } from './twoWayPairs.js';
+
+const DEEP_BOOKS = ['fd', 'dk', 'mgm', 'czr'];
 
 const MAIN_FROM_EXTRA = {
   moneyline: (key, sport) => {
@@ -27,8 +29,11 @@ export function fillMainsFromExtras(game, extras = []) {
     const hit = extras.find((row) => MAIN_FROM_EXTRA[kind](row.key, next.sport) && row.twoWay);
     if (!hit) continue;
     next[kind] = {
-      fd: hit.fd || next[kind]?.fd || null,
-      dk: hit.dk || next[kind]?.dk || null,
+      ...(next[kind] || {}),
+      fd: pinClosestQuotes(hit.fd) || next[kind]?.fd || null,
+      dk: pinClosestQuotes(hit.dk) || next[kind]?.dk || null,
+      mgm: pinClosestQuotes(hit.mgm) || next[kind]?.mgm || null,
+      czr: pinClosestQuotes(hit.czr) || next[kind]?.czr || null,
       twoWay: hit.twoWay,
     };
   }
@@ -45,10 +50,15 @@ function mathKind(kind) {
   return kind;
 }
 
-export function scoreContracts(contracts) {
+export function scoreContracts(contracts, bookIds = DEEP_BOOKS) {
+  const ids = (bookIds || DEEP_BOOKS).filter((id) => DEEP_BOOKS.includes(id));
   const extras = [];
   for (const row of contracts) {
-    const paired = pairContract(mathKind(row.kind), row.fd, row.dk);
+    for (const id of ids) {
+      if (row[id]) row[id] = pinClosestQuotes(row[id]);
+    }
+    const quotes = ids.filter((id) => row[id]).map((id) => ({ id, quote: row[id] }));
+    const paired = pairAmongBooks(mathKind(row.kind), quotes);
     const twoWay = paired.best || null;
     const extraArbs = (paired.arbs || []).filter((arb) => arb !== twoWay && arb.hasArb);
     extras.push({
@@ -58,6 +68,8 @@ export function scoreContracts(contracts) {
       main: MAIN_KEYS.has(row.key),
       fd: row.fd || null,
       dk: row.dk || null,
+      mgm: row.mgm || null,
+      czr: row.czr || null,
       twoWay,
       arbAlts: extraArbs,
     });
@@ -74,8 +86,54 @@ export function scoreContracts(contracts) {
   return extras;
 }
 
-export function attachDeepMarkets(game, fdContracts, dkContracts) {
-  const merged = mergeContracts(fdContracts ?? [], dkContracts ?? []);
+export function rescoreExtras(extras, bookIds = DEEP_BOOKS) {
+  const ids = (bookIds || DEEP_BOOKS).filter((id) => DEEP_BOOKS.includes(id));
+  const next = (extras || []).map((row) => {
+    const pinned = { ...row };
+    for (const id of ids) {
+      if (pinned[id]) pinned[id] = pinClosestQuotes(pinned[id]);
+    }
+    const quotes = ids.filter((id) => pinned[id]).map((id) => ({ id, quote: pinned[id] }));
+    const paired = pairAmongBooks(mathKind(row.kind), quotes);
+    const twoWay = paired.best || null;
+    return {
+      ...pinned,
+      twoWay,
+      arbAlts: (paired.arbs || []).filter((arb) => arb !== twoWay && arb.hasArb),
+    };
+  });
+  next.sort((a, b) => {
+    const pa = a.twoWay?.pSum;
+    const pb = b.twoWay?.pSum;
+    if (pa == null && pb == null) return String(a.label).localeCompare(String(b.label));
+    if (pa == null) return 1;
+    if (pb == null) return -1;
+    if (pa !== pb) return pa - pb;
+    return String(a.label).localeCompare(String(b.label));
+  });
+  return next;
+}
+
+export function applyEnabledExtras(game, bookIds) {
+  if (!game?.extras?.length) return game;
+  const extras = rescoreExtras(game.extras, bookIds);
+  const extraTwoWays = extras.filter((row) => !row.main && row.twoWay);
+  const extraArbs = extraTwoWays.filter((row) => row.twoWay.hasArb);
+  return {
+    ...game,
+    extras,
+    extraArbs,
+    extraCount: extraTwoWays.length,
+    extraArbCount: extraArbs.length,
+  };
+}
+
+export function attachDeepMarkets(game, fdContracts, dkContracts, extraBooks = {}) {
+  let merged = mergeContracts(fdContracts ?? [], dkContracts ?? []);
+  for (const [bookId, list] of Object.entries(extraBooks || {})) {
+    if (!DEEP_BOOKS.includes(bookId) || bookId === 'fd' || bookId === 'dk') continue;
+    merged = mergeBookContracts(merged, list, bookId);
+  }
   const extras = scoreContracts(merged);
   const extraTwoWays = extras.filter((row) => !row.main && row.twoWay);
   const extraArbs = extraTwoWays.filter((row) => row.twoWay.hasArb);

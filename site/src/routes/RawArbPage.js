@@ -3,6 +3,7 @@ import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import {
+  applyEnabledBooks,
   filterGames,
   formatBookSides,
   formatCombinedPct,
@@ -12,13 +13,33 @@ import {
   parseSignedAmerican,
   sortGames,
 } from '../rawarb/rawArbModel';
+import { RAW_BOOKS } from '../rawarb/bookCatalog';
 import { formatSidesForRow } from '../rawarb/twoWayPairs';
-import { applyDeepAttachments, extraRowsForDisplay } from '../rawarb/mergeDeep';
+import { applyDeepAttachments, applyEnabledExtras, extraRowsForDisplay } from '../rawarb/mergeDeep';
 import { sportFiltersFor, sportLabel } from '../rawarb/sportCatalog';
 
 const OG_TITLE = 'Raw Arb';
-const OG_DESCRIPTION = 'FanDuel vs DraftKings two-way markets across every sport both books list';
+const OG_DESCRIPTION = 'FanDuel, DraftKings, BetMGM, and Caesars two-way markets';
 const REFRESH_MS = 60_000;
+const BOOKS_KEY = 'rawarb-books-v2';
+const DEFAULT_ON = new Set(['fd', 'dk']);
+
+function loadEnabledBooks() {
+  const next = {};
+  let stored = {};
+  try {
+    stored = JSON.parse(localStorage.getItem(BOOKS_KEY) || '{}') || {};
+  } catch {
+    stored = {};
+  }
+  for (const book of RAW_BOOKS) {
+    next[book.id] = Object.prototype.hasOwnProperty.call(stored, book.id)
+      ? Boolean(stored[book.id])
+      : DEFAULT_ON.has(book.id);
+  }
+  if (!RAW_BOOKS.some((book) => next[book.id])) next.fd = true;
+  return next;
+}
 
 const MARKET_ROWS = [
   { key: 'moneyline', label: 'ML', kind: 'moneyline' },
@@ -47,27 +68,31 @@ function twoWayClass(twoWay) {
   return '';
 }
 
-function MarketRow({ label, kind, market, best, wide }) {
-  const fd = wide
-    ? formatSidesForRow(market?.fd, kind, market?.twoWay, 'fd')
-    : formatBookSides(market?.fd, kind);
-  const dk = wide
-    ? formatSidesForRow(market?.dk, kind, market?.twoWay, 'dk')
-    : formatBookSides(market?.dk, kind);
+function bookQuoted(market, kind, bookId) {
+  const book = market?.[bookId];
+  if (!book) return false;
+  if (kind === 'total') return Boolean(book.over || book.under);
+  return Boolean(book.away || book.home);
+}
+
+function MarketRow({ label, kind, market, best, wide, books }) {
   const twoWay = market?.twoWay;
+  const priced = books.filter((book) => bookQuoted(market, kind, book.id)).length;
   return (
     <tr className={best ? 'rawarb-row--best' : undefined}>
       <th scope="row" className={wide ? 'rawarb-th-wide' : undefined}>{label}</th>
-      <td>
-        <span>{fd.left}</span>
-        <span className="rawarb-sep">/</span>
-        <span>{fd.right}</span>
-      </td>
-      <td>
-        <span>{dk.left}</span>
-        <span className="rawarb-sep">/</span>
-        <span>{dk.right}</span>
-      </td>
+      {books.map((book) => {
+        const sides = wide
+          ? formatSidesForRow(market?.[book.id], kind, market?.twoWay, book.id)
+          : formatBookSides(market?.[book.id], kind);
+        return (
+          <td key={book.id}>
+            <span>{sides.left}</span>
+            <span className="rawarb-sep">/</span>
+            <span>{sides.right}</span>
+          </td>
+        );
+      })}
       <td className={`rawarb-twoway${twoWayClass(twoWay)}`}>
         {twoWay ? (
           <>
@@ -79,14 +104,14 @@ function MarketRow({ label, kind, market, best, wide }) {
             <div className="rawarb-twoway-legs">{formatTwoWayLegs(twoWay)}</div>
           </>
         ) : (
-          <span className="rawarb-empty">{market?.fd && market?.dk ? '—' : 'Need both books'}</span>
+          <span className="rawarb-empty">{priced >= 2 ? '—' : 'Need two books'}</span>
         )}
       </td>
     </tr>
   );
 }
 
-function GameCard({ game, deepStatus, oddsFilter, filterNyc }) {
+function GameCard({ game, deepStatus, oddsFilter, filterNyc, books }) {
   const { promoted, rest } = extraRowsForDisplay(game, { oddsFilter, filterNyc });
   const [open, setOpen] = useState(false);
   return (
@@ -108,8 +133,9 @@ function GameCard({ game, deepStatus, oddsFilter, filterNyc }) {
         <thead>
           <tr>
             <th scope="col" />
-            <th scope="col">FanDuel</th>
-            <th scope="col">DraftKings</th>
+            {books.map((book) => (
+              <th key={book.id} scope="col">{book.label}</th>
+            ))}
             <th scope="col">Best two-way</th>
           </tr>
         </thead>
@@ -121,6 +147,7 @@ function GameCard({ game, deepStatus, oddsFilter, filterNyc }) {
               kind={row.kind}
               market={game[row.key]}
               best={isBestTwoWay(game[row.key], game, { oddsFilter, filterNyc })}
+              books={books}
             />
           ))}
           {promoted.map((row) => (
@@ -131,6 +158,7 @@ function GameCard({ game, deepStatus, oddsFilter, filterNyc }) {
               market={row}
               best={isBestTwoWay(row, game, { oddsFilter, filterNyc })}
               wide
+              books={books}
             />
           ))}
         </tbody>
@@ -150,6 +178,7 @@ function GameCard({ game, deepStatus, oddsFilter, filterNyc }) {
                   market={row}
                   best={isBestTwoWay(row, game, { oddsFilter, filterNyc })}
                   wide
+                  books={books}
                 />
               ))}
             </tbody>
@@ -178,6 +207,7 @@ function RawArbPage() {
   const [oddsBook, setOddsBook] = useState('fd');
   const [oddsMinRaw, setOddsMinRaw] = useState('');
   const [filterNyc, setFilterNyc] = useState(true);
+  const [enabledBooks, setEnabledBooks] = useState(loadEnabledBooks);
   const attachmentsRef = useRef([]);
   const deepInFlight = useRef(false);
 
@@ -238,9 +268,15 @@ function RawArbPage() {
 
   const sportFilters = useMemo(() => sportFiltersFor(games), [games]);
   const minAmerican = useMemo(() => parseSignedAmerican(oddsMinRaw), [oddsMinRaw]);
+  const activeBooks = useMemo(
+    () => RAW_BOOKS.filter((book) => enabledBooks[book.id]),
+    [enabledBooks],
+  );
+  const activeBookIds = useMemo(() => activeBooks.map((book) => book.id), [activeBooks]);
+  const oddsBookId = activeBookIds.includes(oddsBook) ? oddsBook : activeBookIds[0];
   const oddsFilter = useMemo(
-    () => (Number.isFinite(minAmerican) ? { book: oddsBook, minAmerican } : null),
-    [oddsBook, minAmerican],
+    () => (Number.isFinite(minAmerican) ? { book: oddsBookId, minAmerican } : null),
+    [oddsBookId, minAmerican],
   );
   const filterOpts = useMemo(
     () => ({ oddsFilter, filterNyc }),
@@ -249,10 +285,12 @@ function RawArbPage() {
   const bySport = useMemo(() => filterGames(games, sport), [games, sport]);
   const liveCount = useMemo(() => bySport.filter((game) => game.inPlay).length, [bySport]);
   const upcomingCount = bySport.length - liveCount;
-  const visible = useMemo(
-    () => sortGames(filterGames(games, sport, timing, filterOpts), sortMode, filterOpts),
-    [games, sport, timing, sortMode, filterOpts],
-  );
+  const visible = useMemo(() => {
+    const scored = games.map((game) => (
+      applyEnabledExtras(applyEnabledBooks(game, activeBookIds), activeBookIds)
+    ));
+    return sortGames(filterGames(scored, sport, timing, filterOpts), sortMode, filterOpts);
+  }, [games, sport, timing, sortMode, filterOpts, activeBookIds]);
 
   useEffect(() => {
     if (sport !== 'all' && !sportFilters.some((opt) => opt.id === sport)) {
@@ -271,7 +309,7 @@ function RawArbPage() {
       <div className="rawarb-page">
         <header className="rawarb-head">
           <h1>Raw Arb</h1>
-          <p>Every sport on both books · FanDuel vs DraftKings · every pairable two-way</p>
+          <p>Every sport on FanDuel and DraftKings. BetMGM and Caesars stay off until you turn them on.</p>
         </header>
         <div className="rawarb-toolbar">
           <div className="rawarb-filters" role="group" aria-label="Sport">
@@ -302,6 +340,27 @@ function RawArbPage() {
               </button>
             ))}
           </div>
+          <div className="rawarb-filters rawarb-filters--timing" role="group" aria-label="Books">
+            {RAW_BOOKS.map((book) => (
+              <button
+                key={book.id}
+                type="button"
+                className={`rawarb-chip${enabledBooks[book.id] ? ' rawarb-chip--on' : ''}`}
+                aria-pressed={Boolean(enabledBooks[book.id])}
+                onClick={() => {
+                  setEnabledBooks((prev) => {
+                    const on = RAW_BOOKS.filter((row) => prev[row.id]).length;
+                    if (prev[book.id] && on <= 1) return prev;
+                    const next = { ...prev, [book.id]: !prev[book.id] };
+                    localStorage.setItem(BOOKS_KEY, JSON.stringify(next));
+                    return next;
+                  });
+                }}
+              >
+                {book.short}
+              </button>
+            ))}
+          </div>
           <label className="rawarb-sort">
             Sort
             <select value={sortMode} onChange={(e) => setSortMode(e.target.value)}>
@@ -311,14 +370,14 @@ function RawArbPage() {
           </label>
           <div className="rawarb-odds" role="group" aria-label="Minimum odds">
             <span>Min odds</span>
-            {[{ id: 'fd', label: 'FD' }, { id: 'dk', label: 'DK' }].map((opt) => (
+            {activeBooks.map((book) => (
               <button
-                key={opt.id}
+                key={book.id}
                 type="button"
-                className={`rawarb-chip${oddsBook === opt.id ? ' rawarb-chip--on' : ''}`}
-                onClick={() => setOddsBook(opt.id)}
+                className={`rawarb-chip${oddsBookId === book.id ? ' rawarb-chip--on' : ''}`}
+                onClick={() => setOddsBook(book.id)}
               >
-                {opt.label}
+                {book.short}
               </button>
             ))}
             <input
@@ -340,7 +399,7 @@ function RawArbPage() {
           </button>
           <div className="rawarb-meta">
             {stats
-              ? `${visible.length} games · ${stats.withTwoWay ?? 0} with both books`
+              ? `${visible.length} games · ${stats.withMgm ?? 0} BetMGM · ${stats.withCzr ?? 0} Caesars`
               : null}
             {deepStats ? ` · ${deepStats.extras ?? 0} pairable extras` : null}
             {extraArbTotal ? ` · ${extraArbTotal} extra arbs` : null}
@@ -350,7 +409,7 @@ function RawArbPage() {
         </div>
 
         <p className="rawarb-hint">
-          Default columns are ML, spread, and O/U. Extra two-ways that are already
+          FanDuel and DraftKings start on. BetMGM and Caesars start off — turn a chip on to count that book. Default columns are ML, spread, and O/U. Extra two-ways that are already
           arb (quarters, alts, player props, team totals, yes/no) pin into the
           card. Everything else pairable is under each game&apos;s dropdown.
           Combined under 100% is a lock; a middle still covers 3/4 of the pot.
@@ -362,7 +421,7 @@ function RawArbPage() {
         {error && <p className="rawarb-error">{error}</p>}
 
         {loading && !games.length ? (
-          <LoadingState label="Pulling FanDuel and DraftKings…" />
+          <LoadingState label="Pulling FanDuel, DraftKings, BetMGM, and Caesars…" />
         ) : (
           <div className="rawarb-list">
             {visible.map((game) => (
@@ -372,12 +431,13 @@ function RawArbPage() {
                 deepStatus={deepStatus}
                 oddsFilter={oddsFilter}
                 filterNyc={filterNyc}
+                books={activeBooks}
               />
             ))}
             {!visible.length && !loading && (
               <p className="rawarb-empty">
                 {oddsFilter
-                  ? `No games with ${oddsBook === 'dk' ? 'DraftKings' : 'FanDuel'} ${minAmerican > 0 ? '+' : ''}${minAmerican} or longer.`
+                  ? `No games with ${RAW_BOOKS.find((book) => book.id === oddsBookId)?.label || 'that book'} ${minAmerican > 0 ? '+' : ''}${minAmerican} or longer.`
                   : timing === 'live'
                     ? 'No live games right now.'
                     : timing === 'upcoming'

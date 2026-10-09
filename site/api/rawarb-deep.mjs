@@ -15,6 +15,8 @@ import { fetchRawArbBook } from './rawarb.mjs';
 import { extractDkContracts, extractFdContracts } from '../src/rawarb/extractMarkets.js';
 import { attachDeepMarkets } from '../src/rawarb/mergeDeep.js';
 import { DK_LEAGUES, dkReferer } from '../src/rawarb/sportCatalog.js';
+import { fetchCaesarsContracts } from './rawarb-caesars.mjs';
+import { fetchMgmContracts } from './rawarb-mgm.mjs';
 
 const FD_BASE = 'https://sbapi.nj.sportsbook.fanduel.com/api';
 const FD_QUERY =
@@ -277,6 +279,8 @@ function slimExtra(row) {
     main: row.main,
     fd: row.fd,
     dk: row.dk,
+    mgm: row.mgm || null,
+    czr: row.czr || null,
     twoWay: row.twoWay,
     arbAlts: row.arbAlts,
   };
@@ -291,6 +295,10 @@ export async function fetchRawArbDeep(baseGames) {
   const fdMarketsById = new Map();
   const dkByEvent = new Map();
   const dkSubCounts = {};
+  const mgmById = new Map();
+  const czrById = new Map();
+  const mgmTargets = pickDeepTargets(matched.filter((game) => game.mgmEventId), 48);
+  const czrTargets = pickDeepTargets(matched.filter((game) => game.czrEventId), 36);
 
   await Promise.all([
     mapPool(fdTargets, 7, async (game) => {
@@ -315,6 +323,22 @@ export async function fetchRawArbDeep(baseGames) {
         prev.selections.push(...bundle.selections);
       }
     }),
+    mapPool(mgmTargets, 4, async (game) => {
+      try {
+        const teams = { home: game.home, away: game.away };
+        mgmById.set(String(game.mgmEventId), await fetchMgmContracts(game.mgmEventId, teams));
+      } catch {
+        mgmById.set(String(game.mgmEventId), []);
+      }
+    }),
+    mapPool(czrTargets, 3, async (game) => {
+      try {
+        const teams = { home: game.home, away: game.away };
+        czrById.set(String(game.czrEventId), await fetchCaesarsContracts(game.czrEventId, teams));
+      } catch {
+        czrById.set(String(game.czrEventId), []);
+      }
+    }),
   ]);
 
   const attachments = games.map((game) => {
@@ -326,7 +350,10 @@ export async function fetchRawArbDeep(baseGames) {
       dkContracts = extractDkContracts(dkBundle.markets, dkBundle.selections, teams);
       if (game.dkFlipped) dkContracts = flipDkContracts(dkContracts);
     }
-    const scored = attachDeepMarkets(game, fdContracts, dkContracts);
+    const scored = attachDeepMarkets(game, fdContracts, dkContracts, {
+      mgm: mgmById.get(String(game.mgmEventId)) || [],
+      czr: czrById.get(String(game.czrEventId)) || [],
+    });
     return {
       fdEventId: game.fdEventId,
       dkEventId: game.dkEventId,
@@ -345,6 +372,8 @@ export async function fetchRawArbDeep(baseGames) {
       extras: attachments.reduce((n, row) => n + (row.extraCount ?? 0), 0),
       extraArbs: attachments.reduce((n, row) => n + (row.extraArbCount ?? 0), 0),
       fdEvents: fdMarketsById.size,
+      mgmEvents: mgmById.size,
+      czrEvents: czrById.size,
       dkLeagues: dkLeagues.length,
       dkSubs: dkSubCounts,
     },
@@ -360,9 +389,9 @@ export default async function handler(req, res) {
     const ttlMs = 60_000;
     const data = fresh
       ? await fetchRawArbDeep()
-      : await cachedBook('rawarb-deep-v5', fetchRawArbDeep, () => ttlMs, { persist: true });
+      : await cachedBook('rawarb-deep-v13', fetchRawArbDeep, () => ttlMs, { persist: true });
     if (fresh) {
-      await fillBookCache('rawarb-deep-v5', data, ttlMs, { persist: true });
+      await fillBookCache('rawarb-deep-v13', data, ttlMs, { persist: true });
       setNoStore(res);
     } else {
       setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));

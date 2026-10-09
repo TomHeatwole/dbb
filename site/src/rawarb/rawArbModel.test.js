@@ -8,6 +8,8 @@ import {
   mergeBookGames,
   moneylineTwoWay,
   parseSignedAmerican,
+  isSplitLine,
+  pinClosestQuotes,
   pickBestTwoWay,
   quoteFromAmerican,
   sortGames,
@@ -182,6 +184,49 @@ describe('cross-book two-way', () => {
       'fd:over:47.5',
       'dk:under:48',
     ]);
+
+    const wide = totalTwoWay(
+      { over: { american: -900, line: 1.5 }, under: { american: 550, line: 1.5 } },
+      { over: { american: -105, line: 9.5 }, under: { american: -135, line: 9.5 } },
+    );
+    expect(wide).toBe(null);
+  });
+
+  it('pins a goal ladder to one line instead of the evenest over and a different under', () => {
+    const book = pinClosestQuotes({
+      overs: [
+        { american: -900, line: 1.5 },
+        { american: -105, line: 3.5 },
+      ],
+      unders: [
+        { american: 100, line: 0.75 },
+        { american: -125, line: 3.5 },
+      ],
+      over: { american: -900, line: 1.5 },
+      under: { american: 100, line: 0.75 },
+    });
+    expect(book.over).toMatchObject({ line: 3.5, american: -105 });
+    expect(book.under).toMatchObject({ line: 3.5, american: -125 });
+  });
+
+  it('does not headline a quarter-goal line just because both sides are near even', () => {
+    expect(isSplitLine(2.25)).toBe(true);
+    expect(isSplitLine(0.75)).toBe(true);
+    expect(isSplitLine(-0.25)).toBe(true);
+    expect(isSplitLine(2.5)).toBe(false);
+    expect(isSplitLine(3)).toBe(false);
+    const book = pinClosestQuotes({
+      overs: [
+        { american: -110, line: 2.25 },
+        { american: 110, line: 3.5 },
+      ],
+      unders: [
+        { american: -125, line: 2.25 },
+        { american: -140, line: 3.5 },
+      ],
+    });
+    expect(book.over).toMatchObject({ line: 3.5, american: 110 });
+    expect(book.under).toMatchObject({ line: 3.5, american: -140 });
   });
 
   it('picks the lower implied sum between the two pairings', () => {

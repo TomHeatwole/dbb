@@ -10,6 +10,7 @@ import {
   resolvePeriod,
   resolveStat,
   teamSubject,
+  yesNoSubject,
 } from './marketNormalize.js';
 import { isNonMatchWinnerMarket, isThreeWayMoneyline, isTwoWayWinnerName } from './sportCatalog.js';
 import { isBareTeamName, lastSignificantToken, teamsMatch } from './teamMatch.js';
@@ -30,7 +31,7 @@ function nameMentionsTeam(name, teams = {}) {
   });
 }
 
-const SKIP_NAME = /3-way|3 way|exact (game|team)?\s*winning|exact score|squares|drive \d|drive result|winning margin|anytime(?:\s+\w+)?\s+td scorer|anytime goal|goal ?scorer|last touchdown|first td scorer|1st touchdown scorer|to score \d\+ touchdowns|to score a goal|fan.?duel squares|correct score|octopus|td exactas|most \w+ yards|double winner|futures|first scoring play|score method|1st score method|special teams to score|to score a td|defensive td|to beat the|in overtime|\brace to\b|\bwdw\b|half-time\/full-time|ht\/ft|goals bands|total goals bands|2 way spread (?:away|home)|lead at \d|point by point|to record \d+\+|to win (?:either|both) half|win in both halves|both teams to score - both|both halves|both teams to score.+(?:&|\/)|btts.+(?:&|\/)|no draw|\b1x2\b|double chance|both win set|listed set|win a set|both players to win/i;
+const SKIP_NAME = /3-way|3 way|exact (game|team)?\s*winning|exact score|squares|drive \d|drive result|winning margin|anytime(?:\s+\w+)?\s+td scorer|anytime goal|goal ?scorer|last touchdown|first td scorer|1st touchdown scorer|to score \d\+ touchdowns|to score a goal|fan.?duel squares|correct score|octopus|td exactas|most \w+ yards|double winner|futures|first scoring play|score method|1st score method|special teams to score|to score a td|defensive td|to beat the|in overtime|\brace to\b|\bwdw\b|half-time\/full-time|ht\/ft|goals bands|total goals bands|2 way spread (?:away|home)|lead at \d|point by point|to record \d+\+|to win (?:either|both) half|win in both halves|both teams to score - both|both halves|both teams to score.+(?:&|\/)|btts.+(?:&|\/)|no draw|\b1x2\b|double chance|both win set|listed set|win a set|both players to win|\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}/i;
 
 function isScoreMethodLabel(name) {
   return /touchdown|\btds?\b|field goal|safety|punt|kickoff|interception|fumble|method|special teams|to beat|in overtime|and (?:win|lose)|\bdefense\b|\boffense\b/i.test(String(name ?? ''));
@@ -175,7 +176,7 @@ export function extractFdContracts(markets, teams = {}) {
     }
 
     if (yesNo.length >= 2) {
-      const key = marketKey({ period, kind: 'yesno', stat, subject: 'game' });
+      const key = marketKey({ period, kind: 'yesno', stat, subject: yesNoSubject(name, teams) });
       upsert(key, name, 'yesno', (book) => {
         const yes = yesNo.find((q) => /^yes/i.test(q.name));
         const no = yesNo.find((q) => /^no/i.test(q.name));
@@ -189,7 +190,8 @@ export function extractFdContracts(markets, teams = {}) {
       let subject = 'game';
       let kind = parseKind(name, { overunder: true });
       const player = playerFromText(name) || playerFromText(overUnder[0].name);
-      if (player && /yds|yards|reception|pass|rush|td|sack|tackle|fg|kick|punt|fantasy|attempt|completion|points|assists|rebounds|threes|steals|blocks|pra|shots|saves|goals|hits|strikeouts|aces|corners|cards|double.?double/i.test(name + overUnder[0].name)) {
+      const teamTotalName = /team total/i.test(name);
+      if (player && !teamTotalName && !/^total\b/i.test(player) && /yds|yards|reception|pass|rush|td|sack|tackle|fg|kick|punt|fantasy|attempt|completion|points|assists|rebounds|threes|steals|blocks|pra|shots|saves|goals|hits|strikeouts|aces|corners|cards|double.?double|walks|outs|doubles|triples|singles|home runs|stolen|rbi|earned|\bruns\b/i.test(name + overUnder[0].name)) {
         kind = 'player_ou';
         subject = player;
       } else if (
@@ -320,7 +322,7 @@ export function extractDkContracts(markets, selections, teams = {}) {
     }
 
     if (yeses.length && nos.length) {
-      const key = marketKey({ period, kind: 'yesno', stat, subject: 'game' });
+      const key = marketKey({ period, kind: 'yesno', stat, subject: yesNoSubject(name, teams) });
       upsert(key, name, 'yesno', (book) => {
         book.yes = { american: yeses[0].american, label: 'Yes' };
         book.no = { american: nos[0].american, label: 'No' };
@@ -332,7 +334,8 @@ export function extractDkContracts(markets, selections, teams = {}) {
       let kind = 'total';
       let subject = 'game';
       const player = quotes[0].participant || playerFromText(name);
-      if (player && /pass|rush|rec|yds|reception|td|sack|tackle|fg|kick|punt|fantasy|attempt|completion|int|points|assists|rebounds|threes|steals|blocks|pra|shots|saves|goals|hits|strikeouts|aces|corners|cards/i.test(name)) {
+      const teamTotalName = /team total/i.test(name) || /team totals/i.test(market.hint || '');
+      if (player && !teamTotalName && !/^total\b/i.test(player) && /pass|rush|rec|yds|reception|td|sack|tackle|fg|kick|punt|fantasy|attempt|completion|int|points|assists|rebounds|threes|steals|blocks|pra|shots|saves|goals|hits|strikeouts|aces|corners|cards|walks|outs|doubles|triples|singles|home runs|stolen|rbi|earned|\bruns\b/i.test(name)) {
         kind = 'player_ou';
         subject = player;
       } else if (/team total|:\s*team total/i.test(name) || /team totals/i.test(market.hint || '')) {
@@ -437,4 +440,39 @@ export function mergeContracts(fdList, dkList) {
 function subjectMatchLoose(a, b) {
   if (a === b) return true;
   return teamsMatch(a, b) || peopleMatch(a, b);
+}
+
+/** Hang one more book's contracts onto an FD/DK merge, matching keys loosely. */
+export function mergeBookContracts(base, incoming, bookId) {
+  const rows = (base || []).map((row) => ({ ...row }));
+  const byKey = new Map(rows.map((row) => [row.key, row]));
+  const findRow = (item) => {
+    if (byKey.has(item.key)) return byKey.get(item.key);
+    const [period, kind, stat, ...rest] = String(item.key || '').split('|');
+    const subject = rest.join('|');
+    for (const row of rows) {
+      const parts = String(row.key || '').split('|');
+      if (parts[0] !== period || parts[1] !== kind || parts[2] !== stat) continue;
+      if (subjectMatchLoose(subject, parts.slice(3).join('|'))) return row;
+    }
+    return null;
+  };
+  for (const item of incoming || []) {
+    const quote = item?.[bookId];
+    if (!quote) continue;
+    const hit = findRow(item);
+    if (hit) {
+      hit[bookId] = quote;
+      continue;
+    }
+    const row = {
+      key: item.key,
+      label: item.label,
+      kind: item.kind,
+      [bookId]: quote,
+    };
+    rows.push(row);
+    byKey.set(item.key, row);
+  }
+  return rows;
 }

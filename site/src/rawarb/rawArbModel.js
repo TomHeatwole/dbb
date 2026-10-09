@@ -7,8 +7,9 @@ import { evaluateTwoWayArb } from '../corners/arbChecker.js';
 import { americanToImpliedProb, formatAmericanOdds } from '../sop/sopModel.js';
 import { peopleMatch } from './marketNormalize.js';
 import { matchModeForSport } from './sportCatalog.js';
+import { RAW_BOOK_IDS, bookShort, isRawBookId } from './bookCatalog.js';
 import { nycVisibleExtras } from './nycFilter.js';
-import { matchQuality, namesMatch, teamsMatch } from './teamMatch.js';
+import { dateDeltaHours, matchQuality, namesMatch, teamsMatch } from './teamMatch.js';
 
 export function parseSignedAmerican(raw) {
   if (raw == null || raw === '') return null;
@@ -46,6 +47,16 @@ export function formatJuicePct(pSum) {
 }
 
 const LINE_EPS = 1e-9;
+
+/**
+ * 2.25, 0.75, and +0.25 are quarter lines. The stake splits across the two
+ * neighboring numbers, so they are not one total you can two-way against 2.5.
+ */
+export function isSplitLine(line) {
+  if (!Number.isFinite(line)) return false;
+  const doubled = line * 2;
+  return Math.abs(doubled - Math.round(doubled)) > 1e-6;
+}
 
 /** Spread: sA + sB. Total: under − over. lock=0, middle>0, gap<0. */
 export function lineFitFromCushion(cushion) {
@@ -109,10 +120,13 @@ function leg(bookKey, side, quote, label) {
 
 function spreadPair(a, b, legA, legB) {
   const cushion = Number.isFinite(a?.line) && Number.isFinite(b?.line) ? a.line + b.line : null;
+  let lineFit = lineFitFromCushion(cushion) || 'gap';
+  // Half-point middles stay. A multi-goal middle is two different numbers, not one bet.
+  if (lineFit === 'middle' && cushion > 0.5) lineFit = 'gap';
   return {
     a,
     b,
-    lineFit: lineFitFromCushion(cushion) || 'gap',
+    lineFit,
     lineDelta: cushion,
     legA,
     legB,
@@ -123,14 +137,76 @@ function totalPair(over, under, overLeg, underLeg) {
   const cushion = Number.isFinite(over?.line) && Number.isFinite(under?.line)
     ? under.line - over.line
     : null;
+  let lineFit = lineFitFromCushion(cushion) || 'gap';
+  if (lineFit === 'middle' && cushion > 0.5) lineFit = 'gap';
   return {
     a: over,
     b: under,
-    lineFit: lineFitFromCushion(cushion) || 'gap',
+    lineFit,
     lineDelta: cushion,
     legA: overLeg,
     legB: underLeg,
   };
+}
+
+function evenDistance(american) {
+  const quote = quoteFromAmerican(american);
+  if (!quote) return Number.POSITIVE_INFINITY;
+  return Math.abs(quote.implied - 0.5);
+}
+
+function finiteRows(rows) {
+  return (rows || []).filter((row) => Number.isFinite(row?.line) && row?.american != null && !isSplitLine(row.line));
+}
+
+function closestPair(leftRows, rightRows, matches) {
+  let best = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const left of finiteRows(leftRows)) {
+    for (const right of finiteRows(rightRows)) {
+      if (!matches(left, right)) continue;
+      const dist = evenDistance(left.american) + evenDistance(right.american);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = [left, right];
+      }
+    }
+  }
+  return best;
+}
+
+function closestSingle(rows) {
+  const finite = finiteRows(rows);
+  if (!finite.length) return null;
+  return [...finite].sort((a, b) => evenDistance(a.american) - evenDistance(b.american))[0];
+}
+
+/**
+ * The headline quote is one number: the over/under (or +line/−line) pair
+ * closest to even. Picking each side on its own puts a longshot alt opposite the main.
+ */
+export function pinClosestQuotes(book) {
+  if (!book || typeof book !== 'object') return book;
+  const next = { ...book };
+  const total = closestPair(next.overs, next.unders, (over, under) => Math.abs(over.line - under.line) < 1e-6);
+  if (total) {
+    [next.over, next.under] = total;
+  } else {
+    const over = closestSingle(next.overs);
+    const under = closestSingle(next.unders);
+    if (over) next.over = over;
+    if (under) next.under = under;
+  }
+  const spread = closestPair(next.aways, next.homes, (away, home) => Math.abs(away.line + home.line) < 1e-6);
+  if (spread) {
+    [next.away, next.home] = spread;
+  } else {
+    const away = closestSingle(next.aways);
+    const home = closestSingle(next.homes);
+    if (away) next.away = away;
+    if (home) next.home = home;
+  }
+  return next;
 }
 
 function sameCompetitor(a, b) {
@@ -140,70 +216,145 @@ function sameCompetitor(a, b) {
   return namesMatch(ta, tb) || peopleMatch(ta, tb) || teamsMatch(ta, tb);
 }
 
-export function moneylineTwoWay(fd, dk, teams = {}) {
-  const fdAway = sideQuote(fd, 'away', { team: teams.away });
-  const fdHome = sideQuote(fd, 'home', { team: teams.home });
-  const dkAway = sideQuote(dk, 'away', { team: teams.away });
-  const dkHome = sideQuote(dk, 'home', { team: teams.home });
-  if (sameCompetitor(fdAway, fdHome) || sameCompetitor(dkAway, dkHome)) return null;
+export function moneylineTwoWay(left, right, teams = {}, bookA = 'fd', bookB = 'dk') {
+  const leftAway = sideQuote(left, 'away', { team: teams.away });
+  const leftHome = sideQuote(left, 'home', { team: teams.home });
+  const rightAway = sideQuote(right, 'away', { team: teams.away });
+  const rightHome = sideQuote(right, 'home', { team: teams.home });
+  if (sameCompetitor(leftAway, leftHome) || sameCompetitor(rightAway, rightHome)) return null;
   return pickBestTwoWay(
-    sameCompetitor(fdAway, dkHome) ? null : {
-      a: fdAway,
-      b: dkHome,
+    sameCompetitor(leftAway, rightHome) ? null : {
+      a: leftAway,
+      b: rightHome,
       lineFit: 'lock',
-      legA: leg('fd', 'away', fdAway, fdAway?.team || teams.away || 'Away'),
-      legB: leg('dk', 'home', dkHome, dkHome?.team || teams.home || 'Home'),
+      legA: leg(bookA, 'away', leftAway, leftAway?.team || teams.away || 'Away'),
+      legB: leg(bookB, 'home', rightHome, rightHome?.team || teams.home || 'Home'),
     },
-    sameCompetitor(fdHome, dkAway) ? null : {
-      a: fdHome,
-      b: dkAway,
+    sameCompetitor(leftHome, rightAway) ? null : {
+      a: leftHome,
+      b: rightAway,
       lineFit: 'lock',
-      legA: leg('fd', 'home', fdHome, fdHome?.team || teams.home || 'Home'),
-      legB: leg('dk', 'away', dkAway, dkAway?.team || teams.away || 'Away'),
+      legA: leg(bookA, 'home', leftHome, leftHome?.team || teams.home || 'Home'),
+      legB: leg(bookB, 'away', rightAway, rightAway?.team || teams.away || 'Away'),
     },
   );
 }
 
-export function spreadTwoWay(fd, dk, teams = {}) {
-  const fdAway = sideQuote(fd, 'away', { team: teams.away });
-  const fdHome = sideQuote(fd, 'home', { team: teams.home });
-  const dkAway = sideQuote(dk, 'away', { team: teams.away });
-  const dkHome = sideQuote(dk, 'home', { team: teams.home });
+export function spreadTwoWay(left, right, teams = {}, bookA = 'fd', bookB = 'dk') {
+  const leftAway = sideQuote(left, 'away', { team: teams.away });
+  const leftHome = sideQuote(left, 'home', { team: teams.home });
+  const rightAway = sideQuote(right, 'away', { team: teams.away });
+  const rightHome = sideQuote(right, 'home', { team: teams.home });
   return pickBestTwoWay(
     spreadPair(
-      fdAway,
-      dkHome,
-      leg('fd', 'away', fdAway, teams.away || 'Away'),
-      leg('dk', 'home', dkHome, teams.home || 'Home'),
+      leftAway,
+      rightHome,
+      leg(bookA, 'away', leftAway, teams.away || 'Away'),
+      leg(bookB, 'home', rightHome, teams.home || 'Home'),
     ),
     spreadPair(
-      fdHome,
-      dkAway,
-      leg('fd', 'home', fdHome, teams.home || 'Home'),
-      leg('dk', 'away', dkAway, teams.away || 'Away'),
+      leftHome,
+      rightAway,
+      leg(bookA, 'home', leftHome, teams.home || 'Home'),
+      leg(bookB, 'away', rightAway, teams.away || 'Away'),
     ),
   );
 }
 
-export function totalTwoWay(fd, dk) {
-  const fdOver = sideQuote(fd, 'over');
-  const fdUnder = sideQuote(fd, 'under');
-  const dkOver = sideQuote(dk, 'over');
-  const dkUnder = sideQuote(dk, 'under');
+export function totalTwoWay(left, right, bookA = 'fd', bookB = 'dk') {
+  const leftOver = sideQuote(left, 'over');
+  const leftUnder = sideQuote(left, 'under');
+  const rightOver = sideQuote(right, 'over');
+  const rightUnder = sideQuote(right, 'under');
   return pickBestTwoWay(
     totalPair(
-      fdOver,
-      dkUnder,
-      leg('fd', 'over', fdOver, 'Over'),
-      leg('dk', 'under', dkUnder, 'Under'),
+      leftOver,
+      rightUnder,
+      leg(bookA, 'over', leftOver, 'Over'),
+      leg(bookB, 'under', rightUnder, 'Under'),
     ),
     totalPair(
-      dkOver,
-      fdUnder,
-      leg('dk', 'over', dkOver, 'Over'),
-      leg('fd', 'under', fdUnder, 'Under'),
+      rightOver,
+      leftUnder,
+      leg(bookB, 'over', rightOver, 'Over'),
+      leg(bookA, 'under', leftUnder, 'Under'),
     ),
   );
+}
+
+export function crossBookTwoWay(kind, market, teams, bookIds = RAW_BOOK_IDS) {
+  const ids = (bookIds || []).filter((id) => market?.[id]);
+  let best = null;
+  for (let i = 0; i < ids.length; i += 1) {
+    for (let j = i + 1; j < ids.length; j += 1) {
+      const a = ids[i];
+      const b = ids[j];
+      const twoWay = kind === 'total'
+        ? totalTwoWay(market[a], market[b], a, b)
+        : kind === 'spread'
+          ? spreadTwoWay(market[a], market[b], teams, a, b)
+          : moneylineTwoWay(market[a], market[b], teams, a, b);
+      if (!twoWay) continue;
+      if (!best || twoWay.pSum < best.pSum) best = twoWay;
+    }
+  }
+  return best;
+}
+
+const ATTACH_MAX_HOURS = 36;
+
+function flipBookQuote(book) {
+  if (!book) return null;
+  return { away: book.home ?? null, home: book.away ?? null };
+}
+
+/** Hang another book's mains on games already paired from FanDuel + DraftKings. */
+export function attachBookGames(games, bookGames, bookKey) {
+  const pool = bookGames || [];
+  const used = new Set();
+  return (games || []).map((game) => {
+    let best = null;
+    pool.forEach((other, idx) => {
+      if (used.has(idx) || other?.sport !== game.sport) return;
+      const quality = matchQuality(game, other, matchModeForSport(game.sport));
+      if (!quality) return;
+      const delta = dateDeltaHours(game, other);
+      if (delta != null && delta > ATTACH_MAX_HOURS) return;
+      if (!best || quality.score > best.quality.score) best = { other, idx, quality };
+    });
+    if (!best) return game;
+    used.add(best.idx);
+    const flipped = best.quality.how === 'swap';
+    const src = best.other;
+    const moneyline = flipped ? flipBookQuote(src.moneyline) : src.moneyline;
+    const spread = flipped ? flipBookQuote(src.spread) : src.spread;
+    return {
+      ...game,
+      [`${bookKey}EventId`]: src.eventId,
+      moneyline: { ...(game.moneyline || {}), [bookKey]: moneyline || null },
+      spread: { ...(game.spread || {}), [bookKey]: spread || null },
+      total: { ...(game.total || {}), [bookKey]: src.total || null },
+    };
+  });
+}
+
+/** Recompute main-line two-ways from the books the user left on. */
+export function applyEnabledBooks(game, bookIds = RAW_BOOK_IDS) {
+  const allow = new Set((bookIds || []).filter(isRawBookId));
+  const teams = { home: game.home, away: game.away };
+  const next = { ...game };
+  const sums = [];
+  for (const kind of ['moneyline', 'spread', 'total']) {
+    const market = { ...(game[kind] || {}) };
+    for (const id of RAW_BOOK_IDS) {
+      if (!allow.has(id)) market[id] = null;
+    }
+    market.twoWay = crossBookTwoWay(kind, market, teams, [...allow]);
+    next[kind] = market;
+    if (Number.isFinite(market.twoWay?.pSum)) sums.push(market.twoWay.pSum);
+  }
+  next.bestPSum = sums.length ? Math.min(...sums) : null;
+  return next;
 }
 
 function attachTwoWay(market, kind, teams) {
@@ -364,7 +515,7 @@ export function visibleBestPSum(game, _filterNyc = false) {
 export function sortPSum(game, sortOpts = null) {
   const oddsFilter = sortOpts?.oddsFilter ?? sortOpts;
   const filterNyc = Boolean(sortOpts?.filterNyc);
-  const book = oddsFilter?.book === 'dk' || oddsFilter?.book === 'fd' ? oddsFilter.book : null;
+  const book = isRawBookId(oddsFilter?.book) ? oddsFilter.book : null;
   const minAmerican = oddsFilter?.minAmerican;
   if (book && Number.isFinite(minAmerican)) {
     return bestPSumForMinOdds(game, book, minAmerican, filterNyc);
@@ -378,7 +529,7 @@ export function isBestTwoWay(market, game, sortOpts = null) {
   const target = sortPSum(game, sortOpts);
   if (!Number.isFinite(target) || twoWay.pSum !== target) return false;
   const oddsFilter = sortOpts?.oddsFilter ?? sortOpts;
-  const book = oddsFilter?.book === 'dk' || oddsFilter?.book === 'fd' ? oddsFilter.book : null;
+  const book = isRawBookId(oddsFilter?.book) ? oddsFilter.book : null;
   if (book && Number.isFinite(oddsFilter?.minAmerican)) {
     return twoWayHasMinOdds(twoWay, book, oddsFilter.minAmerican);
   }
@@ -388,7 +539,7 @@ export function isBestTwoWay(market, game, sortOpts = null) {
 export function filterGames(games, sport = 'all', timing = 'all', filterOpts = null) {
   const oddsFilter = filterOpts?.oddsFilter ?? filterOpts;
   const filterNyc = Boolean(filterOpts?.filterNyc);
-  const book = oddsFilter?.book === 'dk' || oddsFilter?.book === 'fd' ? oddsFilter.book : null;
+  const book = isRawBookId(oddsFilter?.book) ? oddsFilter.book : null;
   const minAmerican = oddsFilter?.minAmerican;
   return (games ?? []).filter((game) => {
     if (sport && sport !== 'all' && game.sport !== sport) return false;
@@ -426,7 +577,7 @@ export function formatBookSides(book, kind) {
 export function formatTwoWayLegs(twoWay) {
   if (!twoWay?.legs?.length) return '—';
   return twoWay.legs.map((leg) => {
-    const book = leg.book === 'fd' ? 'FD' : 'DK';
+    const book = bookShort(leg.book);
     let num = '';
     if (leg.side === 'over' || leg.side === 'under') {
       if (Number.isFinite(leg.line)) num = ` ${leg.line}`;
