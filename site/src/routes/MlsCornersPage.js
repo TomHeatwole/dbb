@@ -116,8 +116,8 @@ function MlsCornersPage() {
 
     await fetchJsonWithTimeout(
       manual
-        ? '/api/draftkings-goal-method?book=corners&league=mls&fresh=1'
-        : '/api/draftkings-goal-method?book=corners&league=mls',
+        ? '/api/fanduel-sop?source=dk&book=corners&league=mls&fresh=1'
+        : '/api/fanduel-sop?source=dk&book=corners&league=mls',
       DK_CLIENT_TIMEOUT_MS,
     ).then((data) => {
       if (dkCornerGamesLoaded(data)) {

@@ -4,8 +4,8 @@
  * and KXEPLGOAL (No Goalscorer) to SOP keys.
  */
 
-import { fetchWorldCupSopOdds as fetchFanDuelGames } from './fanduel-sop.mjs';
-import { pickExport } from '../lib/named-export.mjs';
+import { fetchWorldCupSopOdds as fetchFanDuelGames } from '../api/fanduel-sop.mjs';
+import { pickExport } from './named-export.mjs';
 import * as sopModel from '../src/sop/sopModel.js';
 
 const probToAmerican = pickExport(sopModel, 'probToAmerican');
@@ -585,7 +585,7 @@ export default async function handler(req, res) {
   }
 
   if (wantsCornersBook(req)) {
-    const { default: cornersHandler } = await import(`../lib/kalshi-corners.mjs?v=${Date.now()}`);
+    const { default: cornersHandler } = await import(`./kalshi-corners.mjs?v=${Date.now()}`);
     return cornersHandler(req, res);
   }
 

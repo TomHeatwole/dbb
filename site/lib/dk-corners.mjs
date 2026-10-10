@@ -23,7 +23,7 @@ import {
   mapPool,
   marketSelectionsFor,
   selectionQuote,
-} from '../api/draftkings-goal-method.mjs';
+} from './draftkings-goal-method.mjs';
 import { dkLeagueEntries } from '../src/sop/soccerLeagues.js';
 
 const TOTAL_PRE_ID = '17865';

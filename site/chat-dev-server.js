@@ -49,13 +49,13 @@ const server = http.createServer(async (req, res) => {
     '/api/fanduel-sop': './api/fanduel-sop.mjs',
     '/api/ncaaf-drives': './api/ncaaf-drives.mjs',
     '/api/rawarb': './api/rawarb.mjs',
-    '/api/rawarb-deep': './api/rawarb-deep.mjs',
+    '/api/rawarb-deep': './api/rawarb.mjs',
     '/api/pl-corners': './api/pl-corners.mjs',
     '/api/mls-corners': './api/pl-corners.mjs',
     '/api/dk-corners': './lib/dk-corners.mjs',
     '/api/kalshi-corners': './lib/kalshi-corners.mjs',
-    '/api/draftkings-goal-method': './api/draftkings-goal-method.mjs',
-    '/api/kalshi-sop': './api/kalshi-sop.mjs',
+    '/api/draftkings-goal-method': './api/fanduel-sop.mjs',
+    '/api/kalshi-sop': './api/fanduel-sop.mjs',
     '/api/sop-static': './lib/sop-static.mjs',
     '/sop-static.txt': './lib/sop-static.mjs',
     '/SOP-static.txt': './lib/sop-static.mjs',
@@ -77,6 +77,15 @@ const server = http.createServer(async (req, res) => {
         req.query = Object.fromEntries(parsed.searchParams);
         if (pathname === '/api/mls-corners' && !req.query.league) {
           req.query.league = 'mls';
+        }
+        if (pathname === '/api/rawarb-deep' && !req.query.deep) {
+          req.query.deep = '1';
+        }
+        if (pathname === '/api/draftkings-goal-method' && !req.query.source) {
+          req.query.source = 'dk';
+        }
+        if (pathname === '/api/kalshi-sop' && !req.query.source) {
+          req.query.source = 'kalshi';
         }
         const { default: handler } = await import(`${handlerName}?v=${Date.now()}`);
         await handler(req, res);

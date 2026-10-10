@@ -55,7 +55,7 @@ function DKPage() {
     else setBookLoading(true);
     try {
       const res = await fetch(
-        manual ? '/api/draftkings-goal-method?fresh=1' : '/api/draftkings-goal-method',
+        manual ? '/api/fanduel-sop?source=dk&fresh=1' : '/api/fanduel-sop?source=dk',
         manual ? { cache: 'no-store' } : undefined,
       );
       if (!res.ok) {

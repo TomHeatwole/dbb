@@ -1,0 +1,24 @@
+---
+description: Hobby plan allows at most 12 Vercel Serverless Functions per deployment
+alwaysApply: true
+---
+
+# Vercel Hobby function limit
+
+A deployment can include at most **12** Serverless Functions. Every `.js` / `.mjs` file under `site/api/` counts, including helpers that never handle a request.
+
+Do not add a new file under `site/api/` when an existing function can take a query parameter. Put shared modules in `site/lib/`. Keep the old URL with a rewrite in `site/vercel.json`.
+
+```js
+// site/api/rawarb.mjs — one function
+if (req.query.deep === '1') return deepHandler(req, res);
+
+// site/api/fanduel-sop.mjs — FanDuel, plus source=dk and source=kalshi
+if (req.query.source === 'dk') return dkHandler(req, res);
+
+// site/vercel.json
+{ "source": "/api/rawarb-deep", "destination": "/api/rawarb?deep=1" }
+{ "source": "/api/draftkings-goal-method", "destination": "/api/fanduel-sop?source=dk" }
+```
+
+Already combined: `auth` (`/api/me`, `/api/onboard`), `pl-corners` (`league=mls`), `fanduel-sop` (`format=static`, `book=drives`, `source=dk|kalshi`), `rawarb` (`deep=1`).

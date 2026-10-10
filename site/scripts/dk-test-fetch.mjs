@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { loadDkCookieHeader } from './dk-cookie-utils.mjs';
-import { fetchWorldCupGoalMethodOdds } from '../api/draftkings-goal-method.mjs';
+import { fetchWorldCupGoalMethodOdds } from '../lib/draftkings-goal-method.mjs';
 
 const SITE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ENV_LOCAL = path.join(SITE_DIR, '.env.local');

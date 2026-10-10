@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { fetchWorldCupSopOdds as fetchFanDuelGames } from './fanduel-sop.mjs';
+import { fetchWorldCupSopOdds as fetchFanDuelGames } from '../api/fanduel-sop.mjs';
 import {
   cachedBook,
   cdnSecondsForMemoryTtl,
@@ -16,8 +16,8 @@ import {
   setNoStore,
   setSharedCacheHeaders,
   sopTtlMs,
-} from '../lib/bookCache.mjs';
-import { pickExport } from '../lib/named-export.mjs';
+} from './bookCache.mjs';
+import { pickExport } from './named-export.mjs';
 import * as fixtureKey from '../src/sop/fixtureKey.js';
 import * as sopModel from '../src/sop/sopModel.js';
 import * as soccerLeagues from '../src/sop/soccerLeagues.js';
@@ -1114,7 +1114,7 @@ export default async function handler(req, res) {
   }
 
   if (wantsCornersBook(req)) {
-    const { default: cornersHandler } = await import('../lib/dk-corners.mjs');
+    const { default: cornersHandler } = await import('./dk-corners.mjs');
     return cornersHandler(req, res);
   }
 

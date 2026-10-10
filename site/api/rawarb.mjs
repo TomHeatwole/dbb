@@ -18,8 +18,8 @@ import {
   parseSignedAmerican,
 } from '../src/rawarb/rawArbModel.js';
 import { RAW_BOOK_IDS } from '../src/rawarb/bookCatalog.js';
-import { fetchMgmGames } from './rawarb-mgm.mjs';
-import { fetchCaesarsGames } from './rawarb-caesars.mjs';
+import { fetchMgmGames } from '../lib/rawarb-mgm.mjs';
+import { fetchCaesarsGames } from '../lib/rawarb-caesars.mjs';
 import {
   DK_LEAGUES,
   FD_EVENT_TYPES,
@@ -418,7 +418,25 @@ export async function fetchRawArbBook() {
   };
 }
 
+function wantsDeep(req) {
+  const q = req.query || {};
+  if (q.deep === '1' || q.deep === 'true') return true;
+  try {
+    const url = new URL(req.url || '', 'http://localhost');
+    if (url.searchParams.get('deep') === '1' || url.searchParams.get('deep') === 'true') return true;
+    return /\/rawarb-deep\/?$/.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
+  // /api/rawarb-deep is the same function: ?deep=1 (Hobby plan, 12 functions max).
+  if (wantsDeep(req)) {
+    const { default: deepHandler } = await import('../lib/rawarb-deep.mjs');
+    return deepHandler(req, res);
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -101,7 +101,8 @@ async function main() {
 
   app.get('/api/rawarb-deep', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/rawarb-deep.mjs');
+      req.query = { ...req.query, deep: req.query?.deep || '1' };
+      const { default: handler } = await import('./api/rawarb.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });
@@ -147,7 +148,8 @@ async function main() {
 
   app.get('/api/draftkings-goal-method', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/draftkings-goal-method.mjs');
+      req.query = { ...req.query, source: req.query?.source || 'dk' };
+      const { default: handler } = await import('./api/fanduel-sop.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });
@@ -156,7 +158,8 @@ async function main() {
 
   app.get('/api/kalshi-sop', async (req, res) => {
     try {
-      const { default: handler } = await import('./api/kalshi-sop.mjs');
+      req.query = { ...req.query, source: req.query?.source || 'kalshi' };
+      const { default: handler } = await import('./api/fanduel-sop.mjs');
       return handler(req, res);
     } catch (e) {
       return res.status(500).json({ error: e.message });

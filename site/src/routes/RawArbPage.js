@@ -237,7 +237,7 @@ function RawArbPage() {
     deepInFlight.current = true;
     setDeepStatus('scanning');
     try {
-      const res = await fetch('/api/rawarb-deep');
+      const res = await fetch('/api/rawarb?deep=1');
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
       attachmentsRef.current = body.attachments ?? [];

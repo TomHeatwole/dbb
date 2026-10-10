@@ -8,29 +8,18 @@
       "maxDuration": 30
     },
     "api/fanduel-sop.mjs": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "lib/named-export.mjs,lib/draftkings-goal-method.mjs,lib/kalshi-sop.mjs,lib/dk-corners.mjs,lib/kalshi-corners.mjs,src/sop/sopModel.js,src/sop/fixtureKey.js"
     },
     "api/ncaaf-drives.mjs": {
       "maxDuration": 30
     },
     "api/rawarb.mjs": {
-      "maxDuration": 30,
-      "includeFiles": "src/rawarb/**,src/corners/arbChecker.js,src/sop/sopModel.js"
-    },
-    "api/rawarb-deep.mjs": {
       "maxDuration": 60,
-      "includeFiles": "src/rawarb/**,src/corners/arbChecker.js,src/sop/sopModel.js,api/rawarb.mjs"
+      "includeFiles": "src/rawarb/**,src/corners/arbChecker.js,src/sop/sopModel.js,lib/rawarb-deep.mjs,lib/rawarb-mgm.mjs,lib/rawarb-caesars.mjs,lib/caesarsSession.mjs"
     },
     "api/pl-corners.mjs": {
       "maxDuration": 30
-    },
-    "api/draftkings-goal-method.mjs": {
-      "maxDuration": 30,
-      "includeFiles": "lib/named-export.mjs,src/sop/sopModel.js,src/sop/fixtureKey.js,lib/dk-corners.mjs"
-    },
-    "api/kalshi-sop.mjs": {
-      "maxDuration": 30,
-      "includeFiles": "lib/named-export.mjs,src/sop/sopModel.js,lib/kalshi-corners.mjs"
     },
     "api/render.js": {
       "includeFiles": "api/_spa-template.html,routeMeta.json"
@@ -40,6 +29,9 @@
     { "source": "/sop-static.txt", "destination": "/api/fanduel-sop?format=static" },
     { "source": "/SOP-static.txt", "destination": "/api/fanduel-sop?format=static" },
     { "source": "/api/mls-corners", "destination": "/api/pl-corners?league=mls" },
+    { "source": "/api/rawarb-deep", "destination": "/api/rawarb?deep=1" },
+    { "source": "/api/draftkings-goal-method", "destination": "/api/fanduel-sop?source=dk" },
+    { "source": "/api/kalshi-sop", "destination": "/api/fanduel-sop?source=kalshi" },
     { "source": "/api/me", "destination": "/api/auth" },
     { "source": "/api/onboard", "destination": "/api/auth" }
   ],

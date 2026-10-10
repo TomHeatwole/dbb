@@ -10,8 +10,8 @@ import {
   requestIsFresh,
   setNoStore,
   setSharedCacheHeaders,
-} from '../lib/bookCache.mjs';
-import { fetchRawArbBook } from './rawarb.mjs';
+} from './bookCache.mjs';
+import { fetchRawArbBook } from '../api/rawarb.mjs';
 import { extractDkContracts, extractFdContracts } from '../src/rawarb/extractMarkets.js';
 import { attachDeepMarkets } from '../src/rawarb/mergeDeep.js';
 import { DK_LEAGUES, dkReferer } from '../src/rawarb/sportCatalog.js';

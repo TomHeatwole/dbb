@@ -150,7 +150,7 @@ function CornersPage() {
     applyMerges();
 
     await Promise.all([
-      fetchJsonWithTimeout(manual ? '/api/draftkings-goal-method?book=corners&fresh=1' : '/api/draftkings-goal-method?book=corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
+      fetchJsonWithTimeout(manual ? '/api/fanduel-sop?source=dk&book=corners&fresh=1' : '/api/fanduel-sop?source=dk&book=corners', DK_CLIENT_TIMEOUT_MS).then((data) => {
         if (dkCornerGamesLoaded(data)) {
           dkHold.current = data;
           dkData = data;
@@ -159,7 +159,7 @@ function CornersPage() {
         }
         applyMerges();
       }),
-      fetchJsonWithTimeout(manual ? '/api/kalshi-sop?book=corners&fresh=1' : '/api/kalshi-sop?book=corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
+      fetchJsonWithTimeout(manual ? '/api/fanduel-sop?source=kalshi&book=corners&fresh=1' : '/api/fanduel-sop?source=kalshi&book=corners', KALSHI_CLIENT_TIMEOUT_MS).then((data) => {
         if (kalshiCornerGamesLoaded(data)) {
           kalshiHold.current = data;
           kalshiData = data;

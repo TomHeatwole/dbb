@@ -37,13 +37,13 @@ function withFresh(url, fresh) {
 }
 
 async function fetchKalshiOddsForSop(fresh = false) {
-  return fetchJsonWithTimeout(withFresh('/api/kalshi-sop', fresh), KALSHI_CLIENT_TIMEOUT_MS);
+  return fetchJsonWithTimeout(withFresh('/api/fanduel-sop?source=kalshi', fresh), KALSHI_CLIENT_TIMEOUT_MS);
 }
 
 async function fetchDkOddsForSop(soccerScope = 'core', fresh = false) {
   const url = soccerScope === 'all'
-    ? '/api/draftkings-goal-method?soccer=all'
-    : '/api/draftkings-goal-method';
+    ? '/api/fanduel-sop?source=dk&soccer=all'
+    : '/api/fanduel-sop?source=dk';
   return fetchJsonWithTimeout(withFresh(url, fresh), DK_CLIENT_TIMEOUT_MS);
 }
 

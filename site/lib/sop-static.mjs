@@ -29,8 +29,8 @@ function applyTextHeaders(res) {
 export async function buildSopStaticPayload() {
   const [{ fetchPremierLeagueSopOdds }, { fetchWorldCupGoalMethodOdds }, { fetchWorldCupKalshiOdds }] = await Promise.all([
     import('../api/fanduel-sop.mjs'),
-    import('../api/draftkings-goal-method.mjs'),
-    import('../api/kalshi-sop.mjs'),
+    import('./draftkings-goal-method.mjs'),
+    import('./kalshi-sop.mjs'),
   ]);
   const [fdData, dkData, kalshiData] = await Promise.all([
     fetchPremierLeagueSopOdds({ includeEspn: true }),

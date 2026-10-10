@@ -630,12 +630,36 @@ function wantsExpandedSoccer(req) {
   return requestUrl(req)?.searchParams.get('soccer') === 'all';
 }
 
+function requestSource(req) {
+  const q = req.query || {};
+  const fromQuery = q.source || q.feed;
+  if (fromQuery) return String(fromQuery);
+  const parsed = requestUrl(req);
+  if (!parsed) return '';
+  const fromUrl = parsed.searchParams.get('source') || parsed.searchParams.get('feed');
+  if (fromUrl) return fromUrl;
+  if (/\/draftkings-goal-method\/?$/.test(parsed.pathname)) return 'dk';
+  if (/\/kalshi-sop\/?$/.test(parsed.pathname)) return 'kalshi';
+  return '';
+}
+
 export default async function handler(req, res) {
   if (wantsStaticText(req)) {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       return res.status(405).json({ error: 'Method not allowed' });
     }
     return sopStaticHandler(req, res);
+  }
+
+  // DraftKings and Kalshi share this function (Hobby plan, 12 functions max).
+  const source = requestSource(req);
+  if (source === 'dk' || source === 'draftkings') {
+    const { default: dkHandler } = await import('../lib/draftkings-goal-method.mjs');
+    return dkHandler(req, res);
+  }
+  if (source === 'kalshi') {
+    const { default: kalshiHandler } = await import('../lib/kalshi-sop.mjs');
+    return kalshiHandler(req, res);
   }
 
   if (req.method !== 'GET') {
