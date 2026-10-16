@@ -45,6 +45,7 @@ async function loadRosRows() {
     const nameIdx = headers.indexOf('name');
     const posIdx = headers.indexOf('position');
     const sleeperIdx = headers.indexOf('sleeper_id');
+    const teamIdx = headers.indexOf('team');
     if (rankIdx === -1 || sleeperIdx === -1) return;
 
     for (let i = 1; i < lines.length; i++) {
@@ -56,10 +57,12 @@ async function loadRosRows() {
       rows.push({
         sleeperId,
         name: (cols[nameIdx] || '').trim(),
+        team: teamIdx === -1 ? '' : (cols[teamIdx] || '').trim(),
         position,
         posRank,
         effRank: posRank,
         adp: posRank,
+        fpRank: posRank,
       });
     }
   });

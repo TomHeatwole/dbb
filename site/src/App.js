@@ -51,6 +51,7 @@ import FredDuelSetupPage from './routes/FredDuelSetupPage';
 import AccountSetupPage from './routes/AccountSetupPage';
 import AuthCallbackPage from './routes/AuthCallbackPage';
 import RawArbPage from './routes/RawArbPage';
+import TDArbPage from './routes/TDArbPage';
 import { AuthUserProvider } from './hooks/useAuthUser';
 import RequireAdmin from './layout/RequireAdmin';
 import { canAccessRedraftDash } from './utils/adminAccounts';
@@ -233,6 +234,8 @@ function AppInner() {
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/rawarb" element={<RawArbPage />} />
       <Route path="/RAWARB" element={<RawArbPage />} />
+      <Route path="/tdarb" element={<TDArbPage />} />
+      <Route path="/TDARB" element={<TDArbPage />} />
       
       <Route path="*" element={<UnknownRoute />} />
     </Routes>

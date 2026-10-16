@@ -81,7 +81,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,sleeper,rtsports,rea
 80,Kyle Monangai,27131,kyle-monangai,CHI,10,RB,35,65,99,105,82,12534
 81,Kyle Pitts Sr.,20164,kyle-pitts,ATL,11,TE,7,79,85,75,82,7553
 82,DK Metcalf,18219,dk-metcalf,PIT,9,WR,34,80,86,78,83,5846
-83,Marvin Harrison Jr.,23064,marvin-harrison-jr,ARI,14,WR,35,89,81,73,85,11628
+83,Marvin Harrison Jr.,23064,marvin-harrison-jr,HOU,8,WR,35,89,81,73,85,11628
 84,Chris Godwin Jr.,16406,chris-godwin,TB,10,WR,36,95,77,86,86,4037
 85,Caleb Williams,23084,caleb-williams,CHI,10,QB,7,97,79,70,88,11560
 86,Brian Thomas Jr.,23000,brian-thomas-jr,JAC,7,WR,37,84,92,80,88,11631
@@ -189,7 +189,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,sleeper,rtsports,rea
 188,Tyler Loop,27534,tyler-loop,BAL,13,K,6,177,221,180,199,12711
 189,Jacksonville Jaguars DST,8140,,,7,DST,9,209,190,158,199.5,
 190,Kaleb Johnson,27165,kaleb-johnson-rb,GB,11,RB,62,212,188,216,200,12504
-191,Harrison Mevis,26638,harrison-mevis,LAR,11,K,7,184,217,156,200.5,12015
+191,Harrison Mevis,26638,harrison-mevis,,,K,7,184,217,156,200.5,12015
 192,Adonai Mitchell,24357,adonai-mitchell,NYJ,13,WR,65,198,209,187,203.5,11625
 193,Colby Parkinson,19372,colby-parkinson,LAR,11,TE,27,157,253,226,205,6865
 194,Cam Ward,24755,cam-ward,TEN,9,QB,24,239,171,217,205,12522
@@ -201,7 +201,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,sleeper,rtsports,rea
 200,Fernando Mendoza,28013,fernando-mendoza,LV,13,QB,27,233,187,207,210,13269
 201,Pittsburgh Steelers DST,8240,,,9,DST,10,221,199,161,210,
 202,Makai Lemon,25420,makai-lemon,PHI,10,WR,66,,125,120,125,13294
-203,Kaytron Allen,24362,kaytron-allen,WAS,7,RB,64,191,232,214,211.5,13405
+203,Kaytron Allen,24362,kaytron-allen,MIA,6,RB,64,191,232,214,211.5,13405
 204,Najee Harris,19302,najee-harris-rb,NYG,8,RB,65,208,215,206,211.5,7528
 205,Trey Benson,25388,trey-benson,ARI,14,RB,66,128,,,128,11589
 206,Tyreek Hill,15802,tyreek-hill,,,WR,67,172,252,245,212,3321
@@ -254,9 +254,9 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,sleeper,rtsports,rea
 253,Kansas City Chiefs DST,8150,,,5,DST,16,227,270,222,248.5,
 254,Devaughn Vele,26409,devaughn-vele,NO,8,WR,82,266,231,221,248.5,11834
 255,Cairo Santos,13731,cairo-santos,CHI,10,K,15,238,261,227,249.5,2020
-256,Austin Ekeler,16483,austin-ekeler,,,RB,76,,204,,204,4663
+256,Austin Ekeler,16483,austin-ekeler,WAS,7,RB,76,,204,,204,4663
 257,Chase McLaughlin,19058,chase-mclaughlin,TB,10,K,16,251,249,218,250,6650
-258,Devin Neal,23682,devin-neal,,,RB,77,207,,,207,12476
+258,Devin Neal,23682,devin-neal,WAS,7,RB,77,207,,,207,12476
 259,Troy Franklin,23092,troy-franklin,DEN,10,WR,83,210,,,210,11627
 260,Cyrus Allen,28424,cyrus-allen,KC,5,WR,84,,211,201,211,13413
 261,Caleb Douglas,28135,caleb-douglas,MIA,6,WR,85,,212,225,212,13296
@@ -277,9 +277,9 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,sleeper,rtsports,rea
 276,Jaydon Blue,24344,jaydon-blue,PHI,10,RB,80,234,,,234,12457
 277,Chris Brooks,25823,christopher-brooks,GB,11,RB,81,,234,276,234,11370
 278,Germie Bernard,26039,germie-bernard,PIT,9,WR,92,243,288,255,265.5,13274
-279,Audric Estime,23054,audric-estime,NO,8,RB,82,236,,,236,11579
+279,Audric Estime,23054,audric-estime,CLE,11,RB,82,236,,,236,11579
 280,Evan Engram,16411,evan-engram,DEN,10,TE,36,,240,,240,4066
-281,Jarquez Hunter,24335,jarquez-hunter,MIA,6,RB,83,240,,,240,11569
+281,Jarquez Hunter,24335,jarquez-hunter,NO,8,RB,83,240,,,240,11569
 282,Marvin Mims Jr.,23080,marvin-mims,DEN,10,WR,93,241,,,241,9494
 283,Jalen Tolbert,23770,jalen-tolbert,MIA,6,WR,94,,241,,241,8117
 284,Trey Smack,28507,trey-smack,GB,11,K,18,,243,208,243,13545
@@ -309,7 +309,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,sleeper,rtsports,rea
 308,Indianapolis Colts DST,8130,,,13,DST,20,272,,,272,
 309,Atlanta Falcons DST,8010,,,11,DST,21,274,,,274,
 310,Ty Johnson,18406,ty-johnson,BUF,7,RB,88,,275,,275,6039
-311,J.J. McCarthy,23018,jj-mccarthy,MIN,6,QB,37,275,,,275,11565
+311,J.J. McCarthy,23018,jj-mccarthy,NYG,8,QB,37,275,,,275,11565
 312,Cleveland Browns DST,8070,,,11,DST,22,289,282,258,285.5,
 313,LeQuint Allen Jr.,27285,lequint-allen-jr,JAC,7,RB,89,,276,,276,12544
 314,Tampa Bay Buccaneers DST,8290,,,10,DST,23,277,,,277,

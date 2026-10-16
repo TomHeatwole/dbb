@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-10-03T12:57:10.235Z",
-  "latestFile": "2026-10-03T125710235Z.json",
-  "latestHash": "4a6e63f822ce9280491a5b5e2937b1f0023484e3ff294e2bf7196d122f26a167",
+  "updatedAt": "2026-10-16T20:31:18.860Z",
+  "latestFile": "2026-10-16T203118860Z.json",
+  "latestHash": "93531a9ec1a0d6d590533cee315809ef09d84dfe9fddaa6342453ab9885dc55c",
   "snapshots": [
     {
       "capturedAt": "2026-10-03T12:57:10.235Z",
@@ -9,6 +9,13 @@
       "offerCount": 101,
       "betCount": 17,
       "contentHash": "4a6e63f822ce9280491a5b5e2937b1f0023484e3ff294e2bf7196d122f26a167"
+    },
+    {
+      "capturedAt": "2026-10-16T20:31:18.860Z",
+      "file": "2026-10-16T203118860Z.json",
+      "offerCount": 101,
+      "betCount": 17,
+      "contentHash": "93531a9ec1a0d6d590533cee315809ef09d84dfe9fddaa6342453ab9885dc55c"
     }
   ]
 }

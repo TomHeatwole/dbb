@@ -75,7 +75,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,yahoo,sleeper,rtspor
 74,Kyle Pitts Sr.,20164,kyle-pitts,ATL,11,TE,8,71,72,85,73,76,7553
 75,Tony Pollard,18705,tony-pollard,TEN,9,RB,30,82,76,71,78,76.3,5967
 76,Justin Herbert,18635,justin-herbert,LAC,7,QB,8,68,79,83,74,76.7,6797
-77,Marvin Harrison Jr.,23064,marvin-harrison-jr,ARI,14,WR,31,76,73,81,72,76.7,11628
+77,Marvin Harrison Jr.,23064,marvin-harrison-jr,HOU,8,WR,31,76,73,81,72,76.7,11628
 78,Carnell Tate,26009,carnell-tate,TEN,9,WR,32,78,69,89,79,78.7,13279
 79,Dak Prescott,15600,dak-prescott,DAL,14,QB,9,72,86,84,77,80.7,3294
 80,DK Metcalf,18219,dk-metcalf,PIT,9,WR,33,81,78,86,81,81.7,5846
@@ -189,7 +189,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,yahoo,sleeper,rtspor
 188,Baltimore Ravens DST,8020,,,13,DST,9,215,136,220,146,190.3,
 189,Pittsburgh Steelers DST,8240,,,9,DST,10,216,161,199,162,192,
 190,Oronde Gadsden II,25997,oronde-gadsden-ii,LAC,7,TE,25,162,174,242,204,192.7,12493
-191,Harrison Mevis,26638,harrison-mevis,LAR,11,K,6,202,160,217,160,193,12015
+191,Harrison Mevis,26638,harrison-mevis,,,K,6,202,160,217,160,193,12015
 192,Jake Bates,26075,jake-bates,DET,6,K,7,217,156,207,176,193.3,11539
 193,Harrison Butker,16712,harrison-butker,KC,5,K,8,180,180,227,199,195.7,4227
 194,Los Angeles Chargers DST,8250,,,7,DST,11,221,155,214,173,196.7,
@@ -242,7 +242,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,yahoo,sleeper,rtspor
 241,Tank Dell,25361,nathaniel-dell,HOU,8,WR,81,,191,278,236,234.5,9502
 242,Nick Folk,9491,nick-folk,ATL,11,K,19,171,,,274,171,650
 243,Wil Lutz,16026,wil-lutz,DEN,10,K,20,213,,257,216,235,3678
-244,Kaytron Allen,24362,kaytron-allen,WAS,7,RB,66,,238,232,220,235,13405
+244,Kaytron Allen,24362,kaytron-allen,MIA,6,RB,66,,238,232,220,235,13405
 245,Ryan Flournoy,26398,ryan-flournoy,DAL,14,WR,82,,234,238,212,236,11783
 246,Ted Hurst III,28130,ted-hurst,TB,10,WR,83,,247,233,241,240,13317
 247,Michael Penix Jr.,22973,michael-penix-jr,ATL,11,QB,31,,,184,245,184,11559
@@ -258,7 +258,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,yahoo,sleeper,rtspor
 257,James Conner,16447,james-conner,ARI,14,RB,70,,224,272,250,248,4137
 258,George Holani,22915,george-holani,SEA,11,RB,71,,,198,248,198,12048
 259,Deshaun Watson,16398,deshaun-watson,CLE,11,QB,33,,,201,,201,4017
-260,Austin Ekeler,16483,austin-ekeler,,,RB,72,,,204,,204,4663
+260,Austin Ekeler,16483,austin-ekeler,WAS,7,RB,72,,,204,,204,4663
 261,Gunnar Helm,27109,gunnar-helm,TEN,9,TE,30,,257,246,253,251.5,12502
 262,Spencer Shrader,26763,spencer-shrader,IND,13,K,22,210,,295,215,252.5,12185
 263,Keon Coleman,26019,keon-coleman,BUF,7,WR,86,,252,255,239,253.5,11637
@@ -355,7 +355,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,yahoo,sleeper,rtspor
 356,Connor Bazelak,27585,connor-bazelak,,,QB,49,,333,,,333,12776
 357,La'Michael Pettway,26076,lamichael-pettway,,,TE,49,,336,,,336,11540
 358,Noah Brown,16443,noah-brown,,,WR,116,,337,,,337,4234
-359,Lawrence Keys III,26608,lawrence-keys-iii,,,WR,117,,339,,,339,12001
+359,Lawrence Keys III,26608,lawrence-keys-iii,DET,6,WR,117,,339,,,339,12001
 360,Mike White,17447,mike-white,,,QB,50,,342,,,342,5089
 361,Ryan Izzo,17541,ryan-izzo,,,TE,50,,343,,,343,5094
 362,Isaac Rex,26430,isaac-rex,,,TE,51,,344,,,344,12126

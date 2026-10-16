@@ -54,6 +54,8 @@ describe('team matching', () => {
   it('does not collapse Georgia / Georgia Tech', () => {
     expect(teamsMatch('Georgia', 'Georgia Tech')).toBe(false);
     expect(teamsMatch('Texas', 'Texas State')).toBe(false);
+    expect(teamsMatch('Western Michigan', 'Central Michigan')).toBe(false);
+    expect(teamsMatch('Eastern Michigan', 'Central Michigan')).toBe(false);
   });
 
   it('pairs games on home and away', () => {
@@ -434,6 +436,20 @@ describe('merge + sort', () => {
       }],
     };
     expect(sortGames([juiceLongshot, evenLongshot], 'best')[0].away).toBe('Broncos');
+    const altShorter = {
+      ...wide,
+      away: 'Ducks',
+      home: 'Bruins',
+      extras: [{
+        key: '1q|total|points|game',
+        label: '1Q O/U',
+        kind: 'total',
+        main: false,
+        twoWay: { pSum: 0.94, hasArb: true, legs: [] },
+      }],
+    };
+    expect(visibleBestPSum(altShorter)).toBe(0.94);
+    expect(sortGames([close, altShorter], 'best')[0].away).toBe('Ducks');
     expect(sortGames([juiceLongshot, evenLongshot], 'best', { oddsFilter: { book: 'fd', minAmerican: 1500 } })[0].away).toBe('Georgia');
     expect(isBestTwoWay(juiceLongshot.moneyline, juiceLongshot, { oddsFilter: { book: 'fd', minAmerican: 1500 } })).toBe(false);
     expect(isBestTwoWay(evenLongshot.extras[0], evenLongshot, { oddsFilter: { book: 'fd', minAmerican: 1500 } })).toBe(true);

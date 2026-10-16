@@ -204,7 +204,65 @@ export function pairPlayerTotals(fd, dk, bookA = 'fd', bookB = 'dk') {
   return { best, arbs };
 }
 
+function halfPointCover(book, side) {
+  const rows = [
+    ...(book?.[`${side}s`] || []),
+    ...(book?.[side] ? [book[side]] : []),
+  ];
+  return rows.find((row) => Math.abs(Number(row?.line) - 0.5) < 1e-6) || null;
+}
+
+/**
+ * Team A's 3-way win loses only if A fails to win. The other team's +0.5
+ * wins on that team's win or a draw. Same period, opposite books, locks the board.
+ * Only the juicy pairs (pSum < 1) are returned.
+ */
+export function juicyThreeWayCovers(threeEntries, spreadEntries) {
+  const wins = (threeEntries || []).filter((row) => row?.id && row.quote);
+  const covers = (spreadEntries || []).filter((row) => row?.id && row.quote);
+  const found = [];
+  for (const win of wins) {
+    for (const cover of covers) {
+      if (win.id === cover.id) continue;
+      const tries = [
+        ['away', 'home'],
+        ['home', 'away'],
+      ];
+      for (const [winSide, coverSide] of tries) {
+        const winQuote = win.quote?.[winSide];
+        const coverQuote = halfPointCover(cover.quote, coverSide);
+        if (!winQuote || !coverQuote) continue;
+        const a = asQuote({ ...winQuote, line: null });
+        const b = asQuote(coverQuote);
+        if (!a || !b) continue;
+        const ev = evaluateTwoWayArb(a, b, 100);
+        const packed = pack(ev, 'lock', 0, {
+          book: win.id,
+          side: winSide,
+          role: 'win',
+          label: winQuote.label || winQuote.team || winSide,
+          team: winQuote.team ?? null,
+          american: a.american,
+          line: null,
+        }, {
+          book: cover.id,
+          side: coverSide,
+          role: 'cover',
+          label: coverQuote.label || coverQuote.team || coverSide,
+          team: coverQuote.team ?? null,
+          american: b.american,
+          line: 0.5,
+        });
+        if (packed?.hasArb) found.push(packed);
+      }
+    }
+  }
+  found.sort((a, b) => a.pSum - b.pSum);
+  return found;
+}
+
 export function pairContract(kind, fd, dk, bookA = 'fd', bookB = 'dk') {
+  if (kind === 'three_ml' || kind === 'three_spread') return { best: null, arbs: [] };
   if (kind === 'moneyline') return { best: pairMoneyline(fd, dk, bookA, bookB), arbs: [] };
   if (kind === 'yesno') {
     if (fd?.odd || dk?.odd) return { best: pairYesNo(fd, dk, 'odd', 'even', bookA, bookB), arbs: [] };
@@ -265,6 +323,13 @@ function formatBookAtLine(book, kind, line) {
 }
 
 export function formatSidesForRow(book, kind, twoWay, bookKey) {
+  if (kind === 'three_spread') {
+    const own = (twoWay?.legs || []).find((leg) => leg.book === bookKey);
+    if (!own) return { left: '—', right: '—' };
+    const odds = formatAmericanOdds(own.american);
+    const text = own.role === 'cover' ? `+0.5 ${odds}` : odds;
+    return own.side === 'away' ? { left: text, right: '—' } : { left: '—', right: text };
+  }
   if (twoWay?.legs?.length) {
     const own = twoWay.legs.find((leg) => leg.book === bookKey);
     if (!own) {

@@ -68,7 +68,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 67,Mike Evans,12119,mike-evans,SF,8,WR,30,74,63,71,74,64,65,69.2,2216
 68,Jaylen Warren,24209,jaylen-warren,PIT,9,RB,27,76,71,75,63,70,68,71,8228
 69,Tucker Kraft,25298,tucker-kraft,GB,11,TE,6,83,64,70,71,73,63,72.2,9484
-70,Marvin Harrison Jr.,23064,marvin-harrison-jr,ARI,14,WR,31,69,76,68,79,74,73,73.2,11628
+70,Marvin Harrison Jr.,23064,marvin-harrison-jr,HOU,8,WR,31,69,76,68,79,74,73,73.2,11628
 71,Sam LaPorta,22978,sam-laporta,DET,6,TE,7,66,57,65,96,87,64,74.2,10859
 72,Kyle Pitts Sr.,20164,kyle-pitts,ATL,11,TE,8,61,67,74,86,83,71,74.2,7553
 73,Dak Prescott,15600,dak-prescott,DAL,14,QB,7,64,77,59,95,80,78,75,3294
@@ -160,7 +160,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 159,Minnesota Vikings DST,8170,,,6,DST,9,190,155,135,173,175,163,165.6,
 160,Keaton Mitchell,25360,keaton-mitchell,LAC,7,RB,50,200,183,174,140,134,152,166.2,9511
 161,Alvin Kamara,16421,alvin-kamara,NO,8,RB,51,165,167,181,157,163,171,166.6,4035
-162,Harrison Mevis,26638,harrison-mevis,LAR,11,K,7,123,156,187,186,185,175,167.4,12015
+162,Harrison Mevis,26638,harrison-mevis,,,K,7,123,156,187,186,185,175,167.4,12015
 163,Jacksonville Jaguars DST,8140,,,7,DST,10,177,157,170,169,173,178,169.2,
 164,Brian Robinson Jr.,20094,brian-robinson-jr,ATL,11,RB,52,182,171,184,150,165,164,170.4,8154
 165,Denzel Boston,27339,denzel-boston,CLE,11,WR,58,192,170,173,171,155,156,172.2,13346
@@ -245,11 +245,11 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 244,Chris Bell,26038,chris-bell,MIA,6,WR,80,,307,,189,228,207,241.3,13311
 245,Pat Bryant,27211,pat-bryant,DEN,10,WR,81,,236,,239,258,212,244.3,12492
 246,Tyreek Hill,15802,tyreek-hill,,,WR,82,229,232,,,275,237,245.3,3321
-247,Kaytron Allen,24362,kaytron-allen,WAS,7,RB,65,,299,,198,250,241,249,13405
+247,Kaytron Allen,24362,kaytron-allen,MIA,6,RB,65,,299,,198,250,241,249,13405
 248,Sean Tucker,23679,sean-tucker,TB,10,RB,66,,328,,207,229,257,254.7,9506
 249,Rashod Bateman,19794,rashod-bateman,BAL,13,WR,83,,265,,253,256,221,258,7571
 250,Ted Hurst III,28130,ted-hurst,TB,10,WR,84,,300,,223,263,250,262,13317
-251,J.J. McCarthy,23018,jj-mccarthy,MIN,6,QB,30,241,228,,,318,,262.3,11565
+251,J.J. McCarthy,23018,jj-mccarthy,NYG,8,QB,30,241,228,,,318,,262.3,11565
 252,New Orleans Saints DST,8190,,,8,DST,23,,334,192,,267,,264.3,
 253,Devaughn Vele,26409,devaughn-vele,NO,8,WR,85,,301,,225,269,210,265,11834
 254,Shedeur Sanders,25968,shedeur-sanders,CLE,11,QB,31,237,282,,,279,,266,12524
@@ -264,7 +264,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 263,Justice Hill,18256,justice-hill,BAL,13,RB,69,,,,183,187,253,185,5995
 264,Kyle Williams,27487,kyle-williams-wr-2025,NE,11,WR,90,355,225,,,324,,301.3,12547
 265,George Holani,22915,george-holani,SEA,11,RB,70,,,,185,225,219,205,12048
-266,Blake Grupe,25533,blake-grupe,NYJ,13,K,21,260,,183,,469,,304,11058
+266,Blake Grupe,25533,blake-grupe,LAR,11,K,21,260,,183,,469,,304,11058
 267,Malik Davis,24205,malik-davis,DAL,14,RB,71,,,,192,237,206,214.5,8800
 268,Las Vegas Raiders DST,8220,,,13,DST,26,227,421,,,284,,310.7,
 269,Eli Stowers,23144,eli-stowers,PHI,10,TE,30,349,296,,,291,,312,13349
@@ -278,7 +278,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 277,Antonio Williams,25418,antonio-williams-wr,WAS,7,WR,92,,277,,,203,273,240,13301
 278,Indianapolis Colts DST,8130,,,13,DST,27,,220,,,271,,245.5,
 279,Jaylin Noel,27122,jaylin-noel,HOU,8,WR,93,,214,,,280,228,247,12536
-280,Odell Beckham Jr.,12127,odell-beckham,NYG,8,WR,94,202,,,,299,260,250.5,2078
+280,Odell Beckham Jr.,12127,odell-beckham,MIN,6,WR,94,202,,,,299,260,250.5,2078
 281,Washington Commanders DST,8310,,,7,DST,28,218,,,,283,,250.5,
 282,Chris Brooks,25823,christopher-brooks,GB,11,RB,77,,,,229,273,247,251,11370
 283,Ty Simpson,25368,ty-simpson,LAR,11,QB,32,352,317,,,333,,334,13275
@@ -346,7 +346,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 345,Ryan Fitzgerald,27261,ryan-fitzgerald,CAR,5,K,34,225,,,,448,,336.5,12961
 346,Dohnte Meyers,28178,dohnte-meyers,CIN,6,WR,116,317,,,,364,,340.5,13264
 347,Brashard Smith,27259,brashard-smith,KC,5,RB,86,,233,,,449,,341,12455
-348,Devin Neal,23682,devin-neal,,,RB,87,,211,,,475,,343,12476
+348,Devin Neal,23682,devin-neal,WAS,7,RB,87,,211,,,475,,343,12476
 349,Drew Lock,18225,drew-lock,SEA,11,QB,42,323,,,,365,,344,5854
 350,Colbie Young,26037,colbie-young,CIN,6,WR,117,360,,,,329,,344.5,13477
 351,Tyson Bagent,25321,tyson-bagent,CHI,10,QB,43,354,,,,338,,346,11256
@@ -357,7 +357,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 356,Elijah Sarratt,27463,elijah-sarratt,BAL,13,WR,119,464,246,,,487,,399,13268
 357,Joe Flacco,9300,joe-flacco,CIN,6,QB,47,306,,,,393,,349.5,19
 358,Barion Brown,25416,barion-brown,NO,8,WR,120,365,,,,337,,351,13533
-359,Audric Estime,23054,audric-estime,NO,8,RB,88,,286,,,422,,354,11579
+359,Audric Estime,23054,audric-estime,CLE,11,RB,88,,286,,,422,,354,11579
 360,Tyler Higbee,15623,tyler-higbee,LAR,11,TE,40,238,,,,473,,355.5,3271
 361,Tyler Huntley,19297,tyler-huntley,BAL,13,QB,48,383,,,,328,,355.5,7083
 362,Justin Tucker,11465,justin-tucker,,,K,35,212,,,,,,212,1264
@@ -399,7 +399,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 398,Josh Oliver,18487,josh-oliver,MIN,6,TE,50,288,,,,478,,383,5973
 399,Jazz Ferguson,18657,jazz-ferguson,,,WR,129,,268,,,,,268,5997
 400,Ulysses Bentley IV,23112,ulysses-bentley-iv,,,RB,97,268,,,,,,268,12826
-401,AJ Henning,23016,aj-henning,,,WR,130,269,,,,,,269,12865
+401,AJ Henning,23016,aj-henning,MIA,6,WR,130,269,,,,,,269,12865
 402,Jordan Whittington,23135,jordan-whittington,LAR,11,WR,131,315,,,,454,,384.5,11623
 403,Eli Raridon,28154,eli-raridon,NE,11,TE,51,351,,,,419,,385,13421
 404,Elijah Higgins,23119,elijah-higgins,ARI,14,TE,52,271,,,,503,,387,10231
@@ -433,7 +433,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 432,Jarrett Stidham,18604,jarrett-stidham,DEN,10,QB,59,451,,,,342,,396.5,6136
 433,Elijah Moore,20114,elijah-moore,PHI,10,WR,146,400,,,,394,,397,7596
 434,Darren Waller,14104,darren-waller,CAR,5,TE,55,,,,,296,230,296,2505
-435,Andy Dalton,9907,andy-dalton,PHI,10,QB,60,399,,,,398,,398.5,829
+435,Andy Dalton,9907,andy-dalton,,,QB,60,399,,,,398,,398.5,829
 436,Dalvin Cook,16374,dalvin-cook,,,RB,104,298,,,,,,298,4029
 437,Andrei Iosivas,25335,andrei-iosivas,CIN,6,WR,147,,,,,298,,298,10226
 438,Ezekiel Elliott,15498,ezekiel-elliott,,,RB,105,300,,,,,,300,3164
@@ -445,7 +445,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 444,Konata Mumpfield,27449,konata-mumpfield,LAR,11,WR,151,366,,,,438,,402,12718
 445,Bam Knight,24901,zonovan-bam-knight,ARI,14,RB,106,,,,,305,,305,8122
 446,Tommy Tremble,22795,tommy-tremble,CAR,5,TE,57,309,,,,496,,402.5,7694
-447,Jarquez Hunter,24335,jarquez-hunter,MIA,6,RB,107,,306,,,,,306,11569
+447,Jarquez Hunter,24335,jarquez-hunter,NO,8,RB,107,,306,,,,,306,11569
 448,LeQuint Allen Jr.,27285,lequint-allen-jr,JAC,7,RB,108,,,,,306,,306,12544
 449,Carson Beck,22953,carson-beck,ARI,14,QB,61,,,,,307,,307,13272
 450,Sam Howell,23045,sam-howell,DAL,14,QB,62,307,,,,,,307,8162
@@ -479,7 +479,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 479,D'Vonte Price,23874,dvonte-price,,,RB,114,,,,,331,,331,8184
 480,John Jiles,26941,john-jiles,,,WR,159,,331,,,,,331,12383
 481,C.J. Ham,16209,cj-ham,,,RB,115,332,,,,,,332,
-482,Coleman Owen,27621,coleman-owen,,,WR,160,,332,,,,,332,12829
+482,Coleman Owen,27621,coleman-owen,GB,11,WR,160,,332,,,,,332,12829
 483,Mitchell Trubisky,16381,mitch-trubisky,TEN,9,QB,68,498,,,,334,,416,3976
 484,Equanimeous St. Brown,17307,equanimeous-st-brown,,,WR,161,333,,,,,,333,5323
 485,JuJu Smith-Schuster,16427,juju-smith-schuster,,,WR,162,334,,,,,,334,4040
@@ -494,7 +494,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 494,Dimitri Stanley,26841,dimitri-stanley,,,WR,166,,339,,,,,339,12281
 495,Max Klare,27993,max-klare,LAR,11,TE,68,,349,,,490,,419.5,13278
 496,Dyami Brown,20113,dyami-brown,WAS,7,WR,167,453,,,,386,,419.5,7587
-497,Israel Abanikanda,24352,israel-abanikanda,,,RB,119,340,,,,,,340,9227
+497,Israel Abanikanda,24352,israel-abanikanda,DAL,14,RB,119,340,,,,,,340,9227
 498,Tanner Gentry,16660,tanner-gentry,,,WR,168,,341,,,,,341,4551
 499,Max Brosmer,27580,max-brosmer,MIN,6,QB,69,341,,,,,,341,12775
 500,Ramel Keyton,23128,ramel-keyton,,,WR,169,,342,,,,,342,11885
@@ -522,7 +522,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 522,Austin Hooper,15581,austin-hooper,ATL,11,TE,73,357,,,,499,,428,3202
 523,Bryce Lance,28129,bryce-lance,NO,8,WR,180,455,,,,401,,428,13420
 524,Ty Johnson,18406,ty-johnson,BUF,7,RB,125,,,,,357,,357,6039
-525,Xavier Smith,25627,xavier-smith,LAR,11,WR,181,372,,,,485,,428.5,11168
+525,Xavier Smith,25627,xavier-smith,SF,8,WR,181,372,,,,485,,428.5,11168
 526,Cade Stover,25269,cade-stover,HOU,8,TE,74,359,,,,,,359,11599
 527,Trey Knox,22907,trey-knox,,,TE,75,,,,,360,,360,11601
 528,Josh Adams,17248,josh-adams,,,RB,126,,361,,,,,361,5136
@@ -531,7 +531,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 531,Ameer Abdullah,13924,ameer-abdullah,JAC,7,RB,127,,,,,363,,363,2359
 532,Marquez Stevenson,20133,marquez-stevenson,,,WR,183,,363,,,,,363,7556
 533,Max Bredeson,28434,max-bredeson,MIN,6,RB,128,375,,,,488,,431.5,13516
-534,Jimmy Horn Jr.,27294,jimmy-horn-jr,,,WR,184,364,,,,,,364,12523
+534,Jimmy Horn Jr.,27294,jimmy-horn-jr,CLE,11,WR,184,364,,,,,,364,12523
 535,Zane Gonzalez,16548,zane-gonzalez,,,K,44,429,,,,437,,433,4233
 536,Bo Melton,24049,bo-melton,GB,11,WR,185,369,,,,,,369,8204
 537,Dallin Holker,24732,dallin-holker,,,TE,76,,370,,,,,370,11606
@@ -585,7 +585,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 585,Tahj Brooks,26212,tahj-brooks,CIN,6,RB,142,,,,,403,,403,12543
 586,Charlie Kolar,22756,charlie-kolar,LAC,7,TE,94,,,,,404,,404,8127
 587,Brady Russell,25731,brady-russell,SEA,11,TE,95,405,,,,,,405,11280
-588,Jake Browning,18557,jake-browning,,,QB,75,,,,,406,,406,6111
+588,Jake Browning,18557,jake-browning,LAC,7,QB,75,,,,,406,,406,6111
 589,Carlos Washington Jr.,25644,carlos-washington-jr,MIA,6,RB,143,,406,,,,,406,11186
 590,Colson Yankoff,26576,colson-yankoff,WAS,7,TE,96,406,,,,,,406,11942
 591,Jalen Milroe,22884,jalen-milroe,SEA,11,QB,76,407,,,,,,407,12510
@@ -610,7 +610,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 610,Haynes King,23141,haynes-king,CAR,5,QB,78,419,,,,,,419,13415
 611,Keytaon Thompson,24071,keytaon-thompson,,,WR,209,,420,,,,,420,11344
 612,J. Michael Sturdivant,26139,jmichael-sturdivant,GB,11,WR,210,420,,,,,,420,13770
-613,Justin Watson,17603,justin-watson,,,WR,211,421,,,,,,421,5374
+613,Justin Watson,17603,justin-watson,KC,5,WR,211,421,,,,,,421,5374
 614,Taysom Hill,17115,taysom-hill,,,TE,100,422,,,,,,422,4381
 615,Marcus Mariota,13890,marcus-mariota,WAS,7,QB,79,,,,,423,,423,2307
 616,Trayveon Williams,18607,trayveon-williams,,,RB,149,423,,,,,,423,6144
@@ -620,12 +620,12 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 620,Zay Jones,16431,zay-jones,,,WR,213,426,,,,,,426,4080
 621,Jalen Tolbert,23770,jalen-tolbert,MIA,6,WR,214,,,,,426,,426,8117
 622,Michael Badgley,17693,michael-badgley,,,K,47,427,,,,,,427,5230
-623,Austin Ekeler,16483,austin-ekeler,,,RB,150,428,,,,,,428,4663
+623,Austin Ekeler,16483,austin-ekeler,WAS,7,RB,150,428,,,,,,428,4663
 624,Jamaal Williams,16424,jamaal-williams,,,RB,151,430,,,,,,430,4149
 625,Isaac Guerendo,26392,isaac-guerendo,SF,8,RB,152,,,,,430,,430,11651
 626,Derek Carr,12092,derek-carr,,,QB,80,431,,,,,,431,2028
-627,Jam Miller,27326,jam-miller,,,RB,153,,,,,431,,431,13403
-628,Zach Ertz,11689,zach-ertz,,,TE,101,432,,,,,,432,1339
+627,Jam Miller,27326,jam-miller,ATL,11,RB,153,,,,,431,,431,13403
+628,Zach Ertz,11689,zach-ertz,PHI,10,TE,101,432,,,,,,432,1339
 629,Antonio Gibson,19624,antonio-gibson,,,RB,154,434,,,,,,434,6945
 630,Antonio Nunn,23259,antonio-nunn,,,WR,215,,434,,,,,434,7744
 631,Robert Tonyan,16502,robert-tonyan,PIT,9,TE,102,,,,,435,,435,4602
@@ -633,7 +633,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 633,Kadarius Toney,20119,kadarius-toney,,,WR,217,435,,,,,,435,7606
 634,Steven Mitchell Jr.,17916,steven-mitchell-jr,,,WR,218,,436,,,,,436,5132
 635,Zamir White,20095,zamir-white,NO,8,RB,155,436,,,,,,436,8139
-636,Will Levis,22987,will-levis,,,QB,81,437,,,,,,437,9999
+636,Will Levis,22987,will-levis,NYJ,13,QB,81,437,,,,,,437,9999
 637,Tanner Brown,25616,tanner-brown,,,K,48,438,,,,,,438,11145
 638,Mohamed Ibrahim,20153,mohamed-ibrahim,,,RB,156,439,,,,,,439,10651
 639,Ryan Jones,25350,ryan-jones-te,,,TE,103,,439,,,,,439,11298
@@ -648,7 +648,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 648,Brenden Rice,26213,brenden-rice,,,WR,221,442,,,,,,442,11621
 649,Jack Strand,28428,jack-strand,ATL,11,QB,83,,,,,442,,442,13602
 650,Javorius Allen,13944,javorius-allen,,,RB,159,,443,,,,,443,2430
-651,Joe Milton III,25967,joe-milton,DAL,14,QB,84,443,,,,,,443,11557
+651,Joe Milton III,25967,joe-milton,PHI,10,QB,84,443,,,,,,443,11557
 652,Dont'e Thornton Jr.,27288,donte-thornton-jr,LV,13,WR,222,,,,,443,,443,12541
 653,Eric Rogers,11921,eric-rogers,,,WR,223,,444,,,,,444,1701
 654,Parker Romo,24681,john-parker-romo,,,K,50,444,,,,,,444,8670
@@ -667,7 +667,7 @@ rank,name,fp_id,player_slug,team,bye_week,position,pos_rank,espn,sleeper,cbs,rts
 667,Isaiah Bond,24371,isaiah-bond,CLE,11,WR,230,457,,,,502,,479.5,12503
 668,John Bates,22833,john-bates,WAS,7,TE,108,458,,,,,,458,7716
 669,Isaiah Williams,26379,isaiah-williams-wr,NYJ,13,WR,231,459,,,,,,459,11608
-670,Jerome Ford,22921,jerome-ford,MIN,6,RB,161,,,,,460,,460,8143
+670,Jerome Ford,22921,jerome-ford,ARI,14,RB,161,,,,,460,,460,8143
 671,Brenen Thompson,28133,brenen-thompson,LAC,7,WR,232,460,,,,,,460,13380
 672,Ben Sinnott,26310,ben-sinnott,WAS,7,TE,109,462,,,,,,462,11596
 673,Jeremy Ruckert,23742,jeremy-ruckert,NYJ,13,TE,110,463,,,,,,463,8145

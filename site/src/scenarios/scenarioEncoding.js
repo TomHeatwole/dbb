@@ -18,6 +18,7 @@ import { clampSimulatorIterations, DEFAULT_ITERATIONS } from './simulatorMonteCa
 import { normalizeVariance, DEFAULT_VARIANCE, normalizeMonotone, DEFAULT_MONOTONE } from './outcomeDistribution';
 import { normalizeRankSource, DEFAULT_RANK_SOURCE, RANK_SOURCE_DASH } from './simulatorRankSource';
 import { normalizePlayoffFormat } from './playoffStandings';
+import { normalizeRosOrder } from './rosRankOrder';
 
 export { sanitizeRoster, sanitizeRosters, isValidPlayerId };
 
@@ -176,6 +177,7 @@ export function decodeFutureScenario2(encoded) {
       m: obj.y === 'simulator' ? normalizeMonotone(obj.m) : undefined,
       rs: obj.y === 'simulator' ? normalizeRankSource(obj.rs, obj.sy) : undefined,
       pf: obj.y === 'simulator' ? normalizePlayoffFormat(obj.pf) : undefined,
+      ro: obj.y === 'simulator' ? normalizeRosOrder(obj.ro) : null,
     };
   } catch {
     return null;
@@ -191,6 +193,7 @@ export function encodeSimulatorScenario(
     variance = DEFAULT_VARIANCE,
     monotone = DEFAULT_MONOTONE,
     rankSource = DEFAULT_RANK_SOURCE,
+    rosOrder = null,
   } = {},
 ) {
   const changes = [];
@@ -220,6 +223,8 @@ export function encodeSimulatorScenario(
   if (normalizeRankSource(rankSource, sy) === RANK_SOURCE_DASH) {
     payload.rs = RANK_SOURCE_DASH;
   }
+  const rosRankOrder = normalizeRosOrder(rosOrder);
+  if (rosRankOrder) payload.ro = rosRankOrder;
   return btoa(JSON.stringify(payload));
 }
 

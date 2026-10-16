@@ -29,6 +29,11 @@ describe('nyc filter', () => {
     ];
     expect(isNycBlockedExtra(extras[0], hockey)).toBe(true);
     expect(isNycBlockedExtra(extras[1], hockey)).toBe(true);
+    expect(isNycBlockedExtra({
+      key: 'fg|three_spread|winner|fd-away-dk',
+      kind: 'three_spread',
+      twoWay: { pSum: 0.95, hasArb: true, legs: [] },
+    }, hockey)).toBe(false);
     expect(nycVisibleExtras({ ...hockey, extras }, true)).toHaveLength(0);
     const { promoted, rest } = extraRowsForDisplay({ ...hockey, extras }, { filterNyc: true });
     expect(promoted).toHaveLength(0);

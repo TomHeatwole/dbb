@@ -1458,7 +1458,24 @@ export async function fetchPlCornerBook() {
   return fetchCornerBook(PL_BOOK_CONFIG);
 }
 
+function wantsTrack(req) {
+  const q = req.query || {};
+  if (q.track === '1' || q.track === 'true') return true;
+  try {
+    const parsed = new URL(req.url || '', 'http://localhost');
+    if (parsed.searchParams.get('track') === '1') return true;
+    return /\/api\/track-corners\/?$/i.test(parsed.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
+  if (wantsTrack(req)) {
+    const { handleCornersTrack } = await import('../lib/paperTrackCorners.mjs');
+    return handleCornersTrack(req, res);
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -5,6 +5,7 @@ export const GAMBLING_NAV = [
   { to: '/drives', label: 'Drives', match: ['/drives'] },
   { to: '/SOP2', label: 'SOP2', match: ['/sop2'] },
   { to: '/rawarb', label: 'Raw Arb', match: ['/rawarb'] },
+  { to: '/tdarb', label: 'TD Arb', match: ['/tdarb'] },
 ];
 
 export function isGamblingRoute(pathname) {

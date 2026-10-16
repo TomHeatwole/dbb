@@ -27636,3 +27636,329 @@ button.corners-bet:hover {
   }
 }
 
+/* ── ROS rank board ── */
+.ros-rank-open-btn {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ros-rank-open-btn--edited {
+  border-color: rgba(255, 196, 92, 0.7);
+  color: #ffe1a8;
+}
+
+.ros-rank-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(6, 4, 16, 0.72);
+  display: flex;
+  padding: 1.25rem;
+}
+
+.ros-rank-panel {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  background: #14121c;
+  border: 1px solid rgba(130, 150, 220, 0.35);
+  border-radius: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.ros-rank-head {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid rgba(130, 150, 220, 0.18);
+}
+
+.ros-rank-head-copy h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+  color: #f2f4ff;
+}
+
+.ros-rank-head-copy p {
+  margin: 0;
+  max-width: 42rem;
+  color: rgba(210, 216, 240, 0.72);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.ros-rank-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.ros-rank-search {
+  width: 11rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(130, 150, 220, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f4f6ff;
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.ros-rank-search:focus {
+  outline: 2px solid rgba(140, 170, 255, 0.45);
+  outline-offset: 1px;
+}
+
+.ros-rank-reset,
+.ros-rank-close {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(130, 150, 220, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(220, 226, 255, 0.9);
+}
+
+.ros-rank-reset {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.ros-rank-reset:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ros-rank-close {
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.ros-rank-tabs {
+  display: none;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem 0;
+}
+
+.ros-rank-tab {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  border: 1px solid rgba(130, 150, 220, 0.3);
+  background: transparent;
+  color: rgba(210, 216, 240, 0.8);
+  padding: 0.3rem 0.75rem;
+  font-weight: 700;
+}
+
+.ros-rank-tab--active {
+  background: rgba(90, 120, 220, 0.35);
+  color: #fff;
+  border-color: rgba(150, 175, 255, 0.55);
+}
+
+.ros-rank-cols {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 1rem;
+  min-height: 0;
+  flex: 1;
+}
+
+.ros-rank-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(130, 150, 220, 0.16);
+  border-radius: 0.65rem;
+}
+
+.ros-rank-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid rgba(130, 150, 220, 0.14);
+}
+
+.ros-rank-col-pos {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #f4f6ff;
+}
+
+.ros-rank-col-sub {
+  color: rgba(190, 198, 230, 0.6);
+  font-size: 0.72rem;
+}
+
+.ros-rank-list {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 0.35rem;
+}
+
+.ros-rank-empty {
+  color: rgba(190, 198, 230, 0.55);
+  font-size: 0.82rem;
+  padding: 0.8rem 0.4rem;
+}
+
+.ros-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+  border-radius: 0.4rem;
+  border-top: 2px solid transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.ros-rank-row--moved {
+  background: rgba(255, 186, 72, 0.06);
+}
+
+.ros-rank-row--dragging {
+  opacity: 0.45;
+}
+
+.ros-rank-row--drop {
+  border-top-color: rgba(150, 180, 255, 0.95);
+}
+
+.ros-rank-row--end {
+  min-height: 0;
+  height: 0;
+  padding: 0;
+  margin-top: 2px;
+  cursor: default;
+}
+
+.ros-rank-grip {
+  width: 1.35rem;
+  height: 1.55rem;
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  border-radius: 0.3rem;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.ros-rank-grip span {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(190, 200, 235, 0.75);
+  box-shadow:
+    0 -4px 0 rgba(190, 200, 235, 0.75),
+    0 4px 0 rgba(190, 200, 235, 0.75);
+}
+
+.ros-rank-grip:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.ros-rank-dragging,
+body.ros-rank-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+.ros-rank-num {
+  width: 1.7rem;
+  flex: 0 0 auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: rgba(180, 198, 255, 0.95);
+  font-size: 0.82rem;
+}
+
+.ros-rank-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #f3f5ff;
+  font-size: 0.86rem;
+}
+
+.ros-rank-team {
+  flex: 0 0 auto;
+  color: rgba(180, 190, 220, 0.55);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.ros-rank-fp {
+  width: 3.1rem;
+  flex: 0 0 auto;
+  text-align: right;
+  color: #f0c27a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .ros-rank-overlay {
+    padding: 0;
+  }
+
+  .ros-rank-panel {
+    border-radius: 0;
+    max-height: 100%;
+    height: 100%;
+  }
+
+  .ros-rank-head {
+    flex-direction: column;
+  }
+
+  .ros-rank-head-actions {
+    width: 100%;
+  }
+
+  .ros-rank-search {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .ros-rank-tabs {
+    display: flex;
+  }
+
+  .ros-rank-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .ros-rank-col {
+    display: none;
+  }
+
+  .ros-rank-col--active {
+    display: flex;
+  }
+}
+

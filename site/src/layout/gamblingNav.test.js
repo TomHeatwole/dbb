@@ -1,12 +1,13 @@
 import { isGamblingRoute } from './gamblingNav';
 
 describe('isGamblingRoute', () => {
-  it('matches the four gambling pages', () => {
+  it('matches gambling pages', () => {
     expect(isGamblingRoute('/corners')).toBe(true);
     expect(isGamblingRoute('/corners/arb')).toBe(true);
     expect(isGamblingRoute('/drives')).toBe(true);
     expect(isGamblingRoute('/SOP2')).toBe(true);
     expect(isGamblingRoute('/rawarb')).toBe(true);
+    expect(isGamblingRoute('/tdarb')).toBe(true);
   });
 
   it('does not match dynasty or other betting pages', () => {

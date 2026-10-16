@@ -50,6 +50,7 @@ const server = http.createServer(async (req, res) => {
     '/api/ncaaf-drives': './api/ncaaf-drives.mjs',
     '/api/rawarb': './api/rawarb.mjs',
     '/api/rawarb-deep': './api/rawarb.mjs',
+    '/api/tdarb': './api/rawarb.mjs',
     '/api/pl-corners': './api/pl-corners.mjs',
     '/api/mls-corners': './api/pl-corners.mjs',
     '/api/dk-corners': './lib/dk-corners.mjs',
@@ -62,6 +63,9 @@ const server = http.createServer(async (req, res) => {
     '/api/exchange': './api/exchange.mjs',
     '/api/me': './api/auth.mjs',
     '/api/auth': './api/auth.mjs',
+    '/api/track-drives': './api/ncaaf-drives.mjs',
+    '/api/track-sop2': './api/fanduel-sop.mjs',
+    '/api/track-corners': './api/pl-corners.mjs',
   };
 
   const handlerName =
@@ -81,11 +85,24 @@ const server = http.createServer(async (req, res) => {
         if (pathname === '/api/rawarb-deep' && !req.query.deep) {
           req.query.deep = '1';
         }
+        if (pathname === '/api/tdarb' && !req.query.tdarb) {
+          req.query.tdarb = '1';
+        }
         if (pathname === '/api/draftkings-goal-method' && !req.query.source) {
           req.query.source = 'dk';
         }
         if (pathname === '/api/kalshi-sop' && !req.query.source) {
           req.query.source = 'kalshi';
+        }
+        if (pathname === '/api/track-drives') {
+          req.query.track = '1';
+        }
+        if (pathname === '/api/track-sop2') {
+          req.query.track = '1';
+          if (!req.query.soccer) req.query.soccer = 'all';
+        }
+        if (pathname === '/api/track-corners') {
+          req.query.track = '1';
         }
         const { default: handler } = await import(`${handlerName}?v=${Date.now()}`);
         await handler(req, res);

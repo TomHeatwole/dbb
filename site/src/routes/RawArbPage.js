@@ -15,8 +15,10 @@ import {
 } from '../rawarb/rawArbModel';
 import { RAW_BOOKS } from '../rawarb/bookCatalog';
 import { formatSidesForRow } from '../rawarb/twoWayPairs';
-import { applyDeepAttachments, applyEnabledExtras, extraRowsForDisplay } from '../rawarb/mergeDeep';
+import { applyDeepAttachments, applyEnabledExtras, displayedBestPSum, sortCardMarkets } from '../rawarb/mergeDeep';
 import { sportFiltersFor, sportLabel } from '../rawarb/sportCatalog';
+import { formatMultiWayLegs } from '../rawarb/multiWayArb';
+import { formatAmericanOdds } from '../sop/sopModel';
 
 const OG_TITLE = 'Raw Arb';
 const OG_DESCRIPTION = 'FanDuel, DraftKings, BetMGM, and Caesars two-way markets';
@@ -61,47 +63,92 @@ function formatKick(iso) {
   });
 }
 
-function twoWayClass(twoWay) {
-  if (!twoWay) return '';
-  if (twoWay.hasArb) return ' rawarb-twoway--arb';
-  if (twoWay.pSum <= 1.02) return ' rawarb-twoway--close';
+function hedgeClass(hedge) {
+  if (!hedge) return '';
+  if (hedge.hasArb) return ' rawarb-twoway--arb';
+  if (hedge.pSum <= 1.02) return ' rawarb-twoway--close';
   return '';
+}
+
+function pickDisplayHedge(market) {
+  const twoWay = market?.twoWay;
+  const multiWay = market?.multiWay;
+  if (twoWay && multiWay) {
+    return multiWay.pSum < twoWay.pSum
+      ? { mode: 'multi', hedge: multiWay }
+      : { mode: 'two', hedge: twoWay };
+  }
+  if (multiWay) return { mode: 'multi', hedge: multiWay };
+  if (twoWay) return { mode: 'two', hedge: twoWay };
+  return null;
 }
 
 function bookQuoted(market, kind, bookId) {
   const book = market?.[bookId];
   if (!book) return false;
+  if (kind === 'multiway') {
+    return ['td', 'fg', 'punt', 'other', 'away', 'draw', 'home'].some((k) => book[k]?.american != null);
+  }
   if (kind === 'total') return Boolean(book.over || book.under);
+  if (kind === 'three_ml') return Boolean(book.away || book.home || book.draw);
   return Boolean(book.away || book.home);
 }
 
+function formatMultiBookCell(book, kind) {
+  if (!book) return { left: '—', right: '' };
+  const keys = kind === 'multiway'
+    ? ['td', 'fg', 'punt', 'other']
+    : ['away', 'draw', 'home'];
+  const short = { away: 'Away', home: 'Home', draw: 'Draw', td: 'TD', fg: 'FG', punt: 'Punt', other: 'Oth' };
+  const parts = keys
+    .filter((k) => book[k]?.american != null)
+    .map((k) => `${short[k] || k} ${formatAmericanOdds(book[k].american)}`);
+  return { left: parts.join(' · ') || '—', right: '' };
+}
+
 function MarketRow({ label, kind, market, best, wide, books }) {
-  const twoWay = market?.twoWay;
+  const display = pickDisplayHedge(market);
   const priced = books.filter((book) => bookQuoted(market, kind, book.id)).length;
   return (
     <tr className={best ? 'rawarb-row--best' : undefined}>
       <th scope="row" className={wide ? 'rawarb-th-wide' : undefined}>{label}</th>
       {books.map((book) => {
-        const sides = wide
-          ? formatSidesForRow(market?.[book.id], kind, market?.twoWay, book.id)
-          : formatBookSides(market?.[book.id], kind);
-        return (
-          <td key={book.id}>
+        const sides = (wide && (kind === 'multiway' || kind === 'three_ml'))
+          ? formatMultiBookCell(market?.[book.id], kind)
+          : wide
+            ? formatSidesForRow(market?.[book.id], kind, market?.twoWay, book.id)
+            : formatBookSides(market?.[book.id], kind);
+        const split = sides.right ? (
+          <>
             <span>{sides.left}</span>
             <span className="rawarb-sep">/</span>
             <span>{sides.right}</span>
-          </td>
+          </>
+        ) : (
+          <span>{sides.left}</span>
+        );
+        return (
+          <td key={book.id}>{split}</td>
         );
       })}
-      <td className={`rawarb-twoway${twoWayClass(twoWay)}`}>
-        {twoWay ? (
+      <td className={`rawarb-twoway${hedgeClass(display?.hedge)}`}>
+        {display ? (
           <>
             <div className="rawarb-twoway-nums">
-              <strong>{formatCombinedPct(twoWay.pSum)}</strong>
-              <span>{formatJuicePct(twoWay.pSum)}</span>
-              {twoWay.lineFit === 'middle' && <span className="rawarb-middle">Middle</span>}
+              <strong>{formatCombinedPct(display.hedge.pSum)}</strong>
+              <span>{formatJuicePct(display.hedge.pSum)}</span>
+              {display.mode === 'multi' && (
+                <span className="rawarb-middle">{display.hedge.outcomes}-way</span>
+              )}
+              {display.mode === 'two' && display.hedge.lineFit === 'middle' && (
+                <span className="rawarb-middle">Middle</span>
+              )}
             </div>
-            <div className="rawarb-twoway-legs">{formatTwoWayLegs(twoWay)}</div>
+            <div className="rawarb-twoway-legs">
+              {display.mode === 'multi'
+                ? formatMultiWayLegs(display.hedge)
+                : formatTwoWayLegs(display.hedge)}
+            </div>
           </>
         ) : (
           <span className="rawarb-empty">{priced >= 2 ? '—' : 'Need two books'}</span>
@@ -112,8 +159,8 @@ function MarketRow({ label, kind, market, best, wide, books }) {
 }
 
 function GameCard({ game, deepStatus, oddsFilter, filterNyc, books }) {
-  const { promoted, rest } = extraRowsForDisplay(game, { oddsFilter, filterNyc });
-  const [open, setOpen] = useState(false);
+  const displayOpts = { oddsFilter, filterNyc };
+  const faceRows = sortCardMarkets(game, MARKET_ROWS, displayOpts);
   return (
     <article className="rawarb-card">
       <header className="rawarb-card-head">
@@ -136,55 +183,23 @@ function GameCard({ game, deepStatus, oddsFilter, filterNyc, books }) {
             {books.map((book) => (
               <th key={book.id} scope="col">{book.label}</th>
             ))}
-            <th scope="col">Best two-way</th>
+            <th scope="col">Best lock</th>
           </tr>
         </thead>
         <tbody>
-          {MARKET_ROWS.map((row) => (
+          {faceRows.map((row) => (
             <MarketRow
-              key={row.key}
+              key={`${row.key}-${row.market?.twoWay?.pSum ?? 'x'}-${row.market?.twoWay?.legs?.[0]?.line ?? ''}`}
               label={row.label}
               kind={row.kind}
-              market={game[row.key]}
-              best={isBestTwoWay(game[row.key], game, { oddsFilter, filterNyc })}
-              books={books}
-            />
-          ))}
-          {promoted.map((row) => (
-            <MarketRow
-              key={`${row.key}-${row.twoWay?.pSum}-${row.twoWay?.legs?.[0]?.line ?? ''}`}
-              label={row.label}
-              kind={row.kind}
-              market={row}
-              best={isBestTwoWay(row, game, { oddsFilter, filterNyc })}
-              wide
+              market={row.market}
+              best={isBestTwoWay(row.market, game, displayOpts)}
+              wide={row.wide}
               books={books}
             />
           ))}
         </tbody>
       </table>
-      {rest.length > 0 && (
-        <details className="rawarb-more" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-          <summary>
-            Other two-way markets ({rest.length})
-          </summary>
-          <table className="rawarb-table rawarb-table--more">
-            <tbody>
-              {rest.map((row) => (
-                <MarketRow
-                  key={row.key}
-                  label={row.label}
-                  kind={row.kind}
-                  market={row}
-                  best={isBestTwoWay(row, game, { oddsFilter, filterNyc })}
-                  wide
-                  books={books}
-                />
-              ))}
-            </tbody>
-          </table>
-        </details>
-      )}
       {!game.deepLoaded && deepStatus === 'scanning' && (
         <p className="rawarb-scan">Scanning props…</p>
       )}
@@ -286,9 +301,10 @@ function RawArbPage() {
   const liveCount = useMemo(() => bySport.filter((game) => game.inPlay).length, [bySport]);
   const upcomingCount = bySport.length - liveCount;
   const visible = useMemo(() => {
-    const scored = games.map((game) => (
-      applyEnabledExtras(applyEnabledBooks(game, activeBookIds), activeBookIds)
-    ));
+    const scored = games.map((game) => {
+      const next = applyEnabledExtras(applyEnabledBooks(game, activeBookIds), activeBookIds);
+      return { ...next, displayedPSum: displayedBestPSum(next, filterOpts) };
+    });
     return sortGames(filterGames(scored, sport, timing, filterOpts), sortMode, filterOpts);
   }, [games, sport, timing, sortMode, filterOpts, activeBookIds]);
 
@@ -309,7 +325,10 @@ function RawArbPage() {
       <div className="rawarb-page">
         <header className="rawarb-head">
           <h1>Raw Arb</h1>
-          <p>Every sport on FanDuel and DraftKings. BetMGM and Caesars stay off until you turn them on.</p>
+          <p>
+            Every sport on FanDuel and DraftKings. Deep scan includes multi-outcome locks (3-way soccer ML, CFB drive result).
+            BetMGM and Caesars stay off until you turn them on.
+          </p>
         </header>
         <div className="rawarb-toolbar">
           <div className="rawarb-filters" role="group" aria-label="Sport">

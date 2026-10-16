@@ -89,6 +89,16 @@
     "ogDescription": "FanDuel vs DraftKings two-way markets across every sport both books list",
     "ogImage": "/logo.png"
   },
+  "/tdarb": {
+    "ogTitle": "TD Arb",
+    "ogDescription": "NFL anytime touchdown vs Kalshi NO on 1+ touchdowns",
+    "ogImage": "/logo.png"
+  },
+  "/TDARB": {
+    "ogTitle": "TD Arb",
+    "ogDescription": "NFL anytime touchdown vs Kalshi NO on 1+ touchdowns",
+    "ogImage": "/logo.png"
+  },
   "/admincontrols": {
     "ogTitle": "The Hwang Dynasty",
     "ogDescription": "",

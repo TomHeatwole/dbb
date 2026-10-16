@@ -1,12 +1,12 @@
 rank,name,team,position,tier,sleeper_id
 1,Trey McBride,ARI,TE,1,8130
 2,Colston Loveland,CHI,TE,1,12517
-3,Brock Bowers,LV,TE,1,11604
-4,Tyler Warren,IND,TE,1,12518
+3,Tyler Warren,IND,TE,1,12518
+4,Brock Bowers,LV,TE,1,11604
 5,Tucker Kraft,GB,TE,2,9484
 6,Harold Fannin Jr.,CLE,TE,2,12506
-7,Kyle Pitts Sr.,ATL,TE,2,7553
-8,Sam LaPorta,DET,TE,2,10859
+7,Sam LaPorta,DET,TE,2,10859
+8,Kyle Pitts Sr.,ATL,TE,2,7553
 9,George Kittle,SF,TE,2,4217
 10,Travis Kelce,KC,TE,3,1466
 11,Dalton Kincaid,BUF,TE,3,10236
@@ -28,8 +28,8 @@ rank,name,team,position,tier,sleeper_id
 27,Gunnar Helm,TEN,TE,4,12502
 28,Oronde Gadsden II,LAC,TE,4,12493
 29,Evan Engram,DEN,TE,4,4066
-30,David Njoku,LAC,TE,4,4033
-31,Greg Dulcich,MIA,TE,4,8172
+30,Greg Dulcich,MIA,TE,4,8172
+31,David Njoku,LAC,TE,4,4033
 32,Colby Parkinson,LAR,TE,5,6865
 33,Mason Taylor,NYJ,TE,5,12498
 34,Theo Johnson,NYG,TE,5,11597
@@ -37,7 +37,7 @@ rank,name,team,position,tier,sleeper_id
 36,Mike Gesicki,CIN,TE,5,4993
 37,Darren Waller,CAR,TE,5,2505
 38,Michael Mayer,LV,TE,5,9482
-39,Jake Tonges,SF,TE,5,8698
+39,Jake Tonges,SF,TE,6,8698
 40,Charlie Kolar,LAC,TE,6,8127
 41,Darnell Washington,PIT,TE,6,9479
 42,Elijah Arroyo,SEA,TE,6,12521
@@ -49,10 +49,10 @@ rank,name,team,position,tier,sleeper_id
 48,Eli Raridon,NE,TE,6,13421
 49,Noah Gray,KC,TE,6,7828
 50,Max Klare,LAR,TE,6,13278
-51,Ja'Tavion Sanders,CAR,TE,6,11600
-52,Noah Fant,NO,TE,6,5857
-53,Ben Sinnott,WAS,TE,7,11596
-54,Daniel Bellinger,TEN,TE,7,8225
+51,Noah Fant,NO,TE,6,5857
+52,Ja'Tavion Sanders,CAR,TE,6,11600
+53,Daniel Bellinger,TEN,TE,7,8225
+54,Ben Sinnott,WAS,TE,7,11596
 55,Jonnu Smith,GB,TE,7,4144
 56,Tommy Tremble,CAR,TE,7,7694
 57,Mitchell Evans,CAR,TE,7,12473
@@ -65,15 +65,15 @@ rank,name,team,position,tier,sleeper_id
 64,Josh Oliver,MIN,TE,7,5973
 65,Jackson Hawes,BUF,TE,7,12658
 66,John Bates,WAS,TE,7,7716
-67,Adam Trautman,DEN,TE,7,6869
-68,Nate Boerkircher,JAC,TE,7,13299
+67,Nate Boerkircher,JAC,TE,7,13299
+68,Adam Trautman,DEN,TE,7,6869
 69,Will Kacmarek,MIA,TE,7,13434
 70,Tanner Koziol,JAC,TE,7,13408
 71,Luke Schoonmaker,DAL,TE,7,10871
 72,Brock Wright,DET,TE,8,7891
 73,Foster Moreau,HOU,TE,8,5985
 74,Cade Stover,HOU,TE,8,11599
-75,Zach Ertz,FA,TE,8,1339
+75,Zach Ertz,PHI,TE,8,1339
 76,Mo Alie-Cox,IND,TE,8,4054
 77,Durham Smythe,BAL,TE,8,5008
 78,Sam Roush,CHI,TE,8,13322
@@ -144,25 +144,25 @@ rank,name,team,position,tier,sleeper_id
 143,Mark Redman,GB,TE,10,13013
 144,David Martin-Robinson,TEN,TE,10,12357
 145,Jack Stoll,SF,TE,10,7946
-146,Miles Kitselman,FA,TE,10,13431
+146,Miles Kitselman,DET,TE,10,13431
 147,Cole Turner,MIA,TE,10,8214
-148,Devin Culp,FA,TE,10,11820
+148,Devin Culp,CLE,TE,10,11820
 149,E.J. Jenkins,PHI,TE,10,11304
 150,Lake McRee,PIT,TE,10,13292
-151,Hayden Rucci,JAC,TE,10,12389
+151,Hayden Rucci,LAC,TE,10,12389
 152,John Michael Gyllenborg,KC,TE,10,13342
 153,Jack Westover,WAS,TE,10,12045
 154,CJ Dippre,TB,TE,10,12984
 155,Shane Zylstra,FA,TE,11,8041
 156,Jaren Kanak,TEN,TE,11,13422
 157,Joel Wilson,TEN,TE,11,11113
-158,Josiah Deguara,PHI,TE,11,7050
+158,Josiah Deguara,FA,TE,11,7050
 159,Carter Runyon,LV,TE,11,13122
 160,Jaheim Bell,FA,TE,11,11605
 161,DJ Rogers,DAL,TE,11,13355
 162,Logan Thomas,FA,TE,11,2251
 163,Ty Pezza,BAL,TE,11,13705
-164,Tanner Conner,FA,TE,11,8849
+164,Tanner Conner,NE,TE,11,8849
 165,Jordan Akins,FA,TE,11,5032
 166,Harrison Bryant,FA,TE,11,6850
 167,Caleb Lohner,DEN,TE,11,12735
@@ -176,7 +176,7 @@ rank,name,team,position,tier,sleeper_id
 175,Tucker Fisk,FA,TE,11,8885
 176,Cam Grandy,MIN,TE,11,12062
 177,Geoff Swaim,FA,TE,11,2545
-178,Messiah Swinson,CLE,TE,11,12154
+178,Messiah Swinson,FA,TE,11,12154
 179,Sean McKeon,FA,TE,11,6964
 180,Princeton Fant,DAL,TE,11,11508
 181,Noah Togiai,FA,TE,11,7404
@@ -195,7 +195,7 @@ rank,name,team,position,tier,sleeper_id
 194,Gerald Everett,FA,TE,11,4089
 195,Feleipe Franks,CAR,TE,11,7531
 196,Jalin Conyers,FA,TE,11,12866
-197,Kenny Yeboah,FA,TE,11,7597
+197,Kenny Yeboah,ARI,TE,11,7597
 198,Stephen Carlson,CHI,TE,11,6451
 199,Luke Lachey,FA,TE,12,12725
 200,Thomas Gordon,DET,TE,12,13249
@@ -215,9 +215,9 @@ rank,name,team,position,tier,sleeper_id
 214,Patrick Gurd,LV,TE,12,13913
 215,Ross Travis,FA,TE,12,3041
 216,Rivaldo Fairweather,FA,TE,12,12851
-217,Brenden Bates,FA,TE,12,12374
+217,Brenden Bates,JAC,TE,12,12374
 218,Lance Mason,FA,TE,12,13357
-219,Kenny Fletcher Jr.,IND,TE,12,13957
+219,Kenny Fletcher Jr.,FA,TE,12,13957
 220,Chase Curtis,FA,TE,12,13839
 221,Cody Hardy,FA,TE,12,13834
 222,Layne Pryor,FA,TE,12,13261

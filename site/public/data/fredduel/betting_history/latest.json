@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-10-03T12:57:10.235Z",
-  "contentHash": "4a6e63f822ce9280491a5b5e2937b1f0023484e3ff294e2bf7196d122f26a167",
+  "capturedAt": "2026-10-16T20:31:18.860Z",
+  "contentHash": "93531a9ec1a0d6d590533cee315809ef09d84dfe9fddaa6342453ab9885dc55c",
   "offers": [
     {
       "id": 1,
@@ -2155,7 +2155,7 @@
       "remainingExposure": 275,
       "maxExposurePerPerson": null,
       "minTake": 1,
-      "status": "open",
+      "status": "expired",
       "expiresAt": "2026-10-08T21:18:00.000Z",
       "createdAt": "2026-09-24T21:19:48.725Z"
     },
@@ -2386,11 +2386,11 @@
       "line": 100,
       "takerStake": 5,
       "creatorRisk": 5,
-      "status": "live",
+      "status": "void",
       "result": null,
-      "settledAt": null,
-      "settledBy": null,
-      "settlementNote": "",
+      "settledAt": "2026-10-03T23:16:35.081Z",
+      "settledBy": "manual",
+      "settlementNote": "Voided by hand.",
       "createdAt": "2026-09-10T21:17:04.354Z"
     },
     {
@@ -2422,11 +2422,11 @@
       "line": 100,
       "takerStake": 5,
       "creatorRisk": 5,
-      "status": "live",
-      "result": null,
-      "settledAt": null,
-      "settledBy": null,
-      "settlementNote": "",
+      "status": "settled",
+      "result": "taker",
+      "settledAt": "2026-10-03T23:16:31.433Z",
+      "settledBy": "manual",
+      "settlementNote": "Graded by hand: yes.",
       "createdAt": "2026-09-11T07:12:11.156Z"
     },
     {

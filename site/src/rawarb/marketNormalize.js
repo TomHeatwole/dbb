@@ -71,6 +71,8 @@ export function parsePeriod(name) {
     || /\bregulation\b/.test(n)
     || /\bexcl(?:uding|\.)?\s*ot\b/.test(n)
     || /\bexclud(?:es|ing)\s+overtime\b/.test(n)
+    || /\bregular time\b/.test(n)
+    || /\breg(?:ulation)? time\b/.test(n)
   ) return 'reg';
   if (/\b1st set\b|\bfirst set\b|\bset 1\b/.test(n)) return '1s';
   if (/\b2nd set\b|\bsecond set\b|\bset 2\b/.test(n)) return '2s';
@@ -365,7 +367,11 @@ export function formatMarketLabel(key, fallback) {
     return `${p}${subject} ${formatStat(stat) || 'O/U'}`.replace(/\s+/g, ' ').trim();
   }
   if (kind === 'yesno') {
-    return `${p}${formatStat(stat) || fallback || 'Yes/No'}`.trim();
+    const statLabel = formatStat(stat) || fallback || 'Yes/No';
+    if (stat === 'odd_even' && subject && subject !== 'game') {
+      return `${p}${subject} ${statLabel}`.replace(/\s+/g, ' ').trim();
+    }
+    return `${p}${statLabel}`.trim();
   }
   if (subject && subject !== 'game') {
     return `${p}${subject} ${formatStat(stat)}`.replace(/\s+/g, ' ').trim();

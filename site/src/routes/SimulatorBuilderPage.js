@@ -44,6 +44,15 @@ import { DEFAULT_VARIANCE, normalizeVariance, DEFAULT_MONOTONE, normalizeMonoton
 import { useMyCurrentRosterId } from '../hooks/useAuthUser';
 import { getCurrentYear } from '../utils/DateHelper';
 import { getLockedRegularSeasonWeeks, loadRosRankRows } from '../scenarios/rosRankLoader';
+import RosRankBoard from '../scenarios/RosRankBoard';
+import {
+  applyRosOrder,
+  moveRosRow,
+  resetRosPosition,
+  rosOrderByPosition,
+  rosOrdersEqual,
+  stampFpRanks,
+} from '../scenarios/rosRankOrder';
 
 const OG_TITLE = 'Season Simulator';
 const OG_DESCRIPTION = 'Run outcome-roll simulations and see championship odds.';
@@ -72,6 +81,8 @@ function SimulatorTooltip({ season, iterations, rankSource, isRos, lockedWeeks }
                 rest-of-season positional rank ±2 historical pool ({yearLabel}) for
                 {lockedWeeks > 0 ? ` weeks ${nextWeek}–14` : ' weeks 1–14'}.
                 QB, RB, and WR use standard ROS; TE uses half-PPR ROS.
+                Drag a position's board to move players before the run — that order
+                is the rank the historical pool is centered on.
                 Those future weeks are optimal lineups, same as the full-season simulator.
                 Playoff weeks 15–17 are rolled from real historical playoffs of similar
                 weeks 1–14 scorers — actual points already played, plus the rolled rest.
@@ -146,6 +157,8 @@ function SimulatorBuilderPage({ variant = 'season' }) {
     return normalizeRankSource(pre?.rs ?? DEFAULT_RANK_SOURCE, pre?.sy);
   });
   const [hwangRankRows, setHwangRankRows] = useState([]);
+  const [publishedRosRows, setPublishedRosRows] = useState([]);
+  const [rosBoardOpen, setRosBoardOpen] = useState(false);
   const [dashRankRows, setDashRankRows] = useState([]);
 
   useEffect(() => {
@@ -175,8 +188,9 @@ function SimulatorBuilderPage({ variant = 'season' }) {
 
         setPlayersData(players);
         setPlayerIdMap(idMap);
-        setHwangRankRows(isRos ? rosRows : hwangRows);
         setDashRankRows(dashRows);
+        const stampedRos = stampFpRanks(rosRows);
+        let workingRos = stampedRos;
         setTeamsForGrid(teams);
 
         const storedEncoded = sessionStorage.getItem(pendingStorageKey);
@@ -191,6 +205,7 @@ function SimulatorBuilderPage({ variant = 'season' }) {
           if (pending.v != null) setVariance(normalizeVariance(pending.v));
           if (pending.m != null) setMonotone(normalizeMonotone(pending.m));
           if (pending.rs != null) setRankSource(normalizeRankSource(pending.rs, season));
+          if (isRos && pending.ro) workingRos = applyRosOrder(stampedRos, pending.ro);
           if (Array.isArray(pending.c) && pending.c.length > 0) {
             setScenarioRosters(sanitizeRosters(applyScenarioChanges(initial, pending.c)));
             setSearchParams((prev) => {
@@ -208,6 +223,8 @@ function SimulatorBuilderPage({ variant = 'season' }) {
         const snapshot = {};
         for (const rid in initial) snapshot[rid] = [...initial[rid]];
         setOriginalRosters(snapshot);
+        setPublishedRosRows(stampedRos);
+        setHwangRankRows(isRos ? workingRos : hwangRows);
       } catch (e) {
         if (!cancelled) setError('Failed to load roster data.');
       } finally {
@@ -297,6 +314,11 @@ function SimulatorBuilderPage({ variant = 'season' }) {
     ));
   };
 
+  const rosRanksEdited = useMemo(() => {
+    if (!isRos) return false;
+    return !rosOrdersEqual(rosOrderByPosition(hwangRankRows), rosOrderByPosition(publishedRosRows));
+  }, [isRos, hwangRankRows, publishedRosRows]);
+
   const handleRun = () => {
     const encoded = encodeSimulatorScenario(originalRosters, scenarioRosters, {
       seasonYear: season,
@@ -304,6 +326,7 @@ function SimulatorBuilderPage({ variant = 'season' }) {
       variance,
       monotone,
       rankSource,
+      rosOrder: rosRanksEdited ? rosOrderByPosition(hwangRankRows) : null,
     });
     navigate(`?state=run&scenario=${encodeURIComponent(encoded)}`);
   };
@@ -337,9 +360,18 @@ function SimulatorBuilderPage({ variant = 'season' }) {
   const leftHeader = (
     <div className="outcome-scenario-header-meta">
       {isRos ? (
-        <span className="future-scenario-proj-label">
-          {season} {rosWeekLabel} · outcomes {historyLabel}
-        </span>
+        <>
+          <span className="future-scenario-proj-label">
+            {season} {rosWeekLabel} · outcomes {historyLabel}
+          </span>
+          <button
+            type="button"
+            className={`scenario-eval-back-link ros-rank-open-btn${rosRanksEdited ? ' ros-rank-open-btn--edited' : ''}`}
+            onClick={() => setRosBoardOpen(true)}
+          >
+            {rosRanksEdited ? 'ROS ranks · edited' : 'Edit ROS ranks'}
+          </button>
+        </>
       ) : (
         <>
           <OutcomeScenarioSeasonDropdown
@@ -378,6 +410,24 @@ function SimulatorBuilderPage({ variant = 'season' }) {
 
         {!loading && error && (
           <div style={{ color: '#ff6b6b', padding: '20px' }}>{error}</div>
+        )}
+
+        {!loading && !error && isRos && (
+          <RosRankBoard
+            open={rosBoardOpen}
+            rows={hwangRankRows}
+            publishedRows={publishedRosRows}
+            playersData={playersData}
+            playerIdMap={playerIdMap}
+            onClose={() => setRosBoardOpen(false)}
+            onMove={(position, from, to) => {
+              setHwangRankRows((current) => moveRosRow(current, position, from, to));
+            }}
+            onResetPosition={(position) => {
+              setHwangRankRows((current) => resetRosPosition(current, publishedRosRows, position));
+            }}
+            onResetAll={() => setHwangRankRows(publishedRosRows)}
+          />
         )}
 
         {!loading && !error && (

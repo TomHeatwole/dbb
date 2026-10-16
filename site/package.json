@@ -22,6 +22,7 @@
     "prebuild": "node scripts/sync-dbbp-data.mjs",
     "sync:dbbp": "node scripts/sync-dbbp-data.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
+    "paper-track:dump": "node scripts/paper-track-dump.mjs",
     "start": "node scripts/start-dev.mjs",
     "start:cra": "react-scripts start",
     "api": "node chat-dev-server.js",

@@ -202,6 +202,40 @@ const statements = [
     started_at timestamptz NOT NULL,
     ttl_ms     integer NOT NULL
   )`,
+
+  // Paper-line log for /sop2, /drives, and /corners. Cron upserts; dump script
+  // copies rows to example_data/paper_track/*.csv and deletes them from Neon.
+  `CREATE TABLE IF NOT EXISTS paper_snapshots (
+    id               BIGSERIAL PRIMARY KEY,
+    sport            TEXT NOT NULL CHECK (sport IN ('sop', 'drives', 'corners')),
+    event_id         TEXT NOT NULL,
+    phase            TEXT NOT NULL,
+    offense_side     TEXT CHECK (offense_side IS NULL OR offense_side IN ('home', 'away')),
+    captured_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    kickoff_at       TIMESTAMPTZ,
+    odds_fingerprint TEXT NOT NULL,
+    payload          JSONB NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_paper_snapshots_lookup
+     ON paper_snapshots (sport, event_id, phase, captured_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_paper_snapshots_sport_time
+     ON paper_snapshots (sport, captured_at DESC)`,
+  `ALTER TABLE paper_snapshots DROP CONSTRAINT IF EXISTS paper_snapshots_sport_check`,
+  `ALTER TABLE paper_snapshots ADD CONSTRAINT paper_snapshots_sport_check
+     CHECK (sport IN ('sop', 'drives', 'corners'))`,
+  `CREATE TABLE IF NOT EXISTS paper_track_meta (
+    sport            TEXT PRIMARY KEY CHECK (sport IN ('sop', 'drives', 'corners')),
+    last_espn_at     TIMESTAMPTZ,
+    last_books_at    TIMESTAMPTZ,
+    next_kickoff_at  TIMESTAMPTZ,
+    live_count       INTEGER NOT NULL DEFAULT 0,
+    half_time_count  INTEGER NOT NULL DEFAULT 0,
+    upcoming_count   INTEGER NOT NULL DEFAULT 0,
+    updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
+  `ALTER TABLE paper_track_meta DROP CONSTRAINT IF EXISTS paper_track_meta_sport_check`,
+  `ALTER TABLE paper_track_meta ADD CONSTRAINT paper_track_meta_sport_check
+     CHECK (sport IN ('sop', 'drives', 'corners'))`,
 ];
 
 for (const stmt of statements) {

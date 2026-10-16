@@ -14,9 +14,106 @@ import {
 } from './marketNormalize.js';
 import { isNonMatchWinnerMarket, isThreeWayMoneyline, isTwoWayWinnerName } from './sportCatalog.js';
 import { isBareTeamName, lastSignificantToken, teamsMatch } from './teamMatch.js';
+import {
+  driveResultSubject,
+  isDriveResultMarket,
+  quotesToDriveOutcomes,
+} from './driveResultBuckets.js';
 
 function isThreeWayQuotes(name, runnerNames) {
   return isThreeWayMoneyline(name, runnerNames);
+}
+
+const THREE_WAY_TITLE = /3[\s-]?way|\b1x2\b|match result|\bwinner\b|moneyline|\bresult\b|\bto win\b/i;
+const THREE_WAY_NOISE = /correct score|winning margin|double chance|both teams|half-time|full-time|ht\/ft|score method|exact score|to score|scorer|\bmargin\b|bands|either half|both halves|double winner|\bwdw\b|no draw|spread|handicap|\basian\b|early payout|2[\s-]?up|result after|after \d{1,2}:\d{2}|up to \d+(?:st|nd|rd|th)?\s*(?:minute|min\b)|(?:&|\/)| and /i;
+
+export function isDrawQuote(quote) {
+  const label = String(quote?.label || quote?.name || '').trim();
+  const outcome = String(quote?.outcome || quote?.type || '').toLowerCase();
+  return /^(?:the\s+)?(?:draw|tie|x)$/i.test(label) || outcome === 'tie' || outcome === 'draw' || outcome === 'x';
+}
+
+export function isPlainThreeWayTitle(name) {
+  const title = String(name || '');
+  if (!title || isTwoWayWinnerName(title)) return false;
+  if (THREE_WAY_NOISE.test(title)) return false;
+  return THREE_WAY_TITLE.test(title);
+}
+
+/** Prefer full-match and half results over interval “result after …” on the same key. */
+export function threeMlTitleRank(name) {
+  const n = String(name || '').trim().toLowerCase();
+  if (n === 'match result') return 100;
+  if (/^\d+(?:st|nd|rd|th)\s+half\s+result$/.test(n)) return 90;
+  if (/^2nd half result$/.test(n)) return 90;
+  if (/^1st half result$/.test(n)) return 90;
+  if (/result after|after \d{1,2}:\d{2}/.test(n)) return 0;
+  return 50;
+}
+
+/**
+ * A regulation result is two teams plus a draw. Store the team prices only.
+ * Returns true when this market was a plain 3-way and should not be paired as a 2-way.
+ */
+export function storePlainThreeWay(upsert, name, period, quotes, teams, sideOf) {
+  if (!isPlainThreeWayTitle(name)) return false;
+  if (period === 'fg' && /inning/i.test(name)) return false;
+  const list = (quotes || []).filter((q) => q && q.american != null);
+  if (list.some((q) => /\(\s*[+-]?\d/.test(String(q.label || q.name || '')))) return false;
+  if (list.some((q) => Number.isFinite(q.line) && Math.abs(Number(q.line)) > 0)) return false;
+  if (list.length !== 3) return false;
+  if (list.some((q) => /[&/]/.test(String(q.label || q.name || '')))) return false;
+  if (list.filter((q) => isDrawQuote(q)).length !== 1) return false;
+  const away = list.find((q) => !isDrawQuote(q) && sideOf(q) === 'away');
+  const home = list.find((q) => !isDrawQuote(q) && sideOf(q) === 'home');
+  const draw = list.find((q) => isDrawQuote(q));
+  if (!away || !home) return false;
+  if (list.some((q) => q !== away && q !== home && q !== draw && !isDrawQuote(q))) return false;
+  const key = marketKey({ period, kind: 'three_ml', stat: 'winner', subject: 'game' });
+  const rank = threeMlTitleRank(name);
+  upsert(key, name, 'three_ml', (book, row) => {
+    const prevRank = row?._threeMlRank ?? -1;
+    if (book.away && rank <= prevRank) return;
+    if (row) {
+      row._threeMlRank = rank;
+      row.label = name;
+    }
+    book.away = {
+      american: away.american,
+      line: null,
+      team: teams.away || away.label || away.name,
+      label: away.label || away.name || teams.away,
+    };
+    book.home = {
+      american: home.american,
+      line: null,
+      team: teams.home || home.label || home.name,
+      label: home.label || home.name || teams.home,
+    };
+    if (draw) {
+      book.draw = {
+        american: draw.american,
+        line: null,
+        label: draw.label || draw.name || 'Draw',
+      };
+    }
+  });
+  return true;
+}
+
+function storeDriveResultMultiway(upsert, name, period, quotes, teams) {
+  if (!isDriveResultMarket(name)) return false;
+  const outcomes = quotesToDriveOutcomes(quotes);
+  if (Object.keys(outcomes).length < 3) return false;
+  const subject = driveResultSubject(name, teams);
+  const key = marketKey({ period, kind: 'multiway', stat: 'drive_result', subject });
+  upsert(key, name, 'multiway', (book) => {
+    for (const [outKey, val] of Object.entries(outcomes)) {
+      if (!val?.american) continue;
+      book[outKey] = { american: val.american, label: val.label || outKey };
+    }
+  });
+  return true;
 }
 
 function nameMentionsTeam(name, teams = {}) {
@@ -31,7 +128,64 @@ function nameMentionsTeam(name, teams = {}) {
   });
 }
 
-const SKIP_NAME = /3-way|3 way|exact (game|team)?\s*winning|exact score|squares|drive \d|drive result|winning margin|anytime(?:\s+\w+)?\s+td scorer|anytime goal|goal ?scorer|last touchdown|first td scorer|1st touchdown scorer|to score \d\+ touchdowns|to score a goal|fan.?duel squares|correct score|octopus|td exactas|most \w+ yards|double winner|futures|first scoring play|score method|1st score method|special teams to score|to score a td|defensive td|to beat the|in overtime|\brace to\b|\bwdw\b|half-time\/full-time|ht\/ft|goals bands|total goals bands|2 way spread (?:away|home)|lead at \d|point by point|to record \d+\+|to win (?:either|both) half|win in both halves|both teams to score - both|both halves|both teams to score.+(?:&|\/)|btts.+(?:&|\/)|no draw|\b1x2\b|double chance|both win set|listed set|win a set|both players to win|\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}/i;
+/** The one team named in a title. "Total Runs Odd/Even" is the game; "Dodgers Total Runs Odd/Even" is not. */
+function teamMentioned(name, teams = {}) {
+  const named = teamSubject(name, teams);
+  if (named) return named;
+  const n = String(name || '').toLowerCase();
+  const hits = [teams.away, teams.home].filter(Boolean).filter((team) => {
+    const full = String(team).toLowerCase();
+    const token = lastSignificantToken(team);
+    return (full && n.includes(full)) || (token.length >= 3 && n.includes(token));
+  });
+  return hits.length === 1 ? hits[0] : null;
+}
+
+function oddEvenSide(quote) {
+  const text = String(quote?.outcome || quote?.label || quote?.name || '');
+  if (/^odd\b/i.test(text)) return 'odd';
+  if (/^even\b/i.test(text)) return 'even';
+  return null;
+}
+
+/**
+ * A book can post the game total and each team's runs in one tab.
+ * Quotes that name a team stay on that team. The rest is the game total.
+ */
+function oddEvenGroups(quotes, name, teams, teamOf) {
+  const tagged = (quotes || []).map((quote) => ({
+    quote,
+    side: oddEvenSide(quote),
+    team: teamOf ? teamOf(quote) : null,
+  })).filter((row) => row.side);
+  if (tagged.some((row) => row.team)) {
+    const groups = new Map();
+    for (const row of tagged) {
+      if (!row.team) continue;
+      if (!groups.has(row.team)) groups.set(row.team, {});
+      if (!groups.get(row.team)[row.side]) groups.get(row.team)[row.side] = row.quote;
+    }
+    return [...groups.entries()].map(([subject, pair]) => ({
+      subject,
+      odd: pair.odd,
+      even: pair.even,
+    }));
+  }
+  const odd = tagged.find((row) => row.side === 'odd')?.quote;
+  const even = tagged.find((row) => row.side === 'even')?.quote;
+  return [{ subject: teamMentioned(name, teams) || 'game', odd, even }];
+}
+
+function writeOddEven(upsert, name, period, subject, odd, even) {
+  if (!odd || !even) return;
+  const key = marketKey({ period, kind: 'yesno', stat: 'odd_even', subject: subject || 'game' });
+  upsert(key, name, 'yesno', (book) => {
+    if (!book.odd) book.odd = { american: odd.american, label: 'Odd' };
+    if (!book.even) book.even = { american: even.american, label: 'Even' };
+  });
+}
+
+const SKIP_NAME = /3-way|3 way|exact (game|team)?\s*winning|exact score|squares|drive \d|drive result|winning margin|anytime(?:\s+\w+)?\s+td scorer|anytime goal|goal ?scorer|last touchdown|first td scorer|1st touchdown scorer|to score \d\+ touchdowns|to score a goal|fan.?duel squares|correct score|octopus|td exactas|most \w+ yards|double winner|futures|first scoring play|score method|1st score method|special teams to score|to score a td|defensive td|to beat the|in overtime|\brace to\b|\bwdw\b|half-time\/full-time|ht\/ft|goals bands|total goals bands|2 way spread (?:away|home)|lead at \d|point by point|to record \d+\+|to win (?:either|both) half|win in both halves|both teams to score - both|both halves|both teams to score.+(?:&|\/)|btts.+(?:&|\/)|no draw|\b1x2\b|double chance|both win set|listed set|win a set|both players to win|\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}|up to \d+(?:st|nd|rd|th)?\s*(?:minute|min\b)|between .*(?:minute|min\b)|goal scored\s*-|listed time|\btotal goals,\s*\d/i;
 
 function isScoreMethodLabel(name) {
   return /touchdown|\btds?\b|field goal|safety|punt|kickoff|interception|fumble|method|special teams|to beat|in overtime|and (?:win|lose)|\bdefense\b|\boffense\b/i.test(String(name ?? ''));
@@ -101,12 +255,13 @@ export function extractFdContracts(markets, teams = {}) {
   const byKey = new Map();
   const upsert = (key, label, kind, mutate) => {
     if (!byKey.has(key)) byKey.set(key, { key, label, kind, fd: {} });
-    mutate(byKey.get(key).fd);
+    const row = byKey.get(key);
+    mutate(row.fd, row);
   };
 
   for (const market of Object.values(markets ?? {})) {
     const name = market?.marketName ?? '';
-    if (!name || shouldSkipMarketName(name)) continue;
+    if (!name) continue;
     if (isNonMatchWinnerMarket(name, market?._tab || market?.hint)) continue;
     const runners = Array.isArray(market.runners) ? market.runners : Object.values(market.runners ?? {});
     const quotes = runners.map((runner) => {
@@ -120,9 +275,18 @@ export function extractFdContracts(markets, teams = {}) {
       };
     }).filter(Boolean);
     if (quotes.length < 2 && !/alternate|alt /i.test(name)) continue;
+    const period = resolvePeriod(name, market?._tab || market?.hint);
+    if (storePlainThreeWay(upsert, name, period, quotes, teams, (q) => {
+      if (isDrawQuote(q)) return 'draw';
+      const label = stripLine(q.name);
+      if (teams.away && (isBareTeamName(label, teams.away) || teamsMatch(label, teams.away))) return 'away';
+      if (teams.home && (isBareTeamName(label, teams.home) || teamsMatch(label, teams.home))) return 'home';
+      return null;
+    })) continue;
+    if (storeDriveResultMultiway(upsert, name, period, quotes, teams)) continue;
+    if (shouldSkipMarketName(name)) continue;
     if (isThreeWayQuotes(name, runners.map((runner) => runner.runnerName))) continue;
 
-    const period = resolvePeriod(name, market?._tab || market?.hint);
     const stat = resolveStat(name, market?._tab || market?.hint);
     const overUnder = quotes.filter((q) => /^(over|under)\b/i.test(stripLine(q.name)) || / over$| under$/i.test(q.name));
     const yesNo = quotes.filter((q) => /^(yes|no)$/i.test(stripLine(q.name)));
@@ -149,7 +313,7 @@ export function extractFdContracts(markets, teams = {}) {
     }
 
     if (/alternate spread/i.test(name)) {
-      const key = marketKey({ period, kind: 'spread', stat: 'points', subject: 'game' });
+      const key = marketKey({ period, kind: 'spread', stat, subject: 'game' });
       for (const q of quotes) {
         const teamName = stripLine(q.name);
         const line = q.line ?? parseLineFromName(q.name);
@@ -165,13 +329,9 @@ export function extractFdContracts(markets, teams = {}) {
     }
 
     if (oddEven.length >= 2) {
-      const key = marketKey({ period, kind: 'yesno', stat: 'odd_even', subject: 'game' });
-      upsert(key, name, 'yesno', (book) => {
-        const odd = oddEven.find((q) => /^odd/i.test(q.name));
-        const even = oddEven.find((q) => /^even/i.test(q.name));
-        if (odd) book.odd = { american: odd.american, label: 'Odd' };
-        if (even) book.even = { american: even.american, label: 'Even' };
-      });
+      for (const group of oddEvenGroups(oddEven, name, teams)) {
+        writeOddEven(upsert, name, period, group.subject, group.odd, group.even);
+      }
       continue;
     }
 
@@ -249,7 +409,7 @@ export function extractFdContracts(markets, teams = {}) {
         kind,
         stat: kind === 'moneyline'
           ? (stat.startsWith('race') || stat === 'dnb' ? stat : 'winner')
-          : 'points',
+          : stat,
         subject: 'game',
       });
       upsert(key, name, kind, (book) => {
@@ -280,12 +440,13 @@ export function extractDkContracts(markets, selections, teams = {}) {
   const byKey = new Map();
   const upsert = (key, label, kind, mutate) => {
     if (!byKey.has(key)) byKey.set(key, { key, label, kind, dk: {} });
-    mutate(byKey.get(key).dk);
+    const row = byKey.get(key);
+    mutate(row.dk, row);
   };
 
   for (const market of markets ?? []) {
     const name = market?.name ?? '';
-    if (!name || shouldSkipMarketName(name)) continue;
+    if (!name) continue;
     if (isNonMatchWinnerMarket(name, market?.hint)) continue;
     const sels = byMarket.get(String(market.id)) ?? [];
     const quotes = sels.map((sel) => {
@@ -301,9 +462,17 @@ export function extractDkContracts(markets, selections, teams = {}) {
       };
     }).filter(Boolean);
     if (!quotes.length) continue;
+    const period = resolvePeriod(name, market?.hint);
+    if (storePlainThreeWay(upsert, name, period, quotes, teams, (q) => {
+      if (isDrawQuote(q)) return 'draw';
+      if (dkTeamSide(q, 'away', teams.away)) return 'away';
+      if (dkTeamSide(q, 'home', teams.home)) return 'home';
+      return null;
+    })) continue;
+    if (storeDriveResultMultiway(upsert, name, period, quotes, teams)) continue;
+    if (shouldSkipMarketName(name)) continue;
     if (isThreeWayQuotes(name, sels.map((sel) => sel.label || sel.outcomeType))) continue;
 
-    const period = resolvePeriod(name, market?.hint);
     const stat = resolveStat(name, market?.hint);
     const overs = quotes.filter((q) => q.outcome === 'over' || /^over$/i.test(q.label));
     const unders = quotes.filter((q) => q.outcome === 'under' || /^under$/i.test(q.label));
@@ -313,11 +482,10 @@ export function extractDkContracts(markets, selections, teams = {}) {
     const evens = quotes.filter((q) => q.outcome === 'even' || /^even$/i.test(q.label));
 
     if (odds.length && evens.length) {
-      const key = marketKey({ period, kind: 'yesno', stat: 'odd_even', subject: 'game' });
-      upsert(key, name, 'yesno', (book) => {
-        book.odd = { american: odds[0].american, label: 'Odd' };
-        book.even = { american: evens[0].american, label: 'Even' };
-      });
+      const teamOf = (quote) => teamSubject(quote.participant, teams) || teamMentioned(quote.participant, teams);
+      for (const group of oddEvenGroups([...odds, ...evens], name, teams, teamOf)) {
+        writeOddEven(upsert, name, period, group.subject, group.odd, group.even);
+      }
       continue;
     }
 
@@ -374,7 +542,7 @@ export function extractDkContracts(markets, selections, teams = {}) {
         kind,
         stat: kind === 'moneyline'
           ? (stat.startsWith('race') || stat === 'dnb' ? stat : 'winner')
-          : 'points',
+          : stat,
         subject: 'game',
       });
       upsert(key, name, kind, (book) => {

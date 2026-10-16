@@ -643,7 +643,21 @@ function requestSource(req) {
   return '';
 }
 
+function wantsTrack(req) {
+  const q = req.query || {};
+  if (q.track === '1' || q.track === 'true') return true;
+  const parsed = requestUrl(req);
+  if (!parsed) return false;
+  if (parsed.searchParams.get('track') === '1') return true;
+  return /\/api\/track-sop2\/?$/i.test(parsed.pathname);
+}
+
 export default async function handler(req, res) {
+  if (wantsTrack(req)) {
+    const { handleSopTrack } = await import('../lib/paperTrackSop.mjs');
+    return handleSopTrack(req, res);
+  }
+
   if (wantsStaticText(req)) {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       return res.status(405).json({ error: 'Method not allowed' });

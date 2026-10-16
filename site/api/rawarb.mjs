@@ -430,11 +430,48 @@ function wantsDeep(req) {
   }
 }
 
+function wantsTdArb(req) {
+  const q = req.query || {};
+  if (q.tdarb === '1' || q.tdarb === 'true') return true;
+  try {
+    const url = new URL(req.url || '', 'http://localhost');
+    if (url.searchParams.get('tdarb') === '1' || url.searchParams.get('tdarb') === 'true') return true;
+    return /\/tdarb\/?$/.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   // /api/rawarb-deep is the same function: ?deep=1 (Hobby plan, 12 functions max).
   if (wantsDeep(req)) {
     const { default: deepHandler } = await import('../lib/rawarb-deep.mjs');
     return deepHandler(req, res);
+  }
+
+  if (wantsTdArb(req)) {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+    try {
+      const { fetchTdArbBook } = await import('../lib/tdarb.mjs');
+      const fresh = requestIsFresh(req);
+      const ttlMs = 60_000;
+      const data = fresh
+        ? await fetchTdArbBook()
+        : await cachedBook('tdarb-v1', fetchTdArbBook, () => ttlMs, { persist: true });
+      if (fresh) {
+        await fillBookCache('tdarb-v1', data, ttlMs, { persist: true });
+        setNoStore(res);
+      } else {
+        setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));
+      }
+      return res.status(200).json(data);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[tdarb]', err);
+      return res.status(502).json({ error: err.message || 'TD arb fetch failed' });
+    }
   }
 
   if (req.method !== 'GET') {
@@ -445,9 +482,9 @@ export default async function handler(req, res) {
     const ttlMs = 60_000;
     const data = fresh
       ? await fetchRawArbBook()
-      : await cachedBook('rawarb-v4', fetchRawArbBook, () => ttlMs, { persist: true });
+      : await cachedBook('rawarb-v5', fetchRawArbBook, () => ttlMs, { persist: true });
     if (fresh) {
-      await fillBookCache('rawarb-v4', data, ttlMs, { persist: true });
+      await fillBookCache('rawarb-v5', data, ttlMs, { persist: true });
       setNoStore(res);
     } else {
       setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));

@@ -8,18 +8,20 @@
       "maxDuration": 30
     },
     "api/fanduel-sop.mjs": {
-      "maxDuration": 30,
-      "includeFiles": "lib/named-export.mjs,lib/draftkings-goal-method.mjs,lib/kalshi-sop.mjs,lib/dk-corners.mjs,lib/kalshi-corners.mjs,src/sop/sopModel.js,src/sop/fixtureKey.js"
+      "maxDuration": 60,
+      "includeFiles": "lib/named-export.mjs,lib/draftkings-goal-method.mjs,lib/kalshi-sop.mjs,lib/dk-corners.mjs,lib/kalshi-corners.mjs,lib/paperTrackCore.mjs,lib/paperTrackSop.mjs,src/sop/**,src/paperTrack/**"
     },
     "api/ncaaf-drives.mjs": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "lib/paperTrackCore.mjs,lib/paperTrackDrives.mjs,src/drives/**,src/paperTrack/**,src/sop/sopModel.js,src/sop/gameSnapshot.js,src/sop/longestNoGoalPick.js"
     },
     "api/rawarb.mjs": {
       "maxDuration": 60,
-      "includeFiles": "src/rawarb/**,src/corners/arbChecker.js,src/sop/sopModel.js,lib/rawarb-deep.mjs,lib/rawarb-mgm.mjs,lib/rawarb-caesars.mjs,lib/caesarsSession.mjs"
+      "includeFiles": "src/rawarb/**,src/tdarb/**,src/corners/arbChecker.js,src/sop/sopModel.js,lib/rawarb-deep.mjs,lib/rawarb-mgm.mjs,lib/rawarb-caesars.mjs,lib/caesarsSession.mjs,lib/tdarb.mjs,lib/kalshi-sop.mjs"
     },
     "api/pl-corners.mjs": {
-      "maxDuration": 30
+      "maxDuration": 60,
+      "includeFiles": "lib/paperTrackCore.mjs,lib/paperTrackCorners.mjs,lib/dk-corners.mjs,lib/kalshi-corners.mjs,src/corners/**,src/paperTrack/**,src/sop/sopModel.js,src/sop/gameSnapshot.js,src/sop/soccerLeagues.js,src/sop/longestNoGoalPick.js"
     },
     "api/render.js": {
       "includeFiles": "api/_spa-template.html,routeMeta.json"
@@ -30,10 +32,19 @@
     { "source": "/SOP-static.txt", "destination": "/api/fanduel-sop?format=static" },
     { "source": "/api/mls-corners", "destination": "/api/pl-corners?league=mls" },
     { "source": "/api/rawarb-deep", "destination": "/api/rawarb?deep=1" },
+    { "source": "/api/tdarb", "destination": "/api/rawarb?tdarb=1" },
     { "source": "/api/draftkings-goal-method", "destination": "/api/fanduel-sop?source=dk" },
     { "source": "/api/kalshi-sop", "destination": "/api/fanduel-sop?source=kalshi" },
     { "source": "/api/me", "destination": "/api/auth" },
-    { "source": "/api/onboard", "destination": "/api/auth" }
+    { "source": "/api/onboard", "destination": "/api/auth" },
+    { "source": "/api/track-drives", "destination": "/api/ncaaf-drives?track=1" },
+    { "source": "/api/track-sop2", "destination": "/api/fanduel-sop?soccer=all&track=1" },
+    { "source": "/api/track-corners", "destination": "/api/pl-corners?track=1" }
+  ],
+  "crons": [
+    { "path": "/api/track-drives", "schedule": "* * * * *" },
+    { "path": "/api/track-sop2", "schedule": "* * * * *" },
+    { "path": "/api/track-corners", "schedule": "* * * * *" }
   ],
   "headers": [
     {

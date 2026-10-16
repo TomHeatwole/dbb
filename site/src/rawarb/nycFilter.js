@@ -22,7 +22,7 @@ function isMlbAltLine(row) {
 /** Markets NY books typically omit — hide when "Filter out NYC" is on. */
 export function isNycBlockedExtra(row, game) {
   if (!row || !game) return false;
-  if (isHockeySport(game.sport)) return true;
+  if (isHockeySport(game.sport)) return row.kind !== 'three_spread';
   if (game.sport !== 'mlb') return false;
   if (isExtraInnings(row)) return true;
   return isMlbAltLine(row);

@@ -30,12 +30,12 @@ rank,name,team,position,tier,sleeper_id
 29,Geno Smith,NYJ,QB,4,1373
 30,Fernando Mendoza,LV,QB,4,13269
 31,Tua Tagovailoa,ATL,QB,4,6768
-32,Michael Penix Jr.,ATL,QB,4,11559
+32,Michael Penix Jr.,ATL,QB,5,11559
 33,Kirk Cousins,LV,QB,5,1166
 34,Shedeur Sanders,CLE,QB,5,12524
 35,Deshaun Watson,CLE,QB,5,4017
 36,Carson Beck,ARI,QB,5,13272
-37,J.J. McCarthy,MIN,QB,6,11565
+37,J.J. McCarthy,NYG,QB,6,11565
 38,Mac Jones,SF,QB,6,7527
 39,Justin Fields,KC,QB,6,7591
 40,Ty Simpson,LAR,QB,6,13275
@@ -48,31 +48,31 @@ rank,name,team,position,tier,sleeper_id
 47,Davis Mills,HOU,QB,6,7585
 48,Taylen Green,CLE,QB,6,13306
 49,Tyson Bagent,CHI,QB,6,11256
-50,Gardner Minshew II,ARI,QB,7,6011
+50,Joe Milton III,PHI,QB,7,11557
 51,Trey Lance,LAC,QB,7,7610
-52,Joe Milton III,DAL,QB,7,11557
+52,Gardner Minshew II,ARI,QB,7,6011
 53,Tyler Huntley,BAL,QB,7,7083
-54,Quinn Ewers,JAC,QB,7,12500
-55,Spencer Rattler,NO,QB,7,11562
-56,Drew Allar,PIT,QB,7,13289
+54,Spencer Rattler,NO,QB,7,11562
+55,Drew Allar,PIT,QB,7,13289
+56,Quinn Ewers,JAC,QB,7,12500
 57,Jarrett Stidham,DEN,QB,7,6136
 58,Jalen Milroe,SEA,QB,7,12510
-59,Riley Leonard,IND,QB,7,12470
-60,Sam Howell,DAL,QB,7,8162
+59,Sam Howell,DAL,QB,7,8162
+60,Riley Leonard,IND,QB,7,12470
 61,Carson Wentz,MIN,QB,7,3161
 62,Mitchell Trubisky,TEN,QB,7,3976
 63,Dillon Gabriel,CLE,QB,7,12486
-64,Jalon Daniels,TB,QB,7,13425
-65,Tommy DeVito,NE,QB,7,11292
+64,Tommy DeVito,NE,QB,7,11292
+65,Jalon Daniels,TB,QB,7,13425
 66,Joshua Dobbs,DET,QB,7,4179
 67,Kenny Pickett,CAR,QB,7,8160
 68,Mason Rudolph,PIT,QB,7,4972
 69,Drew Lock,SEA,QB,7,5854
 70,Kyle McCord,MIA,QB,7,12494
 71,Kyle Allen,BUF,QB,7,5127
-72,Jack Strand,ATL,QB,7,13602
-73,Haynes King,CAR,QB,7,13415
-74,Andy Dalton,PHI,QB,7,829
+72,Haynes King,CAR,QB,7,13415
+73,Jack Strand,ATL,QB,7,13602
+74,Andy Dalton,FA,QB,7,829
 75,Tanner McKee,PHI,QB,7,9230
 76,Zach Wilson,NO,QB,8,7538
 77,Will Howard,PIT,QB,8,12511
@@ -81,18 +81,18 @@ rank,name,team,position,tier,sleeper_id
 80,Cooper Rush,ATL,QB,8,4574
 81,Aidan O'Connell,LV,QB,8,10866
 82,Stetson Bennett IV,LAR,QB,8,10857
-83,Jake Browning,FA,QB,8,6111
+83,Jake Browning,LAC,QB,8,6111
 84,Case Keenum,CHI,QB,8,1737
-85,Sam Ehlinger,DEN,QB,8,7583
+85,Collin Hill,FA,QB,8,7983
 86,Brady Cook,MIA,QB,8,12538
-87,Collin Hill,FA,QB,8,7983
-88,Behren Morton,NE,QB,8,13295
-89,Kurtis Rourke,SF,QB,8,12477
-90,Joe Fagnano,BAL,QB,8,13350
-91,Athan Kaliakmanis,WAS,QB,8,13557
+87,Sam Ehlinger,DEN,QB,8,7583
+88,Joe Fagnano,BAL,QB,8,13350
+89,Behren Morton,NE,QB,8,13295
+90,Athan Kaliakmanis,WAS,QB,8,13557
+91,Kurtis Rourke,SF,QB,8,12477
 92,Hendon Hooker,TEN,QB,8,9998
-93,Will Levis,FA,QB,9,9999
-94,Nick Mullens,JAC,QB,9,4464
+93,Will Levis,NYJ,QB,8,9999
+94,Nick Mullens,JAC,QB,8,4464
 95,Sean Clifford,CIN,QB,9,10983
 96,Luke Altmyer,DET,QB,9,13314
 97,Cole Payton,PHI,QB,9,13335
@@ -109,7 +109,7 @@ rank,name,team,position,tier,sleeper_id
 108,Kedon Slovis,GB,QB,9,11648
 109,Easton Stick,TB,QB,9,6185
 110,Devin Leary,FA,QB,9,11556
-111,Bailey Zappe,NYJ,QB,9,8157
+111,Bailey Zappe,FA,QB,9,8157
 112,Matt Barkley,FA,QB,9,1338
 113,Matt Corral,FA,QB,9,8164
 114,Joey Aguilar,JAC,QB,9,13428

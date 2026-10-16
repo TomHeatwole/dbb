@@ -52,8 +52,8 @@ const DK_LEAGUE_BY_ID = new Map(DK_LEAGUES.map((league) => [String(league.id), l
 const DK_SKIP_CAT = new Set([
   529, 787, 1076, 1286, 1803, 999, 1303, 1972, 1653, 1858, 1969, 1003,
 ]);
-const DK_SKIP_SUB = /winning margin|correct score|3[\s-]?way|squares|octopus|most |combined |either player|each player|in each |shutout|comeback|halves won|every quarter|half time|full time|bands|to score 1st|to win with|largest lead|2 pt|game winning|drive|first down|1st (?:sack|turnover|first|reception)|specials$|dk specials|quick hits|scoring props|td props|quarter tds|safety props|punt props|field goal props(?!.*o\/u)|h2h|race to|listed half(?!.*total)|both win set|listed set|win a set/i;
-const DK_KEEP_SUB = /alternate|o\/u|over.?under|odd\/?even|overtime|both teams|team total|pass |rush |rec |reception|completion|attempt|intercept|longest|sack|tackle|fantasy|kick|fg |pat |punt|1st score|highest scoring|quarter team|pass tds|rush \+ rec|^game$|1st half|2nd half|1st quarter|2nd quarter|3rd quarter|4th quarter|points|assists|rebounds|threes|pra|shots|saves|goals|hits|strikeouts|corners|cards|aces|games|sets|rounds|puck line|run line|spread|total|moneyline|handicap|draw no bet|player|period|inning|first 5/i;
+const DK_SKIP_SUB = /winning margin|correct score|squares|octopus|most |combined |either player|each player|in each |shutout|comeback|halves won|every quarter|half[\s-]?time\s*\/\s*full|full[\s-]?time\s*\/\s*half|ht\s*\/\s*ft|bands|to score 1st|to win with|largest lead|2 pt|game winning|\bdrive props\b|drive sgp|first down|1st (?:sack|turnover|first|reception)|specials$|dk specials|quick hits|scoring props|td props|quarter tds|safety props|punt props|field goal props(?!.*o\/u)|h2h|race to|listed half(?!.*total)|both win set|listed set|win a set|listed time|goal scored in interval/i;
+const DK_KEEP_SUB = /alternate|o\/u|over.?under|odd\/?even|overtime|both teams|team total|pass |rush |rec |reception|completion|attempt|intercept|longest|sack|tackle|fantasy|kick|fg |pat |punt|1st score|highest scoring|quarter team|pass tds|rush \+ rec|^game$|1st half|2nd half|half time|full time|1st quarter|2nd quarter|3rd quarter|4th quarter|points|assists|rebounds|threes|pra|shots|saves|goals|hits|strikeouts|corners|cards|aces|games|sets|rounds|puck line|run line|spread|total|moneyline|handicap|draw no bet|3[\s-]?way|match result|winner|regulation|60 min|player|period|inning|first 5/i;
 
 function dkHeaders(referer, page = 'league') {
   return {
@@ -389,9 +389,9 @@ export default async function handler(req, res) {
     const ttlMs = 60_000;
     const data = fresh
       ? await fetchRawArbDeep()
-      : await cachedBook('rawarb-deep-v13', fetchRawArbDeep, () => ttlMs, { persist: true });
+      : await cachedBook('rawarb-deep-v21', fetchRawArbDeep, () => ttlMs, { persist: true });
     if (fresh) {
-      await fillBookCache('rawarb-deep-v13', data, ttlMs, { persist: true });
+      await fillBookCache('rawarb-deep-v21', data, ttlMs, { persist: true });
       setNoStore(res);
     } else {
       setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));

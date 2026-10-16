@@ -1,9 +1,9 @@
 /**
  * BetMGM (CDS) fixture → the same main-line shape FanDuel/DraftKings use.
- * Full-game moneyline, spread, and total only. Three-way match results are dropped.
+ * Full-game moneyline, spread, and total, plus plain 3-way results (two teams + draw).
  */
 
-import { shouldSkipMarketName } from './extractMarkets.js';
+import { shouldSkipMarketName, storePlainThreeWay, isDrawQuote } from './extractMarkets.js';
 import {
   marketKey,
   parsePeriod,
@@ -256,16 +256,21 @@ export function extractMgmContracts(fixture, teams = {}) {
   const byKey = new Map();
   const upsert = (key, label, kind, mutate) => {
     if (!byKey.has(key)) byKey.set(key, { key, label, kind, mgm: {} });
-    mutate(byKey.get(key).mgm);
+    const row = byKey.get(key);
+    mutate(row.mgm, row);
   };
   for (const market of marketsOf(fixture)) {
     const title = marketTitle(market);
-    if (!title || shouldSkipMarketName(title)) continue;
-    if (/\s(?:&|and)\s/i.test(title)) continue;
+    if (!title || /\s(?:&|and)\s/i.test(title)) continue;
     const rows = deepRows(market);
+    const period = parsePeriod(title);
+    if (storePlainThreeWay(upsert, title, period, rows, teams, (q) => {
+      if (isDrawQuote(q)) return 'draw';
+      return sideForTeam(q.name, teams);
+    })) continue;
+    if (shouldSkipMarketName(title)) continue;
     if (rows.length !== 2) continue;
     if (rows.some((row) => /^(tie|draw)$/i.test(row.name))) continue;
-    const period = parsePeriod(title);
     const stat = parseStat(title);
     const overs = rows.filter((row) => row.type === 'over');
     const unders = rows.filter((row) => row.type === 'under');
@@ -309,7 +314,7 @@ export function extractMgmContracts(fixture, teams = {}) {
     const key = marketKey({
       period,
       kind,
-      stat: kind === 'spread' ? 'points' : (stat.startsWith('race') || stat === 'dnb' ? stat : 'winner'),
+      stat: kind === 'spread' ? stat : (stat.startsWith('race') || stat === 'dnb' ? stat : 'winner'),
       subject: 'game',
     });
     upsert(key, title, kind, (book) => {

@@ -265,6 +265,16 @@ export function isBareTeamName(label, team) {
 /** CFB token match, then last-word mascot (IND Colts ↔ Indianapolis Colts). */
 export function teamsMatch(a, b) {
   if (namesMatch(a, b)) return true;
+  const ta = teamTokens(a);
+  const tb = teamTokens(b);
+  const qualA = ta.filter((t) => SCHOOL_QUALIFIERS.has(t));
+  const qualB = tb.filter((t) => SCHOOL_QUALIFIERS.has(t));
+  if (qualA.length || qualB.length) {
+    if (qualA.length !== qualB.length) return false;
+    const sortedA = [...qualA].sort().join('|');
+    const sortedB = [...qualB].sort().join('|');
+    if (sortedA !== sortedB) return false;
+  }
   const la = lastSignificantToken(a);
   const lb = lastSignificantToken(b);
   if (!la || !lb || la.length < 3 || lb.length < 3) return false;

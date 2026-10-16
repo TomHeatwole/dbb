@@ -4,7 +4,7 @@
  * full-game moneyline, spread, and total for the marquee leagues.
  */
 
-import { shouldSkipMarketName } from './extractMarkets.js';
+import { isDrawQuote, shouldSkipMarketName, storePlainThreeWay } from './extractMarkets.js';
 import { marketKey, parsePeriod, parseStat, teamSubject, yesNoSubject } from './marketNormalize.js';
 import { parseSignedAmerican } from './rawArbModel.js';
 import { teamsMatch } from './teamMatch.js';
@@ -209,7 +209,8 @@ export function extractCaesarsContracts(event, teams = {}) {
   const byKey = new Map();
   const upsert = (key, label, kind, mutate) => {
     if (!byKey.has(key)) byKey.set(key, { key, label, kind, czr: {} });
-    mutate(byKey.get(key).czr);
+    const row = byKey.get(key);
+    mutate(row.czr, row);
   };
   for (const market of caesarsMarkets(event)) {
     if (market?.active === false) continue;
@@ -217,11 +218,22 @@ export function extractCaesarsContracts(event, teams = {}) {
     const rawName = stripPipes(market.name);
     const template = stripPipes(market.templateName);
     const label = title || rawName || template;
-    if (!label || shouldSkipMarketName(`${label} ${rawName} ${template}`)) continue;
+    if (!label) continue;
     const sels = (market.selections || []).filter((sel) => sel && sel.active !== false && americanOf(sel) != null);
+    const period = parsePeriod(`${label} ${rawName} ${template}`);
+    const threeQuotes = sels.map((sel) => ({
+      name: stripPipes(sel.name),
+      label: stripPipes(sel.name),
+      type: String(sel.type || '').toLowerCase(),
+      american: americanOf(sel),
+    }));
+    if (storePlainThreeWay(upsert, `${label} ${rawName} ${template}`, period, threeQuotes, teams, (q) => {
+      if (isDrawQuote(q)) return 'draw';
+      return selectionSide({ name: q.name, type: q.type }, teams);
+    })) continue;
+    if (shouldSkipMarketName(`${label} ${rawName} ${template}`)) continue;
     if (sels.length !== 2) continue;
     if (isThreeWay(market)) continue;
-    const period = parsePeriod(`${label} ${rawName} ${template}`);
     const stat = parseStat(`${label} ${rawName} ${template}`);
     const types = sels.map((sel) => String(sel.type || '').toLowerCase());
     if (types.includes('over') && types.includes('under')) {
@@ -263,7 +275,7 @@ export function extractCaesarsContracts(event, teams = {}) {
     const key = marketKey({
       period,
       kind: isSpread ? 'spread' : 'moneyline',
-      stat: isSpread ? 'points' : (stat === 'dnb' ? 'dnb' : 'winner'),
+      stat: isSpread ? (stat === 'winner' ? 'points' : stat) : (stat === 'dnb' ? 'dnb' : 'winner'),
       subject: 'game',
     });
     upsert(key, label, isSpread ? 'spread' : 'moneyline', (book) => {

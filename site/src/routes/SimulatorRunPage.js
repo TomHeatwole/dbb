@@ -34,9 +34,14 @@ import { getCurrentYear } from '../utils/DateHelper';
 import {
   getLockedRegularSeasonWeeks,
   loadLockedRegularSeasonPoints,
-  loadRosPositionMaxRanks,
-  loadRosRankMap,
+  loadRosRankRows,
 } from '../scenarios/rosRankLoader';
+import {
+  applyRosOrder,
+  maxRanksFromRosRows,
+  rankMapFromRosRows,
+  stampFpRanks,
+} from '../scenarios/rosRankOrder';
 
 import SimulatorProgressBar from '../scenarios/SimulatorProgressBar';
 import { TOUCHDOWN_CELEBRATION_MS } from '../scenarios/simulatorProgress';
@@ -77,6 +82,7 @@ function SimulatorRunPage({ variant = 'season' }) {
   const [variance, setVariance] = useState(DEFAULT_VARIANCE);
   const [monotone, setMonotone] = useState(DEFAULT_MONOTONE);
   const [rankSource, setRankSource] = useState(DEFAULT_RANK_SOURCE);
+  const [customRosOrder, setCustomRosOrder] = useState(false);
 
   useEffect(() => {
     const decoded = decodeFutureScenario2(scenarioParam);
@@ -98,6 +104,7 @@ function SimulatorRunPage({ variant = 'season' }) {
     setVariance(runVariance);
     setMonotone(runMonotone);
     setRankSource(runRankSource);
+    setCustomRosOrder(isRos && Boolean(decoded.ro));
 
     let cancelled = false;
 
@@ -107,16 +114,21 @@ function SimulatorRunPage({ variant = 'season' }) {
         setLoadingProgress(0);
         setSimProgress(0);
 
-        const [rosterData, cfg, adpMap, maxRanks] = await Promise.all([
+        const [rosterData, cfg, rankSourceData, seasonMaxRanks] = await Promise.all([
           loadOutcomeScenarioRosterData(seasonYear),
           fetch('/data/score_format.json').then((r) => r.json()).catch(() => null),
           isRos
-            ? loadRosRankMap()
+            ? loadRosRankRows()
             : loadSimulatorRankMap(seasonYear, runRankSource),
           isRos
-            ? loadRosPositionMaxRanks()
+            ? Promise.resolve(null)
             : loadSimulatorPositionMaxRanks(seasonYear, runRankSource),
         ]);
+        const orderedRosRows = isRos
+          ? applyRosOrder(stampFpRanks(rankSourceData), decoded.ro)
+          : null;
+        const adpMap = isRos ? rankMapFromRosRows(orderedRosRows) : rankSourceData;
+        const maxRanks = isRos ? maxRanksFromRosRows(orderedRosRows) : seasonMaxRanks;
 
         if (cancelled) return;
 
@@ -225,7 +237,7 @@ function SimulatorRunPage({ variant = 'season' }) {
   const lockedWeeks = isRos ? getLockedRegularSeasonWeeks(scenarioSeason) : 0;
   const subtitle = scenarioSeason
     ? (isRos
-      ? `${scenarioSeason} ROS · ${lockedWeeks > 0 ? `weeks 1–${lockedWeeks} locked` : 'no weeks locked'} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
+      ? `${scenarioSeason} ROS${customRosOrder ? ' · custom order' : ''} · ${lockedWeeks > 0 ? `weeks 1–${lockedWeeks} locked` : 'no weeks locked'} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`
       : `${scenarioSeason} ${rankSourceShortLabel(rankSource, scenarioSeason)} · ${iterations.toLocaleString()} runs · ${VARIANCE_LEVELS[variance]?.label ?? variance} variance · ${MONOTONE_MODES[monotone]?.label ?? monotone}`)
     : null;
 

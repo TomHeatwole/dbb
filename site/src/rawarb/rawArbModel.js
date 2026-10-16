@@ -5,7 +5,7 @@
 
 import { evaluateTwoWayArb } from '../corners/arbChecker.js';
 import { americanToImpliedProb, formatAmericanOdds } from '../sop/sopModel.js';
-import { peopleMatch } from './marketNormalize.js';
+import { parseMarketKey, peopleMatch } from './marketNormalize.js';
 import { matchModeForSport } from './sportCatalog.js';
 import { RAW_BOOK_IDS, bookShort, isRawBookId } from './bookCatalog.js';
 import { nycVisibleExtras } from './nycFilter.js';
@@ -504,11 +504,21 @@ export function bestPSumForMinOdds(game, book, minAmerican, filterNyc = false) {
   return sums.length ? Math.min(...sums) : null;
 }
 
-/** Main ML / spread / O-U only — deep extras stay out of default sort. */
-export function visibleBestPSum(game, _filterNyc = false) {
+function hiddenFullGameMoneyline(row) {
+  const { period, kind, stat } = parseMarketKey(row?.key ?? '');
+  return kind === 'moneyline' && period === 'fg' && (stat === 'winner' || stat === 'points');
+}
+
+/** Shortest two-way on the card: the main three, plus alt and extra lines. */
+export function visibleBestPSum(game, filterNyc = false) {
   const sums = [game?.moneyline, game?.spread, game?.total]
     .map((market) => market?.twoWay?.pSum)
     .filter((n) => Number.isFinite(n));
+  for (const row of nycVisibleExtras(game, filterNyc)) {
+    if (hiddenFullGameMoneyline(row)) continue;
+    const pSum = row?.twoWay?.pSum;
+    if (Number.isFinite(pSum)) sums.push(pSum);
+  }
   return sums.length ? Math.min(...sums) : null;
 }
 
@@ -520,17 +530,34 @@ export function sortPSum(game, sortOpts = null) {
   if (book && Number.isFinite(minAmerican)) {
     return bestPSumForMinOdds(game, book, minAmerican, filterNyc);
   }
+  if (game && Object.prototype.hasOwnProperty.call(game, 'displayedPSum')) return game.displayedPSum;
   return visibleBestPSum(game, filterNyc);
 }
 
+function marketBestPSum(market) {
+  const tw = market?.twoWay?.pSum;
+  const mw = market?.multiWay?.pSum;
+  if (Number.isFinite(tw) && Number.isFinite(mw)) return Math.min(tw, mw);
+  return Number.isFinite(tw) ? tw : mw;
+}
+
 export function isBestTwoWay(market, game, sortOpts = null) {
-  const twoWay = market?.twoWay;
-  if (!twoWay || !Number.isFinite(twoWay.pSum)) return false;
+  const pSum = marketBestPSum(market);
+  if (!Number.isFinite(pSum)) return false;
   const target = sortPSum(game, sortOpts);
-  if (!Number.isFinite(target) || twoWay.pSum !== target) return false;
+  if (!Number.isFinite(target) || pSum !== target) return false;
+  const twoWay = market?.twoWay;
+  const multiWay = market?.multiWay;
+  const hedge = (Number.isFinite(twoWay?.pSum) && Number.isFinite(multiWay?.pSum) && multiWay.pSum < twoWay.pSum)
+    ? multiWay
+    : (twoWay || multiWay);
+  if (!hedge) return false;
   const oddsFilter = sortOpts?.oddsFilter ?? sortOpts;
   const book = isRawBookId(oddsFilter?.book) ? oddsFilter.book : null;
   if (book && Number.isFinite(oddsFilter?.minAmerican)) {
+    if (hedge === multiWay && multiWay?.legs?.length) {
+      return multiWay.legs.some((leg) => leg.book === book && leg.american >= oddsFilter.minAmerican);
+    }
     return twoWayHasMinOdds(twoWay, book, oddsFilter.minAmerican);
   }
   return true;
