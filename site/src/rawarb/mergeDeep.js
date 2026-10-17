@@ -1,7 +1,13 @@
 import { MAIN_KEYS, formatMarketLabel, formatPeriod, parseMarketKey } from './marketNormalize.js';
 import { mergeBookContracts, mergeContracts } from './extractMarkets.js';
-import { marketHasMinOdds, pinClosestQuotes, twoWayHasMinOdds } from './rawArbModel.js';
+import {
+  marketHasMinOdds,
+  pinClosestQuotes,
+  pinTeamTotalQuotes,
+  twoWayHasMinOdds,
+} from './rawArbModel.js';
 import { isNycBlockedExtra } from './nycFilter.js';
+import { namesMatch, teamsMatch } from './teamMatch.js';
 import { juicyThreeWayCovers, pairAmongBooks } from './twoWayPairs.js';
 import { scoreDriveMultiWay, scoreThreeMlMultiWay } from './multiWayArb.js';
 
@@ -23,18 +29,61 @@ function marketHasQuotes(market) {
   return Boolean(market.fd || market.dk || market.twoWay);
 }
 
+/** Reject duplicated-team ML/spread or cross-line totals from bad deep rows. */
+export function bookSidesSane(book, kind) {
+  if (!book) return false;
+  if (kind === 'total') {
+    return book.over?.american != null && book.under?.american != null
+      && Number.isFinite(book.over.line) && Number.isFinite(book.under.line)
+      && Math.abs(book.over.line - book.under.line) < 1e-6;
+  }
+  if (book.away?.american == null || book.home?.american == null) return false;
+  const awayT = book.away.team || book.away.label;
+  const homeT = book.home.team || book.home.label;
+  if (!awayT || !homeT) return false;
+  if (namesMatch(awayT, homeT) || teamsMatch(awayT, homeT)) return false;
+  if (kind === 'spread' && Number.isFinite(book.away.line) && Number.isFinite(book.home.line)) {
+    if (Math.abs(book.away.line + book.home.line) > 0.01) return false;
+  }
+  return true;
+}
+
+function pinBookQuote(book, kind) {
+  if (!book) return null;
+  return kind === 'team_total' ? pinTeamTotalQuotes(book) : pinClosestQuotes(book);
+}
+
+function pickPinnedBook(mainBook, extraBook, kind) {
+  const main = pinBookQuote(mainBook, kind);
+  const extra = pinBookQuote(extraBook, kind);
+  if (bookSidesSane(main, kind)) return main;
+  if (bookSidesSane(extra, kind)) return extra;
+  return main || extra || null;
+}
+
+function mainBooksSane(market, kind) {
+  return DEEP_BOOKS.some((id) => bookSidesSane(market?.[id], kind));
+}
+
 export function fillMainsFromExtras(game, extras = []) {
   const next = { ...game };
   for (const kind of ['moneyline', 'spread', 'total']) {
     if (marketHasQuotes(next[kind]) && next[kind]?.twoWay) continue;
     const hit = extras.find((row) => MAIN_FROM_EXTRA[kind](row.key, next.sport) && row.twoWay);
     if (!hit) continue;
+    if (mainBooksSane(next[kind], kind)) {
+      next[kind] = {
+        ...(next[kind] || {}),
+        twoWay: next[kind]?.twoWay || hit.twoWay,
+      };
+      continue;
+    }
     next[kind] = {
       ...(next[kind] || {}),
-      fd: pinClosestQuotes(hit.fd) || next[kind]?.fd || null,
-      dk: pinClosestQuotes(hit.dk) || next[kind]?.dk || null,
-      mgm: pinClosestQuotes(hit.mgm) || next[kind]?.mgm || null,
-      czr: pinClosestQuotes(hit.czr) || next[kind]?.czr || null,
+      fd: pickPinnedBook(next[kind]?.fd, hit.fd, kind),
+      dk: pickPinnedBook(next[kind]?.dk, hit.dk, kind),
+      mgm: pickPinnedBook(next[kind]?.mgm, hit.mgm, kind),
+      czr: pickPinnedBook(next[kind]?.czr, hit.czr, kind),
       twoWay: hit.twoWay,
     };
   }
@@ -46,7 +95,8 @@ export function fillMainsFromExtras(game, extras = []) {
 }
 
 function mathKind(kind) {
-  if (kind === 'player_ou' || kind === 'team_total') return 'total';
+  if (kind === 'player_ou') return 'player_ou';
+  if (kind === 'team_total') return 'team_total';
   if (kind === 'yesno') return 'yesno';
   if (kind === 'three_ml' || kind === 'three_spread') return 'three_ml';
   return kind;
@@ -110,11 +160,41 @@ export function threeSpreadRows(extras, bookIds = DEEP_BOOKS) {
   return out;
 }
 
-function rowBestPSum(row) {
+/** Default card face: hide extras above this combined implied (102%). */
+export const MAX_DISPLAY_PSUM = 1.02;
+
+export function rowBestPSum(row) {
   const tw = row?.twoWay?.pSum;
   const mw = row?.multiWay?.pSum;
   if (Number.isFinite(tw) && Number.isFinite(mw)) return Math.min(tw, mw);
   return Number.isFinite(tw) ? tw : mw;
+}
+
+/**
+ * Trim prop rows for the card face. Main lines (ML / spread / total) always stay.
+ */
+export function filterCardFaceRows(rows, { showPlayerProps = false, showHeavyJuice = false } = {}) {
+  const maxPSum = showHeavyJuice ? Infinity : MAX_DISPLAY_PSUM;
+  let hiddenPlayerProps = 0;
+  let hiddenHeavyJuice = 0;
+  const out = [];
+  for (const row of rows ?? []) {
+    if (!row.wide) {
+      out.push(row);
+      continue;
+    }
+    if (row.kind === 'player_ou' && !showPlayerProps) {
+      hiddenPlayerProps += 1;
+      continue;
+    }
+    const pSum = rowBestPSum(row.market);
+    if (Number.isFinite(pSum) && pSum > maxPSum) {
+      hiddenHeavyJuice += 1;
+      continue;
+    }
+    out.push(row);
+  }
+  return { rows: out, hiddenPlayerProps, hiddenHeavyJuice };
 }
 
 function sortExtras(rows) {
@@ -135,7 +215,7 @@ export function scoreContracts(contracts, bookIds = DEEP_BOOKS) {
   const extras = [];
   for (const row of contracts) {
     for (const id of ids) {
-      if (row[id]) row[id] = pinClosestQuotes(row[id]);
+      if (row[id]) row[id] = pinBookQuote(row[id], row.kind);
     }
     const quotes = ids.filter((id) => row[id]).map((id) => ({ id, quote: row[id] }));
     const paired = pairAmongBooks(mathKind(row.kind), quotes);
@@ -168,7 +248,7 @@ export function rescoreExtras(extras, bookIds = DEEP_BOOKS) {
   const next = (extras || []).filter((row) => row.kind !== 'three_spread').map((row) => {
     const pinned = { ...row };
     for (const id of ids) {
-      if (pinned[id]) pinned[id] = pinClosestQuotes(pinned[id]);
+      if (pinned[id]) pinned[id] = pinBookQuote(pinned[id], row.kind);
     }
     const quotes = ids.filter((id) => pinned[id]).map((id) => ({ id, quote: pinned[id] }));
     const paired = pairAmongBooks(mathKind(row.kind), quotes);

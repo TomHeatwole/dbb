@@ -181,10 +181,35 @@ function closestSingle(rows) {
   return [...finite].sort((a, b) => evenDistance(a.american) - evenDistance(b.american))[0];
 }
 
+/** Drop FanDuel alt-ladder prices (+800 O 38.5) when a main team total exists. */
+function mainBoardTotals(rows) {
+  const finite = finiteRows(rows);
+  if (finite.length <= 2) return finite;
+  const mainish = finite.filter((row) => row.american >= -450 && row.american <= 450);
+  return mainish.length ? mainish : finite;
+}
+
 /**
  * The headline quote is one number: the over/under (or +line/−line) pair
  * closest to even. Picking each side on its own puts a longshot alt opposite the main.
  */
+export function pinTeamTotalQuotes(book) {
+  if (!book || typeof book !== 'object') return book;
+  const next = { ...book };
+  const overs = mainBoardTotals(next.overs);
+  const unders = mainBoardTotals(next.unders);
+  const total = closestPair(overs, unders, (over, under) => Math.abs(over.line - under.line) < 1e-6);
+  if (total) {
+    [next.over, next.under] = total;
+  } else {
+    const over = closestSingle(overs);
+    const under = closestSingle(unders);
+    if (over) next.over = over;
+    if (under) next.under = under;
+  }
+  return next;
+}
+
 export function pinClosestQuotes(book) {
   if (!book || typeof book !== 'object') return book;
   const next = { ...book };

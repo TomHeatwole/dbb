@@ -388,8 +388,14 @@ export function displaySubject(subject, teams = {}) {
 
 export function teamSubject(name, teams = {}) {
   if (!name) return null;
-  if (teams.away && teamsMatch(name, teams.away)) return teams.away;
-  if (teams.home && teamsMatch(name, teams.home)) return teams.home;
+  const cleaned = String(name)
+    .replace(/\b(?:total|alternate|alt)\b.*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  for (const candidate of [name, cleaned]) {
+    if (teams.away && teamsMatch(candidate, teams.away)) return teams.away;
+    if (teams.home && teamsMatch(candidate, teams.home)) return teams.home;
+  }
   return null;
 }
 

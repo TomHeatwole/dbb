@@ -269,7 +269,7 @@ export function pairContract(kind, fd, dk, bookA = 'fd', bookB = 'dk') {
     return { best: pairYesNo(fd, dk, 'yes', 'no', bookA, bookB), arbs: [] };
   }
   if (kind === 'spread') return pairSpreads(fd, dk, bookA, bookB);
-  if (kind === 'player_ou') return pairPlayerTotals(fd, dk, bookA, bookB);
+  if (kind === 'player_ou' || kind === 'team_total') return pairPlayerTotals(fd, dk, bookA, bookB);
   return pairTotals(fd, dk, bookA, bookB);
 }
 
@@ -353,7 +353,7 @@ export function formatSidesForRow(book, kind, twoWay, bookKey) {
 export function formatExtraSides(book, kind) {
   if (!book) return { left: '—', right: '—' };
   const fmt = (side, prefix) => {
-    const row = Array.isArray(book[`${side}s`]) ? book[`${side}s`][0] : book[side];
+    const row = book[side] || (Array.isArray(book[`${side}s`]) ? book[`${side}s`][0] : null);
     if (!row) return '—';
     const odds = formatAmericanOdds(row.american);
     if (kind === 'spread' && Number.isFinite(row.line)) {

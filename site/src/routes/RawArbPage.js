@@ -15,7 +15,13 @@ import {
 } from '../rawarb/rawArbModel';
 import { RAW_BOOKS } from '../rawarb/bookCatalog';
 import { formatSidesForRow } from '../rawarb/twoWayPairs';
-import { applyDeepAttachments, applyEnabledExtras, displayedBestPSum, sortCardMarkets } from '../rawarb/mergeDeep';
+import {
+  applyDeepAttachments,
+  applyEnabledExtras,
+  displayedBestPSum,
+  filterCardFaceRows,
+  sortCardMarkets,
+} from '../rawarb/mergeDeep';
 import { sportFiltersFor, sportLabel } from '../rawarb/sportCatalog';
 import { formatMultiWayLegs } from '../rawarb/multiWayArb';
 import { formatAmericanOdds } from '../sop/sopModel';
@@ -158,9 +164,25 @@ function MarketRow({ label, kind, market, best, wide, books }) {
   );
 }
 
-function GameCard({ game, deepStatus, oddsFilter, filterNyc, books }) {
+function GameCard({
+  game,
+  deepStatus,
+  oddsFilter,
+  filterNyc,
+  books,
+  showAllPlayerProps,
+  showHeavyJuice,
+}) {
+  const [openPlayerProps, setOpenPlayerProps] = useState(false);
+  const [openHeavyJuice, setOpenHeavyJuice] = useState(false);
   const displayOpts = { oddsFilter, filterNyc };
-  const faceRows = sortCardMarkets(game, MARKET_ROWS, displayOpts);
+  const sorted = sortCardMarkets(game, MARKET_ROWS, displayOpts);
+  const showPlayerProps = showAllPlayerProps || openPlayerProps;
+  const showHeavy = showHeavyJuice || openHeavyJuice;
+  const { rows: faceRows, hiddenPlayerProps, hiddenHeavyJuice } = filterCardFaceRows(sorted, {
+    showPlayerProps,
+    showHeavyJuice: showHeavy,
+  });
   return (
     <article className="rawarb-card">
       <header className="rawarb-card-head">
@@ -200,6 +222,28 @@ function GameCard({ game, deepStatus, oddsFilter, filterNyc, books }) {
           ))}
         </tbody>
       </table>
+      {(hiddenPlayerProps > 0 || hiddenHeavyJuice > 0) && (
+        <div className="rawarb-expand-row">
+          {hiddenPlayerProps > 0 && !showPlayerProps && (
+            <button
+              type="button"
+              className="rawarb-chip"
+              onClick={() => setOpenPlayerProps(true)}
+            >
+              {`Show ${hiddenPlayerProps} player prop${hiddenPlayerProps === 1 ? '' : 's'}`}
+            </button>
+          )}
+          {hiddenHeavyJuice > 0 && !showHeavy && (
+            <button
+              type="button"
+              className="rawarb-chip"
+              onClick={() => setOpenHeavyJuice(true)}
+            >
+              {`Show ${hiddenHeavyJuice} over 102%`}
+            </button>
+          )}
+        </div>
+      )}
       {!game.deepLoaded && deepStatus === 'scanning' && (
         <p className="rawarb-scan">Scanning props…</p>
       )}
@@ -222,6 +266,8 @@ function RawArbPage() {
   const [oddsBook, setOddsBook] = useState('fd');
   const [oddsMinRaw, setOddsMinRaw] = useState('');
   const [filterNyc, setFilterNyc] = useState(true);
+  const [showAllPlayerProps, setShowAllPlayerProps] = useState(false);
+  const [showHeavyJuice, setShowHeavyJuice] = useState(false);
   const [enabledBooks, setEnabledBooks] = useState(loadEnabledBooks);
   const attachmentsRef = useRef([]);
   const deepInFlight = useRef(false);
@@ -416,6 +462,22 @@ function RawArbPage() {
           >
             Filter out NYC
           </button>
+          <button
+            type="button"
+            className={`rawarb-chip${showAllPlayerProps ? ' rawarb-chip--on' : ''}`}
+            onClick={() => setShowAllPlayerProps((on) => !on)}
+            aria-pressed={showAllPlayerProps}
+          >
+            All player props
+          </button>
+          <button
+            type="button"
+            className={`rawarb-chip${showHeavyJuice ? ' rawarb-chip--on' : ''}`}
+            onClick={() => setShowHeavyJuice((on) => !on)}
+            aria-pressed={showHeavyJuice}
+          >
+            Over 102%
+          </button>
           <div className="rawarb-meta">
             {stats
               ? `${visible.length} games · ${stats.withMgm ?? 0} BetMGM · ${stats.withCzr ?? 0} Caesars`
@@ -428,9 +490,8 @@ function RawArbPage() {
         </div>
 
         <p className="rawarb-hint">
-          FanDuel and DraftKings start on. BetMGM and Caesars start off — turn a chip on to count that book. Default columns are ML, spread, and O/U. Extra two-ways that are already
-          arb (quarters, alts, player props, team totals, yes/no) pin into the
-          card. Everything else pairable is under each game&apos;s dropdown.
+          FanDuel and DraftKings start on. BetMGM and Caesars start off — turn a chip on to count that book. Each card shows ML, spread, and O/U, then non-player extras at
+          102% combined or better. Use the per-game buttons or toolbar to show player props or lines over 102%.
           Combined under 100% is a lock; a middle still covers 3/4 of the pot.
         </p>
 
@@ -451,6 +512,8 @@ function RawArbPage() {
                 oddsFilter={oddsFilter}
                 filterNyc={filterNyc}
                 books={activeBooks}
+                showAllPlayerProps={showAllPlayerProps}
+                showHeavyJuice={showHeavyJuice}
               />
             ))}
             {!visible.length && !loading && (

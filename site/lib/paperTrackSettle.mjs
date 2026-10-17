@@ -10,7 +10,6 @@ import {
   isCountableTeamDrive,
   isInProgressDrive,
 } from '../src/drives/espnDriveChart.js';
-import { nameMatchScore } from '../src/drives/driveModel.js';
 import { driveSettlementPatches } from '../src/paperTrack/settleDrives.js';
 import {
   classifySopGoalType,
@@ -36,7 +35,7 @@ const CFB_SUMMARY = [
   'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary',
   'https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary',
 ];
-const MAX_EVENTS_PER_TICK = 16;
+const MAX_EVENTS_PER_TICK = 80;
 
 function resolveSql(sql) {
   return sql || getSql();
@@ -78,6 +77,43 @@ async function espnJson(url, referer) {
 function payloadEspnId(payload) {
   const id = payload?.espn_id ?? payload?.espnId;
   return id != null && String(id).trim() ? String(id) : null;
+}
+
+function normalizeName(value) {
+  return String(value ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function wordAffixMatch(a, b) {
+  if (a === b) return true;
+  const [sh, lo] = a.length <= b.length ? [a, b] : [b, a];
+  return sh.length >= 3 && lo.startsWith(sh);
+}
+
+function nameMatchScore(hay, needle) {
+  const h = normalizeName(hay);
+  const n = normalizeName(needle);
+  if (!h || !n) return 0;
+  if (h === n) return 1000 + n.length;
+  const hWords = h.split(' ').filter(Boolean);
+  const nWords = n.split(' ').filter(Boolean);
+  if (!nWords.length || !hWords.length) return 0;
+  if (nWords.length <= hWords.length) {
+    for (let i = 0; i <= hWords.length - nWords.length; i += 1) {
+      if (nWords.every((w, j) => hWords[i + j] === w)) {
+        return 100 + nWords.length * 20 + n.length;
+      }
+    }
+  }
+  if (nWords.every((nw) => hWords.some((hw) => wordAffixMatch(hw, nw)))) {
+    return 40 + nWords.length * 10 + n.length;
+  }
+  return 0;
 }
 
 function pairScore(a, b) {
@@ -154,16 +190,14 @@ async function applyPatches(patches, sql) {
   let n = 0;
   for (const { id, patch } of patches) {
     const body = { ...patch, settled_at: now };
-    const updated = await sql.query(
+    await sql.query(
       `UPDATE paper_snapshots
        SET payload = payload || $1::jsonb,
            settled_at = $2::timestamptz
-       WHERE id = $3 AND settled_at IS NULL
-       RETURNING id`,
+       WHERE id = $3 AND settled_at IS NULL`,
       [JSON.stringify(body), now, id],
     );
-    const count = Array.isArray(updated) ? updated.length : (updated?.rowCount ?? 0);
-    if (count) n += 1;
+    n += 1;
   }
   return n;
 }
@@ -212,7 +246,7 @@ export async function settleSopSnapshots({ sql = resolveSql(), games = [] } = {}
   }
 
   const batch = prioritizeEvents(groups);
-  let scored = 0;
+  const scoredAt = [];
   await mapPool(batch, 4, async ({ eventId, rows: eventRows }) => {
     const sample = eventRows[0]?.payload || {};
     const book = bookByEvent.get(eventId);
@@ -220,17 +254,15 @@ export async function settleSopSnapshots({ sql = resolveSql(), games = [] } = {}
     let league = sample.espn_league || sample.competition || book?.espnLeague || book?.competition || 'pl';
     let home = sample.home || book?.teams?.home;
     let away = sample.away || book?.teams?.away;
-    if (!espnId) {
-      const hit = findEspnMatch({ teams: { home, away } }, matches)
-        || matches.find((m) => namesMatch(home, m.teams?.home) && namesMatch(away, m.teams?.away));
-      if (hit) {
-        espnId = String(hit.id);
-        league = hit.leagueKey || league;
-        home = hit.teams?.home || home;
-        away = hit.teams?.away || away;
-      }
+    const namedHit = findEspnMatch({ teams: { home, away } }, matches)
+      || matches.find((m) => namesMatch(home, m.teams?.home) && namesMatch(away, m.teams?.away));
+    const boardHit = (espnId && matches.find((m) => String(m.id) === String(espnId))) || namedHit;
+    if (boardHit) {
+      espnId = String(boardHit.id);
+      league = boardHit.leagueKey || league;
+      home = boardHit.teams?.home || home;
+      away = boardHit.teams?.away || away;
     }
-    const boardHit = matches.find((m) => String(m.id) === String(espnId));
     const finished = Boolean(boardHit?.clock?.finished || book?.espn?.finished);
     if (!espnId) return;
 
@@ -264,10 +296,10 @@ export async function settleSopSnapshots({ sql = resolveSql(), games = [] } = {}
       finished,
       scoringPlayCount: plays.length,
     });
-    scored += await applyPatches(patches, sql);
+    scoredAt.push(await applyPatches(patches, sql));
   });
 
-  return { scored, events: batch.length };
+  return { scored: scoredAt.reduce((a, b) => a + b, 0), events: batch.length };
 }
 
 function finalScoreFromSummary(summary) {
@@ -323,7 +355,7 @@ export async function settleDrivesSnapshots({ sql = resolveSql(), games = [] } =
   }
 
   const batch = prioritizeEvents(groups);
-  let scored = 0;
+  const scoredAt = [];
   await mapPool(batch, 4, async ({ eventId, rows: eventRows }) => {
     const sample = eventRows[0]?.payload || {};
     const book = bookByEvent.get(eventId);
@@ -375,8 +407,8 @@ export async function settleDrivesSnapshots({ sql = resolveSql(), games = [] } =
       finalScore,
       finished,
     });
-    scored += await applyPatches(patches, sql);
+    scoredAt.push(await applyPatches(patches, sql));
   });
 
-  return { scored, events: batch.length };
+  return { scored: scoredAt.reduce((a, b) => a + b, 0), events: batch.length };
 }

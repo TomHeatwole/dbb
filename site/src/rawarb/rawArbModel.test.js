@@ -10,6 +10,7 @@ import {
   parseSignedAmerican,
   isSplitLine,
   pinClosestQuotes,
+  pinTeamTotalQuotes,
   pickBestTwoWay,
   quoteFromAmerican,
   sortGames,
@@ -192,6 +193,21 @@ describe('cross-book two-way', () => {
       { over: { american: -105, line: 9.5 }, under: { american: -135, line: 9.5 } },
     );
     expect(wide).toBe(null);
+  });
+
+  it('pins team totals to main-board prices, not alt-ladder longshots', () => {
+    const book = pinTeamTotalQuotes({
+      overs: [
+        { american: 1200, line: 38.5 },
+        { american: -128, line: 26.5 },
+      ],
+      unders: [
+        { american: -5000, line: 38.5 },
+        { american: -104, line: 26.5 },
+      ],
+    });
+    expect(book.over).toMatchObject({ line: 26.5, american: -128 });
+    expect(book.under).toMatchObject({ line: 26.5, american: -104 });
   });
 
   it('pins a goal ladder to one line instead of the evenest over and a different under', () => {

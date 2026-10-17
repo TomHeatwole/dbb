@@ -389,9 +389,9 @@ export default async function handler(req, res) {
     const ttlMs = 60_000;
     const data = fresh
       ? await fetchRawArbDeep()
-      : await cachedBook('rawarb-deep-v21', fetchRawArbDeep, () => ttlMs, { persist: true });
+      : await cachedBook('rawarb-deep-v23', fetchRawArbDeep, () => ttlMs, { persist: true });
     if (fresh) {
-      await fillBookCache('rawarb-deep-v21', data, ttlMs, { persist: true });
+      await fillBookCache('rawarb-deep-v23', data, ttlMs, { persist: true });
       setNoStore(res);
     } else {
       setSharedCacheHeaders(res, cdnSecondsForMemoryTtl(ttlMs));

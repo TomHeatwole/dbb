@@ -1,5 +1,14 @@
 import { extractDkContracts, extractFdContracts, isPlainThreeWayTitle, mergeContracts, shouldSkipMarketName } from './extractMarkets';
-import { attachDeepMarkets, applyDeepAttachments, extraRowsForDisplay, scoreContracts, sortCardMarkets } from './mergeDeep';
+import {
+  attachDeepMarkets,
+  applyDeepAttachments,
+  bookSidesSane,
+  extraRowsForDisplay,
+  fillMainsFromExtras,
+  filterCardFaceRows,
+  scoreContracts,
+  sortCardMarkets,
+} from './mergeDeep';
 import { formatMarketLabel, parsePeriod, parseStat, peopleMatch, resolvePeriod, teamSubject } from './marketNormalize';
 import { buildGameMarkets } from './rawArbModel';
 import { isBareTeamName } from './teamMatch';
@@ -291,10 +300,17 @@ describe('extract + skip', () => {
         ],
       },
       b: {
+        marketName: 'WAS Commanders Total Points',
+        runners: [
+          { runnerName: 'Over', handicap: 22.5, winRunnerOdds: { americanDisplayOdds: { americanOdds: -115 } } },
+          { runnerName: 'Under', handicap: 22.5, winRunnerOdds: { americanDisplayOdds: { americanOdds: -105 } } },
+        ],
+      },
+      bAlt: {
         marketName: 'WAS Commanders Alternate Total',
         runners: [
-          { runnerName: 'Over 22.5', handicap: 22.5, winRunnerOdds: { americanDisplayOdds: { americanOdds: -115 } } },
-          { runnerName: 'Under 22.5', handicap: 22.5, winRunnerOdds: { americanDisplayOdds: { americanOdds: -105 } } },
+          { runnerName: 'Over (30.5)', handicap: 0, winRunnerOdds: { americanDisplayOdds: { americanOdds: 400 } } },
+          { runnerName: 'Under (30.5)', handicap: 0, winRunnerOdds: { americanDisplayOdds: { americanOdds: -600 } } },
         ],
       },
       c: {
@@ -307,7 +323,8 @@ describe('extract + skip', () => {
     }, teams);
     const keys = rows.map((row) => row.key);
     expect(keys).toContain('1q|total|points|game');
-    expect(keys.some((key) => key.startsWith('fg|team_total|points|'))).toBe(true);
+    expect(keys).toContain('fg|team_total|points|Washington Commanders');
+    expect(keys.filter((key) => key.startsWith('fg|team_total|points|'))).toHaveLength(1);
     expect(keys).toContain('fg|player_ou|pass_yds|Marcus Mariota');
     const hinted = extractFdContracts({
       q: {
@@ -858,6 +875,98 @@ describe('deep merge + display', () => {
     expect(row?.key).toMatch(/drive_result/);
     expect(row.fd.td.american).toBe(350);
     expect(row.fd.punt.american).toBe(180);
+  });
+
+  it('keeps FanDuel main team totals separate from alternate ladders', () => {
+    const teams = { home: 'Central Michigan', away: 'Western Michigan' };
+    const rows = extractFdContracts({
+      main: {
+        marketName: 'W Michigan Total Points',
+        runners: [
+          { runnerName: 'Over', handicap: 26.5, winRunnerOdds: { americanDisplayOdds: { americanOdds: -128 } } },
+          { runnerName: 'Under', handicap: 26.5, winRunnerOdds: { americanDisplayOdds: { americanOdds: -104 } } },
+        ],
+      },
+      alt: {
+        marketName: 'W Michigan Alternate Total',
+        runners: [
+          { runnerName: 'Over (38.5)', handicap: 0, winRunnerOdds: { americanDisplayOdds: { americanOdds: 1200 } } },
+          { runnerName: 'Under (38.5)', handicap: 0, winRunnerOdds: { americanDisplayOdds: { americanOdds: -5000 } } },
+        ],
+      },
+    }, teams);
+    const row = rows.find((r) => r.key === 'fg|team_total|points|Western Michigan');
+    expect(row?.fd?.over?.line).toBe(26.5);
+    expect(row?.fd?.under?.line).toBe(26.5);
+    expect(row?.fd?.over?.american).toBe(-128);
+  });
+
+  it('does not pair team totals across different alt lines', () => {
+    const row = scoreContracts([{
+      key: 'fg|team_total|points|Western Michigan',
+      kind: 'team_total',
+      label: 'W Michigan Total Points',
+      fd: {
+        overs: [{ american: 1200, line: 38.5, label: 'over' }, { american: -102, line: 27.5, label: 'over' }],
+        unders: [{ american: -5000, line: 38.5, label: 'under' }, { american: -130, line: 27.5, label: 'under' }],
+        over: { american: -102, line: 27.5, label: 'over' },
+        under: { american: -130, line: 27.5, label: 'under' },
+      },
+      dk: {
+        overs: [{ american: -115, line: 27.5, label: 'over' }],
+        unders: [{ american: -105, line: 27.5, label: 'under' }],
+        over: { american: -115, line: 27.5, label: 'over' },
+        under: { american: -105, line: 27.5, label: 'under' },
+      },
+    }])[0];
+    expect(row.twoWay?.pSum).toBeGreaterThan(0.99);
+    expect(row.twoWay?.pSum).toBeLessThan(1.08);
+    expect(row.twoWay?.legs?.some((leg) => leg.american > 500)).toBe(false);
+  });
+
+  it('keeps sane mains when deep extras duplicate one team', () => {
+    const game = {
+      sport: 'cfb',
+      away: 'Western Michigan',
+      home: 'Central Michigan',
+      moneyline: {
+        fd: {
+          away: { american: -1600, team: 'Western Michigan' },
+          home: { american: 750, team: 'Central Michigan' },
+        },
+        dk: {
+          away: { american: -1640, team: 'Western Michigan' },
+          home: { american: 770, team: 'Central Michigan' },
+        },
+      },
+    };
+    const filled = fillMainsFromExtras(game, [{
+      key: 'fg|moneyline|winner|game',
+      kind: 'moneyline',
+      twoWay: { pSum: 0.99, hasArb: false, legs: [] },
+      fd: {
+        away: { american: -2200, team: 'Western Michigan' },
+        home: { american: -2200, team: 'Western Michigan' },
+      },
+    }]);
+    expect(filled.moneyline.fd.home.team).toBe('Central Michigan');
+    expect(filled.moneyline.fd.home.american).toBe(750);
+    expect(bookSidesSane(filled.moneyline.fd, 'moneyline')).toBe(true);
+  });
+
+  it('hides player props and heavy juice on the card face by default', () => {
+    const rows = [
+      { key: 'ml', label: 'ML', kind: 'moneyline', wide: false, market: { twoWay: { pSum: 1.05 } } },
+      { key: 'p1', label: 'Player Pass', kind: 'player_ou', wide: true, market: { twoWay: { pSum: 0.98 } } },
+      { key: 'p2', label: 'Alt total', kind: 'total', wide: true, market: { twoWay: { pSum: 1.08 } } },
+      { key: 'p3', label: 'Close alt', kind: 'total', wide: true, market: { twoWay: { pSum: 1.01 } } },
+    ];
+    const def = filterCardFaceRows(rows);
+    expect(def.rows.map((r) => r.key)).toEqual(['ml', 'p3']);
+    expect(def.hiddenPlayerProps).toBe(1);
+    expect(def.hiddenHeavyJuice).toBe(1);
+    const all = filterCardFaceRows(rows, { showPlayerProps: true, showHeavyJuice: true });
+    expect(all.rows).toHaveLength(4);
   });
 
   it('scores a 3-way lock when draw is quoted on multiple books', () => {

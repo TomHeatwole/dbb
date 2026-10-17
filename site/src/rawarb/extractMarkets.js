@@ -295,14 +295,11 @@ export function extractFdContracts(markets, teams = {}) {
     if (/alternate total/i.test(name) || (overUnder.length >= 2 && /alternate/i.test(name))) {
       const kind = /team total|total points -/i.test(name) || nameMentionsTeam(name, teams)
         ? 'team_total' : 'total';
+      // FanDuel alt team totals share a subject with the main "X Total Points" market and
+      // poison display/pairing — game-level alternates stay, team alts use the main market only.
+      if (kind === 'team_total') continue;
       let subject = 'game';
-      if (kind === 'team_total') {
-        subject = teamSubject(name.replace(/-.*/, '').replace(/alternate total.*/i, '').trim(), teams)
-          || (teams.away && nameMentionsTeam(name, { away: teams.away }) ? teams.away : null)
-          || (teams.home && nameMentionsTeam(name, { home: teams.home }) ? teams.home : null)
-          || 'game';
-      }
-      const key = marketKey({ period, kind, stat: stat === 'points' ? 'points' : stat, subject });
+      const key = marketKey({ period, kind: stat === 'points' ? 'points' : stat, subject });
       for (const q of quotes) {
         const side = /under/i.test(q.name) ? 'under' : /over/i.test(q.name) ? 'over' : null;
         const line = q.line ?? parseLineFromName(q.name);

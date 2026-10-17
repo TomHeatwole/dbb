@@ -27617,6 +27617,13 @@ button.corners-bet:hover {
   font-weight: 700;
 }
 
+.rawarb-expand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
 @media (max-width: 640px) {
   .rawarb-meta {
     margin-left: 0;
