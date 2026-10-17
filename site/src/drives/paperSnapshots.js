@@ -165,6 +165,7 @@ export function buildDrivesPaperSnapshot(game, market, {
     home: game?.teams?.home ?? null,
     away: game?.teams?.away ?? null,
     kickoff_at: game?.openDate ?? null,
+    espn_id: game?.espnId != null ? String(game.espnId) : null,
     phase,
     offense_side: offenseSide,
     offense_name: model.offenseName ?? null,
@@ -216,6 +217,7 @@ export function buildDrivesLiveLinesSnapshot(game, {
     home: game?.teams?.home ?? null,
     away: game?.teams?.away ?? null,
     kickoff_at: game?.openDate ?? null,
+    espn_id: game?.espnId != null ? String(game.espnId) : null,
     phase: 'live_lines',
     offense_side: null,
     offense_name: null,
@@ -254,6 +256,9 @@ export const DRIVES_CSV_COLUMNS = [
   'total_over_american', 'total_under_american',
   'period', 'clock',
   'pregame_spread', 'pregame_total',
+  'espn_id', 'result', 'result_label', 'settled_at',
+  'model_p_result', 'live_p_result', 'model_logloss', 'market_logloss',
+  'result_spread', 'result_total', 'score_final_home', 'score_final_away',
 ];
 
 export function collectDrivesPaperSnapshots(games, {

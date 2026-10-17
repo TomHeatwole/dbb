@@ -21,6 +21,10 @@ const SCHEMA_STATEMENTS = [
      ON paper_snapshots (sport, event_id, phase, captured_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_paper_snapshots_sport_time
      ON paper_snapshots (sport, captured_at DESC)`,
+  `ALTER TABLE paper_snapshots ADD COLUMN IF NOT EXISTS settled_at TIMESTAMPTZ`,
+  `CREATE INDEX IF NOT EXISTS idx_paper_snapshots_unsettled
+     ON paper_snapshots (sport, event_id)
+     WHERE settled_at IS NULL`,
   `CREATE TABLE IF NOT EXISTS paper_track_meta (
     sport            TEXT PRIMARY KEY CHECK (sport IN ('sop', 'drives', 'corners')),
     last_espn_at     TIMESTAMPTZ,

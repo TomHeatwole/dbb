@@ -32,7 +32,7 @@ export function classifyEspnDriveBucket(drive) {
   if (!drive || isInProgressDrive(drive) || !isCountableTeamDrive(drive)) return null;
   const display = espnDriveResultName(drive).toLowerCase();
   if (!display) return 'other';
-  if (/field goal|missed fg/.test(display)) return 'fg';
+  if (display === 'fg' || /field goal|missed fg/.test(display)) return 'fg';
   if (display === 'punt' || display === 'blocked punt') return 'punt';
   if (/touchdown|\btd\b/.test(display)) return ST_TD.test(display) ? 'other' : 'td';
   if (/^punt\b/.test(display)) return 'punt';

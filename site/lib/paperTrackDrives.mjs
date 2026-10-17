@@ -1,7 +1,8 @@
 /**
  * /drives paper-line cron: ESPN every minute while college games are on.
  * FanDuel/DK while games are live (spread/total), at HT (next-drive), and
- * in the pregame first-drive windows.
+ * in the pregame first-drive windows. Scores first-drive / HT / live lines
+ * against ESPN when the series or game is complete.
  */
 
 import { uniqueScoreboardDates } from '../src/drives/espnScoreboardDates.js';
@@ -16,6 +17,7 @@ import {
   readTrackMeta,
   writeTrackMeta,
 } from './paperTrackCore.mjs';
+import { countReadyUnsettled, settleDrivesSnapshots } from './paperTrackSettle.mjs';
 import {
   shouldFetchBooks,
   shouldFetchEspn,
@@ -104,11 +106,27 @@ async function fetchDriveBooks() {
 export async function runDrivesTrackTick(now = Date.now()) {
   const started = Date.now();
   const meta = await readTrackMeta(SPORT);
-  if (!shouldFetchEspn(meta, now)) {
+  const unsettled = await countReadyUnsettled(SPORT);
+  if (!shouldFetchEspn(meta, now) && unsettled === 0) {
     return {
       ok: true,
       sport: SPORT,
       skipped: 'idle',
+      nextKickoffAt: meta.nextKickoffAt,
+      liveCount: meta.liveCount,
+      halfTimeCount: meta.halfTimeCount,
+      elapsedMs: Date.now() - started,
+    };
+  }
+
+  if (!shouldFetchEspn(meta, now) && unsettled > 0) {
+    const scored = await settleDrivesSnapshots();
+    return {
+      ok: true,
+      sport: SPORT,
+      skipped: 'settle-only',
+      scored: scored.scored,
+      settleEvents: scored.events,
       nextKickoffAt: meta.nextKickoffAt,
       liveCount: meta.liveCount,
       halfTimeCount: meta.halfTimeCount,
@@ -123,11 +141,14 @@ export async function runDrivesTrackTick(now = Date.now()) {
   };
 
   if (!shouldFetchBooks(SPORT, listing, meta, now)) {
+    const scored = await settleDrivesSnapshots();
     await writeTrackMeta(SPORT, espnPatch);
     return {
       ok: true,
       sport: SPORT,
       skipped: 'espn-only',
+      scored: scored.scored,
+      settleEvents: scored.events,
       ...listing,
       nextKickoffAt: listing.nextKickoffAt
         ? new Date(listing.nextKickoffAt).toISOString()
@@ -146,6 +167,7 @@ export async function runDrivesTrackTick(now = Date.now()) {
   });
   const fingerprints = await latestFingerprints(SPORT);
   const wrote = await insertNewSnapshots(snapshots, { fingerprints });
+  const scored = await settleDrivesSnapshots({ games });
   await writeTrackMeta(SPORT, {
     ...listingToMetaPatch(bookListing.liveCount || bookListing.upcomingCount || bookListing.halfTimeCount
       ? bookListing
@@ -160,6 +182,8 @@ export async function runDrivesTrackTick(now = Date.now()) {
     skipped: null,
     inserted: wrote.inserted,
     skippedDupes: wrote.skipped,
+    scored: scored.scored,
+    settleEvents: scored.events,
     games: games.length,
     ...bookListing,
     nextKickoffAt: (bookListing.nextKickoffAt || listing.nextKickoffAt)

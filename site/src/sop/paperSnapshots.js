@@ -217,6 +217,8 @@ export function buildSopPaperSnapshot(game, { pregame = null, capturedAt = new D
     home: game?.teams?.home ?? null,
     away: game?.teams?.away ?? null,
     kickoff_at: game?.openDate ?? null,
+    espn_id: game?.espnId != null ? String(game.espnId) : null,
+    espn_league: game?.espnLeague ?? game?.competition ?? null,
     competition: game?.competition ?? null,
     competition_name: game?.competitionName ?? null,
     phase,
@@ -278,6 +280,10 @@ export const SOP_CSV_COLUMNS = [
   'pregame_model_goal_p', 'pregame_model_no_goal_p',
   'pregame_fd_ng_totalGoalsUnder', 'pregame_fd_ng_nextGoalMethod', 'pregame_fd_ng_correctScore',
   'pregame_fd_sop', 'pregame_fd_header', 'pregame_json',
+  'espn_id', 'result', 'result_label', 'settled_at',
+  'hit_sop', 'hit_no_goal',
+  'model_p_result', 'live_p_result', 'model_logloss', 'market_logloss',
+  'model_sop_logloss', 'market_sop_logloss',
 ];
 
 export function collectSopPaperSnapshots(games, { pregameByEvent = {}, capturedAt = new Date() } = {}) {

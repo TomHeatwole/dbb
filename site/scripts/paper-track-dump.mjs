@@ -40,6 +40,10 @@ const SOP_CSV_COLUMNS = [
   'pregame_model_goal_p', 'pregame_model_no_goal_p',
   'pregame_fd_ng_totalGoalsUnder', 'pregame_fd_ng_nextGoalMethod', 'pregame_fd_ng_correctScore',
   'pregame_fd_sop', 'pregame_fd_header', 'pregame_json',
+  'espn_id', 'result', 'result_label', 'settled_at',
+  'hit_sop', 'hit_no_goal',
+  'model_p_result', 'live_p_result', 'model_logloss', 'market_logloss',
+  'model_sop_logloss', 'market_sop_logloss',
 ];
 
 const CORNERS_CSV_COLUMNS = [
@@ -76,6 +80,9 @@ const DRIVES_CSV_COLUMNS = [
   'total_over_american', 'total_under_american',
   'period', 'clock',
   'pregame_spread', 'pregame_total',
+  'espn_id', 'result', 'result_label', 'settled_at',
+  'model_p_result', 'live_p_result', 'model_logloss', 'market_logloss',
+  'result_spread', 'result_total', 'score_final_home', 'score_final_away',
 ];
 
 const siteDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));

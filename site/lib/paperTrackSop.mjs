@@ -1,6 +1,7 @@
 /**
  * SOP2 paper-line cron: ESPN listing when idle, FanDuel/DK/Kalshi only when
  * matches are live, about to kick off, or the 2h pregame window is due.
+ * Every tick also scores unsettled snapshots against ESPN next-goal results.
  */
 
 import { setNoStore } from './bookCache.mjs';
@@ -13,6 +14,7 @@ import {
   readTrackMeta,
   writeTrackMeta,
 } from './paperTrackCore.mjs';
+import { countReadyUnsettled, settleSopSnapshots } from './paperTrackSettle.mjs';
 import { espnLeagueKeys } from '../src/sop/soccerLeagues.js';
 import { keepSopDisplayGames, mergeDkIntoFdGames } from '../src/sop/mergeDkGames.js';
 import { mergeKalshiIntoFdGames } from '../src/sop/mergeKalshiGames.js';
@@ -79,11 +81,26 @@ async function fetchSop2Books() {
 export async function runSopTrackTick(now = Date.now()) {
   const started = Date.now();
   const meta = await readTrackMeta(SPORT);
-  if (!shouldFetchEspn(meta, now)) {
+  const unsettled = await countReadyUnsettled(SPORT);
+  if (!shouldFetchEspn(meta, now) && unsettled === 0) {
     return {
       ok: true,
       sport: SPORT,
       skipped: 'idle',
+      nextKickoffAt: meta.nextKickoffAt,
+      liveCount: meta.liveCount,
+      elapsedMs: Date.now() - started,
+    };
+  }
+
+  if (!shouldFetchEspn(meta, now) && unsettled > 0) {
+    const scored = await settleSopSnapshots();
+    return {
+      ok: true,
+      sport: SPORT,
+      skipped: 'settle-only',
+      scored: scored.scored,
+      settleEvents: scored.events,
       nextKickoffAt: meta.nextKickoffAt,
       liveCount: meta.liveCount,
       elapsedMs: Date.now() - started,
@@ -97,11 +114,14 @@ export async function runSopTrackTick(now = Date.now()) {
   };
 
   if (!shouldFetchBooks(SPORT, listing, meta, now)) {
+    const scored = await settleSopSnapshots();
     await writeTrackMeta(SPORT, espnPatch);
     return {
       ok: true,
       sport: SPORT,
       skipped: 'espn-only',
+      scored: scored.scored,
+      settleEvents: scored.events,
       ...listing,
       nextKickoffAt: listing.nextKickoffAt
         ? new Date(listing.nextKickoffAt).toISOString()
@@ -119,6 +139,7 @@ export async function runSopTrackTick(now = Date.now()) {
   });
   const fingerprints = await latestFingerprints(SPORT);
   const wrote = await insertNewSnapshots(snapshots, { fingerprints });
+  const scored = await settleSopSnapshots({ games: books.games });
   await writeTrackMeta(SPORT, {
     ...listingToMetaPatch(bookListing.liveCount || bookListing.upcomingCount
       ? bookListing
@@ -133,6 +154,8 @@ export async function runSopTrackTick(now = Date.now()) {
     skipped: null,
     inserted: wrote.inserted,
     skippedDupes: wrote.skipped,
+    scored: scored.scored,
+    settleEvents: scored.events,
     games: books.games.length,
     errors: books.errors,
     ...bookListing,
