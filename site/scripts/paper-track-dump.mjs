@@ -71,6 +71,11 @@ const DRIVES_CSV_COLUMNS = [
   'model_td', 'model_fg', 'model_punt', 'model_other',
   'model_p_td', 'model_p_fg', 'model_p_punt', 'model_p_other',
   'live_p_td', 'live_p_fg', 'live_p_punt', 'live_p_other',
+  'home_spread', 'total',
+  'spread_home_american', 'spread_away_american',
+  'total_over_american', 'total_under_american',
+  'period', 'clock',
+  'pregame_spread', 'pregame_total',
 ];
 
 const siteDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -174,8 +179,21 @@ function flattenRow(row, columns) {
   return columns.map((col) => csvCell(merged[col] ?? ''));
 }
 
+function replaceCsvHeaderIfNeeded(file, columns) {
+  if (!fs.existsSync(file) || fs.statSync(file).size === 0) return;
+  const text = fs.readFileSync(file, 'utf8');
+  const nl = text.indexOf('\n');
+  const existingHeader = (nl >= 0 ? text.slice(0, nl) : text).replace(/\r$/, '');
+  const wanted = columns.join(',');
+  if (existingHeader === wanted) return;
+  const rest = nl >= 0 ? text.slice(nl + 1) : '';
+  const body = rest.endsWith('\n') || rest === '' ? rest : `${rest}\n`;
+  fs.writeFileSync(file, `${wanted}\n${body}`);
+}
+
 function appendCsv(file, columns, rows) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
+  replaceCsvHeaderIfNeeded(file, columns);
   const existing = parseExistingIds(file);
   const fresh = rows.filter((row) => !existing.has(String(row.id)));
   if (!fresh.length) return { wrote: 0, existed: rows.length };

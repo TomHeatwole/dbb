@@ -922,8 +922,8 @@ function findNamedMarket(markets, names) {
 
 function extractMainLines(markets) {
   const ml = findNamedMarket(markets, ['Moneyline']);
-  const spread = findNamedMarket(markets, ['Spread']);
-  const total = findNamedMarket(markets, ['Total Points', 'Total']);
+  const spread = findNamedMarket(markets, ['Spread', 'Point Spread', 'Game Spread']);
+  const total = findNamedMarket(markets, ['Total Points', 'Total', 'Game Total']);
   const pickTwoWay = (market) => {
     if (!market) return null;
     const runners = runnersList(market).map((runner) => {

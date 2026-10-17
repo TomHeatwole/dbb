@@ -150,11 +150,12 @@ export async function latestFingerprints(sport, sql = getSql()) {
 
 export async function latestPregamePayloads(sport, sql = getSql()) {
   await ensurePaperTrackSchema(sql);
+  const phase = sport === 'drives' ? 'pregame_first' : 'pregame';
   const rows = await sql`
     SELECT DISTINCT ON (event_id)
       event_id, payload
     FROM paper_snapshots
-    WHERE sport = ${sport} AND phase = 'pregame'
+    WHERE sport = ${sport} AND phase = ${phase}
     ORDER BY event_id, captured_at DESC
   `;
   const map = {};

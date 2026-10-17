@@ -75,10 +75,9 @@ export function shouldFetchEspn(meta, now = Date.now()) {
 }
 
 /**
- * SOP / corners: scrape books while any match is live, around kickoff, or
- * on the 2h pregame refresh when fixtures are listed.
- * Drives: scrape books at halftime, around kickoff, or on the 2h pregame
- * refresh — not for ordinary in-play snaps.
+ * Scrape books while any match is live (SOP/corners odds, drives live
+ * spread/total), around kickoff, or on the 2h pregame refresh when
+ * fixtures are listed.
  */
 export function shouldFetchBooks(sport, listing, meta, now = Date.now()) {
   const liveCount = listing?.liveCount ?? 0;
@@ -87,8 +86,9 @@ export function shouldFetchBooks(sport, listing, meta, now = Date.now()) {
   const nextKickoffAt = listing?.nextKickoffAt ?? meta?.nextKickoffAt;
   const listed = liveCount > 0 || upcomingCount > 0 || halfTimeCount > 0;
 
-  if ((sport === 'sop' || sport === 'corners') && liveCount > 0) return true;
-  if (sport === 'drives' && halfTimeCount > 0) return true;
+  if ((sport === 'sop' || sport === 'corners' || sport === 'drives') && liveCount > 0) {
+    return true;
+  }
   if (kickoffIsSoon(nextKickoffAt, now)) return true;
   if (!listed) return false;
   return booksAreStale(meta, now);

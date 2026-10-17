@@ -47,7 +47,7 @@ describe('paper-track gating', () => {
     }, now)).toBe(true);
   });
 
-  it('scrapes SOP books while live, but drives books only at HT or pregame windows', () => {
+  it('scrapes SOP and drives books while live, and on pregame windows', () => {
     const live = { liveCount: 3, halfTimeCount: 0, upcomingCount: 2, nextKickoffAt: now + 3 * HOUR };
     const ht = { liveCount: 3, halfTimeCount: 1, upcomingCount: 2, nextKickoffAt: now + 3 * HOUR };
     const pregame = { liveCount: 0, halfTimeCount: 0, upcomingCount: 4, nextKickoffAt: now + 3 * HOUR };
@@ -57,7 +57,7 @@ describe('paper-track gating', () => {
 
     expect(shouldFetchBooks('sop', live, fresh, now)).toBe(true);
     expect(shouldFetchBooks('corners', live, fresh, now)).toBe(true);
-    expect(shouldFetchBooks('drives', live, fresh, now)).toBe(false);
+    expect(shouldFetchBooks('drives', live, fresh, now)).toBe(true);
     expect(shouldFetchBooks('drives', ht, fresh, now)).toBe(true);
     expect(shouldFetchBooks('sop', pregame, stale, now)).toBe(true);
     expect(shouldFetchBooks('drives', pregame, stale, now)).toBe(true);

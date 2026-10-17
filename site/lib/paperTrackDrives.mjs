@@ -1,6 +1,7 @@
 /**
- * /drives paper-line cron: ESPN every minute while college games are on so we
- * can catch halftime; FanDuel/DK only for pregame first-drive and HT next-drive.
+ * /drives paper-line cron: ESPN every minute while college games are on.
+ * FanDuel/DK while games are live (spread/total), at HT (next-drive), and
+ * in the pregame first-drive windows.
  */
 
 import { uniqueScoreboardDates } from '../src/drives/espnScoreboardDates.js';
@@ -10,6 +11,7 @@ import { setNoStore } from './bookCache.mjs';
 import {
   insertNewSnapshots,
   latestFingerprints,
+  latestPregamePayloads,
   listingToMetaPatch,
   readTrackMeta,
   writeTrackMeta,
@@ -137,7 +139,11 @@ export async function runDrivesTrackTick(now = Date.now()) {
   const book = await fetchDriveBooks();
   const games = book?.games ?? [];
   const bookListing = summarizeListing(gamesListing(games), now);
-  const snapshots = collectDrivesPaperSnapshots(games, { capturedAt: new Date(now) });
+  const pregameByEvent = await latestPregamePayloads(SPORT);
+  const snapshots = collectDrivesPaperSnapshots(games, {
+    capturedAt: new Date(now),
+    pregameByEvent,
+  });
   const fingerprints = await latestFingerprints(SPORT);
   const wrote = await insertNewSnapshots(snapshots, { fingerprints });
   await writeTrackMeta(SPORT, {
