@@ -123,9 +123,11 @@ function Teams2Hub() {
       return (liveTotals[b.roster_id] || 0) - (liveTotals[a.roster_id] || 0);
     });
 
-    // Per-week scores for sparkline
+    // Sparkline uses finished weeks only. The in-progress week is 0 (or a
+    // handful of Thursday points) for almost everyone, which yanks every
+    // line to the floor.
     const weeklyScoresByRoster = {};
-    const weeksToShow = isCurrentSeason ? Math.min(currentWeek, 17) : 17;
+    const weeksToShow = isCurrentSeason ? Math.max(0, Math.min(completedWeeks, 17)) : 17;
     for (let w = 1; w <= weeksToShow; w++) {
       const weekArr = weeksParsedData[w - 1];
       if (!Array.isArray(weekArr)) continue;
@@ -150,8 +152,10 @@ function Teams2Hub() {
       const avatarUrl = user?.team_avatar_url || user?.user_avatar_url || user?.avatar_url || null;
 
       const totalPF = liveTotals[s.roster_id] || 0;
-      const weeksPlayed = completedWeeks > 0 ? completedWeeks : (isCurrentSeason ? Math.max(1, currentWeek - 1) : 17);
-      const ppg = weeksPlayed > 0 ? (totalPF / weeksPlayed).toFixed(1) : '0.0';
+      const recentScores = weeklyScoresByRoster[s.roster_id] || [];
+      const weeksPlayed = recentScores.length;
+      const completedPoints = recentScores.reduce((sum, v) => sum + (typeof v === 'number' ? v : 0), 0);
+      const ppg = weeksPlayed > 0 ? (completedPoints / weeksPlayed).toFixed(1) : '0.0';
 
       // Top 3 players by search_rank
       const playerIds = roster?.players || [];
@@ -169,7 +173,7 @@ function Teams2Hub() {
         rank: idx + 1,
         totalPF,
         ppg,
-        recentScores: weeklyScoresByRoster[s.roster_id] || [],
+        recentScores,
         topPlayers,
       };
     });

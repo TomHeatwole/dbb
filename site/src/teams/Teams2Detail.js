@@ -268,12 +268,12 @@ function Teams2Detail() {
           rank++;
         }
 
-        const weeksPlayed = completedWeeks > 0 ? completedWeeks : Math.max(1, currentWeek - 1);
-        const ppg = weeksPlayed > 0 ? (totalPF / weeksPlayed).toFixed(1) : '0.0';
-
-        // High/low week
+        // High/low and PPG use finished weeks. A live total still includes
+        // this week's points, which would inflate PPG before the week ends.
         let high = { pts: -Infinity, week: null };
         let low = { pts: Infinity, week: null };
+        let completedSum = 0;
+        let completedCount = 0;
         const cap = isCurrentSeason ? Math.max(0, completedWeeks) : 17;
         for (let w = 1; w <= cap; w++) {
           const wArr = weeksParsedData[w - 1];
@@ -281,10 +281,13 @@ function Teams2Detail() {
           const entry = wArr.find(e => e && Number(e.roster_id) === rosterId);
           const pts = entry && typeof entry.points === 'number' ? Math.round(entry.points * 10) / 10 : null;
           if (pts !== null) {
+            completedSum += pts;
+            completedCount += 1;
             if (pts > high.pts) high = { pts, week: w };
             if (pts < low.pts) low = { pts, week: w };
           }
         }
+        const ppg = completedCount > 0 ? (completedSum / completedCount).toFixed(1) : '0.0';
 
         return {
           rank,
@@ -299,11 +302,11 @@ function Teams2Detail() {
     // Fallback for non-current or missing player data
     const sortedStandings = standings.slice().sort((a, b) => (b.points_scored || 0) - (a.points_scored || 0));
     const rank = sortedStandings.findIndex(s => s.roster_id === rosterId) + 1;
-    const weeksPlayed = isCurrentSeason ? Math.max(1, completedWeeks || 1) : 17;
-    const ppg = weeksPlayed > 0 ? (totalPF / weeksPlayed).toFixed(1) : '0.0';
 
     let high = { pts: -Infinity, week: null };
     let low = { pts: Infinity, week: null };
+    let completedSum = 0;
+    let completedCount = 0;
     const cap = isCurrentSeason ? completedWeeks : 17;
     for (let w = 1; w <= cap; w++) {
       const wArr = weeksParsedData[w - 1];
@@ -311,10 +314,13 @@ function Teams2Detail() {
       const entry = wArr.find(e => e && Number(e.roster_id) === rosterId);
       const pts = entry && typeof entry.points === 'number' ? Math.round(entry.points * 10) / 10 : null;
       if (pts !== null) {
+        completedSum += pts;
+        completedCount += 1;
         if (pts > high.pts) high = { pts, week: w };
         if (pts < low.pts) low = { pts, week: w };
       }
     }
+    const ppg = completedCount > 0 ? (completedSum / completedCount).toFixed(1) : '0.0';
 
     return {
       rank: rank || '?',
