@@ -20,10 +20,20 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { DATA_DIR, CURRENT_YEAR } from './config.mjs';
 import { loadPlayersData } from './dataLoader.mjs';
+import { getCompletedWeeksCount } from './helpers.mjs';
+import { fetchMatchups } from './sleeperApi.mjs';
 import { buildHistoricalPositionRanks, buildSleeperBasePoints } from './simEngine.mjs';
 
 const OUTCOME_HISTORY_YEARS = 5;
 const NUM_WEEKS = 17;
+const REG_SEASON_WEEKS = 14;
+
+const ROS_CSVS = [
+  { file: 'fantasypros_ros_qb.csv', position: 'QB' },
+  { file: 'fantasypros_ros_rb_std.csv', position: 'RB' },
+  { file: 'fantasypros_ros_wr_std.csv', position: 'WR' },
+  { file: 'fantasypros_ros_te_half.csv', position: 'TE' },
+];
 
 export function getOutcomeHistoryYears(currentYear) {
   const end = Number(currentYear) - 1;
@@ -250,27 +260,173 @@ export async function loadBasePointsByYear(years, neededIds, scoringConfig, play
   return out;
 }
 
-// ─── One-stop context assembly ────────────────────────────────────────────────
+// ─── Rest-of-season ranks + locked weeks ─────────────────────────────────────
+
+/** Finished regular-season weeks (capped at 14). Index 0 of locked points is week 1. */
+export function getLockedRegularSeasonWeeks(season = CURRENT_YEAR) {
+  return Math.max(0, Math.min(REG_SEASON_WEEKS, getCompletedWeeksCount(season)));
+}
+
+let rosRowsCache = null;
+
+function loadRosRows() {
+  if (rosRowsCache) return rosRowsCache;
+  const rows = [];
+  for (const cfg of ROS_CSVS) {
+    const text = readFileSync(join(DATA_DIR, cfg.file), 'utf8');
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) continue;
+    const headers = parseCsvRow(lines[0]);
+    const rankIdx = headers.indexOf('rank');
+    const nameIdx = headers.indexOf('name');
+    const posIdx = headers.indexOf('position');
+    const sleeperIdx = headers.indexOf('sleeper_id');
+    if (rankIdx === -1 || sleeperIdx === -1) continue;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCsvRow(lines[i]);
+      const sleeperId = (cols[sleeperIdx] || '').trim();
+      const posRank = parseInt(cols[rankIdx], 10);
+      if (!sleeperId || !Number.isFinite(posRank) || posRank < 1) continue;
+      const position = ((cols[posIdx] || cfg.position) || '').trim().toUpperCase();
+      rows.push({
+        sleeperId,
+        name: nameIdx === -1 ? '' : (cols[nameIdx] || '').trim(),
+        position,
+        posRank,
+        effRank: posRank,
+        adp: posRank,
+      });
+    }
+  }
+  rosRowsCache = rows;
+  return rows;
+}
+
+/** FantasyPros ROS positional tags. Same shape as loadHwangAdpRankMap. */
+export function loadRosRankMap() {
+  const rankMap = {};
+  for (const row of loadRosRows()) {
+    rankMap[row.sleeperId] = {
+      rank: row.posRank,
+      position: row.position,
+      posRank: row.posRank,
+      effRank: row.effRank,
+      adp: row.adp,
+      name: row.name,
+    };
+  }
+  return rankMap;
+}
+
+export function loadRosPositionMaxRanks() {
+  const maxByPos = {};
+  for (const row of loadRosRows()) {
+    const pos = row.position;
+    if (!maxByPos[pos]) maxByPos[pos] = { maxPosRank: 0, maxEffRank: 0 };
+    maxByPos[pos].maxPosRank = Math.max(maxByPos[pos].maxPosRank, row.posRank);
+    maxByPos[pos].maxEffRank = Math.max(maxByPos[pos].maxEffRank, row.effRank);
+  }
+  return maxByPos;
+}
+
+function overlayMatchupPoints(lockedWeekPoints, matchupsByWeek) {
+  matchupsByWeek.forEach((entries, i) => {
+    const weekMap = lockedWeekPoints[i];
+    if (!weekMap || !entries) return;
+    for (const entry of entries) {
+      const pts = entry && entry.players_points;
+      if (!pts || typeof pts !== 'object') continue;
+      for (const [pid, val] of Object.entries(pts)) {
+        const n = Number(val);
+        if (Number.isFinite(n)) weekMap[String(pid)] = n;
+      }
+    }
+  });
+}
+
+function teamPointsFromMatchups(matchupsByWeek) {
+  return matchupsByWeek.map((entries) => {
+    const map = {};
+    if (!entries) return map;
+    for (const entry of entries) {
+      if (!entry || entry.roster_id == null) continue;
+      const n = Number(entry.points);
+      if (Number.isFinite(n)) map[String(entry.roster_id)] = n;
+    }
+    return map;
+  });
+}
+
+async function fetchWeekStats(year, week) {
+  try {
+    const res = await fetch(`https://api.sleeper.app/v1/stats/nfl/regular/${year}/${week}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+const lockedPointsCache = new Map();
+
+/**
+ * Actual league points for completed regular-season weeks.
+ * Index 0 is week 1. Mirrors site/src/scenarios/rosRankLoader.js.
+ */
+export async function loadLockedRegularSeasonPoints(season, scoringConfig, playersData) {
+  const lockedWeekCount = getLockedRegularSeasonWeeks(season);
+  if (lockedWeekCount <= 0 || !scoringConfig) {
+    return { lockedWeekCount: 0, lockedWeekPoints: null, lockedTeamWeekPoints: null };
+  }
+  const cacheKey = `${season}:${lockedWeekCount}`;
+  const hit = lockedPointsCache.get(cacheKey);
+  if (hit) return hit;
+
+  const weeks = Array.from({ length: lockedWeekCount }, (_, i) => i + 1);
+  const [rawByWeek, matchupsByWeek] = await Promise.all([
+    Promise.all(weeks.map((week) => fetchWeekStats(season, week))),
+    Promise.all(weeks.map((week) => fetchMatchups(week, season).catch(() => null))),
+  ]);
+  const weeklyStats = Array.from({ length: NUM_WEEKS }, (_, i) => rawByWeek[i] || null);
+  const pointsByWeek = buildSleeperBasePoints(weeklyStats, scoringConfig, playersData);
+  const lockedWeekPoints = pointsByWeek.slice(0, lockedWeekCount);
+  overlayMatchupPoints(lockedWeekPoints, matchupsByWeek);
+  const result = {
+    lockedWeekCount,
+    lockedWeekPoints,
+    lockedTeamWeekPoints: teamPointsFromMatchups(matchupsByWeek),
+  };
+  lockedPointsCache.set(cacheKey, result);
+  return result;
+}
 
 /**
  * Load every static + historical input the simulator needs for the current
  * season. Rosters are supplied by the caller (they come from the Sleeper
  * league API and may be modified for hypotheticals).
  *
- * Rank tags are always Hwang ADP. Do not add a Redraft Dash / custom-board
- * rank source — HwangAI must not see or run that variant.
+ * Default rank tags are Hwang ADP (preseason / full-season sim). Pass
+ * `{ mode: 'ros' }` once the season has kicked off: FantasyPros rest-of-season
+ * positional ranks, with finished weeks locked to actual scores.
+ * Do not add a Redraft Dash / custom-board rank source — HwangAI must not
+ * see or run that variant.
  */
-export async function loadSimulationInputs() {
+export async function loadSimulationInputs({ mode = 'preseason' } = {}) {
+  const useRos = mode === 'ros';
   const playersData = loadPlayersData();
   const scoringConfig = loadScoringConfig();
-  const hwangAdpRankMap = loadHwangAdpRankMap(CURRENT_YEAR);
-  const positionMaxRanks = loadHwangPositionMaxRanks(CURRENT_YEAR);
+  const hwangAdpRankMap = useRos ? loadRosRankMap() : loadHwangAdpRankMap(CURRENT_YEAR);
+  const positionMaxRanks = useRos ? loadRosPositionMaxRanks() : loadHwangPositionMaxRanks(CURRENT_YEAR);
   const { years, catalog } = loadOutcomeCatalog(CURRENT_YEAR, playersData);
 
   // Weekly points are only ever read for catalog players (outcome pools map
   // rostered players onto historical player-seasons).
   const neededIds = new Set(catalog.map((e) => e.sleeperId));
   const basePointsByYear = await loadBasePointsByYear(years, neededIds, scoringConfig, playersData);
+
+  const locked = useRos
+    ? await loadLockedRegularSeasonPoints(CURRENT_YEAR, scoringConfig, playersData)
+    : { lockedWeekCount: 0, lockedWeekPoints: null, lockedTeamWeekPoints: null };
 
   return {
     playersData,
@@ -279,5 +435,9 @@ export async function loadSimulationInputs() {
     positionMaxRanks,
     catalog,
     basePointsByYear,
+    mode: useRos ? 'ros' : 'preseason',
+    lockedWeekCount: locked.lockedWeekCount,
+    lockedWeekPoints: locked.lockedWeekPoints,
+    lockedTeamWeekPoints: locked.lockedTeamWeekPoints,
   };
 }

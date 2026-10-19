@@ -23,6 +23,7 @@ import {
 import { RENDER_MODE_FULL, RENDER_MODE_SOFT } from './renderConfig.mjs';
 import { prepareSimContext, runSeasonSim, DEFAULT_ITERATIONS } from './simEngine.mjs';
 import { loadSimulationInputs } from './simData.mjs';
+import { readSeasonClock } from './seasonContext.mjs';
 
 // ── Link helpers ─────────────────────────────────────────────────────────────
 
@@ -948,6 +949,53 @@ export async function getTeamValueSummary(teamQuery, renderMode = RENDER_MODE_FU
 let seasonOddsCache = null; // { key, ts, output }
 const SEASON_ODDS_TTL_MS = 15 * 60 * 1000;
 
+function seasonSimCopy(mode, lockedWeekCount, { delta = false } = {}) {
+  if (mode === 'ros') {
+    const locked = lockedWeekCount > 0
+      ? `Weeks 1–${lockedWeekCount} are the actual scores already played and are not re-rolled.`
+      : 'No regular-season week has finished yet, so none are locked.';
+    const rest = lockedWeekCount >= 14
+      ? 'Playoff weeks 15–17 still roll from historical playoffs of similar regular-season scorers.'
+      : `Weeks ${lockedWeekCount + 1}–14 roll from historical seasons of players at a similar FantasyPros rest-of-season positional rank (QB/RB/WR standard, TE half-PPR). Playoff weeks 15–17 roll from historical playoffs of similar regular-season scorers.`;
+    const paired = delta
+      ? ' Baseline and modified rosters share the same outcome rolls. Finished weeks stay the actual scores on both sides, so the deltas are only the rest of the season.'
+      : '';
+    return {
+      title: delta ? 'Rest-of-Season Delta Simulation' : 'Rest-of-Season Simulation',
+      blurb: `*(ROS simulator — not the preseason ADP sim. ${locked} ${rest}${paired} Top 4 regular-season scores make the playoffs; best weeks 15–17 total wins the title.)*`,
+      missingRank: 'no rest-of-season rank — he contributes 0 in every week that has not been played, so his real impact is understated',
+      unrankedNote: (n) => `*Note: ${n} rostered skill players league-wide have no rest-of-season rank and contribute 0 in every week that has not been played (deep bench / unranked types).*`,
+    };
+  }
+  const paired = delta
+    ? ' Baseline and modified rosters are scored with identical player-outcome rolls — deltas isolate the roster change.'
+    : ' Each run rolls a full season for every player from historical seasons of players drafted at a similar ADP, then scores optimal best-ball lineups for all 17 weeks.';
+  return {
+    title: delta ? 'Preseason Delta Simulation' : 'Preseason Simulation',
+    blurb: `*(Preseason simulator.${paired} Top 4 regular-season scores make the playoffs; best weeks 15–17 total wins the title.)*`,
+    missingRank: 'no draft-capital projection this season — he contributes 0 points in the simulation, so his real impact is understated',
+    unrankedNote: (n) => `*Note: ${n} rostered skill players league-wide have no draft-capital projection and contribute 0 in simulations (deep bench/undrafted types).*`,
+  };
+}
+
+async function buildLiveSeasonSim(scenarioRosters, baselineRosters = null) {
+  const clock = readSeasonClock();
+  const inputs = await loadSimulationInputs({ mode: clock.mode });
+  const ctx = prepareSimContext({
+    scenarioRosters,
+    baselineRosters,
+    hwangAdpRankMap: inputs.hwangAdpRankMap,
+    catalog: inputs.catalog,
+    positionMaxRanks: inputs.positionMaxRanks,
+    basePointsByYear: inputs.basePointsByYear,
+    playersData: inputs.playersData,
+    lockedWeekCount: inputs.lockedWeekCount,
+    lockedWeekPoints: inputs.lockedWeekPoints,
+    lockedTeamWeekPoints: inputs.lockedTeamWeekPoints,
+  });
+  return { clock, inputs, ctx };
+}
+
 function buildRosterMapFromSleeper(rosters) {
   const map = {};
   for (const r of rosters) {
@@ -994,16 +1042,18 @@ function countUnrankedByTeam(rosterMap, hwangAdpRankMap, playersData) {
 
 /**
  * Baseline Monte Carlo championship odds for the current season.
- * Always ADP-ranked — HwangAI must not receive a Redraft Dash variant.
+ * Preseason: Hwang ADP, every week rolled. After kickoff: ROS ranks, finished
+ * weeks locked. HwangAI must not receive a Redraft Dash variant.
  */
 export async function getSeasonOdds(iterations) {
   const iters = Math.max(250, Math.min(3000, Math.round(Number(iterations) || DEFAULT_ITERATIONS)));
+  const clock = readSeasonClock();
 
   const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
   const teamMap = buildTeamMap(rosters, users);
   const rosterMap = buildRosterMapFromSleeper(rosters);
 
-  const cacheKey = `${iters}:${JSON.stringify(rosterMap)}`;
+  const cacheKey = `${clock.mode}:${clock.lockedWeekCount}:${iters}:${JSON.stringify(rosterMap)}`;
   if (seasonOddsCache && seasonOddsCache.key === cacheKey
       && Date.now() - seasonOddsCache.ts < SEASON_ODDS_TTL_MS) {
     return seasonOddsCache.output;
@@ -1016,20 +1066,13 @@ export async function getSeasonOdds(iterations) {
     return persisted.payload;
   }
 
-  const inputs = await loadSimulationInputs();
-  const ctx = prepareSimContext({
-    scenarioRosters: rosterMap,
-    hwangAdpRankMap: inputs.hwangAdpRankMap,
-    catalog: inputs.catalog,
-    positionMaxRanks: inputs.positionMaxRanks,
-    basePointsByYear: inputs.basePointsByYear,
-    playersData: inputs.playersData,
-  });
+  const { inputs, ctx } = await buildLiveSeasonSim(rosterMap);
   const { results, iterations: ran } = runSeasonSim(ctx, iters);
+  const copy = seasonSimCopy(inputs.mode, inputs.lockedWeekCount);
 
   const lines = [
-    `**${CURRENT_YEAR} Season Simulation — ${ran.toLocaleString()} Monte Carlo runs**`,
-    '*(Each run rolls a season outcome for every player from historical seasons of players drafted at a similar ADP, then scores optimal best-ball lineups for all 17 weeks. Top 4 regular-season scores make the playoffs; best weeks 15–17 total wins the title.)*',
+    `**${CURRENT_YEAR} ${copy.title} — ${ran.toLocaleString()} Monte Carlo runs**`,
+    copy.blurb,
     '',
   ];
   lines.push(...formatOddsTable(results, teamMap));
@@ -1037,7 +1080,7 @@ export async function getSeasonOdds(iterations) {
   const unranked = countUnrankedByTeam(rosterMap, inputs.hwangAdpRankMap, inputs.playersData);
   const totalUnranked = Object.values(unranked).reduce((s, n) => s + n, 0);
   if (totalUnranked > 0) {
-    lines.push('', `*Note: ${totalUnranked} rostered skill players league-wide have no draft-capital projection and contribute 0 in simulations (deep bench/undrafted types).*`);
+    lines.push('', copy.unrankedNote(totalUnranked));
   }
 
   const output = lines.join('\n');
@@ -1062,8 +1105,8 @@ export async function simulateRosterChangeOdds({ changes = [], iterations }) {
   const [rosters, users] = await Promise.all([fetchRosters(), fetchUsers()]);
   const teamMap = buildTeamMap(rosters, users);
   const baselineRosters = buildRosterMapFromSleeper(rosters);
-  const playersData = loadPlayersData();
-  const inputs = await loadSimulationInputs();
+  const inputs = await loadSimulationInputs({ mode: readSeasonClock().mode });
+  const copy = seasonSimCopy(inputs.mode, inputs.lockedWeekCount, { delta: true });
 
   const scenarioRosters = {};
   for (const [rid, pids] of Object.entries(baselineRosters)) scenarioRosters[rid] = [...pids];
@@ -1092,7 +1135,7 @@ export async function simulateRosterChangeOdds({ changes = [], iterations }) {
       const displayName = getPlayerDisplayName(found.player);
       added.push(displayName);
       if (!inputs.hwangAdpRankMap[pid]) {
-        warnings.push(`⚠️  ${displayName} has no draft-capital projection this season — he contributes 0 points in the simulation, so his real impact is understated.`);
+        warnings.push(`⚠️  ${displayName} has ${copy.missingRank}.`);
       }
     }
     for (const playerName of (change.drop || [])) {
@@ -1121,6 +1164,9 @@ export async function simulateRosterChangeOdds({ changes = [], iterations }) {
     positionMaxRanks: inputs.positionMaxRanks,
     basePointsByYear: inputs.basePointsByYear,
     playersData: inputs.playersData,
+    lockedWeekCount: inputs.lockedWeekCount,
+    lockedWeekPoints: inputs.lockedWeekPoints,
+    lockedTeamWeekPoints: inputs.lockedTeamWeekPoints,
   });
   const { results, baselineResults, iterations: ran } = runSeasonSim(ctx, iters);
 
@@ -1139,8 +1185,8 @@ export async function simulateRosterChangeOdds({ changes = [], iterations }) {
   }
 
   const lines = [
-    `**${CURRENT_YEAR} Season Delta Simulation — ${ran.toLocaleString()} paired Monte Carlo runs**`,
-    '*(Baseline vs modified rosters scored with identical player-outcome rolls — deltas isolate the roster change.)*',
+    `**${CURRENT_YEAR} ${copy.title} — ${ran.toLocaleString()} paired Monte Carlo runs**`,
+    copy.blurb,
     '',
     '**Changes applied:**',
     ...appliedChanges,

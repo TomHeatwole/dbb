@@ -462,6 +462,45 @@ describe('extract + skip', () => {
     expect(rows[0].fd.home.american).toBe(110);
   });
 
+  it('keeps the match moneyline when an earlier 3-way is on the same key', () => {
+    const teams = { home: 'Malaga', away: 'Real Sociedad' };
+    const rows = extractDkContracts([
+      { id: '1', name: 'Winner', eventId: 'e', hint: 'Match Props Winner' },
+      { id: '2', name: 'Moneyline', eventId: 'e', hint: 'Match Lines Moneyline' },
+    ], [
+      { marketId: '1', label: 'Malaga', outcomeType: 'Home', displayOdds: { american: '+1000' } },
+      { marketId: '1', label: 'Draw', outcomeType: 'Tie', displayOdds: { american: '-1000' } },
+      { marketId: '1', label: 'Real Sociedad', outcomeType: 'Away', displayOdds: { american: '+1000' } },
+      { marketId: '2', label: 'Malaga', outcomeType: 'Home', displayOdds: { american: '+35000' } },
+      { marketId: '2', label: 'Draw', outcomeType: 'Tie', displayOdds: { american: '+35000' } },
+      { marketId: '2', label: 'Real Sociedad', outcomeType: 'Away', displayOdds: { american: '-100000' } },
+    ], teams);
+    const three = rows.find((row) => row.key === 'fg|three_ml|winner|game');
+    expect(three.dk.away).toMatchObject({ american: -100000, label: 'Real Sociedad' });
+    expect(three.dk.home).toMatchObject({ american: 35000, label: 'Malaga' });
+    expect(three.dk.draw.american).toBe(35000);
+  });
+
+  it('does not file a halves-tab Moneyline as the match, and trusts the team name over the outcome tag', () => {
+    const teams = { home: 'Malaga', away: 'Real Sociedad' };
+    const rows = extractDkContracts([
+      { id: '1', name: 'Moneyline', eventId: 'e', hint: 'Halves Moneyline - Halves (3-Way)' },
+      { id: '2', name: 'Moneyline 2nd Half', eventId: 'e', hint: 'Halves Moneyline - Halves (3-Way)' },
+    ], [
+      { marketId: '1', label: 'Away', outcomeType: 'Away', participants: [{ name: 'Real Sociedad' }], displayOdds: { american: '+1000' } },
+      { marketId: '1', label: 'Draw', outcomeType: 'Home', displayOdds: { american: '-1000' } },
+      { marketId: '1', label: 'Home', outcomeType: 'Tie', participants: [{ name: 'Malaga' }], displayOdds: { american: '+1000' } },
+      { marketId: '2', label: 'Real Sociedad', outcomeType: 'Home', displayOdds: { american: '-250' } },
+      { marketId: '2', label: 'Draw', outcomeType: 'Tie', displayOdds: { american: '+180' } },
+      { marketId: '2', label: 'Malaga', outcomeType: 'Away', displayOdds: { american: '+220' } },
+    ], teams);
+    expect(rows.find((row) => row.key === 'fg|three_ml|winner|game')).toBeUndefined();
+    const half = rows.find((row) => row.key === '2h|three_ml|winner|game');
+    expect(half.dk.away).toMatchObject({ american: -250, label: 'Real Sociedad' });
+    expect(half.dk.home).toMatchObject({ american: 220, label: 'Malaga' });
+    expect(half.dk.draw.american).toBe(180);
+  });
+
   it('pairs FD and DK player props when names differ slightly', () => {
     const fd = extractFdContracts({
       a: {

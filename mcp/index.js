@@ -168,7 +168,7 @@ server.tool(
 
 server.tool(
   'get_season_odds',
-  'Monte Carlo simulation of the upcoming/current season with real rosters: rolls each player\'s season outcome from historical seasons of similar-ADP players, scores optimal best-ball lineups for all 17 weeks, and returns title/playoff odds, average finish, and average points for every team.',
+  'Championship odds for the real rosters. Before kickoff: preseason simulator (full season from Hwang ADP). After kickoff: rest-of-season simulator (finished weeks stay real, remaining weeks roll from FantasyPros ROS ranks).',
   {
     iterations: z
       .number()
@@ -183,7 +183,7 @@ server.tool(
 
 server.tool(
   'simulate_roster_change_odds',
-  'Simulate how hypothetical roster changes for the UPCOMING season shift each team\'s title and playoff odds vs the baseline (paired rolls isolate the change). For a trade, express BOTH sides: add players to the receiving team and drop them from the sending team.',
+  'How hypothetical roster changes shift title and playoff odds vs the baseline. Same engine as get_season_odds (preseason ADP before kickoff, rest-of-season with finished weeks locked after kickoff). Paired rolls isolate the change. For a trade, express BOTH sides.',
   {
     changes: z
       .array(

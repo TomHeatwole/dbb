@@ -108,7 +108,12 @@ function formatMultiBookCell(book, kind) {
   const short = { away: 'Away', home: 'Home', draw: 'Draw', td: 'TD', fg: 'FG', punt: 'Punt', other: 'Oth' };
   const parts = keys
     .filter((k) => book[k]?.american != null)
-    .map((k) => `${short[k] || k} ${formatAmericanOdds(book[k].american)}`);
+    .map((k) => {
+      const quote = book[k];
+      const named = String(quote.label || quote.team || '').trim();
+      const sideName = named && !/^(away|home|draw|tie)$/i.test(named) ? named : (short[k] || k);
+      return `${sideName} ${formatAmericanOdds(quote.american)}`;
+    });
   return { left: parts.join(' · ') || '—', right: '' };
 }
 

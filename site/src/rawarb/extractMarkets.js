@@ -25,38 +25,64 @@ function isThreeWayQuotes(name, runnerNames) {
 }
 
 const THREE_WAY_TITLE = /3[\s-]?way|\b1x2\b|match result|\bwinner\b|moneyline|\bresult\b|\bto win\b/i;
-const THREE_WAY_NOISE = /correct score|winning margin|double chance|both teams|half-time|full-time|ht\/ft|score method|exact score|to score|scorer|\bmargin\b|bands|either half|both halves|double winner|\bwdw\b|no draw|spread|handicap|\basian\b|early payout|2[\s-]?up|result after|after \d{1,2}:\d{2}|up to \d+(?:st|nd|rd|th)?\s*(?:minute|min\b)|(?:&|\/)| and /i;
+const THREE_WAY_NOISE = /correct score|winning margin|double chance|both teams|half-time|full-time|ht\/ft|score method|exact score|to score|scorer|\bmargin\b|bands|either half|both halves|double winner|\bwdw\b|no draw|spread|handicap|\basian\b|early payout|2[\s-]?up|result after|after \d{1,2}:\d{2}|up to \d+(?:st|nd|rd|th)?\s*(?:minute|min\b)|corner|booking|\bcards?\b|interval|(?:&|\/)| and /i;
+
+function normThreeTitle(name) {
+  return String(name || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
+}
+
+/** Full-game match result. "Moneyline" inside a halves or corners tab is not this. */
+export function isCanonicalMatchThreeWay(name) {
+  const n = normThreeTitle(name);
+  return /^(?:moneyline(?: \(3 way\))?|match result|full time result|regulation(?: time)? result|1x2)$/.test(n);
+}
 
 export function isDrawQuote(quote) {
   const label = String(quote?.label || quote?.name || '').trim();
+  if (/^(?:the\s+)?(?:draw|tie|x)$/i.test(label)) return true;
+  // A named runner is that runner. Outcome tags do not move a team onto Draw.
+  if (label && !/^(?:away|home)$/i.test(label)) return false;
   const outcome = String(quote?.outcome || quote?.type || '').toLowerCase();
-  return /^(?:the\s+)?(?:draw|tie|x)$/i.test(label) || outcome === 'tie' || outcome === 'draw' || outcome === 'x';
+  return outcome === 'tie' || outcome === 'draw' || outcome === 'x';
 }
 
-export function isPlainThreeWayTitle(name) {
+function threeWayHintRejects(name, hint) {
+  const h = String(hint || '');
+  if (!h || !isCanonicalMatchThreeWay(name)) return false;
+  const n = String(name || '');
+  if (/half|halves/i.test(h) && !/half/i.test(n)) return true;
+  if (/corner|card|booking/i.test(h) && !/corner|card|booking/i.test(n)) return true;
+  return false;
+}
+
+export function isPlainThreeWayTitle(name, hint = '') {
   const title = String(name || '');
   if (!title || isTwoWayWinnerName(title)) return false;
   if (THREE_WAY_NOISE.test(title)) return false;
+  if (threeWayHintRejects(title, hint)) return false;
   return THREE_WAY_TITLE.test(title);
 }
 
-/** Prefer full-match and half results over interval “result after …” on the same key. */
+/**
+ * Full-match moneyline outranks every other 3-way on the same key.
+ * An earlier "Winner" or half line must not keep the match price off the card.
+ */
 export function threeMlTitleRank(name) {
-  const n = String(name || '').trim().toLowerCase();
-  if (n === 'match result') return 100;
-  if (/^\d+(?:st|nd|rd|th)\s+half\s+result$/.test(n)) return 90;
-  if (/^2nd half result$/.test(n)) return 90;
-  if (/^1st half result$/.test(n)) return 90;
-  if (/result after|after \d{1,2}:\d{2}/.test(n)) return 0;
-  return 50;
+  const n = normThreeTitle(name);
+  if (/corner|booking|\bcards?\b|interval|minute|scorer|margin|handicap|spread/.test(n)) return 0;
+  if (isCanonicalMatchThreeWay(name)) return 100;
+  if (/^(?:(?:1st|2nd|first|second) half (?:result|moneyline)|moneyline (?:1st|2nd|first|second) half|half time result|to win the (?:1st|2nd|first|second) half)$/.test(n)) return 90;
+  if (/\bhalf\b/.test(n)) return 80;
+  return 40;
 }
 
 /**
  * A regulation result is two teams plus a draw. Store the team prices only.
  * Returns true when this market was a plain 3-way and should not be paired as a 2-way.
  */
-export function storePlainThreeWay(upsert, name, period, quotes, teams, sideOf) {
-  if (!isPlainThreeWayTitle(name)) return false;
+export function storePlainThreeWay(upsert, name, period, quotes, teams, sideOf, hint = '') {
+  if (!isPlainThreeWayTitle(name, hint)) return false;
+  if (threeMlTitleRank(name) <= 0) return false;
   if (period === 'fg' && /inning/i.test(name)) return false;
   const list = (quotes || []).filter((q) => q && q.american != null);
   if (list.some((q) => /\(\s*[+-]?\d/.test(String(q.label || q.name || '')))) return false;
@@ -78,17 +104,19 @@ export function storePlainThreeWay(upsert, name, period, quotes, teams, sideOf) 
       row._threeMlRank = rank;
       row.label = name;
     }
+    const awayName = quoteTeamLabel(away) || teams.away;
+    const homeName = quoteTeamLabel(home) || teams.home;
     book.away = {
       american: away.american,
       line: null,
-      team: teams.away || away.label || away.name,
-      label: away.label || away.name || teams.away,
+      team: awayName || teams.away,
+      label: awayName || teams.away,
     };
     book.home = {
       american: home.american,
       line: null,
-      team: teams.home || home.label || home.name,
-      label: home.label || home.name || teams.home,
+      team: homeName || teams.home,
+      label: homeName || teams.home,
     };
     if (draw) {
       book.draw = {
@@ -234,11 +262,18 @@ export function shouldSkipMarketName(name) {
   return SKIP_NAME.test(String(name ?? ''));
 }
 
+function quoteTeamLabel(quote) {
+  const label = String(quote?.label || quote?.name || '').trim();
+  if (label && !/^(away|home|draw|tie|x)$/i.test(label)) return label;
+  const participant = String(quote?.participant || '').trim();
+  if (participant && !/^(away|home|draw|tie|x)$/i.test(participant)) return participant;
+  return label;
+}
+
 function dkTeamSide(quote, side, team) {
-  if (!quote || isScoreMethodLabel(quote.label)) return false;
-  if (quote.label && !/^(away|home)$/i.test(quote.label)) {
-    return isBareTeamName(quote.label, team);
-  }
+  if (!quote || isScoreMethodLabel(quote.label) || isScoreMethodLabel(quote.participant)) return false;
+  const named = quoteTeamLabel(quote);
+  if (named && !/^(away|home)$/i.test(named)) return isBareTeamName(named, team);
   return quote.outcome === side;
 }
 
@@ -465,7 +500,7 @@ export function extractDkContracts(markets, selections, teams = {}) {
       if (dkTeamSide(q, 'away', teams.away)) return 'away';
       if (dkTeamSide(q, 'home', teams.home)) return 'home';
       return null;
-    })) continue;
+    }, market?.hint)) continue;
     if (storeDriveResultMultiway(upsert, name, period, quotes, teams)) continue;
     if (shouldSkipMarketName(name)) continue;
     if (isThreeWayQuotes(name, sels.map((sel) => sel.label || sel.outcomeType))) continue;

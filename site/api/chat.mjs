@@ -333,7 +333,7 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'get_season_odds',
-    description: 'Run a Monte Carlo simulation of the upcoming/current season with the real rosters: rolls each player\'s season outcome from historical seasons of players drafted at a similar ADP, scores optimal best-ball lineups for all 17 weeks, and returns title odds, playoff odds, average finish, and average points for every team. Call this before making ANY claim about a team\'s chances, projections, or outlook this season.',
+    description: 'Championship odds for the real rosters. Before kickoff this is the preseason simulator (full season rolled from Hwang ADP). After kickoff it is the rest-of-season simulator: finished weeks stay the actual scores, and only the remaining weeks roll from FantasyPros ROS ranks. Call this before making ANY claim about who wins or a team\'s chances this season. Do not describe an in-season result as a preseason sim.',
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -343,7 +343,7 @@ const TOOL_DECLARATIONS = [
   },
   {
     name: 'simulate_roster_change_odds',
-    description: 'Simulate how hypothetical roster changes for the UPCOMING/current season shift each team\'s title and playoff odds vs the baseline. Both roster sets are scored with identical player-outcome rolls, so the deltas isolate the change. Use this to quantify a proposed trade\'s real impact ("this trade moves you from 10% to 17% title odds"), or to test how much a team needs to improve. For a trade, express BOTH sides: add players to the receiving team and drop them from the sending team.',
+    description: 'Simulate how hypothetical roster changes shift each team\'s title and playoff odds vs the baseline. Uses the same engine as get_season_odds: preseason ADP before kickoff, rest-of-season (finished weeks locked) after kickoff. Both roster sets share outcome rolls, so the deltas isolate the change. Finished weeks stay the actual scores on both sides. For a trade, express BOTH sides: add players to the receiving team and drop them from the sending team.',
     parameters: {
       type: 'OBJECT',
       properties: {
