@@ -124,8 +124,11 @@ export function getCompletedWeeksCount(season = null) {
 }
 
 /**
- * Completed weeks for home cumulative cards. Home passes display week (current);
- * the last fully finished week is one less, capped by calendar completion.
+ * Completed weeks for home cumulative cards. Home passes the display week
+ * (the calendar week, or one ahead once that week's scoreboard is final).
+ * The last finished week is one less. Calendar completion waits until Tuesday,
+ * so a display week that has already moved on may count one week past that
+ * threshold — the Monday night after the slate is final — and no further.
  */
 export function getHomeCardCompletedWeeks(season = null, currentWeekOverride = null) {
   const baseCompleted = getCompletedWeeksCount(season);
@@ -137,7 +140,8 @@ export function getHomeCardCompletedWeeks(season = null, currentWeekOverride = n
     return Math.max(0, Math.min(17, baseCompleted));
   }
   const fromDisplayWeek = Math.max(0, parsed - 1);
-  return Math.max(0, Math.min(fromDisplayWeek, baseCompleted));
+  const ceiling = Math.min(17, baseCompleted + 1);
+  return Math.max(0, Math.min(fromDisplayWeek, ceiling));
 }
 
 /** Kickoff instant for Week 1 — Wed Sep 9, 2026 @ 8:20 PM ET (SEA vs NE). */

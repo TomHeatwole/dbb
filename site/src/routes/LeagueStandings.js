@@ -1042,10 +1042,14 @@ function LeagueStandings() {
           );
         })}
       </div>
-      {/* Playoff Race Graph based on completed weeks only */}
+      {/* Include the current week once its scoreboard is final, before Tuesday's calendar rollover. */}
       <PlayoffRaceGraph
         weeksParsedData={weeksParsedData}
-        completedWeeks={completedWeeks}
+        completedWeeks={
+          isCurrentSeason && isCurrentWeekDoneByGames
+            ? Math.max(Number(completedWeeks) || 0, getCurrentNFLWeek(season))
+            : completedWeeks
+        }
         rosterIdToName={Object.fromEntries((rosters || []).map(r => [Number(r.roster_id), getTeamName(r.roster_id)]))}
         playersData={playersData}
         playerIdMap={playerIdMap}

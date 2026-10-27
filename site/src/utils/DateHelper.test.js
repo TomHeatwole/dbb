@@ -55,4 +55,15 @@ describe('DateHelper week completion', () => {
     expect(getCompletedWeeksCount(2026)).toBe(2);
     expect(getHomeCardCompletedWeeks(2026, 3)).toBe(2);
   });
+
+  it('counts the just-finished week on Monday night once home advances the display week', () => {
+    atLocal('2026-10-26T23:30:00-04:00');
+    expect(getCurrentNFLWeek(2026)).toBe(7);
+    expect(getCompletedWeeksCount(2026)).toBe(6);
+    expect(isCurrentWeekCompletedByDate(2026)).toBe(false);
+    // Home sets the display week to 8 after the week 7 scoreboard is final.
+    expect(getHomeCardCompletedWeeks(2026, 8)).toBe(7);
+    // An unadvanced display week still excludes the in-progress slate.
+    expect(getHomeCardCompletedWeeks(2026, 7)).toBe(6);
+  });
 });

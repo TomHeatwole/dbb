@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
-import { CURRENT_YEAR, getCompletedWeeksCount } from '../utils/DateHelper';
+import { CURRENT_YEAR, getHomeCardCompletedWeeks } from '../utils/DateHelper';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
@@ -67,19 +67,10 @@ function CurrentPlayoffPictureCard({ currentWeekOverride = null }) {
       try {
         const season = CURRENT_YEAR;
 
-        const baseCompleted = getCompletedWeeksCount(season);
-        let completedWeeks = baseCompleted;
-
-        if (currentWeekOverride != null) {
-          const parsed = Number(currentWeekOverride);
-          if (Number.isFinite(parsed) && parsed > 0) {
-            completedWeeks = Math.min(parsed, baseCompleted);
-          }
-        }
-
-        if (!Number.isFinite(completedWeeks) || completedWeeks < 1) {
-          completedWeeks = 0;
-        }
+        const completedWeeksRaw = getHomeCardCompletedWeeks(season, currentWeekOverride);
+        const completedWeeks = Number.isFinite(completedWeeksRaw) && completedWeeksRaw >= 1
+          ? completedWeeksRaw
+          : 0;
 
         const effectiveCompletedWeeks = Math.max(
           0,

@@ -1,0 +1,22 @@
+---
+description: sopllc is a standalone repo and must not depend on the parent dbb tree
+globs: sopllc/**
+alwaysApply: false
+---
+
+# sopllc has no parent dependencies
+
+`sopllc/` is cloned and deployed by itself. Nothing in that directory may read, import, or assume files outside it.
+
+- Env comes from `sopllc/.env.local` or the sopllc Vercel project. Do not load `site/.env.local` or any other parent path.
+- Do not import from `site/`, `scripts/`, or other dbb packages into `sopllc/`.
+- Handlers live in `sopllc/api/`. Shared server code lives in `sopllc/server/`.
+- `DATABASE_URL` is the pooled Neon connection string. The real value stays in `.env.local` or Vercel, not in git.
+
+```js
+// bad — reaches into the parent repo
+loadEnv(mode, new URL('../site', import.meta.url).pathname, '')
+
+// good — sopllc root only
+loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), '')
+```
