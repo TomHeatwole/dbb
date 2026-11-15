@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HomeCard from './HomeCard';
 import LoadingState from '../LoadingState';
@@ -12,12 +12,16 @@ import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
 import { fetchPlayersData, fetchPlayerIdMap } from '../lookups/PlayerLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { buildRosterIdToTeamInfoMap, fetchTeamData } from '../lookups/TeamLookup';
+import { applyLiveEspnOverlay, ensureEspnWeekBox } from '../lookups/EspnBoxScoreLookup';
+import { mergeEspnStatLinesIntoLabels } from '../scores/overlayEspnLiveScores';
 import { mapPlayersToGames, getGameDisplayForTeam, isScoreboardWeekComplete } from '../scores/GamesParser';
 import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
+import { readPlayersSnapshot } from '../utils/database';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { rosterWeekActivity } from '../scores/rosterWeekActivity';
+import { createLiveScoresPoller } from '../utils/livePolling';
 
 const SCOREBOARD_ICON = '/data/scoreboard.svg';
 
@@ -41,12 +45,19 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
   const [playersData, setPlayersData] = useState(null);
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [playerGameLabels, setPlayerGameLabels] = useState({});
+  const [espnStatLines, setEspnStatLines] = useState({});
+  const [playersTeamMap, setPlayersTeamMap] = useState({});
   const [injuriesMap, setInjuriesMap] = useState({});
   const [isWeekCompleteByGames, setIsWeekCompleteByGames] = useState(false);
   const [rankMode, setRankMode] = useState('scores');
+  const overlayCtxRef = useRef({});
 
   const myRosterId = useMyRosterId(rosters, users);
   const projectedPtsById = useWeeklyProjectedPoints(season, week);
+  const labelsWithEspn = useMemo(
+    () => mergeEspnStatLinesIntoLabels(playerGameLabels, espnStatLines),
+    [playerGameLabels, espnStatLines],
+  );
   const weekEntries = useMemo(() => {
     const fromScores = Array.isArray(weeksParsedData) ? weeksParsedData[week - 1] : null;
     if (Array.isArray(fromScores) && fromScores.length) return fromScores;
@@ -76,7 +87,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     rosters,
     playersData,
     projectedPtsById,
-    playerGameLabels,
+    playerGameLabels: labelsWithEspn,
     weekScoresByRoster,
     injuriesMap,
     playerIdMap,
@@ -109,7 +120,26 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
           teamData && teamData.rosters ? teamData.rosters : null,
         );
         if (cancelled) return;
-        setWeeksParsedData(weeksData);
+        let weeks = weeksData;
+        try {
+          const scoreboard = await fetchNflScoreboard(Number(season), week);
+          const overlaid = await applyLiveEspnOverlay({
+            weeks: weeksData,
+            week,
+            season,
+            scoreboard,
+            playerIdMap: idMap,
+            playersData: players,
+          });
+          if (overlaid && Array.isArray(overlaid.weeks)) weeks = overlaid.weeks;
+          if (!cancelled && overlaid && overlaid.statLines && Object.keys(overlaid.statLines).length) {
+            setEspnStatLines(overlaid.statLines);
+          }
+        } catch (_) {
+          // keep Sleeper weeks if ESPN overlay fails
+        }
+        if (cancelled) return;
+        setWeeksParsedData(weeks);
         setRosters(teamData && teamData.rosters ? teamData.rosters : null);
         setUsers(teamData && teamData.users ? teamData.users : null);
         setPlayersData(players);
@@ -127,7 +157,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     }
     load();
     return () => { cancelled = true; };
-  }, [season]);
+  }, [season, week]);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,6 +171,66 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     })();
     return () => { cancelled = true; };
   }, [season, week]);
+
+  useEffect(() => {
+    setEspnStatLines({});
+  }, [season, week]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!week || Number(week) < 1) {
+          if (!cancelled) setPlayersTeamMap({});
+          return;
+        }
+        const snap = await readPlayersSnapshot(String(season), Number(week));
+        const data = snap && snap.snapshot && snap.snapshot.data ? snap.snapshot.data : null;
+        if (cancelled) return;
+        if (!data) {
+          setPlayersTeamMap({});
+          return;
+        }
+        const next = {};
+        for (const [pid, pinfo] of Object.entries(data)) {
+          const abbr = pinfo && (pinfo.team || pinfo.team_abbr || pinfo.team_abbreviation);
+          if (abbr) next[String(pid)] = String(abbr);
+        }
+        setPlayersTeamMap(next);
+      } catch (_) {
+        if (!cancelled) setPlayersTeamMap({});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [season, week]);
+
+  overlayCtxRef.current = { playerIdMap, playersData };
+
+  useEffect(() => {
+    if (!playerIdMap || !playersData || !week) return undefined;
+    if (String(season) !== String(CURRENT_YEAR) || Number(week) !== Number(getCurrentNFLWeek())) {
+      return undefined;
+    }
+    let cancelled = false;
+    const poller = createLiveScoresPoller({
+      season,
+      week,
+      forceOnStartAndFocus: true,
+      getOverlayContext: () => overlayCtxRef.current,
+      onData: ({ newWeeks, espnStatLines: nextLines }) => {
+        if (cancelled || !Array.isArray(newWeeks)) return;
+        setWeeksParsedData(newWeeks);
+        if (nextLines && Object.keys(nextLines).length) {
+          setEspnStatLines(nextLines);
+        }
+      },
+    });
+    poller.start();
+    return () => {
+      cancelled = true;
+      poller.stop();
+    };
+  }, [season, week, playerIdMap, playersData]);
 
   useEffect(() => {
     if (!playersData || !playerIdMap || !weeksParsedData) return undefined;
@@ -175,16 +265,34 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
         } catch (_) {
           setIsWeekCompleteByGames(false);
         }
-        const mapping = await mapPlayersToGames(playerIds, playersData, playerIdMap, json, null);
+        const boxPromise = ensureEspnWeekBox({
+          season,
+          week,
+          scoreboard: json,
+          playerIdMap,
+          playersData,
+        }).catch(() => null);
+        const mapping = await mapPlayersToGames(
+          playerIds,
+          playersData,
+          playerIdMap,
+          json,
+          playersTeamMap,
+        );
         const labels = {};
         for (const pid of playerIds) {
           const item = mapping[pid];
           const ev = item && item.event;
           const teamForWeek = item && item.team;
           const d = ev ? getGameDisplayForTeam(ev, teamForWeek) : { text: 'BYE', live: false };
-          labels[pid] = { ...d, team: teamForWeek || null };
+          const eventId = ev && ev.id ? String(ev.id) : null;
+          labels[pid] = { ...d, team: teamForWeek || null, eventId };
         }
         if (!cancelled) setPlayerGameLabels(labels);
+        const box = await boxPromise;
+        if (!cancelled && box && box.statLines) {
+          setEspnStatLines(box.statLines);
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -193,7 +301,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
         }
       });
     return () => { cancelled = true; };
-  }, [season, week, playersData, playerIdMap, weekEntries, rosters, weeksParsedData]);
+  }, [season, week, playersData, playerIdMap, weekEntries, rosters, weeksParsedData, playersTeamMap]);
 
   const rows = useMemo(() => {
     if (!weekScoresByRoster || !weekEntries.length) return [];
@@ -208,7 +316,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
             raw,
             playersData,
             playerIdMap,
-            playerGameLabels,
+            labelsWithEspn,
             injuriesMap,
             playerSeasonTotalsMap,
             projectedPtsById,
@@ -234,7 +342,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
           liveProj: liveProjByRoster[String(rid)] ?? null,
           hprojHref: href,
           allGamesFinished: Boolean(
-            liveMode && rosterWeekActivity(computed, playerGameLabels).allGamesFinished
+            liveMode && rosterWeekActivity(computed, labelsWithEspn).allGamesFinished
           ),
         };
       });
@@ -246,7 +354,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
     rankMode,
     playersData,
     playerIdMap,
-    playerGameLabels,
+    labelsWithEspn,
     injuriesMap,
     playerSeasonTotalsMap,
     projectedPtsById,
