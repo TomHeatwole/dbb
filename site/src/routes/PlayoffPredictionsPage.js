@@ -3,27 +3,15 @@ import InfoPageWrapper from '../layout/InfoPageWrapper';
 import LoadingState from '../LoadingState';
 import PageMeta from '../PageMeta';
 import { isMyRoster, useMyCurrentRosterId } from '../hooks/useAuthUser';
-import { fetchNflScoreboard } from '../lookups/GamesLookup';
-import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
-import { fetchPlayerIdMap, fetchPlayersData } from '../lookups/PlayerLookup';
-import { getSleeperWeeklyProjections } from '../lookups/ProjectionsLookup';
-import { fetchScoresData } from '../lookups/ScoresLookup';
-import { fetchLeagueScoringSettings } from '../lookups/ScoringSettingsLookup';
-import { buildRosterIdToTeamInfoMap, fetchTeamData } from '../lookups/TeamLookup';
 import PlayoffFourSelector from '../playoffs/PlayoffFourSelector';
-import { PLAYOFF_LAST_WEEK, PLAYOFF_SPOTS, simulatePlayoffField } from '../playoffs/playoffHprojOdds';
-import { runPlayoffHproj } from '../playoffs/runPlayoffHproj';
-import { REG_SEASON_WEEKS } from '../scenarios/simulatorLineup';
-import { CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek } from '../utils/DateHelper';
+import { PLAYOFF_SPOTS, simulatePlayoffField } from '../playoffs/playoffHprojOdds';
+import { loadPlayoffHprojField, peekPlayoffHprojField } from '../playoffs/playoffHprojFieldLoader';
+import { CURRENT_YEAR } from '../utils/DateHelper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import './PlayoffPredictionsPage.css';
 
 const TITLE = 'Playoff Predictions – The Hwang Dynasty';
 const DESCRIPTION = 'HProj playoff odds with live scoring for the current week.';
-const VIEW_CACHE_MS = 10 * 60 * 1000;
-const VIEW_CACHE_VERSION = 4;
-let viewCache = null;
-
 function fmtPts(n) {
   if (!Number.isFinite(n)) return '—';
   return n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -113,6 +101,9 @@ function OddsColumn({
   colClass = '',
   listLead = null,
   hideList = false,
+  mobileHidden = false,
+  medianForRow = null,
+  medianLabel = 'Median',
 }) {
   const displayRows = useMemo(() => {
     if (preserveOrder) return rows;
@@ -129,7 +120,7 @@ function OddsColumn({
   }, [rows, metric, valueForRow, preserveOrder]);
 
   return (
-    <section className={`pp-col ${colClass}`.trim()}>
+    <section className={`pp-col ${colClass}${mobileHidden ? ' pp-col--mobile-off' : ''}`.trim()}>
       <header className="pp-col-head">
         <h2 className="pp-col-title">{title}</h2>
         <p className="pp-col-sub">{subtitle}</p>
@@ -153,17 +144,21 @@ function OddsColumn({
             <li key={row.rosterId} className={`pp-col-item${mine ? ' pp-col-item--me' : ''}`}>
               <span className="pp-col-rank">{index + 1}</span>
               {avatar ? (
-                <img className="pp-col-avatar" src={avatar} alt="" />
+                <img className={`pp-col-avatar${mine ? ' me-avatar' : ''}`} src={avatar} alt="" />
               ) : (
                 <span className="pp-col-avatar pp-col-avatar--empty" aria-hidden="true" />
               )}
               <div className="pp-col-body">
-                <div className="pp-col-team">{info.teamName || `Team ${row.rosterId}`}</div>
+                <div className={`pp-col-team${mine ? ' pp-col-team--me' : ''}`}>
+                  <span className="pp-col-team-name">{info.teamName || `Team ${row.rosterId}`}</span>
+                  {mine ? <span className="me-chip">YOU</span> : null}
+                </div>
                 <div className="pp-col-owner">{info.ownerName || ''}</div>
                 <div className="pp-col-meta">
                   {pointsLine(row, field)}
                   <span className="pp-sep">·</span>
-                  Median {fmtPts(row.p50)}
+                  {medianLabel}{' '}
+                  {fmtPts(medianForRow ? medianForRow(row) : row.p50)}
                 </div>
                 <div className="pp-col-bar" aria-hidden="true">
                   <span style={{
@@ -191,6 +186,36 @@ const WIN_MODES = {
   conditional: 'conditional',
   select: 'select',
 };
+
+const DUO_VIEWS = {
+  playoffs: 'playoffs',
+  win: 'win',
+};
+
+function MobileDuoToggle({ view, onChange }) {
+  return (
+    <div className="pp-duo-mobile-tabs" role="tablist" aria-label="Playoff odds view">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={view === DUO_VIEWS.playoffs}
+        className={`pp-duo-mobile-tab${view === DUO_VIEWS.playoffs ? ' pp-duo-mobile-tab--active' : ''}`}
+        onClick={() => onChange(DUO_VIEWS.playoffs)}
+      >
+        Make it
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={view === DUO_VIEWS.win}
+        className={`pp-duo-mobile-tab${view === DUO_VIEWS.win ? ' pp-duo-mobile-tab--active' : ''}`}
+        onClick={() => onChange(DUO_VIEWS.win)}
+      >
+        Win it
+      </button>
+    </div>
+  );
+}
 
 function WinModeToggle({ mode, onChange }) {
   return (
@@ -232,76 +257,16 @@ function PlayoffPredictionsPage() {
     (async () => {
       try {
         const season = CURRENT_YEAR;
-        const currentWeek = getCurrentNFLWeek(season);
-        const bankedThrough = Math.min(REG_SEASON_WEEKS, getCompletedWeeksCount(season));
-        const cacheKey = `${VIEW_CACHE_VERSION}:${season}:${bankedThrough}:${currentWeek}`;
-        if (viewCache && viewCache.key === cacheKey && Date.now() - viewCache.at < VIEW_CACHE_MS) {
-          setView(viewCache.view);
+        const cached = peekPlayoffHprojField(season);
+        if (cached) {
+          setView(cached);
           return;
         }
-
-        const weekNums = [];
-        for (let week = bankedThrough + 1; week <= PLAYOFF_LAST_WEEK; week += 1) {
-          weekNums.push(week);
-        }
-
-        const [teamData, weeksData, scoring, playerIdMap] = await Promise.all([
-          fetchTeamData(season),
-          fetchScoresData(season),
-          fetchLeagueScoringSettings(season),
-          fetchPlayerIdMap(),
-        ]);
-        if (cancelled) return;
-        const playersData = await fetchPlayersData(teamData.rosters, { week: currentWeek });
-        if (cancelled) return;
-
-        const regRemaining = weekNums.filter((week) => week <= REG_SEASON_WEEKS);
-        const injuriesMap = regRemaining.includes(currentWeek)
-          ? await fetchInjuriesForWeek(season, currentWeek).catch(() => ({}))
-          : {};
-        if (cancelled) return;
-
-        setLabel(weekNums.length
-          ? `Reading weeks ${weekNums[0]}–${PLAYOFF_LAST_WEEK}`
-          : 'Rolling the season forward');
-
-        const weekBundles = await Promise.all(weekNums.map(async (week) => {
-          const [proj, scoreboard] = await Promise.all([
-            getSleeperWeeklyProjections(season, week),
-            fetchNflScoreboard(season, week).catch(() => null),
-          ]);
-          return {
-            week,
-            byPlayerId: proj && proj.byPlayerId ? proj.byPlayerId : {},
-            scoreboard,
-          };
-        }));
-        if (cancelled) return;
-
-        const teamMap = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
-        const field = await runPlayoffHproj({
-          season,
-          rosters: teamData.rosters,
-          weeksData,
-          playersData,
-          playerIdMap,
-          scoring,
-          injuriesMap: injuriesMap || {},
-          weekBundles,
-          bankedThrough,
-          currentWeek,
-          onProgress: (next) => {
-            if (!cancelled) setLabel(next);
-          },
+        setLabel('Loading scores and projections…');
+        const nextView = await loadPlayoffHprojField(season, {
           cancelled: () => cancelled,
-          labelForRoster: (roster) => {
-            const info = teamMap[roster.roster_id] || teamMap[Number(roster.roster_id)];
-            return (info && info.teamName) || `Team ${roster.roster_id}`;
-          },
         });
-        if (cancelled || !field) return;
-        const nextView = { season, teamMap, field };
-        viewCache = { key: cacheKey, view: nextView, at: Date.now() };
+        if (cancelled || !nextView) return;
         setView(nextView);
       } catch (err) {
         if (!cancelled) setError(err && err.message ? err.message : 'Could not build playoff odds');
@@ -339,6 +304,7 @@ function PlayoffPredictionsPage() {
 function Results({ field, teamMap, myRosterId }) {
   const [winMode, setWinMode] = useState(WIN_MODES.conditional);
   const [selectedFour, setSelectedFour] = useState([]);
+  const [mobileDuoView, setMobileDuoView] = useState(DUO_VIEWS.playoffs);
 
   const selectorTeams = useMemo(() => (
     (field.rows || []).map((row) => {
@@ -436,7 +402,9 @@ function Results({ field, teamMap, myRosterId }) {
         </div>
       </div>
 
-      <div className="pp-duo">
+      <div className="pp-duo-wrap">
+        <MobileDuoToggle view={mobileDuoView} onChange={setMobileDuoView} />
+        <div className="pp-duo">
         <OddsColumn
           title="Make playoffs"
           subtitle={
@@ -453,6 +421,9 @@ function Results({ field, teamMap, myRosterId }) {
           preserveOrder
           colClass="pp-col--playoffs"
           listLead={<div className="pp-col-list-lead" aria-hidden="true" />}
+          mobileHidden={mobileDuoView === DUO_VIEWS.win}
+          medianForRow={(row) => row.medianPath}
+          medianLabel="Median path"
         />
         <OddsColumn
           title="Win it"
@@ -498,7 +469,11 @@ function Results({ field, teamMap, myRosterId }) {
               />
             ) : null
           }
+          mobileHidden={mobileDuoView === DUO_VIEWS.playoffs}
+          medianForRow={(row) => row.playoffMedian15317}
+          medianLabel="Median wk 15–17"
         />
+        </div>
       </div>
 
       <section className="pp-detail">
@@ -513,7 +488,12 @@ function Results({ field, teamMap, myRosterId }) {
             P50 path is finalized points plus each remaining week’s median roll (live week uses the sim median, not the live actual).
           </p>
         </header>
-        <div className="pp-table-wrap">
+        <div
+          className="pp-table-wrap"
+          tabIndex={0}
+          role="region"
+          aria-label="Projection breakdown table — scroll horizontally for more weeks"
+        >
           <table className="pp-table">
             <thead>
               <tr>
@@ -542,7 +522,10 @@ function Results({ field, teamMap, myRosterId }) {
                 return (
                   <tr key={row.rosterId} className={mine ? 'pp-tr--me' : undefined}>
                     <th scope="row" className="pp-th-team">
-                      <span className="pp-table-team">{info.teamName || `Team ${row.rosterId}`}</span>
+                      <span className={`pp-table-team${mine ? ' pp-table-team--me' : ''}`}>
+                        {info.teamName || `Team ${row.rosterId}`}
+                        {mine ? <span className="me-chip">YOU</span> : null}
+                      </span>
                       <span className="pp-table-owner">{info.ownerName || ''}</span>
                     </th>
                     <td>{fmtPts(row.pointsSoFar)}</td>

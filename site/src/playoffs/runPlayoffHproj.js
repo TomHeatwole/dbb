@@ -23,6 +23,7 @@ import {
   opponentsFromProjections,
   resolveWeekProjection,
   simulatePlayoffField,
+  summarizeSamples,
   sumBankedPoints,
 } from './playoffHprojOdds';
 
@@ -282,6 +283,16 @@ export async function runPlayoffHproj(input) {
   });
 
   const weekIndex = new Map(weekPlans.map((plan, index) => [index, plan]));
+  const playoffMedianByRoster = new Map();
+  for (const team of teamWeeks) {
+    const rid = Number(team.roster.roster_id);
+    const weekMedians = team.playoffWeeks.map((week) => summarizeSamples(week.samples));
+    const playoffMedian15317 = Math.round(
+      weekMedians.reduce((sum, week) => sum + week.p50, 0) * 10,
+    ) / 10;
+    playoffMedianByRoster.set(rid, playoffMedian15317);
+    playoffMedianByRoster.set(String(rid), playoffMedian15317);
+  }
   const formatMeta = PLAYOFF_FORMATS[playoffFormat] || PLAYOFF_FORMATS.cumulative;
   return {
     bankedThrough,
@@ -309,6 +320,9 @@ export async function runPlayoffHproj(input) {
       liveWeekPts: liveWeek
         ? (liveWeekActualByRoster[row.id] ?? liveWeekActualByRoster[String(row.id)] ?? null)
         : null,
+      playoffMedian15317: playoffMedianByRoster.get(row.id)
+        ?? playoffMedianByRoster.get(String(row.id))
+        ?? null,
       weeks: row.weeks.map((summary, index) => ({
         ...summary,
         week: weekIndex.get(index)?.week,

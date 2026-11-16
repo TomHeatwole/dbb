@@ -7422,6 +7422,171 @@ html {
     grid-column: 5 / 7;
     text-align: right;
   }
+
+  .standings-list--hproj-cols .standings-row-header {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.62rem 0.85rem;
+  }
+
+  .standings-list--hproj-cols .standings-row-header .standings-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .standings-list--hproj-cols .standings-metrics-rail {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  .standings-list--hproj-cols .standings-total,
+  .standings-list--hproj-cols .standings-total--playoff-desktop {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    white-space: nowrap;
+  }
+
+  .standings-list--hproj-cols .standings-total--playoff-desktop {
+    grid-column: unset;
+  }
+}
+
+.standings-table-head {
+  display: none;
+}
+
+.standings-metrics-rail {
+  display: grid;
+  grid-template-columns: 4.1rem 4.1rem 4.35rem 4.6rem;
+  column-gap: 0.9rem;
+  align-items: center;
+}
+
+.standings-metrics-rail--no-ppg {
+  grid-template-columns: 4.1rem 4.1rem 4.8rem;
+}
+
+.standings-metrics-rail > * {
+  justify-self: end;
+  text-align: right;
+  min-width: 0;
+}
+
+.standings-metric-val {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 50.0625em) {
+  .standings-list--hproj-cols .standings-table-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 0.85rem 0.55rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  }
+
+  .standings-table-head-team {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.65rem;
+    min-width: 0;
+  }
+
+  .standings-table-head-kicker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .standings-table-head-more {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #7eb8e8;
+    text-decoration: none;
+  }
+
+  .standings-table-head-more:hover {
+    color: #c4e0ff;
+    text-decoration: underline;
+  }
+
+  .standings-metrics-rail--head {
+    padding-bottom: 0.05rem;
+  }
+
+  .standings-metric-head {
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+
+  .standings-metric-head--link {
+    color: #8fb8e8;
+    text-decoration: none;
+  }
+
+  .standings-metric-head--link:hover {
+    color: #d4e8ff;
+    text-decoration: underline;
+  }
+
+  .standings-list--hproj-cols .standings-hproj-pct {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #b8dafb;
+  }
+
+  .standings-list--hproj-cols .standings-ppg.standings-metric-val {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+
+  .standings-list--hproj-cols .standings-total.standings-metric-val {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+}
+
+.standings-hproj-pct {
+  display: block;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.standings-hproj-pct--loading {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 1.05rem;
+}
+
+.standings-hproj-spinner {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-top-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@media (max-width: 50em) {
+  .standings-stats-grid .stat-label {
+    font-size: 0.82rem;
+  }
 }
 
 /* Mobile: show total (rightmost) and hide PPG */
@@ -26356,6 +26521,13 @@ button.corners-bet:hover {
 .info-container:has(.pp-page) {
   box-sizing: border-box;
   padding: 0 0.85rem 1.5rem;
+}
+
+.mobile-info-container:has(.pp-page) .pp-page,
+.mobile-info-container:has(.pp-page) .pp-detail,
+.mobile-info-container:has(.pp-page) .pp-table-wrap {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .hproj-page {

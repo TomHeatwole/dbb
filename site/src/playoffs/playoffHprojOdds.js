@@ -141,7 +141,7 @@ export function sumBankedPoints(weeksData, rosterId, throughWeek) {
   return round1(total);
 }
 
-function summarizeSamples(samples) {
+export function summarizeSamples(samples) {
   const sorted = (samples && samples.length ? samples : [0]).slice().sort((a, b) => a - b);
   return {
     p10: round1(sampleQuantile(sorted, 0.1)),

@@ -18,11 +18,43 @@ import StandingsRowHeader from '../standings/StandingsRowHeader';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
+import {
+  loadPlayoffHprojField,
+  oddsByRosterFromField,
+  peekPlayoffHprojField,
+} from '../playoffs/playoffHprojFieldLoader';
 
 const OG_TITLE = 'Standings – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
+const PLAYOFF_PREDICTIONS_PATH = '/playoff_predictions';
+
+function fmtHprojOddsPct(n) {
+  if (!Number.isFinite(n)) return '—';
+  const v = Math.max(0, Math.min(100, Number(n) || 0));
+  return `${v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
+function StandingsHprojPctLink({ loading, value, title }) {
+  if (loading) {
+    return (
+      <span className="standings-hproj-pct standings-hproj-pct--loading" title={title}>
+        <span className="standings-hproj-spinner" aria-hidden="true" />
+      </span>
+    );
+  }
+  return (
+    <Link
+      to={PLAYOFF_PREDICTIONS_PATH}
+      className="standings-hproj-pct standings-inline-link"
+      title={title}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {value}
+    </Link>
+  );
+}
 
 function getAvailableYearsAndDefault() {
   return { availableYears: allYears, defaultSeason: CURRENT_YEAR };
@@ -49,6 +81,8 @@ function LeagueStandings() {
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [currentWeekLabels, setCurrentWeekLabels] = useState({}); // pid -> { live, completed, text }
   const [isCurrentWeekDoneByGames, setIsCurrentWeekDoneByGames] = useState(false);
+  const [hprojOddsByRoster, setHprojOddsByRoster] = useState(null);
+  const [hprojOddsState, setHprojOddsState] = useState('idle');
 
   // Season/week context and DB-aware completed weeks
   const isCurrentSeason = season === CURRENT_YEAR;
@@ -69,6 +103,42 @@ function LeagueStandings() {
     })();
     return () => { cancelled = true; };
   }, [season, completedWeeksBase, isCurrentSeason]);
+
+  useEffect(() => {
+    if (season !== CURRENT_YEAR) {
+      setHprojOddsByRoster(null);
+      setHprojOddsState('idle');
+      return undefined;
+    }
+    if (loading) return undefined;
+
+    let cancelled = false;
+    const cached = peekPlayoffHprojField(season);
+    if (cached) {
+      setHprojOddsByRoster(oddsByRosterFromField(cached.field));
+      setHprojOddsState('ready');
+      return undefined;
+    }
+
+    setHprojOddsState('loading');
+    loadPlayoffHprojField(season, { cancelled: () => cancelled })
+      .then((view) => {
+        if (cancelled) return;
+        if (view && view.field) {
+          setHprojOddsByRoster(oddsByRosterFromField(view.field));
+          setHprojOddsState('ready');
+        } else {
+          setHprojOddsState('error');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setHprojOddsState('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [season, loading]);
 
   useEffect(() => {
     trackPageLoad();
@@ -659,6 +729,8 @@ function LeagueStandings() {
 
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
   const showPpgColumn = (season === CURRENT_YEAR) ? (completedWeeks > 1) : (completedWeeks > 0);
+  const showHprojBarCols = season === CURRENT_YEAR && !isMobile;
+  const hprojOddsLoading = hprojOddsState === 'loading';
 
   function computeCompletedWeeksPpg(weeksArr, rosterId, capWeeks = null) {
     const baseCap = (weeksArr ? weeksArr.filter(Boolean).length : 0);
@@ -696,8 +768,17 @@ function LeagueStandings() {
     currentSearchParams,
     completedWeeksNumber,
     ppg14Completed,
-    ppg17Completed
+    ppg17Completed,
+    showHprojOdds,
+    hprojOddsForRoster,
+    hprojOddsState,
   }) {
+    const playoffPctLabel = hprojOddsState === 'loading'
+      ? '…'
+      : fmtHprojOddsPct(hprojOddsForRoster && hprojOddsForRoster.playoffPct);
+    const winPctLabel = hprojOddsState === 'loading'
+      ? '…'
+      : fmtHprojOddsPct(hprojOddsForRoster && hprojOddsForRoster.winPctIfMade);
     const baseQuery = currentSearchParams && currentSearchParams.toString() ? currentSearchParams.toString() : '';
     const buildWeekLink = (week) => {
       if (typeof week !== 'number' || !isFinite(week)) { return null; }
@@ -828,6 +909,28 @@ function LeagueStandings() {
             </>
           )}
 
+          {showHprojOdds ? (
+            <>
+              <div className="stat-label">Playoff %</div>
+              <div className="stat-v1">
+                <Link className="standings-inline-link" to={PLAYOFF_PREDICTIONS_PATH}>
+                  {playoffPctLabel}
+                </Link>
+              </div>
+              <div className="stat-v2" />
+              <div className="stat-v3" />
+
+              <div className="stat-label">Championship %</div>
+              <div className="stat-v1">
+                <Link className="standings-inline-link" to={PLAYOFF_PREDICTIONS_PATH}>
+                  {winPctLabel}
+                </Link>
+              </div>
+              <div className="stat-v2" />
+              <div className="stat-v3" />
+            </>
+          ) : null}
+
           {isMobileView ? (
             <>
               <div className="stat-label">High Score:</div>
@@ -906,7 +1009,40 @@ function LeagueStandings() {
       <PageMeta title={OG_TITLE} description={OG_DESCRIPTION} />
     <InfoPageWrapper title="Standings" subtitle={null} leftHeader={leftHeader}>
       {showYoffsLink ? <YoffsLink /> : null}
-      <div className={"standings-list" + (hasAnyExpanded ? " standings-list--expanded" : "") + (showPpgColumn ? "" : " standings-list--no-ppg") }>
+      <div className={
+        'standings-list'
+        + (hasAnyExpanded ? ' standings-list--expanded' : '')
+        + (showPpgColumn ? '' : ' standings-list--no-ppg')
+        + (showHprojBarCols ? ' standings-list--hproj-cols' : '')
+      }
+      >
+        {showHprojBarCols ? (
+          <div className="standings-table-head">
+            <div className="standings-table-head-team">
+              <span className="standings-table-head-kicker">HProj odds</span>
+              <Link to={PLAYOFF_PREDICTIONS_PATH} className="standings-table-head-more">
+                Full breakdown →
+              </Link>
+            </div>
+            <div
+              className={
+                'standings-metrics-rail standings-metrics-rail--head'
+                + (showPpgColumn ? '' : ' standings-metrics-rail--no-ppg')
+              }
+            >
+              <Link to={PLAYOFF_PREDICTIONS_PATH} className="standings-metric-head standings-metric-head--link" title="Chance to finish top four">
+                Make it
+              </Link>
+              <Link to={PLAYOFF_PREDICTIONS_PATH} className="standings-metric-head standings-metric-head--link" title="Win the title if you make the cut">
+                Win it
+              </Link>
+              {showPpgColumn ? (
+                <span className="standings-metric-head">PPG</span>
+              ) : null}
+              <span className="standings-metric-head">Pts</span>
+            </div>
+          </div>
+        ) : null}
         {displayRows.map((row, idx) => {
           const rosterId = row.roster_id;
           const isExpanded = !!expanded[rosterId];
@@ -977,6 +1113,35 @@ function LeagueStandings() {
                   Playoffs: {roundToTenth(row.points_scored).toFixed(1)} pts
                 </span>
               </>
+            ) : showHprojBarCols ? (
+              <div
+                className={
+                  'standings-metrics-rail'
+                  + (showPpgColumn ? '' : ' standings-metrics-rail--no-ppg')
+                }
+              >
+                <StandingsHprojPctLink
+                  loading={hprojOddsLoading}
+                  value={fmtHprojOddsPct(hprojOddsByRoster?.[Number(rosterId)]?.playoffPct)}
+                  title="HProj playoff odds"
+                />
+                <StandingsHprojPctLink
+                  loading={hprojOddsLoading}
+                  value={fmtHprojOddsPct(hprojOddsByRoster?.[Number(rosterId)]?.winPctIfMade)}
+                  title="HProj championship odds (if you make the playoffs)"
+                />
+                {showPpgColumn ? (
+                  <span className="standings-ppg standings-metric-val">
+                    {ppgValue != null ? `${ppgValue}` : '—'}
+                  </span>
+                ) : null}
+                <span className={`standings-total standings-metric-val${usePlayoffLogic ? ' standings-metric' : ''}`}>
+                  {Math.round(row.points_scored)}
+                  {usePlayoffLogic && (
+                    <span className="standings-tooltip">Non-playoff teams use only weeks 1–14 for PPG and totals.</span>
+                  )}
+                </span>
+              </div>
             ) : (
               <>
                 {showPpgColumn ? (
@@ -1034,7 +1199,12 @@ function LeagueStandings() {
                     currentSearchParams: searchParams,
                     completedWeeksNumber: effectiveCompletedWeeks,
                     ppg14Completed,
-                    ppg17Completed
+                    ppg17Completed,
+                    showHprojOdds: season === CURRENT_YEAR,
+                    hprojOddsForRoster: hprojOddsByRoster
+                      ? hprojOddsByRoster[Number(rosterId)] || null
+                      : null,
+                    hprojOddsState,
                   })
                 )
               )}
