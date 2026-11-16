@@ -95,18 +95,6 @@ async function saveNeonPlayoffHprojCache(season, cacheKey, bankedThrough, curren
   }
 }
 
-async function invalidateNeonPlayoffHprojCache(season) {
-  try {
-    await fetch('/api/playoff-hproj?playoffHproj=1', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'invalidate', season }),
-    });
-  } catch (_) {
-    /* best-effort */
-  }
-}
-
 export function peekPlayoffHprojField(season) {
   if (Number(season) !== Number(CURRENT_YEAR)) return null;
   if (nflWeekHasLiveGame) return null;
