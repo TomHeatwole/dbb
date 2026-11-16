@@ -18,7 +18,7 @@ import LoadingState from '../LoadingState';
 import useViewportMode, { VIEWPORT_MODES } from '../hooks/useViewportMode';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { loadPlayoffHprojField, oddsByRosterFromField } from '../playoffs/playoffHprojFieldLoader';
-import { fmtHprojOddsPct, HprojOddsPctLink } from '../playoffs/playoffHprojOddsUi';
+import { HprojOddsPctLink } from '../playoffs/playoffHprojOddsUi';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -499,7 +499,9 @@ function Teams2Detail() {
                   <div className="teams2-stats-item teams2-stats-item--hproj">
                     <HprojOddsPctLink
                       loading={hprojOddsLoading}
-                      value={fmtHprojOddsPct(rosterHprojOdds?.playoffPct)}
+                      pct={rosterHprojOdds?.playoffPct}
+                      count={rosterHprojOdds?.playoffMadeCount}
+                      total={rosterHprojOdds?.iterations}
                       title="HProj playoff odds — full breakdown"
                       className="teams2-stats-value teams2-stats-hproj-link"
                     />
@@ -509,7 +511,9 @@ function Teams2Detail() {
                   <div className="teams2-stats-item teams2-stats-item--hproj">
                     <HprojOddsPctLink
                       loading={hprojOddsLoading}
-                      value={fmtHprojOddsPct(rosterHprojOdds?.winPctIfMade)}
+                      pct={rosterHprojOdds?.winPctIfMade}
+                      count={rosterHprojOdds?.winCount}
+                      total={rosterHprojOdds?.playoffMadeCount}
                       title="HProj championship odds (if you make the playoffs)"
                       className="teams2-stats-value teams2-stats-hproj-link"
                     />

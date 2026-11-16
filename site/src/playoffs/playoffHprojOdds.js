@@ -306,12 +306,17 @@ export function simulatePlayoffField(teams, options = {}) {
       id: team.id,
       pointsSoFar: team.pointsSoFar,
       playoffPct: filterToLockedField ? 0 : (made[index] / iterations) * 100,
+      playoffMadeCount: filterToLockedField ? 0 : made[index],
       winPct: resolveChampion && !filterToLockedField ? (won[index] / iterations) * 100 : 0,
+      winCount: filterToLockedField ? 0 : won[index],
       winPctIfMade: !filterToLockedField && made[index] > 0
         ? (won[index] / made[index]) * 100
         : 0,
       winPctGivenField: filterToLockedField && lockedSet.has(String(team.id))
         ? (wonWhenField[index] / iterations) * 100
+        : 0,
+      winWhenFieldCount: filterToLockedField && lockedSet.has(String(team.id))
+        ? wonWhenField[index]
         : 0,
       p10: round1(sampleQuantile(finals, 0.1)),
       p50: round1(sampleQuantile(finals, 0.5)),

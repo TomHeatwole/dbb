@@ -17,7 +17,7 @@ import { PLAYOFF_LAST_WEEK } from './playoffHprojOdds';
 import { runPlayoffHproj } from './runPlayoffHproj';
 
 export const FIELD_CACHE_MS = 10 * 60 * 1000;
-export const FIELD_CACHE_VERSION = 7;
+export const FIELD_CACHE_VERSION = 8;
 
 let fieldCache = null;
 let loadPromise = null;
@@ -105,17 +105,20 @@ export function peekPlayoffHprojField(season) {
   return null;
 }
 
-/** @returns {Record<number, { playoffPct: number, winPct: number, winPctIfMade: number }>} */
+/** @returns {Record<number, { playoffPct: number, winPctIfMade: number, playoffMadeCount?: number, winCount?: number, iterations?: number }>} */
 export function oddsByRosterFromField(field) {
   const byRoster = {};
   if (!field || !Array.isArray(field.rows)) return byRoster;
+  const iterations = Number(field.iterations) || 0;
   for (const row of field.rows) {
     const rid = Number(row.rosterId ?? row.id);
     if (!Number.isFinite(rid)) continue;
     byRoster[rid] = {
       playoffPct: Number(row.playoffPct) || 0,
-      winPct: Number(row.winPct) || 0,
       winPctIfMade: Number(row.winPctIfMade) || 0,
+      playoffMadeCount: row.playoffMadeCount,
+      winCount: row.winCount,
+      iterations,
     };
   }
   return byRoster;

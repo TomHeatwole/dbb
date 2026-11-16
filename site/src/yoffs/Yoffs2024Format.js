@@ -15,7 +15,7 @@ import HeadToHeadView from '../matchups/HeadToHeadView';
 import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { loadPlayoffHprojField, oddsByRosterFromField } from '../playoffs/playoffHprojFieldLoader';
-import { fmtHprojOddsPct, HprojOddsPctLink, PLAYOFF_PREDICTIONS_PATH } from '../playoffs/playoffHprojOddsUi';
+import { HprojOddsPctLink, PLAYOFF_PREDICTIONS_PATH } from '../playoffs/playoffHprojOddsUi';
 
 function PrePlayoffOverview({
   rows,
@@ -80,13 +80,17 @@ function PrePlayoffOverview({
                 </Link>
                 <HprojOddsPctLink
                   loading={oddsLoading}
-                  value={fmtHprojOddsPct(odds && odds.playoffPct)}
+                  pct={odds && odds.playoffPct}
+                  count={odds && odds.playoffMadeCount}
+                  total={odds && odds.iterations}
                   title={`${teamName} playoff odds`}
                   className="yoffs-pre-pct"
                 />
                 <HprojOddsPctLink
                   loading={oddsLoading}
-                  value={fmtHprojOddsPct(odds && odds.winPctIfMade)}
+                  pct={odds && odds.winPctIfMade}
+                  count={odds && odds.winCount}
+                  total={odds && odds.playoffMadeCount}
                   title={`${teamName} odds to win the playoffs if they make it`}
                   className="yoffs-pre-pct yoffs-pre-pct--title"
                 />

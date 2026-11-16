@@ -21,7 +21,6 @@ import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
 import { loadPlayoffHprojField, oddsByRosterFromField } from '../playoffs/playoffHprojFieldLoader';
 import {
   PLAYOFF_PREDICTIONS_PATH,
-  fmtHprojOddsPct,
   HprojOddsPctLink,
 } from '../playoffs/playoffHprojOddsUi';
 
@@ -740,12 +739,7 @@ function LeagueStandings() {
     hprojOddsForRoster,
     hprojOddsState,
   }) {
-    const playoffPctLabel = hprojOddsState === 'loading'
-      ? '…'
-      : fmtHprojOddsPct(hprojOddsForRoster && hprojOddsForRoster.playoffPct);
-    const winPctLabel = hprojOddsState === 'loading'
-      ? '…'
-      : fmtHprojOddsPct(hprojOddsForRoster && hprojOddsForRoster.winPctIfMade);
+    const hprojOddsLoadingRow = hprojOddsState === 'loading';
     const baseQuery = currentSearchParams && currentSearchParams.toString() ? currentSearchParams.toString() : '';
     const buildWeekLink = (week) => {
       if (typeof week !== 'number' || !isFinite(week)) { return null; }
@@ -880,18 +874,28 @@ function LeagueStandings() {
             <>
               <div className="stat-label">Playoff %</div>
               <div className="stat-v1">
-                <Link className="standings-inline-link" to={PLAYOFF_PREDICTIONS_PATH}>
-                  {playoffPctLabel}
-                </Link>
+                <HprojOddsPctLink
+                  loading={hprojOddsLoadingRow}
+                  pct={hprojOddsForRoster && hprojOddsForRoster.playoffPct}
+                  count={hprojOddsForRoster && hprojOddsForRoster.playoffMadeCount}
+                  total={hprojOddsForRoster && hprojOddsForRoster.iterations}
+                  title="HProj playoff odds"
+                  className="standings-inline-link"
+                />
               </div>
               <div className="stat-v2" />
               <div className="stat-v3" />
 
               <div className="stat-label">Championship %</div>
               <div className="stat-v1">
-                <Link className="standings-inline-link" to={PLAYOFF_PREDICTIONS_PATH}>
-                  {winPctLabel}
-                </Link>
+                <HprojOddsPctLink
+                  loading={hprojOddsLoadingRow}
+                  pct={hprojOddsForRoster && hprojOddsForRoster.winPctIfMade}
+                  count={hprojOddsForRoster && hprojOddsForRoster.winCount}
+                  total={hprojOddsForRoster && hprojOddsForRoster.playoffMadeCount}
+                  title="HProj championship odds (if you make the playoffs)"
+                  className="standings-inline-link"
+                />
               </div>
               <div className="stat-v2" />
               <div className="stat-v3" />
@@ -1089,12 +1093,16 @@ function LeagueStandings() {
               >
                 <HprojOddsPctLink
                   loading={hprojOddsLoading}
-                  value={fmtHprojOddsPct(hprojOddsByRoster?.[Number(rosterId)]?.playoffPct)}
+                  pct={hprojOddsByRoster?.[Number(rosterId)]?.playoffPct}
+                  count={hprojOddsByRoster?.[Number(rosterId)]?.playoffMadeCount}
+                  total={hprojOddsByRoster?.[Number(rosterId)]?.iterations}
                   title="HProj playoff odds"
                 />
                 <HprojOddsPctLink
                   loading={hprojOddsLoading}
-                  value={fmtHprojOddsPct(hprojOddsByRoster?.[Number(rosterId)]?.winPctIfMade)}
+                  pct={hprojOddsByRoster?.[Number(rosterId)]?.winPctIfMade}
+                  count={hprojOddsByRoster?.[Number(rosterId)]?.winCount}
+                  total={hprojOddsByRoster?.[Number(rosterId)]?.playoffMadeCount}
                   title="HProj championship odds (if you make the playoffs)"
                 />
                 {showPpgColumn ? (

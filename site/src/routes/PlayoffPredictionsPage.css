@@ -466,6 +466,15 @@
   font-size: 0.86rem;
 }
 
+.pp-table-odds .hproj-odds-pct {
+  font-weight: 800;
+}
+
+.pp-col-pct .hproj-odds-pct {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
 .pp-th-week .pp-th-main {
   display: block;
 }

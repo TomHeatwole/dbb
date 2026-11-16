@@ -6,6 +6,8 @@ import { isMyRoster, useMyCurrentRosterId } from '../hooks/useAuthUser';
 import PlayoffFourSelector from '../playoffs/PlayoffFourSelector';
 import { PLAYOFF_SPOTS, simulatePlayoffField } from '../playoffs/playoffHprojOdds';
 import { loadPlayoffHprojField } from '../playoffs/playoffHprojFieldLoader';
+import { HprojOddsPct } from '../playoffs/playoffHprojOddsUi';
+import { REG_SEASON_WEEKS } from '../scenarios/simulatorLineup';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import './PlayoffPredictionsPage.css';
@@ -39,6 +41,19 @@ function titleColor(pct) {
   const hi = [251, 191, 36];
   const rgb = lo.map((c, i) => Math.round(c + ((hi[i] - c) * t)));
   return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
+
+/** Weeks 15–17: show banked + live points on the odds columns. */
+function isLeaguePlayoffPeriod(field) {
+  if (!field) return false;
+  const banked = Number(field.bankedThrough) || 0;
+  const liveWeek = Number(field.liveWeek) || 0;
+  const currentWeek = Number(field.currentWeek) || 0;
+  return (
+    banked > REG_SEASON_WEEKS
+    || liveWeek > REG_SEASON_WEEKS
+    || currentWeek > REG_SEASON_WEEKS
+  );
 }
 
 function pointsLine(row, field) {
@@ -104,6 +119,7 @@ function OddsColumn({
   mobileHidden = false,
   medianForRow = null,
   medianLabel = 'Median',
+  oddsDetailForRow = null,
 }) {
   const displayRows = useMemo(() => {
     if (preserveOrder) return rows;
@@ -140,6 +156,7 @@ function OddsColumn({
           const pct = rawPct == null || !Number.isFinite(rawPct) ? null : rawPct;
           const color = colorFn(pct == null ? 0 : pct);
           const avatar = teamAvatar(info);
+          const oddsDetail = oddsDetailForRow ? oddsDetailForRow(row) : null;
           return (
             <li key={row.rosterId} className={`pp-col-item${mine ? ' pp-col-item--me' : ''}`}>
               <span className="pp-col-rank">{index + 1}</span>
@@ -155,8 +172,12 @@ function OddsColumn({
                 </div>
                 <div className="pp-col-owner">{info.ownerName || ''}</div>
                 <div className="pp-col-meta">
-                  {pointsLine(row, field)}
-                  <span className="pp-sep">·</span>
+                  {isLeaguePlayoffPeriod(field) ? (
+                    <>
+                      {pointsLine(row, field)}
+                      <span className="pp-sep">·</span>
+                    </>
+                  ) : null}
                   {medianLabel}{' '}
                   {fmtPts(medianForRow ? medianForRow(row) : row.p50)}
                 </div>
@@ -168,8 +189,18 @@ function OddsColumn({
                   />
                 </div>
               </div>
-              <div className="pp-col-pct" style={{ color }}>
-                {pct == null ? '—' : fmtPct(pct)}
+              <div className="pp-col-pct">
+                {pct == null ? (
+                  '—'
+                ) : (
+                  <HprojOddsPct
+                    pct={oddsDetail?.pct ?? pct}
+                    count={oddsDetail?.count}
+                    total={oddsDetail?.total}
+                    style={{ color }}
+                    title="Monte Carlo replays"
+                  />
+                )}
               </div>
             </li>
           );
@@ -427,6 +458,11 @@ function Results({ field, teamMap, myRosterId }) {
           mobileHidden={mobileDuoView === DUO_VIEWS.win}
           medianForRow={(row) => row.medianPath}
           medianLabel="Median path"
+          oddsDetailForRow={(row) => ({
+            pct: row.playoffPct,
+            count: row.playoffMadeCount,
+            total: field.iterations,
+          })}
         />
         <OddsColumn
           title="Win it"
@@ -475,6 +511,28 @@ function Results({ field, teamMap, myRosterId }) {
           mobileHidden={mobileDuoView === DUO_VIEWS.playoffs}
           medianForRow={(row) => row.playoffMedian15317}
           medianLabel="Median wk 15–17"
+          oddsDetailForRow={(row) => {
+            if (winMode === WIN_MODES.select && selectedFour.length === PLAYOFF_SPOTS && lockedField) {
+              const lockedRow = lockedField.rows.find((r) => Number(r.id) === Number(row.rosterId));
+              if (
+                !lockedRow
+                || !selectedFour.some((id) => Number(id) === Number(row.rosterId))
+              ) {
+                return null;
+              }
+              return {
+                pct: winByRoster[row.rosterId],
+                count: lockedRow.winWhenFieldCount,
+                total: lockedField.iterations,
+              };
+            }
+            if (!(Number(row.playoffMadeCount) > 0)) return null;
+            return {
+              pct: row.winPctIfMade,
+              count: row.winCount,
+              total: row.playoffMadeCount,
+            };
+          }}
         />
         </div>
       </div>
@@ -543,15 +601,53 @@ function Results({ field, teamMap, myRosterId }) {
                       <span className="pp-table-pts">{fmtPts(row.p50)}</span>
                       <span className="pp-table-range">{fmtPts(row.p10)}–{fmtPts(row.p90)}</span>
                     </td>
-                    <td className="pp-table-odds" style={{ color: playoffColor(row.playoffPct) }}>
-                      {fmtPct(row.playoffPct)}
+                    <td className="pp-table-odds">
+                      <HprojOddsPct
+                        pct={row.playoffPct}
+                        count={row.playoffMadeCount}
+                        total={field.iterations}
+                        style={{ color: playoffColor(row.playoffPct) }}
+                        title="Make playoffs"
+                      />
                     </td>
-                    <td className="pp-table-odds" style={{ color: titleColor(winByRoster[row.rosterId] ?? 0) }}>
+                    <td className="pp-table-odds">
                       {winMode === WIN_MODES.select
                       && selectedFour.length === PLAYOFF_SPOTS
-                      && !selectedFour.some((id) => Number(id) === Number(row.rosterId))
-                        ? '—'
-                        : fmtPct(winByRoster[row.rosterId])}
+                      && !selectedFour.some((id) => Number(id) === Number(row.rosterId)) ? (
+                        '—'
+                      ) : (() => {
+                        const winPct = winByRoster[row.rosterId];
+                        let winDetail = null;
+                        if (winMode === WIN_MODES.select && lockedField) {
+                          const lockedRow = lockedField.rows.find((r) => Number(r.id) === Number(row.rosterId));
+                          if (lockedRow) {
+                            winDetail = {
+                              pct: winPct,
+                              count: lockedRow.winWhenFieldCount,
+                              total: lockedField.iterations,
+                            };
+                          }
+                        } else if (Number(row.playoffMadeCount) > 0) {
+                          winDetail = {
+                            pct: row.winPctIfMade,
+                            count: row.winCount,
+                            total: row.playoffMadeCount,
+                          };
+                        }
+                        return (
+                          <HprojOddsPct
+                            pct={winDetail?.pct ?? winPct}
+                            count={winDetail?.count}
+                            total={winDetail?.total}
+                            style={{ color: titleColor(winPct ?? 0) }}
+                            title={
+                              winMode === WIN_MODES.conditional
+                                ? 'Title odds if you make the cut'
+                                : 'Title odds in this playoff field'
+                            }
+                          />
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
