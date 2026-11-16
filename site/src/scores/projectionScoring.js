@@ -5,6 +5,7 @@ import {
   displayActualPts,
   espnLiveProjection,
   espnRemainingProj,
+  hasWeekProjection,
   liveTimeFrac,
   playerIsRuledOut,
 } from './liveOutlook';
@@ -124,8 +125,15 @@ function annotatePlayer(player, projectedPtsById, playerGameLabels, injuriesCtx)
   const fullProj = projectedPtsById && typeof projectedPtsById[pid] === 'number'
     ? projectedPtsById[pid]
     : null;
+  const keepProjection = Boolean(
+    injuriesCtx
+    && injuriesCtx.keepProjectionIds
+    && injuriesCtx.keepProjectionIds.has(String(player.id)),
+  );
   const ruledOut = Boolean(
-    injuriesCtx && playerIsRuledOut(
+    injuriesCtx
+    && !keepProjection
+    && playerIsRuledOut(
       player.id,
       injuriesCtx.injuriesMap,
       injuriesCtx.playersData,
@@ -430,7 +438,7 @@ function attachBenchHints(computed, playersData, playerIdMap, lineupMode) {
   return { ...computed, starters, bench };
 }
 
-function sortLineup(annotated, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, mode) {
+function sortLineup(annotated, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, mode, injuryNeutralIds) {
   return StartSitSort(
     attachSortKeys(annotated, mode),
     playersData,
@@ -438,8 +446,18 @@ function sortLineup(annotated, playersData, playerIdMap, playerGameLabels, injur
     playerGameLabels,
     injuriesMap,
     playerSeasonTotalsMap,
-    { preferStarted: mode === 'scores' }
+    { preferStarted: mode === 'scores', injuryNeutralIds }
   );
+}
+
+/** Ids whose future-week projection wins over a carried OUT/IR/PUP tag. */
+function projectionIdsToKeep(projectedPtsById, futureWeek) {
+  const ids = new Set();
+  if (!futureWeek || !projectedPtsById) return ids;
+  for (const id of Object.keys(projectedPtsById)) {
+    if (hasWeekProjection(projectedPtsById, id)) ids.add(String(id));
+  }
+  return ids;
 }
 
 /**
@@ -457,10 +475,12 @@ export function startSitWithProjections(
   injuriesMap,
   playerSeasonTotalsMap,
   projectedPtsById,
-  lineupMode = 'scores'
+  lineupMode = 'scores',
+  options = null,
 ) {
   const mode = lineupMode === 'projections' ? 'projections' : 'scores';
-  const injuriesCtx = { injuriesMap, playersData, playerIdMap };
+  const keepProjectionIds = projectionIdsToKeep(projectedPtsById, Boolean(options && options.futureWeek));
+  const injuriesCtx = { injuriesMap, playersData, playerIdMap, keepProjectionIds };
   const hybrid = applyHybridProjectedPoints(teamScore, projectedPtsById, playerGameLabels);
   const annotated = annotateProjectionSources(hybrid, playerGameLabels, projectedPtsById, injuriesCtx);
   const sortArgs = [
@@ -471,8 +491,8 @@ export function startSitWithProjections(
     injuriesMap,
     playerSeasonTotalsMap,
   ];
-  const projSorted = sortLineup(...sortArgs, 'projections');
-  const scoresSorted = sortLineup(...sortArgs, 'scores');
+  const projSorted = sortLineup(...sortArgs, 'projections', keepProjectionIds);
+  const scoresSorted = sortLineup(...sortArgs, 'scores', keepProjectionIds);
   const projFinalized = annotateProjectionSources(projSorted, playerGameLabels, projectedPtsById, injuriesCtx);
   const scoresFinalized = annotateProjectionSources(scoresSorted, playerGameLabels, projectedPtsById, injuriesCtx);
   const optimalProjTotal = roundTenth(

@@ -67,6 +67,13 @@ export function scaledLiveOutcome(actual, rolledPregame, timeFrac) {
   return Math.max(0, (Number(actual) || 0) + add);
 }
 
+/** Finite Sleeper week total, including 0. Missing key means no projection. */
+export function hasWeekProjection(projectedPtsById, playerId) {
+  if (!projectedPtsById || playerId == null) return false;
+  const raw = projectedPtsById[playerId] ?? projectedPtsById[String(playerId)];
+  return typeof raw === 'number' && Number.isFinite(raw);
+}
+
 export function playerIsRuledOut(playerId, injuriesMap, playersData, playerIdMap) {
   const id = String(playerId);
   const mapped = injuriesMap
@@ -83,10 +90,18 @@ export function playerIsRuledOut(playerId, injuriesMap, playersData, playerIdMap
   return abbr === 'O' || abbr === 'IR';
 }
 
-export function collectOutPlayerIds(playerIds, injuriesMap, playersData, playerIdMap) {
+/**
+ * Players treated as done at their current score.
+ * A future week keeps anyone who already has a projection: the OUT/IR tag
+ * can still be shown, but it must not zero that week's number.
+ */
+export function collectOutPlayerIds(playerIds, injuriesMap, playersData, playerIdMap, opts = null) {
+  const futureWeek = Boolean(opts && opts.futureWeek);
+  const projectedPtsById = opts && opts.projectedPtsById;
   const out = new Set();
   for (const raw of playerIds || []) {
     if (raw == null || String(raw) === '0') continue;
+    if (futureWeek && hasWeekProjection(projectedPtsById, raw)) continue;
     if (playerIsRuledOut(raw, injuriesMap, playersData, playerIdMap)) {
       out.add(String(raw));
     }

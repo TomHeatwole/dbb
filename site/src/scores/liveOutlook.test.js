@@ -5,6 +5,7 @@ jest.mock('../utils/database', () => ({
 }));
 
 import {
+  collectOutPlayerIds,
   displayActualPts,
   espnLiveProjection,
   nflTimeRemainingFrac,
@@ -53,5 +54,31 @@ describe('playerIsRuledOut', () => {
     expect(playerIsRuledOut('x', { x: 'IR' }, {}, null)).toBe(true);
     expect(playerIsRuledOut('x', { x: 'Injured Reserve' }, {}, null)).toBe(true);
     expect(playerIsRuledOut('x', { x: 'Questionable' }, {}, null)).toBe(false);
+  });
+});
+
+describe('collectOutPlayerIds', () => {
+  const playersData = { hurt: { injury_status: 'Out' }, pup: { injury_status: 'PUP' } };
+
+  it('locks current-week Out players', () => {
+    const ids = collectOutPlayerIds(['hurt', 'pup'], {}, playersData, null);
+    expect(ids.has('hurt')).toBe(true);
+    expect(ids.has('pup')).toBe(false);
+  });
+
+  it('skips a future week when that player has a projection', () => {
+    const ids = collectOutPlayerIds(['hurt'], {}, playersData, null, {
+      futureWeek: true,
+      projectedPtsById: { hurt: 14.2 },
+    });
+    expect(ids.has('hurt')).toBe(false);
+  });
+
+  it('still locks a future-week Out player with no projection', () => {
+    const ids = collectOutPlayerIds(['hurt'], { hurt: 'IR' }, {}, null, {
+      futureWeek: true,
+      projectedPtsById: { other: 8 },
+    });
+    expect(ids.has('hurt')).toBe(true);
   });
 });

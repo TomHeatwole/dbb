@@ -1,4 +1,4 @@
-import { resolveScoresLineupMode } from './scoresLineupMode';
+import { isFutureSeasonWeek, resolveScoresLineupMode } from './scoresLineupMode';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 
 jest.mock('../utils/DateHelper', () => ({
@@ -69,5 +69,13 @@ describe('resolveScoresLineupMode', () => {
     });
     expect(result.effectiveMode).toBe('scores');
     expect(result.showLineupModeToggle).toBe(false);
+  });
+});
+
+describe('isFutureSeasonWeek', () => {
+  it('is true only for a later week of the current season', () => {
+    expect(isFutureSeasonWeek(CURRENT_YEAR, 6)).toBe(true);
+    expect(isFutureSeasonWeek(CURRENT_YEAR, 5)).toBe(false);
+    expect(isFutureSeasonWeek(2024, 10)).toBe(false);
   });
 });

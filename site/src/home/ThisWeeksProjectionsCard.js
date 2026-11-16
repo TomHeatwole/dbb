@@ -6,6 +6,7 @@ import HprojHint from '../scores/HprojHint';
 import useLeagueHproj from '../scores/useLeagueHproj';
 import useWeeklyProjectedPoints from '../scores/useWeeklyProjectedPoints';
 import { startSitWithProjections } from '../scores/projectionScoring';
+import { isFutureSeasonWeek } from '../scores/scoresLineupMode';
 import { getPlayerSeasonTotalsMap, getWeekScoreBreakdown } from '../scores/ScoresParser';
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
@@ -321,6 +322,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
             playerSeasonTotalsMap,
             projectedPtsById,
             lineupMode,
+            { futureWeek: isFutureSeasonWeek(season, week) },
           )
           : null;
         const info = rosterMap[Number(rid)] || rosterMap[rid] || {};
@@ -349,6 +351,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
   }, [
     weekEntries,
     weekScoresByRoster,
+    season,
     week,
     liveMode,
     rankMode,

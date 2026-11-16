@@ -2768,7 +2768,7 @@ a.scores-lineup-final-hproj,
 }
 .pos-avg-tooltip-fixed {
   position: fixed;
-  z-index: 1000;
+  z-index: 4000;
   background: rgba(15, 12, 30, 0.96);
   color: #e2e8f0;
   border: 1px solid rgba(80, 80, 130, 0.5);

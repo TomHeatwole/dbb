@@ -10,7 +10,10 @@ import { getPlayerInfo } from '../lookups/PlayerLookup';
 // - 'questionable'  -> Q
 // - 'doubtful'      -> D
 // - 'injured'       -> Out, IR, Suspended, PUP, NA, etc.
-function getInjuryCategory(playerId, playersData, playerIdMap, injuriesMap) {
+function getInjuryCategory(playerId, playersData, playerIdMap, injuriesMap, injuryNeutralIds) {
+  if (injuryNeutralIds && injuryNeutralIds.has(String(playerId))) {
+    return 'healthy';
+  }
   function extractStatus(raw) {
     if (!raw) {
       return null;
@@ -88,11 +91,11 @@ function actualOrKeep(player) {
 
 /** Live healthy guys lock in. Completed 0.0 / PUP-OUT-IR zeros do not.
  *  A player who scored and then went Out/IR still locks — those points count. */
-function locksStartedLineupSpot(player, label, playersData, playerIdMap, injuriesMap) {
+function locksStartedLineupSpot(player, label, playersData, playerIdMap, injuriesMap, injuryNeutralIds) {
   if (!isStartedGame(label)) {
     return false;
   }
-  const injured = getInjuryCategory(player.id, playersData, playerIdMap, injuriesMap) === 'injured';
+  const injured = getInjuryCategory(player.id, playersData, playerIdMap, injuriesMap, injuryNeutralIds) === 'injured';
   if (label.completed || injured) {
     return actualOrKeep(player) > 0;
   }
@@ -101,13 +104,14 @@ function locksStartedLineupSpot(player, label, playersData, playerIdMap, injurie
 
 function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, playerSeasonTotalsMap, options) {
   const preferStarted = Boolean(options && options.preferStarted);
+  const injuryNeutralIds = options && options.injuryNeutralIds;
   return function sortByGameAware(players) {
     return players.slice().sort((a, b) => {
       if (preferStarted) {
         const aLab = playerGameLabels && (playerGameLabels[a.id] || playerGameLabels[String(a.id)]);
         const bLab = playerGameLabels && (playerGameLabels[b.id] || playerGameLabels[String(b.id)]);
-        const aLock = locksStartedLineupSpot(a, aLab, playersData, playerIdMap, injuriesMap);
-        const bLock = locksStartedLineupSpot(b, bLab, playersData, playerIdMap, injuriesMap);
+        const aLock = locksStartedLineupSpot(a, aLab, playersData, playerIdMap, injuriesMap, injuryNeutralIds);
+        const bLock = locksStartedLineupSpot(b, bLab, playersData, playerIdMap, injuriesMap, injuryNeutralIds);
         if (aLock !== bLock) {
           return aLock ? -1 : 1;
         }
@@ -125,8 +129,8 @@ function buildSorter(playerGameLabels, playersData, playerIdMap, injuriesMap, pl
       // RULE 2: Injury tier (within equal scores)
       // Tier order (best to worst):
       //   healthy/questionable  <  doubtful (D)  <  injured (Out/IR/Susp/etc.)
-      const aInjuryCat = getInjuryCategory(a.id, playersData, playerIdMap, injuriesMap);
-      const bInjuryCat = getInjuryCategory(b.id, playersData, playerIdMap, injuriesMap);
+      const aInjuryCat = getInjuryCategory(a.id, playersData, playerIdMap, injuriesMap, injuryNeutralIds);
+      const bInjuryCat = getInjuryCategory(b.id, playersData, playerIdMap, injuriesMap, injuryNeutralIds);
       function injuryRank(cat) {
         if (cat === 'doubtful') { return 1; }
         if (cat === 'injured') { return 2; }

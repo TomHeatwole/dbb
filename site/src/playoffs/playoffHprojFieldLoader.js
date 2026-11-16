@@ -1,7 +1,7 @@
 /**
  * Shared cache + loader for HProj playoff field (playoff predictions page + standings).
- * While an NFL game is live on the board: always recompute (no memory/Neon hits).
- * Between live windows: first load banks the full field to Neon; later loads reuse it.
+ * A saved field is returned before any scoreboard or sim work.
+ * A miss runs the sim once and banks it, including when a caller unmounts.
  */
 
 import { fetchNflScoreboard } from '../lookups/GamesLookup';
@@ -12,18 +12,37 @@ import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchLeagueScoringSettings } from '../lookups/ScoringSettingsLookup';
 import { buildRosterIdToTeamInfoMap, fetchTeamData } from '../lookups/TeamLookup';
 import { REG_SEASON_WEEKS } from '../scenarios/simulatorLineup';
-import { isScoreboardWeekHasLiveGame } from '../scores/GamesParser';
 import { CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek } from '../utils/DateHelper';
 import { PLAYOFF_LAST_WEEK } from './playoffHprojOdds';
 import { runPlayoffHproj } from './runPlayoffHproj';
 
 export const FIELD_CACHE_MS = 10 * 60 * 1000;
-export const FIELD_CACHE_VERSION = 6;
+export const FIELD_CACHE_VERSION = 7;
 
 let fieldCache = null;
 let loadPromise = null;
 /** Set during load; peek skips memory cache while a game is live. */
 let nflWeekHasLiveGame = false;
+const progressListeners = new Set();
+
+function reportProgress(label) {
+  for (const fn of progressListeners) {
+    try { fn(label); } catch (_) { /* listener */ }
+  }
+}
+
+function usableCachedView(raw, seasonNum) {
+  if (!raw || typeof raw !== 'object') return null;
+  const field = raw.field && typeof raw.field === 'object' ? raw.field : null;
+  if (!field || field._placeholder) return null;
+  if (!Array.isArray(field.rows) || field.rows.length === 0) return null;
+  if (!Array.isArray(field.weeks)) return null;
+  return {
+    season: Number(raw.season) || seasonNum,
+    teamMap: raw.teamMap || {},
+    field,
+  };
+}
 
 function cacheKeyForSeason(season) {
   const currentWeek = getCurrentNFLWeek(season);
@@ -113,128 +132,118 @@ export function oddsByRosterFromField(field) {
   return byRoster;
 }
 
+async function computePlayoffField(seasonNum) {
+  const currentWeek = getCurrentNFLWeek(seasonNum);
+  const bankedThrough = Math.min(REG_SEASON_WEEKS, getCompletedWeeksCount(seasonNum));
+  const cacheKey = cacheKeyForSeason(seasonNum);
+
+  reportProgress('Loading saved odds…');
+  const cachedNow = peekPlayoffHprojField(seasonNum);
+  if (cachedNow) return cachedNow;
+
+  const neonView = usableCachedView(
+    await fetchNeonPlayoffHprojCache(seasonNum, cacheKey),
+    seasonNum,
+  );
+  if (neonView) {
+    fieldCache = { key: cacheKey, view: neonView, at: Date.now() };
+    return neonView;
+  }
+
+  reportProgress('Loading scores and projections…');
+  const currentScoreboard = await fetchNflScoreboard(seasonNum, currentWeek, { forceUpdate: true })
+    .catch(() => null);
+  nflWeekHasLiveGame = false;
+
+  const weekNums = [];
+  for (let week = bankedThrough + 1; week <= PLAYOFF_LAST_WEEK; week += 1) {
+    weekNums.push(week);
+  }
+
+  const [teamData, weeksData, scoring, playerIdMap] = await Promise.all([
+    fetchTeamData(seasonNum),
+    fetchScoresData(seasonNum),
+    fetchLeagueScoringSettings(seasonNum),
+    fetchPlayerIdMap(),
+  ]);
+  const playersData = await fetchPlayersData(teamData.rosters, { week: currentWeek });
+
+  const regRemaining = weekNums.filter((week) => week <= REG_SEASON_WEEKS);
+  const injuriesMap = regRemaining.includes(currentWeek)
+    ? await fetchInjuriesForWeek(seasonNum, currentWeek).catch(() => ({}))
+    : {};
+
+  const weekBundles = await Promise.all(weekNums.map(async (week) => {
+    const [proj, scoreboard] = await Promise.all([
+      getSleeperWeeklyProjections(seasonNum, week),
+      week === currentWeek && currentScoreboard
+        ? Promise.resolve(currentScoreboard)
+        : fetchNflScoreboard(seasonNum, week).catch(() => null),
+    ]);
+    return {
+      week,
+      byPlayerId: proj && proj.byPlayerId ? proj.byPlayerId : {},
+      scoreboard,
+    };
+  }));
+  const teamMap = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
+  reportProgress('Running the season…');
+  const field = await runPlayoffHproj({
+    season: seasonNum,
+    rosters: teamData.rosters,
+    weeksData,
+    playersData,
+    playerIdMap,
+    scoring,
+    injuriesMap: injuriesMap || {},
+    weekBundles,
+    bankedThrough,
+    currentWeek,
+    onProgress: reportProgress,
+    labelForRoster: (roster) => {
+      const info = teamMap[roster.roster_id] || teamMap[Number(roster.roster_id)];
+      return (info && info.teamName) || `Team ${roster.roster_id}`;
+    },
+  });
+  if (!field) return null;
+
+  const view = { season: seasonNum, teamMap, field };
+  const banked = await saveNeonPlayoffHprojCache(
+    seasonNum,
+    cacheKey,
+    bankedThrough,
+    currentWeek,
+    view,
+  );
+  if (banked) {
+    fieldCache = { key: cacheKey, view, at: Date.now() };
+  }
+  return view;
+}
+
 /**
  * @param {number|string} season
- * @param {{ cancelled?: () => boolean }} [opts]
+ * @param {{ cancelled?: () => boolean, onProgress?: (label: string) => void }} [opts]
  * @returns {Promise<{ season: number, teamMap: object, field: object } | null>}
  */
 export async function loadPlayoffHprojField(season, opts = {}) {
   const seasonNum = Number(season);
   if (seasonNum !== Number(CURRENT_YEAR)) return null;
 
-  if (loadPromise) {
-    return loadPromise;
-  }
+  if (opts.onProgress) progressListeners.add(opts.onProgress);
+  try {
+    const cached = peekPlayoffHprojField(seasonNum);
+    if (cached) return opts.cancelled?.() ? null : cached;
 
-  const cancelled = opts.cancelled || (() => false);
-
-  loadPromise = (async () => {
-    const currentWeek = getCurrentNFLWeek(seasonNum);
-    const bankedThrough = Math.min(REG_SEASON_WEEKS, getCompletedWeeksCount(seasonNum));
-    const cacheKey = cacheKeyForSeason(seasonNum);
-
-    const currentScoreboard = await fetchNflScoreboard(seasonNum, currentWeek, { forceUpdate: true })
-      .catch(() => null);
-    if (cancelled()) return null;
-
-    const hasLiveGame = isScoreboardWeekHasLiveGame(currentScoreboard);
-    nflWeekHasLiveGame = hasLiveGame;
-    if (hasLiveGame) {
-      fieldCache = null;
-    } else {
-      const cached = peekPlayoffHprojField(seasonNum);
-      if (cached) return cached;
+    if (!loadPromise) {
+      loadPromise = computePlayoffField(seasonNum).finally(() => {
+        loadPromise = null;
+      });
     }
-
-    if (!hasLiveGame) {
-      const neonView = await fetchNeonPlayoffHprojCache(seasonNum, cacheKey);
-      if (cancelled()) return null;
-      if (neonView) {
-        const view = {
-          season: seasonNum,
-          teamMap: neonView.teamMap || {},
-          field: neonView.field || neonView,
-        };
-        fieldCache = { key: cacheKey, view, at: Date.now() };
-        return view;
-      }
-    }
-
-    const weekNums = [];
-    for (let week = bankedThrough + 1; week <= PLAYOFF_LAST_WEEK; week += 1) {
-      weekNums.push(week);
-    }
-
-    const [teamData, weeksData, scoring, playerIdMap] = await Promise.all([
-      fetchTeamData(seasonNum),
-      fetchScoresData(seasonNum),
-      fetchLeagueScoringSettings(seasonNum),
-      fetchPlayerIdMap(),
-    ]);
-    if (cancelled()) return null;
-
-    const playersData = await fetchPlayersData(teamData.rosters, { week: currentWeek });
-    if (cancelled()) return null;
-
-    const regRemaining = weekNums.filter((week) => week <= REG_SEASON_WEEKS);
-    const injuriesMap = regRemaining.includes(currentWeek)
-      ? await fetchInjuriesForWeek(seasonNum, currentWeek).catch(() => ({}))
-      : {};
-
-    const weekBundles = await Promise.all(weekNums.map(async (week) => {
-      const [proj, scoreboard] = await Promise.all([
-        getSleeperWeeklyProjections(seasonNum, week),
-        week === currentWeek && currentScoreboard
-          ? Promise.resolve(currentScoreboard)
-          : fetchNflScoreboard(seasonNum, week).catch(() => null),
-      ]);
-      return {
-        week,
-        byPlayerId: proj && proj.byPlayerId ? proj.byPlayerId : {},
-        scoreboard,
-      };
-    }));
-    if (cancelled()) return null;
-
-    const teamMap = buildRosterIdToTeamInfoMap(teamData.rosters, teamData.users);
-    const field = await runPlayoffHproj({
-      season: seasonNum,
-      rosters: teamData.rosters,
-      weeksData,
-      playersData,
-      playerIdMap,
-      scoring,
-      injuriesMap: injuriesMap || {},
-      weekBundles,
-      bankedThrough,
-      currentWeek,
-      cancelled,
-      labelForRoster: (roster) => {
-        const info = teamMap[roster.roster_id] || teamMap[Number(roster.roster_id)];
-        return (info && info.teamName) || `Team ${roster.roster_id}`;
-      },
-    });
-    if (cancelled() || !field) return null;
-
-    const view = { season: seasonNum, teamMap, field };
-
-    if (!hasLiveGame) {
-      const banked = await saveNeonPlayoffHprojCache(
-        seasonNum,
-        cacheKey,
-        bankedThrough,
-        currentWeek,
-        view,
-      );
-      if (banked) {
-        fieldCache = { key: cacheKey, view, at: Date.now() };
-      }
-    }
-
+    const view = await loadPromise;
+    if (opts.cancelled?.()) return null;
     return view;
-  })().finally(() => {
-    loadPromise = null;
-  });
-
-  return loadPromise;
+  } finally {
+    if (opts.onProgress) progressListeners.delete(opts.onProgress);
+  }
 }

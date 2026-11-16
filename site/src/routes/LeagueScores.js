@@ -32,7 +32,7 @@ import useLeagueHproj from '../scores/useLeagueHproj';
 import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 import { rosterWeekActivity } from '../scores/rosterWeekActivity';
-import { resolveScoresLineupMode } from '../scores/scoresLineupMode';
+import { isFutureSeasonWeek, resolveScoresLineupMode } from '../scores/scoresLineupMode';
 
 const OG_TITLE = 'Scores – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
@@ -125,6 +125,7 @@ function LeagueScores() {
 		() => resolveScoresLineupMode({ season, week, isWeekCompleteByGames, lineupMode }),
 		[season, week, isWeekCompleteByGames, lineupMode],
 	);
+	const futureWeek = isFutureSeasonWeek(season, week);
 
 	const buildExpandedData = useCallback((srcWeeksParsedData, targetWeek, labels, seasonTotalsMap) => {
 		if (!srcWeeksParsedData) { return null; }
@@ -141,7 +142,7 @@ function LeagueScores() {
 		const rows = weekEntries.map((e) => {
 			const rid = e.roster_id;
 			const raw = breakdownByRoster[rid];
-			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || labelsWithEspn, injuriesMap, seasonTotalsMap, projectedPtsById, effectiveLineupMode) : null;
+			const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labels || labelsWithEspn, injuriesMap, seasonTotalsMap, projectedPtsById, effectiveLineupMode, { futureWeek }) : null;
 			const total = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 			const starters = computed && Array.isArray(computed.starters) ? computed.starters.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
 			const bench = computed && Array.isArray(computed.bench) ? computed.bench.map(p => ({ id: String(p.id), pts: Number(p.pts || 0) })) : [];
@@ -159,7 +160,7 @@ function LeagueScores() {
 		const teams = {};
 		rows.forEach(r => { teams[r.rosterId] = { total: r.total, starters: r.starters, bench: r.bench }; });
 		return { order, teams };
-	}, [playersData, playerIdMap, labelsWithEspn, injuriesMap, projectedPtsById, effectiveLineupMode]);
+	}, [playersData, playerIdMap, labelsWithEspn, injuriesMap, projectedPtsById, effectiveLineupMode, futureWeek]);
 
 	function compareExpanded(prev, next) {
 		if (!prev || !next) { return []; }
@@ -798,7 +799,7 @@ function LeagueScores() {
 						const computedEntries = weekEntries.map((e) => {
 							const rid = e.roster_id;
 							const raw = breakdownByRoster[rid];
-							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode) : null;
+							const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode, { futureWeek }) : null;
 							const pts = computed ? computed.starterTotal : (typeof e.points === 'number' ? Number(e.points.toFixed(2)) : 0);
 							const place = (placeByRosterIdLive && placeByRosterIdLive[String(rid)]) || placeByRosterIdBase[String(rid)] || 9999;
 							const pfTotal = (liveTotalByRosterId && liveTotalByRosterId[String(rid)] != null)

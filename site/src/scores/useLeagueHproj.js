@@ -8,6 +8,7 @@ import {
   weekHasStartedGames,
 } from './hprojTeamSim';
 import { collectOutPlayerIds } from './liveOutlook';
+import { isFutureSeasonWeek } from './scoresLineupMode';
 
 /**
  * P50 HProj + live P50 (Final/Out locked; live games ESPN-scaled) per roster.
@@ -38,7 +39,10 @@ export default function useLeagueHproj({
       if (!roster) continue;
       const rid = roster.roster_id;
       const score = weekScoresByRoster[rid] || weekScoresByRoster[String(rid)];
-      const outIds = collectOutPlayerIds(roster.players, injuriesMap, playersData, playerIdMap);
+      const outIds = collectOutPlayerIds(roster.players, injuriesMap, playersData, playerIdMap, {
+        futureWeek: isFutureSeasonWeek(season, week),
+        projectedPtsById,
+      });
       const opts = { projectedPtsById, outPlayerIds: outIds };
       const locked = lockedPtsFromCompletedGames(score, playerGameLabels, opts);
       const liveScale = liveScaleFromInProgressGames(score, playerGameLabels, opts);
@@ -47,7 +51,7 @@ export default function useLeagueHproj({
       }
     }
     return out;
-  }, [gamesStarted, weekScoresByRoster, rosters, playerGameLabels, projectedPtsById, injuriesMap, playersData, playerIdMap]);
+  }, [gamesStarted, weekScoresByRoster, rosters, playerGameLabels, projectedPtsById, injuriesMap, playersData, playerIdMap, season, week]);
 
   const liveMapsSig = useMemo(() => JSON.stringify(liveMapsByRoster), [liveMapsByRoster]);
 

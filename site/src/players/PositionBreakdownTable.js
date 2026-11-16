@@ -1,4 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 function ordinalPlace(n) {
   const place = Number(n);
@@ -14,6 +15,13 @@ function rankTone(rank, teamCount) {
   if (rank < midpoint) return 'pos';
   if (rank > midpoint) return 'neg';
   return null;
+}
+
+function weekHasScoring(week) {
+  if (!Array.isArray(week)) return false;
+  return week.some((entry) => (
+    entry && Array.isArray(entry.starters_points) && entry.starters_points.some((v) => Number(v) > 0)
+  ));
 }
 
 function rankTeams(teamScoresMap) {
@@ -43,76 +51,96 @@ function toneClass(tone) {
 const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent, className, variant = 'default' }) {
   const [hovered, setHovered] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [anchor, setAnchor] = useState(null);
-  const hoverTimeout = useRef();
+  const openTimeout = useRef();
+  const closeTimeout = useRef();
   const tooltipRef = useRef(null);
+  const anchorRef = useRef(null);
 
-  function handleMouseEnter(e) {
-    hoverTimeout.current = setTimeout(() => {
-      setHovered(true);
-    }, 50);
-    const rect = e.currentTarget.getBoundingClientRect();
-    setAnchor(rect);
+  function open(rect) {
+    clearTimeout(closeTimeout.current);
+    anchorRef.current = rect;
     if (variant === 'ranklist') {
       setPos({ x: rect.right + 10, y: rect.top });
     } else {
       setPos({ x: rect.left + rect.width / 2, y: rect.top });
     }
+    clearTimeout(openTimeout.current);
+    openTimeout.current = setTimeout(() => setHovered(true), 50);
   }
 
-  function handleMouseLeave() {
-    clearTimeout(hoverTimeout.current);
-    setHovered(false);
+  function scheduleClose() {
+    clearTimeout(openTimeout.current);
+    clearTimeout(closeTimeout.current);
+    closeTimeout.current = setTimeout(() => setHovered(false), 120);
+  }
+
+  function handleMouseEnter(e) {
+    open(e.currentTarget.getBoundingClientRect());
   }
 
   useLayoutEffect(() => {
-    if (!hovered || variant !== 'ranklist' || !tooltipRef.current || !anchor) return;
+    if (!hovered || !tooltipRef.current || !anchorRef.current) return;
+    const anchor = anchorRef.current;
     const tip = tooltipRef.current.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const margin = 8;
     const gap = 10;
-    let left = anchor.right + gap;
-    if (left + tip.width > vw - margin) {
-      left = anchor.left - gap - tip.width;
+    let left;
+    let top;
+    if (variant === 'ranklist') {
+      left = anchor.right + gap;
+      if (left + tip.width > vw - margin) left = anchor.left - gap - tip.width;
+      left = Math.max(margin, Math.min(left, vw - tip.width - margin));
+      top = Math.max(margin, Math.min(anchor.top, vh - tip.height - margin));
+    } else {
+      left = anchor.left + anchor.width / 2;
+      top = anchor.top - 48;
     }
-    left = Math.max(margin, Math.min(left, vw - tip.width - margin));
-    let top = anchor.top;
-    if (top + tip.height > vh - margin) {
-      top = Math.max(margin, vh - tip.height - margin);
-    }
-    if (Math.abs(left - pos.x) > 0.5 || Math.abs(top - pos.y) > 0.5) {
-      setPos({ x: left, y: top });
-    }
-  }, [hovered, variant, anchor, pos.x, pos.y]);
+    setPos((prev) => (
+      Math.abs(prev.x - left) < 0.5 && Math.abs(prev.y - top) < 0.5
+        ? prev
+        : { x: left, y: top }
+    ));
+  }, [hovered, variant]);
 
   const tooltipStyle = variant === 'ranklist'
     ? { left: pos.x, top: pos.y }
     : { left: pos.x, top: pos.y - 48 };
+
+  const tooltip = hovered && tooltipContent && typeof document !== 'undefined'
+    ? createPortal(
+      <div
+        ref={tooltipRef}
+        className={`pos-avg-tooltip-fixed pos-avg-tooltip-fadein${variant === 'ranklist' ? ' pos-avg-tooltip-fixed--ranklist' : ''}`}
+        style={tooltipStyle}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseEnter={() => {
+          clearTimeout(closeTimeout.current);
+          setHovered(true);
+        }}
+        onMouseLeave={scheduleClose}
+      >
+        {tooltipContent}
+      </div>,
+      document.body,
+    )
+    : null;
 
   return (
     <td className="pos-avg-tooltip-relative">
       <div
         className="pos-avg-tooltip-hover-parent"
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onMouseLeave={scheduleClose}
         style={{ display: 'inline-block', width: '100%' }}
       >
         <span className={`pos-avg-tooltip-hover-area${className ? ` ${className}` : ''}`}>
           {value}
         </span>
-        {hovered && tooltipContent && (
-          <div
-            ref={tooltipRef}
-            className={`pos-avg-tooltip-fixed pos-avg-tooltip-fadein${variant === 'ranklist' ? ' pos-avg-tooltip-fixed--ranklist' : ''}`}
-            style={tooltipStyle}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            {tooltipContent}
-          </div>
-        )}
       </div>
+      {tooltip}
     </td>
   );
 });
@@ -255,7 +283,7 @@ export default function PositionBreakdownTable({
             for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
               const weekNum = startWeek + weekIdx;
               const week = Array.isArray(weeksParsedData) ? weeksParsedData[weekNum - 1] : null;
-              if (!week) continue;
+              if (!week || !weekHasScoring(week)) continue;
               week.forEach(entry => {
                 if (!entry) { return; }
                 const startersPoints = (entry && Array.isArray(entry.starters_points)) ? entry.starters_points : null;

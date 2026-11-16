@@ -260,8 +260,15 @@ function PlayoffPredictionsPage() {
         setLabel('Loading scores and projections…');
         const nextView = await loadPlayoffHprojField(season, {
           cancelled: () => cancelled,
+          onProgress: (text) => {
+            if (!cancelled && text) setLabel(text);
+          },
         });
-        if (cancelled || !nextView) return;
+        if (cancelled) return;
+        if (!nextView) {
+          setError('Could not build playoff odds');
+          return;
+        }
         setView(nextView);
       } catch (err) {
         if (!cancelled) setError(err && err.message ? err.message : 'Could not build playoff odds');
@@ -352,29 +359,30 @@ function Results({ field, teamMap, myRosterId }) {
     return field.rows;
   }, [winMode, selectedFour, field.rows]);
 
-  const anyCarried = field.weeks.some((week) => week.carried);
-  const anyLive = field.weeks.some((week) => week.source === 'live');
-  const firstWeek = field.weeks.length ? field.weeks[0].week : null;
-  const lastWeek = field.weeks.length ? field.weeks[field.weeks.length - 1].week : null;
+  const weeks = Array.isArray(field.weeks) ? field.weeks : [];
+  const anyCarried = weeks.some((week) => week.carried);
+  const anyLive = weeks.some((week) => week.source === 'live');
+  const firstWeek = weeks.length ? weeks[0].week : null;
+  const lastWeek = weeks.length ? weeks[weeks.length - 1].week : null;
 
   const liveBlurb = field.liveWeek
     ? `Weeks 1–${field.bankedThrough} are final; week ${field.liveWeek} uses live scoring (finished games locked, in-progress scaled, unplayed re-rolled). `
     : '';
   let context;
-  if (field.weeksLeft === 0 && !field.weeks.length) {
+  if (field.weeksLeft === 0 && !weeks.length) {
     context = `The regular season is complete. Title odds use HProj draws for weeks 15–17 under current playoff rules. ${liveBlurb}`.trim();
   } else if (field.bankedThrough === 0) {
-    context = `${field.iterations.toLocaleString()} full-season replays from week 1 through the title game. ${liveBlurb}`.trim();
+    context = `${Number(field.iterations || 0).toLocaleString()} full-season replays from week 1 through the title game. ${liveBlurb}`.trim();
   } else if (field.liveWeek) {
     const tail = firstWeek === lastWeek ? `week ${firstWeek}` : `weeks ${firstWeek}–${lastWeek}`;
     context = (
-      `${field.iterations.toLocaleString()} replays of ${tail}, plus weeks 15–17 for the title. `
+      `${Number(field.iterations || 0).toLocaleString()} replays of ${tail}, plus weeks 15–17 for the title. `
       + liveBlurb
       + 'Same live-week rules as /hproj.'
     );
   } else {
     const span = firstWeek === lastWeek ? `week ${firstWeek}` : `weeks ${firstWeek}–${lastWeek}`;
-    context = `${field.iterations.toLocaleString()} replays of ${span}, plus weeks 15–17 for the title race, on top of ${field.bankedThrough} finalized ${field.bankedThrough === 1 ? 'week' : 'weeks'}.`;
+    context = `${Number(field.iterations || 0).toLocaleString()} replays of ${span}, plus weeks 15–17 for the title race, on top of ${field.bankedThrough} finalized ${field.bankedThrough === 1 ? 'week' : 'weeks'}.`;
   }
 
   return (
@@ -388,7 +396,7 @@ function Results({ field, teamMap, myRosterId }) {
           </div>
           <div className="pp-pill">
             <span className="pp-pill-label">Replays</span>
-            <strong className="pp-pill-value">{field.iterations.toLocaleString()}</strong>
+            <strong className="pp-pill-value">{Number(field.iterations || 0).toLocaleString()}</strong>
           </div>
           <div className="pp-pill">
             <span className="pp-pill-label">Title rules</span>
@@ -497,7 +505,7 @@ function Results({ field, teamMap, myRosterId }) {
                 {field.liveWeek ? (
                   <th className="pp-th-live-col">Live wk {field.liveWeek}</th>
                 ) : null}
-                {field.weeks.map((week) => (
+                {weeks.map((week) => (
                   <th key={week.week} className="pp-th-week">
                     <span className="pp-th-main">Wk {week.week}</span>
                     {week.source === 'live' ? <span className="pp-badge pp-badge--live">Live</span> : null}

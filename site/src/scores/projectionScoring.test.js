@@ -614,3 +614,89 @@ describe('higher-projection bench hints', () => {
   });
 });
 
+describe('future week injury status', () => {
+  function runHurt({ status = 'Out', futureWeek = false, proj = 14.2, injuriesMap = null }) {
+    const playersData = {
+      qb: { position: 'QB', full_name: 'QB' },
+      rb1: { position: 'RB', full_name: 'RB1' },
+      rb2: { position: 'RB', full_name: 'RB2' },
+      rb3: { position: 'RB', full_name: 'RB3' },
+      rb4: { position: 'RB', full_name: 'RB4' },
+      hurt: { position: 'WR', full_name: 'Hurt', injury_status: status },
+      wr2: { position: 'WR', full_name: 'WR2' },
+      wr3: { position: 'WR', full_name: 'WR3' },
+      wr4: { position: 'WR', full_name: 'WR4' },
+      wr5: { position: 'WR', full_name: 'WR5' },
+      te: { position: 'TE', full_name: 'TE' },
+      te2: { position: 'TE', full_name: 'TE2' },
+    };
+    const projected = {
+      qb: 10,
+      rb1: 9,
+      rb2: 8,
+      rb3: 7,
+      rb4: 4,
+      wr2: 8,
+      wr3: 7,
+      wr4: 6,
+      wr5: 3,
+      te: 5,
+      te2: 2,
+    };
+    if (proj != null) projected.hurt = proj;
+    const ids = Object.keys(playersData);
+    return startSitWithProjections(
+      { starters: ids.map((id) => ({ id, pts: 0 })), bench: [] },
+      playersData,
+      {},
+      {},
+      injuriesMap || {},
+      {},
+      projected,
+      'projections',
+      { futureWeek },
+    );
+  }
+
+  it('keeps a future-week projection for a carried Out tag', () => {
+    const result = runHurt({ status: 'Out', futureWeek: true });
+    const row = starterById(result, 'hurt');
+    expect(row).toBeTruthy();
+    expect(row.actualPts).toBeNull();
+    expect(row.currentExpected).toBe(14.2);
+    expect(row.ptsSource).not.toBe('actual');
+  });
+
+  it.each(['IR', 'PUP', 'Suspended'])('keeps a future-week projection for %s', (status) => {
+    const result = runHurt({ status, futureWeek: true });
+    expect(starterById(result, 'hurt').currentExpected).toBe(14.2);
+    expect(starterById(result, 'hurt').ptsSource).not.toBe('actual');
+  });
+
+  it('keeps a future-week projection when only the injury file says IR', () => {
+    const result = runHurt({
+      status: null,
+      futureWeek: true,
+      injuriesMap: { hurt: 'Injured Reserve' },
+    });
+    expect(starterById(result, 'hurt').currentExpected).toBe(14.2);
+  });
+
+  it('still zeros an Out player this week even with a projection', () => {
+    const result = runHurt({ status: 'Out', futureWeek: false });
+    expect(inStarters(result, 'hurt')).toBe(false);
+    const row = (result.bench || []).find((p) => p.id === 'hurt');
+    expect(row.actualPts).toBe(0);
+    expect(row.currentExpected).toBe(0);
+    expect(row.ptsSource).toBe('actual');
+  });
+
+  it('still zeros a future-week Out player who has no projection', () => {
+    const result = runHurt({ status: 'Out', futureWeek: true, proj: null });
+    expect(inStarters(result, 'hurt')).toBe(false);
+    const row = (result.bench || []).find((p) => p.id === 'hurt');
+    expect(row.currentExpected).toBe(0);
+    expect(row.ptsSource).toBe('actual');
+  });
+});
+

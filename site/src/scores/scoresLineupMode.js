@@ -36,3 +36,11 @@ export function resolveScoresLineupMode({
     isActiveWeek,
   };
 }
+
+/** Current season, week not yet the live NFL week. Past seasons are never future. */
+export function isFutureSeasonWeek(season, week) {
+  if (String(season) !== String(CURRENT_YEAR)) return false;
+  const w = Number(week);
+  if (!Number.isFinite(w)) return false;
+  return w > getCurrentNFLWeek(season);
+}

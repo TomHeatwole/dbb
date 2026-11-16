@@ -9,6 +9,7 @@ import {
   weekHasStartedGames,
 } from './hprojTeamSim';
 import { collectOutPlayerIds } from './liveOutlook';
+import { isFutureSeasonWeek } from './scoresLineupMode';
 
 function rosterById(rosters, id) {
   if (!Array.isArray(rosters) || id == null) return null;
@@ -24,11 +25,15 @@ function liveMapsForRoster({
   injuriesMap,
   playersData,
   playerIdMap,
+  futureWeek = false,
 }) {
   if (!gamesStarted || !roster || !weekScoresByRoster) return null;
   const rid = roster.roster_id;
   const score = weekScoresByRoster[rid] || weekScoresByRoster[String(rid)];
-  const outIds = collectOutPlayerIds(roster.players, injuriesMap, playersData, playerIdMap);
+  const outIds = collectOutPlayerIds(roster.players, injuriesMap, playersData, playerIdMap, {
+    futureWeek,
+    projectedPtsById,
+  });
   const opts = { projectedPtsById, outPlayerIds: outIds };
   const locked = lockedPtsFromCompletedGames(score, playerGameLabels, opts);
   const liveScale = liveScaleFromInProgressGames(score, playerGameLabels, opts);
@@ -80,6 +85,7 @@ export default function useHprojMatchupWinProb({
 }) {
   const [winProb, setWinProb] = useState(null);
   const gamesStarted = weekHasStartedGames(playerGameLabels);
+  const futureWeek = isFutureSeasonWeek(season, week);
 
   const leftRoster = useMemo(() => rosterById(rosters, team1Id), [rosters, team1Id]);
   const rightRoster = useMemo(() => rosterById(rosters, team2Id), [rosters, team2Id]);
@@ -94,6 +100,7 @@ export default function useHprojMatchupWinProb({
       injuriesMap,
       playersData,
       playerIdMap,
+      futureWeek,
     };
     return JSON.stringify({
       left: liveMapsForRoster({ roster: leftRoster, ...args }),
@@ -110,6 +117,7 @@ export default function useHprojMatchupWinProb({
     injuriesMap,
     playersData,
     playerIdMap,
+    futureWeek,
   ]);
 
   useEffect(() => {

@@ -23,7 +23,7 @@ import useLeagueHproj from './useLeagueHproj';
 import { hprojPageHref, ownerFirstNameCounts } from './hprojTeamSim';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 import { rosterWeekActivity } from './rosterWeekActivity';
-import { resolveScoresLineupMode } from './scoresLineupMode';
+import { isFutureSeasonWeek, resolveScoresLineupMode } from './scoresLineupMode';
 
 /**
  * Reusable league scores view (per-week scoreboard).
@@ -235,6 +235,7 @@ function ScoresView({
     () => resolveScoresLineupMode({ season, week, isWeekCompleteByGames, lineupMode }),
     [season, week, isWeekCompleteByGames, lineupMode],
   );
+  const futureWeek = isFutureSeasonWeek(season, week);
 
   // Compute player->game labels for the selected week (web tables)
   useEffect(() => {
@@ -527,7 +528,7 @@ function ScoresView({
     .map((e) => {
       const rid = e.roster_id;
       const raw = breakdownByRoster[rid];
-      const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode) : null;
+      const computed = raw ? startSitWithProjections(raw, playersData, playerIdMap, playerGameLabels, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode, { futureWeek }) : null;
       const pts = computed
         ? computed.starterTotal
         : typeof e.points === 'number'

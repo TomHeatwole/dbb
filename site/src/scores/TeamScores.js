@@ -18,7 +18,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import { createLiveScoresPoller } from '../utils/livePolling';
 import MidweekSimBanner from './MidweekSimBanner';
 import LineupModeToggle from './LineupModeToggle';
-import { resolveScoresLineupMode } from './scoresLineupMode';
+import { isFutureSeasonWeek, resolveScoresLineupMode } from './scoresLineupMode';
 import useLeagueHproj from './useLeagueHproj';
 import { hprojPageHref, ownerFirstNameCounts } from './hprojTeamSim';
 import { compareLeagueScoreRows } from './ScoreSplit';
@@ -419,6 +419,7 @@ const TeamScores = forwardRef(function TeamScores({
     () => resolveScoresLineupMode({ season, week, isWeekCompleteByGames, lineupMode }),
     [season, week, isWeekCompleteByGames, lineupMode],
   );
+  const futureWeek = isFutureSeasonWeek(season, week);
   const weekScoresByRoster = useMemo(
     () => (effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week) : null),
     [effectiveWeeksParsedData, week],
@@ -449,7 +450,7 @@ const TeamScores = forwardRef(function TeamScores({
     ? (weekScoresByRoster[rosterId] || weekScoresByRoster[String(rosterId)])
     : null;
   const weekBreakdown = rawWeekBreakdown
-    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode)
+    ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode, { futureWeek })
     : null;
 
   const weekBoard = useMemo(() => {
@@ -470,6 +471,7 @@ const TeamScores = forwardRef(function TeamScores({
           playerSeasonTotalsMap,
           projectedPtsById,
           effectiveLineupMode,
+          { futureWeek },
         )
         : null;
       return {
@@ -499,6 +501,7 @@ const TeamScores = forwardRef(function TeamScores({
     playerSeasonTotalsMap,
     projectedPtsById,
     effectiveLineupMode,
+    futureWeek,
     hprojByRoster,
     liveProjByRoster,
   ]);

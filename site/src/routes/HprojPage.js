@@ -4,6 +4,7 @@ import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import InfoPageWrapper from '../layout/InfoPageWrapper';
 import { CURRENT_YEAR, getDefaultDisplayWeek } from '../utils/DateHelper';
+import { isFutureSeasonWeek } from '../scores/scoresLineupMode';
 import { fetchTeamData, buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { fetchPlayersData, fetchPlayerIdMap, getPlayerInfo } from '../lookups/PlayerLookup';
 import { fetchInjuriesForWeek, getInjuryAbbreviation } from '../lookups/InjuryLookup';
@@ -540,8 +541,11 @@ function HprojPage() {
   const gamesStarted = weekHasStartedGames(playerGameLabels);
   const projMode = modeParam === 'live' ? 'live' : 'pregame';
   const outPlayerIds = useMemo(
-    () => collectOutPlayerIds(teamInfo?.roster?.players, injuriesMap, playersData, playerIdMap),
-    [teamInfo, injuriesMap, playersData, playerIdMap],
+    () => collectOutPlayerIds(teamInfo?.roster?.players, injuriesMap, playersData, playerIdMap, {
+      futureWeek: isFutureSeasonWeek(season, week),
+      projectedPtsById,
+    }),
+    [teamInfo, injuriesMap, playersData, playerIdMap, season, week, projectedPtsById],
   );
   const lockedPtsById = useMemo(() => {
     if (!teamInfo || !weekScoresByRoster) return {};

@@ -260,35 +260,3 @@ const tables = await sql`
   WHERE table_schema = 'public' ORDER BY table_name
 `;
 console.log('\nTables now in database:', tables.map((t) => t.table_name).join(', '));
-
-// Placeholder HProj playoff cache (invalid while games are live).
-try {
-  const { getSql: getSqlShared } = await import('../lib/db.mjs');
-  const {
-    PLAYOFF_HPROJ_CACHE_VERSION,
-    dummyPlayoffHprojView,
-  } = await import('../lib/playoffHprojCache.mjs');
-  const season = new Date().getFullYear();
-  const bankedThrough = 9;
-  const currentWeek = 10;
-  const cacheKey = `${PLAYOFF_HPROJ_CACHE_VERSION}:${season}:${bankedThrough}:${currentWeek}`;
-  const view = dummyPlayoffHprojView(season);
-  const sqlSeed = getSqlShared();
-  await sqlSeed`
-    INSERT INTO playoff_hproj_cache (
-      season, cache_key, cache_valid, banked_through, current_week, payload, computed_at
-    ) VALUES (
-      ${season},
-      ${cacheKey},
-      false,
-      ${bankedThrough},
-      ${currentWeek},
-      ${JSON.stringify(view)}::jsonb,
-      now()
-    )
-    ON CONFLICT (season) DO NOTHING
-  `;
-  console.log(`ok: playoff_hproj_cache placeholder (only if missing) season=${season}`);
-} catch (err) {
-  console.warn('playoff_hproj_cache seed skipped:', err?.message || err);
-}

@@ -5,7 +5,7 @@
 
 import { getSql } from './db.mjs';
 
-export const PLAYOFF_HPROJ_CACHE_VERSION = 6;
+export const PLAYOFF_HPROJ_CACHE_VERSION = 7;
 
 let tableReady = null;
 
