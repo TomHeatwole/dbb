@@ -217,6 +217,31 @@ export function isScoreboardWeekComplete(scoreboardJson) {
   return true;
 }
 
+function eventState(ev) {
+  const comps = ev && ev.competitions;
+  const comp = Array.isArray(comps) && comps.length ? comps[0] : null;
+  const stType = (comp && comp.status && comp.status.type) || (ev && ev.status && ev.status.type) || {};
+  let state = stType && stType.state ? stType.state : null;
+  if (!state && stType && stType.completed === true) {
+    state = 'post';
+  }
+  if (!state && typeof stType.name === 'string' && /FINAL|STATUS_FINAL|END|FULL/i.test(stType.name)) {
+    state = 'post';
+  }
+  return String(state || '').toLowerCase();
+}
+
+/** True when any NFL game on this scoreboard is in progress (not pre or final). */
+export function isScoreboardWeekHasLiveGame(scoreboardJson) {
+  if (!scoreboardJson) return false;
+  const events = extractEvents(scoreboardJson);
+  if (!events.length) return false;
+  return events.some((ev) => {
+    const s = eventState(ev);
+    return s === 'in' || s === 'live';
+  });
+}
+
 function isWeekFuture(scoreboardJson) {
   const events = extractEvents(scoreboardJson);
   if (!events.length) { return false; }

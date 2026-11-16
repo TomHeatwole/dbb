@@ -18,43 +18,17 @@ import StandingsRowHeader from '../standings/StandingsRowHeader';
 import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
+import { loadPlayoffHprojField, oddsByRosterFromField } from '../playoffs/playoffHprojFieldLoader';
 import {
-  loadPlayoffHprojField,
-  oddsByRosterFromField,
-  peekPlayoffHprojField,
-} from '../playoffs/playoffHprojFieldLoader';
+  PLAYOFF_PREDICTIONS_PATH,
+  fmtHprojOddsPct,
+  HprojOddsPctLink,
+} from '../playoffs/playoffHprojOddsUi';
 
 const OG_TITLE = 'Standings – The Hwang Dynasty';
 const OG_DESCRIPTION = '';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
-const PLAYOFF_PREDICTIONS_PATH = '/playoff_predictions';
-
-function fmtHprojOddsPct(n) {
-  if (!Number.isFinite(n)) return '—';
-  const v = Math.max(0, Math.min(100, Number(n) || 0));
-  return `${v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
-}
-
-function StandingsHprojPctLink({ loading, value, title }) {
-  if (loading) {
-    return (
-      <span className="standings-hproj-pct standings-hproj-pct--loading" title={title}>
-        <span className="standings-hproj-spinner" aria-hidden="true" />
-      </span>
-    );
-  }
-  return (
-    <Link
-      to={PLAYOFF_PREDICTIONS_PATH}
-      className="standings-hproj-pct standings-inline-link"
-      title={title}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {value}
-    </Link>
-  );
-}
 
 function getAvailableYearsAndDefault() {
   return { availableYears: allYears, defaultSeason: CURRENT_YEAR };
@@ -113,13 +87,6 @@ function LeagueStandings() {
     if (loading) return undefined;
 
     let cancelled = false;
-    const cached = peekPlayoffHprojField(season);
-    if (cached) {
-      setHprojOddsByRoster(oddsByRosterFromField(cached.field));
-      setHprojOddsState('ready');
-      return undefined;
-    }
-
     setHprojOddsState('loading');
     loadPlayoffHprojField(season, { cancelled: () => cancelled })
       .then((view) => {
@@ -1120,12 +1087,12 @@ function LeagueStandings() {
                   + (showPpgColumn ? '' : ' standings-metrics-rail--no-ppg')
                 }
               >
-                <StandingsHprojPctLink
+                <HprojOddsPctLink
                   loading={hprojOddsLoading}
                   value={fmtHprojOddsPct(hprojOddsByRoster?.[Number(rosterId)]?.playoffPct)}
                   title="HProj playoff odds"
                 />
-                <StandingsHprojPctLink
+                <HprojOddsPctLink
                   loading={hprojOddsLoading}
                   value={fmtHprojOddsPct(hprojOddsByRoster?.[Number(rosterId)]?.winPctIfMade)}
                   title="HProj championship odds (if you make the playoffs)"

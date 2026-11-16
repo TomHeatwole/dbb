@@ -17,6 +17,8 @@ import PageMeta from '../PageMeta';
 import LoadingState from '../LoadingState';
 import useViewportMode, { VIEWPORT_MODES } from '../hooks/useViewportMode';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
+import { loadPlayoffHprojField, oddsByRosterFromField } from '../playoffs/playoffHprojFieldLoader';
+import { fmtHprojOddsPct, HprojOddsPctLink } from '../playoffs/playoffHprojOddsUi';
 
 const allYears = [CURRENT_YEAR, ...Object.keys(PREVIOUS_YEARS)].sort((a, b) => b - a);
 
@@ -73,6 +75,8 @@ function Teams2Detail() {
 
   const [weeksParsedData, setWeeksParsedData] = useState(null);
   const [scoresLoading, setScoresLoading] = useState(true);
+  const [hprojOddsByRoster, setHprojOddsByRoster] = useState(null);
+  const [hprojOddsState, setHprojOddsState] = useState('idle');
   const [rosters, setRosters] = useState(null);
   const [users, setUsers] = useState(null);
   const myRosterId = useMyRosterId(rosters, users);
@@ -171,6 +175,35 @@ function Teams2Detail() {
       setScoresLoading(false);
     });
   }, [season]);
+
+  useEffect(() => {
+    if (season !== CURRENT_YEAR) {
+      setHprojOddsByRoster(null);
+      setHprojOddsState('idle');
+      return undefined;
+    }
+    if (scoresLoading) return undefined;
+
+    let cancelled = false;
+    setHprojOddsState('loading');
+    loadPlayoffHprojField(season, { cancelled: () => cancelled })
+      .then((view) => {
+        if (cancelled) return;
+        if (view && view.field) {
+          setHprojOddsByRoster(oddsByRosterFromField(view.field));
+          setHprojOddsState('ready');
+        } else {
+          setHprojOddsState('error');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setHprojOddsState('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [season, scoresLoading]);
 
   useEffect(() => {
     if (!/^[1-9]\d*$/.test(id)) return;
@@ -398,6 +431,9 @@ function Teams2Detail() {
   );
 
   const preSeason = isPreSeason(season);
+  const showHprojHeroStats = season === CURRENT_YEAR && !preSeason;
+  const hprojOddsLoading = hprojOddsState === 'loading';
+  const rosterHprojOdds = hprojOddsByRoster ? hprojOddsByRoster[Number(id)] : null;
 
   return (
     <>
@@ -454,6 +490,30 @@ function Teams2Detail() {
                   <div className="teams2-stats-item">
                     <span className="teams2-stats-value teams2-stats-low">{quickStats.lowWeek.pts}</span>
                     <span className="teams2-stats-label">Low (W{quickStats.lowWeek.week})</span>
+                  </div>
+                </>
+              )}
+              {showHprojHeroStats && (
+                <>
+                  <div className="teams2-stats-divider" />
+                  <div className="teams2-stats-item teams2-stats-item--hproj">
+                    <HprojOddsPctLink
+                      loading={hprojOddsLoading}
+                      value={fmtHprojOddsPct(rosterHprojOdds?.playoffPct)}
+                      title="HProj playoff odds — full breakdown"
+                      className="teams2-stats-value teams2-stats-hproj-link"
+                    />
+                    <span className="teams2-stats-label">Playoff %</span>
+                  </div>
+                  <div className="teams2-stats-divider" />
+                  <div className="teams2-stats-item teams2-stats-item--hproj">
+                    <HprojOddsPctLink
+                      loading={hprojOddsLoading}
+                      value={fmtHprojOddsPct(rosterHprojOdds?.winPctIfMade)}
+                      title="HProj championship odds (if you make the playoffs)"
+                      className="teams2-stats-value teams2-stats-hproj-link"
+                    />
+                    <span className="teams2-stats-label">Win %</span>
                   </div>
                 </>
               )}

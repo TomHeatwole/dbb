@@ -236,6 +236,17 @@ const statements = [
   `ALTER TABLE paper_track_meta DROP CONSTRAINT IF EXISTS paper_track_meta_sport_check`,
   `ALTER TABLE paper_track_meta ADD CONSTRAINT paper_track_meta_sport_check
      CHECK (sport IN ('sop', 'drives', 'corners'))`,
+  // HProj playoff field snapshot (standings + /playoff_predictions). cache_valid
+  // is set when the field was fully recomputed after the last live NFL week.
+  `CREATE TABLE IF NOT EXISTS playoff_hproj_cache (
+    season         INTEGER PRIMARY KEY,
+    cache_key      TEXT NOT NULL,
+    cache_valid    BOOLEAN NOT NULL DEFAULT false,
+    banked_through INTEGER,
+    current_week   INTEGER,
+    payload        JSONB NOT NULL,
+    computed_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
 ];
 
 for (const stmt of statements) {
@@ -249,3 +260,35 @@ const tables = await sql`
   WHERE table_schema = 'public' ORDER BY table_name
 `;
 console.log('\nTables now in database:', tables.map((t) => t.table_name).join(', '));
+
+// Placeholder HProj playoff cache (invalid while games are live).
+try {
+  const { getSql: getSqlShared } = await import('../lib/db.mjs');
+  const {
+    PLAYOFF_HPROJ_CACHE_VERSION,
+    dummyPlayoffHprojView,
+  } = await import('../lib/playoffHprojCache.mjs');
+  const season = new Date().getFullYear();
+  const bankedThrough = 9;
+  const currentWeek = 10;
+  const cacheKey = `${PLAYOFF_HPROJ_CACHE_VERSION}:${season}:${bankedThrough}:${currentWeek}`;
+  const view = dummyPlayoffHprojView(season);
+  const sqlSeed = getSqlShared();
+  await sqlSeed`
+    INSERT INTO playoff_hproj_cache (
+      season, cache_key, cache_valid, banked_through, current_week, payload, computed_at
+    ) VALUES (
+      ${season},
+      ${cacheKey},
+      false,
+      ${bankedThrough},
+      ${currentWeek},
+      ${JSON.stringify(view)}::jsonb,
+      now()
+    )
+    ON CONFLICT (season) DO NOTHING
+  `;
+  console.log(`ok: playoff_hproj_cache placeholder (only if missing) season=${season}`);
+} catch (err) {
+  console.warn('playoff_hproj_cache seed skipped:', err?.message || err);
+}

@@ -37,6 +37,7 @@
     { "source": "/api/kalshi-sop", "destination": "/api/fanduel-sop?source=kalshi" },
     { "source": "/api/me", "destination": "/api/auth" },
     { "source": "/api/onboard", "destination": "/api/auth" },
+    { "source": "/api/playoff-hproj", "destination": "/api/auth?playoffHproj=1" },
     { "source": "/api/track-drives", "destination": "/api/ncaaf-drives?track=1" },
     { "source": "/api/track-sop2", "destination": "/api/fanduel-sop?soccer=all&track=1" },
     { "source": "/api/track-corners", "destination": "/api/pl-corners?track=1" }

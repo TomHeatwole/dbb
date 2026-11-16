@@ -1,22 +1,94 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 
-const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent, className }) {
+function ordinalPlace(n) {
+  const place = Number(n);
+  if (!Number.isFinite(place) || place < 1) return '—';
+  const v = place % 100;
+  const suffix = (v >= 11 && v <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[place % 10] || 'th');
+  return `${place}${suffix}`;
+}
+
+function rankTone(rank, teamCount) {
+  if (rank == null || teamCount < 2) return null;
+  const midpoint = (teamCount + 1) / 2;
+  if (rank < midpoint) return 'pos';
+  if (rank > midpoint) return 'neg';
+  return null;
+}
+
+function rankTeams(teamScoresMap) {
+  const teams = Object.entries(teamScoresMap).map(([rid, scores]) => ({
+    rosterId: Number(rid),
+    avg: scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+  }));
+  teams.sort((a, b) => b.avg - a.avg);
+  let lastAvg = null;
+  let lastRank = 0;
+  teams.forEach((team, i) => {
+    if (lastAvg === null || Math.abs(team.avg - lastAvg) > 1e-9) {
+      lastRank = i + 1;
+      lastAvg = team.avg;
+    }
+    team.rank = lastRank;
+  });
+  return teams;
+}
+
+function toneClass(tone) {
+  if (tone === 'pos') return 'team-analytics-num--pos';
+  if (tone === 'neg') return 'team-analytics-num--neg';
+  return '';
+}
+
+const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent, className, variant = 'default' }) {
   const [hovered, setHovered] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
-  const hoverTimeout = React.useRef();
+  const [anchor, setAnchor] = useState(null);
+  const hoverTimeout = useRef();
+  const tooltipRef = useRef(null);
 
   function handleMouseEnter(e) {
     hoverTimeout.current = setTimeout(() => {
       setHovered(true);
     }, 50);
-    const rect = e.target.getBoundingClientRect();
-    setPos({ x: rect.left + rect.width / 2, y: rect.top });
+    const rect = e.currentTarget.getBoundingClientRect();
+    setAnchor(rect);
+    if (variant === 'ranklist') {
+      setPos({ x: rect.right + 10, y: rect.top });
+    } else {
+      setPos({ x: rect.left + rect.width / 2, y: rect.top });
+    }
   }
 
   function handleMouseLeave() {
     clearTimeout(hoverTimeout.current);
     setHovered(false);
   }
+
+  useLayoutEffect(() => {
+    if (!hovered || variant !== 'ranklist' || !tooltipRef.current || !anchor) return;
+    const tip = tooltipRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const margin = 8;
+    const gap = 10;
+    let left = anchor.right + gap;
+    if (left + tip.width > vw - margin) {
+      left = anchor.left - gap - tip.width;
+    }
+    left = Math.max(margin, Math.min(left, vw - tip.width - margin));
+    let top = anchor.top;
+    if (top + tip.height > vh - margin) {
+      top = Math.max(margin, vh - tip.height - margin);
+    }
+    if (Math.abs(left - pos.x) > 0.5 || Math.abs(top - pos.y) > 0.5) {
+      setPos({ x: left, y: top });
+    }
+  }, [hovered, variant, anchor, pos.x, pos.y]);
+
+  const tooltipStyle = variant === 'ranklist'
+    ? { left: pos.x, top: pos.y }
+    : { left: pos.x, top: pos.y - 48 };
 
   return (
     <td className="pos-avg-tooltip-relative">
@@ -31,8 +103,11 @@ const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent,
         </span>
         {hovered && tooltipContent && (
           <div
-            className="pos-avg-tooltip-fixed pos-avg-tooltip-fadein"
-            style={{ left: pos.x, top: pos.y - 48 }}
+            ref={tooltipRef}
+            className={`pos-avg-tooltip-fixed pos-avg-tooltip-fadein${variant === 'ranklist' ? ' pos-avg-tooltip-fixed--ranklist' : ''}`}
+            style={tooltipStyle}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             {tooltipContent}
           </div>
@@ -41,6 +116,89 @@ const HoverInfoCell = React.memo(function HoverInfoCell({ value, tooltipContent,
     </td>
   );
 });
+
+function RankListTooltip({
+  teams,
+  userRosterId,
+  posLabel,
+  userRank,
+  getTeamName,
+  getAvatarUrl,
+  searchParams,
+}) {
+  const teamCount = teams.length;
+  const qs = searchParams && searchParams.toString() ? `?${searchParams.toString()}` : '';
+  return (
+    <div className="pos-avg-rank-tooltip">
+      <div className="pos-avg-rank-tooltip-head">
+        {userRank != null
+          ? `${ordinalPlace(userRank)} of ${teamCount} at ${posLabel}`
+          : `${posLabel} by team`}
+      </div>
+      <ol className="pos-avg-rank-list">
+        {teams.map((team) => {
+          const isMe = Number(team.rosterId) === Number(userRosterId);
+          const avatar = getAvatarUrl(team.rosterId);
+          const inner = (
+            <>
+              <span className="pos-avg-rank-place">{team.rank}</span>
+              {avatar ? (
+                <img src={avatar} alt="" className="pos-avg-rank-avatar" />
+              ) : (
+                <span className="pos-avg-rank-avatar pos-avg-rank-avatar--empty" />
+              )}
+              <span className="pos-avg-rank-name">
+                {getTeamName(team.rosterId)}
+                {isMe ? ' · you' : ''}
+              </span>
+              <span className="pos-avg-rank-avg">{team.avg.toFixed(1)}</span>
+            </>
+          );
+          return (
+            <li
+              key={team.rosterId}
+              className={`pos-avg-rank-row${isMe ? ' pos-avg-rank-row--me' : ''}`}
+            >
+              {isMe ? (
+                <div className="pos-avg-rank-row-inner">{inner}</div>
+              ) : (
+                <a
+                  href={`/team/${team.rosterId}${qs}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pos-avg-rank-row-inner pos-avg-rank-row-link"
+                >
+                  {inner}
+                </a>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+function CeilingFloorTooltip({ rosterId, posLabel, avg, getTeamName, getAvatarUrl, searchParams }) {
+  const avatar = getAvatarUrl(rosterId);
+  const qs = searchParams && searchParams.toString() ? `?${searchParams.toString()}` : '';
+  return (
+    <a
+      href={`/team/${rosterId}${qs}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="pos-avg-tooltip-link"
+    >
+      {avatar && (
+        <img src={avatar} alt={getTeamName(rosterId)} className="owner-avatar pos-avg-tooltip-avatar" />
+      )}
+      <span className="pos-avg-tooltip-team-name">{getTeamName(rosterId)}</span>
+      {posLabel} Avg: {avg.toFixed(1)}
+      <br /><br />
+      <span className="pos-avg-tooltip-analytics-link">See Team Analytics &rarr;</span>
+    </a>
+  );
+}
 
 export default function PositionBreakdownTable({
   weeksParsedData,
@@ -54,21 +212,31 @@ export default function PositionBreakdownTable({
   selectedPos,
   onSelectPosition,
 }) {
-  function getTeamName(rid) {
-    if (!rosters || !users) return `Team ${rid}`;
+  function getUser(rid) {
+    if (!rosters || !users) return null;
     const roster = rosters.find(r => Number(r.roster_id) === Number(rid));
-    if (!roster) return `Team ${rid}`;
-    const user = users.find(u => String(u.user_id) === String(roster.owner_id));
+    if (!roster) return null;
+    return users.find(u => String(u.user_id) === String(roster.owner_id)) || null;
+  }
+
+  function getTeamName(rid) {
+    const user = getUser(rid);
     if (user && user.metadata && user.metadata.team_name) return user.metadata.team_name;
     if (user && user.display_name) return `Team ${user.display_name}`;
     return `Team ${rid}`;
+  }
+
+  function getAvatarUrl(rid) {
+    const user = getUser(rid);
+    if (!user) return null;
+    return user.team_avatar_url || user.user_avatar_url || user.avatar_url || null;
   }
 
   return (
     <div className="team-analytics-card team-analytics-table-card">
       <div className="team-analytics-card-head">
         <h3 className="team-analytics-card-title">Positional averages</h3>
-        <p className="team-analytics-card-sub">Click a slot to inspect weekly scoring and who started there</p>
+        <p className="team-analytics-card-sub">Place vs every other team at that slot. Hover rank to see the board</p>
       </div>
       <div className="team-analytics-table-scroll">
       <table className="team-analytics-table">
@@ -76,15 +244,13 @@ export default function PositionBreakdownTable({
           <tr>
             <th>Position</th>
             <th>Team</th>
-            <th>League</th>
+            <th>Rank</th>
             <th>Ceiling</th>
             <th>Floor</th>
           </tr>
         </thead>
         <tbody>
           {STARTER_POSITION_NAMES.map((posLabel, posIdx) => {
-            let userScores = [];
-            // Map: rosterId -> [scores]
             const teamScoresMap = {};
             for (let weekIdx = 0; weekIdx < (endWeek - startWeek + 1); ++weekIdx) {
               const weekNum = startWeek + weekIdx;
@@ -98,37 +264,35 @@ export default function PositionBreakdownTable({
                 const rid = entry.roster_id;
                 if (!teamScoresMap[rid]) teamScoresMap[rid] = [];
                 teamScoresMap[rid].push(value);
-                if (rid === rosterId) {
-                  userScores.push(value);
-                }
               });
             }
-            // Compute league averages (excluding user)
-            const leagueTeamAveragesArr = Object.entries(teamScoresMap)
-              .filter(([rid]) => Number(rid) !== rosterId)
-              .map(([rid, scores]) => ({
-                rosterId: Number(rid),
-                avg: scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0
-              }));
-            // Add the user's team to the array for ceiling/floor calculation
-            let allTeamAveragesArr = [...leagueTeamAveragesArr];
-            if (userScores.length) {
-              allTeamAveragesArr.push({ rosterId: Number(rosterId), avg: userScores.reduce((a, b) => a + b, 0) / userScores.length });
-            }
-            const leagueAvg = leagueTeamAveragesArr.length ? (leagueTeamAveragesArr.reduce((a, b) => a + b.avg, 0) / leagueTeamAveragesArr.length) : 0;
+            const rankedTeams = rankTeams(teamScoresMap);
+            const userTeam = rankedTeams.find(t => Number(t.rosterId) === Number(rosterId));
+            const userAvg = userTeam ? userTeam.avg : 0;
+            const userRank = userTeam ? userTeam.rank : null;
+            const teamCount = rankedTeams.length;
+            const tone = rankTone(userRank, teamCount);
             let leagueCeiling = 0, leagueCeilingRoster = null;
             let leagueMin = 0, leagueMinRoster = null;
-            if (allTeamAveragesArr.length) {
-              const maxObj = allTeamAveragesArr.reduce((max, curr) => curr.avg > max.avg ? curr : max, allTeamAveragesArr[0]);
-              const minObj = allTeamAveragesArr.reduce((min, curr) => curr.avg < min.avg ? curr : min, allTeamAveragesArr[0]);
+            if (rankedTeams.length) {
+              const maxObj = rankedTeams[0];
+              const minObj = rankedTeams[rankedTeams.length - 1];
               leagueCeiling = maxObj.avg;
               leagueCeilingRoster = maxObj.rosterId;
               leagueMin = minObj.avg;
               leagueMinRoster = minObj.rosterId;
             }
-            const userAvg = userScores.length ? (userScores.reduce((a, b) => a + b, 0) / userScores.length) : 0;
-            // Calculate delta
-            const delta = leagueAvg === 0 ? 0 : ((userAvg - leagueAvg) / leagueAvg) * 100;
+            const rankTooltip = (
+              <RankListTooltip
+                teams={rankedTeams}
+                userRosterId={rosterId}
+                posLabel={posLabel}
+                userRank={userRank}
+                getTeamName={getTeamName}
+                getAvatarUrl={getAvatarUrl}
+                searchParams={searchParams}
+              />
+            );
 
             return (
               <tr
@@ -143,69 +307,44 @@ export default function PositionBreakdownTable({
                 <td className="team-analytics-table-label">{posLabel}</td>
                 <HoverInfoCell
                   value={userAvg.toFixed(1)}
-                  className={delta >= 0 ? 'team-analytics-num--pos' : 'team-analytics-num--neg'}
-                  tooltipContent={
-                    <>
-                      League Avg: <span>{leagueAvg.toFixed(1)}</span><br />
-                      <span className={delta >= 0 ? "pos-avg-tooltip-delta-pos" : "pos-avg-tooltip-delta-neg"}>
-                        {delta >= 0 ? '+' : ''}{delta.toFixed(1)}%
-                      </span>
-                    </>
-                  }
+                  className={toneClass(tone)}
+                  variant="ranklist"
+                  tooltipContent={rankTooltip}
                 />
-                <td>{leagueAvg.toFixed(1)}</td>
+                <HoverInfoCell
+                  value={userRank != null ? ordinalPlace(userRank) : '—'}
+                  className={toneClass(tone)}
+                  variant="ranklist"
+                  tooltipContent={rankTooltip}
+                />
                 <HoverInfoCell
                   value={leagueCeiling.toFixed(1)}
                   tooltipContent={
-                    (() => {
-                      const roster = rosters && leagueCeilingRoster != null ? rosters.find(r => Number(r.roster_id) === Number(leagueCeilingRoster)) : null;
-                      const user = roster && users ? users.find(u => String(u.user_id) === String(roster.owner_id)) : null;
-                      return (
-                        <>
-                          <a
-                            href={`/team/${leagueCeilingRoster}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="pos-avg-tooltip-link"
-                          >
-                            {user && user.avatar_url && (
-                              <img src={user.avatar_url} alt={getTeamName(leagueCeilingRoster)} className="owner-avatar pos-avg-tooltip-avatar" />
-                            )}
-                            <span className="pos-avg-tooltip-team-name">{getTeamName(leagueCeilingRoster)}</span>
-                            {posLabel} Avg: {leagueCeiling.toFixed(1)}
-                            <br /><br />
-                            <span className="pos-avg-tooltip-analytics-link">See Team Analytics &rarr;</span>
-                          </a>
-                        </>
-                      );
-                    })()
+                    leagueCeilingRoster != null ? (
+                      <CeilingFloorTooltip
+                        rosterId={leagueCeilingRoster}
+                        posLabel={posLabel}
+                        avg={leagueCeiling}
+                        getTeamName={getTeamName}
+                        getAvatarUrl={getAvatarUrl}
+                        searchParams={searchParams}
+                      />
+                    ) : null
                   }
                 />
                 <HoverInfoCell
                   value={leagueMin.toFixed(1)}
                   tooltipContent={
-                    (() => {
-                      const roster = rosters && leagueMinRoster != null ? rosters.find(r => Number(r.roster_id) === Number(leagueMinRoster)) : null;
-                      const user = roster && users ? users.find(u => String(u.user_id) === String(roster.owner_id)) : null;
-                      return (
-                        <>
-                          <a
-                            href={`/team/${leagueMinRoster}${searchParams && searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="pos-avg-tooltip-link"
-                          >
-                            {user && user.avatar_url && (
-                              <img src={user.avatar_url} alt={getTeamName(leagueMinRoster)} className="owner-avatar pos-avg-tooltip-avatar" />
-                            )}
-                            <span className="pos-avg-tooltip-team-name">{getTeamName(leagueMinRoster)}</span>
-                            {posLabel} Avg: {leagueMin.toFixed(1)}
-                            <br /><br />
-                            <span className="pos-avg-tooltip-analytics-link">See Team Analytics &rarr;</span>
-                          </a>
-                        </>
-                      );
-                    })()
+                    leagueMinRoster != null ? (
+                      <CeilingFloorTooltip
+                        rosterId={leagueMinRoster}
+                        posLabel={posLabel}
+                        avg={leagueMin}
+                        getTeamName={getTeamName}
+                        getAvatarUrl={getAvatarUrl}
+                        searchParams={searchParams}
+                      />
+                    ) : null
                   }
                 />
               </tr>
@@ -216,4 +355,4 @@ export default function PositionBreakdownTable({
       </div>
     </div>
   );
-} 
+}

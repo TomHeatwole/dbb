@@ -43,6 +43,7 @@ const server = http.createServer(async (req, res) => {
     '/api/exchange': './api/exchange.mjs',
     '/api/onboard': './api/auth.mjs',
     '/api/auth': './api/auth.mjs',
+    '/api/playoff-hproj': './api/auth.mjs',
   };
 
   const getHandlers = {
@@ -63,6 +64,7 @@ const server = http.createServer(async (req, res) => {
     '/api/exchange': './api/exchange.mjs',
     '/api/me': './api/auth.mjs',
     '/api/auth': './api/auth.mjs',
+    '/api/playoff-hproj': './api/auth.mjs',
     '/api/track-drives': './api/ncaaf-drives.mjs',
     '/api/track-sop2': './api/fanduel-sop.mjs',
     '/api/track-corners': './api/pl-corners.mjs',
@@ -103,6 +105,9 @@ const server = http.createServer(async (req, res) => {
         }
         if (pathname === '/api/track-corners') {
           req.query.track = '1';
+        }
+        if (pathname === '/api/playoff-hproj') {
+          req.query.playoffHproj = '1';
         }
         const { default: handler } = await import(`${handlerName}?v=${Date.now()}`);
         await handler(req, res);

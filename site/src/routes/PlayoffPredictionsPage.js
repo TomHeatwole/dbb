@@ -5,7 +5,7 @@ import PageMeta from '../PageMeta';
 import { isMyRoster, useMyCurrentRosterId } from '../hooks/useAuthUser';
 import PlayoffFourSelector from '../playoffs/PlayoffFourSelector';
 import { PLAYOFF_SPOTS, simulatePlayoffField } from '../playoffs/playoffHprojOdds';
-import { loadPlayoffHprojField, peekPlayoffHprojField } from '../playoffs/playoffHprojFieldLoader';
+import { loadPlayoffHprojField } from '../playoffs/playoffHprojFieldLoader';
 import { CURRENT_YEAR } from '../utils/DateHelper';
 import { trackPageLoad } from '../utils/UsageTracker';
 import './PlayoffPredictionsPage.css';
@@ -257,11 +257,6 @@ function PlayoffPredictionsPage() {
     (async () => {
       try {
         const season = CURRENT_YEAR;
-        const cached = peekPlayoffHprojField(season);
-        if (cached) {
-          setView(cached);
-          return;
-        }
         setLabel('Loading scores and projections…');
         const nextView = await loadPlayoffHprojField(season, {
           cancelled: () => cancelled,
