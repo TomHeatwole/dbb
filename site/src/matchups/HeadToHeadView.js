@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
 import MatchupView from './MatchupView';
+import { computeWeeklyTotals, resolveMatchupWinProbWeek, sumRange } from './matchupWeekTotals';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import LoadingState from '../LoadingState';
 import { useMyRosterId } from '../hooks/useAuthUser';
@@ -53,6 +54,7 @@ function HeadToHeadView({
   highlightMode = 'default',
   highlightThreshold = null
 }) {
+  const [compareScope, setCompareScope] = useState('season');
   const myRosterId = useMyRosterId(preloadedTeamData?.rosters, preloadedTeamData?.users);
   const safeSelected = normalizeSelectedIds(selectedIds);
   const [team1Id, team2Id] = useMemo(() => {
@@ -80,6 +82,35 @@ function HeadToHeadView({
   const seedByRosterId = useMemo(() => buildSeedMap(teams), [teams]);
   const seed1 = team1Id != null ? (seedByRosterId[String(team1Id)] || null) : null;
   const seed2 = team2Id != null ? (seedByRosterId[String(team2Id)] || null) : null;
+
+  const weekTotals1 = useMemo(
+    () => computeWeeklyTotals(
+      preloadedWeeksData,
+      preloadedPlayersData,
+      preloadedPlayerIdMap,
+      team1Id,
+      defaultWeeks,
+    ),
+    [preloadedWeeksData, preloadedPlayersData, preloadedPlayerIdMap, team1Id, defaultWeeks],
+  );
+  const weekTotals2 = useMemo(
+    () => computeWeeklyTotals(
+      preloadedWeeksData,
+      preloadedPlayersData,
+      preloadedPlayerIdMap,
+      team2Id,
+      defaultWeeks,
+    ),
+    [preloadedWeeksData, preloadedPlayersData, preloadedPlayerIdMap, team2Id, defaultWeeks],
+  );
+
+  const nflWeek = isCurrentSeason ? getCurrentNFLWeek() : (defaultWeeks[defaultWeeks.length - 1] || 1);
+  const windowStart = defaultWeeks.length ? Number(defaultWeeks[0]) : 1;
+  const focusWeek = resolveMatchupWinProbWeek(defaultWeeks, nflWeek);
+  const priorEnd = focusWeek != null ? focusWeek - 1 : windowStart - 1;
+  const priorLeft = priorEnd >= windowStart ? sumRange(weekTotals1, windowStart, priorEnd) : 0;
+  const priorRight = priorEnd >= windowStart ? sumRange(weekTotals2, windowStart, priorEnd) : 0;
+  const showCompareToggle = Number.isFinite(windowStart) && priorEnd >= windowStart;
 
   const handleSelectionChange = (next) => {
     if (onSelectionChange) {
@@ -132,6 +163,10 @@ function HeadToHeadView({
                 seed2={seed2}
                 highlightMode={highlightMode}
                 highlightThreshold={highlightThreshold}
+                winProbLeftOffset={priorLeft}
+                winProbRightOffset={priorRight}
+                winProbScope={showCompareToggle ? compareScope : 'week'}
+                onWinProbScopeChange={showCompareToggle ? setCompareScope : null}
               />
             </div>
           </div>

@@ -105,7 +105,7 @@ export function peekPlayoffHprojField(season) {
   return null;
 }
 
-/** @returns {Record<number, { playoffPct: number, winPctIfMade: number }>} */
+/** @returns {Record<number, { playoffPct: number, winPct: number, winPctIfMade: number }>} */
 export function oddsByRosterFromField(field) {
   const byRoster = {};
   if (!field || !Array.isArray(field.rows)) return byRoster;
@@ -114,6 +114,7 @@ export function oddsByRosterFromField(field) {
     if (!Number.isFinite(rid)) continue;
     byRoster[rid] = {
       playoffPct: Number(row.playoffPct) || 0,
+      winPct: Number(row.winPct) || 0,
       winPctIfMade: Number(row.winPctIfMade) || 0,
     };
   }

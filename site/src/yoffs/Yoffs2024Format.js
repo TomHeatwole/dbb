@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchTeamData } from '../lookups/TeamLookup';
 import { getStandings, getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from '../scores/ScoresParser';
@@ -13,6 +14,90 @@ import YoffsScoresView from './YoffsScoresView';
 import HeadToHeadView from '../matchups/HeadToHeadView';
 import LoadingState from '../LoadingState';
 import { useMyRosterId, isMyRoster } from '../hooks/useAuthUser';
+import { loadPlayoffHprojField, oddsByRosterFromField } from '../playoffs/playoffHprojFieldLoader';
+import { fmtHprojOddsPct, HprojOddsPctLink, PLAYOFF_PREDICTIONS_PATH } from '../playoffs/playoffHprojOddsUi';
+
+function PrePlayoffOverview({
+  rows,
+  myRosterId,
+  getTeamName,
+  getAvatar,
+  oddsByRoster,
+  oddsLoading,
+}) {
+  const picture = [...(rows || [])]
+    .sort((a, b) => (a.place != null ? a.place : 999) - (b.place != null ? b.place : 999))
+    .slice(0, 4);
+
+  return (
+    <div className="yoffs-pre">
+      <Link className="yoffs-pre-promo" to={PLAYOFF_PREDICTIONS_PATH}>
+        <span className="yoffs-pre-promo-copy">
+          <span className="yoffs-pre-promo-title">Playoff predictions</span>
+          <span className="yoffs-pre-promo-text">
+            These four lead on season points. Their chance to make the playoffs and to win them updates every week — the full field is on Predictions.
+          </span>
+        </span>
+        <span className="yoffs-pre-promo-cta">Open Predictions →</span>
+      </Link>
+
+      <div className="yoffs-pre-head">
+        <span>Current top 4</span>
+        <Link to={PLAYOFF_PREDICTIONS_PATH} title="Chance to finish in the top four">
+          Playoff odds
+        </Link>
+        <Link to={PLAYOFF_PREDICTIONS_PATH} title="Chance to win the title if they make the playoffs">
+          Win playoffs
+        </Link>
+      </div>
+
+      <div className="yoffs-pre-list">
+        {picture.map((row) => {
+          const rosterId = row.rosterId;
+          const mine = isMyRoster(rosterId, myRosterId);
+          const teamName = getTeamName(rosterId);
+          const avatarUrl = getAvatar(rosterId);
+          const odds = oddsByRoster ? oddsByRoster[Number(rosterId)] : null;
+          return (
+            <div
+              key={rosterId}
+              className={`standings-row standings-row--playoff${mine ? ' standings-row--me' : ''}`}
+            >
+              <div className="yoffs-pre-row">
+                <Link className="yoffs-pre-team" to={`/team/${rosterId}`}>
+                  <span className="standings-rank">#{row.place}</span>
+                  {avatarUrl ? (
+                    <img
+                      className={`standings-avatar${mine ? ' me-avatar' : ''}`}
+                      src={avatarUrl}
+                      alt=""
+                    />
+                  ) : null}
+                  <span className="standings-title">
+                    {teamName}
+                    {mine ? <span className="me-chip">YOU</span> : null}
+                  </span>
+                </Link>
+                <HprojOddsPctLink
+                  loading={oddsLoading}
+                  value={fmtHprojOddsPct(odds && odds.playoffPct)}
+                  title={`${teamName} playoff odds`}
+                  className="yoffs-pre-pct"
+                />
+                <HprojOddsPctLink
+                  loading={oddsLoading}
+                  value={fmtHprojOddsPct(odds && odds.winPctIfMade)}
+                  title={`${teamName} odds to win the playoffs if they make it`}
+                  className="yoffs-pre-pct yoffs-pre-pct--title"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function Yoffs2024Format({
   season,
@@ -38,6 +123,8 @@ function Yoffs2024Format({
   const [playerIdMap, setPlayerIdMap] = useState(null);
   const [currentWeekLabels, setCurrentWeekLabels] = useState({});
   const [isCurrentWeekDone, setIsCurrentWeekDone] = useState(true);
+  const [hprojOddsByRoster, setHprojOddsByRoster] = useState(null);
+  const [hprojOddsState, setHprojOddsState] = useState('idle');
   const tabOptions = ['Overview', 'Scores', 'Head to Head'];
   const isMobile = useIsMobile();
 
@@ -74,9 +161,6 @@ function Yoffs2024Format({
           players = null;
         }
 
-        const startIdx = playoffStartWeek - 1;
-        const endIdx = playoffEndWeek - 1;
-
         if (!cancelled) {
           setWeeksParsedData(weeksData);
           setRosters(teamData.rosters);
@@ -89,11 +173,7 @@ function Yoffs2024Format({
         const regularSliceFull = weeksData.slice(0, 14);
         const weeksRegular = regularSliceFull.filter(Boolean);
 
-        // Playoff weeks: weeks 14–17
-        const playoffSlice = weeksData.slice(startIdx, endIdx + 1);
-        const weeksPlayoffs = playoffSlice.filter(Boolean);
-
-        if (!weeksPlayoffs.length || !weeksRegular.length) {
+        if (!weeksRegular.length) {
           if (!cancelled) {
             setRows([]);
             setLoading(false);
@@ -333,6 +413,37 @@ function Yoffs2024Format({
     };
   }, [season, isCurrentWeekDone, playoffStartWeek, playoffEndWeek]);
 
+  const beforePlayoffs = String(season) === String(CURRENT_YEAR)
+    && getCurrentNFLWeek() < playoffStartWeek;
+
+  useEffect(() => {
+    if (!beforePlayoffs) {
+      setHprojOddsByRoster(null);
+      setHprojOddsState('idle');
+      return undefined;
+    }
+
+    let cancelled = false;
+    setHprojOddsState('loading');
+    loadPlayoffHprojField(season, { cancelled: () => cancelled })
+      .then((view) => {
+        if (cancelled) return;
+        if (view && view.field) {
+          setHprojOddsByRoster(oddsByRosterFromField(view.field));
+          setHprojOddsState('ready');
+        } else {
+          setHprojOddsState('error');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setHprojOddsState('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [beforePlayoffs, season]);
+
   useEffect(() => {
     let cancelled = false;
     const isCurrentSeasonLocal = season === CURRENT_YEAR;
@@ -485,7 +596,13 @@ function Yoffs2024Format({
   }
 
   if (!rows.length) {
-    return <div>No playoff data found for weeks {playoffStartWeek}–{playoffEndWeek}.</div>;
+    return (
+      <div>
+        {beforePlayoffs
+          ? 'No season scores yet, so the playoff picture isn\'t available.'
+          : `No playoff data found for weeks ${playoffStartWeek}–${playoffEndWeek}.`}
+      </div>
+    );
   }
 
   const hasAnyExpanded = Object.values(expanded || {}).some(Boolean);
@@ -532,7 +649,18 @@ function Yoffs2024Format({
         </div>
       )}
 
-      {selectedTab === 'Overview' && (
+      {selectedTab === 'Overview' && beforePlayoffs && (
+        <PrePlayoffOverview
+          rows={rows}
+          myRosterId={myRosterId}
+          getTeamName={getTeamName}
+          getAvatar={getAvatar}
+          oddsByRoster={hprojOddsByRoster}
+          oddsLoading={hprojOddsState === 'loading'}
+        />
+      )}
+
+      {selectedTab === 'Overview' && !beforePlayoffs && (
         <div className={'standings-list' + (hasAnyExpanded ? ' standings-list--expanded' : '')}>
           {rows.map((row) => {
         const rosterId = row.rosterId;

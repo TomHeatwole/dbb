@@ -27,8 +27,12 @@ import useLeagueHproj from '../scores/useLeagueHproj';
 import useHprojMatchupWinProb from '../scores/useHprojMatchupWinProb';
 import HprojHint from '../scores/HprojHint';
 import MatchupWinProbLine from './MatchupWinProbLine';
+import { computeWeeklyTotals } from './matchupWeekTotals';
+import { resolveMatchupWinProbWeek, sumRange } from './matchupWinProbWeek';
 import { hprojPageHref, ownerFirstNameCounts } from '../scores/hprojTeamSim';
 import { HPROJ_ON_SCORES } from '../utils/featureToggles';
+
+const MIN_FOCUS_PROJECTIONS = 40;
 
 function resolveTeamMeta(teamData, rosterId) {
   if (rosterId == null) {
@@ -135,6 +139,7 @@ function MatchupView({
   const [gridExpandedByWeek, setGridExpandedByWeek] = useState({});
   const [playersTeamMapByWeek, setPlayersTeamMapByWeek] = useState({});
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [internalWinProbScope, setInternalWinProbScope] = useState('season');
 
   const isMobileView = useIsMobile();
   const isCurrentSeason = String(season) === String(CURRENT_YEAR);
@@ -178,38 +183,107 @@ function MatchupView({
   }, [playerGameLabelsByWeek, espnStatLines, currentWeekNum]);
   const currentWeekLabels = (labelsByWeek && labelsByWeek[currentWeekNum]) || {};
   const projectedPtsById = useWeeklyProjectedPoints(season, currentWeekNum);
-  const currentWeekInjuries = (injuriesByWeek && injuriesByWeek[currentWeekNum]) || {};
-  const hprojEnabled = HPROJ_ON_SCORES && isCurrentSeason;
-  const matchupIncludesCurrentWeek = effectiveWeeks.some(
-    (w) => Number(w) === Number(currentWeekNum),
+  const winProbWeek = useMemo(
+    () => resolveMatchupWinProbWeek(effectiveWeeks, currentWeekNum),
+    [effectiveWeeks, currentWeekNum],
   );
+  const focusWeekProjectedPts = useWeeklyProjectedPoints(
+    season,
+    winProbWeek != null ? winProbWeek : currentWeekNum,
+  );
+  const winProbProjectedPts = useMemo(() => {
+    if (winProbWeek == null || Number(winProbWeek) === Number(currentWeekNum)) {
+      return projectedPtsById;
+    }
+    const count = Object.keys(focusWeekProjectedPts || {}).length;
+    return count >= MIN_FOCUS_PROJECTIONS ? focusWeekProjectedPts : projectedPtsById;
+  }, [winProbWeek, currentWeekNum, projectedPtsById, focusWeekProjectedPts]);
+  const winProbScores = useMemo(
+    () => (weeksParsedData && winProbWeek != null
+      ? getWeekScoreBreakdown(weeksParsedData, winProbWeek, teamData?.rosters)
+      : null),
+    [weeksParsedData, winProbWeek, teamData],
+  );
+  const winProbLabels = (winProbWeek != null && labelsByWeek)
+    ? (labelsByWeek[winProbWeek] || {})
+    : {};
+  const currentWeekInjuries = (injuriesByWeek && injuriesByWeek[currentWeekNum]) || {};
+  const winProbInjuries = (winProbWeek != null && injuriesByWeek)
+    ? (injuriesByWeek[winProbWeek] || {})
+    : {};
+  const hprojEnabled = HPROJ_ON_SCORES && isCurrentSeason;
+  const winProbIsCurrentWeek = winProbWeek != null
+    && Number(winProbWeek) === Number(currentWeekNum);
+  const parentControlsWinProbScope = typeof onWinProbScopeChange === 'function';
+  const autoWeekTotals1 = useMemo(
+    () => (parentControlsWinProbScope
+      ? {}
+      : computeWeeklyTotals(weeksParsedData, playersData, playerIdMap, team1Id, effectiveWeeks)),
+    [parentControlsWinProbScope, weeksParsedData, playersData, playerIdMap, team1Id, effectiveWeeks],
+  );
+  const autoWeekTotals2 = useMemo(
+    () => (parentControlsWinProbScope
+      ? {}
+      : computeWeeklyTotals(weeksParsedData, playersData, playerIdMap, team2Id, effectiveWeeks)),
+    [parentControlsWinProbScope, weeksParsedData, playersData, playerIdMap, team2Id, effectiveWeeks],
+  );
+  const matchupWindowStart = useMemo(() => {
+    const nums = effectiveWeeks.map(Number).filter((w) => Number.isFinite(w));
+    return nums.length ? Math.min(...nums) : null;
+  }, [effectiveWeeks]);
+  const autoPriorEnd = winProbWeek != null ? winProbWeek - 1 : null;
+  const autoHasPrior = !parentControlsWinProbScope
+    && matchupWindowStart != null
+    && autoPriorEnd != null
+    && autoPriorEnd >= matchupWindowStart;
+  const autoLeft = autoHasPrior ? sumRange(autoWeekTotals1, matchupWindowStart, autoPriorEnd) : 0;
+  const autoRight = autoHasPrior ? sumRange(autoWeekTotals2, matchupWindowStart, autoPriorEnd) : 0;
+  const bufferLeft = playoffBufferSide === 'left' ? (Number(playoffBufferAmount) || 0) : 0;
+  const bufferRight = playoffBufferSide === 'right' ? (Number(playoffBufferAmount) || 0) : 0;
+  const hasBufferOffset = bufferLeft > 0 || bufferRight > 0;
+  const showInternalWinProbToggle = !parentControlsWinProbScope && (autoHasPrior || hasBufferOffset);
+  const activeWinProbScope = parentControlsWinProbScope
+    ? winProbScope
+    : (showInternalWinProbToggle ? internalWinProbScope : 'week');
+  const activeWinProbScopeChange = parentControlsWinProbScope
+    ? onWinProbScopeChange
+    : (showInternalWinProbToggle ? setInternalWinProbScope : null);
+  const hprojWeek = winProbWeek != null ? winProbWeek : currentWeekNum;
+  const hprojProjectedPts = winProbWeek != null ? winProbProjectedPts : projectedPtsById;
+  const hprojLabels = winProbWeek != null ? winProbLabels : currentWeekLabels;
+  const hprojScores = winProbWeek != null ? winProbScores : currentWeekScores;
+  const hprojInjuries = winProbWeek != null ? winProbInjuries : currentWeekInjuries;
   const { hprojByRoster, liveProjByRoster, gamesStarted: hprojGamesStarted } = useLeagueHproj({
     season,
-    week: currentWeekNum,
+    week: hprojWeek,
     rosters: teamData?.rosters,
     playersData,
-    projectedPtsById,
-    playerGameLabels: currentWeekLabels,
-    weekScoresByRoster: currentWeekScores,
-    injuriesMap: currentWeekInjuries,
+    projectedPtsById: hprojProjectedPts,
+    playerGameLabels: hprojLabels,
+    weekScoresByRoster: hprojScores,
+    injuriesMap: hprojInjuries,
     playerIdMap,
     enabled: hprojEnabled,
   });
   const { winProb: matchupWinProb, gamesStarted: matchupWinLive } = useHprojMatchupWinProb({
     season,
-    week: currentWeekNum,
+    week: winProbWeek != null ? winProbWeek : currentWeekNum,
     team1Id,
     team2Id,
     rosters: teamData?.rosters,
     playersData,
-    projectedPtsById,
-    playerGameLabels: currentWeekLabels,
-    weekScoresByRoster: currentWeekScores,
-    injuriesMap: currentWeekInjuries,
+    projectedPtsById: winProbProjectedPts,
+    playerGameLabels: winProbLabels,
+    weekScoresByRoster: winProbScores,
+    injuriesMap: winProbInjuries,
     playerIdMap,
-    enabled: hprojEnabled && matchupIncludesCurrentWeek && team1Id != null && team2Id != null,
-    leftOffset: winProbScope === 'season' ? winProbLeftOffset : 0,
-    rightOffset: winProbScope === 'season' ? winProbRightOffset : 0,
+    enabled: hprojEnabled && winProbWeek != null && team1Id != null && team2Id != null,
+    leftOffset: activeWinProbScope === 'season'
+      ? (Number(winProbLeftOffset) || 0) + autoLeft + bufferLeft
+      : 0,
+    rightOffset: activeWinProbScope === 'season'
+      ? (Number(winProbRightOffset) || 0) + autoRight + bufferRight
+      : 0,
   });
   overlayCtxRef.current = { playerIdMap, playersData };
 
@@ -1057,7 +1131,7 @@ function MatchupView({
   const makeWeekProjChip = (rosterId, { dotAfter = false } = {}) => {
     if (!HPROJ_ON_SCORES || !isCurrentSeason || rosterId == null) return null;
     const href = hprojPageHref(
-      currentWeekNum,
+      hprojWeek,
       { rosterId, ownerName: ownerDisplayName(teamData, rosterId) },
       hprojFirstNameCounts,
     );
@@ -1318,8 +1392,10 @@ function MatchupView({
           leftPct={matchupWinProb.leftPct}
           rightPct={matchupWinProb.rightPct}
           live={matchupWinLive}
-          scope={winProbScope}
-          onScopeChange={onWinProbScopeChange}
+          scope={activeWinProbScope}
+          onScopeChange={activeWinProbScopeChange}
+          weekPhrase={winProbIsCurrentWeek || winProbWeek == null ? 'this week' : `week ${winProbWeek}`}
+          weekToggleLabel={winProbIsCurrentWeek || winProbWeek == null ? 'This week' : `Week ${winProbWeek}`}
         />
       ) : null}
       {hasBuffer && bufferPlacement !== 'after' && (

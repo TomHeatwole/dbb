@@ -10,6 +10,8 @@ export default function MatchupWinProbLine({
   live = false,
   scope = 'week',
   onScopeChange = null,
+  weekPhrase = 'this week',
+  weekToggleLabel = 'This week',
 }) {
   const left = Number(leftPct);
   const right = Number(rightPct);
@@ -18,9 +20,10 @@ export default function MatchupWinProbLine({
   const leftHeat = winProbHeat(left);
   const rightHeat = winProbHeat(right);
   const seasonScope = scope === 'season';
+  const phrase = weekPhrase || 'this week';
   const label = seasonScope
-    ? `${left}% vs ${right}% chance to lead through this week`
-    : `${left}% vs ${right}% chance to outscore this week`;
+    ? `${left}% vs ${right}% chance to lead through ${phrase}`
+    : `${left}% vs ${right}% chance to outscore ${phrase}`;
 
   return (
     <div
@@ -37,7 +40,7 @@ export default function MatchupWinProbLine({
             aria-pressed={scope === 'week'}
             onClick={() => onScopeChange('week')}
           >
-            This week
+            {weekToggleLabel || 'This week'}
           </button>
           <button
             type="button"

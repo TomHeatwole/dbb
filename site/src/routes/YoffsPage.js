@@ -7,6 +7,7 @@ import PlayoffRulesToolTip from '../yoffs/PlayoffRulesToolTip';
 import Yoffs2024Format from '../yoffs/Yoffs2024Format';
 import Yoffs2025Format from '../yoffs/Yoffs2025Format';
 import { Link, useSearchParams } from 'react-router-dom';
+import { PLAYOFF_PREDICTIONS_PATH } from '../playoffs/playoffHprojOddsUi';
 import PageMeta from '../PageMeta';
 import {
   PLAYOFF_FORMAT_BRACKET,
@@ -337,7 +338,7 @@ function YoffsPage() {
         </div>
       </div>
       <div className="yoffs-pred-link-row">
-        <Link to="/playoff_predictions">HProj playoff odds</Link>
+        <Link to={PLAYOFF_PREDICTIONS_PATH}>Playoff Predictions →</Link>
       </div>
       {content}
     </InfoPageWrapper>

@@ -2,8 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import HeadToHeadSelectorWeb from './HeadToHeadSelectorWeb';
 import MatchupView from './MatchupView';
-import { getWeekScoreBreakdown } from '../scores/ScoresParser';
-import { StartSitSort } from '../players/StartSitDecider';
+import { computeWeeklyTotals, sumRange } from './matchupWeekTotals';
 import LoadingState from '../LoadingState';
 import { useMyRosterId } from '../hooks/useAuthUser';
 
@@ -16,45 +15,6 @@ function normalizeSelectedIds(selectedIds) {
     out.push(null);
   }
   return out;
-}
-
-function computeWeeklyTotals(weeksParsedData, playersData, playerIdMap, teamId, weeksRange) {
-  if (!Array.isArray(weeksParsedData) || !playersData || !playerIdMap || teamId == null) {
-    return {};
-  }
-  const totals = {};
-  const weeksToUse = Array.isArray(weeksRange) && weeksRange.length > 0
-    ? weeksRange
-    : weeksParsedData.map((_, idx) => idx + 1);
-  for (const w of weeksToUse) {
-    const breakdown = getWeekScoreBreakdown(weeksParsedData, w) || {};
-    const raw = breakdown[teamId];
-    if (!raw) {
-      continue;
-    }
-    try {
-      const computed = StartSitSort(raw, playersData, playerIdMap, null, null, null);
-      if (computed && typeof computed.starterTotal === 'number') {
-        totals[w] = Number(computed.starterTotal);
-      }
-    } catch (_) {
-      // ignore failures, treat as missing
-    }
-  }
-  return totals;
-}
-
-function sumRange(totalsByWeek, startW, endW) {
-  if (!totalsByWeek || startW > endW) {
-    return 0;
-  }
-  let sum = 0;
-  for (let w = startW; w <= endW; w += 1) {
-    if (typeof totalsByWeek[w] === 'number' && Number.isFinite(totalsByWeek[w])) {
-      sum += totalsByWeek[w];
-    }
-  }
-  return sum;
 }
 
 /**
