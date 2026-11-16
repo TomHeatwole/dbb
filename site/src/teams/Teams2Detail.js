@@ -512,6 +512,8 @@ function Teams2Detail() {
             weeksParsedData={weeksParsedData}
             playersData={playersData}
             playerIdMap={playerIdMap}
+            rosters={rosters}
+            users={users}
             updateQueryParams={updateQueryParams}
           />
         )}

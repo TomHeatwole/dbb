@@ -813,6 +813,7 @@ button.lineup-mode-info {
   gap: 1rem;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
   padding: 0.75rem 1rem;
   margin: 0.5rem 1.5rem 1rem 1.5rem;
   background: rgba(35, 35, 58, 0.6);
@@ -820,6 +821,34 @@ button.lineup-mode-info {
   border: 1px solid #444;
   font-weight: 700;
   font-size: 0.95em;
+}
+.team-scores-scoreboard-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.22rem 0.65rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.35);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.team-scores-scoreboard-link:hover,
+.team-scores-scoreboard-link:focus-visible {
+  border-color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  outline: none;
+}
+.team-scores-week-rank {
+  font-weight: 750;
+  white-space: nowrap;
+}
+.team-scores-scoreboard-cta {
+  font-size: 0.82em;
+  font-weight: 650;
+  color: #7dd3fc;
+  white-space: nowrap;
 }
 .team-scores-week-bar {
   display: flex;
@@ -1008,7 +1037,16 @@ button.lineup-mode-info {
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.45rem;
+}
+.yoffs-pred-link-row {
+  text-align: center;
+  margin: 0 0 1rem;
+}
+.yoffs-pred-link-row a {
+  color: #93c5fd;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 .yoffs-mode-label {
   font-weight: 600;
@@ -26314,7 +26352,8 @@ button.corners-bet:hover {
 
 .info-container:has(.hproj-page),
 .info-container:has(.hproj-page-head),
-.info-container:has(.hproj-loading) {
+.info-container:has(.hproj-loading),
+.info-container:has(.pp-page) {
   box-sizing: border-box;
   padding: 0 0.85rem 1.5rem;
 }

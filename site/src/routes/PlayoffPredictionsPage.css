@@ -1,0 +1,485 @@
+.pp-page {
+  width: 100%;
+  max-width: 54rem;
+  margin: 0 auto;
+  color: #e2e8f0;
+  padding-bottom: 1.5rem;
+}
+
+.pp-loading.loading-center {
+  min-height: 18rem;
+}
+
+.pp-error {
+  color: #fecaca;
+}
+
+.pp-hero {
+  margin: 0 0 1.35rem;
+  padding: 1rem 1.1rem 1.05rem;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(59, 130, 246, 0.11), transparent 55%),
+  radial-gradient(90% 70% at 0% 100%, rgba(16, 185, 129, 0.08), transparent 50%),
+  rgba(11, 18, 40, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.pp-hero-lead {
+  margin: 0 0 0.9rem;
+  color: #cbd5e1;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.pp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pp-pill {
+  flex: 1 1 8.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.pp-pill-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.pp-pill-value {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.02rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #f8fafc;
+}
+
+.pp-duo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+  align-items: stretch;
+}
+
+.pp-col {
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(10, 16, 38, 0.72);
+  overflow: hidden;
+}
+
+.pp-col-head {
+  padding: 0.85rem 0.95rem 0.7rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pp-col-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+}
+
+.pp-col-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.pp-col--win .pp-col-head {
+  padding-bottom: 0.55rem;
+}
+
+/* Gap under Make playoffs header — same vertical space as Win it mode toggle */
+.pp-col-list-lead {
+  flex-shrink: 0;
+  /* Win it toggle (in header) minus Make playoffs extra header bottom padding */
+  height: calc(0.65rem + 0.76rem + 0.85rem + 0.55rem - 0.7rem);
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.pp-win-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.pp-win-toggle-btn {
+  flex: 1 1 9rem;
+  padding: 0.38rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(0, 0, 0, 0.22);
+  color: #cbd5e1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pp-win-toggle-btn:hover {
+  border-color: rgba(147, 197, 253, 0.45);
+  color: #f8fafc;
+}
+
+.pp-win-toggle-btn--active {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fde68a;
+}
+
+.pp-col-empty {
+  margin: 0;
+  padding: 0.55rem 0.95rem 0.4rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.pp-col--win:has(.pp-field-picker):not(:has(.pp-col-list)) .pp-col-empty {
+  border-bottom: none;
+  padding-bottom: 0.25rem;
+}
+
+.pp-field-picker {
+  padding: 0.55rem 0.65rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.pp-field-picker-hint {
+  margin: 0 0 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.pp-field-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pp-field-picker .h2h-web-card--compact {
+  padding: 0.55rem 0.7rem;
+  gap: 0.55rem;
+}
+
+.pp-field-picker .h2h-web-avatar {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.pp-field-picker .h2h-web-name {
+  font-size: 0.82rem;
+}
+
+.pp-col-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0.45rem 0.55rem;
+}
+
+.pp-col-item {
+  display: grid;
+  grid-template-columns: 1.35rem 34px minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.5rem 0.45rem;
+  min-height: 4.35rem;
+  box-sizing: border-box;
+  border-radius: 12px;
+}
+
+.pp-col-item + .pp-col-item {
+  margin-top: 0.15rem;
+}
+
+.pp-col-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pp-col-item--me {
+  background: rgba(147, 197, 253, 0.07);
+  box-shadow: inset 2px 0 0 #7dd3fc;
+}
+
+.pp-col-rank {
+  text-align: right;
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+}
+
+.pp-col-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pp-col-avatar--empty {
+  display: block;
+}
+
+.pp-col-body {
+  min-width: 0;
+}
+
+.pp-col-team {
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #f8fafc;
+}
+
+.pp-col-owner {
+  font-size: 0.73rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pp-col-meta {
+  margin-top: 0.1rem;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.pp-sep {
+  margin: 0 0.28rem;
+}
+
+.pp-col-bar {
+  height: 5px;
+  margin-top: 0.32rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.pp-col-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.pp-col-pct {
+  min-width: 3.65rem;
+  text-align: right;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-detail {
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(10, 16, 38, 0.65);
+  padding: 0.95rem 0.95rem 1rem;
+}
+
+.pp-detail-head {
+  margin-bottom: 0.7rem;
+}
+
+.pp-detail-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.pp-detail-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.pp-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pp-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.pp-table th,
+.pp-table td {
+  padding: 0.48rem 0.5rem;
+  text-align: right;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #10172f;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.pp-th-team,
+.pp-table tbody th.pp-th-team {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: 8.75rem;
+  text-align: left;
+  background: #0f162c;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+.pp-tr--me .pp-th-team {
+  box-shadow: inset 2px 0 0 #7dd3fc;
+}
+
+.pp-table-team {
+  display: block;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.pp-table-owner {
+  display: block;
+  margin-top: 0.08rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.pp-table tbody tr:nth-child(even) td,
+.pp-table tbody tr:nth-child(even) th.pp-th-team {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pp-table-pts {
+  display: block;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.pp-table-strong {
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.pp-table-range {
+  display: block;
+  margin-top: 0.06rem;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.pp-table-odds {
+  font-weight: 800;
+  font-size: 0.86rem;
+}
+
+.pp-th-week .pp-th-main {
+  display: block;
+}
+
+.pp-badge {
+  display: inline-block;
+  margin-top: 0.18rem;
+  padding: 0.08rem 0.28rem;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fde68a;
+  background: rgba(250, 204, 21, 0.12);
+}
+
+.pp-badge--live {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.pp-dash {
+  color: #64748b;
+}
+
+.pp-footnote {
+  margin: 0.8rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+@media (max-width: 52em) {
+  .pp-page {
+    max-width: none;
+  }
+
+  .pp-duo {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .pp-col-list-lead {
+    display: none;
+  }
+
+  .pp-col-pct {
+    font-size: 1rem;
+  }
+
+  .pp-col-meta {
+    display: none;
+  }
+}
+
+@media (max-width: 40em) {
+  .pp-hero {
+    padding: 0.85rem 0.8rem;
+  }
+
+  .pp-pill {
+    flex-basis: calc(50% - 0.25rem);
+  }
+
+  .pp-pill:last-child {
+    flex-basis: 100%;
+  }
+}

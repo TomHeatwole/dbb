@@ -446,7 +446,7 @@ function ThisWeeksProjectionsCard({ currentWeekOverride = null }) {
             return (
               <div className={`this-week-proj-row${mine ? ' this-week-proj-row--me' : ''}`} key={row.rosterId}>
                 <span className="this-week-proj-rank">#{idx + 1}</span>
-                <Link to={`/team/${row.rosterId}`} className="this-week-proj-team">
+                <Link to={`/team/${row.rosterId}?tab=Scores&week=${week}`} className="this-week-proj-team">
                   {row.avatarUrl ? (
                     <img
                       className="this-week-proj-avatar"

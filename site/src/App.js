@@ -43,6 +43,7 @@ import SOPPage, { SOP2Page } from './routes/SOPPage';
 import CornersPage from './routes/CornersPage';
 import MlsCornersPage from './routes/MlsCornersPage';
 import HprojPage from './routes/HprojPage';
+import PlayoffPredictionsPage from './routes/PlayoffPredictionsPage';
 import DKPage from './routes/DKPage';
 import PreflopPage from './routes/PreflopPage';
 import FredDuelPage from './routes/FredDuelPage';
@@ -222,6 +223,8 @@ function AppInner() {
       <Route path="/DRIVES/*" element={<Suspense fallback={null}><DrivesPage /></Suspense>} />
       <Route path="/hproj" element={<HprojPage />} />
       <Route path="/HPROJ" element={<HprojPage />} />
+      <Route path="/playoff_predictions" element={<PlayoffPredictionsPage />} />
+      <Route path="/PLAYOFF_PREDICTIONS" element={<PlayoffPredictionsPage />} />
       <Route path="/dk/*" element={<DKPage />} />
       <Route path="/DK/*" element={<DKPage />} />
       <Route path="/preflop" element={<PreflopPage />} />

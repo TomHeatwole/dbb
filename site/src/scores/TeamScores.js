@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
+import { Link, useSearchParams, useParams } from 'react-router-dom';
 import { trackPageLoad } from '../utils/UsageTracker';
-import { useSearchParams, useParams } from 'react-router-dom';
 import { getWeekScoreBreakdown, getPlayerSeasonTotalsMap } from './ScoresParser';
 import { startSitWithProjections } from './projectionScoring';
 import useWeeklyProjectedPoints from './useWeeklyProjectedPoints';
 import { getPlayerInfo, fetchPlayersData } from '../lookups/PlayerLookup';
+import { buildRosterIdToTeamInfoMap } from '../lookups/TeamLookup';
 import { getDefaultDisplayWeek, CURRENT_YEAR, getCurrentNFLWeek } from '../utils/DateHelper';
 import WeekSelector from './WeekSelector';
 import { fetchInjuriesForWeek } from '../lookups/InjuryLookup';
@@ -18,6 +19,10 @@ import { createLiveScoresPoller } from '../utils/livePolling';
 import MidweekSimBanner from './MidweekSimBanner';
 import LineupModeToggle from './LineupModeToggle';
 import { resolveScoresLineupMode } from './scoresLineupMode';
+import useLeagueHproj from './useLeagueHproj';
+import { hprojPageHref, ownerFirstNameCounts } from './hprojTeamSim';
+import { compareLeagueScoreRows } from './ScoreSplit';
+import { HPROJ_ON_SCORES } from '../utils/featureToggles';
 
 // Lazy import to avoid circular deps at module init
 async function readPlayersSnapshotFromDb(season, week) {
@@ -46,7 +51,22 @@ function formatKickoffShort(iso) {
 
 const NUM_WEEKS = 17;
 
-const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData, playerIdMap, updateQueryParams }, ref) {
+function ordinalPlace(n) {
+  const place = Number(n);
+  if (!Number.isFinite(place) || place < 1) return null;
+  const v = place % 100;
+  const suffix = (v >= 11 && v <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[place % 10] || 'th');
+  return `${place}${suffix}`;
+}
+
+const TeamScores = forwardRef(function TeamScores({
+  weeksParsedData,
+  playersData,
+  playerIdMap,
+  rosters = null,
+  users = null,
+  updateQueryParams,
+}, ref) {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlWeek = parseInt(searchParams.get('week'), 10);
   const initialWeek = !isNaN(urlWeek) && urlWeek >= 1 && urlWeek <= NUM_WEEKS ? urlWeek : getDefaultDisplayWeek(searchParams.get('year'));
@@ -238,16 +258,19 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     }
 
     const playerIdSet = new Set();
-    // Collect player IDs from the raw week data for this roster
     const weekArr = Array.isArray(effectiveWeeksParsedData) ? effectiveWeeksParsedData[week - 1] : null;
     if (Array.isArray(weekArr)) {
-      const entry = weekArr.find(e => e && Number(e.roster_id) === Number(rosterId));
-      if (entry && Array.isArray(entry.players)) {
-        entry.players.forEach(pid => {
-          if (pid && String(pid) !== '0') {
-            playerIdSet.add(pid);
-          }
-        });
+      for (const entry of weekArr) {
+        if (!entry) continue;
+        let playersArray = entry.players;
+        if ((!playersArray || !playersArray.length) && Array.isArray(rosters)) {
+          const roster = rosters.find((r) => r && Number(r.roster_id) === Number(entry.roster_id));
+          if (roster && Array.isArray(roster.players)) playersArray = roster.players;
+        }
+        if (!Array.isArray(playersArray)) continue;
+        for (const pid of playersArray) {
+          if (pid && String(pid) !== '0') playerIdSet.add(pid);
+        }
       }
     }
 
@@ -299,7 +322,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
             text = `${kickoff} ${perspective}`.trim();
           }
 
-          labels[pid] = { ...d, text, team: teamForWeek || null };
+          labels[pid] = { ...d, text, team: teamForWeek || null, eventId: d.eventId || (ev && ev.id ? String(ev.id) : null) };
         }
         if (!cancelled) {
           setPlayerGameLabels(labels);
@@ -318,7 +341,7 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     return () => {
       cancelled = true;
     };
-  }, [season, week, rosterId, playersDataForWeek, playerIdMap, effectiveWeeksParsedData, playersTeamMap]);
+  }, [season, week, rosterId, playersDataForWeek, playerIdMap, effectiveWeeksParsedData, playersTeamMap, rosters]);
 
   const labelsWithEspn = useMemo(
     () => mergeEspnStatLinesIntoLabels(playerGameLabels, espnStatLines),
@@ -396,12 +419,111 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
     () => resolveScoresLineupMode({ season, week, isWeekCompleteByGames, lineupMode }),
     [season, week, isWeekCompleteByGames, lineupMode],
   );
+  const weekScoresByRoster = useMemo(
+    () => (effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week) : null),
+    [effectiveWeeksParsedData, week],
+  );
+  const { hprojByRoster, liveProjByRoster, gamesStarted: hprojGamesStarted } = useLeagueHproj({
+    season,
+    week,
+    rosters,
+    playersData: playersDataForWeek,
+    projectedPtsById,
+    playerGameLabels: labelsWithEspn,
+    weekScoresByRoster,
+    injuriesMap,
+    playerIdMap,
+    enabled: HPROJ_ON_SCORES,
+  });
+  const rosterMap = useMemo(
+    () => buildRosterIdToTeamInfoMap(rosters, users),
+    [rosters, users],
+  );
+  const hprojFirstNameCounts = useMemo(
+    () => ownerFirstNameCounts(rosters, users),
+    [rosters, users],
+  );
 
   // Get week breakdown for this roster
-  const rawWeekBreakdown = effectiveWeeksParsedData ? getWeekScoreBreakdown(effectiveWeeksParsedData, week)[rosterId] : null;
+  const rawWeekBreakdown = weekScoresByRoster
+    ? (weekScoresByRoster[rosterId] || weekScoresByRoster[String(rosterId)])
+    : null;
   const weekBreakdown = rawWeekBreakdown
     ? startSitWithProjections(rawWeekBreakdown, playersDataForWeek, playerIdMap, labelsWithEspn, injuriesMap, playerSeasonTotalsMap, projectedPtsById, effectiveLineupMode)
     : null;
+
+  const weekBoard = useMemo(() => {
+    const weekEntries = Array.isArray(effectiveWeeksParsedData)
+      ? (effectiveWeeksParsedData[week - 1] || []).filter((e) => e && e.roster_id != null)
+      : [];
+    if (!weekEntries.length || !weekScoresByRoster) return { rows: [], liveBoard: false };
+    const rows = weekEntries.map((entry) => {
+      const rid = entry.roster_id;
+      const raw = weekScoresByRoster[rid] || weekScoresByRoster[String(rid)];
+      const computed = raw
+        ? startSitWithProjections(
+          raw,
+          playersDataForWeek,
+          playerIdMap,
+          labelsWithEspn,
+          injuriesMap,
+          playerSeasonTotalsMap,
+          projectedPtsById,
+          effectiveLineupMode,
+        )
+        : null;
+      return {
+        rosterId: rid,
+        points: computed ? computed.starterTotal : (typeof entry.points === 'number' ? Number(entry.points.toFixed(2)) : 0),
+        actual: computed?.starterActualTotal ?? 0,
+        hasActual: Boolean(computed?.starterHasActual),
+        hproj: hprojByRoster[String(rid)] ?? null,
+        liveProj: liveProjByRoster[String(rid)] ?? null,
+      };
+    });
+    const liveBoard = rows.some((row) => row.hasActual);
+    rows.sort((a, b) => compareLeagueScoreRows(a, b, {
+      lineupMode: effectiveLineupMode,
+      useHproj: HPROJ_ON_SCORES,
+      liveBoard,
+    }));
+    return { rows, liveBoard };
+  }, [
+    effectiveWeeksParsedData,
+    week,
+    weekScoresByRoster,
+    playersDataForWeek,
+    playerIdMap,
+    labelsWithEspn,
+    injuriesMap,
+    playerSeasonTotalsMap,
+    projectedPtsById,
+    effectiveLineupMode,
+    hprojByRoster,
+    liveProjByRoster,
+  ]);
+
+  const weekRank = useMemo(() => {
+    const idx = weekBoard.rows.findIndex((row) => Number(row.rosterId) === Number(rosterId));
+    if (idx < 0) return null;
+    const sortByProj = HPROJ_ON_SCORES && (effectiveLineupMode === 'projections' || !weekBoard.liveBoard);
+    return {
+      place: idx + 1,
+      kind: sortByProj ? 'Projected' : 'Score',
+    };
+  }, [weekBoard, rosterId, effectiveLineupMode]);
+
+  const ownerName = (rosterMap[rosterId] || rosterMap[Number(rosterId)] || {}).ownerName || '';
+  const showHproj = HPROJ_ON_SCORES && String(season) === String(CURRENT_YEAR);
+  const hprojHref = showHproj
+    ? hprojPageHref(week, { rosterId, ownerName }, hprojFirstNameCounts)
+    : null;
+  const hprojValue = hprojByRoster[String(rosterId)] ?? null;
+  const liveProjValue = liveProjByRoster[String(rosterId)] ?? null;
+  const scoreboardHref = String(season) === String(CURRENT_YEAR)
+    ? `/Scores/Week?week=${week}`
+    : `/Scores/Week?week=${week}&year=${season}`;
+  const weekRankLabel = weekRank ? ordinalPlace(weekRank.place) : null;
 
   // Debug: dump players missing ESPN mapping for this team/week
   useEffect(() => {
@@ -469,29 +591,38 @@ const TeamScores = forwardRef(function TeamScores({ weeksParsedData, playersData
           <span className="standings-activity-item">
             {isMobile ? `Live ${activeCount}` : `In-Play: ${activeCount}`}
           </span>
+          <Link to={scoreboardHref} className="team-scores-scoreboard-link">
+            {weekRank && weekRankLabel ? (
+              <span className="team-scores-week-rank">
+                {weekRank.kind}: {weekRankLabel} this week
+              </span>
+            ) : null}
+            <span className="team-scores-scoreboard-cta">See Scoreboard</span>
+          </Link>
         </div>
       )}
 
       {weekBreakdown ? (
         <div className="standings-row teams2-scores-row">
           <div className="teams2-scores-row-body">
-            {(() => {
-              return (
-                <LeagueScoresTeamBreakdown
-                  weekBreakdown={weekBreakdown}
-                  benchOpen={benchOpen}
-                  onToggleBench={() => setBenchOpen(open => !open)}
-                  playersData={playersDataForWeek}
-                  playerIdMap={playerIdMap}
-                  playerGameLabels={labelsWithEspn}
-                  isActiveWeek={isActiveWeek}
-                  injuriesMap={injuriesMap}
-                  showCurrentInjury={showCurrentInjury}
-                  playerHighlightMap={{}}
-                  playersTeamMap={playersTeamMap}
-                />
-              );
-            })()}
+            <LeagueScoresTeamBreakdown
+              weekBreakdown={weekBreakdown}
+              benchOpen={benchOpen}
+              onToggleBench={() => setBenchOpen(open => !open)}
+              playersData={playersDataForWeek}
+              playerIdMap={playerIdMap}
+              playerGameLabels={labelsWithEspn}
+              isActiveWeek={isActiveWeek}
+              injuriesMap={injuriesMap}
+              showCurrentInjury={showCurrentInjury}
+              playerHighlightMap={{}}
+              playersTeamMap={playersTeamMap}
+              hprojHref={hprojHref}
+              hprojValue={hprojValue}
+              liveProjValue={liveProjValue}
+              gamesStarted={hprojGamesStarted}
+              weekComplete={isWeekCompleteByGames}
+            />
           </div>
         </div>
       ) : (

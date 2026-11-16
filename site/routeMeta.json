@@ -24,6 +24,16 @@
     "ogDescription": "",
     "ogImage": "/og_playoffs.png"
   },
+  "/playoff_predictions": {
+    "ogTitle": "Playoff Predictions \u2013 The Hwang Dynasty",
+    "ogDescription": "HProj playoff odds with live scoring for the current week.",
+    "ogImage": "/og_playoffs.png"
+  },
+  "/PLAYOFF_PREDICTIONS": {
+    "ogTitle": "Playoff Predictions \u2013 The Hwang Dynasty",
+    "ogDescription": "HProj playoff odds with live scoring for the current week.",
+    "ogImage": "/og_playoffs.png"
+  },
   "/notes": {
     "ogTitle": "Commissioner Notes – The Hwang Dynasty",
     "ogDescription": "All commissioner notes for the league",
