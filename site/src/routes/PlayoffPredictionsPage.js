@@ -4,7 +4,11 @@ import LoadingState from '../LoadingState';
 import PageMeta from '../PageMeta';
 import { isMyRoster, useMyCurrentRosterId } from '../hooks/useAuthUser';
 import PlayoffFourSelector from '../playoffs/PlayoffFourSelector';
-import { PLAYOFF_SPOTS, simulatePlayoffField } from '../playoffs/playoffHprojOdds';
+import {
+  PLAYOFF_SPOTS,
+  SELECT_FOUR_TITLE_ITERS,
+  simulatePlayoffField,
+} from '../playoffs/playoffHprojOdds';
 import { loadPlayoffHprojField } from '../playoffs/playoffHprojFieldLoader';
 import { HprojOddsPct } from '../playoffs/playoffHprojOddsUi';
 import { REG_SEASON_WEEKS } from '../scenarios/simulatorLineup';
@@ -112,6 +116,7 @@ function OddsColumn({
   footer = null,
   extraHead = null,
   emptyHint = null,
+  emptyHintSpin = false,
   preserveOrder = false,
   colClass = '',
   listLead = null,
@@ -143,7 +148,7 @@ function OddsColumn({
         {extraHead}
       </header>
       {emptyHint ? (
-        <p className="pp-col-empty">{emptyHint}</p>
+        <p className={`pp-col-empty${emptyHintSpin ? ' pp-col-empty--spin' : ''}`}>{emptyHint}</p>
       ) : null}
       {!hideList ? (
         <>
@@ -291,6 +296,7 @@ function PlayoffPredictionsPage() {
         setLabel('Loading scores and projections…');
         const nextView = await loadPlayoffHprojField(season, {
           cancelled: () => cancelled,
+          requireSimTeams: true,
           onProgress: (text) => {
             if (!cancelled && text) setLabel(text);
           },
@@ -350,17 +356,44 @@ function Results({ field, teamMap, myRosterId }) {
     })
   ), [field.rows, teamMap]);
 
-  const lockedField = useMemo(() => {
-    if (winMode !== WIN_MODES.select || selectedFour.length !== PLAYOFF_SPOTS) return null;
-    if (!field.simTeams || !field.replaySeed) return null;
+  const [lockedField, setLockedField] = useState(null);
+  const [selectFourLoading, setSelectFourLoading] = useState(false);
+
+  useEffect(() => {
+    if (winMode !== WIN_MODES.select || selectedFour.length !== PLAYOFF_SPOTS) {
+      setLockedField(null);
+      setSelectFourLoading(false);
+      return undefined;
+    }
+    if (!field.simTeams?.length || !field.replaySeed) {
+      setLockedField(null);
+      setSelectFourLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setSelectFourLoading(true);
+    setLockedField(null);
+
     const ids = selectedFour.map((id) => Number(id)).sort((a, b) => a - b);
-    return simulatePlayoffField(field.simTeams, {
-      iterations: field.iterations,
-      spots: field.spots,
-      format: field.playoffFormat,
-      seed: `${field.replaySeed}:field:${ids.join(',')}`,
-      lockedPlayoffIds: ids,
-    });
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      const result = simulatePlayoffField(field.simTeams, {
+        iterations: SELECT_FOUR_TITLE_ITERS,
+        spots: field.spots || PLAYOFF_SPOTS,
+        format: field.playoffFormat,
+        seed: `${field.replaySeed}:select4:${ids.join(',')}`,
+        lockedPlayoffIds: ids,
+      });
+      if (cancelled) return;
+      setLockedField(result);
+      setSelectFourLoading(false);
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [winMode, selectedFour, field]);
 
   const winByRoster = useMemo(() => {
@@ -469,9 +502,11 @@ function Results({ field, teamMap, myRosterId }) {
           subtitle={
             winMode === WIN_MODES.conditional
               ? `If you make the cut · ${field.playoffFormatLabel || 'cumulative'} · live weeks included`
+              : selectedFour.length === PLAYOFF_SPOTS && selectFourLoading
+                ? `Rerolling ${SELECT_FOUR_TITLE_ITERS.toLocaleString()} outcomes for this playoff field…`
               : selectedFour.length === PLAYOFF_SPOTS && lockedField
                 ? (
-                  `Title odds if these four are the playoff field`
+                  `Title odds if these four are the playoff field (${SELECT_FOUR_TITLE_ITERS.toLocaleString()} sims)`
                   + (lockedField.fieldMatchPct != null && lockedField.fieldMatchPct < 99.5
                     ? ` · finishes top four in ${fmtPct(lockedField.fieldMatchPct)} of replays`
                     : '')
@@ -491,12 +526,18 @@ function Results({ field, teamMap, myRosterId }) {
           }
           colClass="pp-col--win"
           extraHead={<WinModeToggle mode={winMode} onChange={setWinMode} />}
-          emptyHint={
-            winMode === WIN_MODES.select && selectedFour.length < PLAYOFF_SPOTS
-              ? `Select ${PLAYOFF_SPOTS - selectedFour.length} more team${PLAYOFF_SPOTS - selectedFour.length === 1 ? '' : 's'} below to see title odds for that field.`
-              : null
+          hideList={
+            winMode === WIN_MODES.select
+            && (selectedFour.length < PLAYOFF_SPOTS || selectFourLoading)
           }
-          hideList={winMode === WIN_MODES.select && selectedFour.length < PLAYOFF_SPOTS}
+          emptyHint={
+            winMode === WIN_MODES.select && selectedFour.length === PLAYOFF_SPOTS && selectFourLoading
+              ? `Rerolling ${SELECT_FOUR_TITLE_ITERS.toLocaleString()} playoff outcomes…`
+              : (winMode === WIN_MODES.select && selectedFour.length < PLAYOFF_SPOTS
+                ? `Select ${PLAYOFF_SPOTS - selectedFour.length} more team${PLAYOFF_SPOTS - selectedFour.length === 1 ? '' : 's'} below to see title odds for that field.`
+                : null)
+          }
+          emptyHintSpin={winMode === WIN_MODES.select && selectedFour.length === PLAYOFF_SPOTS && selectFourLoading}
           footer={
             winMode === WIN_MODES.select ? (
               <PlayoffFourSelector
@@ -593,7 +634,7 @@ function Results({ field, teamMap, myRosterId }) {
                     {field.liveWeek ? (
                       <td className="pp-table-live-actual">{fmtPts(row.liveWeekPts)}</td>
                     ) : null}
-                    {row.weeks.map((summary) => (
+                    {(Array.isArray(row.weeks) ? row.weeks : []).map((summary) => (
                       <WeekCell key={summary.week} summary={summary} />
                     ))}
                     <td className="pp-table-strong">{fmtPts(row.medianPath)}</td>

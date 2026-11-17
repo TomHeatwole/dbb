@@ -153,6 +153,24 @@
   color: #fde68a;
 }
 
+.pp-col-empty--spin {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pp-col-empty--spin::before {
+  content: '';
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
 .pp-col-empty {
   margin: 0;
   padding: 0.55rem 0.95rem 0.4rem;

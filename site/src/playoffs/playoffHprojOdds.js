@@ -15,6 +15,8 @@ import { buildFinalStandings, normalizePlayoffFormat } from '../scenarios/playof
 export const PLAYOFF_SPOTS = 4;
 export const PLAYOFF_LAST_WEEK = 17;
 export const MIN_WEEK_PROJECTIONS = 40;
+/** Fixed replay count for “Select your 4 teams” title odds (independent of cached field rows). */
+export const SELECT_FOUR_TITLE_ITERS = 8000;
 
 function round1(n) {
   return Math.round((Number(n) || 0) * 10) / 10;
