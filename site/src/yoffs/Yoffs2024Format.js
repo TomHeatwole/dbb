@@ -88,10 +88,10 @@ function PrePlayoffOverview({
                 />
                 <HprojOddsPctLink
                   loading={oddsLoading}
-                  pct={odds && odds.winPctIfMade}
+                  pct={odds && odds.winPct}
                   count={odds && odds.winCount}
-                  total={odds && odds.playoffMadeCount}
-                  title={`${teamName} odds to win the playoffs if they make it`}
+                  total={odds && odds.iterations}
+                  title={`${teamName} HProj title odds this season`}
                   className="yoffs-pre-pct yoffs-pre-pct--title"
                 />
               </div>

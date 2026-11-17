@@ -1,6 +1,7 @@
 /**
  * Shared cache + loader for HProj playoff field (playoff predictions page + standings).
- * A saved field is returned before any scoreboard or sim work.
+ * During a live NFL game: always recompute; never read Neon or memory cache.
+ * Otherwise: saved field first, then sim once and bank.
  * A miss runs the sim once and banks it, including when a caller unmounts.
  */
 
@@ -11,6 +12,7 @@ import { getSleeperWeeklyProjections } from '../lookups/ProjectionsLookup';
 import { fetchScoresData } from '../lookups/ScoresLookup';
 import { fetchLeagueScoringSettings } from '../lookups/ScoringSettingsLookup';
 import { buildRosterIdToTeamInfoMap, fetchTeamData } from '../lookups/TeamLookup';
+import { isScoreboardWeekHasLiveGame } from '../scores/GamesParser';
 import { REG_SEASON_WEEKS } from '../scenarios/simulatorLineup';
 import { CURRENT_YEAR, getCompletedWeeksCount, getCurrentNFLWeek } from '../utils/DateHelper';
 import { PLAYOFF_LAST_WEEK } from './playoffHprojOdds';
@@ -132,6 +134,7 @@ export function oddsByRosterFromField(field) {
     if (!Number.isFinite(rid)) continue;
     byRoster[rid] = {
       playoffPct: Number(row.playoffPct) || 0,
+      winPct: Number(row.winPct) || 0,
       winPctIfMade: Number(row.winPctIfMade) || 0,
       playoffMadeCount: row.playoffMadeCount,
       winCount: row.winCount,
@@ -141,30 +144,53 @@ export function oddsByRosterFromField(field) {
   return byRoster;
 }
 
+async function invalidateNeonPlayoffHprojCache(season) {
+  try {
+    await fetch('/api/playoff-hproj?playoffHproj=1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'invalidate', season }),
+    });
+  } catch (_) {
+    /* best-effort */
+  }
+}
+
 async function computePlayoffField(seasonNum, opts = {}) {
   const currentWeek = getCurrentNFLWeek(seasonNum);
   const bankedThrough = Math.min(REG_SEASON_WEEKS, getCompletedWeeksCount(seasonNum));
   const cacheKey = cacheKeyForSeason(seasonNum);
 
-  reportProgress('Loading saved odds…');
-  const cachedNow = peekPlayoffHprojField(seasonNum);
-  if (cachedNow && (!opts.requireSimTeams || fieldReadyForPlayoffPage(cachedNow.field))) {
-    return cachedNow;
+  reportProgress('Checking for live NFL games…');
+  const currentScoreboard = await fetchNflScoreboard(seasonNum, currentWeek, {
+    forceUpdate: true,
+    maxAgeMs: 15_000,
+  }).catch(() => null);
+  const hasLiveGame = isScoreboardWeekHasLiveGame(currentScoreboard);
+  nflWeekHasLiveGame = hasLiveGame;
+  if (hasLiveGame) {
+    fieldCache = null;
+    invalidateNeonPlayoffHprojCache(seasonNum);
   }
 
-  const neonView = usableCachedView(
-    await fetchNeonPlayoffHprojCache(seasonNum, cacheKey),
-    seasonNum,
-  );
-  if (neonView && (!opts.requireSimTeams || fieldReadyForPlayoffPage(neonView.field))) {
-    fieldCache = { key: cacheKey, view: neonView, at: Date.now() };
-    return neonView;
+  if (!hasLiveGame) {
+    reportProgress('Loading saved odds…');
+    const cachedNow = peekPlayoffHprojField(seasonNum);
+    if (cachedNow && (!opts.requireSimTeams || fieldReadyForPlayoffPage(cachedNow.field))) {
+      return cachedNow;
+    }
+
+    const neonView = usableCachedView(
+      await fetchNeonPlayoffHprojCache(seasonNum, cacheKey),
+      seasonNum,
+    );
+    if (neonView && (!opts.requireSimTeams || fieldReadyForPlayoffPage(neonView.field))) {
+      fieldCache = { key: cacheKey, view: neonView, at: Date.now() };
+      return neonView;
+    }
   }
 
   reportProgress('Loading scores and projections…');
-  const currentScoreboard = await fetchNflScoreboard(seasonNum, currentWeek, { forceUpdate: true })
-    .catch(() => null);
-  nflWeekHasLiveGame = false;
 
   const weekNums = [];
   for (let week = bankedThrough + 1; week <= PLAYOFF_LAST_WEEK; week += 1) {
@@ -219,16 +245,20 @@ async function computePlayoffField(seasonNum, opts = {}) {
   if (!field) return null;
 
   const view = { season: seasonNum, teamMap, field };
-  const banked = await saveNeonPlayoffHprojCache(
-    seasonNum,
-    cacheKey,
-    bankedThrough,
-    currentWeek,
-    view,
-  );
-  if (banked) {
-    fieldCache = { key: cacheKey, view, at: Date.now() };
+
+  if (!hasLiveGame) {
+    const banked = await saveNeonPlayoffHprojCache(
+      seasonNum,
+      cacheKey,
+      bankedThrough,
+      currentWeek,
+      view,
+    );
+    if (banked) {
+      fieldCache = { key: cacheKey, view, at: Date.now() };
+    }
   }
+
   return view;
 }
 
@@ -243,11 +273,6 @@ export async function loadPlayoffHprojField(season, opts = {}) {
 
   if (opts.onProgress) progressListeners.add(opts.onProgress);
   try {
-    const cached = peekPlayoffHprojField(seasonNum);
-    if (cached && (!opts.requireSimTeams || fieldReadyForPlayoffPage(cached.field))) {
-      return opts.cancelled?.() ? null : cached;
-    }
-
     if (!loadPromise) {
       loadPromise = computePlayoffField(seasonNum, opts).finally(() => {
         loadPromise = null;

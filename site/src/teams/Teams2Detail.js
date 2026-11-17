@@ -511,10 +511,10 @@ function Teams2Detail() {
                   <div className="teams2-stats-item teams2-stats-item--hproj">
                     <HprojOddsPctLink
                       loading={hprojOddsLoading}
-                      pct={rosterHprojOdds?.winPctIfMade}
+                      pct={rosterHprojOdds?.winPct}
                       count={rosterHprojOdds?.winCount}
-                      total={rosterHprojOdds?.playoffMadeCount}
-                      title="HProj championship odds (if you make the playoffs)"
+                      total={rosterHprojOdds?.iterations}
+                      title="HProj title odds this season"
                       className="teams2-stats-value teams2-stats-hproj-link"
                     />
                     <span className="teams2-stats-label">Win %</span>

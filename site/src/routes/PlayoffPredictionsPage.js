@@ -219,7 +219,7 @@ function OddsColumn({
 }
 
 const WIN_MODES = {
-  conditional: 'conditional',
+  overall: 'overall',
   select: 'select',
 };
 
@@ -259,11 +259,11 @@ function WinModeToggle({ mode, onChange }) {
       <button
         type="button"
         role="tab"
-        aria-selected={mode === WIN_MODES.conditional}
-        className={`pp-win-toggle-btn${mode === WIN_MODES.conditional ? ' pp-win-toggle-btn--active' : ''}`}
-        onClick={() => onChange(WIN_MODES.conditional)}
+        aria-selected={mode === WIN_MODES.overall}
+        className={`pp-win-toggle-btn${mode === WIN_MODES.overall ? ' pp-win-toggle-btn--active' : ''}`}
+        onClick={() => onChange(WIN_MODES.overall)}
       >
-        Conditional on making it
+        Title odds
       </button>
       <button
         type="button"
@@ -341,7 +341,7 @@ function PlayoffPredictionsPage() {
 }
 
 function Results({ field, teamMap, myRosterId }) {
-  const [winMode, setWinMode] = useState(WIN_MODES.conditional);
+  const [winMode, setWinMode] = useState(WIN_MODES.overall);
   const [selectedFour, setSelectedFour] = useState([]);
   const [mobileDuoView, setMobileDuoView] = useState(DUO_VIEWS.playoffs);
 
@@ -398,9 +398,9 @@ function Results({ field, teamMap, myRosterId }) {
 
   const winByRoster = useMemo(() => {
     const map = {};
-    if (winMode === WIN_MODES.conditional) {
+    if (winMode === WIN_MODES.overall) {
       for (const row of field.rows) {
-        map[row.rosterId] = row.winPctIfMade ?? 0;
+        map[row.rosterId] = row.winPct ?? 0;
       }
       return map;
     }
@@ -500,8 +500,8 @@ function Results({ field, teamMap, myRosterId }) {
         <OddsColumn
           title="Win it"
           subtitle={
-            winMode === WIN_MODES.conditional
-              ? `If you make the cut · ${field.playoffFormatLabel || 'cumulative'} · live weeks included`
+            winMode === WIN_MODES.overall
+              ? `Chance to win the league · ${field.playoffFormatLabel || 'cumulative'} · live weeks included`
               : selectedFour.length === PLAYOFF_SPOTS && selectFourLoading
                 ? `Rerolling ${SELECT_FOUR_TITLE_ITERS.toLocaleString()} outcomes for this playoff field…`
               : selectedFour.length === PLAYOFF_SPOTS && lockedField
@@ -517,7 +517,7 @@ function Results({ field, teamMap, myRosterId }) {
           teamMap={teamMap}
           myRosterId={myRosterId}
           field={field}
-          metric="winPctIfMade"
+          metric="winPct"
           colorFn={titleColor}
           valueForRow={
             winMode === WIN_MODES.select && selectedFour.length === PLAYOFF_SPOTS
@@ -567,11 +567,10 @@ function Results({ field, teamMap, myRosterId }) {
                 total: lockedField.iterations,
               };
             }
-            if (!(Number(row.playoffMadeCount) > 0)) return null;
             return {
-              pct: row.winPctIfMade,
+              pct: row.winPct,
               count: row.winCount,
-              total: row.playoffMadeCount,
+              total: field.iterations,
             };
           }}
         />
@@ -668,13 +667,16 @@ function Results({ field, teamMap, myRosterId }) {
                               total: lockedField.iterations,
                             };
                           }
-                        } else if (Number(row.playoffMadeCount) > 0) {
+                        } else {
                           winDetail = {
-                            pct: row.winPctIfMade,
+                            pct: row.winPct,
                             count: row.winCount,
-                            total: row.playoffMadeCount,
+                            total: field.iterations,
                           };
                         }
+                        const ifMade = Number(row.playoffMadeCount) > 0 && Number.isFinite(row.winPctIfMade)
+                          ? ` · ${fmtPct(row.winPctIfMade)} if you make it`
+                          : '';
                         return (
                           <HprojOddsPct
                             pct={winDetail?.pct ?? winPct}
@@ -682,8 +684,8 @@ function Results({ field, teamMap, myRosterId }) {
                             total={winDetail?.total}
                             style={{ color: titleColor(winPct ?? 0) }}
                             title={
-                              winMode === WIN_MODES.conditional
-                                ? 'Title odds if you make the cut'
+                              winMode === WIN_MODES.overall
+                                ? `Title odds this season${ifMade}`
                                 : 'Title odds in this playoff field'
                             }
                           />

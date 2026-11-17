@@ -890,10 +890,10 @@ function LeagueStandings() {
               <div className="stat-v1">
                 <HprojOddsPctLink
                   loading={hprojOddsLoadingRow}
-                  pct={hprojOddsForRoster && hprojOddsForRoster.winPctIfMade}
+                  pct={hprojOddsForRoster && hprojOddsForRoster.winPct}
                   count={hprojOddsForRoster && hprojOddsForRoster.winCount}
-                  total={hprojOddsForRoster && hprojOddsForRoster.playoffMadeCount}
-                  title="HProj championship odds (if you make the playoffs)"
+                  total={hprojOddsForRoster && hprojOddsForRoster.iterations}
+                  title="HProj title odds this season"
                   className="standings-inline-link"
                 />
               </div>
@@ -1100,10 +1100,10 @@ function LeagueStandings() {
                 />
                 <HprojOddsPctLink
                   loading={hprojOddsLoading}
-                  pct={hprojOddsByRoster?.[Number(rosterId)]?.winPctIfMade}
+                  pct={hprojOddsByRoster?.[Number(rosterId)]?.winPct}
                   count={hprojOddsByRoster?.[Number(rosterId)]?.winCount}
-                  total={hprojOddsByRoster?.[Number(rosterId)]?.playoffMadeCount}
-                  title="HProj championship odds (if you make the playoffs)"
+                  total={hprojOddsByRoster?.[Number(rosterId)]?.iterations}
+                  title="HProj title odds this season"
                 />
                 {showPpgColumn ? (
                   <span className="standings-ppg standings-metric-val">
